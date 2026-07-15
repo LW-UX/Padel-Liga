@@ -16,11 +16,13 @@
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="data/players.js"></script>
   <script src="data/seasons.js"></script>
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
-  <link rel="stylesheet" href="style.css">
+  <script src="data/supabase-config.js"></script>
+  <link rel="stylesheet" href="style.css?v=2026-07-15-tippspiel">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -37,23 +39,26 @@
   <div class="hero">
     <div class="hero-eyebrow" id="hero-orgs">Headsquare × Hanako × Envidual</div>
     <div class="hero-title-row">
-      <h1>PADEL<em>LIGA</em></h1>
-      <div class="viewer-picker" id="viewer-picker">
-        <button class="viewer-toggle" type="button" data-viewer-toggle aria-haspopup="listbox" aria-expanded="false">
-          <span class="viewer-label-full" id="viewer-label-full">Spieler auswählen</span>
-          <span class="viewer-label-short" id="viewer-label-short">Auswählen</span>
-        </button>
-        <div class="viewer-menu" id="viewer-menu" role="listbox"></div>
+      <h1><button class="hero-home-button" type="button" data-nav-target="start" aria-label="Zur Startseite">PADEL<em>LIGA</em></button></h1>
+      <div class="hero-actions">
+        <div class="viewer-picker" id="viewer-picker">
+          <button class="viewer-toggle" type="button" data-viewer-toggle aria-haspopup="listbox" aria-expanded="false">
+            <span class="viewer-label-full" id="viewer-label-full">Spieler auswählen</span>
+            <span class="viewer-label-short" id="viewer-label-short">Auswählen</span>
+          </button>
+          <div class="viewer-menu" id="viewer-menu" role="listbox"></div>
+        </div>
+        <button class="auth-button" id="auth-button" type="button" data-auth-open>Login</button>
       </div>
     </div>
   </div>
 </header>
 
 <nav class="site-nav" aria-label="Hauptnavigation">
-  <button class="active" data-section="start">Home</button>
   <button data-section="rangliste">Rangliste</button>
   <button data-section="partien">Partien</button>
   <button data-section="rechner">Rechner</button>
+  <button data-section="tippspiel">Tippspiel</button>
   <button data-section="verlauf">Statistik</button>
   <button data-section="infos">Infos</button>
 </nav>
@@ -106,6 +111,46 @@
           <button class="text-link" data-nav-target="infos">Alle Infos</button>
         </article>
       </div>
+    </div>
+  </section>
+
+  <!-- TIPPSPIEL -->
+  <section id="tippspiel" class="section">
+    <div class="sh">
+      <div class="sh-title">TIPPSPIEL</div>
+      <div class="sh-meta" id="prediction-meta">Saison <span data-season-label></span></div>
+    </div>
+    <div class="prediction-layout">
+      <div class="prediction-main">
+        <article class="widget prediction-rules">
+          <div class="widget-label">So wird gewertet</div>
+          <div class="prediction-rule-grid">
+            <div><strong>4</strong><span>Exaktes Satzergebnis</span><small>z. B. 2:0 → 2:0</small></div>
+            <div><strong>2</strong><span>Richtige Richtung</span><small>z. B. 2:0 → 2:1</small></div>
+            <div><strong>0</strong><span>Falscher Sieger</span><small>z. B. 2:0 → 1:2</small></div>
+          </div>
+        </article>
+        <div id="prediction-auth-hint"></div>
+        <div id="prediction-matches" class="prediction-match-list"></div>
+      </div>
+      <aside class="widget prediction-ranking-panel">
+        <div class="widget-label">Tippspiel-Tabelle</div>
+        <div class="ranking-wrap prediction-ranking-wrap">
+          <table class="rt prediction-ranking-table">
+            <thead>
+              <tr>
+                <th class="l rn">#</th>
+                <th class="l">Name</th>
+                <th>Tipps</th>
+                <th>Exakt</th>
+                <th>Punkte</th>
+              </tr>
+            </thead>
+            <tbody id="prediction-ranking-body"></tbody>
+          </table>
+        </div>
+        <div id="prediction-ranking-empty" class="empty-state"></div>
+      </aside>
     </div>
   </section>
 
@@ -376,6 +421,50 @@
 
 </main>
 
-<script src="js/app.js?v=2026-07-09-theme-stat-colors"></script>
+<dialog class="auth-dialog" id="auth-dialog" aria-labelledby="auth-dialog-title">
+  <div class="auth-dialog-card">
+    <button class="auth-dialog-close" type="button" data-auth-close aria-label="Dialog schließen">×</button>
+    <div id="auth-guest-view">
+      <div class="widget-label">Dein Tippspiel-Konto</div>
+      <h2 id="auth-dialog-title">Einloggen</h2>
+      <div class="auth-mode-toggle" aria-label="Login oder Registrierung">
+        <button class="active" type="button" data-auth-mode="login">Login</button>
+        <button type="button" data-auth-mode="signup">Konto erstellen</button>
+      </div>
+      <form id="auth-form" class="auth-form">
+        <label id="auth-name-field" hidden>
+          <span>Anzeigename</span>
+          <input type="text" name="displayName" autocomplete="name" minlength="2" maxlength="40" placeholder="Wie sollst du in der Tabelle heißen?">
+        </label>
+        <label>
+          <span>E-Mail</span>
+          <input type="email" name="email" autocomplete="email" required placeholder="name@firma.de">
+        </label>
+        <label>
+          <span>Passwort</span>
+          <input type="password" name="password" autocomplete="current-password" minlength="8" required placeholder="Mindestens 8 Zeichen">
+        </label>
+        <button class="primary-button" id="auth-submit" type="submit">Einloggen</button>
+      </form>
+    </div>
+    <div id="auth-account-view" hidden>
+      <div class="widget-label">Dein Konto</div>
+      <h2 id="account-display-name"></h2>
+      <p class="auth-account-email" id="account-email"></p>
+      <form id="profile-form" class="auth-form">
+        <label>
+          <span>Anzeigename</span>
+          <input type="text" name="displayName" minlength="2" maxlength="40" required>
+        </label>
+        <button class="primary-button" type="submit">Namen speichern</button>
+      </form>
+      <button class="secondary-button auth-logout-button" type="button" data-auth-logout>Ausloggen</button>
+    </div>
+    <div class="auth-message" id="auth-message" role="status"></div>
+  </div>
+</dialog>
+
+<script src="js/tippspiel.js?v=2026-07-15"></script>
+<script src="js/app.js?v=2026-07-15-tippspiel"></script>
 </body>
 </html>

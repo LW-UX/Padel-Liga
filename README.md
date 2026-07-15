@@ -9,13 +9,17 @@ padel-liga/
 ├── index.html
 ├── style.css
 ├── js/
-│   └── app.js                    Navigation, Berechnungen und Darstellung
+│   ├── app.js                    Navigation, Berechnungen und Darstellung
+│   └── tippspiel.js              Login, Tipps und Tippspiel-Tabelle
 ├── data/
 │   ├── players.js                Globale Spieler-Stammdaten
 │   ├── seasons.js                Verfügbare Saisons und Standard-Saison
 │   ├── data2026.js               Teilnehmer, Ligaspiele und Inhalte der Saison 2026
 │   ├── training-matches.js       Saisonunabhängige Trainingsspiele
+│   ├── supabase-config.js         Öffentliche Supabase-Verbindungsdaten
 │   └── info.js                   Globale Regeln und allgemeine Infos
+├── supabase/
+│   └── migrations/               Datenbankschema, Rechte und Startdaten
 └── tools/
     └── elo-calculator.html       Internes Elo-Hilfsmittel
 ```
@@ -137,6 +141,46 @@ Alte Saisondateien bleiben erhalten. Dadurch können frühere Saisonstände weit
 ```text
 index.html?saison=2026
 ```
+
+## Tippspiel und Benutzerkonten
+
+Das Tippspiel verwendet Supabase für Benutzerkonten, gespeicherte Tipps und die öffentliche Tabelle. Getippt wird das Satzergebnis:
+
+- exakt richtiges Ergebnis: 4 Punkte,
+- richtiger Sieger bei anderem Satzergebnis: 2 Punkte,
+- falscher Sieger: 0 Punkte.
+
+Ein Tipp kann bis zum in der Datenbank hinterlegten Spielbeginn geändert werden. Spiele ohne festgelegte Uhrzeit bleiben zunächst offen. Sobald bei einem Spiel `actual_sets` gesetzt wird, schließt die Datenbank das Spiel automatisch für weitere Tipps und die Tabelle berechnet die Punkte neu.
+
+Die Datenbank trennt Spieler, Saisons, Ligen, Saison-Teilnahmen, Spiele, Benutzerkonten und Tipps. Dadurch kann eine spätere Saison mehrere Ligen erhalten, ohne für die aktuelle Saison bereits einen konkreten Spiel- oder Finalmodus festzulegen.
+
+Die Datei `data/supabase-config.js` enthält ausschließlich die öffentliche Projekt-URL und den öffentlichen Publishable Key. Ein Supabase Secret Key gehört weder in diese Datei noch an eine andere Stelle im Repository. Schreibzugriffe sind zusätzlich durch Row Level Security abgesichert: Benutzer können nur ihr eigenes Profil und ihre eigenen, noch offenen Tipps bearbeiten.
+
+Für E-Mail-Bestätigungen sollte unter **Supabase → Authentication → URL Configuration** die veröffentlichte Adresse als Site URL und Redirect URL eingetragen sein:
+
+```text
+https://lw-ux.github.io/Padel-Liga/
+```
+
+Für die lokale Entwicklung kann zusätzlich beispielsweise `http://localhost:4173/**` als Redirect URL freigegeben werden.
+
+Die Seite für Login-Tests nicht direkt als `file://…/index.html` öffnen, sondern im Projektordner über einen kleinen lokalen Webserver starten:
+
+```text
+python3 -m http.server 4173
+```
+
+Danach `http://localhost:4173/` im Browser öffnen. So besitzt die Seite eine gültige Herkunft und Bestätigungslinks können zuverlässig zurückkehren.
+
+### Ergebnisse im Tippspiel aktualisieren
+
+Bis es eine eigene Ergebnis-Eingabemaske gibt, werden abgeschlossene Partien kontrolliert in Supabase aktualisiert. Maßgeblich sind in `public.matches`:
+
+- `result_details`: angezeigtes Detailergebnis,
+- `actual_sets`: `2:0`, `2:1`, `1:2` oder `0:2`,
+- `winner`: `1` oder `2`.
+
+Das Setzen von `actual_sets` stellt `betting_open` automatisch auf `false`. Die statischen Saisondaten bleiben während der Übergangsphase ebenfalls die Quelle für Rangliste und Elo; Spielresultate sollten deshalb an beiden Stellen gleich gepflegt werden.
 
 ## Auf GitHub Pages veröffentlichen
 

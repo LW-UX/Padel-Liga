@@ -673,6 +673,7 @@ function nav(id, el) {
   if (activeButton) activeButton.classList.add('active');
   scrollToTopInstantly();
   if (id === 'verlauf') initChart();
+  if (id === 'tippspiel') window.PadelTippspiel?.refresh();
 }
 
 function scrollToTopInstantly() {
@@ -3693,6 +3694,7 @@ async function initApp() {
     renderCalculator();
     renderStatistik();
     renderInfos();
+    await window.PadelTippspiel?.init(PADEL_DATA);
   } catch (error) {
     document.querySelector('main').innerHTML = `<div class="empty-state">Die Saison-Daten konnten nicht geladen werden.</div>`;
     console.error(error);

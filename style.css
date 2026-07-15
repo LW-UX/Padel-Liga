@@ -114,6 +114,50 @@
     }
     .hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3.4rem, 8vw, 6.4rem); line-height: 0.9; letter-spacing: 0.02em; }
     .hero h1 em { color: var(--accent); font-style: normal; }
+    .hero-home-button {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+      letter-spacing: inherit;
+      line-height: inherit;
+      padding: 0;
+    }
+    .hero-home-button:focus-visible {
+      border-radius: 6px;
+      outline: 2px solid var(--accent);
+      outline-offset: 6px;
+    }
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .auth-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 84px;
+      min-height: 36px;
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      background: var(--accent);
+      color: #07080c;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.45rem 0.9rem;
+      white-space: nowrap;
+    }
+    .auth-button:hover { filter: brightness(1.08); }
+    .auth-button.is-authenticated {
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .hero-sub { color: var(--dim); font-size: 0.9rem; font-weight: 300; margin-top: 1rem; }
     .site-nav {
       position: sticky;
@@ -217,6 +261,210 @@
       background: color-mix(in srgb, var(--accent) 15%, transparent);
       color: var(--accent);
     }
+
+    /* ── TIPPSPIEL & AUTH ── */
+    .prediction-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .prediction-main { display: grid; gap: 14px; min-width: 0; }
+    .prediction-rules { padding-bottom: 1.1rem; }
+    .prediction-rule-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .prediction-rule-grid > div {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      column-gap: 10px;
+      align-items: center;
+    }
+    .prediction-rule-grid strong {
+      grid-row: 1 / 3;
+      color: var(--accent);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 400;
+      line-height: 1;
+    }
+    .prediction-rule-grid span { color: var(--text); font-size: 0.9rem; font-weight: 600; }
+    .prediction-rule-grid small { color: var(--dim); font-size: 0.74rem; }
+    .prediction-login-hint,
+    .prediction-session-note {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--accent) 7%, transparent);
+      padding: 1rem 1.15rem;
+    }
+    .prediction-login-hint > div { display: grid; gap: 3px; }
+    .prediction-login-hint span,
+    .prediction-session-note { color: var(--dim); font-size: 0.86rem; }
+    .prediction-session-note strong { color: var(--text); }
+    .primary-button,
+    .secondary-button {
+      min-height: 38px;
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.84rem;
+      font-weight: 700;
+      padding: 0.55rem 1rem;
+    }
+    .primary-button { background: var(--accent); color: #07080c; }
+    .secondary-button { background: transparent; color: var(--dim); border-color: var(--border); }
+    .primary-button:disabled { cursor: wait; opacity: 0.55; }
+    .prediction-match-list { display: grid; gap: 10px; }
+    .prediction-match-card {
+      display: grid;
+      gap: 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: transparent;
+      padding: 1rem 1.15rem;
+    }
+    .prediction-match-card.has-prediction {
+      border-color: color-mix(in srgb, var(--accent2) 55%, var(--border));
+      background: color-mix(in srgb, var(--accent2) 5%, transparent);
+    }
+    .prediction-match-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+    }
+    .prediction-teams {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 38px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+    }
+    .prediction-team {
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+    .prediction-team-2 { text-align: right; }
+    .prediction-versus { color: var(--dim); font-family: 'DM Mono', monospace; font-size: 0.72rem; text-align: center; }
+    .prediction-options {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 7px;
+    }
+    .prediction-option {
+      min-height: 42px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--dim);
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .prediction-option:hover { border-color: var(--accent); color: var(--text); }
+    .prediction-option.active { border-color: var(--accent); background: var(--accent); color: #07080c; }
+    .prediction-option:disabled { cursor: wait; opacity: 0.62; }
+    .prediction-save-state { color: var(--dim); font-size: 0.75rem; text-align: right; }
+    .prediction-save-state.saved { color: var(--positiv); }
+    .prediction-ranking-panel { position: sticky; top: 78px; }
+    .prediction-ranking-wrap { margin-bottom: 0; }
+    .prediction-ranking-table { min-width: 100%; }
+    .prediction-ranking-table th,
+    .prediction-ranking-table td { padding-left: 8px !important; padding-right: 8px !important; }
+    .prediction-ranking-table .rn { width: 32px; }
+    .prediction-error {
+      display: grid;
+      gap: 4px;
+      border: 1px solid color-mix(in srgb, var(--negativ) 50%, var(--border));
+      border-radius: 12px;
+      color: var(--text);
+      padding: 1rem;
+    }
+    .prediction-error small { color: var(--dim); }
+
+    .auth-dialog {
+      width: min(92vw, 460px);
+      max-width: none;
+      max-height: min(90vh, 720px);
+      margin: auto;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 30px 100px rgba(0,0,0,0.65);
+      padding: 0;
+    }
+    .auth-dialog::backdrop { background: rgba(0,0,0,0.72); backdrop-filter: blur(4px); }
+    .auth-dialog-card { position: relative; padding: 1.5rem; }
+    .auth-dialog-close {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--surface2);
+      color: var(--dim);
+      cursor: pointer;
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+    .auth-dialog h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.04em; margin: 0.25rem 0 1rem; }
+    .auth-mode-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      padding: 3px;
+      margin-bottom: 1rem;
+    }
+    .auth-mode-toggle button {
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--dim);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.55rem;
+    }
+    .auth-mode-toggle button.active { background: var(--surface2); color: var(--accent); }
+    .auth-form { display: grid; gap: 12px; }
+    .auth-form label[hidden] { display: none !important; }
+    .auth-form label { display: grid; gap: 5px; color: var(--dim); font-size: 0.78rem; font-weight: 600; }
+    .auth-form input {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 1rem;
+      outline: none;
+      padding: 0.65rem 0.75rem;
+    }
+    .auth-form input:focus { border-color: var(--accent); }
+    .auth-message { min-height: 1.25rem; color: var(--dim); font-size: 0.82rem; margin-top: 0.8rem; }
+    .auth-message.error { color: var(--negativ); }
+    .auth-message.success { color: var(--positiv); }
+    .auth-account-email { color: var(--dim); font-size: 0.88rem; margin: -0.7rem 0 1.2rem; }
+    .auth-logout-button { width: 100%; margin-top: 1rem; }
 
     /* ── MAIN ── */
     main { max-width: 1100px; margin: 0 auto; padding: 0 .5rem 6rem; }
@@ -1460,6 +1708,21 @@
       }
       .hero-title-row { gap: 0.75rem; }
       .hero h1 { flex: 1 1 auto; min-width: 0; }
+      .hero-actions { gap: 5px; }
+      .auth-button {
+        min-width: 58px;
+        max-width: 76px !important;
+        min-height: 34px;
+        font-size: 0.7rem;
+        padding: 0.4rem 0.6rem;
+      }
+      .viewer-toggle {
+        min-width: 74px;
+        min-height: 34px;
+        padding: 0.4rem 0.55rem;
+      }
+      .viewer-label-full { display: none; }
+      .viewer-label-short { display: inline; }
       .site-nav {
         width: calc(100% - 1.5rem);
         margin-bottom: 1.25rem;
@@ -1871,4 +2134,24 @@
         padding-right: 6px;
         font-size: 0.95rem;
       }
+      .prediction-layout { grid-template-columns: 1fr; gap: 12px; }
+      .prediction-ranking-panel { position: static; }
+      .prediction-rule-grid { grid-template-columns: 1fr; gap: 10px; }
+      .prediction-rule-grid > div { grid-template-columns: 34px 1fr; }
+      .prediction-rule-grid strong { font-size: 2rem; }
+      .prediction-login-hint,
+      .prediction-session-note { align-items: flex-start; flex-direction: column; gap: 10px; }
+      .prediction-login-hint .primary-button { width: 100%; }
+      .prediction-match-meta { align-items: flex-start; flex-direction: column; gap: 3px; }
+      .prediction-teams { gap: 5px; }
+      .prediction-team {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-size: 0.94rem;
+      }
+      .prediction-team .mc-player-sep { display: none; }
+      .prediction-options { gap: 5px; }
+      .prediction-option { min-height: 40px; font-size: 0.9rem; }
+      table.prediction-ranking-table { min-width: 100%; }
     }
