@@ -60,8 +60,267 @@ function countsForRanking(match) {
   return match?.countsForRanking !== false;
 }
 
+function countsForElo(match) {
+  return match?.countsForElo === true;
+}
+
 function isSingleSetMatch(match) {
   return match?.format === 'single-set';
+}
+
+function getQualifierLabel(rank) {
+  return ({ 1: 'Erster', 2: 'Zweiter', 3: 'Dritter', 4: 'Vierter' })[rank] || `Platz ${rank}`;
+}
+
+function normalizeSeasonLeagues(rawSeason) {
+  const source = Array.isArray(rawSeason.leagues) && rawSeason.leagues.length
+    ? rawSeason.leagues
+    : [{ id: 'main', label: rawSeason.title || rawSeason.label || 'Liga', default: true }];
+  const leagueIds = new Set();
+  const leagues = source.map(league => {
+    if (!league?.id || leagueIds.has(league.id)) {
+      throw new Error(`Doppelte oder ungültige Liga-ID ${league?.id || ''}.`);
+    }
+    leagueIds.add(league.id);
+    return { ...league };
+  });
+  const defaultLeague = leagues.find(league => league.default) || leagues[0];
+
+  return { leagues, leagueIds, defaultLeagueId: defaultLeague.id };
+}
+
+function resolveLeagueId(record, leagueConfig, recordLabel) {
+  const leagueId = record?.leagueId || (
+    leagueConfig.leagues.length === 1 ? leagueConfig.defaultLeagueId : null
+  );
+
+  if (!leagueId || !leagueConfig.leagueIds.has(leagueId)) {
+    throw new Error(`Ungültige oder fehlende Liga für ${recordLabel}.`);
+  }
+  return leagueId;
+}
+
+function hydrateTeam(team, playersById) {
+  const playerIds = Array.isArray(team?.playerIds) ? team.playerIds : [];
+  const qualifierRanks = Array.isArray(team?.qualifierRanks) ? team.qualifierRanks : [];
+
+  playerIds.forEach(playerId => {
+    if (!playersById.has(playerId)) {
+      throw new Error(`Unbekannte Spieler-ID ${playerId}.`);
+    }
+  });
+
+  return {
+    ...team,
+    playerIds,
+    qualifierRanks,
+    // Anzeigenamen werden ausschließlich aus den zentralen Stammdaten abgeleitet.
+    spieler: playerIds.length
+      ? playerIds.map(playerId => playersById.get(playerId).name)
+      : qualifierRanks.map(getQualifierLabel)
+  };
+}
+
+function hydrateMatch(match, playersById) {
+  return {
+    ...match,
+    // Die Oberfläche nutzt vorerst diese bisherigen Feldnamen. Die gepflegten
+    // Rohdaten verwenden für Saison- und Trainingsspiele dasselbe Schema.
+    spieltag: match.matchday ?? null,
+    datum: match.date ?? null,
+    uhrzeit: match.time ?? null,
+    ergebnis: match.result ?? null,
+    saetze: match.sets ?? null,
+    sieger: match.winner ?? null,
+    team1: hydrateTeam(match.team1, playersById),
+    team2: hydrateTeam(match.team2, playersById)
+  };
+}
+
+function parseEloScore(match) {
+  const normalized = String(match?.ergebnis || '').replace(/\([^)]*\)/g, '');
+  const scores = [...normalized.matchAll(/(\d+)\s*:\s*(\d+)/g)]
+    .map(match => [Number(match[1]), Number(match[2])]);
+
+  const requiredSetCount = isSingleSetMatch(match) ? 1 : 2;
+  if (scores.length < requiredSetCount) return null;
+  return {
+    regularSets: scores.slice(0, requiredSetCount),
+    matchTiebreak: requiredSetCount === 2 ? scores[2] || null : null
+  };
+}
+
+function getEloExpectedScore(playerElo, opponentElo) {
+  return 1 / (1 + Math.pow(10, (opponentElo - playerElo) / 500));
+}
+
+function getEloExpectedScoreAgainstTeam(playerElo, opponentElos) {
+  return opponentElos.reduce(
+    (sum, opponentElo) => sum + getEloExpectedScore(playerElo, opponentElo),
+    0
+  ) / opponentElos.length;
+}
+
+function getEloPointFactor(score) {
+  const regularGames = score.regularSets.reduce(
+    (totals, set) => [totals[0] + set[0], totals[1] + set[1]],
+    [0, 0]
+  );
+  const regularDifference = Math.abs(regularGames[0] - regularGames[1]);
+  const tiebreakDifference = score.matchTiebreak
+    ? (Math.abs(score.matchTiebreak[0] - score.matchTiebreak[1]) / 10) * 3
+    : 0;
+
+  return Math.pow(Math.log10(regularDifference + tiebreakDifference + 1), 3) + 2;
+}
+
+function calculateSeasonEloHistory(season) {
+  const playersById = new Map(season.players.map(player => [player.id, player]));
+  const ratings = new Map(season.players.map(player => [player.id, Number(player.startElo)]));
+  const startDate = season.startDate || season.matchdays?.find(day => day.startDate)?.startDate;
+
+  season.players.forEach(player => {
+    if (!Number.isFinite(ratings.get(player.id))) {
+      throw new Error(`Ungültiger Start-Elo für ${player.id}.`);
+    }
+    player.history = [{
+      date: startDate,
+      elo: ratings.get(player.id),
+      matchId: null,
+      label: 'Start'
+    }];
+  });
+
+  season.matches
+    .filter(match => countsForElo(match) && match.sieger !== null)
+    .sort((a, b) => getMatchOrderKey(a).localeCompare(getMatchOrderKey(b)))
+    .forEach(match => {
+      const team1Ids = match.team1.playerIds;
+      const team2Ids = match.team2.playerIds;
+      const score = parseEloScore(match);
+
+      if (team1Ids.length !== 2 || team2Ids.length !== 2 || !score) {
+        throw new Error(`Elo für ${match.id} kann nicht berechnet werden.`);
+      }
+
+      const team1Elos = team1Ids.map(playerId => ratings.get(playerId));
+      const team2Elos = team2Ids.map(playerId => ratings.get(playerId));
+      const pointFactor = getEloPointFactor(score);
+      const updates = [
+        ...team1Ids.map((playerId, index) => ({
+          playerId,
+          oldElo: team1Elos[index],
+          expected: getEloExpectedScoreAgainstTeam(team1Elos[index], team2Elos),
+          score: match.sieger === 1 ? 1 : 0
+        })),
+        ...team2Ids.map((playerId, index) => ({
+          playerId,
+          oldElo: team2Elos[index],
+          expected: getEloExpectedScoreAgainstTeam(team2Elos[index], team1Elos),
+          score: match.sieger === 2 ? 1 : 0
+        }))
+      ];
+
+      updates.forEach(update => {
+        const elo = Math.round(
+          update.oldElo + pointFactor * 50 * (update.score - update.expected)
+        );
+        ratings.set(update.playerId, elo);
+        playersById.get(update.playerId).history.push({
+          date: match.datum,
+          elo,
+          matchId: match.id,
+          label: getMatchDisplayLabel(match)
+        });
+      });
+    });
+}
+
+function hydrateSeasonData(rawSeason) {
+  if (!Array.isArray(window.PADEL_PLAYERS)) {
+    throw new Error('Zentrale Spielerdaten fehlen.');
+  }
+
+  const playersById = new Map();
+  window.PADEL_PLAYERS.forEach(player => {
+    if (!player?.id || playersById.has(player.id)) {
+      throw new Error(`Doppelte oder ungültige Spieler-ID ${player?.id || ''}.`);
+    }
+    if (!player.name || !player.initials || !player.firma) {
+      throw new Error(`Unvollständige Stammdaten für ${player.id}.`);
+    }
+    playersById.set(player.id, player);
+  });
+
+  const leagueConfig = normalizeSeasonLeagues(rawSeason);
+  const participantIds = new Set();
+  const allPlayers = rawSeason.participants.map(participant => {
+    const player = playersById.get(participant.playerId);
+    if (!player || participantIds.has(participant.playerId)) {
+      throw new Error(`Ungültige Saison-Teilnahme ${participant.playerId}.`);
+    }
+    participantIds.add(participant.playerId);
+    return {
+      ...player,
+      leagueId: resolveLeagueId(
+        participant,
+        leagueConfig,
+        `Teilnehmer ${participant.playerId}`
+      ),
+      startElo: Number(participant.startElo)
+    };
+  });
+
+  const matchIds = new Set();
+  const allMatches = rawSeason.matches.map(match => {
+    if (!match?.id || matchIds.has(match.id)) {
+      throw new Error(`Doppelte oder ungültige Match-ID ${match?.id || ''}.`);
+    }
+    if (match.type !== 'season' || match.seasonId !== rawSeason.id) {
+      throw new Error(`Ungültige Saisonzuordnung für ${match.id}.`);
+    }
+    matchIds.add(match.id);
+    const hydratedMatch = hydrateMatch({
+      ...match,
+      leagueId: resolveLeagueId(match, leagueConfig, `Spiel ${match.id}`)
+    }, playersById);
+    [...hydratedMatch.team1.playerIds, ...hydratedMatch.team2.playerIds].forEach(playerId => {
+      if (!participantIds.has(playerId)) {
+        throw new Error(`${playerId} nimmt nicht an Saison ${rawSeason.id} teil.`);
+      }
+    });
+    return hydratedMatch;
+  });
+
+  const trainingMatches = (window.PADEL_TRAINING_MATCHES || [])
+    .map(match => hydrateMatch(match, playersById));
+  trainingMatches.forEach(match => {
+    if (!match?.id || matchIds.has(match.id) || match.type !== 'training') {
+      throw new Error(`Doppelte oder ungültige Trainingsspiel-ID ${match?.id || ''}.`);
+    }
+    matchIds.add(match.id);
+    if (match.countsForRanking !== false || match.countsForElo !== false) {
+      throw new Error(`Trainingsspiel ${match.id} darf weder Tabelle noch Elo verändern.`);
+    }
+  });
+
+  const completeSeason = {
+    ...rawSeason,
+    leagues: leagueConfig.leagues,
+    activeLeagueId: leagueConfig.defaultLeagueId,
+    players: allPlayers,
+    matches: allMatches,
+    trainingMatches
+  };
+  calculateSeasonEloHistory(completeSeason);
+
+  return {
+    ...completeSeason,
+    allPlayers,
+    allMatches,
+    players: allPlayers.filter(player => player.leagueId === leagueConfig.defaultLeagueId),
+    matches: allMatches.filter(match => match.leagueId === leagueConfig.defaultLeagueId)
+  };
 }
 
 async function loadActiveSeason() {
@@ -70,11 +329,13 @@ async function loadActiveSeason() {
 
   window.PADEL_SEASON = null;
   await loadScript(selectedSeason.file);
-  PADEL_DATA = window.PADEL_SEASON;
+  const rawSeason = window.PADEL_SEASON;
 
-  if (!PADEL_DATA?.players || !PADEL_DATA?.matches) {
+  if (!rawSeason?.participants || !rawSeason?.matches) {
     throw new Error(`Saison ${selectedSeason.id} ist unvollständig.`);
   }
+
+  PADEL_DATA = hydrateSeasonData(rawSeason);
 }
 
 function applySeasonMetadata() {
@@ -485,9 +746,13 @@ function getLatestPlayerEloValue(player) {
 }
 
 function getMatchNumber(matchOrLabel) {
-  const value = typeof matchOrLabel === 'string' ? matchOrLabel : matchOrLabel?.id;
-  const match = String(value || '').match(/\d+/);
-  return match ? Number(match[0]) : 0;
+  const value = typeof matchOrLabel === 'string'
+    ? matchOrLabel
+    : matchOrLabel?.displayLabel || matchOrLabel?.id;
+  const taggedNumber = String(value || '').match(/(?:partie|final)[\s_-]*(\d+)/i);
+  const trailingNumber = String(value || '').match(/(\d+)\s*$/);
+  const match = taggedNumber || trailingNumber;
+  return match ? Number(match[1]) : 0;
 }
 
 function getMatchOrderKey(match) {
@@ -499,7 +764,9 @@ function getMatchOrderKey(match) {
 }
 
 function getHistoryOrderKey(historyEntry) {
-  const historyMatch = PADEL_DATA.matches.find(match => getMatchNumber(match) === getMatchNumber(historyEntry.partie));
+  const historyMatch = historyEntry.matchId
+    ? PADEL_DATA.matches.find(match => match.id === historyEntry.matchId)
+    : null;
   if (historyMatch) return getMatchOrderKey(historyMatch);
 
   const dateKey = toDateKey(historyEntry.date) || '0000-00-00';
@@ -982,7 +1249,7 @@ function compareMatchesByDateTime(a, b) {
 
   return dateA.localeCompare(dateB)
     || getMatchTimeMinutes(a) - getMatchTimeMinutes(b)
-    || Number(a.id.replace('partie', '')) - Number(b.id.replace('partie', ''));
+    || getMatchNumber(a) - getMatchNumber(b);
 }
 
 function compareMatchesByDateTimeDesc(a, b) {
@@ -990,7 +1257,7 @@ function compareMatchesByDateTimeDesc(a, b) {
 }
 
 function compareMatchesByNumber(a, b) {
-  return Number(a.id.replace('partie', '')) - Number(b.id.replace('partie', ''));
+  return getMatchNumber(a) - getMatchNumber(b);
 }
 
 function hasScheduledDateTime(match) {
@@ -1213,7 +1480,10 @@ function getWinnerProbability(match) {
 }
 
 function getMatchDisplayLabel(match) {
-  return match?.displayLabel || String(match?.id || '').replace('partie','Partie ');
+  if (match?.displayLabel) return match.displayLabel;
+  const number = getMatchNumber(match);
+  const prefix = String(match?.id || '').includes('-final-') ? 'Final' : 'Partie';
+  return number ? `${prefix} ${number}` : 'Partie';
 }
 
 function formatMatchNumberLabel(match) {
@@ -2768,24 +3038,12 @@ function normalizeGameLabel(label) {
   return value || 'Start';
 }
 
-function getGameNumber(label) {
-  const gameNumber = String(label || '').match(/(?:spiel|partie)\s*(\d+)/i)?.[1];
-  return gameNumber ? Number(gameNumber) : null;
-}
-
-function getMatchByGameLabel(label) {
-  const gameNumber = getGameNumber(label);
-  if (!gameNumber) return null;
-
-  return PADEL_DATA.matches.find(match => Number(match.id.replace('partie', '')) === gameNumber) || null;
-}
-
 function getHistoryEventKey(historyEntry) {
   const date = toDateKey(historyEntry.date);
-  const gameNumber = getGameNumber(historyEntry.partie);
-  const label = normalizeGameLabel(historyEntry.partie).toLowerCase().replace(/\s+/g, '-');
+  if (historyEntry.matchId) return `match:${historyEntry.matchId}`;
+  const label = normalizeGameLabel(historyEntry.label).toLowerCase().replace(/\s+/g, '-');
 
-  return `${date}|${gameNumber ? `partie${gameNumber}` : label}`;
+  return `${date}|${label}`;
 }
 
 function formatChartEventLabel(event) {
@@ -2807,8 +3065,8 @@ function getChartEvents() {
       const elo = Number(historyEntry.elo);
       if (!date || !Number.isFinite(elo)) return;
 
-      const gameLabel = normalizeGameLabel(historyEntry.partie);
-      const match = getMatchByGameLabel(gameLabel);
+      const gameLabel = normalizeGameLabel(historyEntry.label);
+      const match = historyEntry.matchId ? getMatchById(historyEntry.matchId) : null;
       const key = getHistoryEventKey(historyEntry);
 
       if (!events.has(key)) {
@@ -2836,7 +3094,7 @@ function getChartEvents() {
       const timeCompare = (a.match ? getMatchTimeMinutes(a.match) : 0) - (b.match ? getMatchTimeMinutes(b.match) : 0);
       if (timeCompare) return timeCompare;
 
-      return (getGameNumber(a.gameLabel) || 0) - (getGameNumber(b.gameLabel) || 0);
+      return getMatchNumber(a.match || a.gameLabel) - getMatchNumber(b.match || b.gameLabel);
     })
     .map((event, eventIndex) => ({ ...event, eventIndex, label: formatChartEventLabel(event) }));
 }
@@ -2867,10 +3125,9 @@ function getPlayerByName(playerName) {
 
 function getPlayerHistoryEntryForMatch(player, match) {
   if (!player || !match) return null;
-  const matchNumber = getMatchNumber(match);
 
   return (player.history || []).find(historyEntry =>
-    getMatchNumber(historyEntry.partie) === matchNumber &&
+    historyEntry.matchId === match.id &&
     Number.isFinite(Number(historyEntry.elo))
   ) || null;
 }

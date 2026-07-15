@@ -2,10 +2,18 @@ window.PADEL_SEASON = {
   "id": "2026",
   "label": "2026",
   "title": "Padel-Liga 2026",
+  "startDate": "2026-05-11",
   "organizations": [
     "Headsquare",
     "Hanako",
     "Envidual"
+  ],
+  "leagues": [
+    {
+      "id": "main",
+      "label": "Padel-Liga 2026",
+      "default": true
+    }
   ],
   "shortInfo": [
     "Jeder Teilnehmer hat 6 Partien.",
@@ -55,1201 +63,836 @@ window.PADEL_SEASON = {
       "title": "Final Four"
     }
   ],
-  "players": [
+  "participants": [
     {
-      "id": "agnes_k",
-      "name": "Agnes K.",
-      "initials": "AK",
-      "firma": "Headsquare",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 750,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-06-11",
-          "elo": 708,
-          "partie": "Partie 1"
-        }
-      ]
+      "playerId": "agnes_k",
+      "startElo": 750
     },
     {
-      "id": "andreas_l",
-      "name": "Andreas L.",
-      "initials": "AL",
-      "firma": "Headsquare",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 1100,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-06-03",
-          "elo": 1025,
-          "partie": "Partie 12"
-        },
-        {
-          "date": "2026-06-10",
-          "elo": 1090,
-          "partie": "Partie 5"
-        },
-        {
-          "date": "2026-07-14",
-          "elo": 1113,
-          "partie": "Partie 21"
-        }
-      ]
+      "playerId": "andreas_l",
+      "startElo": 1100
     },
     {
-      "id": "chris_m",
-      "name": "Chris M.",
-      "initials": "ChM",
-      "firma": "Envidual",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 900,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-06-17",
-          "elo": 950,
-          "partie": "Partie 8"
-        },
-        {
-          "date": "2026-06-17",
-          "elo": 884,
-          "partie": "Partie 3"
-        },
-        {
-          "date": "2026-06-23",
-          "elo": 956,
-          "partie": "Partie 13"
-        },
-        {
-          "date": "2026-07-07",
-          "elo": 1006,
-          "partie": "Partie 9"
-        }
-      ]
+      "playerId": "chris_m",
+      "startElo": 900
     },
     {
-      "id": "christoph_l",
-      "name": "Christoph L.",
-      "initials": "CL",
-      "firma": "Headsquare",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 850,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-06-11",
-          "elo": 909,
-          "partie": "Partie 1"
-        },
-        {
-          "date": "2026-06-12",
-          "elo": 858,
-          "partie": "Partie 7"
-        },
-        {
-          "date": "2026-06-25",
-          "elo": 790,
-          "partie": "Partie 14"
-        },
-        {
-          "date": "2026-07-09",
-          "elo": 746,
-          "partie": "Partie 11"
-        }
-      ]
+      "playerId": "christoph_l",
+      "startElo": 850
     },
     {
-      "id": "cristian_b",
-      "name": "Cristian B.",
-      "initials": "CB",
-      "firma": "Hanako",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 800,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-05-19",
-          "elo": 877,
-          "partie": "Partie 6"
-        },
-        {
-          "date": "2026-05-20",
-          "elo": 785,
-          "partie": "Partie 2"
-        },
-        {
-          "date": "2026-06-25",
-          "elo": 866,
-          "partie": "Partie 14"
-        },
-        {
-          "date": "2026-07-07",
-          "elo": 925,
-          "partie": "Partie 9"
-        }
-      ]
+      "playerId": "cristian_b",
+      "startElo": 800
     },
     {
-      "id": "florian_z",
-      "name": "Florian Z.",
-      "initials": "FZ",
-      "firma": "Hanako",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 800,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-05-13",
-          "elo": 773,
-          "partie": "Partie 4"
-        },
-        {
-          "date": "2026-07-09",
-          "elo": 731,
-          "partie": "Partie 11"
-        },
-        {
-          "date": "2026-07-14",
-          "elo": 703,
-          "partie": "Partie 21"
-        },
-        {
-          "date": "2026-07-15",
-          "elo": 784,
-          "partie": "Partie 17"
-        }
-      ]
+      "playerId": "florian_z",
+      "startElo": 800
     },
     {
-      "id": "greta_p",
-      "name": "Greta P.",
-      "initials": "GP",
-      "firma": "Hanako",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 900,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-05-19",
-          "elo": 840,
-          "partie": "Partie 6"
-        },
-        {
-          "date": "2026-06-03",
-          "elo": 797,
-          "partie": "Partie 12"
-        },
-        {
-          "date": "2026-06-11",
-          "elo": 748,
-          "partie": "Partie 1"
-        }
-      ]
+      "playerId": "greta_p",
+      "startElo": 900
     },
     {
-      "id": "irene_w",
-      "name": "Irene W.",
-      "initials": "IW",
-      "firma": "Headsquare",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 750,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-06-17",
-          "elo": 702,
-          "partie": "Partie 8"
-        },
-        {
-          "date": "2026-06-17",
-          "elo": 783,
-          "partie": "Partie 3"
-        },
-        {
-          "date": "2026-06-23",
-          "elo": 745,
-          "partie": "Partie 13"
-        },
-        {
-          "date": "2026-07-09",
-          "elo": 805,
-          "partie": "Partie 11"
-        }
-      ]
+      "playerId": "irene_w",
+      "startElo": 750
     },
     {
-      "id": "jonas_l",
-      "name": "Jonas L.",
-      "initials": "JL",
-      "firma": "Envidual",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 800,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-05-20",
-          "elo": 885,
-          "partie": "Partie 2"
-        },
-        {
-          "date": "2026-06-03",
-          "elo": 951,
-          "partie": "Partie 12"
-        },
-        {
-          "date": "2026-06-17",
-          "elo": 993,
-          "partie": "Partie 8"
-        }
-      ]
+      "playerId": "jonas_l",
+      "startElo": 800
     },
     {
-      "id": "leonie_r",
-      "name": "Leonie R.",
-      "initials": "LR",
-      "firma": "Hanako",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 800,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-05-20",
-          "elo": 722,
-          "partie": "Partie 2"
-        },
-        {
-          "date": "2026-06-17",
-          "elo": 678,
-          "partie": "Partie 8"
-        },
-        {
-          "date": "2026-07-07",
-          "elo": 649,
-          "partie": "Partie 9"
-        },
-        {
-          "date": "2026-07-14",
-          "elo": 629,
-          "partie": "Partie 21"
-        }
-      ]
+      "playerId": "leonie_r",
+      "startElo": 800
     },
     {
-      "id": "luca_w",
-      "name": "Luca W.",
-      "initials": "LW",
-      "firma": "Envidual",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 800,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-05-20",
-          "elo": 885,
-          "partie": "Partie 2"
-        },
-        {
-          "date": "2026-06-10",
-          "elo": 969,
-          "partie": "Partie 5"
-        },
-        {
-          "date": "2026-06-24",
-          "elo": 1027,
-          "partie": "Partie 24"
-        },
-        {
-          "date": "2026-07-09",
-          "elo": 1054,
-          "partie": "Partie 11"
-        },
-        {
-          "date": "2026-07-15",
-          "elo": 973,
-          "partie": "Partie 17"
-        }
-      ]
+      "playerId": "luca_w",
+      "startElo": 800
     },
     {
-      "id": "ludwig_w",
-      "name": "Ludwig W.",
-      "initials": "LuW",
-      "firma": "Envidual",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 1100,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-05-13",
-          "elo": 1130,
-          "partie": "Partie 4"
-        },
-        {
-          "date": "2026-05-19",
-          "elo": 1161,
-          "partie": "Partie 6"
-        },
-        {
-          "date": "2026-06-23",
-          "elo": 1073,
-          "partie": "Partie 13"
-        },
-        {
-          "date": "2026-07-14",
-          "elo": 1098,
-          "partie": "Partie 21"
-        },
-        {
-          "date": "2026-07-15",
-          "elo": 1134,
-          "partie": "Partie 17"
-        }
-      ]
+      "playerId": "ludwig_w",
+      "startElo": 1100
     },
     {
-      "id": "lukas_p",
-      "name": "Lukas P.",
-      "initials": "LP",
-      "firma": "Headsquare",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 1150,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-06-10",
-          "elo": 1049,
-          "partie": "Partie 5"
-        },
-        {
-          "date": "2026-06-24",
-          "elo": 1098,
-          "partie": "Partie 24"
-        },
-        {
-          "date": "2026-06-25",
-          "elo": 1130,
-          "partie": "Partie 14"
-        }
-      ]
+      "playerId": "lukas_p",
+      "startElo": 1150
     },
     {
-      "id": "marcel_m",
-      "name": "Marcel M.",
-      "initials": "MzM",
-      "firma": "Envidual",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 1000,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-06-03",
-          "elo": 1053,
-          "partie": "Partie 12"
-        },
-        {
-          "date": "2026-06-12",
-          "elo": 1126,
-          "partie": "Partie 7"
-        },
-        {
-          "date": "2026-06-17",
-          "elo": 1154,
-          "partie": "Partie 3"
-        },
-        {
-          "date": "2026-06-24",
-          "elo": 1077,
-          "partie": "Partie 24"
-        }
-      ]
+      "playerId": "marcel_m",
+      "startElo": 1000
     },
     {
-      "id": "marco_m",
-      "name": "Marco M.",
-      "initials": "MaMay",
-      "firma": "Headsquare",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 1050,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-06-11",
-          "elo": 1081,
-          "partie": "Partie 1"
-        },
-        {
-          "date": "2026-06-12",
-          "elo": 1149,
-          "partie": "Partie 7"
-        }
-      ]
+      "playerId": "marco_m",
+      "startElo": 1050
     },
     {
-      "id": "martin_b",
-      "name": "Martin B.",
-      "initials": "MB",
-      "firma": "Headsquare",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 800,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-06-10",
-          "elo": 752,
-          "partie": "Partie 5"
-        },
-        {
-          "date": "2026-06-17",
-          "elo": 708,
-          "partie": "Partie 3"
-        },
-        {
-          "date": "2026-06-25",
-          "elo": 663,
-          "partie": "Partie 14"
-        },
-        {
-          "date": "2026-07-15",
-          "elo": 627,
-          "partie": "Partie 17"
-        }
-      ]
+      "playerId": "martin_b",
+      "startElo": 800
     },
     {
-      "id": "niklas_k",
-      "name": "Niklas K.",
-      "initials": "NK",
-      "firma": "Hanako",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 850,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-05-13",
-          "elo": 817,
-          "partie": "Partie 4"
-        },
-        {
-          "date": "2026-05-19",
-          "elo": 768,
-          "partie": "Partie 6"
-        },
-        {
-          "date": "2026-06-24",
-          "elo": 739,
-          "partie": "Partie 24"
-        }
-      ]
+      "playerId": "niklas_k",
+      "startElo": 850
     },
     {
-      "id": "raphael_h",
-      "name": "Raphael H.",
-      "initials": "RH",
-      "firma": "Headsquare",
-      "history": [
-        {
-          "date": "2026-05-11",
-          "elo": 1100,
-          "partie": "Start"
-        },
-        {
-          "date": "2026-05-13",
-          "elo": 1130,
-          "partie": "Partie 4"
-        },
-        {
-          "date": "2026-06-12",
-          "elo": 1041,
-          "partie": "Partie 7"
-        },
-        {
-          "date": "2026-06-23",
-          "elo": 1095,
-          "partie": "Partie 13"
-        },
-        {
-          "date": "2026-07-07",
-          "elo": 1015,
-          "partie": "Partie 9"
-        }
-      ]
+      "playerId": "raphael_h",
+      "startElo": 1100
     }
   ],
   "matches": [
     {
-      "id": "partie1",
-      "spieltag": 1,
-      "datum": "2026-06-11",
-      "uhrzeit": "12.30",
+      "id": "season-2026-partie-1",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 1,
+      "date": "2026-06-11",
+      "time": "12.30",
+      "result": "1:6, 3:6",
+      "sets": "0:2",
+      "winner": 2,
       "team1": {
-        "spieler": [
-          "Greta P.",
-          "Agnes K."
+        "playerIds": [
+          "greta_p",
+          "agnes_k"
         ]
       },
       "team2": {
-        "spieler": [
-          "Christoph L.",
-          "Marco M."
+        "playerIds": [
+          "christoph_l",
+          "marco_m"
         ]
-      },
-      "ergebnis": "1:6, 3:6",
-      "saetze": "0:2",
-      "sieger": 2
+      }
     },
     {
-      "id": "partie2",
-      "spieltag": 1,
-      "datum": "2026-05-20",
-      "uhrzeit": "12.30",
+      "id": "season-2026-partie-2",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 1,
+      "date": "2026-05-20",
+      "time": "12.30",
+      "result": "2:6, 0:6",
+      "sets": "0:2",
+      "winner": 2,
       "team1": {
-        "spieler": [
-          "Leonie R.",
-          "Cristian B."
+        "playerIds": [
+          "leonie_r",
+          "cristian_b"
         ]
       },
       "team2": {
-        "spieler": [
-          "Jonas L.",
-          "Luca W."
+        "playerIds": [
+          "jonas_l",
+          "luca_w"
         ]
-      },
-      "ergebnis": "2:6, 0:6",
-      "saetze": "0:2",
-      "sieger": 2
+      }
     },
     {
-      "id": "partie3",
-      "spieltag": 1,
-      "datum": "2026-06-17",
-      "uhrzeit": "13.00",
+      "id": "season-2026-partie-3",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 1,
+      "date": "2026-06-17",
+      "time": "13.00",
+      "result": "4:6, 3:6",
+      "sets": "0:2",
+      "winner": 2,
       "team1": {
-        "spieler": [
-          "Martin B.",
-          "Chris M."
+        "playerIds": [
+          "martin_b",
+          "chris_m"
         ]
       },
       "team2": {
-        "spieler": [
-          "Marcel M.",
-          "Irene W."
+        "playerIds": [
+          "marcel_m",
+          "irene_w"
         ]
-      },
-      "ergebnis": "4:6, 3:6",
-      "saetze": "0:2",
-      "sieger": 2
+      }
     },
     {
-      "id": "partie4",
-      "spieltag": 1,
-      "datum": "2026-05-13",
-      "uhrzeit": "17.30",
+      "id": "season-2026-partie-4",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 1,
+      "date": "2026-05-13",
+      "time": "17.30",
+      "result": "6:3, 6:2",
+      "sets": "2:0",
+      "winner": 1,
       "team1": {
-        "spieler": [
-          "Ludwig W.",
-          "Raphael H."
+        "playerIds": [
+          "ludwig_w",
+          "raphael_h"
         ]
       },
       "team2": {
-        "spieler": [
-          "Florian Z.",
-          "Niklas K."
+        "playerIds": [
+          "florian_z",
+          "niklas_k"
         ]
-      },
-      "ergebnis": "6:3, 6:2",
-      "saetze": "2:0",
-      "sieger": 1
+      }
     },
     {
-      "id": "partie5",
-      "spieltag": 2,
-      "datum": "2026-06-10",
-      "uhrzeit": "12.00",
+      "id": "season-2026-partie-5",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 2,
+      "date": "2026-06-10",
+      "time": "12.00",
+      "result": "0:6, 4:6",
+      "sets": "0:2",
+      "winner": 2,
       "team1": {
-        "spieler": [
-          "Lukas P.",
-          "Martin B."
+        "playerIds": [
+          "lukas_p",
+          "martin_b"
         ]
       },
       "team2": {
-        "spieler": [
-          "Luca W.",
-          "Andreas L."
+        "playerIds": [
+          "luca_w",
+          "andreas_l"
         ]
-      },
-      "ergebnis": "0:6, 4:6",
-      "saetze": "0:2",
-      "sieger": 2
+      }
     },
     {
-      "id": "partie6",
-      "spieltag": 2,
-      "datum": "2026-05-19",
-      "uhrzeit": "13.00",
+      "id": "season-2026-partie-6",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 2,
+      "date": "2026-05-19",
+      "time": "13.00",
+      "result": "7:5, 6:1",
+      "sets": "2:0",
+      "winner": 1,
       "team1": {
-        "spieler": [
-          "Ludwig W.",
-          "Cristian B."
+        "playerIds": [
+          "ludwig_w",
+          "cristian_b"
         ]
       },
       "team2": {
-        "spieler": [
-          "Niklas K.",
-          "Greta P."
+        "playerIds": [
+          "niklas_k",
+          "greta_p"
         ]
-      },
-      "ergebnis": "7:5, 6:1",
-      "saetze": "2:0",
-      "sieger": 1
+      }
     },
     {
-      "id": "partie7",
-      "spieltag": 2,
-      "datum": "2026-06-12",
-      "uhrzeit": "07.30",
+      "id": "season-2026-partie-7",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 2,
+      "date": "2026-06-12",
+      "time": "07.30",
+      "result": "1:6, 1:6",
+      "sets": "0:2",
+      "winner": 2,
       "team1": {
-        "spieler": [
-          "Christoph L.",
-          "Raphael H."
+        "playerIds": [
+          "christoph_l",
+          "raphael_h"
         ]
       },
       "team2": {
-        "spieler": [
-          "Marco M.",
-          "Marcel M."
+        "playerIds": [
+          "marco_m",
+          "marcel_m"
         ]
-      },
-      "ergebnis": "1:6, 1:6",
-      "saetze": "0:2",
-      "sieger": 2
+      }
     },
     {
-      "id": "partie8",
-      "spieltag": 2,
-      "datum": "2026-06-17",
-      "uhrzeit": "12.00",
+      "id": "season-2026-partie-8",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 2,
+      "date": "2026-06-17",
+      "time": "12.00",
+      "result": "6:0, 6:2",
+      "sets": "2:0",
+      "winner": 1,
       "team1": {
-        "spieler": [
-          "Chris M.",
-          "Jonas L."
+        "playerIds": [
+          "chris_m",
+          "jonas_l"
         ]
       },
       "team2": {
-        "spieler": [
-          "Irene W.",
-          "Leonie R."
+        "playerIds": [
+          "irene_w",
+          "leonie_r"
         ]
-      },
-      "ergebnis": "6:0, 6:2",
-      "saetze": "2:0",
-      "sieger": 1
+      }
     },
     {
-      "id": "partie9",
-      "spieltag": 3,
-      "datum": "2026-07-07",
-      "uhrzeit": "07.30",
+      "id": "season-2026-partie-9",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 3,
+      "date": "2026-07-07",
+      "time": "07.30",
+      "result": "1:6, 6:3 – 10:5",
+      "sets": "2:1",
+      "winner": 1,
       "team1": {
-        "spieler": [
-          "Cristian B.",
-          "Chris M."
+        "playerIds": [
+          "cristian_b",
+          "chris_m"
         ]
       },
       "team2": {
-        "spieler": [
-          "Raphael H.",
-          "Leonie R."
+        "playerIds": [
+          "raphael_h",
+          "leonie_r"
         ]
-      },
-      "ergebnis": "1:6, 6:3 – 10:5",
-      "saetze": "2:1",
-      "sieger": 1
+      }
     },
     {
-      "id": "partie10",
-      "spieltag": 3,
-      "datum": "2026-06-08",
-      "uhrzeit": null,
+      "id": "season-2026-partie-10",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 3,
+      "date": "2026-06-08",
+      "time": null,
+      "result": null,
+      "sets": null,
+      "winner": null,
       "team1": {
-        "spieler": [
-          "Agnes K.",
-          "Lukas P."
+        "playerIds": [
+          "agnes_k",
+          "lukas_p"
         ]
       },
       "team2": {
-        "spieler": [
-          "Ludwig W.",
-          "Marco M."
+        "playerIds": [
+          "ludwig_w",
+          "marco_m"
         ]
-      },
-      "ergebnis": null,
-      "saetze": null,
-      "sieger": null
+      }
     },
     {
-      "id": "partie11",
-      "spieltag": 3,
-      "datum": "2026-07-09",
-      "uhrzeit": "07.30",
+      "id": "season-2026-partie-11",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 3,
+      "date": "2026-07-09",
+      "time": "07.30",
+      "result": "4:6, 6:2 – 7:10",
+      "sets": "1:2",
+      "winner": 2,
       "team1": {
-        "spieler": [
-          "Christoph L.",
-          "Florian Z."
+        "playerIds": [
+          "christoph_l",
+          "florian_z"
         ]
       },
       "team2": {
-        "spieler": [
-          "Luca W.",
-          "Irene W."
+        "playerIds": [
+          "luca_w",
+          "irene_w"
         ]
-      },
-      "ergebnis": "4:6, 6:2 – 7:10",
-      "saetze": "1:2",
-      "sieger": 2
+      }
     },
     {
-      "id": "partie12",
-      "spieltag": 3,
-      "datum": "2026-06-03",
-      "uhrzeit": "12.30",
+      "id": "season-2026-partie-12",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 3,
+      "date": "2026-06-03",
+      "time": "12.30",
+      "result": "1:6, 6:3 – 6:10",
+      "sets": "1:2",
+      "winner": 2,
       "team1": {
-        "spieler": [
-          "Greta P.",
-          "Andreas L."
+        "playerIds": [
+          "greta_p",
+          "andreas_l"
         ]
       },
       "team2": {
-        "spieler": [
-          "Marcel M.",
-          "Jonas L."
+        "playerIds": [
+          "marcel_m",
+          "jonas_l"
         ]
-      },
-      "ergebnis": "1:6, 6:3 – 6:10",
-      "saetze": "1:2",
-      "sieger": 2
+      }
     },
     {
-      "id": "partie13",
-      "spieltag": 4,
-      "datum": "2026-06-23",
-      "uhrzeit": "07.30",
+      "id": "season-2026-partie-13",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 4,
+      "date": "2026-06-23",
+      "time": "07.30",
+      "result": "7:6 (11:9), 6:2",
+      "sets": "2:0",
+      "winner": 1,
       "team1": {
-        "spieler": [
-          "Chris M.",
-          "Raphael H."
+        "playerIds": [
+          "chris_m",
+          "raphael_h"
         ]
       },
       "team2": {
-        "spieler": [
-          "Ludwig W.",
-          "Irene W."
+        "playerIds": [
+          "ludwig_w",
+          "irene_w"
         ]
-      },
-      "ergebnis": "7:6 (11:9), 6:2",
-      "saetze": "2:0",
-      "sieger": 1
+      }
     },
     {
-      "id": "partie14",
-      "spieltag": 4,
-      "datum": "2026-06-25",
-      "uhrzeit": "12.00",
+      "id": "season-2026-partie-14",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 4,
+      "date": "2026-06-25",
+      "time": "12.00",
+      "result": "6:1, 6:0",
+      "sets": "2:0",
+      "winner": 1,
       "team1": {
-        "spieler": [
-          "Cristian B.",
-          "Lukas P."
+        "playerIds": [
+          "cristian_b",
+          "lukas_p"
         ]
       },
       "team2": {
-        "spieler": [
-          "Christoph L.",
-          "Martin B."
+        "playerIds": [
+          "christoph_l",
+          "martin_b"
         ]
-      },
-      "ergebnis": "6:1, 6:0",
-      "saetze": "2:0",
-      "sieger": 1
+      }
     },
     {
-      "id": "partie15",
-      "spieltag": 4,
-      "datum": "2026-06-22",
-      "uhrzeit": null,
+      "id": "season-2026-partie-15",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 4,
+      "date": "2026-06-22",
+      "time": null,
+      "result": null,
+      "sets": null,
+      "winner": null,
       "team1": {
-        "spieler": [
-          "Marco M.",
-          "Andreas L."
+        "playerIds": [
+          "marco_m",
+          "andreas_l"
         ]
       },
       "team2": {
-        "spieler": [
-          "Leonie R.",
-          "Niklas K."
+        "playerIds": [
+          "leonie_r",
+          "niklas_k"
         ]
-      },
-      "ergebnis": null,
-      "saetze": null,
-      "sieger": null
+      }
     },
     {
-      "id": "partie16",
-      "spieltag": 4,
-      "datum": "2026-07-16",
-      "uhrzeit": "07.15",
+      "id": "season-2026-partie-16",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 4,
+      "date": "2026-07-16",
+      "time": "07.15",
+      "result": null,
+      "sets": null,
+      "winner": null,
       "team1": {
-        "spieler": [
-          "Marcel M.",
-          "Florian Z."
+        "playerIds": [
+          "marcel_m",
+          "florian_z"
         ]
       },
       "team2": {
-        "spieler": [
-          "Agnes K.",
-          "Jonas L."
+        "playerIds": [
+          "agnes_k",
+          "jonas_l"
         ]
-      },
-      "ergebnis": null,
-      "saetze": null,
-      "sieger": null
+      }
     },
     {
-      "id": "partie17",
-      "spieltag": 5,
-      "datum": "2026-07-15",
-      "uhrzeit": "07.30",
+      "id": "season-2026-partie-17",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 5,
+      "date": "2026-07-15",
+      "time": "07.30",
+      "result": "7:6 (7:4), 2:6 – 2:10",
+      "sets": "1:2",
+      "winner": 2,
       "team1": {
-        "spieler": [
-          "Martin B.",
-          "Luca W."
+        "playerIds": [
+          "martin_b",
+          "luca_w"
         ]
       },
       "team2": {
-        "spieler": [
-          "Florian Z.",
-          "Ludwig W."
+        "playerIds": [
+          "florian_z",
+          "ludwig_w"
         ]
-      },
-      "ergebnis": "7:6 (7:4), 2:6 – 2:10",
-      "saetze": "1:2",
-      "sieger": 2
+      }
     },
     {
-      "id": "partie18",
-      "spieltag": 5,
-      "datum": "2026-07-06",
-      "uhrzeit": null,
+      "id": "season-2026-partie-18",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 5,
+      "date": "2026-07-06",
+      "time": null,
+      "result": null,
+      "sets": null,
+      "winner": null,
       "team1": {
-        "spieler": [
-          "Chris M.",
-          "Agnes K."
+        "playerIds": [
+          "chris_m",
+          "agnes_k"
         ]
       },
       "team2": {
-        "spieler": [
-          "Jonas L.",
-          "Greta P."
+        "playerIds": [
+          "jonas_l",
+          "greta_p"
         ]
-      },
-      "ergebnis": null,
-      "saetze": null,
-      "sieger": null
+      }
     },
     {
-      "id": "partie19",
-      "spieltag": 5,
-      "datum": "2026-07-06",
-      "uhrzeit": null,
+      "id": "season-2026-partie-19",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 5,
+      "date": "2026-07-06",
+      "time": null,
+      "result": null,
+      "sets": null,
+      "winner": null,
       "team1": {
-        "spieler": [
-          "Raphael H.",
-          "Andreas L."
+        "playerIds": [
+          "raphael_h",
+          "andreas_l"
         ]
       },
       "team2": {
-        "spieler": [
-          "Lukas P.",
-          "Niklas K."
+        "playerIds": [
+          "lukas_p",
+          "niklas_k"
         ]
-      },
-      "ergebnis": null,
-      "saetze": null,
-      "sieger": null
+      }
     },
     {
-      "id": "partie20",
-      "spieltag": 5,
-      "datum": "2026-07-06",
-      "uhrzeit": null,
+      "id": "season-2026-partie-20",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 5,
+      "date": "2026-07-06",
+      "time": null,
+      "result": null,
+      "sets": null,
+      "winner": null,
       "team1": {
-        "spieler": [
-          "Christoph L.",
-          "Irene W."
+        "playerIds": [
+          "christoph_l",
+          "irene_w"
         ]
       },
       "team2": {
-        "spieler": [
-          "Marco M.",
-          "Cristian B."
+        "playerIds": [
+          "marco_m",
+          "cristian_b"
         ]
-      },
-      "ergebnis": null,
-      "saetze": null,
-      "sieger": null
+      }
     },
     {
-      "id": "partie21",
-      "spieltag": 6,
-      "datum": "2026-07-14",
-      "uhrzeit": "12.30",
+      "id": "season-2026-partie-21",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 6,
+      "date": "2026-07-14",
+      "time": "12.30",
+      "result": "0:6, 0:6",
+      "sets": "0:2",
+      "winner": 2,
       "team1": {
-        "spieler": [
-          "Florian Z.",
-          "Leonie R."
+        "playerIds": [
+          "florian_z",
+          "leonie_r"
         ]
       },
       "team2": {
-        "spieler": [
-          "Andreas L.",
-          "Ludwig W."
+        "playerIds": [
+          "andreas_l",
+          "ludwig_w"
         ]
-      },
-      "ergebnis": "0:6, 0:6",
-      "saetze": "0:2",
-      "sieger": 2
+      }
     },
     {
-      "id": "partie22",
-      "spieltag": 6,
-      "datum": "2026-07-20",
-      "uhrzeit": null,
+      "id": "season-2026-partie-22",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 6,
+      "date": "2026-07-20",
+      "time": null,
+      "result": null,
+      "sets": null,
+      "winner": null,
       "team1": {
-        "spieler": [
-          "Irene W.",
-          "Cristian B."
+        "playerIds": [
+          "irene_w",
+          "cristian_b"
         ]
       },
       "team2": {
-        "spieler": [
-          "Greta P.",
-          "Christoph L."
+        "playerIds": [
+          "greta_p",
+          "christoph_l"
         ]
-      },
-      "ergebnis": null,
-      "saetze": null,
-      "sieger": null
+      }
     },
     {
-      "id": "partie23",
-      "spieltag": 6,
-      "datum": "2026-07-20",
-      "uhrzeit": null,
+      "id": "season-2026-partie-23",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 6,
+      "date": "2026-07-20",
+      "time": null,
+      "result": null,
+      "sets": null,
+      "winner": null,
       "team1": {
-        "spieler": [
-          "Jonas L.",
-          "Marco M."
+        "playerIds": [
+          "jonas_l",
+          "marco_m"
         ]
       },
       "team2": {
-        "spieler": [
-          "Agnes K.",
-          "Martin B."
+        "playerIds": [
+          "agnes_k",
+          "martin_b"
         ]
-      },
-      "ergebnis": null,
-      "saetze": null,
-      "sieger": null
+      }
     },
     {
-      "id": "partie24",
-      "spieltag": 6,
-      "datum": "2026-06-24",
-      "uhrzeit": "12.00",
+      "id": "season-2026-partie-24",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 6,
+      "date": "2026-06-24",
+      "time": "12.00",
+      "result": "4:6, 4:6",
+      "sets": "0:2",
+      "winner": 2,
       "team1": {
-        "spieler": [
-          "Marcel M.",
-          "Niklas K."
+        "playerIds": [
+          "marcel_m",
+          "niklas_k"
         ]
       },
       "team2": {
-        "spieler": [
-          "Lukas P.",
-          "Luca W."
+        "playerIds": [
+          "lukas_p",
+          "luca_w"
         ]
-      },
-      "ergebnis": "4:6, 4:6",
-      "saetze": "0:2",
-      "sieger": 2
+      }
     },
     {
-      "id": "partie25",
-      "spieltag": 7,
-      "datum": "2026-07-16",
-      "uhrzeit": "12.30",
+      "id": "season-2026-partie-25",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 7,
+      "date": "2026-07-16",
+      "time": "12.30",
+      "result": null,
+      "sets": null,
+      "winner": null,
       "team1": {
-        "spieler": [
-          "Niklas K.",
-          "Chris M."
+        "playerIds": [
+          "niklas_k",
+          "chris_m"
         ]
       },
       "team2": {
-        "spieler": [
-          "Agnes K.",
-          "Andreas L."
+        "playerIds": [
+          "agnes_k",
+          "andreas_l"
         ]
-      },
-      "ergebnis": null,
-      "saetze": null,
-      "sieger": null
+      }
     },
     {
-      "id": "partie26",
-      "spieltag": 7,
-      "datum": "2026-07-21",
-      "uhrzeit": "12.30",
+      "id": "season-2026-partie-26",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 7,
+      "date": "2026-07-21",
+      "time": "12.30",
+      "result": null,
+      "sets": null,
+      "winner": null,
       "team1": {
-        "spieler": [
-          "Florian Z.",
-          "Raphael H."
+        "playerIds": [
+          "florian_z",
+          "raphael_h"
         ]
       },
       "team2": {
-        "spieler": [
-          "Marcel M.",
-          "Luca W."
+        "playerIds": [
+          "marcel_m",
+          "luca_w"
         ]
-      },
-      "ergebnis": null,
-      "saetze": null,
-      "sieger": null
+      }
     },
     {
-      "id": "partie27",
-      "spieltag": 7,
-      "datum": "2026-08-03",
-      "uhrzeit": null,
+      "id": "season-2026-partie-27",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": true,
+      "countsForElo": true,
+      "matchday": 7,
+      "date": "2026-08-03",
+      "time": null,
+      "result": null,
+      "sets": null,
+      "winner": null,
       "team1": {
-        "spieler": [
-          "Leonie R.",
-          "Lukas P."
+        "playerIds": [
+          "leonie_r",
+          "lukas_p"
         ]
       },
       "team2": {
-        "spieler": [
-          "Greta P.",
-          "Martin B."
+        "playerIds": [
+          "greta_p",
+          "martin_b"
         ]
-      },
-      "ergebnis": null,
-      "saetze": null,
-      "sieger": null
+      }
     },
     {
-      "id": "partie28",
+      "id": "season-2026-final-1",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": false,
+      "countsForElo": true,
       "displayLabel": "Final 1",
-      "spieltag": 8,
+      "matchday": 8,
       "format": "single-set",
-      "countsForRanking": false,
-      "datum": null,
-      "uhrzeit": null,
+      "date": null,
+      "time": null,
+      "result": null,
+      "sets": null,
+      "winner": null,
       "team1": {
-        "spieler": [
-          "Erster",
-          "Zweiter"
+        "qualifierRanks": [
+          1,
+          2
         ]
       },
       "team2": {
-        "spieler": [
-          "Dritter",
-          "Vierter"
+        "qualifierRanks": [
+          3,
+          4
         ]
-      },
-      "ergebnis": null,
-      "saetze": null,
-      "sieger": null
+      }
     },
     {
-      "id": "partie29",
+      "id": "season-2026-final-2",
+      "type": "season",
+      "seasonId": "2026",
+      "countsForRanking": false,
+      "countsForElo": true,
       "displayLabel": "Final 2",
-      "spieltag": 8,
+      "matchday": 8,
       "format": "single-set",
-      "countsForRanking": false,
-      "datum": null,
-      "uhrzeit": null,
+      "date": null,
+      "time": null,
+      "result": null,
+      "sets": null,
+      "winner": null,
       "team1": {
-        "spieler": [
-          "Erster",
-          "Vierter"
+        "qualifierRanks": [
+          1,
+          4
         ]
       },
       "team2": {
-        "spieler": [
-          "Zweiter",
-          "Dritter"
+        "qualifierRanks": [
+          2,
+          3
         ]
-      },
-      "ergebnis": null,
-      "saetze": null,
-      "sieger": null
+      }
     },
     {
-      "id": "partie30",
-      "displayLabel": "Final 3",
-      "spieltag": 8,
-      "format": "single-set",
+      "id": "season-2026-final-3",
+      "type": "season",
+      "seasonId": "2026",
       "countsForRanking": false,
-      "datum": null,
-      "uhrzeit": null,
+      "countsForElo": true,
+      "displayLabel": "Final 3",
+      "matchday": 8,
+      "format": "single-set",
+      "date": null,
+      "time": null,
+      "result": null,
+      "sets": null,
+      "winner": null,
       "team1": {
-        "spieler": [
-          "Erster",
-          "Dritter"
+        "qualifierRanks": [
+          1,
+          3
         ]
       },
       "team2": {
-        "spieler": [
-          "Zweiter",
-          "Vierter"
+        "qualifierRanks": [
+          2,
+          4
         ]
-      },
-      "ergebnis": null,
-      "saetze": null,
-      "sieger": null
+      }
     }
   ],
   "articles": [

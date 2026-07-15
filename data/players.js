@@ -1,0 +1,20 @@
+window.PADEL_PLAYERS = [
+  { id: "agnes_k", name: "Agnes K.", initials: "AK", firma: "Headsquare" },
+  { id: "andreas_l", name: "Andreas L.", initials: "AL", firma: "Headsquare" },
+  { id: "chris_m", name: "Chris M.", initials: "ChM", firma: "Envidual" },
+  { id: "christoph_l", name: "Christoph L.", initials: "CL", firma: "Headsquare" },
+  { id: "cristian_b", name: "Cristian B.", initials: "CB", firma: "Hanako" },
+  { id: "florian_z", name: "Florian Z.", initials: "FZ", firma: "Hanako" },
+  { id: "greta_p", name: "Greta P.", initials: "GP", firma: "Hanako" },
+  { id: "irene_w", name: "Irene W.", initials: "IW", firma: "Headsquare" },
+  { id: "jonas_l", name: "Jonas L.", initials: "JL", firma: "Envidual" },
+  { id: "leonie_r", name: "Leonie R.", initials: "LR", firma: "Hanako" },
+  { id: "luca_w", name: "Luca W.", initials: "LW", firma: "Envidual" },
+  { id: "ludwig_w", name: "Ludwig W.", initials: "LuW", firma: "Envidual" },
+  { id: "lukas_p", name: "Lukas P.", initials: "LP", firma: "Headsquare" },
+  { id: "marcel_m", name: "Marcel M.", initials: "MzM", firma: "Envidual" },
+  { id: "marco_m", name: "Marco M.", initials: "MaMay", firma: "Headsquare" },
+  { id: "martin_b", name: "Martin B.", initials: "MB", firma: "Headsquare" },
+  { id: "niklas_k", name: "Niklas K.", initials: "NK", firma: "Hanako" },
+  { id: "raphael_h", name: "Raphael H.", initials: "RH", firma: "Headsquare" }
+];
