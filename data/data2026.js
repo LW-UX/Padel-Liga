@@ -522,9 +522,9 @@ window.PADEL_SEASON = {
       "matchday": 4,
       "date": "2026-07-16",
       "time": "07.15",
-      "result": null,
-      "sets": null,
-      "winner": null,
+      "result": "6:3, 6:1",
+      "sets": "2:0",
+      "winner": 1,
       "team1": {
         "playerIds": [
           "marcel_m",
