@@ -2052,7 +2052,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Was für ein Spiel! Und es hätte kaum extremere Umstände geben können. In der Mittagshitze bei gefühlten 47 Grad im Kessel des Lucky Star lieferten sich Marcel M. und Niklas K. auf der einen und Lukas P. und Luca W. auf der anderen Seite. Heiß ging es hin und her, sodass es schon für die Zuschauer zu warm war, die volle Partie zu verfolgen. Am Ende stand ein knapper 6:4, 6:4 Erfolg und wie bereits berichtet die erste Saisonniederlage für den Spirit-König."
+          "text": "Was für ein Spiel! Und es hätte kaum extremere Umstände geben können. In der Mittagshitze bei gefühlten 47 Grad im Kessel des Lucky Star lieferten sich Marcel M. und Niklas K. auf der einen und Lukas P. und Luca W. auf der anderen Seite einen offenen Schlagabtausch. Heiß ging es hin und her, sodass es schon für die Zuschauer zu warm war, die volle Partie zu verfolgen. Am Ende stand ein knapper 6:4, 6:4 Erfolg und wie bereits berichtet die erste Saisonniederlage für den Spirit-König."
         },
         {
           "type": "p",

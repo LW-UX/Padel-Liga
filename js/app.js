@@ -2052,6 +2052,13 @@ function expandInfoArticle(index) {
   document.getElementById(`info-article-readmore-${index}`).style.display = 'none';
 }
 
+function getInfoArticleMenuTitle(article) {
+  if (article.spieltag === 'abschluss') return article.title;
+  if (Number(article.spieltag) === 8) return `F4: ${article.title}`;
+  if (Number.isInteger(Number(article.spieltag))) return `S${article.spieltag}: ${article.title}`;
+  return article.title;
+}
+
 function renderInfos() {
   const articles = PADEL_DATA.articles || [];
   const sectionLinks = [
@@ -2060,7 +2067,7 @@ function renderInfos() {
     { id: 'artikel', title: 'Artikel' },
     ...articles.map(article => ({
       id: `artikel-${article.spieltag}`,
-      title: article.title,
+      title: getInfoArticleMenuTitle(article),
       sub: true
     }))
   ];
