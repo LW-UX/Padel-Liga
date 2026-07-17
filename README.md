@@ -2,6 +2,8 @@
 
 Die statische Webseite trennt dauerhafte Spielerdaten, saisonabhängige Daten und Trainingsspiele. Alle Verknüpfungen erfolgen über stabile IDs; Namen werden nur einmal zentral gepflegt.
 
+Die fortlaufenden Projektentscheidungen stehen in [`docs/PROJECT_DECISIONS.md`](docs/PROJECT_DECISIONS.md) und werden bei neuen oder geänderten Entscheidungen aktualisiert.
+
 ## Dateien
 
 ```text
@@ -23,6 +25,8 @@ padel-liga/
 │   └── info.js                   Globale Regeln und allgemeine Infos
 ├── supabase/
 │   └── migrations/               Datenbankschema, Rechte und Startdaten
+├── docs/
+│   └── PROJECT_DECISIONS.md      Fortlaufendes Projektgedächtnis
 └── tools/
     └── elo-calculator.html       Internes Elo-Hilfsmittel
 ```

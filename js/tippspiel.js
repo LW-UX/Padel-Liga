@@ -15,6 +15,7 @@
     players: [],
     trainingRoundCount: 1,
     editingTrainingId: null,
+    extendedPlayerFeatures: true,
     saving: new Set(),
     ready: false,
     error: null,
@@ -91,6 +92,27 @@
     return ['player', 'admin'].includes(state.profile?.app_role) && Boolean(state.profile?.player_id);
   }
 
+  function publishAuthenticatedPlayer() {
+    const playerId = state.profile?.player_id || null;
+    if (typeof window.PadelLigaSetAuthenticatedPlayer === 'function') {
+      window.PadelLigaSetAuthenticatedPlayer(playerId);
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('padel:authenticated-player', {
+      detail: { playerId }
+    }));
+  }
+
+  function isMissingAppRoleColumn(error) {
+    const message = `${error?.message || ''} ${error?.details || ''}`.toLowerCase();
+    return message.includes('app_role') && (
+      message.includes('does not exist')
+      || message.includes('not found')
+      || error?.code === '42703'
+      || error?.code === 'PGRST204'
+    );
+  }
+
   function renderAuthState() {
     const button = document.getElementById('auth-button');
     const guestView = document.getElementById('auth-guest-view');
@@ -116,7 +138,7 @@
         profileForm.querySelector('[name="displayName"]').value = displayName;
       }
       const playerArea = document.getElementById('account-player-area');
-      if (playerArea) playerArea.hidden = !isPlayerAccount();
+      if (playerArea) playerArea.hidden = !isPlayerAccount() || !state.extendedPlayerFeatures;
     }
   }
 
@@ -381,14 +403,40 @@
 
   async function loadProfile() {
     state.profile = null;
-    if (!state.session?.user) return;
-    const { data, error } = await state.client
+    if (!state.session?.user) {
+      publishAuthenticatedPlayer();
+      return;
+    }
+
+    const profileResponse = await state.client
       .from('profiles')
       .select('id, display_name, player_id, app_role, players(display_name)')
       .eq('id', state.session.user.id)
       .single();
-    if (error) throw error;
-    state.profile = data;
+
+    if (!profileResponse.error) {
+      state.extendedPlayerFeatures = true;
+      state.profile = profileResponse.data;
+      publishAuthenticatedPlayer();
+      return;
+    }
+
+    if (!isMissingAppRoleColumn(profileResponse.error)) throw profileResponse.error;
+
+    // Keep login and tipping usable while the player-role migration is still pending.
+    const legacyResponse = await state.client
+      .from('profiles')
+      .select('id, display_name, player_id, players(display_name)')
+      .eq('id', state.session.user.id)
+      .single();
+    if (legacyResponse.error) throw legacyResponse.error;
+
+    state.extendedPlayerFeatures = false;
+    state.profile = {
+      ...legacyResponse.data,
+      app_role: legacyResponse.data.player_id ? 'player' : 'tipper'
+    };
+    publishAuthenticatedPlayer();
   }
 
   async function loadPlayerTools() {
@@ -396,7 +444,7 @@
     state.trainingTasks = [];
     state.trainingSessions = [];
     state.players = [];
-    if (!isPlayerAccount()) return;
+    if (!isPlayerAccount() || !state.extendedPlayerFeatures) return;
 
     const [playersResponse, resultResponse, trainingTaskResponse, trainingResponse] = await Promise.all([
       state.client.from('players').select('id, display_name, initials, company').order('display_name'),
