@@ -22,7 +22,7 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-07-16-results">
+  <link rel="stylesheet" href="style.css?v=2026-07-17-player-results">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -37,7 +37,16 @@
 
 <header class="site-header">
   <div class="hero">
-    <div class="hero-eyebrow" id="hero-orgs">Headsquare × Hanako × Envidual</div>
+    <div class="hero-topbar">
+      <div class="hero-eyebrow" id="hero-orgs">Headsquare × Hanako × Envidual</div>
+      <div class="context-actions">
+        <label class="season-picker">
+          <span>Saison</span>
+          <select id="season-select" aria-label="Saison auswählen"></select>
+        </label>
+        <a class="context-link" id="tippspiel-link" href="tipp/">Zum Tippspiel</a>
+      </div>
+    </div>
     <div class="hero-title-row">
       <h1><button class="hero-home-button" type="button" data-nav-target="start" aria-label="Zur Startseite">PADEL<em>LIGA</em></button></h1>
       <div class="hero-actions">
@@ -58,7 +67,6 @@
   <button data-section="rangliste">Rangliste</button>
   <button data-section="partien">Partien</button>
   <button data-section="rechner">Rechner</button>
-  <button data-section="tippspiel">Tippspiel</button>
   <button data-section="verlauf">Statistik</button>
   <button data-section="infos">Infos</button>
 </nav>
@@ -111,46 +119,6 @@
           <button class="text-link" data-nav-target="infos">Alle Infos</button>
         </article>
       </div>
-    </div>
-  </section>
-
-  <!-- TIPPSPIEL -->
-  <section id="tippspiel" class="section">
-    <div class="sh">
-      <div class="sh-title">TIPPSPIEL</div>
-      <div class="sh-meta" id="prediction-meta">Saison <span data-season-label></span></div>
-    </div>
-    <div class="prediction-layout">
-      <div class="prediction-main">
-        <article class="widget prediction-rules">
-          <div class="widget-label">So wird gewertet</div>
-          <div class="prediction-rule-grid">
-            <div><strong>4</strong><span>Exaktes Satzergebnis</span><small>z. B. 2:0 → 2:0</small></div>
-            <div><strong>2</strong><span>Richtige Richtung</span><small>z. B. 2:0 → 2:1</small></div>
-            <div><strong>0</strong><span>Falscher Sieger</span><small>z. B. 2:0 → 1:2</small></div>
-          </div>
-        </article>
-        <div id="prediction-auth-hint"></div>
-        <div id="prediction-matches" class="prediction-match-list"></div>
-      </div>
-      <aside class="widget prediction-ranking-panel">
-        <div class="widget-label">Tippspiel-Tabelle</div>
-        <div class="ranking-wrap prediction-ranking-wrap">
-          <table class="rt prediction-ranking-table">
-            <thead>
-              <tr>
-                <th class="l rn">#</th>
-                <th class="l">Name</th>
-                <th>Tipps</th>
-                <th>Exakt</th>
-                <th>Punkte</th>
-              </tr>
-            </thead>
-            <tbody id="prediction-ranking-body"></tbody>
-          </table>
-        </div>
-        <div id="prediction-ranking-empty" class="empty-state"></div>
-      </aside>
     </div>
   </section>
 
@@ -451,20 +419,53 @@
       <div class="widget-label">Dein Konto</div>
       <h2 id="account-display-name"></h2>
       <p class="auth-account-email" id="account-email"></p>
-      <form id="profile-form" class="auth-form">
+      <form id="profile-form" class="auth-form account-profile-form">
         <label>
           <span>Anzeigename</span>
           <input type="text" name="displayName" minlength="2" maxlength="40" required>
         </label>
         <button class="primary-button" type="submit">Namen speichern</button>
       </form>
+      <div class="account-player-area" id="account-player-area" hidden>
+        <section class="account-section">
+          <div class="account-section-heading">
+            <div>
+              <div class="widget-label">Liga</div>
+              <h3>Offene Spielergebnisse</h3>
+            </div>
+            <span class="account-task-count" id="result-task-count"></span>
+          </div>
+          <div class="account-task-list" id="result-task-list"></div>
+        </section>
+        <section class="account-section">
+          <div class="account-section-heading">
+            <div>
+              <div class="widget-label">Saisonunabhängig</div>
+              <h3>Training</h3>
+            </div>
+            <button class="secondary-button compact-button" type="button" data-training-toggle>Training hinzufügen</button>
+          </div>
+          <form class="training-form" id="training-form" hidden>
+            <div class="training-form-meta">
+              <label><span>Datum</span><input type="date" name="playedOn" required></label>
+              <label><span>Uhrzeit</span><input type="time" name="displayTime" required></label>
+            </div>
+            <div class="training-player-fields" id="training-player-fields"></div>
+            <div class="training-rounds" id="training-rounds"></div>
+            <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
+            <button class="primary-button" type="submit">Training zur Bestätigung senden</button>
+          </form>
+          <div class="account-task-list" id="training-task-list"></div>
+          <div class="training-history" id="training-history"></div>
+        </section>
+      </div>
       <button class="secondary-button auth-logout-button" type="button" data-auth-logout>Ausloggen</button>
     </div>
     <div class="auth-message" id="auth-message" role="status"></div>
   </div>
 </dialog>
 
-<script src="js/tippspiel.js?v=2026-07-16-results"></script>
-<script src="js/app.js?v=2026-07-17-article-prefixes"></script>
+<script src="js/tippspiel.js?v=2026-07-17-player-results"></script>
+<script src="js/app.js?v=2026-07-17-player-results"></script>
 </body>
 </html>

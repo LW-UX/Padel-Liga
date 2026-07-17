@@ -9,9 +9,16 @@
     databaseMatches: new Map(),
     predictions: new Map(),
     leaderboard: [],
+    resultTasks: [],
+    trainingTasks: [],
+    trainingSessions: [],
+    players: [],
+    trainingRoundCount: 1,
+    editingTrainingId: null,
     saving: new Set(),
     ready: false,
-    error: null
+    error: null,
+    bound: false
   };
 
   function escapeHtml(value) {
@@ -68,7 +75,20 @@
   }
 
   function renderTeam(team) {
-    return team.spieler.map(escapeHtml).join('<span class="mc-player-sep"> / </span>');
+    return team.spieler
+      .map(player => `<span class="prediction-player">${escapeHtml(player)}</span>`)
+      .join('<span class="mc-player-sep"> / </span>');
+  }
+
+  function getProfileDisplayName() {
+    return state.profile?.players?.display_name
+      || state.profile?.display_name
+      || state.session?.user?.user_metadata?.display_name
+      || 'Konto';
+  }
+
+  function isPlayerAccount() {
+    return ['player', 'admin'].includes(state.profile?.app_role) && Boolean(state.profile?.player_id);
   }
 
   function renderAuthState() {
@@ -78,8 +98,11 @@
     if (!button || !guestView || !accountView) return;
 
     const isLoggedIn = Boolean(state.session?.user);
-    const displayName = state.profile?.display_name || state.session?.user?.user_metadata?.display_name || 'Konto';
-    button.textContent = isLoggedIn ? displayName : 'Login';
+    const displayName = getProfileDisplayName();
+    const taskCount = state.resultTasks.length + state.trainingTasks.filter(task => !task.created_by_me).length;
+    button.innerHTML = isLoggedIn
+      ? `${escapeHtml(displayName)}${taskCount ? `<span class="auth-task-badge">${taskCount}</span>` : ''}`
+      : 'Login';
     button.classList.toggle('is-authenticated', isLoggedIn);
     guestView.hidden = isLoggedIn;
     accountView.hidden = !isLoggedIn;
@@ -87,7 +110,13 @@
     if (isLoggedIn) {
       document.getElementById('account-display-name').textContent = displayName;
       document.getElementById('account-email').textContent = state.session.user.email || '';
-      document.querySelector('#profile-form [name="displayName"]').value = displayName;
+      const profileForm = document.getElementById('profile-form');
+      if (profileForm) {
+        profileForm.hidden = isPlayerAccount();
+        profileForm.querySelector('[name="displayName"]').value = displayName;
+      }
+      const playerArea = document.getElementById('account-player-area');
+      if (playerArea) playerArea.hidden = !isPlayerAccount();
     }
   }
 
@@ -95,7 +124,7 @@
     const target = document.getElementById('prediction-auth-hint');
     if (!target) return;
     target.innerHTML = state.session
-      ? `<div class="prediction-session-note"><span>Du tippst als <strong>${escapeHtml(state.profile?.display_name || state.session.user.email)}</strong>.</span><button class="text-link inline-link" type="button" data-auth-open>Konto öffnen</button></div>`
+      ? `<div class="prediction-session-note"><span>Du tippst als <strong>${escapeHtml(getProfileDisplayName() || state.session.user.email)}</strong>.</span><button class="text-link inline-link" type="button" data-auth-open>Konto öffnen</button></div>`
       : '<div class="prediction-login-hint"><div><strong>Einloggen und mittippen</strong><span>Deine Tipps werden in deinem Konto gespeichert.</span></div><button class="primary-button" type="button" data-auth-open>Login / Konto erstellen</button></div>';
   }
 
@@ -203,11 +232,151 @@
       : '';
   }
 
+  function formatTaskDate(dateValue, timeValue) {
+    const date = new Date(`${dateValue}T12:00:00`);
+    const label = Number.isNaN(date.getTime())
+      ? dateValue
+      : new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+    return `${label} · ${String(timeValue || '').slice(0, 5).replace(':', '.')} Uhr`;
+  }
+
+  function renderResultForm(task, counter = false) {
+    return `<form class="result-entry-form" data-result-submit="${escapeHtml(task.match_id)}">
+      <label>
+        <span>${counter ? 'Dein Gegenvorschlag' : 'Genaue Satzergebnisse'}</span>
+        <input name="resultDetails" required maxlength="100" placeholder="z. B. 6:3, 4:6 – 10:7">
+      </label>
+      <label>
+        <span>Satzergebnis</span>
+        <select name="actualSets" required>
+          <option value="2:0">2:0 für Team 1</option>
+          <option value="2:1">2:1 für Team 1</option>
+          <option value="1:2">1:2 für Team 2</option>
+          <option value="0:2">0:2 für Team 2</option>
+        </select>
+      </label>
+      <button class="primary-button" type="submit">${state.profile?.app_role === 'admin' ? 'Direkt eintragen' : counter ? 'Gegenvorschlag senden' : 'Zur Bestätigung senden'}</button>
+    </form>`;
+  }
+
+  function renderResultTasks() {
+    const target = document.getElementById('result-task-list');
+    const count = document.getElementById('result-task-count');
+    if (!target) return;
+    if (count) count.textContent = state.resultTasks.length ? String(state.resultTasks.length) : '';
+    target.innerHTML = state.resultTasks.length
+      ? state.resultTasks.map(task => `
+        <article class="account-task-card">
+          <div class="account-task-meta">Partie ${escapeHtml(task.match_id.match(/\d+$/)?.[0] || task.match_id)} · ${escapeHtml(formatTaskDate(task.scheduled_date, task.display_time))}</div>
+          <div class="account-task-matchup"><strong>${escapeHtml(task.team_one_label)}</strong><span>gegen</span><strong>${escapeHtml(task.team_two_label)}</strong></div>
+          ${task.task_type === 'review' ? `
+            <div class="result-proposal">
+              <span>Vorschlag des anderen Teams</span>
+              <strong>${escapeHtml(task.proposed_sets)} · ${escapeHtml(task.proposed_result)}</strong>
+            </div>
+            <div class="account-task-actions">
+              <button class="primary-button" type="button" data-result-confirm="${task.proposal_id}">Ergebnis bestätigen</button>
+              <details class="counterproposal-details">
+                <summary>Gegenvorschlag machen</summary>
+                ${renderResultForm(task, true)}
+              </details>
+            </div>
+          ` : renderResultForm(task)}
+        </article>
+      `).join('')
+      : '<div class="account-empty">Für diese Saison gibt es aktuell keine offenen Aufgaben.</div>';
+  }
+
+  function getPlayerName(playerId) {
+    return state.players.find(player => player.id === playerId)?.display_name
+      || (window.PADEL_PLAYERS || []).find(player => player.id === playerId)?.name
+      || playerId;
+  }
+
+  function readTrainingRoundValues() {
+    return [...document.querySelectorAll('[data-training-round]')].map(round => ({
+      pairing: round.querySelector('[name="pairing"]')?.value || 'ab_cd',
+      result: round.querySelector('[name="roundResult"]')?.value || '',
+      setCount: round.querySelector('[name="setCount"]')?.value || '1'
+    }));
+  }
+
+  function renderTrainingRounds(preserved = []) {
+    const target = document.getElementById('training-rounds');
+    if (!target) return;
+    target.innerHTML = Array.from({ length: state.trainingRoundCount }, (_, index) => `
+      <div class="training-round-field" data-training-round="${index}">
+        <div class="training-round-title">Spielergebnis ${index + 1}</div>
+        <label><span>Paarung</span><select name="pairing">
+          <option value="ab_cd">Spieler 1 + 2 gegen 3 + 4</option>
+          <option value="ac_bd">Spieler 1 + 3 gegen 2 + 4</option>
+          <option value="ad_bc">Spieler 1 + 4 gegen 2 + 3</option>
+        </select></label>
+        <label><span>Ergebnis</span><input name="roundResult" required placeholder="6:3 oder 6:3, 4:6"></label>
+        <label><span>Gespielte Sätze</span><select name="setCount"><option value="1">1 Satz</option><option value="2">2 Sätze</option></select></label>
+        ${index ? '<button class="text-link" type="button" data-training-round-remove="' + index + '">Entfernen</button>' : ''}
+      </div>
+    `).join('');
+    [...target.querySelectorAll('[data-training-round]')].forEach((round, index) => {
+      const value = preserved[index];
+      if (!value) return;
+      round.querySelector('[name="pairing"]').value = value.pairing;
+      round.querySelector('[name="roundResult"]').value = value.result;
+      round.querySelector('[name="setCount"]').value = value.setCount;
+    });
+  }
+
+  function renderTrainingForm() {
+    const target = document.getElementById('training-player-fields');
+    if (!target || !state.players.length) return;
+    const options = state.players.map(player => `<option value="${escapeHtml(player.id)}">${escapeHtml(player.display_name)}</option>`).join('');
+    target.innerHTML = Array.from({ length: 4 }, (_, index) => `
+      <label><span>Spieler ${index + 1}</span><select name="playerId" required><option value="">Auswählen</option>${options}</select></label>
+    `).join('');
+    const ownPlayer = target.querySelector('[name="playerId"]');
+    if (ownPlayer && state.profile?.player_id) ownPlayer.value = state.profile.player_id;
+    renderTrainingRounds();
+  }
+
+  function renderTrainingTaskCard(task) {
+    const rounds = Array.isArray(task.rounds) ? task.rounds : [];
+    return `<article class="account-task-card training-task-card">
+      <div class="account-task-meta">Training · ${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>
+      <div class="training-player-line">${task.player_ids.map(id => escapeHtml(getPlayerName(id))).join(' · ')}</div>
+      ${rounds.map(round => `<div class="training-round-result"><span>${round.team_one_ids.map(getPlayerName).map(escapeHtml).join(' / ')}</span><strong>${escapeHtml(round.result_details)}</strong><span>${round.team_two_ids.map(getPlayerName).map(escapeHtml).join(' / ')}</span></div>`).join('')}
+      <div class="account-task-actions">
+        ${task.created_by_me
+          ? `<span class="account-waiting">Wartet auf Bestätigung</span><button class="text-link" type="button" data-training-edit="${task.session_id}">Bearbeiten</button><button class="text-link" type="button" data-training-delete="${task.session_id}">Löschen</button>`
+          : `<button class="primary-button" type="button" data-training-confirm="${task.session_id}">Training bestätigen</button>`}
+      </div>
+    </article>`;
+  }
+
+  function renderTrainingHistoryCard(session) {
+    const playerMap = new Map((session.players || []).map(player => [player.id, player.display_name]));
+    const name = id => playerMap.get(id) || getPlayerName(id);
+    return `<article class="training-history-card">
+      <div class="account-task-meta">${escapeHtml(formatTaskDate(session.played_on, session.display_time))}</div>
+      ${(session.rounds || []).map(round => `<div class="training-round-result"><span>${round.team_one_ids.map(name).map(escapeHtml).join(' / ')}</span><strong>${escapeHtml(round.result_details)}</strong><span>${round.team_two_ids.map(name).map(escapeHtml).join(' / ')}</span></div>`).join('')}
+    </article>`;
+  }
+
+  function renderTraining() {
+    const taskTarget = document.getElementById('training-task-list');
+    const historyTarget = document.getElementById('training-history');
+    if (taskTarget) taskTarget.innerHTML = state.trainingTasks.map(renderTrainingTaskCard).join('');
+    if (historyTarget) historyTarget.innerHTML = state.trainingSessions.length
+      ? `<div class="training-history-heading">Bestätigte Trainings</div>${state.trainingSessions.map(renderTrainingHistoryCard).join('')}`
+      : '<div class="account-empty">Noch keine bestätigten Trainingsspiele.</div>';
+  }
+
   function render() {
     renderAuthState();
     renderAuthHint();
     renderMatches();
     renderLeaderboard();
+    renderResultTasks();
+    renderTraining();
   }
 
   async function loadProfile() {
@@ -215,11 +384,33 @@
     if (!state.session?.user) return;
     const { data, error } = await state.client
       .from('profiles')
-      .select('id, display_name, player_id')
+      .select('id, display_name, player_id, app_role, players(display_name)')
       .eq('id', state.session.user.id)
       .single();
     if (error) throw error;
     state.profile = data;
+  }
+
+  async function loadPlayerTools() {
+    state.resultTasks = [];
+    state.trainingTasks = [];
+    state.trainingSessions = [];
+    state.players = [];
+    if (!isPlayerAccount()) return;
+
+    const [playersResponse, resultResponse, trainingTaskResponse, trainingResponse] = await Promise.all([
+      state.client.from('players').select('id, display_name, initials, company').order('display_name'),
+      state.client.rpc('get_my_result_tasks', { p_season_id: state.season?.id }),
+      state.client.rpc('get_my_training_tasks'),
+      state.client.rpc('get_training_sessions')
+    ]);
+    const error = playersResponse.error || resultResponse.error || trainingTaskResponse.error || trainingResponse.error;
+    if (error) throw error;
+    state.players = playersResponse.data || [];
+    state.resultTasks = resultResponse.data || [];
+    state.trainingTasks = trainingTaskResponse.data || [];
+    state.trainingSessions = trainingResponse.data || [];
+    renderTrainingForm();
   }
 
   async function loadPredictions() {
@@ -251,6 +442,7 @@
     if (!state.client) return;
     try {
       await Promise.all([loadPublicData(), loadPredictions(), loadProfile()]);
+      await loadPlayerTools();
       state.ready = true;
       state.error = null;
     } catch (error) {
@@ -358,6 +550,134 @@
     setAuthMessage('Name gespeichert.', 'success');
   }
 
+  function resultWinner(actualSets) {
+    return ['2:0', '2:1'].includes(actualSets) ? 1 : 2;
+  }
+
+  async function handleResultSubmit(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const resultDetails = String(data.get('resultDetails') || '').trim();
+    const actualSets = String(data.get('actualSets') || '');
+    const button = form.querySelector('[type="submit"]');
+    button.disabled = true;
+    setAuthMessage('Ergebnis wird gespeichert …');
+    const { error } = await state.client.rpc('submit_match_result', {
+      p_match_id: form.dataset.resultSubmit,
+      p_result_details: resultDetails,
+      p_actual_sets: actualSets,
+      p_winner: resultWinner(actualSets)
+    });
+    button.disabled = false;
+    if (error) {
+      setAuthMessage(error.message, 'error');
+      return;
+    }
+    setAuthMessage(state.profile?.app_role === 'admin' ? 'Ergebnis wurde direkt eingetragen.' : 'Ergebnis wurde an das andere Team gesendet.', 'success');
+    await refresh();
+    if (state.season?.databaseResults && !document.body.classList.contains('tip-page')) window.location.reload();
+  }
+
+  async function confirmResult(proposalId) {
+    setAuthMessage('Ergebnis wird bestätigt …');
+    const { error } = await state.client.rpc('confirm_match_result', { p_proposal_id: Number(proposalId) });
+    if (error) {
+      setAuthMessage(error.message, 'error');
+      return;
+    }
+    setAuthMessage('Ergebnis bestätigt. Tabelle und Elo wurden aktualisiert.', 'success');
+    await refresh();
+    if (state.season?.databaseResults && !document.body.classList.contains('tip-page')) window.location.reload();
+  }
+
+  function getTrainingPairing(playerIds, pairing) {
+    if (pairing === 'ac_bd') return [[playerIds[0], playerIds[2]], [playerIds[1], playerIds[3]]];
+    if (pairing === 'ad_bc') return [[playerIds[0], playerIds[3]], [playerIds[1], playerIds[2]]];
+    return [[playerIds[0], playerIds[1]], [playerIds[2], playerIds[3]]];
+  }
+
+  async function handleTrainingSubmit(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const playerIds = data.getAll('playerId').map(String);
+    if (new Set(playerIds).size !== 4 || playerIds.some(id => !id)) {
+      setAuthMessage('Bitte vier verschiedene Spieler auswählen.', 'error');
+      return;
+    }
+    const rounds = [...form.querySelectorAll('[data-training-round]')].map(round => {
+      const [teamOne, teamTwo] = getTrainingPairing(playerIds, round.querySelector('[name="pairing"]').value);
+      return {
+        team_one_ids: teamOne,
+        team_two_ids: teamTwo,
+        result_details: round.querySelector('[name="roundResult"]').value.trim(),
+        set_count: Number(round.querySelector('[name="setCount"]').value)
+      };
+    });
+    const button = form.querySelector('[type="submit"]');
+    button.disabled = true;
+    setAuthMessage('Training wird gespeichert …');
+    const rpcName = state.editingTrainingId ? 'replace_pending_training_session' : 'create_training_session';
+    const payload = {
+      p_played_on: String(data.get('playedOn')),
+      p_display_time: String(data.get('displayTime')),
+      p_player_ids: playerIds,
+      p_rounds: rounds
+    };
+    if (state.editingTrainingId) payload.p_session_id = Number(state.editingTrainingId);
+    const { error } = await state.client.rpc(rpcName, payload);
+    button.disabled = false;
+    if (error) {
+      setAuthMessage(error.message, 'error');
+      return;
+    }
+    form.reset();
+    form.hidden = true;
+    state.trainingRoundCount = 1;
+    state.editingTrainingId = null;
+    setAuthMessage('Training wurde zur Bestätigung gesendet.', 'success');
+    await refresh();
+  }
+
+  function editTraining(sessionId) {
+    const task = state.trainingTasks.find(item => Number(item.session_id) === Number(sessionId));
+    if (!task) return;
+    const form = document.getElementById('training-form');
+    state.editingTrainingId = Number(sessionId);
+    state.trainingRoundCount = Math.max(1, task.rounds?.length || 1);
+    renderTrainingForm();
+    form.hidden = false;
+    form.querySelector('[name="playedOn"]').value = task.played_on;
+    form.querySelector('[name="displayTime"]').value = String(task.display_time).slice(0, 5);
+    [...form.querySelectorAll('[name="playerId"]')].forEach((select, index) => { select.value = task.player_ids[index] || ''; });
+    [...form.querySelectorAll('[data-training-round]')].forEach((roundElement, index) => {
+      const round = task.rounds[index];
+      if (!round) return;
+      const [a, b, c, d] = task.player_ids;
+      const teamOne = new Set(round.team_one_ids);
+      const pairing = teamOne.has(a) && teamOne.has(c) ? 'ac_bd' : teamOne.has(a) && teamOne.has(d) ? 'ad_bc' : 'ab_cd';
+      roundElement.querySelector('[name="pairing"]').value = pairing;
+      roundElement.querySelector('[name="roundResult"]').value = round.result_details;
+      roundElement.querySelector('[name="setCount"]').value = String(round.set_count);
+    });
+  }
+
+  async function confirmTraining(sessionId) {
+    setAuthMessage('Training wird bestätigt …');
+    const { error } = await state.client.rpc('confirm_training_session', { p_session_id: Number(sessionId) });
+    if (error) return setAuthMessage(error.message, 'error');
+    setAuthMessage('Training bestätigt.', 'success');
+    await refresh();
+  }
+
+  async function deleteTraining(sessionId) {
+    const { error } = await state.client.rpc('delete_my_pending_training', { p_session_id: Number(sessionId) });
+    if (error) return setAuthMessage(error.message, 'error');
+    setAuthMessage('Training gelöscht.', 'success');
+    await refresh();
+  }
+
   async function savePrediction(matchId, prediction) {
     if (!state.session?.user) {
       openAuthDialog();
@@ -407,6 +727,51 @@
         closeAuthDialog();
         return;
       }
+      const confirmResultButton = event.target.closest('[data-result-confirm]');
+      if (confirmResultButton) {
+        await confirmResult(confirmResultButton.dataset.resultConfirm);
+        return;
+      }
+      const trainingToggle = event.target.closest('[data-training-toggle]');
+      if (trainingToggle) {
+        const form = document.getElementById('training-form');
+        form.hidden = !form.hidden;
+        if (!form.hidden) {
+          state.editingTrainingId = null;
+          state.trainingRoundCount = 1;
+          renderTrainingForm();
+        }
+        return;
+      }
+      if (event.target.closest('[data-training-round-add]')) {
+        const preserved = readTrainingRoundValues();
+        state.trainingRoundCount += 1;
+        renderTrainingRounds(preserved);
+        return;
+      }
+      const removeRound = event.target.closest('[data-training-round-remove]');
+      if (removeRound) {
+        const preserved = readTrainingRoundValues();
+        preserved.splice(Number(removeRound.dataset.trainingRoundRemove), 1);
+        state.trainingRoundCount = Math.max(1, state.trainingRoundCount - 1);
+        renderTrainingRounds(preserved);
+        return;
+      }
+      const confirmTrainingButton = event.target.closest('[data-training-confirm]');
+      if (confirmTrainingButton) {
+        await confirmTraining(confirmTrainingButton.dataset.trainingConfirm);
+        return;
+      }
+      const editTrainingButton = event.target.closest('[data-training-edit]');
+      if (editTrainingButton) {
+        editTraining(editTrainingButton.dataset.trainingEdit);
+        return;
+      }
+      const deleteTrainingButton = event.target.closest('[data-training-delete]');
+      if (deleteTrainingButton) {
+        await deleteTraining(deleteTrainingButton.dataset.trainingDelete);
+        return;
+      }
       const prediction = event.target.closest('[data-prediction-match]');
       if (prediction) {
         savePrediction(prediction.dataset.predictionMatch, prediction.dataset.predictionValue);
@@ -415,6 +780,10 @@
 
     document.getElementById('auth-form')?.addEventListener('submit', handleAuthSubmit);
     document.getElementById('profile-form')?.addEventListener('submit', handleProfileSubmit);
+    document.getElementById('training-form')?.addEventListener('submit', handleTrainingSubmit);
+    document.addEventListener('submit', event => {
+      if (event.target.matches('[data-result-submit]')) handleResultSubmit(event);
+    });
     document.getElementById('auth-dialog')?.addEventListener('click', event => {
       if (event.target === event.currentTarget) closeAuthDialog();
     });
@@ -430,8 +799,12 @@
       return;
     }
 
-    state.client = window.supabase.createClient(config.url, config.publishableKey);
-    bindEvents();
+    state.client = window.PADEL_SUPABASE_CLIENT || window.supabase.createClient(config.url, config.publishableKey);
+    window.PADEL_SUPABASE_CLIENT = state.client;
+    if (!state.bound) {
+      bindEvents();
+      state.bound = true;
+    }
     setAuthMode('login');
     const { data: { session }, error } = await state.client.auth.getSession();
     if (error) {

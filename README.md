@@ -7,6 +7,8 @@ Die statische Webseite trennt dauerhafte Spielerdaten, saisonabhängige Daten un
 ```text
 padel-liga/
 ├── index.html
+├── tipp/
+│   └── index.html                 Eigenständige Padeltipp-Seite
 ├── style.css
 ├── js/
 │   ├── app.js                    Navigation, Berechnungen und Darstellung
@@ -15,6 +17,7 @@ padel-liga/
 │   ├── players.js                Globale Spieler-Stammdaten
 │   ├── seasons.js                Verfügbare Saisons und Standard-Saison
 │   ├── data2026.js               Teilnehmer, Ligaspiele und Inhalte der Saison 2026
+│   ├── data-test-2026.js          Temporäre Test-Saison für Ergebnisabläufe
 │   ├── training-matches.js       Saisonunabhängige Trainingsspiele
 │   ├── supabase-config.js         Öffentliche Supabase-Verbindungsdaten
 │   └── info.js                   Globale Regeln und allgemeine Infos
@@ -144,7 +147,7 @@ index.html?saison=2026
 
 ## Tippspiel und Benutzerkonten
 
-Das Tippspiel verwendet Supabase für Benutzerkonten, gespeicherte Tipps und die öffentliche Tabelle. Getippt wird das Satzergebnis:
+Das Tippspiel liegt unter `/tipp/` und verwendet Supabase für Benutzerkonten, gespeicherte Tipps und die öffentliche Tabelle. Getippt wird das Satzergebnis:
 
 - exakt richtiges Ergebnis: 4 Punkte,
 - richtiger Sieger bei anderem Satzergebnis: 2 Punkte,
@@ -153,6 +156,34 @@ Das Tippspiel verwendet Supabase für Benutzerkonten, gespeicherte Tipps und die
 Ein Tipp kann bis zum in der Datenbank hinterlegten Spielbeginn geändert werden. Spiele ohne festgelegte Uhrzeit bleiben zunächst offen. Sobald bei einem Spiel `actual_sets` gesetzt wird, schließt die Datenbank das Spiel automatisch für weitere Tipps und die Tabelle berechnet die Punkte neu.
 
 Die Datenbank trennt Spieler, Saisons, Ligen, Saison-Teilnahmen, Spiele, Benutzerkonten und Tipps. Dadurch kann eine spätere Saison mehrere Ligen erhalten, ohne für die aktuelle Saison bereits einen konkreten Spiel- oder Finalmodus festzulegen.
+
+## Spielergebnisse und Rollen
+
+Die Saison 2026 bleibt unverändert dateibasiert. Die temporäre Saison `test-2026` erprobt den künftigen Datenbankablauf:
+
+- Neue Konten erhalten zunächst die Rolle `tipper`.
+- Vorab hinterlegte und bestätigte E-Mail-Adressen werden automatisch einem Spielerprofil zugeordnet.
+- Spielernamen werden zentral gepflegt und können im Konto nicht geändert werden.
+- Ein beteiligter Spieler schlägt ein Ergebnis vor. Ein Spieler des anderen Teams bestätigt oder macht einen Gegenvorschlag.
+- Nur bestätigte Ergebnisse aktualisieren Rangliste und Elo. Die vier Elo-Änderungen werden unveränderbar je Partie gespeichert und unter dem Ergebnis angezeigt.
+- Admins können Resultate ohne Bestätigung direkt eintragen.
+- Liga-Partien können nicht durch Spieler angelegt werden.
+
+Offene Ergebnisaufgaben erscheinen ausschließlich im Konto-Dialog. Unbestätigte Vorschläge sind nicht an der öffentlichen Partie sichtbar. Tipps schließen weiterhin ausschließlich zum hinterlegten Spielbeginn.
+
+## Trainingsspiele
+
+Spieler können im Konto-Dialog ein saisonunabhängiges Training mit Datum, Uhrzeit und genau vier Spielern anlegen. Eine Trainingskarte kann mehrere Spielabschnitte mit wechselnden Paarungen derselben vier Spieler enthalten. Jeder Abschnitt enthält einen oder zwei tatsächlich gespielte Sätze; ein Stand von 1:1 ist zulässig. Ein anderer beteiligter Spieler muss das Training bestätigen. Trainings verändern kein Elo.
+
+## Registrierung nach E-Mail-Domain
+
+Die Migration legt die geschützte Tabelle `private.signup_email_domains` sowie den Hook `private.hook_restrict_signup_by_email_domain` an. Solange keine Domains eingetragen sind, bleiben Registrierungen wie bisher möglich. Sobald die erlaubten Domains gepflegt sind, wird der Hook unter **Authentication → Hooks → Before User Created** aktiviert:
+
+```text
+pg-functions://postgres/private/hook_restrict_signup_by_email_domain
+```
+
+Bereits vorhandene Konten bleiben davon unberührt. Einzelne vorab hinterlegte Spieler-E-Mail-Adressen sind auch außerhalb der später freigegebenen Domains zulässig.
 
 Die Datei `data/supabase-config.js` enthält ausschließlich die öffentliche Projekt-URL und den öffentlichen Publishable Key. Ein Supabase Secret Key gehört weder in diese Datei noch an eine andere Stelle im Repository. Schreibzugriffe sind zusätzlich durch Row Level Security abgesichert: Benutzer können nur ihr eigenes Profil und ihre eigenen, noch offenen Tipps bearbeiten.
 

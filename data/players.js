@@ -10,6 +10,8 @@ window.PADEL_PLAYERS = [
   { id: "jonas_l", name: "Jonas L.", initials: "JL", firma: "Envidual" },
   { id: "leonie_r", name: "Leonie R.", initials: "LR", firma: "Hanako" },
   { id: "luca_w", name: "Luca W.", initials: "LW", firma: "Envidual" },
+  { id: "ludi_gmail", name: "Ludi Gmail", initials: "LGML", firma: "Test" },
+  { id: "ludi_gmx", name: "Ludi GMX", initials: "LGMX", firma: "Test" },
   { id: "ludwig_w", name: "Ludwig W.", initials: "LuW", firma: "Envidual" },
   { id: "lukas_p", name: "Lukas P.", initials: "LP", firma: "Headsquare" },
   { id: "marcel_m", name: "Marcel M.", initials: "MzM", firma: "Envidual" },

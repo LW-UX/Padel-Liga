@@ -56,6 +56,99 @@ function loadScript(src) {
   });
 }
 
+function getSupabaseClient() {
+  if (window.PADEL_SUPABASE_CLIENT) return window.PADEL_SUPABASE_CLIENT;
+  const config = window.PADEL_SUPABASE_CONFIG;
+  if (!config?.url || !config?.publishableKey || !window.supabase?.createClient) return null;
+  window.PADEL_SUPABASE_CLIENT = window.supabase.createClient(config.url, config.publishableKey);
+  return window.PADEL_SUPABASE_CLIENT;
+}
+
+async function mergeDatabaseResults(rawSeason) {
+  if (!rawSeason.databaseResults) return rawSeason;
+  const client = getSupabaseClient();
+  if (!client) throw new Error('Supabase ist für die Test-Saison nicht konfiguriert.');
+  const matchIds = rawSeason.matches.map(match => match.id);
+  const [{ data: databaseMatches, error: matchError }, { data: eloChanges, error: eloError }] = await Promise.all([
+    client
+      .from('matches')
+      .select('id, result_details, actual_sets, winner')
+      .in('id', matchIds),
+    client
+      .from('match_elo_changes')
+      .select('match_id, player_id, old_elo, new_elo, delta')
+      .in('match_id', matchIds)
+  ]);
+  if (matchError) throw matchError;
+  if (eloError) throw eloError;
+
+  const matchesById = new Map((databaseMatches || []).map(match => [match.id, match]));
+  const eloByMatch = new Map();
+  (eloChanges || []).forEach(change => {
+    if (!eloByMatch.has(change.match_id)) eloByMatch.set(change.match_id, []);
+    eloByMatch.get(change.match_id).push({
+      playerId: change.player_id,
+      oldElo: change.old_elo,
+      newElo: change.new_elo,
+      delta: change.delta
+    });
+  });
+
+  return {
+    ...rawSeason,
+    matches: rawSeason.matches.map(match => {
+      const stored = matchesById.get(match.id);
+      if (!stored) throw new Error(`Die Datenbank-Partie ${match.id} fehlt.`);
+      return {
+        ...match,
+        result: stored.result_details,
+        sets: stored.actual_sets,
+        winner: stored.winner,
+        eloChanges: eloByMatch.get(match.id) || []
+      };
+    })
+  };
+}
+
+function normalizeLegacySeason(rawSeason) {
+  if (Array.isArray(rawSeason?.participants)) return rawSeason;
+  if (!Array.isArray(rawSeason?.players) || !Array.isArray(rawSeason?.matches)) return rawSeason;
+  const centralPlayers = new Map((window.PADEL_PLAYERS || []).map(player => [player.name, player.id]));
+  const qualifierRanks = new Map([['Erster', 1], ['Zweiter', 2], ['Dritter', 3], ['Vierter', 4]]);
+  const normalizeTeam = team => {
+    const names = Array.isArray(team?.spieler) ? team.spieler : [];
+    const playerIds = names.map(name => centralPlayers.get(name)).filter(Boolean);
+    return playerIds.length === names.length
+      ? { playerIds }
+      : { qualifierRanks: names.map(name => qualifierRanks.get(name)).filter(Boolean) };
+  };
+
+  return {
+    ...rawSeason,
+    participants: rawSeason.players.map(player => ({
+      playerId: player.id,
+      startElo: Number(player.history?.[0]?.elo)
+    })),
+    matches: rawSeason.matches.map(match => ({
+      id: `season-${rawSeason.id}-partie-${String(match.id).match(/\d+$/)?.[0] || match.id}`,
+      type: 'season',
+      seasonId: rawSeason.id,
+      format: match.format || 'best-of-three',
+      countsForRanking: match.countsForRanking !== false,
+      countsForElo: match.countsForElo !== false,
+      matchday: match.spieltag,
+      date: match.datum,
+      time: match.uhrzeit,
+      result: match.ergebnis,
+      sets: match.saetze,
+      winner: match.sieger,
+      displayLabel: match.displayLabel,
+      team1: normalizeTeam(match.team1),
+      team2: normalizeTeam(match.team2)
+    }))
+  };
+}
+
 function countsForRanking(match) {
   return match?.countsForRanking !== false;
 }
@@ -329,7 +422,7 @@ async function loadActiveSeason() {
 
   window.PADEL_SEASON = null;
   await loadScript(selectedSeason.file);
-  const rawSeason = window.PADEL_SEASON;
+  const rawSeason = await mergeDatabaseResults(normalizeLegacySeason(window.PADEL_SEASON));
 
   if (!rawSeason?.participants || !rawSeason?.matches) {
     throw new Error(`Saison ${selectedSeason.id} ist unvollständig.`);
@@ -350,6 +443,20 @@ function applySeasonMetadata() {
     element.textContent = label;
   });
   if (heroOrganizations) heroOrganizations.textContent = organizationLabel;
+  document.body.classList.toggle('is-test-season', Boolean(PADEL_DATA.resultsEntryEnabled));
+  const seasonSelect = document.getElementById('season-select');
+  if (seasonSelect) {
+    seasonSelect.innerHTML = getSeasonOptions().map(season => `
+      <option value="${season.id}" ${season.id === selectedSeason.id ? 'selected' : ''}>${season.label}</option>
+    `).join('');
+    seasonSelect.addEventListener('change', () => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('saison', seasonSelect.value);
+      window.location.assign(url);
+    });
+  }
+  const predictionLink = document.getElementById('tippspiel-link');
+  if (predictionLink) predictionLink.href = `tipp/?saison=${encodeURIComponent(selectedSeason.id)}`;
 }
 
 function resetSeasonState() {
@@ -2132,6 +2239,13 @@ function renderMatchRow(m) {
   const probability = countsForRanking(m) ? getHistoricalMatchWinProbability(m) : null;
   const leftProbability = probability ? `<span class="mc-result-prob">${probability.team1}%</span>` : '';
   const rightProbability = probability ? `<span class="mc-result-prob">${probability.team2}%</span>` : '';
+  const playerNames = new Map((window.PADEL_PLAYERS || []).map(player => [player.id, player.name]));
+  const eloHtml = Array.isArray(m.eloChanges) && m.eloChanges.length
+    ? `<div class="mc-elo-changes">${m.eloChanges
+        .sort((first, second) => first.playerId.localeCompare(second.playerId))
+        .map(change => `<span><strong>${escapeHtml(playerNames.get(change.playerId) || change.playerId)}</strong> ${change.oldElo} → ${change.newElo} <em>${change.delta >= 0 ? '+' : ''}${change.delta}</em></span>`)
+        .join('')}</div>`
+    : '';
 
   return `<div class="mc played ${isViewerMatch(m) ? `viewer-match ${viewerResultClass}` : ''}">        <div class="mc-meta"><span class="mc-nr">${formatMatchMeta(m, { relative: true })}</span></div>
     <div class="mc-team mc-team-1 ${t1w?'win':''}">
@@ -2148,6 +2262,7 @@ function renderMatchRow(m) {
     <div class="mc-team mc-team-2 ${t2w?'win':''}">
       <div class="mc-players">${renderTeamPlayers(m.team2.spieler)}</div>
     </div>
+    ${eloHtml}
   </div>`;
 }
 
