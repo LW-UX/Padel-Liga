@@ -3,7 +3,6 @@ const VIEWER_STORAGE_KEY_PREFIX = 'padel-liga-viewer';
 let PADEL_DATA = null;
 let selectedSeason = null;
 let selectedViewerId = 'sb';
-let authenticatedViewerId = null;
 let matchScope = 'all';
 let rankingSortMode = 'points';
 let rankingViewMode = 'compact';
@@ -517,7 +516,6 @@ function isViewerMatch(match) {
 
 function toggleViewerMenu() {
   const picker = document.getElementById('viewer-picker');
-  if (authenticatedViewerId) return;
   const isOpen = picker.classList.toggle('open');
   document.querySelector('.viewer-toggle').setAttribute('aria-expanded', String(isOpen));
 }
@@ -530,7 +528,6 @@ function closeViewerMenu() {
 }
 
 function selectViewer(id) {
-  if (authenticatedViewerId && id !== authenticatedViewerId) return;
   selectedViewerId = id;
   storeViewerId(selectedViewerId);
   if (!isParticipantView() && matchScope === 'mine') matchScope = 'all';
@@ -546,16 +543,8 @@ function selectViewer(id) {
 
 function updateViewerPicker() {
   const selected = getSelectedViewer();
-  const toggle = document.querySelector('.viewer-toggle');
-  const picker = document.getElementById('viewer-picker');
   document.getElementById('viewer-label-full').textContent = selected.name;
   document.getElementById('viewer-label-short').textContent = selected.mobileLabel || selected.short;
-  if (toggle) {
-    toggle.disabled = Boolean(authenticatedViewerId);
-    toggle.setAttribute('aria-disabled', String(Boolean(authenticatedViewerId)));
-    toggle.title = authenticatedViewerId ? 'Automatisch mit deinem Spielerprofil verbunden' : '';
-  }
-  picker?.classList.toggle('is-profile-locked', Boolean(authenticatedViewerId));
   document.getElementById('viewer-menu').innerHTML = getViewerOptions().map(option => `
     <button
       type="button"
@@ -572,15 +561,7 @@ function updateViewerPicker() {
 
 function setAuthenticatedPlayer(playerId = null) {
   const isSeasonParticipant = Boolean(playerId && PADEL_DATA?.players.some(player => player.id === playerId));
-  authenticatedViewerId = isSeasonParticipant ? playerId : null;
-
-  if (authenticatedViewerId) {
-    selectViewer(authenticatedViewerId);
-    return;
-  }
-
-  closeViewerMenu();
-  if (PADEL_DATA) updateViewerPicker();
+  if (isSeasonParticipant) selectViewer(playerId);
 }
 
 window.PadelLigaSetAuthenticatedPlayer = setAuthenticatedPlayer;

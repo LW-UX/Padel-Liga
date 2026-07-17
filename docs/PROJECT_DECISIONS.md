@@ -4,6 +4,21 @@ Stand: 17. Juli 2026
 
 Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell beschlossene Zielbild. Bei neuen oder geänderten Entscheidungen wird sie zusammen mit der jeweiligen Umsetzung aktualisiert.
 
+## Zusammenarbeit
+
+- Der Nutzer arbeitet ausschließlich über Codex und verwendet kein Terminal.
+- Codex führt erforderliche und autorisierte technische Befehle selbst aus.
+- Der Nutzer wird nur um unvermeidbare Freigaben, Anmeldungen oder fachliche Entscheidungen gebeten.
+- Anleitungen an den Nutzer werden ohne vorausgesetzte Terminal- oder Datenbankkenntnisse formuliert.
+
+## Aktueller Umsetzungsstand
+
+- Die projektbezogene Supabase-MCP-Verbindung ist auf dem Entwicklungsrechner in Codex eingetragen und per OAuth autorisiert.
+- Die Migration `20260717100000_player_results_training_test_season.sql` wurde am 17. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet.
+- Die Konten für `Ludi Gmail` und `Ludi GMX` sind jeweils mit ihrer Spieler-ID und der Rolle `player` verbunden.
+- Das Konto für `Ludwig W.` ist mit seiner Spieler-ID und der Rolle `admin` verbunden.
+- Alle drei zugeordneten E-Mail-Adressen sind bestätigt. Die Test-Saison enthält vier Datenbankspiele, und Row Level Security ist für alle neu angelegten öffentlichen Tabellen aktiviert.
+
 ## Saison- und Datenstrategie
 
 - Die laufende Saison 2026 bleibt bis zu ihrem Abschluss in der öffentlichen Ligaansicht dateibasiert. Sie erhält während der laufenden Saison keine neue Ergebniseingabe und kein Tippspiel.
@@ -35,7 +50,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Der Name eines verbundenen Spielerprofils kommt aus dem zentralen Spielerdatensatz und kann vom Konto nicht geändert werden.
 - Ein zunächst als Tipper angelegtes Konto kann später administrativ einem Spieler zugeordnet und zur Spielerrolle geändert werden.
 - Künftig werden Registrierungen auf erlaubte E-Mail-Domains begrenzt. Die konkrete Domainliste wird später festgelegt. Vorab freigegebene Spieleradressen bleiben als gezielte Ausnahmen möglich.
-- Nach dem Login wird die verbundene Spieler-ID automatisch als aktiver Spieler in der Spielerauswahl der Liga gesetzt, sofern der Spieler an der ausgewählten Saison teilnimmt. Solange dieses Spielerkonto angemeldet ist, kann dort kein anderer Spieler ausgewählt werden.
+- Nach dem Login wird die verbundene Spieler-ID automatisch als aktiver Spieler in der Spielerauswahl der Liga gesetzt, sofern der Spieler an der ausgewählten Saison teilnimmt. Die Auswahl bleibt danach frei bedienbar, damit auch andere Spieler hervorgehoben und betrachtet werden können.
 - Ein Admin mit eigenem Spielerprofil wird ebenfalls automatisch als dieser Spieler ausgewählt. Adminfunktionen bleiben davon getrennt.
 - Die Datenbank prüft Berechtigungen immer anhand des angemeldeten Kontos und seiner Spieler-ID; die sichtbare Auswahl allein ist keine Sicherheitsgrenze.
 

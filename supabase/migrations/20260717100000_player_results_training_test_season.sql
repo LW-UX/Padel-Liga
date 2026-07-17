@@ -1,3 +1,5 @@
+begin;
+
 do $$ begin
   create type public.app_role as enum ('tipper', 'player', 'admin');
 exception
@@ -907,6 +909,8 @@ grant usage on schema private to supabase_auth_admin;
 grant select on private.player_email_allowlist, private.signup_email_domains to supabase_auth_admin;
 grant execute on function private.hook_restrict_signup_by_email_domain(jsonb) to supabase_auth_admin;
 revoke execute on function private.hook_restrict_signup_by_email_domain(jsonb) from public, anon, authenticated;
+
+commit;
 
 -- Aktivierung erst, sobald Domains gepflegt sind:
 -- Supabase Dashboard -> Authentication -> Hooks -> Before User Created

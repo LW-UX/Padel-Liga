@@ -264,10 +264,6 @@
       color: var(--accent);
     }
 
-    .viewer-picker.is-profile-locked .viewer-toggle {
-      cursor: default;
-      opacity: 1;
-    }
     .viewer-label-short { display: none; }
     .viewer-menu {
       position: absolute;
