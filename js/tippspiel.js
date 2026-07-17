@@ -23,20 +23,33 @@
       .replaceAll("'", '&#039;');
   }
 
-  function getOpenLocalMatches() {
+  function getPredictionLocalMatches() {
     if (!state.season) return [];
     return state.season.matches.filter(match =>
-      match.sieger === null &&
       match.matchday !== 8 &&
       match.team1.playerIds.length > 0 &&
       match.team2.playerIds.length > 0 &&
-      state.databaseMatches.get(match.id)?.betting_open === true &&
-      state.databaseMatches.get(match.id)?.actual_sets === null &&
-      (
-        !state.databaseMatches.get(match.id)?.lock_at ||
-        new Date(state.databaseMatches.get(match.id).lock_at).getTime() > Date.now()
-      )
+      state.databaseMatches.has(match.id)
     );
+  }
+
+  function getActualSets(match) {
+    return state.databaseMatches.get(match.id)?.actual_sets || match.saetze || null;
+  }
+
+  function isPredictionOpen(match) {
+    const databaseMatch = state.databaseMatches.get(match.id);
+    if (!databaseMatch || databaseMatch.betting_open !== true || getActualSets(match)) return false;
+    if (!databaseMatch.lock_at) return match.sieger === null;
+    return match.sieger === null && new Date(databaseMatch.lock_at).getTime() > Date.now();
+  }
+
+  function getPredictionPoints(prediction, actualSets) {
+    if (!prediction || !actualSets) return null;
+    if (prediction === actualSets) return 4;
+    const predictedTeam = prediction.startsWith('2') ? 1 : 2;
+    const actualTeam = actualSets.startsWith('2') ? 1 : 2;
+    return predictedTeam === actualTeam ? 2 : 0;
   }
 
   function formatMatchDate(match) {
@@ -46,6 +59,12 @@
       ? match.datum
       : new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
     return `${dateLabel}${match.uhrzeit ? ` · ${match.uhrzeit} Uhr` : ''}`;
+  }
+
+  function getMatchTimestamp(match) {
+    const time = match.uhrzeit ? match.uhrzeit.replace('.', ':') : '23:59';
+    const timestamp = new Date(`${match.datum || '9999-12-31'}T${time}:00`).getTime();
+    return Number.isNaN(timestamp) ? 0 : timestamp;
   }
 
   function renderTeam(team) {
@@ -96,20 +115,44 @@
       return;
     }
 
-    const matches = getOpenLocalMatches();
-    if (meta) meta.textContent = `${matches.length} offene ${matches.length === 1 ? 'Partie' : 'Partien'}`;
+    const matches = getPredictionLocalMatches();
+    const openMatches = matches
+      .filter(isPredictionOpen)
+      .sort((first, second) => getMatchTimestamp(first) - getMatchTimestamp(second));
+    const lockedMatches = matches
+      .filter(match => !isPredictionOpen(match))
+      .sort((first, second) => getMatchTimestamp(second) - getMatchTimestamp(first));
+    if (meta) meta.textContent = `${openMatches.length} offen · ${lockedMatches.length} gesperrt`;
     if (!matches.length) {
-      target.innerHTML = '<div class="widget empty-state">Aktuell gibt es keine offenen Spiele zum Tippen.</div>';
+      target.innerHTML = '<div class="widget empty-state">Für diese Saison sind noch keine Spiele im Tippspiel hinterlegt.</div>';
       return;
     }
 
-    target.innerHTML = matches.map(match => {
+    const renderMatch = match => {
       const selected = state.predictions.get(match.id);
       const isSaving = state.saving.has(match.id);
+      const isOpen = isPredictionOpen(match);
+      const actualSets = getActualSets(match);
+      const resultDetails = state.databaseMatches.get(match.id)?.result_details || match.ergebnis;
+      const points = getPredictionPoints(selected, actualSets);
+      const statusLabel = isOpen ? 'Offen' : actualSets ? 'Gespielt' : 'Gesperrt';
+      const saveState = isOpen
+        ? isSaving
+          ? 'Wird gespeichert …'
+          : selected
+            ? `Gespeichert: ${selected}`
+            : 'Noch kein Tipp'
+        : actualSets
+          ? selected
+            ? `Dein Tipp: ${selected} · Ergebnis: ${actualSets} · ${points} ${points === 1 ? 'Punkt' : 'Punkte'}`
+            : `Kein Tipp abgegeben · Ergebnis: ${actualSets}`
+          : selected
+            ? `Dein Tipp: ${selected} · Ergebnis ausstehend`
+            : 'Kein Tipp abgegeben · Ergebnis ausstehend';
       return `
-        <article class="prediction-match-card ${selected ? 'has-prediction' : ''}">
+        <article class="prediction-match-card ${selected ? 'has-prediction' : ''} ${isOpen ? '' : 'is-locked'}">
           <div class="prediction-match-meta">
-            <span>Partie ${escapeHtml(match.id.match(/\d+$/)?.[0] || match.id)}</span>
+            <span class="prediction-match-number">Partie ${escapeHtml(match.id.match(/\d+$/)?.[0] || match.id)} <span class="prediction-status ${isOpen ? 'is-open' : 'is-locked'}">${statusLabel}</span></span>
             <span>Spieltag ${escapeHtml(match.spieltag)} · ${escapeHtml(formatMatchDate(match))}</span>
           </div>
           <div class="prediction-teams">
@@ -121,18 +164,24 @@
             ${VALID_PREDICTIONS.map(prediction => `
               <button
                 type="button"
-                class="prediction-option ${selected === prediction ? 'active' : ''}"
+                class="prediction-option ${selected === prediction ? 'active' : ''} ${actualSets === prediction ? 'is-result' : ''}"
                 data-prediction-match="${escapeHtml(match.id)}"
                 data-prediction-value="${prediction}"
                 aria-pressed="${selected === prediction}"
-                ${isSaving ? 'disabled' : ''}
+                ${isSaving || !isOpen ? 'disabled' : ''}
               >${prediction}</button>
             `).join('')}
           </div>
-          <div class="prediction-save-state ${selected ? 'saved' : ''}">${isSaving ? 'Wird gespeichert …' : selected ? `Gespeichert: ${selected}` : 'Noch kein Tipp'}</div>
+          ${actualSets ? `<div class="prediction-result-details">Endstand ${escapeHtml(actualSets)}${resultDetails ? ` · ${escapeHtml(resultDetails)}` : ''}</div>` : ''}
+          <div class="prediction-save-state ${selected ? 'saved' : ''} ${points !== null ? `points-${points}` : ''}">${saveState}</div>
         </article>
       `;
-    }).join('');
+    };
+
+    target.innerHTML = `
+      ${openMatches.length ? `<div class="prediction-match-group"><div class="prediction-group-title">Offene Spiele <span>${openMatches.length}</span></div>${openMatches.map(renderMatch).join('')}</div>` : ''}
+      ${lockedMatches.length ? `<div class="prediction-match-group"><div class="prediction-group-title">Gespielt &amp; gesperrt <span>${lockedMatches.length}</span></div>${lockedMatches.map(renderMatch).join('')}</div>` : ''}
+    `;
   }
 
   function renderLeaderboard() {
@@ -188,7 +237,7 @@
     const [{ data: matches, error: matchesError }, { data: leaderboard, error: leaderboardError }] = await Promise.all([
       state.client
         .from('matches')
-        .select('id, betting_open, actual_sets, lock_at')
+        .select('id, betting_open, actual_sets, result_details, lock_at')
         .eq('season_id', seasonId),
       state.client.rpc('get_prediction_leaderboard', { p_season_id: seasonId })
     ]);
@@ -246,10 +295,11 @@
   async function handleAuthSubmit(event) {
     event.preventDefault();
     if (!state.client) return;
-    const form = new FormData(event.currentTarget);
-    const email = String(form.get('email') || '').trim();
-    const password = String(form.get('password') || '');
-    const displayName = String(form.get('displayName') || '').trim();
+    const authForm = event.currentTarget;
+    const formData = new FormData(authForm);
+    const email = String(formData.get('email') || '').trim();
+    const password = String(formData.get('password') || '');
+    const displayName = String(formData.get('displayName') || '').trim();
     const submit = document.getElementById('auth-submit');
     submit.disabled = true;
     setAuthMessage(state.authMode === 'signup' ? 'Konto wird erstellt …' : 'Login läuft …');
@@ -277,7 +327,7 @@
         const { error } = await state.client.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
-      event.currentTarget.reset();
+      authForm.reset();
       closeAuthDialog();
     } catch (error) {
       setAuthMessage(getFriendlyAuthError(error), 'error');
