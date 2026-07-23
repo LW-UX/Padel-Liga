@@ -22,7 +22,7 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-07-23-user-icon">
+  <link rel="stylesheet" href="style.css?v=2026-07-23-dismissible-app-hint">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -78,6 +78,7 @@
     <div class="home-grid">
       <div class="home-main">
         <article class="widget home-app-hint">
+          <button class="home-app-hint-close" type="button" data-dismiss-app-hint aria-label="App-Hinweis schließen">×</button>
           <div class="widget-label">Jetzt auch als App!</div>
           <p class="home-app-hint-text">Diese Webseite auf dem Handy öffnen, im Browser-Menü auf Teilen drücken und zum Home-Bildschirm hinzufügen. Name vergeben, speichern und schon ist die App auf dem Handy für uneingeschränkten Zugriff.</p>
         </article>
@@ -484,6 +485,6 @@
 </dialog>
 
 <script src="js/tippspiel.js?v=2026-07-23-user-icon"></script>
-<script src="js/app.js?v=2026-07-23-account-tabs"></script>
+<script src="js/app.js?v=2026-07-23-dismissible-app-hint"></script>
 </body>
 </html>

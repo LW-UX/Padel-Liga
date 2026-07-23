@@ -782,10 +782,37 @@
     .home-side { display: grid; gap: 18px; }
     .home-main { display: grid; gap: 18px; align-content: start; }
     .home-app-hint {
+      position: relative;
       border: 1px solid var(--accent2) !important;
+      padding-right: 3.25rem;
     }
     .home-app-hint .widget-label { color: var(--accent2); margin-bottom: 0.4rem; }
     .home-app-hint-text { color: var(--dim); line-height: 1.5; font-size: 0.92rem; margin: 0; }
+    .home-app-hint-close {
+      position: absolute;
+      top: 0.55rem;
+      right: 0.6rem;
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--dim);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+    .home-app-hint-close:hover {
+      background: color-mix(in srgb, var(--accent2) 12%, transparent);
+      color: var(--accent2);
+    }
+    .home-app-hint-close:focus-visible {
+      outline: 2px solid var(--accent2);
+      outline-offset: 1px;
+    }
     .is-standalone .home-app-hint { display: none; }
     .stats-grid {
       display: grid;

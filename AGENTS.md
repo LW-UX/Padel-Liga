@@ -12,4 +12,4 @@ Der Nutzer arbeitet ausschließlich über Codex und verwendet kein Terminal. For
 
 ## Supabase
 
-Für Zugriffe auf die projektbezogene Supabase-Datenbank ist ausschließlich der MCP-Server `supabase_padel_liga` zu verwenden. Datenbank-Schreibaktionen sind dem Nutzer vor der Ausführung zur Freigabe vorzulegen. Wenn die Verbindung nicht verfügbar ist, darf nicht auf den Supabase-Browser oder einen selbstgebauten Einmal-OAuth-Ablauf ausgewichen werden; stattdessen ist die Verbindungsstörung klar zu melden.
+Für Zugriffe auf die projektbezogene Supabase-Datenbank ist ausschließlich `tools/supabase-mcp.mjs` beziehungsweise der schlüsselbundgestützte Starthelfer `tools/run-supabase-mcp.sh` zu verwenden. Datenbank-Schreibaktionen sind dem Nutzer vor der Ausführung zur Freigabe vorzulegen. Wenn die Verbindung nicht verfügbar ist, darf nicht auf den Supabase-Browser oder einen selbstgebauten Einmal-OAuth-Ablauf ausgewichen werden; stattdessen ist die Verbindungsstörung klar zu melden.

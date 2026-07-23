@@ -1,5 +1,6 @@
 // ── VIEWER ────────────────────────────────────────────────────────
 const VIEWER_STORAGE_KEY_PREFIX = 'padel-liga-viewer';
+const APP_HINT_DISMISSED_STORAGE_KEY = 'padel-liga-app-hint-dismissed';
 let PADEL_DATA = null;
 let selectedSeason = null;
 let selectedViewerId = 'sb';
@@ -28,6 +29,29 @@ function storeViewerId(id) {
   } catch (error) {
     // The viewer picker still works for the current page load if storage is blocked.
   }
+}
+
+function isAppHintDismissed() {
+  try {
+    return localStorage.getItem(APP_HINT_DISMISSED_STORAGE_KEY) === 'true';
+  } catch (error) {
+    return false;
+  }
+}
+
+function dismissAppHint() {
+  const hint = document.querySelector('.home-app-hint');
+  if (hint) hint.hidden = true;
+  try {
+    localStorage.setItem(APP_HINT_DISMISSED_STORAGE_KEY, 'true');
+  } catch (error) {
+    // The hint still stays hidden for the current page load if storage is blocked.
+  }
+}
+
+function applyAppHintVisibility() {
+  const hint = document.querySelector('.home-app-hint');
+  if (hint && isAppHintDismissed()) hint.hidden = true;
 }
 
 function getSeasonOptions() {
@@ -554,6 +578,12 @@ window.addEventListener('padel:authenticated-player', event => {
 });
 
 document.addEventListener('click', event => {
+  const appHintDismissControl = event.target.closest('[data-dismiss-app-hint]');
+  if (appHintDismissControl) {
+    dismissAppHint();
+    return;
+  }
+
   const viewerToggle = event.target.closest('[data-viewer-toggle]');
   if (viewerToggle) {
     toggleViewerMenu();
@@ -3814,4 +3844,5 @@ mobileViewportQuery.addEventListener?.('change', () => {
   if (PADEL_DATA) renderRanking();
 });
 
+applyAppHintVisibility();
 initApp();
