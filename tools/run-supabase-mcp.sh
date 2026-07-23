@@ -3,19 +3,17 @@
 set -euo pipefail
 
 readonly project_ref="ufpaeluwcqynzudhmrro"
-readonly keychain_service="codex-padel-liga-supabase"
 readonly node_bin_dir="/Applications/ChatGPT.app/Contents/Resources/cua_node/bin"
 readonly npm_cache_dir="${TMPDIR:-/private/tmp}/codex-padel-liga-supabase-npm"
+readonly repository_root="${0:A:h:h}"
+readonly token_file="${repository_root}/.codex-secrets/supabase-access-token"
 
-if ! supabase_access_token="$(
-  /usr/bin/security find-generic-password \
-    -s "${keychain_service}" \
-    -a "${project_ref}" \
-    -w 2>/dev/null
-)"; then
-  print -u2 "Der Supabase-Zugriffsschlüssel fehlt im macOS-Schlüsselbund."
+if [[ ! -r "${token_file}" ]]; then
+  print -u2 "Der lokale Supabase-Zugriffsschlüssel fehlt."
   exit 1
 fi
+
+supabase_access_token="$(<"${token_file}")"
 
 mkdir -p "${npm_cache_dir}"
 chmod 700 "${npm_cache_dir}"
@@ -31,4 +29,3 @@ exec "${node_bin_dir}/npx" \
   "@supabase/mcp-server-supabase@0.9.0" \
   "--project-ref=${project_ref}" \
   "--features=database"
-

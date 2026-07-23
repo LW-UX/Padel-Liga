@@ -10,12 +10,12 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Codex führt erforderliche und autorisierte technische Befehle selbst aus.
 - Der Nutzer wird nur um unvermeidbare Freigaben, Anmeldungen oder fachliche Entscheidungen gebeten.
 - Anleitungen an den Nutzer werden ohne vorausgesetzte Terminal- oder Datenbankkenntnisse formuliert.
-- Supabase-Datenbankzugriffe erfolgen über eine projektgebundene MCP-Verbindung. Der dafür notwendige persönliche Zugriffsschlüssel wird ausschließlich im macOS-Schlüsselbund gespeichert und nicht im Repository oder in Codex-Aufgaben hinterlegt.
+- Supabase-Datenbankzugriffe erfolgen über eine projektgebundene MCP-Verbindung. Der dafür notwendige persönliche Zugriffsschlüssel liegt ausschließlich in der lokalen, nur für den Benutzer lesbaren Datei `.codex-secrets/supabase-access-token`. Das Verzeichnis ist durch `.gitignore` von der Versionierung ausgeschlossen; der Schlüssel wird weder im Repository noch in Codex-Aufgaben hinterlegt.
 - Schreibende Supabase-Aktionen bleiben einzeln freigabepflichtig. Einmalige OAuth-Helfer und der Supabase-Browser sind kein Ersatz für die projektgebundene Verbindung.
 
 ## Aktueller Umsetzungsstand
 
-- Die projektbezogene Supabase-MCP-Verbindung ist im Repository vorbereitet. Sie verwendet wegen der derzeit fehlerhaften OAuth-Erkennung der installierten Codex-Version einen im macOS-Schlüsselbund hinterlegten persönlichen Zugriffsschlüssel.
+- Die projektbezogene Supabase-MCP-Verbindung ist im Repository vorbereitet. Sie verwendet wegen der derzeit fehlerhaften OAuth-Erkennung der installierten Codex-Version einen lokal geschützten persönlichen Zugriffsschlüssel.
 - Die Migration `20260717100000_player_results_training_test_season.sql` wurde am 17. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet.
 - Die Migration `20260723160000_profile_result_tabs_actual_time.sql` wurde am 23. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Die neue Ergebnisfunktion mit tatsächlichem Datum und tatsächlicher Uhrzeit ist im Supabase-Schema-Cache verfügbar.
 - Die Migration `20260723164500_fix_elo_player_id_ambiguity.sql` wurde am 23. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Sie behebt die zuvor mehrdeutige Spieler-ID in der Elo-Neuberechnung.
@@ -36,7 +36,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 ## Saisonauswahl und Seitenaufteilung
 
-- Der Hinweis „Jetzt auch als App!“ auf der Startseite kann über ein X im Kasten geschlossen werden. Die Entscheidung wird lokal auf dem Gerät gespeichert, sodass der Hinweis bei späteren Besuchen ausgeblendet bleibt.
+- Der Hinweis „Jetzt auch als App!“ auf der Startseite kann über ein X im Kasten für den aktuellen Browser-Tab geschlossen werden. Er bleibt bei Reloads innerhalb dieses Tabs ausgeblendet und erscheint nach dem Schließen des Tabs beim nächsten Besuch wieder.
 - Die Saisonauswahl steht rechts oben auf Höhe der Eyebrow oberhalb des Loginbereichs.
 - Das Tippspiel liegt auf einer eigenen Seite unter `/Padel-Liga/tipp/`.
 - Auf der Ligaseite steht neben der Saisonauswahl der Link „Zum Tippspiel“, auf der Tippseite „Zur Liga“.

@@ -1,6 +1,6 @@
 // ── VIEWER ────────────────────────────────────────────────────────
 const VIEWER_STORAGE_KEY_PREFIX = 'padel-liga-viewer';
-const APP_HINT_DISMISSED_STORAGE_KEY = 'padel-liga-app-hint-dismissed';
+const APP_HINT_DISMISSED_SESSION_KEY = 'padel-liga-app-hint-dismissed';
 let PADEL_DATA = null;
 let selectedSeason = null;
 let selectedViewerId = 'sb';
@@ -33,7 +33,7 @@ function storeViewerId(id) {
 
 function isAppHintDismissed() {
   try {
-    return localStorage.getItem(APP_HINT_DISMISSED_STORAGE_KEY) === 'true';
+    return sessionStorage.getItem(APP_HINT_DISMISSED_SESSION_KEY) === 'true';
   } catch (error) {
     return false;
   }
@@ -43,7 +43,7 @@ function dismissAppHint() {
   const hint = document.querySelector('.home-app-hint');
   if (hint) hint.hidden = true;
   try {
-    localStorage.setItem(APP_HINT_DISMISSED_STORAGE_KEY, 'true');
+    sessionStorage.setItem(APP_HINT_DISMISSED_SESSION_KEY, 'true');
   } catch (error) {
     // The hint still stays hidden for the current page load if storage is blocked.
   }

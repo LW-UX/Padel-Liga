@@ -1,15 +1,14 @@
 #!/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node
 
-import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const projectRef = 'ufpaeluwcqynzudhmrro';
-const keychainService = 'codex-padel-liga-supabase';
 const resource = `https://mcp.supabase.com/mcp?project_ref=${projectRef}&features=database`;
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const migrationsDirectory = resolve(repositoryRoot, 'supabase/migrations');
+const tokenFile = resolve(repositoryRoot, '.codex-secrets/supabase-access-token');
 
 const [command, argument] = process.argv.slice(2);
 
@@ -19,13 +18,9 @@ if (!command) {
 
 let accessToken;
 try {
-  accessToken = execFileSync(
-    '/usr/bin/security',
-    ['find-generic-password', '-s', keychainService, '-a', projectRef, '-w'],
-    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
-  ).trim();
+  accessToken = (await readFile(tokenFile, 'utf8')).trim();
 } catch {
-  fail('Der Supabase-Zugriffsschlüssel fehlt im macOS-Schlüsselbund.');
+  fail('Der lokale Supabase-Zugriffsschlüssel fehlt.');
 }
 
 let requestId = 0;
@@ -125,4 +120,3 @@ if (command === 'list-migrations') {
 } else {
   fail(`Unbekannter Befehl: ${command}`);
 }
-
