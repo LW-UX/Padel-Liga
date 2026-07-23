@@ -1617,19 +1617,6 @@
     .mc-result-prob { min-width: 34px; text-align: center; }
     .mc-pending-label { font-size: 0.85rem; color: var(--dim); text-align: center; }
     .mc-nr { font-family: 'DM Mono', monospace; font-size: 0.85rem; color: var(--dim); text-align: left; }
-    .mc-elo-changes {
-      grid-column: 2 / 5;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 4px 16px;
-      border-top: 1px solid var(--border);
-      color: var(--dim);
-      font: 0.7rem 'DM Mono', monospace;
-      padding-top: 8px;
-    }
-    .mc-elo-changes span { display: flex; justify-content: space-between; gap: 8px; }
-    .mc-elo-changes strong { color: var(--text); font-family: 'DM Sans', sans-serif; }
-    .mc-elo-changes em { color: var(--accent); font-style: normal; }
 
     /* ── CALCULATOR ── */
     .calculator-layout {
@@ -2209,8 +2196,7 @@
         grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         grid-template-areas:
           "meta meta meta"
-          "team1 score team2"
-          "elo elo elo";
+          "team1 score team2";
         gap: 8px 10px;
         padding: 1rem 0.95rem;
       }
@@ -2227,7 +2213,6 @@
       .mc-result-row { gap: 7px; }
       .mc-result-prob { min-width: 30px; }
       .mc-nr { text-align: left; }
-      .mc-elo-changes { grid-area: elo; grid-template-columns: 1fr; }
       .calculator-layout {
         grid-template-columns: 1fr;
         gap: 12px;

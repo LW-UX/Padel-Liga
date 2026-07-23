@@ -10,10 +10,12 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Codex führt erforderliche und autorisierte technische Befehle selbst aus.
 - Der Nutzer wird nur um unvermeidbare Freigaben, Anmeldungen oder fachliche Entscheidungen gebeten.
 - Anleitungen an den Nutzer werden ohne vorausgesetzte Terminal- oder Datenbankkenntnisse formuliert.
+- Supabase-Datenbankzugriffe erfolgen über eine projektgebundene MCP-Verbindung. Der dafür notwendige persönliche Zugriffsschlüssel wird ausschließlich im macOS-Schlüsselbund gespeichert und nicht im Repository oder in Codex-Aufgaben hinterlegt.
+- Schreibende Supabase-Aktionen bleiben einzeln freigabepflichtig. Einmalige OAuth-Helfer und der Supabase-Browser sind kein Ersatz für die projektgebundene Verbindung.
 
 ## Aktueller Umsetzungsstand
 
-- Die projektbezogene Supabase-MCP-Verbindung ist auf dem Entwicklungsrechner in Codex eingetragen und per OAuth autorisiert.
+- Die projektbezogene Supabase-MCP-Verbindung ist im Repository konfiguriert. Sie verwendet wegen der derzeit fehlerhaften OAuth-Erkennung der installierten Codex-Version einen im macOS-Schlüsselbund hinterlegten persönlichen Zugriffsschlüssel.
 - Die Migration `20260717100000_player_results_training_test_season.sql` wurde am 17. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet.
 - Die Migration `20260723160000_profile_result_tabs_actual_time.sql` wurde am 23. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Die neue Ergebnisfunktion mit tatsächlichem Datum und tatsächlicher Uhrzeit ist im Supabase-Schema-Cache verfügbar.
 - Die Migration `20260723164500_fix_elo_player_id_ambiguity.sql` wurde am 23. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Sie behebt die zuvor mehrdeutige Spieler-ID in der Elo-Neuberechnung.
@@ -74,7 +76,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 - Elo wird nur für bestätigte Ligaspiele berechnet, auch wenn das Ergebnis über den Seitenlogin eingetragen wurde.
 - Trainingsspiele verändern kein Elo.
-- Unter einem bestätigten Ligaergebnis werden die berechneten Elo-Veränderungen schreibgeschützt angezeigt.
+- Elo-Veränderungen werden nicht in der Ergebnisübersicht angezeigt. Sie bleiben intern nachvollziehbar gespeichert und fließen weiterhin in Rangliste und Saisonverlauf ein.
 - Für jeden Spieler und jedes gewertete Spiel sollen Elo vor dem Spiel, Veränderung und Elo nach dem Spiel nachvollziehbar gespeichert werden.
 - Zusätzlich soll die verwendete Version der Elo-Berechnung festgehalten werden, damit spätere Neuberechnungen und Vergleiche möglich bleiben.
 - Beim späteren Import von 2026 werden die vorhandenen Werte zunächst unverändert übernommen und anschließend durch eine Neuberechnung kontrolliert.

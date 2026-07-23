@@ -69,30 +69,13 @@ async function mergeDatabaseResults(rawSeason) {
   const client = getSupabaseClient();
   if (!client) throw new Error('Supabase ist für die Test-Saison nicht konfiguriert.');
   const matchIds = rawSeason.matches.map(match => match.id);
-  const [{ data: databaseMatches, error: matchError }, { data: eloChanges, error: eloError }] = await Promise.all([
-    client
-      .from('matches')
-      .select('id, scheduled_date, display_time, result_details, actual_sets, winner')
-      .in('id', matchIds),
-    client
-      .from('match_elo_changes')
-      .select('match_id, player_id, old_elo, new_elo, delta')
-      .in('match_id', matchIds)
-  ]);
+  const { data: databaseMatches, error: matchError } = await client
+    .from('matches')
+    .select('id, scheduled_date, display_time, result_details, actual_sets, winner')
+    .in('id', matchIds);
   if (matchError) throw matchError;
-  if (eloError) throw eloError;
 
   const matchesById = new Map((databaseMatches || []).map(match => [match.id, match]));
-  const eloByMatch = new Map();
-  (eloChanges || []).forEach(change => {
-    if (!eloByMatch.has(change.match_id)) eloByMatch.set(change.match_id, []);
-    eloByMatch.get(change.match_id).push({
-      playerId: change.player_id,
-      oldElo: change.old_elo,
-      newElo: change.new_elo,
-      delta: change.delta
-    });
-  });
 
   return {
     ...rawSeason,
@@ -105,8 +88,7 @@ async function mergeDatabaseResults(rawSeason) {
         time: stored.display_time ? String(stored.display_time).slice(0, 5).replace(':', '.') : match.time,
         result: stored.result_details,
         sets: stored.actual_sets,
-        winner: stored.winner,
-        eloChanges: eloByMatch.get(match.id) || []
+        winner: stored.winner
       };
     })
   };
@@ -2251,13 +2233,6 @@ function renderMatchRow(m) {
   const probability = countsForRanking(m) ? getHistoricalMatchWinProbability(m) : null;
   const leftProbability = probability ? `<span class="mc-result-prob">${probability.team1}%</span>` : '';
   const rightProbability = probability ? `<span class="mc-result-prob">${probability.team2}%</span>` : '';
-  const playerNames = new Map((window.PADEL_PLAYERS || []).map(player => [player.id, player.name]));
-  const eloHtml = Array.isArray(m.eloChanges) && m.eloChanges.length
-    ? `<div class="mc-elo-changes">${m.eloChanges
-        .sort((first, second) => first.playerId.localeCompare(second.playerId))
-        .map(change => `<span><strong>${escapeHtml(playerNames.get(change.playerId) || change.playerId)}</strong> ${change.oldElo} → ${change.newElo} <em>${change.delta >= 0 ? '+' : ''}${change.delta}</em></span>`)
-        .join('')}</div>`
-    : '';
 
   return `<div class="mc played ${isViewerMatch(m) ? `viewer-match ${viewerResultClass}` : ''}">        <div class="mc-meta"><span class="mc-nr">${formatMatchMeta(m, { relative: true })}</span></div>
     <div class="mc-team mc-team-1 ${t1w?'win':''}">
@@ -2274,7 +2249,6 @@ function renderMatchRow(m) {
     <div class="mc-team mc-team-2 ${t2w?'win':''}">
       <div class="mc-players">${renderTeamPlayers(m.team2.spieler)}</div>
     </div>
-    ${eloHtml}
   </div>`;
 }
 
