@@ -1,6 +1,6 @@
 # Projektentscheidungen Padel-Liga
 
-Stand: 17. Juli 2026
+Stand: 23. Juli 2026
 
 Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell beschlossene Zielbild. Bei neuen oder geänderten Entscheidungen wird sie zusammen mit der jeweiligen Umsetzung aktualisiert.
 
@@ -57,10 +57,12 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 ## Ligaergebnisse und Bestätigung
 
 - Spieler können keine Ligaspiele erstellen. Ligaspiele werden vorab im Spielplan angelegt.
-- Nach der hinterlegten tatsächlichen Startzeit darf ein beteiligter Spieler ein Ergebnis vorschlagen. Datum und Uhrzeit des Ligaspiels kann er nicht verändern.
+- Ein beteiligter Spieler kann zu einem Ligaspiel ein Ergebnis samt tatsächlich gespieltem Datum und tatsächlicher Uhrzeit vorschlagen. Der tatsächliche Termin darf nicht in der Zukunft liegen und darf vom ursprünglich geplanten Termin abweichen.
+- Nach der Bestätigung werden das vorgeschlagene Datum und die vorgeschlagene Uhrzeit zusammen mit dem Ergebnis zum offiziellen, öffentlich angezeigten Spieltermin.
+- Zukünftig geplante Partien zählen nicht als offene Spiele. Sie bleiben unter „Alle Spiele“ sichtbar und können dort erfasst werden, falls sie abweichend vom Plan bereits gespielt wurden.
 - Ein einziger beteiligter Spieler eines Teams reicht zum Eintragen beziehungsweise Bearbeiten eines Vorschlags aus.
 - Ein Spieler des anderen Teams kann den Vorschlag bestätigen oder einen Gegenvorschlag machen. Eine reine Ablehnung gibt es nicht.
-- Ein Gegenvorschlag geht an das jeweils andere Team zurück. Der Austausch kann fortgesetzt werden, bis ein Team den letzten Vorschlag des anderen Teams bestätigt.
+- Ein Gegenvorschlag umfasst Ergebnis, tatsächliches Datum und tatsächliche Uhrzeit und geht an das jeweils andere Team zurück. Der Austausch kann fortgesetzt werden, bis ein Team den letzten Vorschlag des anderen Teams bestätigt.
 - Ein vom Admin eingetragenes Ergebnis ist sofort gültig und benötigt keine Bestätigung.
 - Hat ein Admin lediglich als normal beteiligter Spieler eingetragen, gelten die bewusst gewählten administrativen beziehungsweise normalen Aktionen getrennt.
 - Unbestätigte Vorschläge und ihr Status erscheinen nicht öffentlich an der Partie. Offene Aufgaben stehen im Konto-Dialog.
@@ -96,9 +98,11 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 ## Konto-Dialog und Aufgaben
 
-- Der bestehende Login-/Profil-Dialog wird um persönliche Aufgaben erweitert.
-- Dort erscheinen offene Ligaergebnisse, zu bestätigende oder zu beantwortende Vorschläge und offene Trainingsbestätigungen.
-- Trainingsspiele werden ebenfalls über diesen Dialog angelegt.
+- Der Konto-Dialog besitzt die Tabs „Spiele“ und „Einstellungen“.
+- Im Tab „Spiele“ erscheinen offene Ligaergebnisse, zu bestätigende oder zu beantwortende Vorschläge und offene Trainingsbestätigungen.
+- Die Ligaergebnisse lassen sich zwischen „Offen“ und „Alle Spiele“ umschalten. „Offen“ enthält keine rein zukünftig geplanten Partien; „Alle Spiele“ enthält auch geplante und bereits bestätigte Partien der ausgewählten Saison.
+- Trainingsspiele werden ebenfalls im Tab „Spiele“ angelegt.
+- Der Tab „Einstellungen“ enthält den Logout. Nur reine Tipper können dort ihren Anzeigenamen ändern; Namen verbundener Spielerprofile bleiben zentral gepflegt.
 - Der öffentliche Spielplan zeigt keinen internen Bestätigungsstatus.
 
 ## Temporäre Test-Saison

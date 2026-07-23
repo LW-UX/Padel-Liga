@@ -168,12 +168,13 @@ Die Saison 2026 bleibt unverändert dateibasiert. Die temporäre Saison `test-20
 - Neue Konten erhalten zunächst die Rolle `tipper`.
 - Vorab hinterlegte und bestätigte E-Mail-Adressen werden automatisch einem Spielerprofil zugeordnet.
 - Spielernamen werden zentral gepflegt und können im Konto nicht geändert werden.
-- Ein beteiligter Spieler schlägt ein Ergebnis vor. Ein Spieler des anderen Teams bestätigt oder macht einen Gegenvorschlag.
+- Ein beteiligter Spieler schlägt ein Ergebnis mit dem tatsächlichen Datum und der tatsächlichen Uhrzeit vor. Ein Spieler des anderen Teams bestätigt oder macht einen Gegenvorschlag.
+- Der tatsächliche Termin darf vom Plan abweichen, aber nicht in der Zukunft liegen. Mit der Bestätigung wird er zum offiziellen Spieltermin.
 - Nur bestätigte Ergebnisse aktualisieren Rangliste und Elo. Die vier Elo-Änderungen werden unveränderbar je Partie gespeichert und unter dem Ergebnis angezeigt.
 - Admins können Resultate ohne Bestätigung direkt eintragen.
 - Liga-Partien können nicht durch Spieler angelegt werden.
 
-Offene Ergebnisaufgaben erscheinen ausschließlich im Konto-Dialog. Unbestätigte Vorschläge sind nicht an der öffentlichen Partie sichtbar. Tipps schließen weiterhin ausschließlich zum hinterlegten Spielbeginn.
+Der Konto-Dialog trennt „Spiele“ und „Einstellungen“. Unter „Spiele“ zeigt der Filter „Offen“ nur bereits fällige Partien und laufende Bestätigungen; „Alle Spiele“ enthält zusätzlich zukünftige und bestätigte Saisonpartien. Unter „Einstellungen“ können reine Tipper ihren Namen ändern und alle Konten sich ausloggen. Unbestätigte Vorschläge sind nicht an der öffentlichen Partie sichtbar. Tipps schließen weiterhin ausschließlich zum hinterlegten Spielbeginn.
 
 ## Trainingsspiele
 

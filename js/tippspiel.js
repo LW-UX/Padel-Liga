@@ -15,6 +15,8 @@
     players: [],
     trainingRoundCount: 1,
     editingTrainingId: null,
+    accountTab: 'games',
+    resultScope: 'open',
     extendedPlayerFeatures: true,
     saving: new Set(),
     ready: false,
@@ -61,12 +63,15 @@
   }
 
   function formatMatchDate(match) {
-    if (!match.datum) return `Spieltag ${match.spieltag}`;
-    const date = new Date(`${match.datum}T12:00:00`);
+    const databaseMatch = state.databaseMatches.get(match.id);
+    const dateValue = databaseMatch?.scheduled_date || match.datum;
+    const timeValue = databaseMatch?.display_time || match.uhrzeit;
+    if (!dateValue) return `Spieltag ${match.spieltag}`;
+    const date = new Date(`${dateValue}T12:00:00`);
     const dateLabel = Number.isNaN(date.getTime())
-      ? match.datum
+      ? dateValue
       : new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
-    return `${dateLabel}${match.uhrzeit ? ` · ${match.uhrzeit} Uhr` : ''}`;
+    return `${dateLabel}${timeValue ? ` · ${String(timeValue).slice(0, 5).replace(':', '.')} Uhr` : ''}`;
   }
 
   function getMatchTimestamp(match) {
@@ -90,6 +95,35 @@
 
   function isPlayerAccount() {
     return ['player', 'admin'].includes(state.profile?.app_role) && Boolean(state.profile?.player_id);
+  }
+
+  function isResultTaskOpen(task) {
+    if (typeof task?.is_open === 'boolean') return task.is_open;
+    if (task?.task_type === 'review' || task?.task_type === 'waiting') return true;
+    if (task?.task_type === 'completed') return false;
+    return getMatchTimestamp({
+      datum: task?.scheduled_date,
+      uhrzeit: task?.display_time
+    }) <= Date.now();
+  }
+
+  function getOpenResultTasks() {
+    return state.resultTasks.filter(task => isResultTaskOpen(task) && task.task_type !== 'completed');
+  }
+
+  function getActionableResultTasks() {
+    return getOpenResultTasks().filter(task => task.task_type !== 'waiting');
+  }
+
+  function renderAccountTabs() {
+    document.querySelectorAll('[data-account-tab]').forEach(button => {
+      const isActive = button.dataset.accountTab === state.accountTab;
+      button.classList.toggle('active', isActive);
+      button.setAttribute('aria-selected', String(isActive));
+    });
+    document.querySelectorAll('[data-account-panel]').forEach(panel => {
+      panel.hidden = panel.dataset.accountPanel !== state.accountTab;
+    });
   }
 
   function publishAuthenticatedPlayer() {
@@ -121,7 +155,7 @@
 
     const isLoggedIn = Boolean(state.session?.user);
     const displayName = getProfileDisplayName();
-    const taskCount = state.resultTasks.length + state.trainingTasks.filter(task => !task.created_by_me).length;
+    const taskCount = getActionableResultTasks().length + state.trainingTasks.filter(task => !task.created_by_me).length;
     button.innerHTML = isLoggedIn
       ? `${escapeHtml(displayName)}${taskCount ? `<span class="auth-task-badge">${taskCount}</span>` : ''}`
       : 'Login';
@@ -139,6 +173,11 @@
       }
       const playerArea = document.getElementById('account-player-area');
       if (playerArea) playerArea.hidden = !isPlayerAccount() || !state.extendedPlayerFeatures;
+      const gamesEmpty = document.getElementById('account-games-empty');
+      if (gamesEmpty) gamesEmpty.hidden = isPlayerAccount() && state.extendedPlayerFeatures;
+      const resultScope = document.getElementById('result-task-scope');
+      if (resultScope) resultScope.value = state.resultScope;
+      renderAccountTabs();
     }
   }
 
@@ -255,15 +294,54 @@
   }
 
   function formatTaskDate(dateValue, timeValue) {
+    if (!dateValue) return 'Termin noch offen';
     const date = new Date(`${dateValue}T12:00:00`);
     const label = Number.isNaN(date.getTime())
       ? dateValue
       : new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
-    return `${label} · ${String(timeValue || '').slice(0, 5).replace(':', '.')} Uhr`;
+    const time = String(timeValue || '').slice(0, 5).replace(':', '.');
+    return `${label}${time ? ` · ${time} Uhr` : ''}`;
+  }
+
+  function normalizeTimeInput(value) {
+    return String(value || '').slice(0, 5).replace('.', ':');
+  }
+
+  function getTodayInputValue() {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60_000;
+    return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+  }
+
+  function getResultFormDate(task) {
+    if (task.proposed_played_on) return task.proposed_played_on;
+    const today = getTodayInputValue();
+    return task.scheduled_date && task.scheduled_date <= today ? task.scheduled_date : today;
+  }
+
+  function getResultFormTime(task) {
+    const proposed = normalizeTimeInput(task.proposed_played_time);
+    if (proposed) return proposed;
+    const scheduled = task.scheduled_date && task.scheduled_date <= getTodayInputValue()
+      ? normalizeTimeInput(task.display_time)
+      : '';
+    if (scheduled) return scheduled;
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   }
 
   function renderResultForm(task, counter = false) {
     return `<form class="result-entry-form" data-result-submit="${escapeHtml(task.match_id)}">
+      <div class="result-entry-timing">
+        <label>
+          <span>Tatsächliches Datum</span>
+          <input type="date" name="playedOn" required max="${getTodayInputValue()}" value="${escapeHtml(getResultFormDate(task))}">
+        </label>
+        <label>
+          <span>Uhrzeit</span>
+          <input type="time" name="playedTime" required value="${escapeHtml(getResultFormTime(task))}">
+        </label>
+      </div>
       <label>
         <span>${counter ? 'Dein Gegenvorschlag' : 'Genaue Satzergebnisse'}</span>
         <input name="resultDetails" required maxlength="100" placeholder="z. B. 6:3, 4:6 – 10:7">
@@ -281,32 +359,67 @@
     </form>`;
   }
 
+  function renderResultTaskStatus(task) {
+    if (task.task_type === 'completed') return '<span class="account-task-status is-complete">Bestätigt</span>';
+    if (task.task_type === 'waiting') return '<span class="account-task-status is-open">In Bestätigung</span>';
+    if (task.task_type === 'review') return '<span class="account-task-status is-open">Zu bestätigen</span>';
+    return isResultTaskOpen(task)
+      ? '<span class="account-task-status is-open">Offen</span>'
+      : '<span class="account-task-status">Geplant</span>';
+  }
+
+  function renderProposedResult(task, ownProposal = false) {
+    return `<div class="result-proposal">
+      <span>${ownProposal ? 'Dein Vorschlag' : 'Vorschlag des anderen Teams'}<br>${escapeHtml(formatTaskDate(task.proposed_played_on, task.proposed_played_time))}</span>
+      <strong>${escapeHtml(task.proposed_sets)} · ${escapeHtml(task.proposed_result)}</strong>
+    </div>`;
+  }
+
+  function renderResultTaskBody(task) {
+    if (task.task_type === 'completed') {
+      return `<div class="result-proposal">
+        <span>Bestätigtes Ergebnis</span>
+        <strong>${escapeHtml(task.official_sets)} · ${escapeHtml(task.official_result)}</strong>
+      </div>`;
+    }
+    if (task.task_type === 'waiting') {
+      return `${renderProposedResult(task, true)}
+        <div class="account-task-actions"><span class="account-waiting">Wartet auf die Bestätigung des anderen Teams.</span></div>`;
+    }
+    if (task.task_type === 'review') {
+      return `${renderProposedResult(task)}
+        <div class="account-task-actions">
+          <button class="primary-button" type="button" data-result-confirm="${task.proposal_id}">Ergebnis bestätigen</button>
+          <details class="counterproposal-details">
+            <summary>Gegenvorschlag machen</summary>
+            ${renderResultForm(task, true)}
+          </details>
+        </div>`;
+    }
+    return renderResultForm(task);
+  }
+
   function renderResultTasks() {
     const target = document.getElementById('result-task-list');
     const count = document.getElementById('result-task-count');
     if (!target) return;
-    if (count) count.textContent = state.resultTasks.length ? String(state.resultTasks.length) : '';
-    target.innerHTML = state.resultTasks.length
-      ? state.resultTasks.map(task => `
+    const openTasks = getOpenResultTasks();
+    const visibleTasks = state.resultScope === 'all' ? state.resultTasks : openTasks;
+    if (count) count.textContent = openTasks.length ? String(openTasks.length) : '';
+    target.innerHTML = visibleTasks.length
+      ? visibleTasks.map(task => `
         <article class="account-task-card">
-          <div class="account-task-meta">Partie ${escapeHtml(task.match_id.match(/\d+$/)?.[0] || task.match_id)} · ${escapeHtml(formatTaskDate(task.scheduled_date, task.display_time))}</div>
+          <div class="account-task-meta">
+            <span>Partie ${escapeHtml(task.match_id.match(/\d+$/)?.[0] || task.match_id)} · ${escapeHtml(formatTaskDate(task.scheduled_date, task.display_time))}</span>
+            ${renderResultTaskStatus(task)}
+          </div>
           <div class="account-task-matchup"><strong>${escapeHtml(task.team_one_label)}</strong><span>gegen</span><strong>${escapeHtml(task.team_two_label)}</strong></div>
-          ${task.task_type === 'review' ? `
-            <div class="result-proposal">
-              <span>Vorschlag des anderen Teams</span>
-              <strong>${escapeHtml(task.proposed_sets)} · ${escapeHtml(task.proposed_result)}</strong>
-            </div>
-            <div class="account-task-actions">
-              <button class="primary-button" type="button" data-result-confirm="${task.proposal_id}">Ergebnis bestätigen</button>
-              <details class="counterproposal-details">
-                <summary>Gegenvorschlag machen</summary>
-                ${renderResultForm(task, true)}
-              </details>
-            </div>
-          ` : renderResultForm(task)}
+          ${renderResultTaskBody(task)}
         </article>
       `).join('')
-      : '<div class="account-empty">Für diese Saison gibt es aktuell keine offenen Aufgaben.</div>';
+      : `<div class="account-empty">${state.resultScope === 'open'
+        ? 'Für diese Saison gibt es aktuell keine offenen Spiele.'
+        : 'Für diese Saison sind keine Spiele vorhanden.'}</div>`;
   }
 
   function getPlayerName(playerId) {
@@ -476,7 +589,7 @@
     const [{ data: matches, error: matchesError }, { data: leaderboard, error: leaderboardError }] = await Promise.all([
       state.client
         .from('matches')
-        .select('id, betting_open, actual_sets, result_details, lock_at')
+        .select('id, betting_open, actual_sets, result_details, lock_at, scheduled_date, display_time')
         .eq('season_id', seasonId),
       state.client.rpc('get_prediction_leaderboard', { p_season_id: seasonId })
     ]);
@@ -604,39 +717,49 @@
 
   async function handleResultSubmit(event) {
     event.preventDefault();
-    const form = event.currentTarget;
+    const form = event.target;
     const data = new FormData(form);
     const resultDetails = String(data.get('resultDetails') || '').trim();
     const actualSets = String(data.get('actualSets') || '');
+    const playedOn = String(data.get('playedOn') || '');
+    const playedTime = String(data.get('playedTime') || '');
     const button = form.querySelector('[type="submit"]');
     button.disabled = true;
     setAuthMessage('Ergebnis wird gespeichert …');
-    const { error } = await state.client.rpc('submit_match_result', {
-      p_match_id: form.dataset.resultSubmit,
-      p_result_details: resultDetails,
-      p_actual_sets: actualSets,
-      p_winner: resultWinner(actualSets)
-    });
-    button.disabled = false;
-    if (error) {
-      setAuthMessage(error.message, 'error');
-      return;
+    try {
+      const { error } = await state.client.rpc('submit_match_result', {
+        p_match_id: form.dataset.resultSubmit,
+        p_result_details: resultDetails,
+        p_actual_sets: actualSets,
+        p_winner: resultWinner(actualSets),
+        p_played_on: playedOn,
+        p_played_time: playedTime
+      });
+      if (error) throw error;
+      setAuthMessage(state.profile?.app_role === 'admin' ? 'Ergebnis wurde direkt eingetragen.' : 'Ergebnis wurde an das andere Team gesendet.', 'success');
+      await refresh();
+      if (state.season?.databaseResults && !document.body.classList.contains('tip-page')) window.location.reload();
+    } catch (error) {
+      setAuthMessage(error.message || 'Das Ergebnis konnte nicht gespeichert werden.', 'error');
+    } finally {
+      button.disabled = false;
     }
-    setAuthMessage(state.profile?.app_role === 'admin' ? 'Ergebnis wurde direkt eingetragen.' : 'Ergebnis wurde an das andere Team gesendet.', 'success');
-    await refresh();
-    if (state.season?.databaseResults && !document.body.classList.contains('tip-page')) window.location.reload();
   }
 
-  async function confirmResult(proposalId) {
+  async function confirmResult(proposalId, button) {
+    if (button) button.disabled = true;
     setAuthMessage('Ergebnis wird bestätigt …');
-    const { error } = await state.client.rpc('confirm_match_result', { p_proposal_id: Number(proposalId) });
-    if (error) {
-      setAuthMessage(error.message, 'error');
-      return;
+    try {
+      const { error } = await state.client.rpc('confirm_match_result', { p_proposal_id: Number(proposalId) });
+      if (error) throw error;
+      setAuthMessage('Ergebnis bestätigt. Tabelle und Elo wurden aktualisiert.', 'success');
+      await refresh();
+      if (state.season?.databaseResults && !document.body.classList.contains('tip-page')) window.location.reload();
+    } catch (error) {
+      setAuthMessage(error.message || 'Das Ergebnis konnte nicht bestätigt werden.', 'error');
+    } finally {
+      if (button) button.disabled = false;
     }
-    setAuthMessage('Ergebnis bestätigt. Tabelle und Elo wurden aktualisiert.', 'success');
-    await refresh();
-    if (state.season?.databaseResults && !document.body.classList.contains('tip-page')) window.location.reload();
   }
 
   function getTrainingPairing(playerIds, pairing) {
@@ -777,7 +900,14 @@
       }
       const confirmResultButton = event.target.closest('[data-result-confirm]');
       if (confirmResultButton) {
-        await confirmResult(confirmResultButton.dataset.resultConfirm);
+        await confirmResult(confirmResultButton.dataset.resultConfirm, confirmResultButton);
+        return;
+      }
+      const accountTab = event.target.closest('[data-account-tab]');
+      if (accountTab) {
+        state.accountTab = accountTab.dataset.accountTab === 'settings' ? 'settings' : 'games';
+        renderAccountTabs();
+        setAuthMessage('');
         return;
       }
       const trainingToggle = event.target.closest('[data-training-toggle]');
@@ -829,6 +959,10 @@
     document.getElementById('auth-form')?.addEventListener('submit', handleAuthSubmit);
     document.getElementById('profile-form')?.addEventListener('submit', handleProfileSubmit);
     document.getElementById('training-form')?.addEventListener('submit', handleTrainingSubmit);
+    document.getElementById('result-task-scope')?.addEventListener('change', event => {
+      state.resultScope = event.currentTarget.value === 'all' ? 'all' : 'open';
+      renderResultTasks();
+    });
     document.addEventListener('submit', event => {
       if (event.target.matches('[data-result-submit]')) handleResultSubmit(event);
     });

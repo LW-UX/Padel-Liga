@@ -22,7 +22,7 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-07-17-profile-auto-selection">
+  <link rel="stylesheet" href="style.css?v=2026-07-23-account-tabs">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -419,53 +419,71 @@
       <div class="widget-label">Dein Konto</div>
       <h2 id="account-display-name"></h2>
       <p class="auth-account-email" id="account-email"></p>
-      <form id="profile-form" class="auth-form account-profile-form">
-        <label>
-          <span>Anzeigename</span>
-          <input type="text" name="displayName" minlength="2" maxlength="40" required>
-        </label>
-        <button class="primary-button" type="submit">Namen speichern</button>
-      </form>
-      <div class="account-player-area" id="account-player-area" hidden>
-        <section class="account-section">
-          <div class="account-section-heading">
-            <div>
-              <div class="widget-label">Liga</div>
-              <h3>Offene Spielergebnisse</h3>
-            </div>
-            <span class="account-task-count" id="result-task-count"></span>
-          </div>
-          <div class="account-task-list" id="result-task-list"></div>
-        </section>
-        <section class="account-section">
-          <div class="account-section-heading">
-            <div>
-              <div class="widget-label">Saisonunabhängig</div>
-              <h3>Training</h3>
-            </div>
-            <button class="secondary-button compact-button" type="button" data-training-toggle>Training hinzufügen</button>
-          </div>
-          <form class="training-form" id="training-form" hidden>
-            <div class="training-form-meta">
-              <label><span>Datum</span><input type="date" name="playedOn" required></label>
-              <label><span>Uhrzeit</span><input type="time" name="displayTime" required></label>
-            </div>
-            <div class="training-player-fields" id="training-player-fields"></div>
-            <div class="training-rounds" id="training-rounds"></div>
-            <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
-            <button class="primary-button" type="submit">Training zur Bestätigung senden</button>
-          </form>
-          <div class="account-task-list" id="training-task-list"></div>
-          <div class="training-history" id="training-history"></div>
-        </section>
+      <div class="account-tabs" role="tablist" aria-label="Kontobereiche">
+        <button class="active" type="button" role="tab" aria-selected="true" aria-controls="account-games-panel" data-account-tab="games">Spiele</button>
+        <button type="button" role="tab" aria-selected="false" aria-controls="account-settings-panel" data-account-tab="settings">Einstellungen</button>
       </div>
-      <button class="secondary-button auth-logout-button" type="button" data-auth-logout>Ausloggen</button>
+      <div id="account-games-panel" role="tabpanel" data-account-panel="games">
+        <div class="account-games-empty" id="account-games-empty" hidden>Als Tipper hast du keine eigenen Liga- oder Trainingsspiele.</div>
+        <div class="account-player-area" id="account-player-area" hidden>
+          <section class="account-section account-section-first">
+            <div class="account-section-heading">
+              <div>
+                <div class="widget-label">Liga</div>
+                <h3>Spielergebnisse</h3>
+              </div>
+              <div class="account-result-controls">
+                <label>
+                  <span class="sr-only">Spiele anzeigen</span>
+                  <select id="result-task-scope" aria-label="Spiele anzeigen">
+                    <option value="open">Offen</option>
+                    <option value="all">Alle Spiele</option>
+                  </select>
+                </label>
+                <span class="account-task-count" id="result-task-count"></span>
+              </div>
+            </div>
+            <div class="account-task-list" id="result-task-list"></div>
+          </section>
+          <section class="account-section">
+            <div class="account-section-heading">
+              <div>
+                <div class="widget-label">Saisonunabhängig</div>
+                <h3>Training</h3>
+              </div>
+              <button class="secondary-button compact-button" type="button" data-training-toggle>Training hinzufügen</button>
+            </div>
+            <form class="training-form" id="training-form" hidden>
+              <div class="training-form-meta">
+                <label><span>Datum</span><input type="date" name="playedOn" required></label>
+                <label><span>Uhrzeit</span><input type="time" name="displayTime" required></label>
+              </div>
+              <div class="training-player-fields" id="training-player-fields"></div>
+              <div class="training-rounds" id="training-rounds"></div>
+              <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
+              <button class="primary-button" type="submit">Training zur Bestätigung senden</button>
+            </form>
+            <div class="account-task-list" id="training-task-list"></div>
+            <div class="training-history" id="training-history"></div>
+          </section>
+        </div>
+      </div>
+      <div id="account-settings-panel" role="tabpanel" data-account-panel="settings" hidden>
+        <form id="profile-form" class="auth-form account-profile-form">
+          <label>
+            <span>Anzeigename</span>
+            <input type="text" name="displayName" minlength="2" maxlength="40" required>
+          </label>
+          <button class="primary-button" type="submit">Namen speichern</button>
+        </form>
+        <button class="secondary-button auth-logout-button" type="button" data-auth-logout>Ausloggen</button>
+      </div>
     </div>
     <div class="auth-message" id="auth-message" role="status"></div>
   </div>
 </dialog>
 
-<script src="js/tippspiel.js?v=2026-07-17-profile-auto-selection"></script>
-<script src="js/app.js?v=2026-07-17-profile-auto-selection"></script>
+<script src="js/tippspiel.js?v=2026-07-23-account-tabs"></script>
+<script src="js/app.js?v=2026-07-23-account-tabs"></script>
 </body>
 </html>

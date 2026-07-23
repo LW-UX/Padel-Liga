@@ -87,6 +87,15 @@
     }
     body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; touch-action: manipulation; }
     * { touch-action: manipulation; }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
 
     /* ── HEADER ── */
     .site-header {
@@ -548,12 +557,55 @@
     .auth-message.success { color: var(--positiv); }
     .auth-account-email { color: var(--dim); font-size: 0.88rem; margin: -0.7rem 0 1.2rem; }
     .auth-logout-button { width: 100%; margin-top: 1rem; }
-    .account-player-area { display: grid; gap: 18px; margin-top: 1.2rem; }
+    .account-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      padding: 3px;
+      margin-bottom: 1rem;
+    }
+    .account-tabs button {
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--dim);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.6rem;
+    }
+    .account-tabs button.active { background: var(--surface2); color: var(--accent); }
+    [data-account-panel][hidden] { display: none; }
+    .account-games-empty {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--dim);
+      font-size: 0.82rem;
+      padding: 1rem;
+    }
+    .account-games-empty[hidden] { display: none; }
+    .account-profile-form { margin-top: 0.2rem; }
+    .account-player-area { display: grid; gap: 18px; }
     .account-player-area[hidden] { display: none; }
     .account-section { display: grid; gap: 12px; border-top: 1px solid var(--border); padding-top: 1.1rem; }
+    .account-section-first { border-top: 0; padding-top: 0; }
     .account-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .account-section h3 { font-size: 1rem; }
     .account-task-count { color: var(--accent); font-family: 'DM Mono', monospace; }
+    .account-result-controls { display: flex; align-items: center; gap: 8px; }
+    .account-result-controls select {
+      min-height: 34px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font: 0.76rem 'DM Sans', sans-serif;
+      padding: 0.35rem 0.55rem;
+    }
     .compact-button { min-height: 32px; padding: 0.35rem 0.75rem; font-size: 0.75rem; }
     .account-task-list { display: grid; gap: 10px; }
     .account-task-card,
@@ -565,7 +617,17 @@
       background: var(--bg);
       padding: 0.9rem;
     }
-    .account-task-meta { color: var(--dim); font: 0.7rem 'DM Mono', monospace; }
+    .account-task-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--dim); font: 0.7rem 'DM Mono', monospace; }
+    .account-task-status {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--dim);
+      font: 0.64rem 'DM Sans', sans-serif;
+      padding: 0.2rem 0.45rem;
+      white-space: nowrap;
+    }
+    .account-task-status.is-open { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); color: var(--accent); }
+    .account-task-status.is-complete { border-color: color-mix(in srgb, var(--positiv) 45%, var(--border)); color: var(--positiv); }
     .account-task-matchup { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; font-size: 0.86rem; }
     .account-task-matchup strong:last-child { text-align: right; }
     .account-task-matchup span { color: var(--dim); font-size: 0.72rem; }
@@ -575,7 +637,8 @@
     .account-task-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
     .counterproposal-details { flex: 1 1 100%; }
     .counterproposal-details summary { color: var(--accent); cursor: pointer; font-size: 0.78rem; }
-    .result-entry-form { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(170px, 0.8fr) auto; align-items: end; gap: 8px; }
+    .result-entry-form { display: grid; grid-template-columns: minmax(190px, 0.9fr) minmax(0, 1.5fr) minmax(150px, 0.75fr) auto; align-items: end; gap: 8px; }
+    .result-entry-timing { display: grid; grid-template-columns: 1fr 0.8fr; gap: 8px; }
     .counterproposal-details .result-entry-form { margin-top: 10px; }
     .result-entry-form label,
     .training-form label { display: grid; gap: 5px; color: var(--dim); font-size: 0.72rem; font-weight: 600; }
@@ -594,6 +657,7 @@
     }
     .account-empty,
     .account-waiting { color: var(--dim); font-size: 0.78rem; }
+    .account-waiting { display: inline-flex; align-items: center; min-height: 36px; }
     .training-form { display: grid; gap: 10px; border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem; }
     .training-form[hidden] { display: none; }
     .training-form-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -1907,6 +1971,9 @@
       .auth-dialog { width: min(96vw, 760px); max-height: 94vh; }
       .auth-dialog-card { padding: 1.1rem; }
       .result-entry-form { grid-template-columns: 1fr; }
+      .result-entry-timing { grid-template-columns: 1fr 1fr; }
+      .account-section-heading { align-items: flex-start; }
+      .account-result-controls { flex: 0 0 auto; }
       .account-task-matchup { grid-template-columns: 1fr; text-align: left; }
       .account-task-matchup strong:last-child { text-align: left; }
       .account-task-matchup span { display: none; }

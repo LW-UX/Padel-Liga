@@ -72,7 +72,7 @@ async function mergeDatabaseResults(rawSeason) {
   const [{ data: databaseMatches, error: matchError }, { data: eloChanges, error: eloError }] = await Promise.all([
     client
       .from('matches')
-      .select('id, result_details, actual_sets, winner')
+      .select('id, scheduled_date, display_time, result_details, actual_sets, winner')
       .in('id', matchIds),
     client
       .from('match_elo_changes')
@@ -101,6 +101,8 @@ async function mergeDatabaseResults(rawSeason) {
       if (!stored) throw new Error(`Die Datenbank-Partie ${match.id} fehlt.`);
       return {
         ...match,
+        date: stored.scheduled_date || match.date,
+        time: stored.display_time ? String(stored.display_time).slice(0, 5).replace(':', '.') : match.time,
         result: stored.result_details,
         sets: stored.actual_sets,
         winner: stored.winner,

@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
+const tippspielSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'tippspiel.js'), 'utf8');
 
 test('legacy profiles without app_role still publish their player id', async () => {
   const publishedPlayerIds = [];
@@ -85,10 +86,25 @@ test('legacy profiles without app_role still publish their player id', async () 
     PadelLigaSetAuthenticatedPlayer(playerId) { publishedPlayerIds.push(playerId); }
   };
   const context = vm.createContext({ console, CustomEvent: class {}, document, window });
-  const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'tippspiel.js'), 'utf8');
-  vm.runInContext(source, context);
+  vm.runInContext(tippspielSource, context);
 
   await window.PadelTippspiel.init({ id: 'test-2026', matches: [] });
 
   assert.equal(publishedPlayerIds.at(-1), 'ludi_gmx');
+});
+
+test('delegated result forms submit the form itself with the actual date and time', () => {
+  const resultHandler = tippspielSource.match(
+    /async function handleResultSubmit\(event\) \{[\s\S]*?(?=\n  async function confirmResult)/
+  )?.[0] || '';
+  assert.match(resultHandler, /const form = event\.target;/);
+  assert.match(resultHandler, /p_played_on: playedOn/);
+  assert.match(resultHandler, /p_played_time: playedTime/);
+  assert.doesNotMatch(resultHandler, /const form = event\.currentTarget;/);
+});
+
+test('open result tasks are separated from all season matches', () => {
+  assert.match(tippspielSource, /state\.resultScope === 'all' \? state\.resultTasks : openTasks/);
+  assert.match(tippspielSource, /typeof task\?\.is_open === 'boolean'/);
+  assert.match(tippspielSource, /task\.task_type === 'completed'/);
 });
