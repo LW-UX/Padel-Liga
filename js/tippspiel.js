@@ -742,7 +742,6 @@
       if (error) throw error;
       setAuthMessage(state.profile?.app_role === 'admin' ? 'Ergebnis wurde direkt eingetragen.' : 'Ergebnis wurde an das andere Team gesendet.', 'success');
       await refresh();
-      if (state.season?.databaseResults && !document.body.classList.contains('tip-page')) window.location.reload();
     } catch (error) {
       setAuthMessage(error.message || 'Das Ergebnis konnte nicht gespeichert werden.', 'error');
     } finally {
@@ -758,7 +757,6 @@
       if (error) throw error;
       setAuthMessage('Ergebnis bestätigt. Tabelle und Elo wurden aktualisiert.', 'success');
       await refresh();
-      if (state.season?.databaseResults && !document.body.classList.contains('tip-page')) window.location.reload();
     } catch (error) {
       setAuthMessage(error.message || 'Das Ergebnis konnte nicht bestätigt werden.', 'error');
     } finally {

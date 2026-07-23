@@ -15,6 +15,8 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 - Die projektbezogene Supabase-MCP-Verbindung ist auf dem Entwicklungsrechner in Codex eingetragen und per OAuth autorisiert.
 - Die Migration `20260717100000_player_results_training_test_season.sql` wurde am 17. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet.
+- Die Migration `20260723160000_profile_result_tabs_actual_time.sql` wurde am 23. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Die neue Ergebnisfunktion mit tatsächlichem Datum und tatsächlicher Uhrzeit ist im Supabase-Schema-Cache verfügbar.
+- Die Migration `20260723164500_fix_elo_player_id_ambiguity.sql` wurde am 23. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Sie behebt die zuvor mehrdeutige Spieler-ID in der Elo-Neuberechnung.
 - Die Konten für `Ludi Gmail` und `Ludi GMX` sind jeweils mit ihrer Spieler-ID und der Rolle `player` verbunden.
 - Das Konto für `Ludwig W.` ist mit seiner Spieler-ID und der Rolle `admin` verbunden.
 - Alle drei zugeordneten E-Mail-Adressen sind bestätigt. Die Test-Saison enthält vier Datenbankspiele, und Row Level Security ist für alle neu angelegten öffentlichen Tabellen aktiviert.
@@ -100,6 +102,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 - Nach dem Login zeigt der Konto-Button im Seitenkopf ein User-Icon statt des Anzeigenamens. Der Name bleibt im Konto-Dialog sichtbar; offene Aufgaben werden weiterhin als Badge am Icon angezeigt.
 - Der Konto-Dialog besitzt die Tabs „Spiele“ und „Einstellungen“.
+- Nach dem Senden oder Bestätigen eines Ergebnisses bleibt der Konto-Dialog geöffnet und aktualisiert seine Aufgaben direkt.
 - Im Tab „Spiele“ erscheinen offene Ligaergebnisse, zu bestätigende oder zu beantwortende Vorschläge und offene Trainingsbestätigungen.
 - Die Ligaergebnisse lassen sich zwischen „Offen“ und „Alle Spiele“ umschalten. „Offen“ enthält keine rein zukünftig geplanten Partien; „Alle Spiele“ enthält auch geplante und bereits bestätigte Partien der ausgewählten Saison.
 - Trainingsspiele werden ebenfalls im Tab „Spiele“ angelegt.

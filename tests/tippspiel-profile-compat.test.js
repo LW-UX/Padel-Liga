@@ -108,3 +108,12 @@ test('open result tasks are separated from all season matches', () => {
   assert.match(tippspielSource, /typeof task\?\.is_open === 'boolean'/);
   assert.match(tippspielSource, /task\.task_type === 'completed'/);
 });
+
+test('result submission and confirmation refresh in place without closing the account dialog', () => {
+  const resultHandlers = tippspielSource.match(
+    /async function handleResultSubmit\(event\) \{[\s\S]*?(?=\n  function getTrainingPairing)/
+  )?.[0] || '';
+  assert.match(resultHandlers, /await refresh\(\);/);
+  assert.doesNotMatch(resultHandlers, /window\.location\.reload/);
+  assert.doesNotMatch(resultHandlers, /closeAuthDialog/);
+});

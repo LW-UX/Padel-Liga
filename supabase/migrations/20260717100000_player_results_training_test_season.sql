@@ -193,7 +193,7 @@ declare
   regular_difference numeric;
   tiebreak_difference numeric;
   point_factor numeric;
-  player_id text;
+  current_player_id text;
   player_old integer;
   player_new integer;
   opponent_one integer;
@@ -252,8 +252,8 @@ begin
     end;
     point_factor := power(log(10::numeric, regular_difference + tiebreak_difference + 1), 3) + 2;
 
-    foreach player_id in array team_one_ids loop
-      player_old := (ratings ->> player_id)::integer;
+    foreach current_player_id in array team_one_ids loop
+      player_old := (ratings ->> current_player_id)::integer;
       opponent_one := (ratings ->> team_two_ids[1])::integer;
       opponent_two := (ratings ->> team_two_ids[2])::integer;
       expected := (
@@ -263,11 +263,11 @@ begin
       won_score := case when played_match.winner = 1 then 1 else 0 end;
       player_new := round(player_old + point_factor * 50 * (won_score - expected));
       insert into public.match_elo_changes (match_id, player_id, old_elo, new_elo)
-      values (played_match.id, player_id, player_old, player_new);
+      values (played_match.id, current_player_id, player_old, player_new);
     end loop;
 
-    foreach player_id in array team_two_ids loop
-      player_old := (ratings ->> player_id)::integer;
+    foreach current_player_id in array team_two_ids loop
+      player_old := (ratings ->> current_player_id)::integer;
       opponent_one := (ratings ->> team_one_ids[1])::integer;
       opponent_two := (ratings ->> team_one_ids[2])::integer;
       expected := (
@@ -277,16 +277,16 @@ begin
       won_score := case when played_match.winner = 2 then 1 else 0 end;
       player_new := round(player_old + point_factor * 50 * (won_score - expected));
       insert into public.match_elo_changes (match_id, player_id, old_elo, new_elo)
-      values (played_match.id, player_id, player_old, player_new);
+      values (played_match.id, current_player_id, player_old, player_new);
     end loop;
 
-    foreach player_id in array team_one_ids || team_two_ids loop
+    foreach current_player_id in array team_one_ids || team_two_ids loop
       select change.new_elo
       into player_new
       from public.match_elo_changes as change
       where change.match_id = played_match.id
-        and change.player_id = player_id;
-      ratings := jsonb_set(ratings, array[player_id], to_jsonb(player_new), true);
+        and change.player_id = current_player_id;
+      ratings := jsonb_set(ratings, array[current_player_id], to_jsonb(player_new), true);
     end loop;
   end loop;
 end;
