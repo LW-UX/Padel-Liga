@@ -157,9 +157,13 @@
     const displayName = getProfileDisplayName();
     const taskCount = getActionableResultTasks().length + state.trainingTasks.filter(task => !task.created_by_me).length;
     button.innerHTML = isLoggedIn
-      ? `${escapeHtml(displayName)}${taskCount ? `<span class="auth-task-badge">${taskCount}</span>` : ''}`
+      ? `<svg class="auth-user-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/>
+        </svg>${taskCount ? `<span class="auth-task-badge">${taskCount}</span>` : ''}`
       : 'Login';
     button.classList.toggle('is-authenticated', isLoggedIn);
+    button.setAttribute('aria-label', isLoggedIn ? `Konto von ${displayName} öffnen` : 'Einloggen');
+    button.title = isLoggedIn ? displayName : '';
     guestView.hidden = isLoggedIn;
     accountView.hidden = !isLoggedIn;
 

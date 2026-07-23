@@ -181,6 +181,7 @@
       gap: 8px;
     }
     .auth-button {
+      position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -199,9 +200,18 @@
     }
     .auth-button:hover { filter: brightness(1.08); }
     .auth-button.is-authenticated {
-      max-width: 150px;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      width: 38px;
+      min-width: 38px;
+      padding: 0;
+    }
+    .auth-user-icon {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.8;
     }
     .hero-sub { color: var(--dim); font-size: 0.9rem; font-weight: 300; margin-top: 1rem; }
     .site-nav {
@@ -237,14 +247,18 @@
     }
     .site-nav.tip-site-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .auth-task-badge {
-      display: inline-grid;
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      display: grid;
       place-items: center;
       min-width: 19px;
       height: 19px;
-      margin-left: 6px;
+      padding: 0 4px;
       border-radius: 999px;
       background: #07080c;
       color: var(--accent);
+      box-shadow: 0 0 0 2px var(--bg);
       font-family: 'DM Mono', monospace;
       font-size: 0.66rem;
     }
@@ -1940,6 +1954,12 @@
         min-height: 34px;
         font-size: 0.7rem;
         padding: 0.4rem 0.6rem;
+      }
+      .auth-button.is-authenticated {
+        width: 34px;
+        min-width: 34px;
+        max-width: 34px !important;
+        padding: 0;
       }
       .viewer-toggle {
         min-width: 74px;

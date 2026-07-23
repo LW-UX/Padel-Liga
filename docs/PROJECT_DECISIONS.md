@@ -98,6 +98,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 ## Konto-Dialog und Aufgaben
 
+- Nach dem Login zeigt der Konto-Button im Seitenkopf ein User-Icon statt des Anzeigenamens. Der Name bleibt im Konto-Dialog sichtbar; offene Aufgaben werden weiterhin als Badge am Icon angezeigt.
 - Der Konto-Dialog besitzt die Tabs „Spiele“ und „Einstellungen“.
 - Im Tab „Spiele“ erscheinen offene Ligaergebnisse, zu bestätigende oder zu beantwortende Vorschläge und offene Trainingsbestätigungen.
 - Die Ligaergebnisse lassen sich zwischen „Offen“ und „Alle Spiele“ umschalten. „Offen“ enthält keine rein zukünftig geplanten Partien; „Alle Spiele“ enthält auch geplante und bereits bestätigte Partien der ausgewählten Saison.
