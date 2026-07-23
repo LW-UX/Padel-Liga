@@ -11,12 +11,9 @@
     leaderboard: [],
     resultTasks: [],
     trainingTasks: [],
-    trainingSessions: [],
     players: [],
     trainingRoundCount: 1,
     editingTrainingId: null,
-    accountTab: 'games',
-    resultScope: 'open',
     extendedPlayerFeatures: true,
     saving: new Set(),
     ready: false,
@@ -87,10 +84,19 @@
   }
 
   function getProfileDisplayName() {
-    return state.profile?.players?.display_name
-      || state.profile?.display_name
-      || state.session?.user?.user_metadata?.display_name
-      || 'Konto';
+    return deriveDisplayNameFromEmail(state.session?.user?.email);
+  }
+
+  function deriveDisplayNameFromEmail(email) {
+    const localPart = String(email || '').trim().split('@')[0] || '';
+    const parts = localPart.split('.').map(part => part.trim()).filter(Boolean);
+    const capitalize = value => value
+      ? `${value.charAt(0).toLocaleUpperCase('de-DE')}${value.slice(1).toLocaleLowerCase('de-DE')}`
+      : '';
+    if (parts.length >= 2) {
+      return `${capitalize(parts[0])} ${parts.at(-1).charAt(0).toLocaleUpperCase('de-DE')}`;
+    }
+    return capitalize(localPart) || 'Konto';
   }
 
   function isPlayerAccount() {
@@ -113,17 +119,6 @@
 
   function getActionableResultTasks() {
     return getOpenResultTasks().filter(task => task.task_type !== 'waiting');
-  }
-
-  function renderAccountTabs() {
-    document.querySelectorAll('[data-account-tab]').forEach(button => {
-      const isActive = button.dataset.accountTab === state.accountTab;
-      button.classList.toggle('active', isActive);
-      button.setAttribute('aria-selected', String(isActive));
-    });
-    document.querySelectorAll('[data-account-panel]').forEach(panel => {
-      panel.hidden = panel.dataset.accountPanel !== state.accountTab;
-    });
   }
 
   function publishAuthenticatedPlayer() {
@@ -170,18 +165,10 @@
     if (isLoggedIn) {
       document.getElementById('account-display-name').textContent = displayName;
       document.getElementById('account-email').textContent = state.session.user.email || '';
-      const profileForm = document.getElementById('profile-form');
-      if (profileForm) {
-        profileForm.hidden = isPlayerAccount();
-        profileForm.querySelector('[name="displayName"]').value = displayName;
-      }
       const playerArea = document.getElementById('account-player-area');
       if (playerArea) playerArea.hidden = !isPlayerAccount() || !state.extendedPlayerFeatures;
       const gamesEmpty = document.getElementById('account-games-empty');
       if (gamesEmpty) gamesEmpty.hidden = isPlayerAccount() && state.extendedPlayerFeatures;
-      const resultScope = document.getElementById('result-task-scope');
-      if (resultScope) resultScope.value = state.resultScope;
-      renderAccountTabs();
     }
   }
 
@@ -319,26 +306,81 @@
 
   function getResultFormDate(task) {
     if (task.proposed_played_on) return task.proposed_played_on;
-    const today = getTodayInputValue();
-    return task.scheduled_date && task.scheduled_date <= today ? task.scheduled_date : today;
+    return task.scheduled_date || getTodayInputValue();
   }
 
   function getResultFormTime(task) {
     const proposed = normalizeTimeInput(task.proposed_played_time);
     if (proposed) return proposed;
-    const scheduled = task.scheduled_date && task.scheduled_date <= getTodayInputValue()
-      ? normalizeTimeInput(task.display_time)
-      : '';
+    const scheduled = normalizeTimeInput(task.display_time);
     if (scheduled) return scheduled;
     const now = new Date();
     return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   }
 
+  function getTaskNumber(task) {
+    return task.match_id.match(/\d+$/)?.[0] || task.match_id;
+  }
+
+  function getTaskLeagueLabel(task) {
+    const league = task.league_label || task.league_id || 'Liga';
+    return task.season_label && task.season_label !== league
+      ? `${league} · ${task.season_label}`
+      : league;
+  }
+
+  function parseResultScores(resultDetails) {
+    return [...String(resultDetails || '').matchAll(/(\d+)\s*:\s*(\d+)/g)]
+      .slice(0, 3)
+      .map(match => [Number(match[1]), Number(match[2])]);
+  }
+
+  function renderScoreCounters(resultDetails = '') {
+    const values = parseResultScores(resultDetails);
+    return `<div class="result-score-entry">
+      ${['Satz 1', 'Satz 2', 'Entscheidung'].map((label, setIndex) => {
+        const score = values[setIndex] || [];
+        return `<div class="result-score-set">
+          <span>${label}</span>
+          <div class="result-score-pair">
+            ${[1, 2].map((team, teamIndex) => `<div class="result-score-counter">
+              <button type="button" data-result-score-step="-1" aria-label="${label}, Team ${team}: eins abziehen">−</button>
+              <input
+                type="number"
+                inputmode="numeric"
+                min="0"
+                max="99"
+                ${setIndex < 2 ? 'required' : ''}
+                name="score_${setIndex}_${teamIndex}"
+                data-result-score
+                data-score-set="${setIndex}"
+                data-score-team="${teamIndex}"
+                value="${score[teamIndex] ?? ''}"
+                placeholder="0"
+                aria-label="${label}, Team ${team}"
+              >
+              <button type="button" data-result-score-step="1" aria-label="${label}, Team ${team}: eins addieren">+</button>
+            </div>`).join('<span class="result-score-colon">:</span>')}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  function renderTaskMatchup(task) {
+    return `<div class="account-task-matchup">
+      <strong>${escapeHtml(task.team_one_label)}</strong>
+      <span>gegen</span>
+      <strong>${escapeHtml(task.team_two_label)}</strong>
+    </div>`;
+  }
+
   function renderResultForm(task, counter = false) {
-    return `<form class="result-entry-form" data-result-submit="${escapeHtml(task.match_id)}">
+    const initialResult = counter ? task.proposed_result : '';
+    return `<form class="result-entry-form ${counter ? 'is-counterproposal' : ''}" data-result-submit="${escapeHtml(task.match_id)}" ${counter ? 'hidden' : ''}>
       <div class="result-entry-timing">
         <label>
-          <span>Tatsächliches Datum</span>
+          <span>Datum</span>
           <input type="date" name="playedOn" required max="${getTodayInputValue()}" value="${escapeHtml(getResultFormDate(task))}">
         </label>
         <label>
@@ -346,20 +388,12 @@
           <input type="time" name="playedTime" required value="${escapeHtml(getResultFormTime(task))}">
         </label>
       </div>
-      <label>
-        <span>${counter ? 'Dein Gegenvorschlag' : 'Genaue Satzergebnisse'}</span>
-        <input name="resultDetails" required maxlength="100" placeholder="z. B. 6:3, 4:6 – 10:7">
-      </label>
-      <label>
-        <span>Satzergebnis</span>
-        <select name="actualSets" required>
-          <option value="2:0">2:0 für Team 1</option>
-          <option value="2:1">2:1 für Team 1</option>
-          <option value="1:2">1:2 für Team 2</option>
-          <option value="0:2">0:2 für Team 2</option>
-        </select>
-      </label>
-      <button class="primary-button" type="submit">${state.profile?.app_role === 'admin' ? 'Direkt eintragen' : counter ? 'Gegenvorschlag senden' : 'Zur Bestätigung senden'}</button>
+      ${counter ? '' : renderTaskMatchup(task)}
+      ${renderScoreCounters(initialResult)}
+      <div class="result-entry-summary" data-result-summary>Satzergebnis wird automatisch berechnet.</div>
+      <div class="result-entry-actions">
+        <button class="primary-button" type="submit">${state.profile?.app_role === 'admin' ? 'Ergebnis eintragen' : counter ? 'Alternative senden' : 'Zur Bestätigung senden'}</button>
+      </div>
     </form>`;
   }
 
@@ -392,38 +426,75 @@
     }
     if (task.task_type === 'review') {
       return `${renderProposedResult(task)}
-        <div class="account-task-actions">
+        <div class="account-task-actions result-review-actions">
           <button class="primary-button" type="button" data-result-confirm="${task.proposal_id}">Ergebnis bestätigen</button>
-          <details class="counterproposal-details">
-            <summary>Gegenvorschlag machen</summary>
-            ${renderResultForm(task, true)}
-          </details>
-        </div>`;
+          <button class="secondary-button" type="button" data-counterproposal-toggle="${escapeHtml(task.match_id)}">Alternative eingeben</button>
+        </div>
+        ${renderResultForm(task, true)}`;
     }
     return renderResultForm(task);
   }
 
-  function renderResultTasks() {
-    const target = document.getElementById('result-task-list');
-    const count = document.getElementById('result-task-count');
+  function renderResultTaskCard(task) {
+    const formOwnsMatchup = !['completed', 'waiting', 'review'].includes(task.task_type);
+    return `<div class="result-task-wrap">
+      <div class="account-task-league">${escapeHtml(getTaskLeagueLabel(task))}</div>
+      <article class="account-task-card result-task-card">
+        <div class="account-task-meta">
+          <span>Partie ${escapeHtml(getTaskNumber(task))}</span>
+          ${renderResultTaskStatus(task)}
+        </div>
+        ${formOwnsMatchup ? '' : `<div class="result-card-timing">${escapeHtml(formatTaskDate(
+          task.task_type === 'completed' ? task.scheduled_date : task.proposed_played_on || task.scheduled_date,
+          task.task_type === 'completed' ? task.display_time : task.proposed_played_time || task.display_time
+        ))}</div>`}
+        ${formOwnsMatchup ? '' : renderTaskMatchup(task)}
+        ${renderResultTaskBody(task)}
+      </article>
+    </div>`;
+  }
+
+  function renderTaskCollection(target, tasks, emptyText) {
     if (!target) return;
+    target.innerHTML = tasks.length
+      ? tasks.map(renderResultTaskCard).join('')
+      : `<div class="account-empty">${emptyText}</div>`;
+  }
+
+  function renderAdminAllMatches() {
+    const details = document.getElementById('admin-all-matches');
+    if (!details?.open) return;
+    renderTaskCollection(
+      document.getElementById('admin-all-matches-list'),
+      state.resultTasks,
+      'Es sind noch keine Ligaspiele vorhanden.'
+    );
+  }
+
+  function renderResultTasks() {
     const openTasks = getOpenResultTasks();
-    const visibleTasks = state.resultScope === 'all' ? state.resultTasks : openTasks;
+    const completedTasks = state.resultTasks.filter(task => task.task_type === 'completed').reverse();
+    const isAdmin = state.profile?.app_role === 'admin';
+    const count = document.getElementById('result-task-count');
     if (count) count.textContent = openTasks.length ? String(openTasks.length) : '';
-    target.innerHTML = visibleTasks.length
-      ? visibleTasks.map(task => `
-        <article class="account-task-card">
-          <div class="account-task-meta">
-            <span>Partie ${escapeHtml(task.match_id.match(/\d+$/)?.[0] || task.match_id)} · ${escapeHtml(formatTaskDate(task.scheduled_date, task.display_time))}</span>
-            ${renderResultTaskStatus(task)}
-          </div>
-          <div class="account-task-matchup"><strong>${escapeHtml(task.team_one_label)}</strong><span>gegen</span><strong>${escapeHtml(task.team_two_label)}</strong></div>
-          ${renderResultTaskBody(task)}
-        </article>
-      `).join('')
-      : `<div class="account-empty">${state.resultScope === 'open'
-        ? 'Für diese Saison gibt es aktuell keine offenen Spiele.'
-        : 'Für diese Saison sind keine Spiele vorhanden.'}</div>`;
+    renderTaskCollection(
+      document.getElementById('result-task-list'),
+      openTasks,
+      'Aktuell gibt es keine offenen Ergebnisse.'
+    );
+
+    const playedSection = document.getElementById('admin-played-section');
+    const allMatches = document.getElementById('admin-all-matches');
+    if (playedSection) playedSection.hidden = !isAdmin;
+    if (allMatches) allMatches.hidden = !isAdmin;
+    if (isAdmin) {
+      renderTaskCollection(
+        document.getElementById('admin-played-list'),
+        completedTasks,
+        'Es wurden noch keine Spiele bestätigt.'
+      );
+      renderAdminAllMatches();
+    }
   }
 
   function getPlayerName(playerId) {
@@ -477,10 +548,10 @@
     renderTrainingRounds();
   }
 
-  function renderTrainingTaskCard(task) {
+  function renderTrainingTaskCard(task, index) {
     const rounds = Array.isArray(task.rounds) ? task.rounds : [];
     return `<article class="account-task-card training-task-card">
-      <div class="account-task-meta">Training · ${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>
+      <div class="account-task-meta"><span>Training ${escapeHtml(task.training_number || index + 1)}</span><span>${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</span></div>
       <div class="training-player-line">${task.player_ids.map(id => escapeHtml(getPlayerName(id))).join(' · ')}</div>
       ${rounds.map(round => `<div class="training-round-result"><span>${round.team_one_ids.map(getPlayerName).map(escapeHtml).join(' / ')}</span><strong>${escapeHtml(round.result_details)}</strong><span>${round.team_two_ids.map(getPlayerName).map(escapeHtml).join(' / ')}</span></div>`).join('')}
       <div class="account-task-actions">
@@ -491,22 +562,11 @@
     </article>`;
   }
 
-  function renderTrainingHistoryCard(session) {
-    const playerMap = new Map((session.players || []).map(player => [player.id, player.display_name]));
-    const name = id => playerMap.get(id) || getPlayerName(id);
-    return `<article class="training-history-card">
-      <div class="account-task-meta">${escapeHtml(formatTaskDate(session.played_on, session.display_time))}</div>
-      ${(session.rounds || []).map(round => `<div class="training-round-result"><span>${round.team_one_ids.map(name).map(escapeHtml).join(' / ')}</span><strong>${escapeHtml(round.result_details)}</strong><span>${round.team_two_ids.map(name).map(escapeHtml).join(' / ')}</span></div>`).join('')}
-    </article>`;
-  }
-
   function renderTraining() {
     const taskTarget = document.getElementById('training-task-list');
-    const historyTarget = document.getElementById('training-history');
-    if (taskTarget) taskTarget.innerHTML = state.trainingTasks.map(renderTrainingTaskCard).join('');
-    if (historyTarget) historyTarget.innerHTML = state.trainingSessions.length
-      ? `<div class="training-history-heading">Bestätigte Trainings</div>${state.trainingSessions.map(renderTrainingHistoryCard).join('')}`
-      : '<div class="account-empty">Noch keine bestätigten Trainingsspiele.</div>';
+    if (taskTarget) taskTarget.innerHTML = state.trainingTasks.length
+      ? state.trainingTasks.map(renderTrainingTaskCard).join('')
+      : '<div class="account-empty">Keine offenen Trainings.</div>';
   }
 
   function render() {
@@ -559,22 +619,19 @@
   async function loadPlayerTools() {
     state.resultTasks = [];
     state.trainingTasks = [];
-    state.trainingSessions = [];
     state.players = [];
     if (!isPlayerAccount() || !state.extendedPlayerFeatures) return;
 
-    const [playersResponse, resultResponse, trainingTaskResponse, trainingResponse] = await Promise.all([
+    const [playersResponse, resultResponse, trainingTaskResponse] = await Promise.all([
       state.client.from('players').select('id, display_name, initials, company').order('display_name'),
-      state.client.rpc('get_my_result_tasks', { p_season_id: state.season?.id }),
-      state.client.rpc('get_my_training_tasks'),
-      state.client.rpc('get_training_sessions')
+      state.client.rpc('get_my_result_tasks', { p_season_id: null }),
+      state.client.rpc('get_my_training_tasks')
     ]);
-    const error = playersResponse.error || resultResponse.error || trainingTaskResponse.error || trainingResponse.error;
+    const error = playersResponse.error || resultResponse.error || trainingTaskResponse.error;
     if (error) throw error;
     state.players = playersResponse.data || [];
     state.resultTasks = resultResponse.data || [];
     state.trainingTasks = trainingTaskResponse.data || [];
-    state.trainingSessions = trainingResponse.data || [];
     renderTrainingForm();
   }
 
@@ -628,9 +685,6 @@
     document.querySelectorAll('[data-auth-mode]').forEach(button => {
       button.classList.toggle('active', button.dataset.authMode === state.authMode);
     });
-    document.getElementById('auth-name-field').hidden = state.authMode !== 'signup';
-    const nameInput = document.querySelector('#auth-form [name="displayName"]');
-    nameInput.required = state.authMode === 'signup';
     const passwordInput = document.querySelector('#auth-form [name="password"]');
     passwordInput.autocomplete = state.authMode === 'signup' ? 'new-password' : 'current-password';
     document.getElementById('auth-dialog-title').textContent = state.authMode === 'signup' ? 'Konto erstellen' : 'Einloggen';
@@ -656,7 +710,6 @@
     const formData = new FormData(authForm);
     const email = String(formData.get('email') || '').trim();
     const password = String(formData.get('password') || '');
-    const displayName = String(formData.get('displayName') || '').trim();
     const submit = document.getElementById('auth-submit');
     submit.disabled = true;
     setAuthMessage(state.authMode === 'signup' ? 'Konto wird erstellt …' : 'Login läuft …');
@@ -671,7 +724,6 @@
           email,
           password,
           options: {
-            data: { display_name: displayName },
             ...(emailRedirectTo ? { emailRedirectTo } : {})
           }
         });
@@ -701,41 +753,82 @@
     return message;
   }
 
-  async function handleProfileSubmit(event) {
-    event.preventDefault();
-    const displayName = String(new FormData(event.currentTarget).get('displayName') || '').trim();
-    setAuthMessage('Name wird gespeichert …');
-    const { error } = await state.client.rpc('update_my_profile', { p_display_name: displayName });
-    if (error) {
-      setAuthMessage(error.message, 'error');
-      return;
+  function readResultScore(form) {
+    const scores = [0, 1, 2].map(setIndex => [0, 1].map(teamIndex => {
+      const input = form.querySelector(`[data-score-set="${setIndex}"][data-score-team="${teamIndex}"]`);
+      const raw = String(input?.value ?? '').trim();
+      return raw === '' ? null : Number(raw);
+    }));
+    if (scores.slice(0, 2).some(score => score.some(value => !Number.isInteger(value) || value < 0))) {
+      throw new Error('Bitte beide Ergebnisse für Satz 1 und Satz 2 eingeben.');
     }
-    await loadProfile();
-    render();
-    setAuthMessage('Name gespeichert.', 'success');
+    if (scores.slice(0, 2).some(([first, second]) => first === second)) {
+      throw new Error('Ein Satz benötigt einen eindeutigen Sieger.');
+    }
+
+    const firstTwoWins = scores.slice(0, 2).reduce((wins, [first, second]) => {
+      wins[first > second ? 0 : 1] += 1;
+      return wins;
+    }, [0, 0]);
+    const decidingStarted = scores[2].some(value => value !== null);
+    if (firstTwoWins[0] === firstTwoWins[1] && !decidingStarted) {
+      throw new Error('Bei 1:1 bitte auch das Entscheidungsergebnis eingeben.');
+    }
+    if (firstTwoWins[0] !== firstTwoWins[1] && decidingStarted) {
+      throw new Error('Bei einem Ergebnis von 2:0 ist keine Entscheidung mehr nötig.');
+    }
+    if (decidingStarted && scores[2].some(value => !Number.isInteger(value) || value < 0)) {
+      throw new Error('Bitte beide Werte für die Entscheidung eingeben.');
+    }
+    if (decidingStarted && scores[2][0] === scores[2][1]) {
+      throw new Error('Die Entscheidung benötigt einen eindeutigen Sieger.');
+    }
+
+    const usedScores = decidingStarted ? scores : scores.slice(0, 2);
+    const setWins = usedScores.reduce((wins, [first, second]) => {
+      wins[first > second ? 0 : 1] += 1;
+      return wins;
+    }, [0, 0]);
+    const actualSets = `${setWins[0]}:${setWins[1]}`;
+    return {
+      actualSets,
+      winner: setWins[0] === 2 ? 1 : 2,
+      resultDetails: usedScores
+        .map((score, index) => `${index === 2 ? '– ' : ''}${score[0]}:${score[1]}`)
+        .join(', ')
+        .replace(', –', ' –')
+    };
   }
 
-  function resultWinner(actualSets) {
-    return ['2:0', '2:1'].includes(actualSets) ? 1 : 2;
+  function updateResultSummary(form) {
+    const target = form.querySelector('[data-result-summary]');
+    if (!target) return;
+    try {
+      const result = readResultScore(form);
+      target.textContent = `${result.resultDetails} · automatisch ${result.actualSets}`;
+      target.classList.add('is-valid');
+    } catch (error) {
+      target.textContent = 'Satzergebnis wird automatisch berechnet.';
+      target.classList.remove('is-valid');
+    }
   }
 
   async function handleResultSubmit(event) {
     event.preventDefault();
     const form = event.target;
     const data = new FormData(form);
-    const resultDetails = String(data.get('resultDetails') || '').trim();
-    const actualSets = String(data.get('actualSets') || '');
     const playedOn = String(data.get('playedOn') || '');
     const playedTime = String(data.get('playedTime') || '');
     const button = form.querySelector('[type="submit"]');
-    button.disabled = true;
-    setAuthMessage('Ergebnis wird gespeichert …');
     try {
+      const { resultDetails, actualSets, winner } = readResultScore(form);
+      button.disabled = true;
+      setAuthMessage('Ergebnis wird gespeichert …');
       const { error } = await state.client.rpc('submit_match_result', {
         p_match_id: form.dataset.resultSubmit,
         p_result_details: resultDetails,
         p_actual_sets: actualSets,
-        p_winner: resultWinner(actualSets),
+        p_winner: winner,
         p_played_on: playedOn,
         p_played_time: playedTime
       });
@@ -905,11 +998,24 @@
         await confirmResult(confirmResultButton.dataset.resultConfirm, confirmResultButton);
         return;
       }
-      const accountTab = event.target.closest('[data-account-tab]');
-      if (accountTab) {
-        state.accountTab = accountTab.dataset.accountTab === 'settings' ? 'settings' : 'games';
-        renderAccountTabs();
-        setAuthMessage('');
+      const counterproposalToggle = event.target.closest('[data-counterproposal-toggle]');
+      if (counterproposalToggle) {
+        const card = counterproposalToggle.closest('.result-task-card');
+        const form = card?.querySelector('.result-entry-form.is-counterproposal');
+        if (form) {
+          form.hidden = !form.hidden;
+          counterproposalToggle.textContent = form.hidden ? 'Alternative eingeben' : 'Alternative schließen';
+          if (!form.hidden) updateResultSummary(form);
+        }
+        return;
+      }
+      const scoreStep = event.target.closest('[data-result-score-step]');
+      if (scoreStep) {
+        const input = scoreStep.parentElement?.querySelector('[data-result-score]');
+        if (!input) return;
+        const current = Number(input.value || 0);
+        input.value = String(Math.max(0, Math.min(99, current + Number(scoreStep.dataset.resultScoreStep))));
+        updateResultSummary(input.closest('[data-result-submit]'));
         return;
       }
       const trainingToggle = event.target.closest('[data-training-toggle]');
@@ -959,15 +1065,16 @@
     });
 
     document.getElementById('auth-form')?.addEventListener('submit', handleAuthSubmit);
-    document.getElementById('profile-form')?.addEventListener('submit', handleProfileSubmit);
     document.getElementById('training-form')?.addEventListener('submit', handleTrainingSubmit);
-    document.getElementById('result-task-scope')?.addEventListener('change', event => {
-      state.resultScope = event.currentTarget.value === 'all' ? 'all' : 'open';
-      renderResultTasks();
-    });
     document.addEventListener('submit', event => {
       if (event.target.matches('[data-result-submit]')) handleResultSubmit(event);
     });
+    document.addEventListener('input', event => {
+      if (event.target.matches('[data-result-score]')) {
+        updateResultSummary(event.target.closest('[data-result-submit]'));
+      }
+    });
+    document.getElementById('admin-all-matches')?.addEventListener('toggle', renderAdminAllMatches);
     document.getElementById('auth-dialog')?.addEventListener('click', event => {
       if (event.target === event.currentTarget) closeAuthDialog();
     });

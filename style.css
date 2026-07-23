@@ -500,9 +500,9 @@
     .prediction-error small { color: var(--dim); }
 
     .auth-dialog {
-      width: min(94vw, 760px);
+      width: min(96vw, 1020px);
       max-width: none;
-      max-height: min(90vh, 720px);
+      max-height: min(92vh, 900px);
       margin: auto;
       border: 1px solid var(--border);
       border-radius: 16px;
@@ -569,31 +569,18 @@
     .auth-message { min-height: 1.25rem; color: var(--dim); font-size: 0.82rem; margin-top: 0.8rem; }
     .auth-message.error { color: var(--negativ); }
     .auth-message.success { color: var(--positiv); }
-    .auth-account-email { color: var(--dim); font-size: 0.88rem; margin: -0.7rem 0 1.2rem; }
-    .auth-logout-button { width: 100%; margin-top: 1rem; }
-    .account-tabs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--bg);
-      padding: 3px;
-      margin-bottom: 1rem;
+    .account-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding-right: 48px;
+      margin-bottom: 1.35rem;
     }
-    .account-tabs button {
-      border: 0;
-      border-radius: 7px;
-      background: transparent;
-      color: var(--dim);
-      cursor: pointer;
-      font: inherit;
-      font-size: 0.85rem;
-      font-weight: 600;
-      padding: 0.6rem;
-    }
-    .account-tabs button.active { background: var(--surface2); color: var(--accent); }
-    [data-account-panel][hidden] { display: none; }
+    .account-header > div { min-width: 0; }
+    .account-header h2 { margin-bottom: 0.65rem; }
+    .auth-account-email { color: var(--dim); font-size: 0.88rem; margin: 0; overflow-wrap: anywhere; }
+    .auth-logout-button { flex: 0 0 auto; width: auto; margin: 0; }
     .account-games-empty {
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -602,36 +589,33 @@
       padding: 1rem;
     }
     .account-games-empty[hidden] { display: none; }
-    .account-profile-form { margin-top: 0.2rem; }
     .account-player-area { display: grid; gap: 18px; }
     .account-player-area[hidden] { display: none; }
     .account-section { display: grid; gap: 12px; border-top: 1px solid var(--border); padding-top: 1.1rem; }
     .account-section-first { border-top: 0; padding-top: 0; }
+    #admin-played-section[hidden] + #open-results-section { border-top: 0; padding-top: 0; }
     .account-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .account-section h3 { font-size: 1rem; }
     .account-task-count { color: var(--accent); font-family: 'DM Mono', monospace; }
-    .account-result-controls { display: flex; align-items: center; gap: 8px; }
-    .account-result-controls select {
-      min-height: 34px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--bg);
-      color: var(--text);
-      font: 0.76rem 'DM Sans', sans-serif;
-      padding: 0.35rem 0.55rem;
-    }
     .compact-button { min-height: 32px; padding: 0.35rem 0.75rem; font-size: 0.75rem; }
     .account-task-list { display: grid; gap: 10px; }
-    .account-task-card,
-    .training-history-card {
+    .result-task-wrap { display: grid; gap: 6px; }
+    .account-task-card {
       display: grid;
-      gap: 10px;
+      gap: 13px;
       border: 1px solid var(--border);
       border-radius: 12px;
       background: var(--bg);
-      padding: 0.9rem;
+      padding: 1rem;
     }
-    .account-task-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--dim); font: 0.7rem 'DM Mono', monospace; }
+    .account-task-league {
+      color: var(--accent);
+      font: 0.68rem 'DM Mono', monospace;
+      letter-spacing: 0.08em;
+      padding-left: 2px;
+      text-transform: uppercase;
+    }
+    .account-task-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--dim); font: 0.72rem 'DM Mono', monospace; }
     .account-task-status {
       border: 1px solid var(--border);
       border-radius: 999px;
@@ -642,18 +626,23 @@
     }
     .account-task-status.is-open { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); color: var(--accent); }
     .account-task-status.is-complete { border-color: color-mix(in srgb, var(--positiv) 45%, var(--border)); color: var(--positiv); }
-    .account-task-matchup { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; font-size: 0.86rem; }
+    .result-card-timing { color: var(--dim); font: 0.74rem 'DM Mono', monospace; }
+    .account-task-matchup { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; font-size: 1rem; }
     .account-task-matchup strong:last-child { text-align: right; }
     .account-task-matchup span { color: var(--dim); font-size: 0.72rem; }
     .result-proposal { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 8px; background: var(--surface2); padding: 0.7rem; }
     .result-proposal span { color: var(--dim); font-size: 0.72rem; }
     .result-proposal strong { font-family: 'DM Mono', monospace; font-size: 0.82rem; text-align: right; }
     .account-task-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-    .counterproposal-details { flex: 1 1 100%; }
-    .counterproposal-details summary { color: var(--accent); cursor: pointer; font-size: 0.78rem; }
-    .result-entry-form { display: grid; grid-template-columns: minmax(190px, 0.9fr) minmax(0, 1.5fr) minmax(150px, 0.75fr) auto; align-items: end; gap: 8px; }
-    .result-entry-timing { display: grid; grid-template-columns: 1fr 0.8fr; gap: 8px; }
-    .counterproposal-details .result-entry-form { margin-top: 10px; }
+    .result-review-actions { justify-content: flex-end; flex-wrap: nowrap; }
+    .result-review-actions > button { min-width: 190px; }
+    .result-entry-form { display: grid; grid-template-columns: 1fr; gap: 13px; }
+    .result-entry-form[hidden] { display: none; }
+    .result-entry-form.is-counterproposal {
+      border-top: 1px solid var(--border);
+      padding-top: 13px;
+    }
+    .result-entry-timing { display: grid; grid-template-columns: minmax(150px, 200px) minmax(120px, 160px); gap: 8px; }
     .result-entry-form label,
     .training-form label { display: grid; gap: 5px; color: var(--dim); font-size: 0.72rem; font-weight: 600; }
     .result-entry-form input,
@@ -669,6 +658,94 @@
       font: 0.86rem 'DM Sans', sans-serif;
       padding: 0.55rem 0.65rem;
     }
+    .result-score-entry {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .result-score-set {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+    .result-score-set > span {
+      color: var(--dim);
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-align: center;
+    }
+    .result-score-pair {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 5px;
+    }
+    .result-score-colon {
+      color: var(--dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 1.2rem;
+    }
+    .result-score-counter {
+      display: grid;
+      grid-template-columns: 30px minmax(38px, 1fr) 30px;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      overflow: hidden;
+      background: var(--surface);
+    }
+    .result-score-counter button {
+      border: 0;
+      background: var(--surface2);
+      color: var(--dim);
+      cursor: pointer;
+      font: 1rem 'DM Sans', sans-serif;
+      padding: 0;
+    }
+    .result-score-counter button:hover { color: var(--accent); }
+    .result-score-counter input {
+      width: 100%;
+      min-width: 0;
+      height: 44px;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      font: 600 1rem 'DM Mono', monospace;
+      text-align: center;
+      appearance: textfield;
+      padding: 0;
+    }
+    .result-score-counter input::-webkit-inner-spin-button,
+    .result-score-counter input::-webkit-outer-spin-button { appearance: none; margin: 0; }
+    .result-entry-summary {
+      color: var(--dim);
+      font: 0.74rem 'DM Mono', monospace;
+      text-align: right;
+    }
+    .result-entry-summary.is-valid { color: var(--positiv); }
+    .result-entry-actions {
+      display: flex;
+      justify-content: flex-end;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+    .result-entry-actions .primary-button { min-width: 230px; }
+    .admin-all-matches {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+      padding: 0;
+    }
+    .admin-all-matches[hidden] { display: none; }
+    .admin-all-matches summary {
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 0.9rem 1rem;
+    }
+    .admin-all-matches[open] summary { border-bottom: 1px solid var(--border); }
+    .admin-all-matches > .account-task-list { padding: 10px; }
     .account-empty,
     .account-waiting { color: var(--dim); font-size: 0.78rem; }
     .account-waiting { display: inline-flex; align-items: center; min-height: 36px; }
@@ -683,8 +760,6 @@
     .training-round-result { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; font-size: 0.76rem; }
     .training-round-result span:last-child { text-align: right; }
     .training-round-result strong { color: var(--accent); font-family: 'DM Mono', monospace; text-align: center; }
-    .training-history { display: grid; gap: 8px; }
-    .training-history-heading { color: var(--dim); font: 0.7rem 'DM Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; }
     .standalone-ranking-panel { position: static; max-width: 760px; margin: 0 auto; }
     .tip-page .prediction-main { max-width: 820px; margin: 0 auto; }
 
@@ -2002,17 +2077,21 @@
         width: min(260px, calc(100vw - 1.5rem));
         max-height: 420px;
       }
-      .auth-dialog { width: min(96vw, 760px); max-height: 94vh; }
+      .auth-dialog { width: 96vw; max-height: 94vh; }
       .auth-dialog-card { padding: 1.1rem; }
-      .result-entry-form { grid-template-columns: 1fr; }
+      .account-header { align-items: center; gap: 12px; padding-right: 38px; }
+      .account-header h2 { font-size: 1.65rem; }
+      .auth-logout-button { min-height: 36px; padding: 0.45rem 0.7rem; }
       .result-entry-timing { grid-template-columns: 1fr 1fr; }
       .account-section-heading { align-items: flex-start; }
-      .account-result-controls { flex: 0 0 auto; }
       .account-task-matchup { grid-template-columns: 1fr; text-align: left; }
       .account-task-matchup strong:last-child { text-align: left; }
       .account-task-matchup span { display: none; }
       .result-proposal { align-items: flex-start; flex-direction: column; }
       .result-proposal strong { text-align: left; }
+      .result-score-entry { grid-template-columns: 1fr; }
+      .result-review-actions > button { flex: 1 1 0; min-width: 0; }
+      .result-entry-actions .primary-button { width: 100%; min-width: 0; }
       .training-form-meta,
       .training-player-fields { grid-template-columns: 1fr 1fr; }
       .training-round-field { grid-template-columns: 1fr; }

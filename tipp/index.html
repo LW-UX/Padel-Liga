@@ -12,7 +12,7 @@
   <script src="../data/players.js"></script>
   <script src="../data/seasons.js"></script>
   <script src="../data/supabase-config.js"></script>
-  <link rel="stylesheet" href="../style.css?v=2026-07-23-dismissible-app-hint">
+  <link rel="stylesheet" href="../style.css?v=2026-07-23-account-game-cards">
 </head>
 <body class="tip-page">
 <header class="site-header">
@@ -98,41 +98,39 @@
         <button type="button" data-auth-mode="signup">Konto erstellen</button>
       </div>
       <form id="auth-form" class="auth-form">
-        <label id="auth-name-field" hidden>
-          <span>Anzeigename</span>
-          <input type="text" name="displayName" autocomplete="name" minlength="2" maxlength="40" placeholder="Wie sollst du in der Tabelle heißen?">
-        </label>
-        <label><span>E-Mail</span><input type="email" name="email" autocomplete="email" required></label>
+        <label><span>E-Mail</span><input type="email" name="email" autocomplete="email" required placeholder="vorname.nachname@firma.de"></label>
         <label><span>Passwort</span><input type="password" name="password" autocomplete="current-password" minlength="8" required></label>
         <button class="primary-button" id="auth-submit" type="submit">Einloggen</button>
       </form>
     </div>
     <div id="auth-account-view" hidden>
-      <div class="widget-label">Dein Konto</div>
-      <h2 id="account-display-name"></h2>
-      <p class="auth-account-email" id="account-email"></p>
-      <div class="account-tabs" role="tablist" aria-label="Kontobereiche">
-        <button class="active" type="button" role="tab" aria-selected="true" aria-controls="account-games-panel" data-account-tab="games">Spiele</button>
-        <button type="button" role="tab" aria-selected="false" aria-controls="account-settings-panel" data-account-tab="settings">Einstellungen</button>
+      <div class="account-header">
+        <div>
+          <div class="widget-label">Dein Konto</div>
+          <h2 id="account-display-name"></h2>
+          <p class="auth-account-email" id="account-email"></p>
+        </div>
+        <button class="secondary-button auth-logout-button" type="button" data-auth-logout>Ausloggen</button>
       </div>
-      <div id="account-games-panel" role="tabpanel" data-account-panel="games">
+      <div id="account-games-panel">
         <div class="account-games-empty" id="account-games-empty" hidden>Als Tipper hast du keine eigenen Liga- oder Trainingsspiele.</div>
         <div class="account-player-area" id="account-player-area" hidden>
-          <section class="account-section account-section-first">
+          <section class="account-section account-section-first" id="admin-played-section" hidden>
             <div class="account-section-heading">
-              <div><div class="widget-label">Liga</div><h3>Spielergebnisse</h3></div>
-              <div class="account-result-controls">
-                <label>
-                  <span class="sr-only">Spiele anzeigen</span>
-                  <select id="result-task-scope" aria-label="Spiele anzeigen">
-                    <option value="open">Offen</option>
-                    <option value="all">Alle Spiele</option>
-                  </select>
-                </label>
-                <span class="account-task-count" id="result-task-count"></span>
-              </div>
+              <div><div class="widget-label">Admin</div><h3>Gespielte Spiele</h3></div>
+            </div>
+            <div class="account-task-list" id="admin-played-list"></div>
+          </section>
+          <section class="account-section" id="open-results-section">
+            <div class="account-section-heading">
+              <div><div class="widget-label">Ligaübergreifend</div><h3>Offene Ergebnisse</h3></div>
+              <span class="account-task-count" id="result-task-count"></span>
             </div>
             <div class="account-task-list" id="result-task-list"></div>
+            <details class="admin-all-matches" id="admin-all-matches" hidden>
+              <summary>Alle Ligaspiele anzeigen</summary>
+              <div class="account-task-list" id="admin-all-matches-list"></div>
+            </details>
           </section>
           <section class="account-section">
             <div class="account-section-heading">
@@ -150,23 +148,15 @@
               <button class="primary-button" type="submit">Training zur Bestätigung senden</button>
             </form>
             <div class="account-task-list" id="training-task-list"></div>
-            <div class="training-history" id="training-history"></div>
           </section>
         </div>
-      </div>
-      <div id="account-settings-panel" role="tabpanel" data-account-panel="settings" hidden>
-        <form id="profile-form" class="auth-form account-profile-form">
-          <label><span>Anzeigename</span><input type="text" name="displayName" minlength="2" maxlength="40" required></label>
-          <button class="primary-button" type="submit">Namen speichern</button>
-        </form>
-        <button class="secondary-button auth-logout-button" type="button" data-auth-logout>Ausloggen</button>
       </div>
     </div>
     <div class="auth-message" id="auth-message" role="status"></div>
   </div>
 </dialog>
 
-<script src="../js/tippspiel.js?v=2026-07-23-user-icon"></script>
+<script src="../js/tippspiel.js?v=2026-07-23-account-game-cards"></script>
 <script src="../js/tipp-page.js?v=2026-07-23-account-tabs"></script>
 </body>
 </html>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Konto-Dialog Vorschau</title>
+  <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+  <dialog class="auth-dialog" open>
+    <div class="auth-dialog-card">
+      <button class="auth-dialog-close" type="button">×</button>
+      <div class="account-header">
+        <div>
+          <div class="widget-label">Dein Konto</div>
+          <h2>Ludwig W</h2>
+          <p class="auth-account-email">ludwig.wagner@mail.de</p>
+        </div>
+        <button class="secondary-button auth-logout-button" type="button">Ausloggen</button>
+      </div>
+      <div class="account-player-area">
+        <section class="account-section account-section-first">
+          <div class="account-section-heading">
+            <div><div class="widget-label">Ligaübergreifend</div><h3>Offene Ergebnisse</h3></div>
+            <span class="account-task-count">1</span>
+          </div>
+          <div class="account-task-list">
+            <div class="result-task-wrap">
+              <div class="account-task-league">Test-Liga · Test-Saison</div>
+              <article class="account-task-card result-task-card">
+              <div class="account-task-meta"><span>Partie 2</span><span class="account-task-status is-open">Offen</span></div>
+              <form class="result-entry-form">
+                <div class="result-entry-timing">
+                  <label><span>Datum</span><input type="date" value="2026-07-16"></label>
+                  <label><span>Uhrzeit</span><input type="time" value="18:00"></label>
+                </div>
+                <div class="account-task-matchup"><strong>Ludi GMX / Greta P.</strong><span>gegen</span><strong>Ludi Gmail / Ludwig W.</strong></div>
+                <div class="result-score-entry">
+                  <div class="result-score-set"><span>Satz 1</span><div class="result-score-pair"><div class="result-score-counter"><button>−</button><input value="6"><button>+</button></div><span class="result-score-colon">:</span><div class="result-score-counter"><button>−</button><input value="2"><button>+</button></div></div></div>
+                  <div class="result-score-set"><span>Satz 2</span><div class="result-score-pair"><div class="result-score-counter"><button>−</button><input value="3"><button>+</button></div><span class="result-score-colon">:</span><div class="result-score-counter"><button>−</button><input value="6"><button>+</button></div></div></div>
+                  <div class="result-score-set"><span>Entscheidung</span><div class="result-score-pair"><div class="result-score-counter"><button>−</button><input value="4"><button>+</button></div><span class="result-score-colon">:</span><div class="result-score-counter"><button>−</button><input value="10"><button>+</button></div></div></div>
+                </div>
+                <div class="result-entry-summary is-valid">6:2, 3:6 – 4:10 · automatisch 1:2</div>
+                <div class="result-entry-actions"><button class="primary-button">Zur Bestätigung senden</button></div>
+              </form>
+              </article>
+            </div>
+          </div>
+          <details class="admin-all-matches"><summary>Alle Ligaspiele anzeigen</summary></details>
+        </section>
+        <section class="account-section">
+          <div class="account-section-heading">
+            <div><div class="widget-label">Saisonunabhängig</div><h3>Training</h3></div>
+            <button class="secondary-button compact-button">Training hinzufügen</button>
+          </div>
+          <div class="account-empty">Keine offenen Trainings.</div>
+        </section>
+      </div>
+    </div>
+  </dialog>
+</body>
+</html>
