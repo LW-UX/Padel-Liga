@@ -1623,7 +1623,7 @@
       border-color: var(--accent);
       color: var(--accent);
     }
-    .chart-wrap { position: relative; height: 580px; }
+    .chart-wrap { position: relative; height: 620px; }
     .placement-chart-wrap { position: relative; height: 520px; }
     .chart-custom-tooltip {
       position: absolute;

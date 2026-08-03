@@ -1479,14 +1479,25 @@ function renderHomeMatchCard(match, options = {}) {
 function getCurrentArticle() {
   const articles = PADEL_DATA.articles || [];
   const todayKey = toDateKey(new Date());
-  const current = articles.find(article => {
+  const publishedArticles = articles.filter(article => Array.isArray(article.body) && article.body.length);
+  const current = publishedArticles.find(article => {
     if (!article.startDate && !article.endDate) return false;
     const start = article.startDate || '0000-01-01';
     const end = article.endDate || '9999-12-31';
     return start <= todayKey && todayKey <= end;
   });
 
-  return current || articles[0];
+  if (current) return current;
+
+  return publishedArticles.reduce((latest, article) => {
+    const articleStart = article.startDate || article.endDate;
+    if (articleStart && articleStart > todayKey) return latest;
+    if (!latest) return article;
+
+    const articleDate = article.endDate || article.startDate || '';
+    const latestDate = latest.endDate || latest.startDate || '';
+    return articleDate >= latestDate ? article : latest;
+  }, null) || publishedArticles[0] || null;
 }
 
 function formatArticleMeta(meta) {
@@ -3686,7 +3697,7 @@ function initChart() {
       scales: {
         x: { grid: { color: '#222' }, ticks: { color: '#5a5a72', font: { family: 'DM Sans', size: 12 } } },
         y: {
-          min: 600, max: 1250,
+          min: 500, max: 1250,
           grid: { color: '#222' },
           ticks: { color: '#5a5a72', font: { family: 'DM Sans', size: 12 } }
         }
