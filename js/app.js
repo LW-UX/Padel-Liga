@@ -3098,6 +3098,10 @@ function getEloChartLineWidth(playerName) {
   return isParticipantView() && getSelectedViewer().name === playerName ? 3 : 1;
 }
 
+function getEloChartPointRadius(playerName) {
+  return isParticipantView() && getSelectedViewer().name !== playerName ? 2 : 4;
+}
+
 function getPlacementLabelWeight(playerName) {
   return isParticipantView() && getSelectedViewer().name === playerName ? 700 : 300;
 }
@@ -3129,6 +3133,7 @@ function updateChartViewerFocus() {
       dataset.pointHoverBackgroundColor = color;
       dataset.pointHoverBorderColor = color;
       dataset.borderWidth = getEloChartLineWidth(player.name);
+      dataset.pointRadius = getEloChartPointRadius(player.name);
     });
     chart.update();
   }
@@ -3669,7 +3674,7 @@ function initChart() {
       pointHoverBackgroundColor: color,
       pointHoverBorderColor: color,
       borderWidth: getEloChartLineWidth(p.name),
-      pointRadius: 4,
+      pointRadius: getEloChartPointRadius(p.name),
       pointHoverRadius: 5,
       tension: 0.3,
       spanGaps: true

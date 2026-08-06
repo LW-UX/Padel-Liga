@@ -11,3 +11,12 @@ test('Elo history chart starts at 500 and is 620 pixels high', () => {
   assert.match(appSource, /min:\s*500,\s*max:\s*1250/);
   assert.match(styleSource, /\.chart-wrap\s*\{[^}]*height:\s*620px;/);
 });
+
+test('Elo history points are smaller for non-active players', () => {
+  assert.match(
+    appSource,
+    /function getEloChartPointRadius\(playerName\)\s*\{\s*return isParticipantView\(\) && getSelectedViewer\(\)\.name !== playerName \? 2 : 4;\s*\}/
+  );
+  assert.match(appSource, /pointRadius:\s*getEloChartPointRadius\(p\.name\)/);
+  assert.match(appSource, /dataset\.pointRadius = getEloChartPointRadius\(player\.name\)/);
+});
