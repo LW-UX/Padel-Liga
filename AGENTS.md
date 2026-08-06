@@ -10,6 +10,10 @@ Technische Implementierungsdetails ohne dauerhafte fachliche Bedeutung gehören 
 
 Der Nutzer arbeitet ausschließlich über Codex und verwendet kein Terminal. Fordere ihn nicht dazu auf, Shell-, CLI-, Git- oder Datenbankbefehle selbst auszuführen. Führe notwendige und autorisierte Befehle mit den verfügbaren Werkzeugen selbst aus. Bitte den Nutzer nur um unvermeidbare sichtbare Freigaben, Anmeldungen oder fachliche Entscheidungen und erkläre diese ohne technische Vorkenntnisse vorauszusetzen.
 
+## Tests
+
+Erstelle nicht automatisch für jede Änderung einen neuen Testfall. Ergänze oder ändere Tests nur, wenn sie einen sinnvollen dauerhaften Schutz bieten, insbesondere bei fachlicher Logik, behobenen Fehlern mit Wiederholungsrisiko, sicherheits- oder datenrelevantem Verhalten sowie komplexen Abläufen. Kleine visuelle Anpassungen, reine Textänderungen und vergleichbar risikoarme Änderungen benötigen ohne ausdrücklichen Wunsch des Nutzers keinen eigenen Testfall. Führe vorhandene passende Tests weiterhin in einem dem Risiko angemessenen Umfang aus.
+
 ## Supabase
 
 Für Zugriffe auf die projektbezogene Supabase-Datenbank ist ausschließlich `tools/supabase-mcp.mjs` beziehungsweise der schlüsselbundgestützte Starthelfer `tools/run-supabase-mcp.sh` zu verwenden. Datenbank-Schreibaktionen sind dem Nutzer vor der Ausführung zur Freigabe vorzulegen. Wenn die Verbindung nicht verfügbar ist, darf nicht auf den Supabase-Browser oder einen selbstgebauten Einmal-OAuth-Ablauf ausgewichen werden; stattdessen ist die Verbindungsstörung klar zu melden.
