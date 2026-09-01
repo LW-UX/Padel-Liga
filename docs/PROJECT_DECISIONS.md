@@ -1,6 +1,6 @@
 # Projektentscheidungen Padel-Liga
 
-Stand: 3. August 2026
+Stand: 1. September 2026
 
 Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell beschlossene Zielbild. Bei neuen oder geänderten Entscheidungen wird sie zusammen mit der jeweiligen Umsetzung aktualisiert.
 
@@ -82,6 +82,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Elo wird nur für bestätigte Ligaspiele berechnet, auch wenn das Ergebnis über den Seitenlogin eingetragen wurde.
 - Trainingsspiele verändern kein Elo.
 - Die Y-Achse der Elo-Verlaufsgrafik beginnt bei 500; die Grafik ist 620 Pixel hoch.
+- In der Grafik „Platzierungen nach Spieltag“ kennzeichnet ein Kreis eine gespielte Partie, ein kleines hohles Quadrat einen spielfreien Spieler und ein fehlendes Symbol eine angesetzte, aber noch nicht gespielte Partie.
 - Elo-Veränderungen werden nicht in der Ergebnisübersicht angezeigt. Sie bleiben intern nachvollziehbar gespeichert und fließen weiterhin in Rangliste und Saisonverlauf ein.
 - Für jeden Spieler und jedes gewertete Spiel sollen Elo vor dem Spiel, Veränderung und Elo nach dem Spiel nachvollziehbar gespeichert werden.
 - Zusätzlich soll die verwendete Version der Elo-Berechnung festgehalten werden, damit spätere Neuberechnungen und Vergleiche möglich bleiben.

@@ -3143,9 +3143,10 @@ function updateChartViewerFocus() {
       const player = PADEL_DATA.players[index];
       const color = getPlacementChartColor(COLORS[index], player.name);
       const playedFlags = dataset.playedFlags;
+      const byeFlags = dataset.byeFlags;
       dataset.borderColor = color;
-      dataset.pointBackgroundColor = playedFlags.map(hasMatch => hasMatch ? color : GRAY);
-      dataset.pointBorderColor = playedFlags.map(hasMatch => hasMatch ? color : GRAY);
+      dataset.pointBackgroundColor = playedFlags.map(hasMatch => hasMatch ? color : 'transparent');
+      dataset.pointBorderColor = playedFlags.map((hasMatch, pointIndex) => hasMatch ? color : byeFlags[pointIndex] ? GRAY : 'transparent');
       dataset.borderWidth = getPlacementChartLineWidth(player.name);
       dataset.segment.borderColor = ctx => getPlacementSegmentColor(ctx, playedFlags, color);
     });
@@ -3610,22 +3611,24 @@ function getPlacementSeries() {
   const matchDays = [...new Set(PADEL_DATA.matches.filter(countsForRanking).map(m => m.spieltag))].sort((a, b) => a - b);
   const placementsByPlayer = new Map(PADEL_DATA.players.map(p => [p.name, []]));
   const playedByPlayer = new Map(PADEL_DATA.players.map(p => [p.name, []]));
+  const byeByPlayer = new Map(PADEL_DATA.players.map(p => [p.name, []]));
   const statsByPlayer = new Map(PADEL_DATA.players.map(p => [p.name, []]));
 
   matchDays.forEach(spieltag => {
     const matchesUntilDay = PADEL_DATA.matches.filter(m => countsForRanking(m) && m.sieger !== null && m.spieltag <= spieltag);
-    const matchesAtDay = PADEL_DATA.matches.filter(m => countsForRanking(m) && m.sieger !== null && m.spieltag === spieltag);
+    const scheduledMatchesAtDay = PADEL_DATA.matches.filter(m => countsForRanking(m) && m.spieltag === spieltag);
+    const playedMatchesAtDay = scheduledMatchesAtDay.filter(m => m.sieger !== null);
     const ranked = getRankedPlayers(matchesUntilDay);
     ranked.forEach((player, index) => {
+      const isInMatch = match => match.team1.spieler.includes(player.name) || match.team2.spieler.includes(player.name);
       placementsByPlayer.get(player.name).push(index + 1);
       statsByPlayer.get(player.name).push(player.stats);
-      playedByPlayer.get(player.name).push(matchesAtDay.some(m =>
-        m.team1.spieler.includes(player.name) || m.team2.spieler.includes(player.name)
-      ));
+      playedByPlayer.get(player.name).push(playedMatchesAtDay.some(isInMatch));
+      byeByPlayer.get(player.name).push(!scheduledMatchesAtDay.some(isInMatch));
     });
   });
 
-  return { matchDays, placementsByPlayer, playedByPlayer, statsByPlayer };
+  return { matchDays, placementsByPlayer, playedByPlayer, byeByPlayer, statsByPlayer };
 }
 
 const placementLabelPlugin = {
@@ -3733,23 +3736,27 @@ function getPlacementSegmentColor(context, playedFlags, color) {
 
 function initPlacementChart() {
   if (placementChart) return;
-  const { matchDays, placementsByPlayer, playedByPlayer, statsByPlayer } = getPlacementSeries();
+  const { matchDays, placementsByPlayer, playedByPlayer, byeByPlayer, statsByPlayer } = getPlacementSeries();
   const maxPlace = PADEL_DATA.players.length;
   const datasets = PADEL_DATA.players.map((p, i) => {
     const playedFlags = playedByPlayer.get(p.name);
+    const byeFlags = byeByPlayer.get(p.name);
     const color = getPlacementChartColor(COLORS[i], p.name);
     return {
       label: p.name,
       data: placementsByPlayer.get(p.name),
       playedFlags,
+      byeFlags,
       statsByPoint: statsByPlayer.get(p.name),
       baseColor: COLORS[i],
       borderColor: color,
       backgroundColor: 'transparent',
-      pointBackgroundColor: playedFlags.map(hasMatch => hasMatch ? color : GRAY),
-      pointBorderColor: playedFlags.map(hasMatch => hasMatch ? color : GRAY),
+      pointBackgroundColor: playedFlags.map(hasMatch => hasMatch ? color : 'transparent'),
+      pointBorderColor: playedFlags.map((hasMatch, pointIndex) => hasMatch ? color : byeFlags[pointIndex] ? GRAY : 'transparent'),
       borderWidth: getPlacementChartLineWidth(p.name),
-      pointRadius: playedFlags.map(hasMatch => hasMatch ? 3 : 0),
+      pointStyle: playedFlags.map((hasMatch, pointIndex) => byeFlags[pointIndex] && !hasMatch ? 'rect' : 'circle'),
+      pointRadius: playedFlags.map((hasMatch, pointIndex) => hasMatch ? 3 : byeFlags[pointIndex] ? 2 : 0),
+      pointBorderWidth: playedFlags.map((hasMatch, pointIndex) => hasMatch || byeFlags[pointIndex] ? 1 : 0),
       pointHitRadius: playedFlags.map(hasMatch => hasMatch ? 8 : 0),
       pointHoverRadius: playedFlags.map(hasMatch => hasMatch ? 4 : 0),
       tension: 0,
