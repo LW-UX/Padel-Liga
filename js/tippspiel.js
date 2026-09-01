@@ -507,7 +507,8 @@
     return [...document.querySelectorAll('[data-training-round]')].map(round => ({
       pairing: round.querySelector('[name="pairing"]')?.value || 'ab_cd',
       result: round.querySelector('[name="roundResult"]')?.value || '',
-      setCount: round.querySelector('[name="setCount"]')?.value || '1'
+      setCount: round.querySelector('[name="setCount"]')?.value || '1',
+      roundStatus: round.querySelector('[name="roundStatus"]')?.value || 'complete'
     }));
   }
 
@@ -523,7 +524,8 @@
           <option value="ad_bc">Spieler 1 + 4 gegen 2 + 3</option>
         </select></label>
         <label><span>Ergebnis</span><input name="roundResult" required placeholder="6:3 oder 6:3, 4:6"></label>
-        <label><span>Gespielte Sätze</span><select name="setCount"><option value="1">1 Satz</option><option value="2">2 Sätze</option></select></label>
+        <label><span>Ergebnisabschnitte</span><select name="setCount"><option value="1">1 Satz</option><option value="2">2 Sätze</option><option value="3">3 Sätze / Match-Tiebreak</option></select></label>
+        <label><span>Status</span><select name="roundStatus"><option value="complete">Vollständig</option><option value="incomplete">Abgebrochen · ohne Wertung</option></select></label>
         ${index ? '<button class="text-link" type="button" data-training-round-remove="' + index + '">Entfernen</button>' : ''}
       </div>
     `).join('');
@@ -533,6 +535,7 @@
       round.querySelector('[name="pairing"]').value = value.pairing;
       round.querySelector('[name="roundResult"]').value = value.result;
       round.querySelector('[name="setCount"]').value = value.setCount;
+      round.querySelector('[name="roundStatus"]').value = value.roundStatus;
     });
   }
 
@@ -553,7 +556,7 @@
     return `<article class="account-task-card training-task-card">
       <div class="account-task-meta"><span>Training ${escapeHtml(task.training_number || index + 1)}</span><span>${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</span></div>
       <div class="training-player-line">${task.player_ids.map(id => escapeHtml(getPlayerName(id))).join(' · ')}</div>
-      ${rounds.map(round => `<div class="training-round-result"><span>${round.team_one_ids.map(getPlayerName).map(escapeHtml).join(' / ')}</span><strong>${escapeHtml(round.result_details)}</strong><span>${round.team_two_ids.map(getPlayerName).map(escapeHtml).join(' / ')}</span></div>`).join('')}
+      ${rounds.map(round => `<div class="training-round-result${round.is_complete === false ? ' incomplete' : ''}"><span>${round.team_one_ids.map(getPlayerName).map(escapeHtml).join(' / ')}</span><strong title="${round.is_complete === false ? 'Abgebrochen · ohne Wertung' : 'Vollständiges Ergebnis'}">${escapeHtml(round.result_details)}</strong><span>${round.team_two_ids.map(getPlayerName).map(escapeHtml).join(' / ')}</span></div>`).join('')}
       <div class="account-task-actions">
         ${task.created_by_me
           ? `<span class="account-waiting">Wartet auf Bestätigung</span><button class="text-link" type="button" data-training-edit="${task.session_id}">Bearbeiten</button><button class="text-link" type="button" data-training-delete="${task.session_id}">Löschen</button>`
@@ -878,7 +881,8 @@
         team_one_ids: teamOne,
         team_two_ids: teamTwo,
         result_details: round.querySelector('[name="roundResult"]').value.trim(),
-        set_count: Number(round.querySelector('[name="setCount"]').value)
+        set_count: Number(round.querySelector('[name="setCount"]').value),
+        is_complete: round.querySelector('[name="roundStatus"]').value === 'complete'
       };
     });
     const button = form.querySelector('[type="submit"]');
@@ -926,6 +930,7 @@
       roundElement.querySelector('[name="pairing"]').value = pairing;
       roundElement.querySelector('[name="roundResult"]').value = round.result_details;
       roundElement.querySelector('[name="setCount"]').value = String(round.set_count);
+      roundElement.querySelector('[name="roundStatus"]').value = round.is_complete === false ? 'incomplete' : 'complete';
     });
   }
 

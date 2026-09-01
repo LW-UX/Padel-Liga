@@ -4,6 +4,7 @@ const path = require('node:path');
 const test = require('node:test');
 
 const root = path.join(__dirname, '..');
+const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 const pages = [
   fs.readFileSync(path.join(root, 'index.html'), 'utf8'),
   fs.readFileSync(path.join(root, 'tipp', 'index.html'), 'utf8')
@@ -15,7 +16,10 @@ test('both account dialogs only expose games and place logout in the header', ()
     assert.doesNotMatch(source, /account-settings-panel/);
     assert.doesNotMatch(source, /name="displayName"/);
     assert.match(source, /class="account-header"[\s\S]*data-auth-logout/);
+    assert.match(source, /<dialog class="auth-dialog"[^>]*>\s*<button class="modal-close-button auth-dialog-close"/);
   });
+  assert.match(style, /\.modal-close-button \{[\s\S]*position: absolute;[\s\S]*top: 22px;[\s\S]*right: 22px;/);
+  assert.match(style, /\.auth-dialog-card \{[\s\S]*max-height: inherit;[\s\S]*overflow: auto;/);
 });
 
 test('both account dialogs have admin lists without the former result dropdown', () => {

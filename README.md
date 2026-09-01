@@ -36,10 +36,10 @@ padel-liga/
 Jeder Spieler wird genau einmal in `data/players.js` angelegt. Die ID bleibt dauerhaft unverändert, auch wenn sich der Anzeigename ändert oder der Spieler eine Saison aussetzt.
 
 ```js
-{ id: "agnes_k", name: "Agnes K.", initials: "AK", firma: "Headsquare" }
+{ id: "agnes_k", name: "Agnes K.", initials: "AK", firma: "Headsquare", profileEmoji: "👩" }
 ```
 
-Die Firma gehört ebenfalls zu den dauerhaften Stammdaten und wird nicht in den einzelnen Saisons wiederholt.
+Die Firma und der Emoji-Platzhalter für ein fehlendes Profilbild gehören ebenfalls zu den dauerhaften Stammdaten und werden nicht in den einzelnen Saisons wiederholt. Als Platzhalter werden `👨` und `👩` verwendet; ein vorhandenes Profilbild hat immer Vorrang.
 
 ## Saison-Teilnehmer
 

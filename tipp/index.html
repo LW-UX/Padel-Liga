@@ -9,10 +9,10 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../data/icon-32.png">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../data/players.js"></script>
+  <script src="../data/players.js?v=2026-09-01-profile-emojis"></script>
   <script src="../data/seasons.js"></script>
   <script src="../data/supabase-config.js"></script>
-  <link rel="stylesheet" href="../style.css?v=2026-09-01-medal-colors">
+  <link rel="stylesheet" href="../style.css?v=2026-09-01-training-groups">
 </head>
 <body class="tip-page">
 <header class="site-header">
@@ -91,8 +91,8 @@
 </main>
 
 <dialog class="auth-dialog" id="auth-dialog" aria-labelledby="auth-dialog-title">
+  <button class="modal-close-button auth-dialog-close" type="button" data-auth-close aria-label="Dialog schließen">×</button>
   <div class="auth-dialog-card">
-    <button class="auth-dialog-close" type="button" data-auth-close aria-label="Dialog schließen">×</button>
     <div id="auth-guest-view">
       <div class="widget-label">Dein Padeltipp-Konto</div>
       <h2 id="auth-dialog-title">Einloggen</h2>
@@ -159,7 +159,7 @@
   </div>
 </dialog>
 
-<script src="../js/tippspiel.js?v=2026-09-01-medal-colors"></script>
+<script src="../js/tippspiel.js?v=2026-09-01-incomplete-training"></script>
 <script src="../js/tipp-page.js?v=2026-09-01-season-picker"></script>
 </body>
 </html>

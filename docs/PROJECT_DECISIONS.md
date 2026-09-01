@@ -23,6 +23,9 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Die Migration `20260901130000_public_player_profiles.sql` wurde am 1. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Öffentliche Profildaten, Saisonfunktionen, Auszeichnungen und die anonym lesbaren RPCs sind aktiv.
 - Die Migration `20260901131000_import_2026_profile_history.sql` wurde am 1. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Der geprüfte Bestand von „Sommer 2026“ umfasst 18 Teilnehmer, 30 Partien, 22 Ergebnisse, 108 Spielerzuordnungen und 88 Elo-Änderungen.
 - Die Migration `20260901132000_sommer_2026_final_four_achievements.sql` wurde am 1. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Saison und Liga tragen live die Bezeichnung „Sommer 2026“; Luca W. und Marco M. besitzen jeweils die freigegebene Final-4-Auszeichnung.
+- Die Migration `20260901133000_sommer_2026_marcel_winner_achievement.sql` wurde am 1. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Marcel M. besitzt live die goldene Gewinner-Auszeichnung für „Sommer 2026“.
+- Die Migration `20260901140000_incomplete_training_rounds.sql` wurde am 1. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Abgebrochene Trainingsrunden und bis zu drei Ergebnisabschnitte je Runde sind aktiv; abgebrochene Runden bleiben aus den Profilstatistiken ausgeschlossen.
+- Die Migration `20260901141000_import_historical_training_sessions.sql` wurde am 1. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Fünf historische Trainingseinheiten mit sieben Runden wurden geprüft importiert; das abgebrochene 3:1 vom 13. August 2026 ist sichtbar, aber ohne Wertung.
 - Die Konten für `Ludi Gmail` und `Ludi GMX` sind jeweils mit ihrer Spieler-ID und der Rolle `player` verbunden.
 - Das Konto für `Ludwig W.` ist mit seiner Spieler-ID und der Rolle `admin` verbunden.
 - Alle drei zugeordneten E-Mail-Adressen sind bestätigt. Die Test-Saison enthält vier Datenbankspiele, und Row Level Security ist für alle neu angelegten öffentlichen Tabellen aktiviert.
@@ -109,14 +112,15 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Jeder angemeldete Spieler darf ein Training anlegen, wenn er selbst zu den vier Beteiligten gehört. Ein Admin darf dies im administrativen Rahmen ebenfalls.
 - Ein Training enthält genau vier Spieler. Werden andere Spieler eingesetzt, ist es ein neues Training.
 - Innerhalb einer Trainingskarte dürfen mehrere Spielabschnitte mit unterschiedlichen Paarungen derselben vier Spieler stehen.
-- Jeder Spielabschnitt enthält einen oder zwei tatsächlich gespielte Sätze. Auch ein Zwischenstand von 1:1 ist als tatsächliches Trainingsergebnis zulässig.
+- Jeder Spielabschnitt enthält einen bis drei tatsächlich gespielte Ergebnisabschnitte. Dazu gehören einzelne Sätze, vollständige Zwei- oder Drei-Satz-Partien sowie zwei Sätze mit anschließendem Match-Tiebreak. Auch ein Zwischenstand von 1:1 ist als tatsächliches Trainingsergebnis zulässig. Ein wegen Zeitmangels oder aus einem anderen Grund nicht beendeter Satz wird als „abgebrochen“ erfasst und bleibt ohne Wertung.
 - Datum, tatsächliche Uhrzeit und Ergebnisse werden beim Anlegen erfasst.
 - Ein anderer beteiligter Spieler muss das Training bestätigen. Der Ersteller kann nicht selbst bestätigen.
 - Trainingsspiele werden über den Konto-Dialog hinzugefügt und verwaltet.
 - Trainings werden nach ihrem Erstellungszeitpunkt fortlaufend als „Training X“ nummeriert. Im Konto erscheinen nur offene Trainings; bestätigte Trainings werden dort nicht mehr angezeigt.
-- Jede bestätigte Trainingsrunde zählt in öffentlichen Spielerprofilen als eine All-Time-Partie und fließt in Spiele-G:V sowie Spieldifferenz ein.
+- Jede bestätigte und vollständig beendete Trainingsrunde zählt in öffentlichen Spielerprofilen als eine All-Time-Partie und fließt in Spiele-G:V sowie Spieldifferenz ein. Abgebrochene Runden bleiben im Partienverlauf sichtbar, zählen aber weder für Partien, Siege/Niederlagen, Spiele, Spieldifferenz noch für Mitspieler-/Gegnerauswertungen.
 - Eine bestätigte Trainingsrunde mit ausgeglichener Satzbilanz zählt weder als Sieg noch als Niederlage. Deshalb dürfen Siege plus Niederlagen kleiner als die All-Time-Partienzahl sein.
 - Trainings bleiben trotz ihrer Profilwertung ohne Einfluss auf Saisonrangliste und Elo.
+- Mehrere Runden desselben Trainings werden im Spielerprofil als kompakte Gruppe dargestellt. Das Datum erscheint nur an der ersten Runde, die Kennzeichnung „Training“ nur an der letzten; jede Runde behält ihren eigenen Ergebniskreis und Spielstand. Abgebrochene Spielstände erscheinen kursiv und abgedimmt mit einem neutralen, gestrichelten Ergebniskreis.
 
 ## Konto-Dialog und Aufgaben
 
@@ -129,6 +133,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Für Admins stehen die gespielten Partien zuerst, danach die offenen Ergebnisse. Unter den offenen Ergebnissen folgt ein standardmäßig geschlossener Bereich „Alle Ligaspiele“; dessen Karten werden erst beim Aufklappen angezeigt. Der frühere Filter „Offen/Alle Spiele“ entfällt.
 - Trainingsspiele werden ebenfalls im Bereich „Spiele“ angelegt.
 - Der öffentliche Spielplan zeigt keinen internen Bestätigungsstatus.
+- Spielerprofil und Konto-/Ergebnisdialog verwenden denselben runden Schließen-Button. Er bleibt beim Scrollen des jeweiligen Modalinhalts fest rechts oben stehen.
 
 ## Temporäre Test-Saison
 
@@ -143,15 +148,19 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 ## Öffentliche Spielerprofile
 
 - Für jeden Spieler gibt es ein eigenständiges öffentliches Profil-Modal, getrennt vom privaten Konto- und Ergebnisdialog.
-- Das Profil-Modal verwendet den schwarzen Seitenhintergrund. Profilbild und Name laufen ohne Widget bis an den Dialogrand; das Firmenlabel steht unter dem Namen und verwendet dieselbe Badge-Gestaltung wie in der Rangliste. Ein Coverbild gibt es nicht. Die gesamte All-Time-Statistik steht in einem gemeinsamen vollbreiten Widget; Elo-Verlauf, Teilnahmen und vergangene Partien bilden drei weitere Widgets.
+- Das Profil-Modal verwendet den schwarzen Seitenhintergrund. Profilbild und Name laufen ohne Widget bis an den Dialogrand; das Firmenlabel steht unter dem Namen und verwendet dieselbe Badge-Gestaltung wie in der Rangliste. Ein Coverbild gibt es nicht. Die gesamte All-Time-Statistik steht in einem gemeinsamen vollbreiten Widget; Elo-Verlauf, Teilnahmen, Mitspieler/Gegner und vergangene Partien bilden vier weitere Widgets.
 - Das Profil öffnet sich über Spielernamen in Ranglisten, Partienübersichten und Rechner. Verknüpfungen verwenden ausschließlich stabile Spieler-IDs.
 - Das Profil zeigt All-Time-Partien, Siege und Niederlagen, Spiele-G:V, Spieldifferenz, offiziellen saisonübergreifenden Elo-Verlauf, Saison-Teilnahmen, explizit hinterlegte Erfolge und vergangene Liga- beziehungsweise Trainingspartien.
+- Die X-Achse des Elo-Verlaufs im Spielerprofil zeigt das jeweilige Spieldatum statt der Partienummer.
+- Der Filter „Alle / Liga / Training“ im Widget „Vergangene Partien“ verwendet dieselbe Auswahlkomponente wie die Partienübersicht; der aktive Eintrag erscheint in der Akzentfarbe.
+- Links neben den auf zwei Drittel Breite angezeigten vergangenen Partien steht ein ein Drittel breites Widget mit Lieblingspartner, Lieblingsgegner und Angstgegner. Grundlage ist die All-Time-Siegquote der bestätigten Liga- und Trainingspartien. Eine Person erscheint erst ab drei gemeinsamen beziehungsweise gegeneinander gespielten Partien; Lieblingspartner und Lieblingsgegner benötigen zusätzlich eine Siegquote über 50 Prozent, der Angstgegner eine Siegquote unter 50 Prozent. Bei genau 50 Prozent wird keine Kategorie angezeigt.
 - Öffentliche Profilwerte werden serverseitig aus bestätigten Daten aggregiert. Match-Tiebreak-Punkte zählen nicht als Spiele; Trainings verändern kein Elo.
 - Erfolge werden ausdrücklich in einer eigenen Datenbanktabelle gepflegt und nicht aus einem Mockup oder einer laufenden Platzierung erfunden. Ohne Einträge wird der Erfolgsbereich ausgeblendet.
 - Gold (`#FFD000`), Silber (`#ADC8D8`) und Bronze (`#C97B2E`) sind zentrale Gestaltungsfarben. Sie werden sowohl für Auszeichnungen als auch für die Plätze 1 bis 3 in sämtlichen Ranglisten verwendet.
 - Auszeichnungen werden von den bereitgestellten linken und rechten Lorbeerzweigen eingerahmt. Gewinner erscheinen mit der Überschrift „GEWINNER“ in Gold, Final-4-Teilnehmer mit „FINAL 4“ in Silber; der Saisonname steht jeweils zentriert darunter.
 - Luca W. und Marco M. erhalten für die Saison „Sommer 2026“ jeweils die Auszeichnung „Final 4 Teilnehmer“ mit dem Untertitel „Padel-Liga Sommer 2026“.
-- Profilbilder liegen im Git-Repository unter `assets/players/<spieler-id>/profile.webp`. Fehlende Bilder verwenden den gestalteten Platzhalter; Bilddateien und Binärdaten werden nicht in Supabase gespeichert.
+- Marcel M. erhält für die Saison „Sommer 2026“ die goldene Auszeichnung „Gewinner“ mit dem Untertitel „Padel-Liga Sommer 2026“.
+- Profilbilder liegen im Git-Repository unter `assets/players/<spieler-id>/profile.webp`. Fehlende Bilder verwenden auf dunklem Hintergrund den in den Spieler-Stammdaten festgelegten Platzhalter `👨` beziehungsweise `👩`; vorhandene Profilbilder haben immer Vorrang. Luca W. und Ludwig W. besitzen jeweils ein eigenes Profilbild. Bilddateien und Binärdaten werden nicht in Supabase gespeichert.
 - Das Profil startet mit dem tatsächlich vorhandenen Bestand ab der Saison „Sommer 2026“. Es werden keine älteren Mock-Saisons erzeugt.
 
 ## Rechner-Interaktion
