@@ -3122,6 +3122,14 @@ function getPlacementChartLineWidth(playerName) {
   return isParticipantView() && getSelectedViewer().name === playerName ? 3 : 1;
 }
 
+function getPlacementChartPointRadius(playerName, hasPlayed, hasBye) {
+  if (hasPlayed) {
+    return isParticipantView() && getSelectedViewer().name === playerName ? 4 : 3;
+  }
+
+  return hasBye ? 3 : 0;
+}
+
 function updateChartViewerFocus() {
   if (chart) {
     chart.data.datasets.forEach((dataset, index) => {
@@ -3146,8 +3154,11 @@ function updateChartViewerFocus() {
       const byeFlags = dataset.byeFlags;
       dataset.borderColor = color;
       dataset.pointBackgroundColor = playedFlags.map(hasMatch => hasMatch ? color : 'transparent');
-      dataset.pointBorderColor = playedFlags.map((hasMatch, pointIndex) => hasMatch ? color : byeFlags[pointIndex] ? GRAY : 'transparent');
+      dataset.pointBorderColor = playedFlags.map((hasMatch, pointIndex) => hasMatch || byeFlags[pointIndex] ? color : 'transparent');
       dataset.borderWidth = getPlacementChartLineWidth(player.name);
+      dataset.pointRadius = playedFlags.map((hasMatch, pointIndex) =>
+        getPlacementChartPointRadius(player.name, hasMatch, byeFlags[pointIndex])
+      );
       dataset.segment.borderColor = ctx => getPlacementSegmentColor(ctx, playedFlags, color);
     });
     placementChart.update();
@@ -3203,7 +3214,7 @@ function getHistoryEventKey(historyEntry) {
 }
 
 function formatChartEventLabel(event) {
-  if (event.gameLabel === 'Start') return ['Start'];
+  if (event.gameLabel === 'Start' || event.gameLabel === 'Final') return [event.gameLabel];
 
   const dateLabel = event.match
     ? formatMatchDate(event.match)
@@ -3238,6 +3249,19 @@ function getChartEvents() {
     });
   });
 
+  const finalDate = toDateKey(PADEL_DATA.eloFinalDate);
+  if (finalDate) {
+    events.set('final', {
+      key: 'final',
+      date: finalDate,
+      gameLabel: 'Final',
+      match: null,
+      isFinal: true,
+      index: Number.MAX_SAFE_INTEGER,
+      label: null
+    });
+  }
+
   return [...events.values()]
     .sort((a, b) => {
       const dateCompare = a.date.localeCompare(b.date);
@@ -3246,6 +3270,10 @@ function getChartEvents() {
       const aIsStart = a.gameLabel === 'Start';
       const bIsStart = b.gameLabel === 'Start';
       if (aIsStart !== bIsStart) return aIsStart ? -1 : 1;
+
+      const aIsFinal = a.gameLabel === 'Final';
+      const bIsFinal = b.gameLabel === 'Final';
+      if (aIsFinal !== bIsFinal) return aIsFinal ? 1 : -1;
 
       const timeCompare = (a.match ? getMatchTimeMinutes(a.match) : 0) - (b.match ? getMatchTimeMinutes(b.match) : 0);
       if (timeCompare) return timeCompare;
@@ -3563,6 +3591,9 @@ function formatEloDelta(delta) {
 }
 
 function getPlayerSeries(player, events) {
+  const completedEloMatchCount = (player.history || []).filter(historyEntry =>
+    historyEntry.matchId && Number.isFinite(Number(historyEntry.elo))
+  ).length;
   const historyByEvent = new Map(
     (player.history || [])
       .map(historyEntry => [getHistoryEventKey(historyEntry), historyEntry])
@@ -3579,6 +3610,17 @@ function getPlayerSeries(player, events) {
   };
 
   events.forEach(event => {
+    if (event.isFinal) {
+      const hasFinalValue = completedEloMatchCount >= 6 && Number.isFinite(previousElo);
+      series.eloValues.push(hasFinalValue ? previousElo : null);
+      series.deltas.push(null);
+      series.deltaLabels.push('');
+      series.gameLabels.push(hasFinalValue ? 'Final' : '');
+      series.eventTitles.push(hasFinalValue ? 'Final' : '');
+      series.matchContexts.push(null);
+      return;
+    }
+
     const historyEntry = historyByEvent.get(event.key);
     if (!historyEntry) {
       series.eloValues.push(null);
@@ -3598,8 +3640,8 @@ function getPlayerSeries(player, events) {
     series.deltas.push(delta);
     series.deltaLabels.push(formatEloDelta(delta));
     series.gameLabels.push(event.gameLabel);
-    series.eventTitles.push(event.gameLabel === 'Start'
-      ? 'Start'
+    series.eventTitles.push(event.gameLabel === 'Start' || event.gameLabel === 'Final'
+      ? event.gameLabel
       : event.match ? formatMatchMeta(event.match) : formatMatchDate({ datum: event.date }));
     series.matchContexts.push(getPlayerMatchContext(player.name, event.match));
   });
@@ -3752,13 +3794,15 @@ function initPlacementChart() {
       borderColor: color,
       backgroundColor: 'transparent',
       pointBackgroundColor: playedFlags.map(hasMatch => hasMatch ? color : 'transparent'),
-      pointBorderColor: playedFlags.map((hasMatch, pointIndex) => hasMatch ? color : byeFlags[pointIndex] ? GRAY : 'transparent'),
+      pointBorderColor: playedFlags.map((hasMatch, pointIndex) => hasMatch || byeFlags[pointIndex] ? color : 'transparent'),
       borderWidth: getPlacementChartLineWidth(p.name),
-      pointStyle: playedFlags.map((hasMatch, pointIndex) => byeFlags[pointIndex] && !hasMatch ? 'rect' : 'circle'),
-      pointRadius: playedFlags.map((hasMatch, pointIndex) => hasMatch ? 3 : byeFlags[pointIndex] ? 2 : 0),
+      pointStyle: 'circle',
+      pointRadius: playedFlags.map((hasMatch, pointIndex) =>
+        getPlacementChartPointRadius(p.name, hasMatch, byeFlags[pointIndex])
+      ),
       pointBorderWidth: playedFlags.map((hasMatch, pointIndex) => hasMatch || byeFlags[pointIndex] ? 1 : 0),
       pointHitRadius: playedFlags.map(hasMatch => hasMatch ? 8 : 0),
-      pointHoverRadius: playedFlags.map(hasMatch => hasMatch ? 4 : 0),
+      pointHoverRadius: playedFlags.map(hasMatch => hasMatch ? 5 : 0),
       tension: 0,
       segment: {
         borderColor: ctx => getPlacementSegmentColor(ctx, playedFlags, color)

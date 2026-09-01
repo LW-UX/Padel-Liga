@@ -2,6 +2,7 @@ window.PADEL_SEASON = {
   "id": "2026",
   "label": "2026",
   "title": "Padel-Liga 2026",
+  "eloFinalDate": "2026-10-01",
   "organizations": [
     "Headsquare",
     "Hanako",
