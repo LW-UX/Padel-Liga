@@ -128,6 +128,7 @@
       gap: 8px;
     }
     .season-picker {
+      position: relative;
       display: inline-flex;
       align-items: center;
       gap: 7px;
@@ -137,8 +138,7 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
-    .season-picker select,
-    .context-link {
+    .season-toggle {
       min-height: 34px;
       border: 1px solid var(--border);
       border-radius: 999px;
@@ -147,10 +147,31 @@
       font: 600 0.76rem 'DM Sans', sans-serif;
       padding: 0.4rem 0.8rem;
     }
-    .season-picker select { cursor: pointer; outline: none; }
-    .season-picker select:focus { border-color: var(--accent); }
-    .context-link { display: inline-flex; align-items: center; color: var(--accent); text-decoration: none; white-space: nowrap; }
-    .context-link:hover { border-color: var(--accent); }
+    .season-toggle {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 148px;
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      outline: none;
+      white-space: nowrap;
+    }
+    .season-toggle:hover,
+    .season-toggle:focus-visible,
+    .season-picker.open .season-toggle { border-color: var(--accent); color: var(--accent); }
+    .context-link {
+      display: inline-flex;
+      align-items: center;
+      color: var(--accent);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: opacity 160ms ease;
+    }
     .hero-title-row {
       display: flex;
       align-items: center;
@@ -267,6 +288,7 @@
       flex: 0 0 auto;
     }
     .viewer-toggle {
+      position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -286,9 +308,28 @@
       border-color: var(--accent);
       color: var(--accent);
     }
+    .season-toggle::after,
+    .viewer-toggle::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: 0.85rem;
+      width: 6px;
+      height: 6px;
+      border-right: 1.5px solid currentColor;
+      border-bottom: 1.5px solid currentColor;
+      transform: translateY(-65%) rotate(45deg);
+      transform-origin: center;
+      transition: transform 160ms ease;
+    }
+    .season-picker.open .season-toggle::after,
+    .viewer-picker.open .viewer-toggle::after {
+      transform: translateY(-35%) rotate(225deg);
+    }
 
     .viewer-label-short { display: none; }
-    .viewer-menu {
+    .viewer-menu,
+    .season-menu {
       position: absolute;
       right: 0;
       top: calc(100% + 8px);
@@ -302,9 +343,13 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       box-shadow: 0 18px 45px rgba(0,0,0,0.45);
+      text-transform: none;
+      letter-spacing: normal;
     }
-    .viewer-picker.open .viewer-menu { display: grid; gap: 2px; }
-    .viewer-option {
+    .viewer-picker.open .viewer-menu,
+    .season-picker.open .season-menu { display: grid; gap: 2px; }
+    .viewer-option,
+    .season-option {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -326,11 +371,13 @@
       color: var(--dim);
       white-space: nowrap;
     }
-    .viewer-option:hover {
+    .viewer-option:hover,
+    .season-option:hover {
       background: var(--surface);
       color: var(--text);
     }
-    .viewer-option.active {
+    .viewer-option.active,
+    .season-option.active {
       background: color-mix(in srgb, var(--accent) 15%, transparent);
       color: var(--accent);
     }
@@ -1047,7 +1094,10 @@
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
+      transition: opacity 160ms ease;
     }
+    .text-link:hover,
+    .context-link:hover { opacity: 0.7; }
     .inline-link { margin-top: 0; }
     .home-widget-links {
       display: flex;
@@ -2032,8 +2082,14 @@
       .hero-topbar { align-items: flex-start; margin-bottom: 0.65rem; }
       .context-actions { gap: 5px; }
       .season-picker > span { display: none; }
-      .season-picker select,
-      .context-link { min-height: 30px; max-width: 126px; font-size: 0.67rem; padding: 0.35rem 0.55rem; }
+      .season-toggle { width: 132px; min-height: 30px; font-size: 0.67rem; padding: 0.35rem 0.55rem; }
+      .context-link { font-size: 0.75rem; }
+      .season-toggle::after,
+      .viewer-toggle::after { right: 0.65rem; }
+      .season-menu {
+        width: min(240px, calc(100vw - 1.5rem));
+        max-height: 420px;
+      }
       .hero-title-row { gap: 0.75rem; }
       .hero h1 { flex: 1 1 auto; min-width: 0; }
       .hero-actions { gap: 5px; }

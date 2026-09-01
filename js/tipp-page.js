@@ -61,14 +61,40 @@
   }
 
   function renderSeasonPicker(selected) {
-    const picker = document.getElementById('season-select');
-    picker.innerHTML = getSeasonOptions().map(option =>
-      `<option value="${option.id}" ${option.id === selected.id ? 'selected' : ''}>${option.label}</option>`
+    const picker = document.getElementById('season-picker');
+    const toggle = picker.querySelector('[data-season-toggle]');
+    const label = document.getElementById('season-picker-label');
+    const menu = document.getElementById('season-menu');
+    label.textContent = selected.label;
+    menu.innerHTML = getSeasonOptions().map(option =>
+      `<button type="button" class="season-option ${option.id === selected.id ? 'active' : ''}" role="option" aria-selected="${option.id === selected.id}" data-season-id="${option.id}"><span>${option.label}</span></button>`
     ).join('');
-    picker.addEventListener('change', () => {
+
+    toggle.addEventListener('click', () => {
+      const isOpen = picker.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', String(isOpen));
+    });
+    menu.addEventListener('click', event => {
+      const option = event.target.closest('[data-season-id]');
+      if (!option) return;
+      if (option.dataset.seasonId === selected.id) {
+        picker.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+        return;
+      }
       const url = new URL(window.location.href);
-      url.searchParams.set('saison', picker.value);
+      url.searchParams.set('saison', option.dataset.seasonId);
       window.location.assign(url);
+    });
+    document.addEventListener('click', event => {
+      if (picker.contains(event.target)) return;
+      picker.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape') return;
+      picker.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
     });
     const ligaLink = document.getElementById('liga-link');
     ligaLink.href = `../?saison=${encodeURIComponent(selected.id)}`;

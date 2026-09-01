@@ -452,16 +452,21 @@ function applySeasonMetadata() {
   });
   if (heroOrganizations) heroOrganizations.textContent = organizationLabel;
   document.body.classList.toggle('is-test-season', Boolean(PADEL_DATA.resultsEntryEnabled));
-  const seasonSelect = document.getElementById('season-select');
-  if (seasonSelect) {
-    seasonSelect.innerHTML = getSeasonOptions().map(season => `
-      <option value="${season.id}" ${season.id === selectedSeason.id ? 'selected' : ''}>${season.label}</option>
+  const seasonLabel = document.getElementById('season-picker-label');
+  const seasonMenu = document.getElementById('season-menu');
+  if (seasonLabel && seasonMenu) {
+    seasonLabel.textContent = selectedSeason.label;
+    seasonMenu.innerHTML = getSeasonOptions().map(season => `
+      <button
+        type="button"
+        class="season-option ${season.id === selectedSeason.id ? 'active' : ''}"
+        role="option"
+        aria-selected="${season.id === selectedSeason.id}"
+        data-season-id="${season.id}"
+      >
+        <span>${season.label}</span>
+      </button>
     `).join('');
-    seasonSelect.addEventListener('change', () => {
-      const url = new URL(window.location.href);
-      url.searchParams.set('saison', seasonSelect.value);
-      window.location.assign(url);
-    });
   }
   const predictionLink = document.getElementById('tippspiel-link');
   if (predictionLink) predictionLink.href = `tipp/?saison=${encodeURIComponent(selectedSeason.id)}`;
@@ -526,6 +531,7 @@ function toggleViewerMenu() {
   const picker = document.getElementById('viewer-picker');
   const isOpen = picker.classList.toggle('open');
   document.querySelector('.viewer-toggle').setAttribute('aria-expanded', String(isOpen));
+  closeSeasonMenu();
 }
 
 function closeViewerMenu() {
@@ -533,6 +539,31 @@ function closeViewerMenu() {
   if (!picker) return;
   picker.classList.remove('open');
   picker.querySelector('.viewer-toggle')?.setAttribute('aria-expanded', 'false');
+}
+
+function toggleSeasonMenu() {
+  const picker = document.getElementById('season-picker');
+  if (!picker) return;
+  const isOpen = picker.classList.toggle('open');
+  picker.querySelector('.season-toggle')?.setAttribute('aria-expanded', String(isOpen));
+  closeViewerMenu();
+}
+
+function closeSeasonMenu() {
+  const picker = document.getElementById('season-picker');
+  if (!picker) return;
+  picker.classList.remove('open');
+  picker.querySelector('.season-toggle')?.setAttribute('aria-expanded', 'false');
+}
+
+function selectSeason(id) {
+  if (id === selectedSeason?.id) {
+    closeSeasonMenu();
+    return;
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.set('saison', id);
+  window.location.assign(url);
 }
 
 function selectViewer(id) {
@@ -581,6 +612,18 @@ document.addEventListener('click', event => {
   const appHintDismissControl = event.target.closest('[data-dismiss-app-hint]');
   if (appHintDismissControl) {
     dismissAppHint();
+    return;
+  }
+
+  const seasonToggle = event.target.closest('[data-season-toggle]');
+  if (seasonToggle) {
+    toggleSeasonMenu();
+    return;
+  }
+
+  const seasonOption = event.target.closest('[data-season-id]');
+  if (seasonOption) {
+    selectSeason(seasonOption.dataset.seasonId);
     return;
   }
 
@@ -677,6 +720,8 @@ document.addEventListener('click', event => {
 
   const picker = document.getElementById('viewer-picker');
   if (picker && !picker.contains(event.target)) closeViewerMenu();
+  const seasonPicker = document.getElementById('season-picker');
+  if (seasonPicker && !seasonPicker.contains(event.target)) closeSeasonMenu();
 });
 
 document.addEventListener('input', event => {
@@ -741,6 +786,7 @@ document.addEventListener('keydown', event => {
 
   if (event.key === 'Escape') {
     closeViewerMenu();
+    closeSeasonMenu();
     hideFormTooltip();
   }
 });
@@ -3099,7 +3145,7 @@ function getEloChartLineWidth(playerName) {
 }
 
 function getEloChartPointRadius(playerName) {
-  return isParticipantView() && getSelectedViewer().name !== playerName ? 2 : 4;
+  return isParticipantView() && getSelectedViewer().name !== playerName ? 3 : 4;
 }
 
 function getPlacementLabelWeight(playerName) {
@@ -3694,12 +3740,39 @@ const placementLabelPlugin = {
   }
 };
 
+const eloFinalStraightSegmentPlugin = {
+  id: 'eloFinalStraightSegmentPlugin',
+  beforeDatasetsDraw(chartInstance) {
+    chartInstance.data.datasets.forEach((dataset, datasetIndex) => {
+      const finalIndex = dataset.finalPointIndex;
+      if (!Number.isInteger(finalIndex) || finalIndex < 1 || dataset.data[finalIndex] === null) return;
+
+      const points = chartInstance.getDatasetMeta(datasetIndex).data;
+      const finalPoint = points[finalIndex];
+      if (!finalPoint || finalPoint.skip) return;
+
+      let previousIndex = finalIndex - 1;
+      while (previousIndex >= 0 && (!points[previousIndex] || points[previousIndex].skip)) {
+        previousIndex -= 1;
+      }
+      if (previousIndex < 0) return;
+
+      const previousPoint = points[previousIndex];
+      previousPoint.cp2x = previousPoint.x;
+      previousPoint.cp2y = previousPoint.y;
+      finalPoint.cp1x = finalPoint.x;
+      finalPoint.cp1y = finalPoint.y;
+    });
+  }
+};
+
 function initChart() {
   if (chart) {
     initPlacementChart();
     return;
   }
   const chartEvents = getChartEvents();
+  const finalPointIndex = chartEvents.findIndex(event => event.isFinal);
 
   const datasets = PADEL_DATA.players.map((p, i) => {
     const series = getPlayerSeries(p, chartEvents);
@@ -3712,6 +3785,7 @@ function initChart() {
       gameLabels: series.gameLabels,
       eventTitles: series.eventTitles,
       matchContexts: series.matchContexts,
+      finalPointIndex,
       borderColor: color,
       backgroundColor: 'transparent',
       pointBackgroundColor: color,
@@ -3733,6 +3807,7 @@ function initChart() {
       labels: chartEvents.map(event => new Date(event.date).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})),
       datasets
     },
+    plugins: [eloFinalStraightSegmentPlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,

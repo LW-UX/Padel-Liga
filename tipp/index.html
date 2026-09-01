@@ -12,7 +12,7 @@
   <script src="../data/players.js"></script>
   <script src="../data/seasons.js"></script>
   <script src="../data/supabase-config.js"></script>
-  <link rel="stylesheet" href="../style.css?v=2026-08-03-elo-chart">
+  <link rel="stylesheet" href="../style.css?v=2026-09-01-season-picker-links">
 </head>
 <body class="tip-page">
 <header class="site-header">
@@ -20,10 +20,13 @@
     <div class="hero-topbar">
       <div class="hero-eyebrow">TIPPSPIEL</div>
       <div class="context-actions">
-        <label class="season-picker">
+        <div class="season-picker" id="season-picker">
           <span>Saison</span>
-          <select id="season-select" aria-label="Saison auswählen"></select>
-        </label>
+          <button class="season-toggle" type="button" data-season-toggle aria-haspopup="listbox" aria-expanded="false">
+            <span id="season-picker-label"></span>
+          </button>
+          <div class="season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
+        </div>
         <a class="context-link" id="liga-link" href="../">Zur Liga</a>
       </div>
     </div>
@@ -157,6 +160,6 @@
 </dialog>
 
 <script src="../js/tippspiel.js?v=2026-07-23-account-game-cards"></script>
-<script src="../js/tipp-page.js?v=2026-07-23-account-tabs"></script>
+<script src="../js/tipp-page.js?v=2026-09-01-season-picker"></script>
 </body>
 </html>
