@@ -580,7 +580,7 @@ function isViewerMatch(match) {
 function toggleViewerMenu() {
   const picker = document.getElementById('viewer-picker');
   const isOpen = picker.classList.toggle('open');
-  document.querySelector('.viewer-toggle').setAttribute('aria-expanded', String(isOpen));
+  picker.querySelector('[data-viewer-toggle]').setAttribute('aria-expanded', String(isOpen));
   closeSeasonMenu();
 }
 
@@ -588,14 +588,14 @@ function closeViewerMenu() {
   const picker = document.getElementById('viewer-picker');
   if (!picker) return;
   picker.classList.remove('open');
-  picker.querySelector('.viewer-toggle')?.setAttribute('aria-expanded', 'false');
+  picker.querySelector('[data-viewer-toggle]')?.setAttribute('aria-expanded', 'false');
 }
 
 function toggleSeasonMenu() {
   const picker = document.getElementById('season-picker');
   if (!picker) return;
   const isOpen = picker.classList.toggle('open');
-  picker.querySelector('.season-toggle')?.setAttribute('aria-expanded', String(isOpen));
+  picker.querySelector('[data-season-toggle]')?.setAttribute('aria-expanded', String(isOpen));
   closeViewerMenu();
 }
 
@@ -603,7 +603,7 @@ function closeSeasonMenu() {
   const picker = document.getElementById('season-picker');
   if (!picker) return;
   picker.classList.remove('open');
-  picker.querySelector('.season-toggle')?.setAttribute('aria-expanded', 'false');
+  picker.querySelector('[data-season-toggle]')?.setAttribute('aria-expanded', 'false');
 }
 
 function selectSeason(id) {

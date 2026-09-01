@@ -83,12 +83,17 @@
       --row-alt:    #0E1017;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; scrollbar-gutter: stable; }
     html.instant-scroll,
     html.instant-scroll * {
       scroll-behavior: auto !important;
     }
     body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; touch-action: manipulation; }
+    html:has(dialog[open]),
+    body:has(dialog[open]) {
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
     * { touch-action: manipulation; }
     .sr-only {
       position: absolute;
@@ -141,29 +146,26 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
-    .season-toggle {
-      min-height: 34px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: var(--surface);
-      color: var(--text);
-      font: 600 0.76rem 'DM Sans', sans-serif;
-      padding: 0.4rem 0.8rem;
-    }
-    .season-toggle {
+    .picker-toggle {
       position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 148px;
+      min-width: 168px;
+      min-height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--text);
       cursor: pointer;
-      font-family: 'DM Mono', monospace;
-      outline: none;
+      font: 600 0.85rem 'DM Sans', sans-serif;
+      padding: 0.45rem 0.85rem;
       white-space: nowrap;
     }
-    .season-toggle:hover,
-    .season-toggle:focus-visible,
-    .season-picker.open .season-toggle { border-color: var(--accent); color: var(--accent); }
+    .picker-toggle:hover,
+    .picker-toggle:focus-visible,
+    .season-picker.open .picker-toggle,
+    .viewer-picker.open .picker-toggle { border-color: var(--accent); color: var(--accent); }
     .context-link {
       display: inline-flex;
       align-items: center;
@@ -290,29 +292,7 @@
       position: relative;
       flex: 0 0 auto;
     }
-    .viewer-toggle {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 168px;
-      min-height: 36px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: var(--surface);
-      color: var(--text);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.78rem;
-      cursor: pointer;
-      padding: 0.45rem 0.85rem;
-    }
-    .viewer-toggle:hover,
-    .viewer-picker.open .viewer-toggle {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-    .season-toggle::after,
-    .viewer-toggle::after {
+    .picker-toggle::after {
       content: '';
       position: absolute;
       top: 50%;
@@ -325,8 +305,8 @@
       transform-origin: center;
       transition: transform 160ms ease;
     }
-    .season-picker.open .season-toggle::after,
-    .viewer-picker.open .viewer-toggle::after {
+    .season-picker.open .picker-toggle::after,
+    .viewer-picker.open .picker-toggle::after {
       transform: translateY(-35%) rotate(225deg);
     }
 
@@ -411,7 +391,7 @@
       max-height: min(calc(100vh - 64px), 900px);
       margin: auto;
       border: 1px solid var(--border);
-      border-radius: 22px;
+      border-radius: 20px;
       background: var(--bg);
       color: var(--text);
       box-shadow: 0 34px 120px rgba(0,0,0,0.72);
@@ -427,7 +407,8 @@
       min-height: 360px;
       max-height: inherit;
       overflow: auto;
-      padding: 18px;
+      overscroll-behavior: contain;
+      padding: 20px;
     }
     .player-profile-content {
       display: grid;
@@ -452,17 +433,17 @@
     .modal-close-button {
       position: absolute;
       z-index: 20;
-      top: 22px;
-      right: 22px;
-      width: 48px;
-      height: 48px;
+      top: 8px;
+      right: 8px;
+      width: 40px;
+      height: 40px;
       border: 1px solid var(--border);
       border-radius: 50%;
       background: rgba(7,8,12,0.86);
       color: var(--text);
       cursor: pointer;
-      padding: 0 0 5px;
-      font-size: 2rem;
+      padding: 0 0 4px;
+      font-size: 1.7rem;
       font-weight: 300;
     }
     .modal-close-button:hover { color: var(--accent); border-color: var(--accent); }
@@ -980,6 +961,7 @@
       box-sizing: border-box;
       max-height: inherit;
       overflow: auto;
+      overscroll-behavior: contain;
       padding: 1.5rem;
     }
     .auth-dialog h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.04em; margin: 0.25rem 0 1rem; }
@@ -2498,10 +2480,10 @@
       .hero-topbar { align-items: flex-start; margin-bottom: 0.65rem; }
       .context-actions { gap: 5px; }
       .season-picker > span { display: none; }
-      .season-toggle { width: 132px; min-height: 30px; font-size: 0.67rem; padding: 0.35rem 0.55rem; }
+      .picker-toggle { min-height: 34px; font-size: 0.7rem; padding: 0.4rem 0.7rem; }
+      .season-picker .picker-toggle { width: 132px; min-width: 132px; }
       .context-link { font-size: 0.75rem; }
-      .season-toggle::after,
-      .viewer-toggle::after { right: 0.65rem; }
+      .picker-toggle::after { right: 0.65rem; }
       .season-menu {
         width: min(240px, calc(100vw - 1.5rem));
         max-height: 420px;
@@ -2522,13 +2504,7 @@
         max-width: 34px !important;
         padding: 0;
       }
-      .viewer-toggle {
-        min-width: 74px;
-        min-height: 34px;
-        padding: 0.4rem 0.55rem;
-      }
-      .viewer-label-full { display: none; }
-      .viewer-label-short { display: inline; }
+      .viewer-picker .picker-toggle { width: 96px; min-width: 96px; }
       .site-nav {
         width: calc(100% - 1.5rem);
         margin-bottom: 1.25rem;
@@ -2537,11 +2513,6 @@
       .site-nav button {
         font-size: 0.72rem;
         padding: 0.5rem 0.1rem;
-      }
-      .viewer-toggle {
-        min-width: 96px;
-        min-height: 34px;
-        padding: 0.35rem 0.7rem;
       }
       .viewer-label-full { display: none; }
       .viewer-label-short { display: inline; }

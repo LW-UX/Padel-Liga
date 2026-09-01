@@ -22,7 +22,7 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-01-training-groups">
+  <link rel="stylesheet" href="style.css?v=2026-09-01-modal-scroll-lock">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -42,7 +42,7 @@
       <div class="context-actions">
         <div class="season-picker" id="season-picker">
           <span>Saison</span>
-          <button class="season-toggle" type="button" data-season-toggle aria-haspopup="listbox" aria-expanded="false">
+          <button class="picker-toggle" type="button" data-season-toggle aria-haspopup="listbox" aria-expanded="false">
             <span id="season-picker-label"></span>
           </button>
           <div class="season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
@@ -54,7 +54,7 @@
       <h1><button class="hero-home-button" type="button" data-nav-target="start" aria-label="Zur Startseite">PADEL<em>LIGA</em></button></h1>
       <div class="hero-actions">
         <div class="viewer-picker" id="viewer-picker">
-          <button class="viewer-toggle" type="button" data-viewer-toggle aria-haspopup="listbox" aria-expanded="false">
+          <button class="picker-toggle" type="button" data-viewer-toggle aria-haspopup="listbox" aria-expanded="false">
             <span class="viewer-label-full" id="viewer-label-full">Spieler auswählen</span>
             <span class="viewer-label-short" id="viewer-label-short">Auswählen</span>
           </button>

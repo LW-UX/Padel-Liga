@@ -48,6 +48,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Der Hinweis „Jetzt auch als App!“ auf der Startseite kann über ein X im Kasten für den aktuellen Browser-Tab geschlossen werden. Er bleibt bei Reloads innerhalb dieses Tabs ausgeblendet und erscheint nach dem Schließen des Tabs beim nächsten Besuch wieder.
 - Gibt es für den aktuellen Zeitraum noch keinen veröffentlichten Artikel, zeigt die Startseite weiterhin den zeitlich jüngsten bereits veröffentlichten Artikel. Unveröffentlichte Artikelplatzhalter werden dabei nicht angezeigt.
 - Die Saisonauswahl steht rechts oben auf Höhe der Eyebrow oberhalb des Loginbereichs.
+- Saison- und Spielerauswahl verwenden denselben Dropdown-Button mit einheitlicher Höhe, Typografie, Rahmen-, Hover- und Pfeildarstellung; nur die responsive Breite richtet sich nach dem jeweiligen Inhalt und Platzbedarf.
 - Das Tippspiel liegt auf einer eigenen Seite unter `/Padel-Liga/tipp/`.
 - Auf der Ligaseite steht neben der Saisonauswahl der Link „Zum Tippspiel“, auf der Tippseite „Zur Liga“.
 - Die Tippseite trägt die Überschrift „PADELTIPP“ statt „PADELLIGA“.
@@ -133,7 +134,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Für Admins stehen die gespielten Partien zuerst, danach die offenen Ergebnisse. Unter den offenen Ergebnissen folgt ein standardmäßig geschlossener Bereich „Alle Ligaspiele“; dessen Karten werden erst beim Aufklappen angezeigt. Der frühere Filter „Offen/Alle Spiele“ entfällt.
 - Trainingsspiele werden ebenfalls im Bereich „Spiele“ angelegt.
 - Der öffentliche Spielplan zeigt keinen internen Bestätigungsstatus.
-- Spielerprofil und Konto-/Ergebnisdialog verwenden denselben runden Schließen-Button. Er bleibt beim Scrollen des jeweiligen Modalinhalts fest rechts oben stehen.
+- Spielerprofil und Konto-/Ergebnisdialog verwenden denselben runden Schließen-Button. Er bleibt beim Scrollen des jeweiligen Modalinhalts fest rechts oben stehen. Solange ein Modal geöffnet ist, bleibt die Seite dahinter vollständig scrollgesperrt; Scrollbewegungen am Anfang oder Ende des Modalinhalts werden nicht an den Hintergrund weitergereicht.
 
 ## Temporäre Test-Saison
 

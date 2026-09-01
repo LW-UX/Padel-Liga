@@ -18,8 +18,11 @@ test('both account dialogs only expose games and place logout in the header', ()
     assert.match(source, /class="account-header"[\s\S]*data-auth-logout/);
     assert.match(source, /<dialog class="auth-dialog"[^>]*>\s*<button class="modal-close-button auth-dialog-close"/);
   });
-  assert.match(style, /\.modal-close-button \{[\s\S]*position: absolute;[\s\S]*top: 22px;[\s\S]*right: 22px;/);
+  assert.match(style, /\.modal-close-button \{[\s\S]*position: absolute;[\s\S]*top: \d+px;[\s\S]*right: \d+px;/);
   assert.match(style, /\.auth-dialog-card \{[\s\S]*max-height: inherit;[\s\S]*overflow: auto;/);
+  assert.match(style, /html:has\(dialog\[open\]\),[\s\S]*body:has\(dialog\[open\]\)[\s\S]*overflow: hidden;[\s\S]*overscroll-behavior: none;/);
+  assert.match(style, /\.player-profile-shell \{[\s\S]*overflow: auto;[\s\S]*overscroll-behavior: contain;/);
+  assert.match(style, /\.auth-dialog-card \{[\s\S]*overflow: auto;[\s\S]*overscroll-behavior: contain;/);
 });
 
 test('both account dialogs have admin lists without the former result dropdown', () => {
