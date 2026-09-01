@@ -22,7 +22,7 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-01-season-picker-links">
+  <link rel="stylesheet" href="style.css?v=2026-09-01-medal-colors">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -276,7 +276,7 @@
       </article>
     </div>
     <div class="chart-box stats-chart-box">
-      <div class="chart-box-title">Platzierungen nach Spieltag</div>
+      <div class="chart-box-title widget-label">Platzierungen nach Spieltag</div>
       <div class="placement-chart-wrap"><canvas id="placementChart"></canvas></div>
     </div>
     <div class="stats-grid stats-facts-grid">
@@ -292,7 +292,7 @@
       </article>
     </div>
     <div class="chart-box stats-chart-box">
-      <div class="chart-box-title">Elo-Score</div>
+      <div class="chart-box-title widget-label">Elo-Score</div>
       <div class="filter-controls">
         <div class="filter-toggle-btns">
           <button class="fb-toggle" data-chart-toggle-all="true">Alle an</button>
@@ -327,7 +327,7 @@
         <div class="sh-title sh-title-with-help">TURNIERRECHNER
           <span class="th-help-wrap">
             <span class="help-icon" tabindex="0" aria-label="Turnierrechner erklären">?</span>
-            <span class="help-tooltip">Ergebnisse gibst du satzweise als 6:x oder x:6 ein.<br>Ein Klick auf einen Teamnamen setzt direkt 6:2, 6:2 beziehungsweise 2:6, 2:6.<br>Der Auto-Tipp setzt die Ergebnisse basierend auf der Wahrscheinlichkeit.</span>
+            <span class="help-tooltip">Ergebnisse gibst du satzweise als 6:x oder x:6 ein.<br>Ein Klick auf die Wahrscheinlichkeit eines Teams setzt es direkt mit 6:2, 6:2 als Sieger ein.<br>Ein Klick auf einen Namen öffnet das Spielerprofil.</span>
           </span>
         </div>
       </div>
@@ -392,6 +392,73 @@
   </section>
 
 </main>
+
+<dialog class="player-profile-dialog" id="player-profile-dialog" aria-labelledby="player-profile-name">
+  <svg class="achievement-symbols" aria-hidden="true">
+    <symbol id="achievement-laurel-left" viewBox="0 0 627.96 1166.47">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="9.33" d="M557.89 1161.81C222.45 1108.78 108.83 690.9 211.51 408.18c36.54-100.61 105.11-186.32 189.43-251.48"/>
+      <path fill="currentColor" d="M427.94 1121.56s80.68-130-36.83-314.82c-4.43 9.89-62.18 171.83 36.83 314.82ZM350.99 1068.8S203.11 1108.06 60.59 941.76c10.75-1.35 182.49-9.37 290.4 127.04ZM221.06 880.71S69.3 861.32 0 653.56c10.46 2.8 172.56 60.13 221.06 227.15ZM172.21 672.06S34.72 604.92 35.87 385.91c9.01 6.02 144.08 112.4 136.34 286.15ZM194.15 451.28S79.69 349.75 139.49 139.06c7.07 8.21 108.69 146.9 54.66 312.22ZM265.07 294.13S200.35 162.55 324.6 0c3.33 9.82 44.14 169.22-59.53 294.13ZM273.65 979.19s124.57-113.02 62.56-340.04c-7.78 9-118.53 154.78-62.56 340.04ZM183.33 725.92s130.61-74.07 135.53-294.87c-9.35 6.39-135.2 104.98-135.53 294.87ZM308.07 275.41c37.43-27.19 80.51-45.93 124.95-58.81-.09 9.22-1.36 18.42-3.77 27.31-2.98 11.02-7.68 21.51-12.86 31.69-41.4 81.32-125.52 158.37-217.36 176.43.3-10.34 7.29-24.21 10.17-34.36 16.65-58.66 49.18-106.17 98.87-142.27ZM410.22 132.82C471.23 83.5 549.44 55.89 627.89 55.97c1.88 24.66-30.62 47.43-47.64 60.31-38.98 29.48-79.99 49.56-127.66 62.42-29.34 7.92-62.33 14.28-92.79 14.23-.91 0-1.95-.07-2.51-.78-.8-1.03-.04-2.5.73-3.56 6.03-8.36 13.82-15.26 20.15-23.39 9.47-12.14 20.09-22.72 32.06-32.4Z"/>
+    </symbol>
+    <symbol id="achievement-laurel-right" viewBox="0 0 627.96 1166.47">
+      <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="9.33" d="M70.07 1161.81c335.44-53.03 449.06-470.91 346.38-753.63-36.54-100.61-105.11-186.32-189.43-251.48"/>
+      <path fill="currentColor" d="M200.02 1121.56s-80.68-130 36.83-314.82c4.43 9.89 62.18 171.83-36.83 314.82ZM276.97 1068.8s147.88 39.26 290.4-127.04c-10.75-1.35-182.49-9.37-290.4 127.04ZM406.9 880.71s151.77-19.39 221.06-227.15c-10.46 2.8-172.56 60.13-221.06 227.15ZM455.75 672.06s137.49-67.14 136.34-286.15c-9.01 6.02-144.08 112.4-136.34 286.15ZM433.81 451.28s114.46-101.53 54.66-312.22c-7.07 8.21-108.69 146.9-54.66 312.22ZM362.89 294.13S427.61 162.55 303.36 0c-3.33 9.82-44.14 169.22 59.53 294.13ZM354.31 979.19s-124.57-113.02-62.56-340.04c7.78 9 118.53 154.78 62.56 340.04ZM444.63 725.92S314.02 651.85 309.1 431.05c9.35 6.39 135.2 104.98 135.53 294.87ZM319.89 275.41c-37.43-27.19-80.51-45.93-124.95-58.81.09 9.22 1.36 18.42 3.77 27.31 2.98 11.02 7.68 21.51 12.86 31.69 41.4 81.32 125.52 158.37 217.36 176.43-.3-10.34-7.29-24.21-10.17-34.36-16.65-58.66-49.18-106.17-98.87-142.27ZM217.74 132.82C156.73 83.5 78.53 55.89.08 55.98c-1.88 24.66 30.62 47.43 47.64 60.31 38.98 29.48 79.99 49.56 127.66 62.42 29.34 7.92 62.33 14.28 92.79 14.23.91 0 1.95-.07 2.51-.78.8-1.03.04-2.5-.73-3.56-6.03-8.36-13.82-15.26-20.15-23.39-9.47-12.14-20.09-22.72-32.06-32.4Z"/>
+    </symbol>
+  </svg>
+  <div class="player-profile-shell">
+    <button class="player-profile-close" type="button" data-player-profile-close aria-label="Spielerprofil schließen">×</button>
+    <div class="player-profile-state" id="player-profile-state" role="status">Spielerprofil wird geladen …</div>
+    <div class="player-profile-content" id="player-profile-content" hidden>
+      <div class="player-profile-hero-block">
+        <header class="player-profile-hero">
+          <div class="player-profile-identity-row">
+            <div class="player-profile-avatar">
+              <img id="player-profile-avatar-image" alt="" hidden>
+              <span>Profilbild</span>
+            </div>
+            <div class="player-profile-identity">
+              <h2 id="player-profile-name"></h2>
+              <span class="player-profile-company firma-badge" id="player-profile-company"></span>
+            </div>
+            <div class="player-profile-achievements" id="player-profile-achievements" hidden></div>
+          </div>
+        </header>
+      </div>
+
+      <article class="widget player-profile-widget player-profile-stats-widget">
+        <section class="player-profile-stats" id="player-profile-stats" aria-label="All-Time-Statistiken"></section>
+      </article>
+
+      <article class="widget player-profile-widget player-profile-elo-panel">
+        <div class="player-profile-section-heading">
+          <h3 class="widget-label">Elo-Verlauf</h3>
+          <span id="player-profile-elo-range"></span>
+        </div>
+        <div class="player-profile-chart-wrap">
+          <canvas id="player-profile-elo-chart"></canvas>
+        </div>
+        <div class="player-profile-chart-legend" id="player-profile-chart-legend"></div>
+      </article>
+
+      <article class="widget player-profile-widget player-profile-participations-panel">
+        <div class="player-profile-section-heading"><h3 class="widget-label">Teilnahmen</h3></div>
+        <div class="player-profile-participations" id="player-profile-participations"></div>
+      </article>
+
+      <article class="widget player-profile-widget player-profile-history">
+        <div class="player-profile-history-heading">
+          <div class="player-profile-section-heading"><h3 class="widget-label">Vergangene Partien</h3></div>
+          <div class="player-profile-history-filters" aria-label="Partien filtern">
+            <button class="active" type="button" data-player-profile-filter="all">Alle</button>
+            <button type="button" data-player-profile-filter="league">Liga</button>
+            <button type="button" data-player-profile-filter="training">Training</button>
+          </div>
+        </div>
+        <div class="player-profile-match-list" id="player-profile-match-list"></div>
+        <button class="player-profile-show-all" id="player-profile-show-all" type="button" data-player-profile-show-all hidden></button>
+      </article>
+    </div>
+  </div>
+</dialog>
 
 <dialog class="auth-dialog" id="auth-dialog" aria-labelledby="auth-dialog-title">
   <div class="auth-dialog-card">
@@ -477,7 +544,7 @@
   </div>
 </dialog>
 
-<script src="js/tippspiel.js?v=2026-07-23-account-game-cards"></script>
-<script src="js/app.js?v=2026-09-01-straight-elo-final-season-picker"></script>
+<script src="js/tippspiel.js?v=2026-09-01-medal-colors"></script>
+<script src="js/app.js?v=2026-09-01-medal-colors"></script>
 </body>
 </html>

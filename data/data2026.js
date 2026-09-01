@@ -1,7 +1,7 @@
 window.PADEL_SEASON = {
   "id": "2026",
-  "label": "2026",
-  "title": "Padel-Liga 2026",
+  "label": "Sommer 2026",
+  "title": "Padel-Liga Sommer 2026",
   "eloFinalDate": "2026-10-01",
   "organizations": [
     "Headsquare",
@@ -1378,12 +1378,12 @@ window.PADEL_SEASON = {
       "spieltag": 1,
       "startDate": "2026-05-11",
       "endDate": "2026-05-24",
-      "title": "Der Aufschlag ist gemacht - die Padel-Liga 2026 startet!",
+      "title": "Der Aufschlag ist gemacht - die Padel-Liga Sommer 2026 startet!",
       "meta": "SPIELTAG 1  ·  11. MAI - 22. MAI 2026",
       "body": [
         {
           "type": "p",
-          "text": "Es ist so weit: Die Padel-Liga 2026 der Unternehmensgruppe Headsquare, Hanako und Envidual öffnet ihre Tore. Mit dem ersten Spieltag - ausgetragen im Zeitfenster vom 11. bis 22. Mai - fallen endlich die ersten Bälle. Die Spannung unter den 18 Teilnehmerinnen und Teilnehmern könnte kaum größer sein, die ersten Ergebnisse werden sehnlichst erwartet."
+          "text": "Es ist so weit: Die Padel-Liga Sommer 2026 der Unternehmensgruppe Headsquare, Hanako und Envidual öffnet ihre Tore. Mit dem ersten Spieltag - ausgetragen im Zeitfenster vom 11. bis 22. Mai - fallen endlich die ersten Bälle. Die Spannung unter den 18 Teilnehmerinnen und Teilnehmern könnte kaum größer sein, die ersten Ergebnisse werden sehnlichst erwartet."
         },
         {
           "type": "h",
@@ -1758,7 +1758,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Ab sofort hat die Padel-Liga 2026 hiermit ein digitales Zuhause. Eine Rangliste, ein Elo-Verlauf als interaktiver Graph, eine überarbeitete Spielübersicht mit Gewinnwahrscheinlichkeiten und vieles mehr. Wer wissen will, wie die eigenen Chancen stehen, bekommt hier die schonungslose Wahrheit in Prozentzahlen serviert. Die Liga wird transparenter, die Ausreden weniger."
+          "text": "Ab sofort hat die Padel-Liga Sommer 2026 hiermit ein digitales Zuhause. Eine Rangliste, ein Elo-Verlauf als interaktiver Graph, eine überarbeitete Spielübersicht mit Gewinnwahrscheinlichkeiten und vieles mehr. Wer wissen will, wie die eigenen Chancen stehen, bekommt hier die schonungslose Wahrheit in Prozentzahlen serviert. Die Liga wird transparenter, die Ausreden weniger."
         },
         {
           "type": "h",
@@ -1891,7 +1891,7 @@ window.PADEL_SEASON = {
       "body": [
         {
           "type": "p",
-          "text": "Die Padel-Liga 2026 hat eine neue Nummer eins: Sie heißt Luca W. Mit drei Siegen aus drei Spielen, neun Punkten und einer Differenz von +22 hat sich der Envidual-Mann an die Tabellenspitze geschoben. Der Weg dorthin führte über niemand Geringeren als Marcel M. Der Spirit-König ist also verwundbar."
+          "text": "Die Padel-Liga Sommer 2026 hat eine neue Nummer eins: Sie heißt Luca W. Mit drei Siegen aus drei Spielen, neun Punkten und einer Differenz von +22 hat sich der Envidual-Mann an die Tabellenspitze geschoben. Der Weg dorthin führte über niemand Geringeren als Marcel M. Der Spirit-König ist also verwundbar."
         },
         {
           "type": "p",

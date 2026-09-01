@@ -71,6 +71,9 @@
       --accent2:    #5B8DEF;
       --positiv:    #3af5b4;
       --negativ:    #FF3F5E;
+      --gold:       #FFD000;
+      --silver:     #ADC8D8;
+      --bronze:     #C97B2E;
       --text:       #F3F4F1;
       --muted:      #7E828B;
       --dim:        #B9BBC2;
@@ -381,6 +384,401 @@
       background: color-mix(in srgb, var(--accent) 15%, transparent);
       color: var(--accent);
     }
+
+    /* Public player profile */
+    .player-profile-link {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+      font-weight: inherit;
+      line-height: inherit;
+      margin: 0;
+      padding: 0;
+      text-align: inherit;
+    }
+    .player-profile-link:hover { opacity: 0.7; }
+    .player-profile-link:focus-visible {
+      border-radius: 3px;
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+    .player-profile-dialog {
+      width: min(calc(100vw - 28px), 1200px);
+      max-width: none;
+      max-height: min(calc(100vh - 64px), 900px);
+      margin: auto;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: var(--bg);
+      color: var(--text);
+      box-shadow: 0 34px 120px rgba(0,0,0,0.72);
+      overflow: auto;
+      padding: 0;
+    }
+    .player-profile-dialog::backdrop {
+      background: rgba(3,4,8,0.82);
+      backdrop-filter: blur(6px);
+    }
+    .player-profile-shell { position: relative; min-height: 360px; padding: 18px; }
+    .player-profile-content {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+      gap: 18px;
+    }
+    .player-profile-content > .player-profile-widget {
+      min-width: 0;
+      margin: 0;
+    }
+    .player-profile-hero-block,
+    .player-profile-stats-widget,
+    .player-profile-history { grid-column: 1 / -1; }
+    .player-profile-hero-block { margin: -18px -18px 0; }
+    .player-profile-content > .player-profile-stats-widget {
+      overflow: hidden;
+      padding: 0;
+    }
+    .player-profile-close {
+      position: absolute;
+      z-index: 5;
+      top: 22px;
+      right: 22px;
+      width: 48px;
+      height: 48px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: rgba(7,8,12,0.86);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 2rem;
+      font-weight: 300;
+      line-height: 1;
+    }
+    .player-profile-close:hover { border-color: var(--accent); }
+    .player-profile-state {
+      display: grid;
+      min-height: 360px;
+      place-items: center;
+      color: var(--dim);
+      font-family: 'DM Mono', monospace;
+      padding: 3rem 4.5rem;
+      text-align: center;
+    }
+    .player-profile-state[hidden],
+    .player-profile-content[hidden] { display: none; }
+    .player-profile-avatar {
+      position: relative;
+      overflow: hidden;
+      background-color: #141925;
+      background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0 14px, transparent 14px 28px);
+      color: var(--dim);
+      font-family: 'DM Mono', monospace;
+      text-transform: uppercase;
+    }
+    .player-profile-avatar img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .player-profile-identity-row {
+      display: grid;
+      grid-template-columns: 168px minmax(240px, 1fr) minmax(50px, auto);
+      align-items: center;
+      gap: 32px;
+      padding: 40px 80px 0px 40px;
+    }
+    .player-profile-avatar {
+      display: grid;
+      width: 168px;
+      aspect-ratio: 1;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      place-items: center;
+      text-align: center;
+    }
+    .player-profile-identity .player-profile-company { margin: 6px 0 0; }
+    .player-profile-identity h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.4rem, 4vw, 4rem);
+      letter-spacing: 0.05em;
+      margin-bottom: 0;
+    }
+    .player-profile-achievements {
+      display: grid;
+      gap: 20px;
+      justify-items: stretch;
+    }
+    .player-profile-achievement {
+      display: flex;
+      align-items: center;
+      color: var(--achievement-color);
+      text-align: center;
+    }
+    .player-profile-achievement-winner { --achievement-color: var(--gold); }
+    .player-profile-achievement-final-four { --achievement-color: var(--silver); }
+    .achievement-symbols {
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .player-profile-achievement-laurel {
+      display: block;
+      width: 28px;
+      height: 52px;
+      color: inherit;
+      overflow: visible;
+    }
+    .player-profile-achievement-copy { min-width: 0; }
+    .player-profile-achievement-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .player-profile-achievement-subtitle {
+      font-size: 0.7rem;
+      font-weight: 400;
+      margin-top: -6px;
+      white-space: nowrap;
+    }
+    .player-profile-stats {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+    .player-profile-stat {
+      border-right: 1px solid var(--border);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .player-profile-stat:last-child { border-right: 0; }
+    .player-profile-stat-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.05em;
+      line-height: 1;
+    }
+    .player-profile-stat-value.positive { color: var(--positiv); }
+    .player-profile-section-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .player-profile-section-heading h3 {
+      margin: 0;
+      font-weight: inherit;
+    }
+    .player-profile-section-heading span {
+      color: var(--dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+    }
+    .player-profile-chart-wrap { height: 270px; margin-top: 18px; }
+    .player-profile-chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 22px;
+      margin-top: 16px;
+    }
+    .player-profile-chart-legend span,
+    .player-profile-participation-marker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+    }
+    .player-profile-chart-legend i,
+    .player-profile-participation-marker i {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--profile-season-color);
+    }
+    .player-profile-participations {
+      display: grid;
+      margin-top: 18px;
+      padding-left: 14px;
+    }
+    .player-profile-participation {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 6px 14px;
+      border-bottom: 1px solid var(--border-soft);
+      padding: 14px 0;
+    }
+    .player-profile-participation:last-child { border-bottom: 0; }
+    .player-profile-participation-name { font-size: 1rem; font-weight: 600; }
+    .player-profile-participation-rank {
+      grid-row: 1 / span 2;
+      grid-column: 2;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+    .player-profile-participation-rank.r1 { color: var(--gold); }
+    .player-profile-participation-rank.r2 { color: var(--silver); }
+    .player-profile-participation-rank.r3 { color: var(--bronze); }
+    .player-profile-participation-meta {
+      color: var(--dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.69rem;
+      text-transform: uppercase;
+    }
+    .player-profile-history-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .player-profile-history-filters {
+      display: flex;
+      gap: 2px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 3px;
+    }
+    .player-profile-history-filters button {
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--dim);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 8px 18px;
+    }
+    .player-profile-history-filters button.active { background: var(--surface2); color: var(--text); }
+    .player-profile-match-list { margin-top: 20px; }
+    .player-profile-match {
+      display: grid;
+      grid-template-columns: 100px 44px minmax(0, 1fr) auto 120px;
+      align-items: center;
+      gap: 16px;
+      min-height: 72px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .player-profile-match-date,
+    .player-profile-match-season {
+      color: var(--dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+    }
+    .player-profile-match-outcome {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--positiv);
+      color: #07100d;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 600;
+      place-items: center;
+    }
+    .player-profile-match-outcome.loss { background: var(--negativ); color: #17040a; }
+    .player-profile-match-outcome.draw { border: 1px dashed var(--positiv); background: transparent; color: var(--positiv); }
+    .player-profile-match-teams { font-size: 0.94rem; font-weight: 500; }
+    .player-profile-match-teams span { color: var(--dim); }
+    .player-profile-match-score {
+      font-family: 'DM Mono', monospace;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .player-profile-match.win .player-profile-match-score { color: var(--positiv); }
+    .player-profile-match.loss .player-profile-match-score { color: var(--negativ); }
+    .player-profile-match-season { text-align: right; }
+    .player-profile-show-all {
+      width: 100%;
+      min-height: 54px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+      margin-top: 24px;
+    }
+    .player-profile-show-all:hover { border-color: var(--accent); }
+
+    @media (max-width: 1024px) {
+      .player-profile-identity-row {
+        grid-template-columns: 168px minmax(0, 1fr);
+      }
+      .player-profile-achievements {
+        grid-column: 1 / -1;
+        justify-self: center;
+        width: min(100%, 480px);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .player-profile-dialog {
+        width: calc(100vw - 24px);
+        max-height: calc(100vh - 24px);
+        border-radius: 20px;
+      }
+      .player-profile-shell { padding: 12px; }
+      .player-profile-content { grid-template-columns: 1fr; gap: 12px; }
+      .player-profile-hero-block { margin: -12px -12px 0; }
+      .player-profile-close { top: 28px; left: 28px; width: 44px; height: 44px; }
+      .player-profile-identity-row {
+        grid-template-columns: 116px minmax(0, 1fr);
+        gap: 20px;
+        min-height: 0;
+        padding: 80px 28px 28px;
+      }
+      .player-profile-avatar { width: 116px; border-radius: 20px; }
+      .player-profile-identity h2 { font-size: clamp(1.85rem, 8vw, 2.5rem); }
+      .player-profile-achievements {
+        grid-column: 1 / -1;
+        min-width: 0;
+        width: 100%;
+      }
+      .player-profile-achievement {
+        grid-template-columns: 44px minmax(0, 1fr) 44px;
+        gap: 10px;
+      }
+      .player-profile-achievement-laurel { width: 44px; height: 80px; }
+      .player-profile-achievement-title { font-size: 2rem; }
+      .player-profile-achievement-subtitle { font-size: 0.82rem; white-space: normal; }
+      .player-profile-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .player-profile-stat { min-height: 94px; border-bottom: 1px solid var(--border); padding: 20px 25px; }
+      .player-profile-stat:nth-child(even) { border-right: 0; }
+      .player-profile-stat:last-child { grid-column: 1 / -1; border-bottom: 0; }
+      .player-profile-stat-value { font-size: 2.4rem; }
+      .player-profile-chart-wrap { height: 210px; }
+      .player-profile-history-heading { align-items: flex-start; gap: 8px; }
+      .player-profile-history-filters button { font-size: 0.72rem; padding: 7px 9px; }
+      .player-profile-match {
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+        gap: 8px 12px;
+        padding: 13px 0;
+      }
+      .player-profile-match-date { grid-column: 2; grid-row: 2; }
+      .player-profile-match-outcome { grid-row: 1 / span 2; }
+      .player-profile-match-score { grid-column: 3; grid-row: 1 / span 2; }
+      .player-profile-match-season { grid-column: 2; grid-row: 2; margin-left: 82px; text-align: left; }
+      .player-profile-match-teams { font-size: 0.88rem; }
+    }
+
 
     /* ── TIPPSPIEL & AUTH ── */
     .prediction-layout {
@@ -1001,7 +1399,7 @@
       margin-top: 0.2rem;
       color: var(--dim);
       font-family: 'DM Sans', sans-serif;
-      font-size: 0.82rem;
+      font-size: 0.9rem;
       line-height: 1.35;
     }
     .stat-split-score {
@@ -1018,17 +1416,17 @@
     .stat-split-label {
       color: var(--dim);
       font-family: 'DM Mono', monospace;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      white-space: nowrap;
+      white-space : nowrap;
     }
     .stat-split-value {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 2.15rem;
+      font-size: 2rem;
       line-height: 0.9;
       color: var(--accent2);
-      letter-spacing: 0.02em;
+      letter-spacing: 0.12em;
       white-space: nowrap;
     }
     .stat-shift-groups {
@@ -1042,7 +1440,7 @@
     .stat-shift-label {
       color: var(--dim);
       font-family: 'DM Mono', monospace;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
@@ -1229,9 +1627,9 @@
       font-weight: 700;
     }
     .mini-rank-points { color: var(--accent2); font-weight: 700; }
-    .mini-rank-row.r1 .mini-rank-pos { color: var(--accent); font-weight: 700; }
-    .mini-rank-row.r2 .mini-rank-pos { color: #bbb; font-weight: 700; }
-    .mini-rank-row.r3 .mini-rank-pos { color: #c97b2e; font-weight: 700; }
+    .mini-rank-row.r1 .mini-rank-pos { color: var(--gold); font-weight: 700; }
+    .mini-rank-row.r2 .mini-rank-pos { color: var(--silver); font-weight: 700; }
+    .mini-rank-row.r3 .mini-rank-pos { color: var(--bronze); font-weight: 700; }
     .mini-rank-row.r4 .mini-rank-pos { color: var(--dim); font-weight: 500; }
     .mini-rank-row.viewer-highlight {
       margin-left: -0.45rem;
@@ -1590,9 +1988,9 @@
     .form-recency-2 { opacity: 0.42; }
 
     .rn { font-family: 'DM Mono', monospace; font-size: 1rem; color: var(--text); width: 36px; text-align: left !important; }
-    .r1 .rn { color: var(--accent); font-weight: 700; }
-    .r2 .rn { color: #bbb; font-weight: 700; }
-    .r3 .rn { color: #c97b2e; font-weight: 700; }
+    .r1 .rn { color: var(--gold); font-weight: 700; }
+    .r2 .rn { color: var(--silver); font-weight: 700; }
+    .r3 .rn { color: var(--bronze); font-weight: 700; }
     .rank-cell-inner {
       display: inline-flex;
       align-items: baseline;
@@ -1640,7 +2038,7 @@
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 14px; padding: 1.5rem; margin-bottom: 1.5rem;
     }
-    .chart-box-title { font-size: 0.85rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); margin-bottom: 1rem; }
+    .chart-box-title { margin-bottom: 1rem; }
     .filter-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap; }
     .filter-row { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
     .filter-toggle-btns { display: flex; gap: 6px; }
@@ -1892,15 +2290,6 @@
       line-height: 1.22;
       min-width: 0;
     }
-    .calculator-match-team[data-calculator-preset-team] {
-      cursor: pointer;
-      touch-action: manipulation;
-    }
-    .calculator-match-team[data-calculator-preset-team]:focus-visible {
-      outline: none;
-      box-shadow: 0 0 0 2px var(--accent);
-      border-radius: 8px;
-    }
     .calculator-match-team-2 {
       text-align: right;
     }
@@ -1922,6 +2311,23 @@
       letter-spacing: 0;
       line-height: 1;
       min-height: 1.85rem;
+    }
+    .calculator-probability-button {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+      margin: 0;
+      padding: 5px 3px;
+      touch-action: manipulation;
+    }
+    .calculator-probability-button:hover { color: var(--accent); }
+    .calculator-probability-button:focus-visible {
+      border-radius: 4px;
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
     }
     .calculator-live-result .mc-result-row { gap: 4px; }
     .calculator-live-result .mc-result-prob { min-width: 30px; }
@@ -2461,9 +2867,9 @@
         box-shadow: inset 3px 0 0 var(--accent2);
       }
       .calculator-mini-rank-row.r1 .calculator-mini-rank-pos,
-      .calculator-mini-rank-row:nth-child(1) .calculator-mini-rank-pos { color: var(--accent); }
-      .calculator-mini-rank-row:nth-child(2) .calculator-mini-rank-pos { color: #bbb; }
-      .calculator-mini-rank-row:nth-child(3) .calculator-mini-rank-pos { color: #c97b2e; }
+      .calculator-mini-rank-row:nth-child(1) .calculator-mini-rank-pos { color: var(--gold); }
+      .calculator-mini-rank-row:nth-child(2) .calculator-mini-rank-pos { color: var(--silver); }
+      .calculator-mini-rank-row:nth-child(3) .calculator-mini-rank-pos { color: var(--bronze); }
       .calculator-match-teams {
         gap: 4px;
       }

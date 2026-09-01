@@ -18,7 +18,7 @@ padel-liga/
 ├── data/
 │   ├── players.js                Globale Spieler-Stammdaten
 │   ├── seasons.js                Verfügbare Saisons und Standard-Saison
-│   ├── data2026.js               Teilnehmer, Ligaspiele und Inhalte der Saison 2026
+│   ├── data2026.js               Teilnehmer, Ligaspiele und Inhalte der Saison „Sommer 2026“
 │   ├── data-test-2026.js          Temporäre Test-Saison für Ergebnisabläufe
 │   ├── training-matches.js       Saisonunabhängige Trainingsspiele
 │   ├── supabase-config.js         Öffentliche Supabase-Verbindungsdaten
@@ -62,7 +62,7 @@ Eine Saison kann neutral eine oder später mehrere Ligen definieren. Für 2026 e
 
 ```js
 leagues: [
-  { id: "main", label: "Padel-Liga 2026", default: true }
+  { id: "main", label: "Padel-Liga Sommer 2026", default: true }
 ]
 ```
 
@@ -163,7 +163,7 @@ Die Datenbank trennt Spieler, Saisons, Ligen, Saison-Teilnahmen, Spiele, Benutze
 
 ## Spielergebnisse und Rollen
 
-Die Saison 2026 bleibt unverändert dateibasiert. Die temporäre Saison `test-2026` erprobt den künftigen Datenbankablauf:
+Die Saison „Sommer 2026“ bleibt unverändert dateibasiert. Die temporäre Saison `test-2026` erprobt den künftigen Datenbankablauf:
 
 - Neue Konten erhalten zunächst die Rolle `tipper`.
 - Vorab hinterlegte und bestätigte E-Mail-Adressen werden automatisch einem Spielerprofil zugeordnet.

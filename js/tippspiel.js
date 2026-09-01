@@ -271,7 +271,7 @@
     if (!body || !empty) return;
 
     body.innerHTML = state.leaderboard.map((entry, index) => `
-      <tr class="${state.session?.user?.id === entry.user_id ? 'viewer-highlight' : ''}">
+      <tr class="r${Math.min(index + 1, 4)} ${state.session?.user?.id === entry.user_id ? 'viewer-highlight' : ''}">
         <td class="l rn">${index + 1}</td>
         <td class="l"><span class="pname">${escapeHtml(entry.display_name)}</span></td>
         <td class="num-val">${Number(entry.predictions_count) || 0}</td>

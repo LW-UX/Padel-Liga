@@ -20,18 +20,23 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Die Migration `20260723160000_profile_result_tabs_actual_time.sql` wurde am 23. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Die neue Ergebnisfunktion mit tatsächlichem Datum und tatsächlicher Uhrzeit ist im Supabase-Schema-Cache verfügbar.
 - Die Migration `20260723164500_fix_elo_player_id_ambiguity.sql` wurde am 23. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Sie behebt die zuvor mehrdeutige Spieler-ID in der Elo-Neuberechnung.
 - Die Migration `20260723173000_account_games_email_names.sql` wurde am 23. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Die E-Mail-abgeleiteten Kontonamen, ligaübergreifenden Aufgaben, automatisch geprüften Satzbilanzen und Trainingsnummern sind aktiv.
+- Die Migration `20260901130000_public_player_profiles.sql` wurde am 1. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Öffentliche Profildaten, Saisonfunktionen, Auszeichnungen und die anonym lesbaren RPCs sind aktiv.
+- Die Migration `20260901131000_import_2026_profile_history.sql` wurde am 1. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Der geprüfte Bestand von „Sommer 2026“ umfasst 18 Teilnehmer, 30 Partien, 22 Ergebnisse, 108 Spielerzuordnungen und 88 Elo-Änderungen.
+- Die Migration `20260901132000_sommer_2026_final_four_achievements.sql` wurde am 1. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Saison und Liga tragen live die Bezeichnung „Sommer 2026“; Luca W. und Marco M. besitzen jeweils die freigegebene Final-4-Auszeichnung.
 - Die Konten für `Ludi Gmail` und `Ludi GMX` sind jeweils mit ihrer Spieler-ID und der Rolle `player` verbunden.
 - Das Konto für `Ludwig W.` ist mit seiner Spieler-ID und der Rolle `admin` verbunden.
 - Alle drei zugeordneten E-Mail-Adressen sind bestätigt. Die Test-Saison enthält vier Datenbankspiele, und Row Level Security ist für alle neu angelegten öffentlichen Tabellen aktiviert.
 
 ## Saison- und Datenstrategie
 
-- Die laufende Saison 2026 bleibt bis zu ihrem Abschluss in der öffentlichen Ligaansicht dateibasiert. Sie erhält während der laufenden Saison keine neue Ergebniseingabe und kein Tippspiel.
-- Die neuen Funktionen werden schon vor Saisonende vollständig mit der temporären Test-Saison erprobt.
+- Die separat weiterbetriebene öffentliche Saison „Sommer 2026“ bleibt bis zu ihrem Abschluss dateibasiert. Ihre Datenquelle und ihr laufender Betrieb werden durch die vorbereitete Nachfolgeversion nicht verändert; die stabile technische Saison-ID bleibt `2026`.
+- Die vorbereitete Nachfolgeversion verwendet dieselbe künftige Produktivdatenbank bereits vor der nächsten regulären Saison. Die echten Daten aus `data2026.js` werden dort kontrolliert unter der regulären Saison-ID `2026` ergänzt, damit öffentliche Spielerprofile und saisonübergreifende Auswertungen mit realen Daten entwickelt werden können.
+- Bis zum Abschluss der parallel laufenden dateibasierten Saison werden neue reale Ergebnisse zusätzlich kontrolliert in der Datenbank nachgetragen. Danach ist die Datenbank die einzige aktive Quelle für strukturierte Spieler-, Saison-, Match-, Ergebnis- und Elo-Daten der Nachfolgeversion.
+- Editoriale Saisonartikel bleiben Inhalte des Git-Repositorys und werden nicht in die Sportdatenbank verschoben.
 - Die nächste reguläre Saison wird von Beginn an datenbankbasiert betrieben.
-- Nach Abschluss der Saison 2026 wird deren vollständiger Datenbestand kontrolliert in die Datenbank importiert. Dazu gehören Spielerzuordnungen, Partien, Teams, Sätze, Ergebnisse und Elo-Verläufe.
-- Die importierte Saison 2026 wird anschließend als abgeschlossen und schreibgeschützt behandelt. Sie dient Spielerprofilen, Statistiken und historischen Auswertungen.
-- Vor dem finalen Import werden Datenbank und Quelldaten gesichert. Ein separates Repository enthält bereits ein vollständiges Backup der Saison 2026.
+- Der vollständige Datenbestand der Saison „Sommer 2026“ wird kontrolliert in die Datenbank importiert. Dazu gehören Spielerzuordnungen, Partien, Teams, Sätze, Ergebnisse und reproduzierbar berechnete Elo-Verläufe.
+- Die importierte Saison „Sommer 2026“ wird anschließend als abgeschlossen und schreibgeschützt behandelt. Sie dient Spielerprofilen, Statistiken und historischen Auswertungen.
+- Vor dem finalen Import werden Datenbank und Quelldaten gesichert. Ein separates Repository enthält bereits ein vollständiges Backup der Saison „Sommer 2026“.
 - Während der Umstellung ist eine kurzzeitige doppelte Datenhaltung als Rückfallmöglichkeit erlaubt. Nach erfolgreichem Vergleich wird die aktive Doppelhaltung entfernt.
 - Der finale Import muss Anzahl und Inhalt der Spiele, Satzergebnisse, Tabelle sowie Elo-Endstände und Elo-Verlauf gegen die Quelldaten prüfen.
 
@@ -46,7 +51,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Der frühere Tippspiel-Navigationspunkt wird aus der Ligaseite entfernt.
 - Die Tippseite besitzt die Bereiche „Tippen“ und „Tippübersicht“.
 - Die Tippübersicht zeigt eine öffentliche Rangliste aller Konten, die mindestens einen Tipp abgegeben haben.
-- Für die Saison 2026 wird kein Tippspiel mehr angeboten. Die Test-Saison und spätere datenbankbasierte Saisons verwenden die separate Tippseite.
+- Für die Saison „Sommer 2026“ wird kein Tippspiel mehr angeboten. Die Test-Saison und spätere datenbankbasierte Saisons verwenden die separate Tippseite.
 
 ## Konten, Rollen und Spielerzuordnung
 
@@ -83,12 +88,12 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Trainingsspiele verändern kein Elo.
 - Die Y-Achse der Elo-Verlaufsgrafik beginnt bei 500; die Grafik ist 620 Pixel hoch.
 - Die Punkte der Elo-Verlaufsgrafik haben für den aktiven Spieler 4 Pixel Radius und für die übrigen Spieler 3 Pixel Radius; beim Hover verwenden sie 5 Pixel Radius.
-- Die Elo-Verlaufsgrafik der Saison 2026 ergänzt am 1. Oktober 2026 einen gemeinsamen Punkt „Final“ ausschließlich für Spieler mit mindestens sechs gewerteten Spielen. Dieser Punkt wiederholt den Elo-Wert nach dem jeweils letzten Spiel, damit die Linien dieser Spieler bis zum gemeinsamen Saisonendpunkt reichen; der Endpunkt selbst verändert das Elo nicht. Die Verbindung vom letzten Spiel zum Final-Punkt verläuft gerade, während die Verbindungen zwischen den tatsächlichen Spielwerten geglättet bleiben. Bei Spielern mit weniger als sechs Spielen endet die Linie weiterhin beim letzten tatsächlich gespielten Match.
+- Die Elo-Verlaufsgrafik der Saison „Sommer 2026“ ergänzt am 1. Oktober 2026 einen gemeinsamen Punkt „Final“ ausschließlich für Spieler mit mindestens sechs gewerteten Spielen. Dieser Punkt wiederholt den Elo-Wert nach dem jeweils letzten Spiel, damit die Linien dieser Spieler bis zum gemeinsamen Saisonendpunkt reichen; der Endpunkt selbst verändert das Elo nicht. Die Verbindung vom letzten Spiel zum Final-Punkt verläuft gerade, während die Verbindungen zwischen den tatsächlichen Spielwerten geglättet bleiben. Bei Spielern mit weniger als sechs Spielen endet die Linie weiterhin beim letzten tatsächlich gespielten Match.
 - In der Grafik „Platzierungen nach Spieltag“ kennzeichnet ein ausgefüllter Kreis eine gespielte Partie, ein hohler Kreis mit transparenter Fläche in der jeweiligen Spielerfarbe einen spielfreien Spieler und ein fehlendes Symbol eine angesetzte, aber noch nicht gespielte Partie. Die Linie bleibt an spielfreien Spieltagen grau. Der aktive Spieler verwendet für gespielte Partien 4 Pixel Punkt-Radius, die übrigen Spieler 3 Pixel; beide wachsen beim Hover auf 5 Pixel. Der spielfreie Kreis hat 3 Pixel Radius und keinen Hover-Effekt.
 - Elo-Veränderungen werden nicht in der Ergebnisübersicht angezeigt. Sie bleiben intern nachvollziehbar gespeichert und fließen weiterhin in Rangliste und Saisonverlauf ein.
 - Für jeden Spieler und jedes gewertete Spiel sollen Elo vor dem Spiel, Veränderung und Elo nach dem Spiel nachvollziehbar gespeichert werden.
 - Zusätzlich soll die verwendete Version der Elo-Berechnung festgehalten werden, damit spätere Neuberechnungen und Vergleiche möglich bleiben.
-- Beim späteren Import von 2026 werden die vorhandenen Werte zunächst unverändert übernommen und anschließend durch eine Neuberechnung kontrolliert.
+- Die Elo-Historie von „Sommer 2026“ wird mit sämtlichen Vorher-/Nachher-Werten 1:1 aus `data/data2026.js` übernommen. Eine Neuberechnung darf ausschließlich als Vergleich dienen und die importierten Referenzwerte nicht überschreiben. Nach dem Import wurde die Übereinstimmung aller 88 Elo-Änderungen ohne Abweichung geprüft.
 
 ## Tippspiel
 
@@ -109,6 +114,9 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Ein anderer beteiligter Spieler muss das Training bestätigen. Der Ersteller kann nicht selbst bestätigen.
 - Trainingsspiele werden über den Konto-Dialog hinzugefügt und verwaltet.
 - Trainings werden nach ihrem Erstellungszeitpunkt fortlaufend als „Training X“ nummeriert. Im Konto erscheinen nur offene Trainings; bestätigte Trainings werden dort nicht mehr angezeigt.
+- Jede bestätigte Trainingsrunde zählt in öffentlichen Spielerprofilen als eine All-Time-Partie und fließt in Spiele-G:V sowie Spieldifferenz ein.
+- Eine bestätigte Trainingsrunde mit ausgeglichener Satzbilanz zählt weder als Sieg noch als Niederlage. Deshalb dürfen Siege plus Niederlagen kleiner als die All-Time-Partienzahl sein.
+- Trainings bleiben trotz ihrer Profilwertung ohne Einfluss auf Saisonrangliste und Elo.
 
 ## Konto-Dialog und Aufgaben
 
@@ -130,13 +138,26 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Die übrigen Plätze werden mit Spielern aus der normalen Spielerliste besetzt.
 - Testdaten dürfen zurückgesetzt und nach erfolgreichen Tests vollständig gelöscht werden.
 - Die Test-Saison dient insbesondere den Rollen-, Ergebnis-, Gegenvorschlags-, Bestätigungs-, Elo-, Tipp- und Trainingsabläufen.
+- `test-2026` ist vollständig von öffentlichen Spielerprofilen, Karrierewerten, Teilnahmen und saisonübergreifenden Elo-Verläufen ausgeschlossen.
 
-## Zukünftige Spielerprofile
+## Öffentliche Spielerprofile
 
-- Für jeden einzelnen Spieler soll ein Profil mit allen vergangenen Spielen entstehen.
-- Historische Spiele müssen über stabile Spieler-IDs statt nur über Anzeigenamen mit dem Profil verbunden sein.
-- Vorgesehene Auswertungen sind unter anderem Spiele, Partner, Gegner, Siege, Niederlagen, Satzbilanz, Elo-Verlauf, häufigste Partner und direkte Vergleiche.
-- Die historischen Daten der Saison 2026 werden deshalb nach Saisonende in die Datenbank übernommen und nicht dauerhaft nur in statischen Dateien belassen.
+- Für jeden Spieler gibt es ein eigenständiges öffentliches Profil-Modal, getrennt vom privaten Konto- und Ergebnisdialog.
+- Das Profil-Modal verwendet den schwarzen Seitenhintergrund. Profilbild und Name laufen ohne Widget bis an den Dialogrand; das Firmenlabel steht unter dem Namen und verwendet dieselbe Badge-Gestaltung wie in der Rangliste. Ein Coverbild gibt es nicht. Die gesamte All-Time-Statistik steht in einem gemeinsamen vollbreiten Widget; Elo-Verlauf, Teilnahmen und vergangene Partien bilden drei weitere Widgets.
+- Das Profil öffnet sich über Spielernamen in Ranglisten, Partienübersichten und Rechner. Verknüpfungen verwenden ausschließlich stabile Spieler-IDs.
+- Das Profil zeigt All-Time-Partien, Siege und Niederlagen, Spiele-G:V, Spieldifferenz, offiziellen saisonübergreifenden Elo-Verlauf, Saison-Teilnahmen, explizit hinterlegte Erfolge und vergangene Liga- beziehungsweise Trainingspartien.
+- Öffentliche Profilwerte werden serverseitig aus bestätigten Daten aggregiert. Match-Tiebreak-Punkte zählen nicht als Spiele; Trainings verändern kein Elo.
+- Erfolge werden ausdrücklich in einer eigenen Datenbanktabelle gepflegt und nicht aus einem Mockup oder einer laufenden Platzierung erfunden. Ohne Einträge wird der Erfolgsbereich ausgeblendet.
+- Gold (`#FFD000`), Silber (`#ADC8D8`) und Bronze (`#C97B2E`) sind zentrale Gestaltungsfarben. Sie werden sowohl für Auszeichnungen als auch für die Plätze 1 bis 3 in sämtlichen Ranglisten verwendet.
+- Auszeichnungen werden von den bereitgestellten linken und rechten Lorbeerzweigen eingerahmt. Gewinner erscheinen mit der Überschrift „GEWINNER“ in Gold, Final-4-Teilnehmer mit „FINAL 4“ in Silber; der Saisonname steht jeweils zentriert darunter.
+- Luca W. und Marco M. erhalten für die Saison „Sommer 2026“ jeweils die Auszeichnung „Final 4 Teilnehmer“ mit dem Untertitel „Padel-Liga Sommer 2026“.
+- Profilbilder liegen im Git-Repository unter `assets/players/<spieler-id>/profile.webp`. Fehlende Bilder verwenden den gestalteten Platzhalter; Bilddateien und Binärdaten werden nicht in Supabase gespeichert.
+- Das Profil startet mit dem tatsächlich vorhandenen Bestand ab der Saison „Sommer 2026“. Es werden keine älteren Mock-Saisons erzeugt.
+
+## Rechner-Interaktion
+
+- Ein Klick auf einen Spielernamen im Rechner öffnet ausschließlich das öffentliche Spielerprofil und verändert keine simulierten Ergebnisse.
+- Die bisherige 6:2-/6:2-Schnellwahl liegt auf den beiden Wahrscheinlichkeitswerten. Die linke beziehungsweise rechte Wahrscheinlichkeit setzt das zugehörige Team als Sieger und darf vorhandene Eingaben überschreiben; ein vorhandener Match-Tiebreak wird dabei entfernt.
 
 ## Noch nicht abschließend festgelegt
 
