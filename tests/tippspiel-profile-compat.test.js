@@ -100,11 +100,50 @@ test('delegated result forms submit the form itself with the actual date and tim
   assert.doesNotMatch(resultHandler, /const form = event\.currentTarget;/);
 });
 
-test('personal result tasks load across seasons and keep the admin archive collapsed', () => {
+test('result tasks load across seasons without a separate admin archive', () => {
   assert.match(tippspielSource, /get_my_result_tasks', \{ p_season_id: null \}/);
   assert.match(tippspielSource, /typeof task\?\.is_open === 'boolean'/);
   assert.match(tippspielSource, /task\.task_type === 'completed'/);
-  assert.match(tippspielSource, /if \(!details\?\.open\) return/);
+  assert.doesNotMatch(tippspielSource, /renderAdminAllMatches/);
+});
+
+test('games are player-scoped for players and unfiltered for admins', () => {
+  const timestampSource = tippspielSource.match(
+    /function getMatchTimestamp\(match\) \{[\s\S]*?(?=\n  function renderTeam)/
+  )?.[0] || '';
+  const groupingSource = tippspielSource.match(
+    /function getPlayerResultTaskGroups\(tasks = \[\], now = Date\.now\(\), includeAll = false\) \{[\s\S]*?(?=\n  function getActionableResultTasks)/
+  )?.[0] || '';
+  const getGroups = vm.runInNewContext(`(() => { ${timestampSource}\n${groupingSource}\nreturn getPlayerResultTaskGroups; })()`);
+  const now = new Date('2026-09-01T12:00:00').getTime();
+  const groups = getGroups([
+    { match_id: 'future', my_team: 1, task_type: 'enter', scheduled_date: '2026-09-02', display_time: '18:00' },
+    { match_id: 'admin-only', my_team: null, task_type: 'review', scheduled_date: '2026-08-28', display_time: '18:00' },
+    { match_id: 'review', my_team: 2, task_type: 'review', scheduled_date: '2026-08-30', display_time: '18:00' },
+    { match_id: 'past', my_team: 1, task_type: 'enter', scheduled_date: '2026-08-31', display_time: '18:00:00' },
+    { match_id: 'waiting', my_team: 1, task_type: 'waiting', scheduled_date: '2026-08-29', display_time: '18:00' }
+  ], now);
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(groups.map(group => [group.key, group.tasks.map(task => task.match_id)]))),
+    [['review', ['review']], ['past', ['past']], ['future', ['future']]]
+  );
+  const adminGroups = getGroups([
+    { match_id: 'admin-review', my_team: null, task_type: 'review', scheduled_date: '2026-08-28', display_time: '18:00' },
+    { match_id: 'admin-past', my_team: null, task_type: 'enter', scheduled_date: '2026-08-31', display_time: '18:00' },
+    { match_id: 'admin-future', my_team: null, task_type: 'enter', scheduled_date: '2026-09-02', display_time: '18:00' }
+  ], now, true);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(adminGroups.map(group => [group.key, group.tasks.map(task => task.match_id)]))),
+    [['review', ['admin-review']], ['past', ['admin-past']], ['future', ['admin-future']]]
+  );
+});
+
+test('training confirmations join the first group and own trainings stay in training management', () => {
+  assert.match(tippspielSource, /function isTrainingTaskVisible\(task\)[\s\S]*app_role === 'admin'/);
+  assert.match(tippspielSource, /const trainingConfirmations = state\.trainingTasks[\s\S]*!task\.created_by_me && isTrainingTaskVisible\(task\)/);
+  assert.match(tippspielSource, /trainingTasks\.forEach\([\s\S]*kind: 'training'/);
+  assert.match(tippspielSource, /const ownTrainingTasks = state\.trainingTasks[\s\S]*task\.created_by_me && isTrainingTaskVisible\(task\)/);
 });
 
 test('account names are derived from email and cannot be submitted by the user', () => {
@@ -143,6 +182,50 @@ test('score derivation handles straight sets and a deciding match tiebreak', () 
   assert.deepEqual(
     JSON.parse(JSON.stringify(readResultScore(formFor([[6, 2], [3, 6], [4, 10]])))),
     { actualSets: '1:2', winner: 2, resultDetails: '6:2, 3:6 – 4:10' }
+  );
+});
+
+test('decision counters unlock only at 1:1 and share the action row with their status', () => {
+  assert.match(tippspielSource, /function hasSplitFirstTwoSets\(scores\)/);
+  assert.match(tippspielSource, /data-result-decision/);
+  assert.match(tippspielSource, /control\.disabled = !decisionEnabled/);
+  assert.match(tippspielSource, /<div class="result-entry-actions">\s*<div class="result-entry-summary"[^>]*>Satzergebnis wird automatisch berechnet\.<\/div>\s*<button class="primary-button"/);
+});
+
+test('training distinguishes three regular sets from two sets plus match tiebreak', () => {
+  assert.match(tippspielSource, /value="two_sets_match_tiebreak">2 Sätze \+ Match-Tiebreak/);
+  assert.match(tippspielSource, /value="three_sets">3 Sätze/);
+  assert.doesNotMatch(tippspielSource, /3 Sätze \/ Match-Tiebreak/);
+  const splitSource = tippspielSource.match(
+    /function hasSplitFirstTwoSets\(scores\) \{[\s\S]*?(?=\n  function renderScoreCounters)/
+  )?.[0] || '';
+  const trainingResultSource = tippspielSource.match(
+    /function getTrainingResultData\(round\) \{[\s\S]*?(?=\n  async function handleTrainingSubmit)/
+  )?.[0] || '';
+  const getTrainingResultData = vm.runInNewContext(
+    `(() => { ${splitSource}\n${trainingResultSource}\nreturn getTrainingResultData; })()`
+  );
+  const roundFor = (resultFormat, result) => ({
+    querySelector(selector) {
+      return { value: selector.includes('resultFormat') ? resultFormat : result };
+    }
+  });
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(getTrainingResultData(roundFor('two_sets_match_tiebreak', '6:3, 4:6, 10:7')))),
+    { resultDetails: '6:3, 4:6 – 10:7', setCount: 3 }
+  );
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(getTrainingResultData(roundFor('three_sets', '6:3, 4:6, 6:4')))),
+    { resultDetails: '6:3, 4:6, 6:4', setCount: 3 }
+  );
+  assert.throws(
+    () => getTrainingResultData(roundFor('three_sets', '6:3, 4:6, 10:7')),
+    /kein Match-Tiebreak/
+  );
+  assert.throws(
+    () => getTrainingResultData(roundFor('two_sets_match_tiebreak', '6:3, 6:4, 10:7')),
+    /nur nach einem Satzstand von 1:1/
   );
 });
 

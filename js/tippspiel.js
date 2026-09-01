@@ -72,15 +72,16 @@
   }
 
   function getMatchTimestamp(match) {
-    const time = match.uhrzeit ? match.uhrzeit.replace('.', ':') : '23:59';
-    const timestamp = new Date(`${match.datum || '9999-12-31'}T${time}:00`).getTime();
+    const rawTime = String(match.uhrzeit || '23:59').replace('.', ':');
+    const time = /^\d{1,2}:\d{2}$/.test(rawTime) ? `${rawTime}:00` : rawTime;
+    const timestamp = new Date(`${match.datum || '9999-12-31'}T${time}`).getTime();
     return Number.isNaN(timestamp) ? 0 : timestamp;
   }
 
   function renderTeam(team) {
     return team.spieler
       .map(player => `<span class="prediction-player">${escapeHtml(player)}</span>`)
-      .join('<span class="mc-player-sep"> / </span>');
+      .join('<span class="mc-player-sep"> &amp; </span>');
   }
 
   function getProfileDisplayName() {
@@ -103,6 +104,12 @@
     return ['player', 'admin'].includes(state.profile?.app_role) && Boolean(state.profile?.player_id);
   }
 
+  function isTrainingTaskVisible(task) {
+    if (state.profile?.app_role === 'admin') return true;
+    const playerId = state.profile?.player_id;
+    return Boolean(playerId && Array.isArray(task?.player_ids) && task.player_ids.includes(playerId));
+  }
+
   function isResultTaskOpen(task) {
     if (typeof task?.is_open === 'boolean') return task.is_open;
     if (task?.task_type === 'review' || task?.task_type === 'waiting') return true;
@@ -113,12 +120,50 @@
     }) <= Date.now();
   }
 
-  function getOpenResultTasks() {
-    return state.resultTasks.filter(task => isResultTaskOpen(task) && task.task_type !== 'completed');
+  function getPlayerResultTaskGroups(tasks = [], now = Date.now(), includeAll = false) {
+    const compareBySchedule = (first, second) => getMatchTimestamp({
+      datum: first.scheduled_date,
+      uhrzeit: first.display_time
+    }) - getMatchTimestamp({
+      datum: second.scheduled_date,
+      uhrzeit: second.display_time
+    });
+    const scopedTasks = includeAll
+      ? tasks
+      : tasks.filter(task => [1, 2].includes(Number(task?.my_team)));
+    const resultEntries = scopedTasks.filter(task => task.task_type === 'enter' && task.scheduled_date);
+
+    return [
+      {
+        key: 'review',
+        label: 'Zu bestätigen',
+        tasks: scopedTasks.filter(task => task.task_type === 'review').sort(compareBySchedule)
+      },
+      {
+        key: 'past',
+        label: 'Ergebnis eintragen',
+        tasks: resultEntries
+          .filter(task => getMatchTimestamp({ datum: task.scheduled_date, uhrzeit: task.display_time }) <= now)
+          .sort(compareBySchedule)
+      },
+      {
+        key: 'future',
+        label: 'Terminierte Spiele',
+        tasks: resultEntries
+          .filter(task => getMatchTimestamp({ datum: task.scheduled_date, uhrzeit: task.display_time }) > now)
+          .sort(compareBySchedule)
+      }
+    ];
   }
 
   function getActionableResultTasks() {
-    return getOpenResultTasks().filter(task => task.task_type !== 'waiting');
+    return getPlayerResultTaskGroups(
+      state.resultTasks,
+      Date.now(),
+      state.profile?.app_role === 'admin'
+    )
+      .slice(0, 2)
+      .flatMap(group => group.tasks);
   }
 
   function publishAuthenticatedPlayer() {
@@ -150,7 +195,8 @@
 
     const isLoggedIn = Boolean(state.session?.user);
     const displayName = getProfileDisplayName();
-    const taskCount = getActionableResultTasks().length + state.trainingTasks.filter(task => !task.created_by_me).length;
+    const taskCount = getActionableResultTasks().length
+      + state.trainingTasks.filter(task => !task.created_by_me && isTrainingTaskVisible(task)).length;
     button.innerHTML = isLoggedIn
       ? `<svg class="auth-user-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/>
@@ -260,8 +306,8 @@
     };
 
     target.innerHTML = `
-      ${openMatches.length ? `<div class="prediction-match-group"><div class="prediction-group-title">Offene Spiele <span>${openMatches.length}</span></div>${openMatches.map(renderMatch).join('')}</div>` : ''}
-      ${lockedMatches.length ? `<div class="prediction-match-group"><div class="prediction-group-title">Gespielt &amp; gesperrt <span>${lockedMatches.length}</span></div>${lockedMatches.map(renderMatch).join('')}</div>` : ''}
+      ${openMatches.length ? `<div class="prediction-match-group"><div class="widget-label">Offene Spiele</div>${openMatches.map(renderMatch).join('')}</div>` : ''}
+      ${lockedMatches.length ? `<div class="prediction-match-group"><div class="widget-label">Gespielt &amp; gesperrt</div>${lockedMatches.map(renderMatch).join('')}</div>` : ''}
     `;
   }
 
@@ -323,10 +369,7 @@
   }
 
   function getTaskLeagueLabel(task) {
-    const league = task.league_label || task.league_id || 'Liga';
-    return task.season_label && task.season_label !== league
-      ? `${league} · ${task.season_label}`
-      : league;
+    return task.league_label || task.league_id || 'Liga';
   }
 
   function parseResultScores(resultDetails) {
@@ -335,16 +378,24 @@
       .map(match => [Number(match[1]), Number(match[2])]);
   }
 
+  function hasSplitFirstTwoSets(scores) {
+    return scores.length >= 2
+      && scores.slice(0, 2).every(score => score.every(Number.isInteger) && score[0] !== score[1])
+      && (scores[0][0] > scores[0][1]) !== (scores[1][0] > scores[1][1]);
+  }
+
   function renderScoreCounters(resultDetails = '') {
     const values = parseResultScores(resultDetails);
+    const decisionEnabled = hasSplitFirstTwoSets(values);
     return `<div class="result-score-entry">
       ${['Satz 1', 'Satz 2', 'Entscheidung'].map((label, setIndex) => {
         const score = values[setIndex] || [];
-        return `<div class="result-score-set">
+        const decisionDisabled = setIndex === 2 && !decisionEnabled;
+        return `<div class="result-score-set"${setIndex === 2 ? ' data-result-decision' : ''}>
           <span>${label}</span>
           <div class="result-score-pair">
             ${[1, 2].map((team, teamIndex) => `<div class="result-score-counter">
-              <button type="button" data-result-score-step="-1" aria-label="${label}, Team ${team}: eins abziehen">−</button>
+              <button type="button" data-result-score-step="-1" aria-label="${label}, Team ${team}: eins abziehen"${decisionDisabled ? ' disabled' : ''}>−</button>
               <input
                 type="number"
                 inputmode="numeric"
@@ -358,8 +409,9 @@
                 value="${score[teamIndex] ?? ''}"
                 placeholder="0"
                 aria-label="${label}, Team ${team}"
+                ${decisionDisabled ? 'disabled' : ''}
               >
-              <button type="button" data-result-score-step="1" aria-label="${label}, Team ${team}: eins addieren">+</button>
+              <button type="button" data-result-score-step="1" aria-label="${label}, Team ${team}: eins addieren"${decisionDisabled ? ' disabled' : ''}>+</button>
             </div>`).join('<span class="result-score-colon">:</span>')}
           </div>
         </div>`;
@@ -367,11 +419,29 @@
     </div>`;
   }
 
+  function renderTaskTeamLabel(label, authenticatedPlayerName) {
+    const normalizedAuthenticatedName = String(authenticatedPlayerName || '').trim().toLocaleLowerCase('de-DE');
+    return String(label || '')
+      .split(' / ')
+      .map(playerName => {
+        const escapedName = escapeHtml(playerName);
+        const isAuthenticatedPlayer = normalizedAuthenticatedName
+          && playerName.trim().toLocaleLowerCase('de-DE') === normalizedAuthenticatedName;
+        return isAuthenticatedPlayer
+          ? `<span class="account-task-player-name is-authenticated">${escapedName}</span>`
+          : escapedName;
+      })
+      .join(' &amp; ');
+  }
+
   function renderTaskMatchup(task) {
+    const authenticatedPlayerName = state.profile?.player_id
+      ? getPlayerName(state.profile.player_id)
+      : '';
     return `<div class="account-task-matchup">
-      <strong>${escapeHtml(task.team_one_label)}</strong>
+      <strong>${renderTaskTeamLabel(task.team_one_label, authenticatedPlayerName)}</strong>
       <span>gegen</span>
-      <strong>${escapeHtml(task.team_two_label)}</strong>
+      <strong>${renderTaskTeamLabel(task.team_two_label, authenticatedPlayerName)}</strong>
     </div>`;
   }
 
@@ -390,8 +460,8 @@
       </div>
       ${counter ? '' : renderTaskMatchup(task)}
       ${renderScoreCounters(initialResult)}
-      <div class="result-entry-summary" data-result-summary>Satzergebnis wird automatisch berechnet.</div>
       <div class="result-entry-actions">
+        <div class="result-entry-summary" data-result-summary>Satzergebnis wird automatisch berechnet.</div>
         <button class="primary-button" type="submit">${state.profile?.app_role === 'admin' ? 'Ergebnis eintragen' : counter ? 'Alternative senden' : 'Zur Bestätigung senden'}</button>
       </div>
     </form>`;
@@ -438,10 +508,9 @@
   function renderResultTaskCard(task) {
     const formOwnsMatchup = !['completed', 'waiting', 'review'].includes(task.task_type);
     return `<div class="result-task-wrap">
-      <div class="account-task-league">${escapeHtml(getTaskLeagueLabel(task))}</div>
       <article class="account-task-card result-task-card">
         <div class="account-task-meta">
-          <span>Partie ${escapeHtml(getTaskNumber(task))}</span>
+          <span class="widget-label">${escapeHtml(getTaskLeagueLabel(task))} · Partie ${escapeHtml(getTaskNumber(task))}</span>
           ${renderResultTaskStatus(task)}
         </div>
         ${formOwnsMatchup ? '' : `<div class="result-card-timing">${escapeHtml(formatTaskDate(
@@ -454,47 +523,39 @@
     </div>`;
   }
 
-  function renderTaskCollection(target, tasks, emptyText) {
+  function renderResultTaskGroups(target, groups, trainingTasks = []) {
     if (!target) return;
-    target.innerHTML = tasks.length
-      ? tasks.map(renderResultTaskCard).join('')
-      : `<div class="account-empty">${emptyText}</div>`;
-  }
-
-  function renderAdminAllMatches() {
-    const details = document.getElementById('admin-all-matches');
-    if (!details?.open) return;
-    renderTaskCollection(
-      document.getElementById('admin-all-matches-list'),
-      state.resultTasks,
-      'Es sind noch keine Ligaspiele vorhanden.'
-    );
+    const groupedItems = groups.map((group, groupIndex) => {
+      const items = group.tasks.map(task => ({ kind: 'league', task }));
+      if (groupIndex === 0) {
+        trainingTasks.forEach((task, index) => items.push({ kind: 'training', task, index }));
+        items.sort((first, second) => getMatchTimestamp({
+          datum: first.kind === 'training' ? first.task.played_on : first.task.scheduled_date,
+          uhrzeit: first.task.display_time
+        }) - getMatchTimestamp({
+          datum: second.kind === 'training' ? second.task.played_on : second.task.scheduled_date,
+          uhrzeit: second.task.display_time
+        }));
+      }
+      return { ...group, items };
+    });
+    const visibleGroups = groupedItems.filter(group => group.items.length);
+    target.innerHTML = visibleGroups.length
+      ? visibleGroups.map(group => `<section class="prediction-match-group" data-result-task-group="${group.key}">
+          <div class="widget-label">${escapeHtml(group.label)}</div>
+          <div class="account-task-list">${group.items.map(item => item.kind === 'training'
+            ? renderTrainingTaskCard(item.task, item.index)
+            : renderResultTaskCard(item.task)).join('')}</div>
+        </section>`).join('')
+      : '<div class="account-empty">Aktuell gibt es keine Spiele für dein Spielerprofil.</div>';
   }
 
   function renderResultTasks() {
-    const openTasks = getOpenResultTasks();
-    const completedTasks = state.resultTasks.filter(task => task.task_type === 'completed').reverse();
     const isAdmin = state.profile?.app_role === 'admin';
-    const count = document.getElementById('result-task-count');
-    if (count) count.textContent = openTasks.length ? String(openTasks.length) : '';
-    renderTaskCollection(
-      document.getElementById('result-task-list'),
-      openTasks,
-      'Aktuell gibt es keine offenen Ergebnisse.'
-    );
-
-    const playedSection = document.getElementById('admin-played-section');
-    const allMatches = document.getElementById('admin-all-matches');
-    if (playedSection) playedSection.hidden = !isAdmin;
-    if (allMatches) allMatches.hidden = !isAdmin;
-    if (isAdmin) {
-      renderTaskCollection(
-        document.getElementById('admin-played-list'),
-        completedTasks,
-        'Es wurden noch keine Spiele bestätigt.'
-      );
-      renderAdminAllMatches();
-    }
+    const groups = getPlayerResultTaskGroups(state.resultTasks, Date.now(), isAdmin);
+    const trainingConfirmations = state.trainingTasks
+      .filter(task => !task.created_by_me && isTrainingTaskVisible(task));
+    renderResultTaskGroups(document.getElementById('result-task-list'), groups, trainingConfirmations);
   }
 
   function getPlayerName(playerId) {
@@ -507,7 +568,7 @@
     return [...document.querySelectorAll('[data-training-round]')].map(round => ({
       pairing: round.querySelector('[name="pairing"]')?.value || 'ab_cd',
       result: round.querySelector('[name="roundResult"]')?.value || '',
-      setCount: round.querySelector('[name="setCount"]')?.value || '1',
+      resultFormat: round.querySelector('[name="resultFormat"]')?.value || 'one_set',
       roundStatus: round.querySelector('[name="roundStatus"]')?.value || 'complete'
     }));
   }
@@ -524,7 +585,7 @@
           <option value="ad_bc">Spieler 1 + 4 gegen 2 + 3</option>
         </select></label>
         <label><span>Ergebnis</span><input name="roundResult" required placeholder="6:3 oder 6:3, 4:6"></label>
-        <label><span>Ergebnisabschnitte</span><select name="setCount"><option value="1">1 Satz</option><option value="2">2 Sätze</option><option value="3">3 Sätze / Match-Tiebreak</option></select></label>
+        <label><span>Ergebnisformat</span><select name="resultFormat"><option value="one_set">1 Satz</option><option value="two_sets">2 Sätze</option><option value="two_sets_match_tiebreak">2 Sätze + Match-Tiebreak</option><option value="three_sets">3 Sätze</option></select></label>
         <label><span>Status</span><select name="roundStatus"><option value="complete">Vollständig</option><option value="incomplete">Abgebrochen · ohne Wertung</option></select></label>
         ${index ? '<button class="text-link" type="button" data-training-round-remove="' + index + '">Entfernen</button>' : ''}
       </div>
@@ -534,7 +595,7 @@
       if (!value) return;
       round.querySelector('[name="pairing"]').value = value.pairing;
       round.querySelector('[name="roundResult"]').value = value.result;
-      round.querySelector('[name="setCount"]').value = value.setCount;
+      round.querySelector('[name="resultFormat"]').value = value.resultFormat;
       round.querySelector('[name="roundStatus"]').value = value.roundStatus;
     });
   }
@@ -556,7 +617,7 @@
     return `<article class="account-task-card training-task-card">
       <div class="account-task-meta"><span>Training ${escapeHtml(task.training_number || index + 1)}</span><span>${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</span></div>
       <div class="training-player-line">${task.player_ids.map(id => escapeHtml(getPlayerName(id))).join(' · ')}</div>
-      ${rounds.map(round => `<div class="training-round-result${round.is_complete === false ? ' incomplete' : ''}"><span>${round.team_one_ids.map(getPlayerName).map(escapeHtml).join(' / ')}</span><strong title="${round.is_complete === false ? 'Abgebrochen · ohne Wertung' : 'Vollständiges Ergebnis'}">${escapeHtml(round.result_details)}</strong><span>${round.team_two_ids.map(getPlayerName).map(escapeHtml).join(' / ')}</span></div>`).join('')}
+      ${rounds.map(round => `<div class="training-round-result${round.is_complete === false ? ' incomplete' : ''}"><span>${round.team_one_ids.map(getPlayerName).map(escapeHtml).join(' &amp; ')}</span><strong title="${round.is_complete === false ? 'Abgebrochen · ohne Wertung' : 'Vollständiges Ergebnis'}">${escapeHtml(round.result_details)}</strong><span>${round.team_two_ids.map(getPlayerName).map(escapeHtml).join(' &amp; ')}</span></div>`).join('')}
       <div class="account-task-actions">
         ${task.created_by_me
           ? `<span class="account-waiting">Wartet auf Bestätigung</span><button class="text-link" type="button" data-training-edit="${task.session_id}">Bearbeiten</button><button class="text-link" type="button" data-training-delete="${task.session_id}">Löschen</button>`
@@ -567,8 +628,10 @@
 
   function renderTraining() {
     const taskTarget = document.getElementById('training-task-list');
-    if (taskTarget) taskTarget.innerHTML = state.trainingTasks.length
-      ? state.trainingTasks.map(renderTrainingTaskCard).join('')
+    const ownTrainingTasks = state.trainingTasks
+      .filter(task => task.created_by_me && isTrainingTaskVisible(task));
+    if (taskTarget) taskTarget.innerHTML = ownTrainingTasks.length
+      ? ownTrainingTasks.map(renderTrainingTaskCard).join('')
       : '<div class="account-empty">Keine offenen Trainings.</div>';
   }
 
@@ -804,6 +867,18 @@
   }
 
   function updateResultSummary(form) {
+    if (!form) return;
+    const firstTwoScores = [0, 1].map(setIndex => [0, 1].map(teamIndex => {
+      const input = form.querySelector(`[data-score-set="${setIndex}"][data-score-team="${teamIndex}"]`);
+      const raw = String(input?.value ?? '').trim();
+      return raw === '' ? null : Number(raw);
+    }));
+    const decisionEnabled = hasSplitFirstTwoSets(firstTwoScores);
+    form.querySelector('[data-result-decision]')?.querySelectorAll('input, button').forEach(control => {
+      if (!decisionEnabled && control.matches('input')) control.value = '';
+      control.disabled = !decisionEnabled;
+    });
+
     const target = form.querySelector('[data-result-summary]');
     if (!target) return;
     try {
@@ -866,6 +941,40 @@
     return [[playerIds[0], playerIds[1]], [playerIds[2], playerIds[3]]];
   }
 
+  function getTrainingResultData(round) {
+    const resultFormat = round.querySelector('[name="resultFormat"]').value;
+    const rawResult = round.querySelector('[name="roundResult"]').value.trim();
+    const scores = [...rawResult.matchAll(/(\d+)\s*:\s*(\d+)/g)]
+      .map(match => [Number(match[1]), Number(match[2])]);
+    const expectedCounts = { one_set: 1, two_sets: 2, two_sets_match_tiebreak: 3, three_sets: 3 };
+    const setCount = expectedCounts[resultFormat];
+
+    if (!setCount || scores.length !== setCount || scores.some(score => score[0] === score[1])) {
+      throw new Error('Das Ergebnis passt nicht zum gewählten Ergebnisformat.');
+    }
+    if ((resultFormat === 'two_sets_match_tiebreak' || resultFormat === 'three_sets') && !hasSplitFirstTwoSets(scores)) {
+      throw new Error('Ein dritter Ergebnisabschnitt ist nur nach einem Satzstand von 1:1 möglich.');
+    }
+    if (resultFormat === 'two_sets_match_tiebreak') {
+      const winnerScore = Math.max(...scores[2]);
+      const loserScore = Math.min(...scores[2]);
+      if (winnerScore < 10 || winnerScore - loserScore < 2) {
+        throw new Error('Der Match-Tiebreak geht bis mindestens 10 und benötigt zwei Punkte Abstand.');
+      }
+    }
+    if (resultFormat === 'three_sets' && Math.max(...scores[2]) > 7) {
+      throw new Error('Beim Format „3 Sätze“ darf der dritte Ergebnisabschnitt kein Match-Tiebreak sein.');
+    }
+
+    return {
+      resultDetails: scores
+        .map(([first, second], index) => `${resultFormat === 'two_sets_match_tiebreak' && index === 2 ? '– ' : ''}${first}:${second}`)
+        .join(', ')
+        .replace(', –', ' –'),
+      setCount
+    };
+  }
+
   async function handleTrainingSubmit(event) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -875,16 +984,23 @@
       setAuthMessage('Bitte vier verschiedene Spieler auswählen.', 'error');
       return;
     }
-    const rounds = [...form.querySelectorAll('[data-training-round]')].map(round => {
-      const [teamOne, teamTwo] = getTrainingPairing(playerIds, round.querySelector('[name="pairing"]').value);
-      return {
-        team_one_ids: teamOne,
-        team_two_ids: teamTwo,
-        result_details: round.querySelector('[name="roundResult"]').value.trim(),
-        set_count: Number(round.querySelector('[name="setCount"]').value),
-        is_complete: round.querySelector('[name="roundStatus"]').value === 'complete'
-      };
-    });
+    let rounds;
+    try {
+      rounds = [...form.querySelectorAll('[data-training-round]')].map(round => {
+        const [teamOne, teamTwo] = getTrainingPairing(playerIds, round.querySelector('[name="pairing"]').value);
+        const result = getTrainingResultData(round);
+        return {
+          team_one_ids: teamOne,
+          team_two_ids: teamTwo,
+          result_details: result.resultDetails,
+          set_count: result.setCount,
+          is_complete: round.querySelector('[name="roundStatus"]').value === 'complete'
+        };
+      });
+    } catch (error) {
+      setAuthMessage(error.message, 'error');
+      return;
+    }
     const button = form.querySelector('[type="submit"]');
     button.disabled = true;
     setAuthMessage('Training wird gespeichert …');
@@ -929,7 +1045,9 @@
       const pairing = teamOne.has(a) && teamOne.has(c) ? 'ac_bd' : teamOne.has(a) && teamOne.has(d) ? 'ad_bc' : 'ab_cd';
       roundElement.querySelector('[name="pairing"]').value = pairing;
       roundElement.querySelector('[name="roundResult"]').value = round.result_details;
-      roundElement.querySelector('[name="setCount"]').value = String(round.set_count);
+      roundElement.querySelector('[name="resultFormat"]').value = Number(round.set_count) === 3
+        ? (String(round.result_details).includes('–') ? 'two_sets_match_tiebreak' : 'three_sets')
+        : Number(round.set_count) === 2 ? 'two_sets' : 'one_set';
       roundElement.querySelector('[name="roundStatus"]').value = round.is_complete === false ? 'incomplete' : 'complete';
     });
   }
@@ -1079,7 +1197,6 @@
         updateResultSummary(event.target.closest('[data-result-submit]'));
       }
     });
-    document.getElementById('admin-all-matches')?.addEventListener('toggle', renderAdminAllMatches);
     document.getElementById('auth-dialog')?.addEventListener('click', event => {
       if (event.target === event.currentTarget) closeAuthDialog();
     });

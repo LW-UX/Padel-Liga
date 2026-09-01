@@ -72,6 +72,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 ## Ligaergebnisse und Bestätigung
 
+- Die öffentliche Partienübersicht ist standardmäßig nach Spieltagen gruppiert und kann alternativ chronologisch nach Datum gruppiert werden. Partien ohne vollständiges Datum und Uhrzeit gelten dort als offen und stehen in der Datumsansicht gesammelt am Ende.
 - Spieler können keine Ligaspiele erstellen. Ligaspiele werden vorab im Spielplan angelegt.
 - Ein beteiligter Spieler kann zu einem Ligaspiel ein Ergebnis samt tatsächlich gespieltem Datum und tatsächlicher Uhrzeit vorschlagen. Der tatsächliche Termin darf nicht in der Zukunft liegen und darf vom ursprünglich geplanten Termin abweichen.
 - Datum und Uhrzeit der Ergebniseingabe sind mit den vorhandenen Spieldaten vorausgefüllt.
@@ -113,7 +114,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Jeder angemeldete Spieler darf ein Training anlegen, wenn er selbst zu den vier Beteiligten gehört. Ein Admin darf dies im administrativen Rahmen ebenfalls.
 - Ein Training enthält genau vier Spieler. Werden andere Spieler eingesetzt, ist es ein neues Training.
 - Innerhalb einer Trainingskarte dürfen mehrere Spielabschnitte mit unterschiedlichen Paarungen derselben vier Spieler stehen.
-- Jeder Spielabschnitt enthält einen bis drei tatsächlich gespielte Ergebnisabschnitte. Dazu gehören einzelne Sätze, vollständige Zwei- oder Drei-Satz-Partien sowie zwei Sätze mit anschließendem Match-Tiebreak. Auch ein Zwischenstand von 1:1 ist als tatsächliches Trainingsergebnis zulässig. Ein wegen Zeitmangels oder aus einem anderen Grund nicht beendeter Satz wird als „abgebrochen“ erfasst und bleibt ohne Wertung.
+- Jeder Spielabschnitt enthält einen bis drei tatsächlich gespielte Ergebnisabschnitte. Dazu gehören einzelne Sätze, vollständige Zwei- oder Drei-Satz-Partien sowie genau zwei Sätze mit anschließendem Match-Tiebreak. Drei reguläre Sätze und zwei Sätze mit Match-Tiebreak sind getrennte Ergebnisformate; ein dritter Ergebnisabschnitt ist nur beim Satzstand 1:1 möglich. Auch ein Zwischenstand von 1:1 ist als tatsächliches Trainingsergebnis zulässig. Ein wegen Zeitmangels oder aus einem anderen Grund nicht beendeter Satz wird als „abgebrochen“ erfasst und bleibt ohne Wertung.
 - Datum, tatsächliche Uhrzeit und Ergebnisse werden beim Anlegen erfasst.
 - Ein anderer beteiligter Spieler muss das Training bestätigen. Der Ersteller kann nicht selbst bestätigen.
 - Trainingsspiele werden über den Konto-Dialog hinzugefügt und verwaltet.
@@ -126,15 +127,19 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 ## Konto-Dialog und Aufgaben
 
 - Nach dem Login zeigt der Konto-Button im Seitenkopf ein User-Icon statt des Anzeigenamens. Der Name bleibt im Konto-Dialog sichtbar; offene Aufgaben werden weiterhin als Badge am Icon angezeigt.
-- Der Konto-Dialog besitzt keine Tabnavigation mehr und zeigt ausschließlich den Bereich „Spiele“. Der Logout steht im Kopf des Dialogs auf Höhe des Kontonamens.
+- Der Konto-Dialog besitzt keine Tabnavigation mehr und zeigt ausschließlich die Bereiche „Ligaspiele“ und „Trainingsspiele“. Der Logout steht im Kopf des Dialogs auf Höhe des Kontonamens.
 - Nach dem Senden oder Bestätigen eines Ergebnisses bleibt der Konto-Dialog geöffnet und aktualisiert seine Aufgaben direkt.
-- Im Bereich „Spiele“ erscheinen offene Ligaergebnisse, zu bestätigende oder zu beantwortende Vorschläge und offene Trainingsbestätigungen liga- und saisonübergreifend. Die aktuell ausgewählte Liga oder Saison filtert diese persönlichen Aufgaben nicht.
-- Jede Ligaspielkarte nennt oberhalb der Karte die zugehörige Liga und zeigt „Partie X“, Termin und Mannschaften in derselben visuellen Struktur wie die Tippspielkarten.
+- Im Bereich „Ligaspiele“ erscheinen Ligaaufgaben und offene Trainingsbestätigungen liga- und saisonübergreifend. Für normale Spieler werden Liga- und Trainingsspiele ausschließlich berücksichtigt, wenn die Spieler-ID des aktiven Kontos selbst beteiligt ist. Admins sehen dagegen weiterhin sämtliche noch nicht abgeschlossenen Ligaspiele und offenen Trainingsspiele im administrativen Umfang.
+- Die persönliche Spielansicht zeigt zuerst alle Bestätigungsaufgaben; dazu gehören fremde Liga-Ergebnisvorschläge und von anderen Beteiligten angelegte Trainings. Danach folgen bereits fällige Ligapartien ohne Ergebnis und anschließend zukünftige terminierte Ligapartien. Innerhalb jeder Gruppe stehen die Partien chronologisch. Eigene bereits gesendete Vorschläge gelten bis zur Reaktion des anderen Teams nicht als erneut bearbeitbare Aufgabe.
+- Jede Ligaspielkarte zeigt die zugehörige Liga innerhalb ihrer Kopfzeile unmittelbar vor „Partie X“ sowie Termin und Mannschaften in derselben visuellen Struktur wie die Tippspielkarten. Zwei Spieler eines Teams werden in diesen Darstellungen mit `&` verbunden. Der Name des mit dem Konto verbundenen Spielers wird innerhalb der Mannschaften in `accent2` hervorgehoben.
 - Beim Bestätigen eines Vorschlags stehen „Ergebnis bestätigen“ und „Alternative eingeben“ nebeneinander. Die eigentliche Aktion zum Senden einer Eingabe steht in einer eigenen Zeile unter den Satz-Countern innerhalb der Karte.
-- Für Admins stehen die gespielten Partien zuerst, danach die offenen Ergebnisse. Unter den offenen Ergebnissen folgt ein standardmäßig geschlossener Bereich „Alle Ligaspiele“; dessen Karten werden erst beim Aufklappen angezeigt. Der frühere Filter „Offen/Alle Spiele“ entfällt.
-- Trainingsspiele werden ebenfalls im Bereich „Spiele“ angelegt.
+- Admins sehen Ergebnisvorschläge, fällige Partien und zukünftige terminierte Partien vollständig in den nach Aufgabenart sortierten Gruppen. Bestätigte beziehungsweise abgeschlossene Ligapartien erscheinen nicht im Konto-Dialog, da sie bereits öffentlich unter „Partien“ sichtbar sind.
+- Ein vom Admin neu eingegebenes oder alternativ eingetragenes Ergebnis wird unmittelbar als offizielles Ergebnis übernommen, aktualisiert Tabelle und Elo und erzeugt keinen Bestätigungsvorschlag.
+- Als letzter Bereich folgt immer die Trainingsverwaltung mit eigenen noch wartenden Trainings und der Möglichkeit, ein neues Trainingsspiel anzulegen. Trainings, die das aktive Profil bestätigen muss, werden nicht zusätzlich dort, sondern in der ersten Gruppe „Zu bestätigen“ angezeigt.
+- „Ausloggen“ und „Training hinzufügen“ verwenden dieselbe pillenförmige Button-Gestaltung wie die bestehenden Auswahl-Buttons, enthalten aber bewusst weder Chevron noch ein anderes Icon. Sichtbare Spielanzahlen entfallen in den Bereichs- und Gruppenüberschriften. Die Kombination aus Liga und „Partie X“ innerhalb einer Spielkarte verwendet ebenfalls die allgemeine Widget-Label-Gestaltung.
 - Der öffentliche Spielplan zeigt keinen internen Bestätigungsstatus.
 - Spielerprofil und Konto-/Ergebnisdialog verwenden denselben runden Schließen-Button. Er bleibt beim Scrollen des jeweiligen Modalinhalts fest rechts oben stehen. Solange ein Modal geöffnet ist, bleibt die Seite dahinter vollständig scrollgesperrt; Scrollbewegungen am Anfang oder Ende des Modalinhalts werden nicht an den Hintergrund weitergereicht.
+- Der Konto-/Ergebnisdialog für Spieler und Admins verwendet wie das öffentliche Spielerprofil den schwarzen Seitenhintergrund, ist auf `min(calc(100vw - 28px), 640px)` begrenzt und bleibt auf die Spieleingabe zugeschnitten. Die Bereiche „Ligaspiele“ und „Trainingsspiele“ stehen frei auf der Dialogfläche, beginnen jeweils mit einer Trennlinie und verwenden dieselbe 2-rem-Überschriftklasse wie die öffentlichen Hauptbereiche. Zwischen den Bereichen sowie zwischen den Ligaspiel-Untergruppen besteht ein klarer vertikaler Abstand. Die Untergruppen verwenden die allgemeine Widget-Label-Gestaltung. Ausschließlich die einzelnen Spielkarten erhalten wie in der Partienansicht einen hervorgehobenen Hintergrund. Die Ergebnis-Counter verwenden die kompakte, vollständig gerundete Gestaltung des Rechners. Die Entscheidungscounter sind bis zu einem gültigen Satzstand von 1:1 deaktiviert. Der automatische Ergebnishinweis steht links auf derselben Höhe wie die primäre Aktion; eine Trennlinie vor dieser Aktionszeile gibt es nicht.
 
 ## Temporäre Test-Saison
 

@@ -5,6 +5,7 @@ let PADEL_DATA = null;
 let selectedSeason = null;
 let selectedViewerId = 'sb';
 let matchScope = 'all';
+let matchSortMode = 'matchday';
 let rankingSortMode = 'points';
 let rankingViewMode = 'compact';
 let calculatorResults = new Map();
@@ -528,6 +529,7 @@ function resetSeasonState() {
     selectedViewerId = 'sb';
   }
   matchScope = 'all';
+  matchSortMode = 'matchday';
   rankingSortMode = 'points';
   rankingViewMode = 'compact';
   calculatorResults = new Map();
@@ -1269,6 +1271,12 @@ document.addEventListener('click', event => {
     return;
   }
 
+  const matchSortControl = event.target.closest('[data-match-sort]');
+  if (matchSortControl) {
+    setMatchSort(matchSortControl.dataset.matchSort);
+    return;
+  }
+
   const rankingSortControl = event.target.closest('[data-ranking-sort]');
   if (rankingSortControl) {
     setRankingSort(rankingSortControl.dataset.rankingSort);
@@ -1415,6 +1423,20 @@ function updateMatchScopeToggle() {
   buttons[1].classList.toggle('active', matchScope === 'open');
   buttons[2].classList.toggle('active', matchScope === 'mine');
   buttons[2].disabled = !canFilter;
+}
+
+function setMatchSort(mode) {
+  matchSortMode = mode === 'date' ? 'date' : 'matchday';
+  renderPartien();
+}
+
+function updateMatchSortToggle() {
+  const toggle = document.getElementById('match-sort-toggle');
+  if (!toggle) return;
+
+  const buttons = toggle.querySelectorAll('button');
+  buttons[0]?.classList.toggle('active', matchSortMode === 'matchday');
+  buttons[1]?.classList.toggle('active', matchSortMode === 'date');
 }
 
 function setRankingSort(mode) {
@@ -2068,6 +2090,18 @@ function hasScheduledDateTime(match) {
   return Boolean(match?.datum && match?.uhrzeit);
 }
 
+function compareMatchesBySchedule(a, b) {
+  const aIsScheduled = hasScheduledDateTime(a);
+  const bIsScheduled = hasScheduledDateTime(b);
+  if (aIsScheduled !== bIsScheduled) return aIsScheduled ? -1 : 1;
+  if (!aIsScheduled) {
+    const aMatchday = Number.isFinite(Number(a.spieltag)) ? Number(a.spieltag) : Number.MAX_SAFE_INTEGER;
+    const bMatchday = Number.isFinite(Number(b.spieltag)) ? Number(b.spieltag) : Number.MAX_SAFE_INTEGER;
+    return aMatchday - bMatchday || compareMatchesByNumber(a, b);
+  }
+  return compareMatchesByDateTime(a, b);
+}
+
 function formatMatchWeekday(date) {
   const parsedDate = parseDateValue(date);
   if (!parsedDate) return '';
@@ -2117,7 +2151,7 @@ function formatMatchMeta(match, options = {}) {
 }
 
 function getPendingMatchLabel(match) {
-  return match.uhrzeit ? 'Terminiert' : 'Ausstehend';
+  return hasScheduledDateTime(match) ? 'Terminiert' : 'Ausstehend';
 }
 
 function renderHomeMatchCard(match, options = {}) {
@@ -2990,26 +3024,79 @@ function renderFinalFourGroup(matches) {
   </div>`;
 }
 
-function renderPartien() {
-  updateMatchScopeToggle();
-  const regularMatches = PADEL_DATA.matches.filter(countsForRanking);
-  const finalFourMatches = PADEL_DATA.matches
-    .filter(m => !countsForRanking(m))
-    .sort(compareMatchesByNumber);
-  const spieltage = [...new Set(regularMatches.map(m => m.spieltag))].sort((a,b)=>a-b);
-  const played = regularMatches.filter(m => m.sieger !== null).length;
-  document.getElementById('sp-meta').textContent = `${played}/${regularMatches.length}`;
+function matchesCurrentMatchScope(match) {
+  if (matchScope === 'open') return !hasScheduledDateTime(match);
+  if (matchScope === 'mine') return isViewerMatch(match);
+  return true;
+}
 
-  const regularHtml = spieltage.map(st => {
-    const matches = regularMatches
-      .filter(m => m.spieltag === st)
-      .filter(m => matchScope !== 'open' || m.sieger === null)
-      .filter(m => matchScope !== 'mine' || isViewerMatch(m))
+function renderPartienByMatchday(matches) {
+  const regularMatches = matches.filter(countsForRanking);
+  const finalFourMatches = matches
+    .filter(match => !countsForRanking(match))
+    .sort(compareMatchesByNumber);
+  const matchdays = [...new Set(regularMatches.map(match => match.spieltag))].sort((a, b) => a - b);
+
+  const regularHtml = matchdays.map(matchday => {
+    const matchesForDay = regularMatches
+      .filter(match => match.spieltag === matchday)
       .sort(compareMatchesByNumber);
-    return renderMatchdayGroup(st, matches);
+    return renderMatchdayGroup(matchday, matchesForDay);
   }).join('');
   const finalFourHtml = renderFinalFourGroup(finalFourMatches);
-  const spielplanHtml = [regularHtml, finalFourHtml].filter(Boolean).join('');
+  return [regularHtml, finalFourHtml].filter(Boolean).join('');
+}
+
+function formatMatchDateGroupLabel(date) {
+  const parsedDate = parseDateValue(date);
+  if (!parsedDate) return date;
+  return parsedDate.toLocaleDateString('de-DE', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long'
+  });
+}
+
+function renderMatchDateGroup(date, matches) {
+  if (!matches.length) return '';
+  const countLabel = matches.length === 1 ? '1 Partie' : `${matches.length} Partien`;
+  return `<div class="spieltag-group">
+    ${renderSplitMeta(formatMatchDateGroupLabel(date), countLabel, 'spieltag-label')}
+    <div class="match-list">${matches.map(renderMatchRow).join('')}</div>
+  </div>`;
+}
+
+function renderOpenMatchGroup(matches) {
+  if (!matches.length) return '';
+  return `<div class="spieltag-group">
+    ${renderSplitMeta('Offen', 'Ohne vollständigen Termin', 'spieltag-label')}
+    <div class="match-list">${matches.map(renderMatchRow).join('')}</div>
+  </div>`;
+}
+
+function renderPartienByDate(matches) {
+  const sortedMatches = [...matches].sort(compareMatchesBySchedule);
+  const scheduledMatches = sortedMatches.filter(hasScheduledDateTime);
+  const openMatches = sortedMatches.filter(match => !hasScheduledDateTime(match));
+  const dateGroups = [...new Set(scheduledMatches.map(match => toDateKey(match.datum)))];
+  const scheduledHtml = dateGroups.map(date => renderMatchDateGroup(
+    date,
+    scheduledMatches.filter(match => toDateKey(match.datum) === date)
+  )).join('');
+  const openHtml = renderOpenMatchGroup(openMatches);
+  return [scheduledHtml, openHtml].filter(Boolean).join('');
+}
+
+function renderPartien() {
+  updateMatchScopeToggle();
+  updateMatchSortToggle();
+  const regularMatches = PADEL_DATA.matches.filter(countsForRanking);
+  const played = regularMatches.filter(m => m.sieger !== null).length;
+  document.getElementById('sp-meta').textContent = `${played}/${regularMatches.length}`;
+  const visibleMatches = PADEL_DATA.matches.filter(matchesCurrentMatchScope);
+  const spielplanHtml = matchSortMode === 'date'
+    ? renderPartienByDate(visibleMatches)
+    : renderPartienByMatchday(visibleMatches);
 
   document.getElementById('spielplan').innerHTML = spielplanHtml || '<div class="empty-state">Keine Partien für diese Auswahl.</div>';
 }

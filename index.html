@@ -22,7 +22,7 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-01-modal-scroll-lock">
+  <link rel="stylesheet" href="style.css?v=2026-09-01-account-actions-no-icons">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -311,6 +311,10 @@
         <div class="sh-title">PARTIEN</div>
         <div class="sh-meta" id="sp-meta"></div>
       </div>
+      <div class="match-scope-toggle ranking-sort-toggle" id="match-sort-toggle" aria-label="Partien sortieren">
+        <button type="button" class="active" data-match-sort="matchday">Spieltage</button>
+        <button type="button" data-match-sort="date">Datum</button>
+      </div>
       <div class="match-scope-toggle" id="match-scope-toggle" aria-label="Spielplan filtern">
         <button type="button" class="active" data-match-scope="all">Alle</button>
         <button type="button" data-match-scope="open">Offen</button>
@@ -494,41 +498,21 @@
           <h2 id="account-display-name"></h2>
           <p class="auth-account-email" id="account-email"></p>
         </div>
-        <button class="secondary-button auth-logout-button" type="button" data-auth-logout>Ausloggen</button>
+        <button class="picker-toggle" type="button" data-auth-logout>Ausloggen</button>
       </div>
       <div id="account-games-panel">
         <div class="account-games-empty" id="account-games-empty" hidden>Als Tipper hast du keine eigenen Liga- oder Trainingsspiele.</div>
         <div class="account-player-area" id="account-player-area" hidden>
-          <section class="account-section account-section-first" id="admin-played-section" hidden>
-            <div class="account-section-heading">
-              <div>
-                <div class="widget-label">Admin</div>
-                <h3>Gespielte Spiele</h3>
-              </div>
-            </div>
-            <div class="account-task-list" id="admin-played-list"></div>
-          </section>
           <section class="account-section" id="open-results-section">
             <div class="account-section-heading">
-              <div>
-                <div class="widget-label">Ligaübergreifend</div>
-                <h3>Offene Ergebnisse</h3>
-              </div>
-              <span class="account-task-count" id="result-task-count"></span>
+              <h3 class="sh-title">Ligaspiele</h3>
             </div>
-            <div class="account-task-list" id="result-task-list"></div>
-            <details class="admin-all-matches" id="admin-all-matches" hidden>
-              <summary>Alle Ligaspiele anzeigen</summary>
-              <div class="account-task-list" id="admin-all-matches-list"></div>
-            </details>
+            <div class="account-task-list prediction-match-list" id="result-task-list"></div>
           </section>
           <section class="account-section">
             <div class="account-section-heading">
-              <div>
-                <div class="widget-label">Saisonunabhängig</div>
-                <h3>Training</h3>
-              </div>
-              <button class="secondary-button compact-button" type="button" data-training-toggle>Training hinzufügen</button>
+              <h3 class="sh-title">Trainingsspiele</h3>
+              <button class="picker-toggle" type="button" data-training-toggle>Training hinzufügen</button>
             </div>
             <form class="training-form" id="training-form" hidden>
               <div class="training-form-meta">
@@ -549,7 +533,7 @@
   </div>
 </dialog>
 
-<script src="js/tippspiel.js?v=2026-09-01-incomplete-training"></script>
-<script src="js/app.js?v=2026-09-01-training-groups"></script>
+<script src="js/tippspiel.js?v=2026-09-01-authenticated-player-highlight"></script>
+<script src="js/app.js?v=2026-09-01-match-sorting"></script>
 </body>
 </html>

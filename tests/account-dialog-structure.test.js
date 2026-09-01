@@ -23,13 +23,31 @@ test('both account dialogs only expose games and place logout in the header', ()
   assert.match(style, /html:has\(dialog\[open\]\),[\s\S]*body:has\(dialog\[open\]\)[\s\S]*overflow: hidden;[\s\S]*overscroll-behavior: none;/);
   assert.match(style, /\.player-profile-shell \{[\s\S]*overflow: auto;[\s\S]*overscroll-behavior: contain;/);
   assert.match(style, /\.auth-dialog-card \{[\s\S]*overflow: auto;[\s\S]*overscroll-behavior: contain;/);
+  assert.match(style, /\.auth-dialog \{[\s\S]*width: min\(calc\(100vw - 28px\), 640px\);/);
 });
 
-test('both account dialogs have admin lists without the former result dropdown', () => {
+test('both account dialogs omit completed games and former result controls', () => {
   pages.forEach(source => {
     assert.doesNotMatch(source, /id="result-task-scope"/);
-    assert.match(source, /id="admin-played-list"/);
-    assert.match(source, /<details class="admin-all-matches" id="admin-all-matches" hidden>/);
+    assert.doesNotMatch(source, /id="admin-played-list"/);
+    assert.doesNotMatch(source, /Gespielte Spiele/);
+    assert.doesNotMatch(source, /id="admin-all-matches"/);
     assert.doesNotMatch(source, /id="training-history"/);
+    assert.match(source, /id="open-results-section"[\s\S]*data-training-toggle/);
+    assert.match(source, /<h3 class="sh-title">Ligaspiele<\/h3>/);
+    assert.match(source, /<h3 class="sh-title">Trainingsspiele<\/h3>/);
+    assert.match(source, /<button class="picker-toggle"[^>]*data-auth-logout/);
+    assert.match(source, /<button class="picker-toggle"[^>]*data-training-toggle/);
+    assert.match(source, /data-auth-logout>Ausloggen<\/button>/);
+    assert.match(source, /data-training-toggle>Training hinzufügen<\/button>/);
+    assert.doesNotMatch(source, /picker-toggle-chevron/);
+    assert.doesNotMatch(source, /auth-logout-button|compact-button|account-task-count|result-task-count/);
+    assert.doesNotMatch(source, /Ligaübergreifend|Saisonunabhängig/);
   });
+  assert.match(style, /\.sh-title \{[^}]*font-size: 2rem;[^}]*font-weight: 400;/);
+  assert.doesNotMatch(style, /\.prediction-group-title/);
+  assert.doesNotMatch(style, /\.auth-logout-button|\.compact-button|\.account-task-count|\.account-task-league/);
+  assert.doesNotMatch(style, /\.picker-toggle-chevron/);
+  assert.match(style, /\.result-entry-actions \{[\s\S]*align-items: center;[\s\S]*justify-content: space-between;/);
+  assert.doesNotMatch(style, /\.result-entry-actions \{[^}]*border-top:/);
 });

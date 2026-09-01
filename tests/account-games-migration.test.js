@@ -7,6 +7,10 @@ const migration = fs.readFileSync(
   path.join(__dirname, '..', 'supabase', 'migrations', '20260723173000_account_games_email_names.sql'),
   'utf8'
 );
+const resultMigration = fs.readFileSync(
+  path.join(__dirname, '..', 'supabase', 'migrations', '20260723160000_profile_result_tabs_actual_time.sql'),
+  'utf8'
+);
 
 test('migration derives and verifies official set results', () => {
   assert.match(migration, /create or replace function private\.derive_official_result/);
@@ -26,4 +30,14 @@ test('migration makes email-derived account names immutable to users', () => {
   assert.match(migration, /private\.display_name_from_email\(auth_user\.email\)/);
   assert.match(migration, /drop policy if exists "Users update their display name"/);
   assert.match(migration, /revoke execute on function public\.update_my_profile\(text\)/);
+});
+
+test('admin result entry becomes official immediately without a proposal', () => {
+  const adminBranch = resultMigration.match(
+    /if current_profile\.app_role = 'admin' then[\s\S]*?return null;[\s\S]*?end if;/
+  )?.[0] || '';
+  assert.match(adminBranch, /update public\.matches/);
+  assert.match(adminBranch, /result_details = trim\(p_result_details\)/);
+  assert.match(adminBranch, /perform private\.recalculate_season_elo\(selected_match\.season_id\)/);
+  assert.doesNotMatch(adminBranch, /insert into public\.result_proposals/);
 });
