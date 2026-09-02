@@ -1,6 +1,6 @@
 # Projektentscheidungen Padel-Liga
 
-Stand: 1. September 2026
+Stand: 2. September 2026
 
 Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell beschlossene Zielbild. Bei neuen oder geänderten Entscheidungen wird sie zusammen mit der jeweiligen Umsetzung aktualisiert.
 
@@ -15,6 +15,9 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 ## Aktueller Umsetzungsstand
 
+- Die Migration `20260902120000_season_tournament_automation.sql` wurde am 2. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. „Sommer 2026“ ist wieder die aktive Standardsaison und für Ergebniseingaben freigeschaltet; „Winter 2026“ bleibt auswählbar. Die saisonabhängige Turnierfortschreibung, Formatprüfung, Elo-Erweiterung, Tippspielwertung und automatische Auszeichnungsvergabe sind live.
+- Die Migration `20260902100000_winter_2026_season.sql` wurde am 2. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Die zehn bestätigten Winter-Teilnehmer werden mit ihren übernommenen Sommer-End-Elo-Werten öffentlich ausgeliefert. Die zunächst durch diese Migration gesetzte Winter-Standardsaison wurde mit `20260902120000_season_tournament_automation.sql` planmäßig wieder durch Sommer 2026 ersetzt.
+- Die Migration `20260902110000_add_test_result_matches.sql` wurde am 2. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Die Test-Saison enthält nun zehn Partien; die sechs ergänzten offenen Partien verteilen sich auf drei vergangene August-Termine und drei zukünftige Dezember-Termine. Ludi GMX und Ludi Gmail stehen sich darin jeweils als Gegner gegenüber.
 - Die projektbezogene Supabase-MCP-Verbindung ist im Repository vorbereitet. Sie verwendet wegen der derzeit fehlerhaften OAuth-Erkennung der installierten Codex-Version einen lokal geschützten persönlichen Zugriffsschlüssel.
 - Die Migration `20260717100000_player_results_training_test_season.sql` wurde am 17. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet.
 - Die Migration `20260723160000_profile_result_tabs_actual_time.sql` wurde am 23. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Die neue Ergebnisfunktion mit tatsächlichem Datum und tatsächlicher Uhrzeit ist im Supabase-Schema-Cache verfügbar.
@@ -22,26 +25,24 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Die Migration `20260723173000_account_games_email_names.sql` wurde am 23. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Die E-Mail-abgeleiteten Kontonamen, ligaübergreifenden Aufgaben, automatisch geprüften Satzbilanzen und Trainingsnummern sind aktiv.
 - Die Migration `20260901130000_public_player_profiles.sql` wurde am 1. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Öffentliche Profildaten, Saisonfunktionen, Auszeichnungen und die anonym lesbaren RPCs sind aktiv.
 - Die Migration `20260901131000_import_2026_profile_history.sql` wurde am 1. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Der geprüfte Bestand von „Sommer 2026“ umfasst 18 Teilnehmer, 30 Partien, 22 Ergebnisse, 108 Spielerzuordnungen und 88 Elo-Änderungen.
-- Die Migration `20260901132000_sommer_2026_final_four_achievements.sql` wurde am 1. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Saison und Liga tragen live die Bezeichnung „Sommer 2026“; Luca W. und Marco M. besitzen jeweils die freigegebene Final-4-Auszeichnung.
-- Die Migration `20260901133000_sommer_2026_marcel_winner_achievement.sql` wurde am 1. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Marcel M. besitzt live die goldene Gewinner-Auszeichnung für „Sommer 2026“.
+- Die Migration `20260901132000_sommer_2026_final_four_achievements.sql` wurde am 1. September 2026 angewendet. Ihre verfrühten Final-Four-Auszeichnungen für Luca W. und Marco M. wurden am 2. September 2026 durch `20260902120000_season_tournament_automation.sql` entfernt; künftig entstehen sie erst automatisch nach feststehender Qualifikation.
+- Die Migration `20260901133000_sommer_2026_marcel_winner_achievement.sql` wurde am 1. September 2026 angewendet. Die verfrühte Gewinner-Auszeichnung für Marcel M. wurde am 2. September 2026 durch `20260902120000_season_tournament_automation.sql` entfernt; künftig entsteht die Gewinner-Auszeichnung erst automatisch nach allen drei Final-Four-Sätzen.
 - Die Migration `20260901140000_incomplete_training_rounds.sql` wurde am 1. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Abgebrochene Trainingsrunden und bis zu drei Ergebnisabschnitte je Runde sind aktiv; abgebrochene Runden bleiben aus den Profilstatistiken ausgeschlossen.
 - Die Migration `20260901141000_import_historical_training_sessions.sql` wurde am 1. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Fünf historische Trainingseinheiten mit sieben Runden wurden geprüft importiert; das abgebrochene 3:1 vom 13. August 2026 ist sichtbar, aber ohne Wertung.
 - Die Konten für `Ludi Gmail` und `Ludi GMX` sind jeweils mit ihrer Spieler-ID und der Rolle `player` verbunden.
 - Das Konto für `Ludwig W.` ist mit seiner Spieler-ID und der Rolle `admin` verbunden.
-- Alle drei zugeordneten E-Mail-Adressen sind bestätigt. Die Test-Saison enthält vier Datenbankspiele, und Row Level Security ist für alle neu angelegten öffentlichen Tabellen aktiviert.
+- Alle drei zugeordneten E-Mail-Adressen sind bestätigt. Die Test-Saison enthält zehn Datenbankspiele, und Row Level Security ist für alle neu angelegten öffentlichen Tabellen aktiviert.
 
 ## Saison- und Datenstrategie
 
-- Die separat weiterbetriebene öffentliche Saison „Sommer 2026“ bleibt bis zu ihrem Abschluss dateibasiert. Ihre Datenquelle und ihr laufender Betrieb werden durch die vorbereitete Nachfolgeversion nicht verändert; die stabile technische Saison-ID bleibt `2026`.
-- Die vorbereitete Nachfolgeversion verwendet dieselbe künftige Produktivdatenbank bereits vor der nächsten regulären Saison. Die echten Daten aus `data2026.js` werden dort kontrolliert unter der regulären Saison-ID `2026` ergänzt, damit öffentliche Spielerprofile und saisonübergreifende Auswertungen mit realen Daten entwickelt werden können.
-- Bis zum Abschluss der parallel laufenden dateibasierten Saison werden neue reale Ergebnisse zusätzlich kontrolliert in der Datenbank nachgetragen. Danach ist die Datenbank die einzige aktive Quelle für strukturierte Spieler-, Saison-, Match-, Ergebnis- und Elo-Daten der Nachfolgeversion.
+- Die reguläre Nachfolgesaison von „Sommer 2026“ heißt „Winter 2026“, verwendet die stabile Saison-ID `winter-2026` und beginnt technisch am gemeinsamen Saisonübergang 1. Oktober 2026.
+- „Sommer 2026“ bleibt bis zum Abschluss ihrer fünf offenen Ligapartien und des Final Four die aktive Standardsaison. „Winter 2026“ ist bereits auswählbar und vorbereitet, wird aber erst nach dem Sommerabschluss zur Standardsaison.
+- Für „Winter 2026“ stehen zunächst Marcel M., Chris M., Luca W., Marco M., Ludwig W., Greta P., Agnes K., Niklas K., Andreas L. und Jonas L. fest. Weitere Teilnehmer und der Spielplan folgen.
+- Die Start-Elo-Werte dieser Teilnehmer entsprechen ihren letzten offiziellen Elo-Werten aus „Sommer 2026“. Bis zum ersten Winter-Ligaspiel werden sie mit null Partien und null Punkten in der Winter-Rangliste angezeigt.
+- Die stabile technische Saison-ID von „Sommer 2026“ bleibt `2026`. Ihr Spielplan ist vollständig; die Partien 10, 19, 22, 23 und 27 sowie das Final Four sind noch offen.
+- Die Datenbank ist die aktive Quelle für strukturierte Spieler-, Saison-, Match-, Ergebnis- und Elo-Daten. Die Sommer-Saisondatei bleibt als kontrollierter Fallback sowie für die weiterhin repositorybasierten redaktionellen Inhalte erhalten.
 - Editoriale Saisonartikel bleiben Inhalte des Git-Repositorys und werden nicht in die Sportdatenbank verschoben.
-- Die nächste reguläre Saison wird von Beginn an datenbankbasiert betrieben.
-- Der vollständige Datenbestand der Saison „Sommer 2026“ wird kontrolliert in die Datenbank importiert. Dazu gehören Spielerzuordnungen, Partien, Teams, Sätze, Ergebnisse und reproduzierbar berechnete Elo-Verläufe.
-- Die importierte Saison „Sommer 2026“ wird anschließend als abgeschlossen und schreibgeschützt behandelt. Sie dient Spielerprofilen, Statistiken und historischen Auswertungen.
-- Vor dem finalen Import werden Datenbank und Quelldaten gesichert. Ein separates Repository enthält bereits ein vollständiges Backup der Saison „Sommer 2026“.
-- Während der Umstellung ist eine kurzzeitige doppelte Datenhaltung als Rückfallmöglichkeit erlaubt. Nach erfolgreichem Vergleich wird die aktive Doppelhaltung entfernt.
-- Der finale Import muss Anzahl und Inhalt der Spiele, Satzergebnisse, Tabelle sowie Elo-Endstände und Elo-Verlauf gegen die Quelldaten prüfen.
+- Der vollständige Sommer-Datenbestand aus Spielerzuordnungen, Partien, Teams, Sätzen, Ergebnissen und Elo-Verläufen wurde gegen die Quelldaten geprüft importiert. Ein separates Repository enthält weiterhin das vollständige Saison-Backup.
 
 ## Saisonauswahl und Seitenaufteilung
 
@@ -86,10 +87,14 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Hat ein Admin lediglich als normal beteiligter Spieler eingetragen, gelten die bewusst gewählten administrativen beziehungsweise normalen Aktionen getrennt.
 - Unbestätigte Vorschläge und ihr Status erscheinen nicht öffentlich an der Partie. Offene Aufgaben stehen im Konto-Dialog.
 - Nach einer Bestätigung wird das offizielle Ergebnis gespeichert, die Rangliste aktualisiert und die Elo-Berechnung ausgeführt.
+- Der Spielmodus ist saisonabhängig. Reguläre Ligapartien, Halbfinals und Final Four werden als getrennte Partienphasen gespeichert; Turnierpartien verändern die abgeschlossene Liga-Rangliste nicht.
+- Sommer 2026 verwendet den direkten Top-4-Einzug. Nach der letzten bestätigten Ligapartie setzt die Datenbank die endgültigen Top 4 automatisch in die drei bestehenden Final-Four-Paarungen ein.
+- Winter 2026 verwendet den Top-8-Modus. Nach vollständigem Spielplan und letzter bestätigter Ligapartie werden Platz 1 und 2 gegen 7 und 8 sowie Platz 3 und 4 gegen 5 und 6 gesetzt. Nach beiden Halbfinals werden die vier Sieger nach ursprünglicher Ligaplatzierung geordnet und in die drei wechselnden Final-Four-Paarungen übernommen.
+- Die automatische Turnierfortschreibung ist idempotent und überschreibt keine Folgerunde mit vorhandenen Ergebnissen, Vorschlägen oder Tipps. Notfallkorrekturen erfolgen kontrolliert über Codex statt über eine eigene Adminoberfläche.
 
 ## Elo
 
-- Elo wird nur für bestätigte Ligaspiele berechnet, auch wenn das Ergebnis über den Seitenlogin eingetragen wurde.
+- Elo wird für bestätigte reguläre Liga-, Halbfinal- und Final-Four-Partien berechnet, auch wenn das Ergebnis über den Seitenlogin eingetragen wurde. Nur reguläre Ligapartien verändern die Ligapunkte.
 - Trainingsspiele verändern kein Elo.
 - Die Y-Achse der Elo-Verlaufsgrafik beginnt bei 500; die Grafik ist 620 Pixel hoch.
 - Die Punkte der Elo-Verlaufsgrafik haben für den aktiven Spieler 4 Pixel Radius und für die übrigen Spieler 3 Pixel Radius; beim Hover verwenden sie 5 Pixel Radius.
@@ -107,6 +112,8 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Wertung: 4 Punkte für das exakte Satzergebnis, 2 Punkte für den richtigen Sieger bei anderem Satzergebnis, 0 Punkte für den falschen Sieger.
 - Die Tippübersicht bleibt öffentlich sichtbar.
 - Eine Partie mit nachträglich geändertem offiziellen Ergebnis muss für die Tippspielauswertung den bestätigten offiziellen Stand verwenden.
+- Winter-Halbfinals werden wie reguläre Partien auf das Satzergebnis getippt. Für einen Final-Four-Satz wird der genaue Satzspielstand getippt; vier Punkte gibt es exakt, zwei für den richtigen Sieger und null für den falschen Sieger.
+- Ein Turnierspiel wird erst tippbar, wenn echte Teilnehmer sowie ein vollständiger Termin feststehen. Sommer 2026 bleibt ohne Tippspiel.
 
 ## Trainingsspiele
 
@@ -143,9 +150,9 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 ## Temporäre Test-Saison
 
-- Es gibt eine öffentlich sichtbare Test-Saison mit vier Testspielen.
+- Es gibt eine öffentlich sichtbare Test-Saison mit zehn Testspielen.
 - Die Testprofile `Ludi GMX` und `Ludi Gmail` sind über vorab hinterlegte Konten zugeordnet; `Ludwig W.` besitzt ein Spielerprofil mit Adminrolle.
-- In jedem der vier Testspiele steht mindestens eines der beiden speziellen Testprofile einem der anderen Testprofile beziehungsweise dem Adminprofil im gegnerischen Team gegenüber.
+- In allen zehn Testspielen stehen `Ludi GMX` und `Ludi Gmail` in gegnerischen Teams; ihre jeweiligen Partner wechseln.
 - Die übrigen Plätze werden mit Spielern aus der normalen Spielerliste besetzt.
 - Testdaten dürfen zurückgesetzt und nach erfolgreichen Tests vollständig gelöscht werden.
 - Die Test-Saison dient insbesondere den Rollen-, Ergebnis-, Gegenvorschlags-, Bestätigungs-, Elo-, Tipp- und Trainingsabläufen.
@@ -164,8 +171,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Erfolge werden ausdrücklich in einer eigenen Datenbanktabelle gepflegt und nicht aus einem Mockup oder einer laufenden Platzierung erfunden. Ohne Einträge wird der Erfolgsbereich ausgeblendet.
 - Gold (`#FFD000`), Silber (`#ADC8D8`) und Bronze (`#C97B2E`) sind zentrale Gestaltungsfarben. Sie werden sowohl für Auszeichnungen als auch für die Plätze 1 bis 3 in sämtlichen Ranglisten verwendet.
 - Auszeichnungen werden von den bereitgestellten linken und rechten Lorbeerzweigen eingerahmt. Gewinner erscheinen mit der Überschrift „GEWINNER“ in Gold, Final-4-Teilnehmer mit „FINAL 4“ in Silber; der Saisonname steht jeweils zentriert darunter.
-- Luca W. und Marco M. erhalten für die Saison „Sommer 2026“ jeweils die Auszeichnung „Final 4 Teilnehmer“ mit dem Untertitel „Padel-Liga Sommer 2026“.
-- Marcel M. erhält für die Saison „Sommer 2026“ die goldene Auszeichnung „Gewinner“ mit dem Untertitel „Padel-Liga Sommer 2026“.
+- Final-Four-Auszeichnungen werden erst bei feststehender Qualifikation automatisch für alle vier Teilnehmer erzeugt. Die Gewinnerauszeichnung entsteht automatisch nach allen drei bestätigten Final-Four-Sätzen anhand von Siegen, Spiel-Differenz, direktem Vergleich und Ausgangsplatzierung. Verfrühte Sommer-Auszeichnungen werden entfernt.
 - Profilbilder liegen im Git-Repository unter `assets/players/<spieler-id>/profile.webp`. Fehlende Bilder verwenden auf dunklem Hintergrund den in den Spieler-Stammdaten festgelegten Platzhalter `👨` beziehungsweise `👩`; vorhandene Profilbilder haben immer Vorrang. Luca W. und Ludwig W. besitzen jeweils ein eigenes Profilbild. Bilddateien und Binärdaten werden nicht in Supabase gespeichert.
 - Das Profil startet mit dem tatsächlich vorhandenen Bestand ab der Saison „Sommer 2026“. Es werden keine älteren Mock-Saisons erzeugt.
 
@@ -178,4 +184,4 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 - Die erlaubten E-Mail-Domains.
 - Der genaue Umfang zukünftiger Adminfunktionen über die bereits beschlossene direkte Ergebniseingabe hinaus.
-- Der endgültige Spielmodus und Spielplan der nächsten regulären Saison.
+- Der vollständige reguläre Spielplan der Saison „Winter 2026“.

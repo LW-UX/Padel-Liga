@@ -19,6 +19,7 @@ padel-liga/
 │   ├── players.js                Globale Spieler-Stammdaten
 │   ├── seasons.js                Verfügbare Saisons und Standard-Saison
 │   ├── data2026.js               Teilnehmer, Ligaspiele und Inhalte der Saison „Sommer 2026“
+│   ├── data-winter-2026.js        Teilnehmer und Turnierplatzhalter für „Winter 2026“
 │   ├── data-test-2026.js          Temporäre Test-Saison für Ergebnisabläufe
 │   ├── training-matches.js       Saisonunabhängige Trainingsspiele
 │   ├── supabase-config.js         Öffentliche Supabase-Verbindungsdaten
@@ -78,7 +79,7 @@ Solange eine Saison nur eine Liga besitzt, müssen Teilnehmer und Spiele kein `l
 }
 ```
 
-Es ist bewusst noch kein Final-, Aufstiegs- oder Ligamodus festgelegt. Die bestehende Oberfläche zeigt weiterhin nur die als Standard markierte Liga. Eine Liga-Auswahl und besondere Regeln werden erst ergänzt, wenn der tatsächliche Modus feststeht.
+Die Turnierstruktur wird pro Saison über `competition` festgelegt. Sommer 2026 verwendet den direkten Top-4-Einzug ins Final Four; Winter 2026 verwendet Top 8, zwei Halbfinals und anschließend das Final Four. Die bestehende Oberfläche zeigt weiterhin nur die als Standard markierte Liga.
 
 ## Ligaspiele
 
@@ -89,6 +90,7 @@ Spieler werden ausschließlich über IDs referenziert. Match-IDs sind global ein
   id: "season-2026-partie-31",
   type: "season",
   seasonId: "2026",
+  stage: "league",
   countsForRanking: true,
   countsForElo: true,
   matchday: 7,
@@ -103,6 +105,8 @@ Spieler werden ausschließlich über IDs referenziert. Match-IDs sind global ein
 ```
 
 Offene Spiele verwenden für `result`, `sets` und `winner` jeweils `null`.
+
+Die Phase eines Spiels ist ausdrücklich `league`, `semifinal` oder `final-four`. Turnierpartien setzen `countsForRanking: false`, bleiben mit `countsForElo: true` aber Bestandteil des Elo-Verlaufs und der Spielerprofile. Ein Final-Four-Spiel hat das Format `single-set`; reguläre Ligapartien und Halbfinals verwenden `best-of-three`.
 
 ## Elo
 
@@ -151,19 +155,19 @@ index.html?saison=2026
 
 ## Tippspiel und Benutzerkonten
 
-Das Tippspiel liegt unter `/tipp/` und verwendet Supabase für Benutzerkonten, gespeicherte Tipps und die öffentliche Tabelle. Getippt wird das Satzergebnis:
+Das Tippspiel liegt unter `/tipp/` und verwendet Supabase für Benutzerkonten, gespeicherte Tipps und die öffentliche Tabelle. Bei Best-of-three-Partien wird das Satzergebnis getippt, bei einem Final-Four-Satz der genaue Satzendstand:
 
 - exakt richtiges Ergebnis: 4 Punkte,
 - richtiger Sieger bei anderem Satzergebnis: 2 Punkte,
 - falscher Sieger: 0 Punkte.
 
-Ein Tipp kann bis zum in der Datenbank hinterlegten Spielbeginn geändert werden. Spiele ohne festgelegte Uhrzeit bleiben zunächst offen. Sobald bei einem Spiel `actual_sets` gesetzt wird, schließt die Datenbank das Spiel automatisch für weitere Tipps und die Tabelle berechnet die Punkte neu.
+Ein Tipp kann bis zum in der Datenbank hinterlegten Spielbeginn geändert werden. Turnierpartien werden erst nach vollständiger Teilnehmerzuordnung sowie mit Datum und Uhrzeit geöffnet. Sobald bei einem Spiel `actual_sets` gesetzt wird, schließt die Datenbank das Spiel automatisch für weitere Tipps und die Tabelle berechnet die Punkte neu. Sommer 2026 deaktiviert das Tippspiel über die Saisonkonfiguration.
 
-Die Datenbank trennt Spieler, Saisons, Ligen, Saison-Teilnahmen, Spiele, Benutzerkonten und Tipps. Dadurch kann eine spätere Saison mehrere Ligen erhalten, ohne für die aktuelle Saison bereits einen konkreten Spiel- oder Finalmodus festzulegen.
+Die Datenbank trennt Spieler, Saisons, Ligen, Saison-Teilnahmen, Spiele, Turnierteilnahmen, Benutzerkonten und Tipps. Dadurch kann jede Saison ihren eigenen Turniermodus verwenden, ohne bestehende Saisonstrukturen zu verändern.
 
 ## Spielergebnisse und Rollen
 
-Die Saison „Sommer 2026“ bleibt unverändert dateibasiert. Die temporäre Saison `test-2026` erprobt den künftigen Datenbankablauf:
+Die Datenbank ist die aktive Quelle für strukturierte Saison- und Ergebnisdaten; die statischen Saisondateien dienen als kontrollierter Fallback. Die temporäre Saison `test-2026` erprobt die Ergebnisabläufe:
 
 - Neue Konten erhalten zunächst die Rolle `tipper`.
 - Vorab hinterlegte und bestätigte E-Mail-Adressen werden automatisch einem Spielerprofil zugeordnet.

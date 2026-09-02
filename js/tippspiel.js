@@ -1,5 +1,9 @@
 (function () {
-  const VALID_PREDICTIONS = ['2:0', '2:1', '1:2', '0:2'];
+  const BEST_OF_THREE_PREDICTIONS = ['2:0', '2:1', '1:2', '0:2'];
+  const SINGLE_SET_PREDICTIONS = [
+    '6:0', '6:1', '6:2', '6:3', '6:4', '7:5', '7:6',
+    '0:6', '1:6', '2:6', '3:6', '4:6', '5:7', '6:7'
+  ];
   const state = {
     client: null,
     season: null,
@@ -31,9 +35,8 @@
   }
 
   function getPredictionLocalMatches() {
-    if (!state.season) return [];
+    if (!state.season || state.season.competition?.predictionsEnabled === false) return [];
     return state.season.matches.filter(match =>
-      match.matchday !== 8 &&
       match.team1.playerIds.length > 0 &&
       match.team2.playerIds.length > 0 &&
       state.databaseMatches.has(match.id)
@@ -44,6 +47,22 @@
     return state.databaseMatches.get(match.id)?.actual_sets || match.saetze || null;
   }
 
+  function getMatchFormat(match) {
+    return state.databaseMatches.get(match.id)?.format || match.format || 'best-of-three';
+  }
+
+  function getPredictionOptions(match) {
+    return getMatchFormat(match) === 'single-set'
+      ? SINGLE_SET_PREDICTIONS
+      : BEST_OF_THREE_PREDICTIONS;
+  }
+
+  function getActualPredictionValue(match) {
+    if (getMatchFormat(match) !== 'single-set') return getActualSets(match);
+    const resultDetails = state.databaseMatches.get(match.id)?.result_details || match.ergebnis;
+    return String(resultDetails || '').match(/(\d+)\s*:\s*(\d+)/)?.slice(1, 3).join(':') || null;
+  }
+
   function isPredictionOpen(match) {
     const databaseMatch = state.databaseMatches.get(match.id);
     if (!databaseMatch || databaseMatch.betting_open !== true || getActualSets(match)) return false;
@@ -51,11 +70,18 @@
     return match.sieger === null && new Date(databaseMatch.lock_at).getTime() > Date.now();
   }
 
-  function getPredictionPoints(prediction, actualSets) {
-    if (!prediction || !actualSets) return null;
-    if (prediction === actualSets) return 4;
-    const predictedTeam = prediction.startsWith('2') ? 1 : 2;
-    const actualTeam = actualSets.startsWith('2') ? 1 : 2;
+  function getPredictionWinner(value, format) {
+    if (format !== 'single-set') return value?.startsWith('2') ? 1 : 2;
+    const [teamOne, teamTwo] = String(value || '').split(':').map(Number);
+    if (!Number.isFinite(teamOne) || !Number.isFinite(teamTwo) || teamOne === teamTwo) return null;
+    return teamOne > teamTwo ? 1 : 2;
+  }
+
+  function getPredictionPoints(prediction, actualValue, format = 'best-of-three') {
+    if (!prediction || !actualValue) return null;
+    if (prediction === actualValue) return 4;
+    const predictedTeam = getPredictionWinner(prediction, format);
+    const actualTeam = getPredictionWinner(actualValue, format);
     return predictedTeam === actualTeam ? 2 : 0;
   }
 
@@ -260,8 +286,10 @@
       const isSaving = state.saving.has(match.id);
       const isOpen = isPredictionOpen(match);
       const actualSets = getActualSets(match);
+      const matchFormat = getMatchFormat(match);
+      const actualPredictionValue = getActualPredictionValue(match);
       const resultDetails = state.databaseMatches.get(match.id)?.result_details || match.ergebnis;
-      const points = getPredictionPoints(selected, actualSets);
+      const points = getPredictionPoints(selected, actualPredictionValue, matchFormat);
       const statusLabel = isOpen ? 'Offen' : actualSets ? 'Gespielt' : 'Gesperrt';
       const saveState = isOpen
         ? isSaving
@@ -271,8 +299,8 @@
             : 'Noch kein Tipp'
         : actualSets
           ? selected
-            ? `Dein Tipp: ${selected} · Ergebnis: ${actualSets} · ${points} ${points === 1 ? 'Punkt' : 'Punkte'}`
-            : `Kein Tipp abgegeben · Ergebnis: ${actualSets}`
+            ? `Dein Tipp: ${selected} · Ergebnis: ${actualPredictionValue} · ${points} ${points === 1 ? 'Punkt' : 'Punkte'}`
+            : `Kein Tipp abgegeben · Ergebnis: ${actualPredictionValue}`
           : selected
             ? `Dein Tipp: ${selected} · Ergebnis ausstehend`
             : 'Kein Tipp abgegeben · Ergebnis ausstehend';
@@ -288,10 +316,10 @@
             <div class="prediction-team prediction-team-2">${renderTeam(match.team2)}</div>
           </div>
           <div class="prediction-options" role="group" aria-label="Satzergebnis für Partie ${escapeHtml(match.id)} tippen">
-            ${VALID_PREDICTIONS.map(prediction => `
+            ${getPredictionOptions(match).map(prediction => `
               <button
                 type="button"
-                class="prediction-option ${selected === prediction ? 'active' : ''} ${actualSets === prediction ? 'is-result' : ''}"
+                class="prediction-option ${selected === prediction ? 'active' : ''} ${actualPredictionValue === prediction ? 'is-result' : ''}"
                 data-prediction-match="${escapeHtml(match.id)}"
                 data-prediction-value="${prediction}"
                 aria-pressed="${selected === prediction}"
@@ -299,7 +327,7 @@
               >${prediction}</button>
             `).join('')}
           </div>
-          ${actualSets ? `<div class="prediction-result-details">Endstand ${escapeHtml(actualSets)}${resultDetails ? ` · ${escapeHtml(resultDetails)}` : ''}</div>` : ''}
+          ${actualSets ? `<div class="prediction-result-details">Endstand ${escapeHtml(actualPredictionValue)}${matchFormat === 'single-set' ? '' : resultDetails ? ` · ${escapeHtml(resultDetails)}` : ''}</div>` : ''}
           <div class="prediction-save-state ${selected ? 'saved' : ''} ${points !== null ? `points-${points}` : ''}">${saveState}</div>
         </article>
       `;
@@ -384,11 +412,12 @@
       && (scores[0][0] > scores[0][1]) !== (scores[1][0] > scores[1][1]);
   }
 
-  function renderScoreCounters(resultDetails = '') {
+  function renderScoreCounters(resultDetails = '', format = 'best-of-three') {
     const values = parseResultScores(resultDetails);
     const decisionEnabled = hasSplitFirstTwoSets(values);
+    const labels = format === 'single-set' ? ['Satz'] : ['Satz 1', 'Satz 2', 'Entscheidung'];
     return `<div class="result-score-entry">
-      ${['Satz 1', 'Satz 2', 'Entscheidung'].map((label, setIndex) => {
+      ${labels.map((label, setIndex) => {
         const score = values[setIndex] || [];
         const decisionDisabled = setIndex === 2 && !decisionEnabled;
         return `<div class="result-score-set"${setIndex === 2 ? ' data-result-decision' : ''}>
@@ -401,7 +430,7 @@
                 inputmode="numeric"
                 min="0"
                 max="99"
-                ${setIndex < 2 ? 'required' : ''}
+                ${format === 'single-set' || setIndex < 2 ? 'required' : ''}
                 name="score_${setIndex}_${teamIndex}"
                 data-result-score
                 data-score-set="${setIndex}"
@@ -447,7 +476,8 @@
 
   function renderResultForm(task, counter = false) {
     const initialResult = counter ? task.proposed_result : '';
-    return `<form class="result-entry-form ${counter ? 'is-counterproposal' : ''}" data-result-submit="${escapeHtml(task.match_id)}" ${counter ? 'hidden' : ''}>
+    const matchFormat = task.match_format || 'best-of-three';
+    return `<form class="result-entry-form ${counter ? 'is-counterproposal' : ''}" data-result-submit="${escapeHtml(task.match_id)}" data-result-format="${escapeHtml(matchFormat)}" ${counter ? 'hidden' : ''}>
       <div class="result-entry-timing">
         <label>
           <span>Datum</span>
@@ -459,7 +489,7 @@
         </label>
       </div>
       ${counter ? '' : renderTaskMatchup(task)}
-      ${renderScoreCounters(initialResult)}
+      ${renderScoreCounters(initialResult, matchFormat)}
       <div class="result-entry-actions">
         <div class="result-entry-summary" data-result-summary>Satzergebnis wird automatisch berechnet.</div>
         <button class="primary-button" type="submit">${state.profile?.app_role === 'admin' ? 'Ergebnis eintragen' : counter ? 'Alternative senden' : 'Zur Bestätigung senden'}</button>
@@ -716,7 +746,7 @@
     const [{ data: matches, error: matchesError }, { data: leaderboard, error: leaderboardError }] = await Promise.all([
       state.client
         .from('matches')
-        .select('id, betting_open, actual_sets, result_details, lock_at, scheduled_date, display_time')
+        .select('id, format, competition_stage, betting_open, actual_sets, result_details, lock_at, scheduled_date, display_time')
         .eq('season_id', seasonId),
       state.client.rpc('get_prediction_leaderboard', { p_season_id: seasonId })
     ]);
@@ -820,11 +850,27 @@
   }
 
   function readResultScore(form) {
+    const format = form.dataset?.resultFormat || 'best-of-three';
     const scores = [0, 1, 2].map(setIndex => [0, 1].map(teamIndex => {
       const input = form.querySelector(`[data-score-set="${setIndex}"][data-score-team="${teamIndex}"]`);
       const raw = String(input?.value ?? '').trim();
       return raw === '' ? null : Number(raw);
     }));
+    if (format === 'single-set') {
+      const [first, second] = scores[0];
+      if (![first, second].every(value => Number.isInteger(value) && value >= 0)) {
+        throw new Error('Bitte beide Ergebnisse für den Satz eingeben.');
+      }
+      if (first === second) throw new Error('Der Satz benötigt einen eindeutigen Sieger.');
+      if (!SINGLE_SET_PREDICTIONS.includes(`${first}:${second}`)) {
+        throw new Error('Bitte einen gültigen Satzendstand eingeben.');
+      }
+      return {
+        actualSets: first > second ? '1:0' : '0:1',
+        winner: first > second ? 1 : 2,
+        resultDetails: `${first}:${second}`
+      };
+    }
     if (scores.slice(0, 2).some(score => score.some(value => !Number.isInteger(value) || value < 0))) {
       throw new Error('Bitte beide Ergebnisse für Satz 1 und Satz 2 eingeben.');
     }
@@ -868,12 +914,13 @@
 
   function updateResultSummary(form) {
     if (!form) return;
+    const format = form.dataset?.resultFormat || 'best-of-three';
     const firstTwoScores = [0, 1].map(setIndex => [0, 1].map(teamIndex => {
       const input = form.querySelector(`[data-score-set="${setIndex}"][data-score-team="${teamIndex}"]`);
       const raw = String(input?.value ?? '').trim();
       return raw === '' ? null : Number(raw);
     }));
-    const decisionEnabled = hasSplitFirstTwoSets(firstTwoScores);
+    const decisionEnabled = format !== 'single-set' && hasSplitFirstTwoSets(firstTwoScores);
     form.querySelector('[data-result-decision]')?.querySelectorAll('input, button').forEach(control => {
       if (!decisionEnabled && control.matches('input')) control.value = '';
       control.disabled = !decisionEnabled;
@@ -1072,7 +1119,8 @@
       openAuthDialog();
       return;
     }
-    if (!VALID_PREDICTIONS.includes(prediction) || !state.databaseMatches.get(matchId)?.betting_open) return;
+    const localMatch = state.season?.matches.find(match => match.id === matchId);
+    if (!localMatch || !getPredictionOptions(localMatch).includes(prediction) || !state.databaseMatches.get(matchId)?.betting_open) return;
 
     const previous = state.predictions.get(matchId);
     state.predictions.set(matchId, prediction);

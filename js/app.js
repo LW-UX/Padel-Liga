@@ -165,7 +165,10 @@ function normalizeLegacySeason(rawSeason) {
     const playerIds = names.map(name => centralPlayers.get(name)).filter(Boolean);
     return playerIds.length === names.length
       ? { playerIds }
-      : { qualifierRanks: names.map(name => qualifierRanks.get(name)).filter(Boolean) };
+      : {
+          qualifierRanks: names.map(name => qualifierRanks.get(name)).filter(Boolean),
+          qualifierLabels: names
+        };
   };
 
   return {
@@ -177,6 +180,7 @@ function normalizeLegacySeason(rawSeason) {
     matches: rawSeason.matches.map(match => ({
       id: `season-${rawSeason.id}-partie-${String(match.id).match(/\d+$/)?.[0] || match.id}`,
       type: 'season',
+      stage: match.stage || (match.countsForRanking === false ? 'final-four' : 'league'),
       seasonId: rawSeason.id,
       format: match.format || 'best-of-three',
       countsForRanking: match.countsForRanking !== false,
@@ -196,6 +200,22 @@ function normalizeLegacySeason(rawSeason) {
 
 function countsForRanking(match) {
   return match?.countsForRanking !== false;
+}
+
+function getMatchStage(match) {
+  if (['league', 'semifinal', 'final-four'].includes(match?.stage)) return match.stage;
+  return countsForRanking(match) ? 'league' : 'final-four';
+}
+
+function getCompetitionConfig() {
+  const competition = PADEL_DATA?.competition || {};
+  return {
+    tournamentMode: competition.tournamentMode || 'none',
+    qualificationPlaces: Number(competition.qualificationPlaces) || 0,
+    homeRankingLimit: Number(competition.homeRankingLimit) || 4,
+    regularScheduleLocked: Boolean(competition.regularScheduleLocked),
+    predictionsEnabled: competition.predictionsEnabled !== false
+  };
 }
 
 function countsForElo(match) {
@@ -241,6 +261,7 @@ function resolveLeagueId(record, leagueConfig, recordLabel) {
 function hydrateTeam(team, playersById) {
   const playerIds = Array.isArray(team?.playerIds) ? team.playerIds : [];
   const qualifierRanks = Array.isArray(team?.qualifierRanks) ? team.qualifierRanks : [];
+  const qualifierLabels = Array.isArray(team?.qualifierLabels) ? team.qualifierLabels : [];
 
   playerIds.forEach(playerId => {
     if (!playersById.has(playerId)) {
@@ -252,10 +273,11 @@ function hydrateTeam(team, playersById) {
     ...team,
     playerIds,
     qualifierRanks,
+    qualifierLabels,
     // Anzeigenamen werden ausschließlich aus den zentralen Stammdaten abgeleitet.
     spieler: playerIds.length
       ? playerIds.map(playerId => playersById.get(playerId).name)
-      : qualifierRanks.map(getQualifierLabel)
+      : qualifierLabels.length ? qualifierLabels : qualifierRanks.map(getQualifierLabel)
   };
 }
 
@@ -444,6 +466,13 @@ function hydrateSeasonData(rawSeason) {
 
   const completeSeason = {
     ...rawSeason,
+    competition: {
+      tournamentMode: rawSeason.competition?.tournamentMode || 'none',
+      qualificationPlaces: Number(rawSeason.competition?.qualificationPlaces) || 0,
+      homeRankingLimit: Number(rawSeason.competition?.homeRankingLimit) || 4,
+      regularScheduleLocked: Boolean(rawSeason.competition?.regularScheduleLocked),
+      predictionsEnabled: rawSeason.competition?.predictionsEnabled !== false
+    },
     leagues: leagueConfig.leagues,
     activeLeagueId: leagueConfig.defaultLeagueId,
     players: allPlayers,
@@ -1675,7 +1704,7 @@ function renderFirmenRanking() {
 
 function getFinalFourMatches() {
   return PADEL_DATA.matches
-    .filter(match => !countsForRanking(match))
+    .filter(match => getMatchStage(match) === 'final-four')
     .sort(compareMatchesByNumber);
 }
 
@@ -1968,7 +1997,9 @@ function renderRanking() {
   const firmaShort = { Envidual: 'Env', Headsquare: 'Hsq', Hanako: 'Han' };
   document.getElementById('rl-meta').textContent = withStats.length + ' Spieler';
   const sortNotes = {
-    points: 'Top 4: Final-Four-Qualifikation  |  Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele',
+    points: getCompetitionConfig().qualificationPlaces
+      ? `Top ${getCompetitionConfig().qualificationPlaces}: Qualifikationsplätze  |  Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele`
+      : 'Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele',
     elo: 'Sortierung: Elo · Punkte · Spiel-Differenz · gewonnene Spiele',
     placement: 'Sortierung: bereinigter Rang aus Punkte-Platz minus Platzierungsfaktor'
   };
@@ -1979,7 +2010,8 @@ function renderRanking() {
     const extras = getPlayerRankingExtras(p, rankMap);
     const spielDiffStr = p.stats.partien > 0 ? (p.stats.spielDiff >= 0 ? `+${p.stats.spielDiff}` : `${p.stats.spielDiff}`) : '—';
     const spielDiffClass = getStatDiffClass(p.stats.spielDiff);
-    const isTopFourQualifier = pointsRank <= 4;
+    const isTopFourQualifier = getCompetitionConfig().qualificationPlaces > 0
+      && pointsRank <= getCompetitionConfig().qualificationPlaces;
     return `<tr class="r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}">
       <td class="rn l sticky-rank"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${renderPointsRankReference(currentRank, pointsRank)}</span></td>
       <td class="l sticky-name"><span class="player-cell-inner">${renderPlayerProfileLink(p, 'pname')}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span></span></td>
@@ -2266,7 +2298,8 @@ function renderHome() {
     <button class="text-link article-readmore" id="article-readmore" data-expand-home-article>Weiterlesen</button>
   `;
 
-  document.getElementById('home-ranking').innerHTML = getRankedPlayers().slice(0, 4)
+  document.getElementById('home-ranking').innerHTML = getRankedPlayers()
+    .slice(0, getCompetitionConfig().homeRankingLimit)
     .map((p, i) => {
       const spielDiffStr = p.stats.partien > 0 ? formatStatDiff(p.stats.spielDiff) : '—';
       const spielDiffClass = getStatDiffClass(p.stats.spielDiff);
@@ -2289,7 +2322,9 @@ function renderHome() {
     .sort(compareMatchesByDateTime)
     .slice(0, 3);
   const allMatchesPlayed = PADEL_DATA.matches.every(match => match.sieger !== null);
-  const emptyNextMatchesText = allMatchesPlayed
+  const emptyNextMatchesText = PADEL_DATA.matches.length === 0
+    ? 'Der Spielplan folgt.'
+    : allMatchesPlayed
     ? 'Alle Partien sind gespielt.'
     : 'Keine weiteren Partien terminiert.';
 
@@ -2653,7 +2688,10 @@ function renderFinalFourForecast() {
   const target = document.getElementById('stats-final-four-forecast');
   if (!target) return;
 
-  const forecast = getFinalFourForecast().slice(0, 4);
+  const qualificationPlaces = getCompetitionConfig().qualificationPlaces || 4;
+  const forecast = getFinalFourForecast().slice(0, qualificationPlaces);
+  const label = document.getElementById('stats-qualification-forecast-label');
+  if (label) label.textContent = qualificationPlaces > 4 ? `Top-${qualificationPlaces}-Prognose` : 'Final-Four-Prognose';
   const openMatches = PADEL_DATA.matches
     .filter(countsForRanking)
     .filter(match => match.sieger === null).length;
@@ -3008,12 +3046,12 @@ function renderMatchdayGroup(spieltag, matches) {
   </div>`;
 }
 
-function renderFinalFourGroup(matches) {
+function renderTournamentGroup(matches, fallbackTitle, className) {
   if (!matches.length) return '';
 
-  const title = getMatchdayInfo(matches[0].spieltag)?.title || 'Final Four';
+  const title = getMatchdayInfo(matches[0].spieltag)?.title || fallbackTitle;
   const played = matches.filter(match => match.sieger !== null).length;
-  return `<div class="spieltag-group final-four-group">
+  return `<div class="spieltag-group ${className}">
     <div class="sh final-four-heading">
       <div class="sh-heading">
         <div class="sh-title">${title.toUpperCase()}</div>
@@ -3031,9 +3069,12 @@ function matchesCurrentMatchScope(match) {
 }
 
 function renderPartienByMatchday(matches) {
-  const regularMatches = matches.filter(countsForRanking);
+  const regularMatches = matches.filter(match => getMatchStage(match) === 'league');
+  const semifinalMatches = matches
+    .filter(match => getMatchStage(match) === 'semifinal')
+    .sort(compareMatchesByNumber);
   const finalFourMatches = matches
-    .filter(match => !countsForRanking(match))
+    .filter(match => getMatchStage(match) === 'final-four')
     .sort(compareMatchesByNumber);
   const matchdays = [...new Set(regularMatches.map(match => match.spieltag))].sort((a, b) => a - b);
 
@@ -3043,8 +3084,9 @@ function renderPartienByMatchday(matches) {
       .sort(compareMatchesByNumber);
     return renderMatchdayGroup(matchday, matchesForDay);
   }).join('');
-  const finalFourHtml = renderFinalFourGroup(finalFourMatches);
-  return [regularHtml, finalFourHtml].filter(Boolean).join('');
+  const semifinalHtml = renderTournamentGroup(semifinalMatches, 'Halbfinale', 'semifinal-group');
+  const finalFourHtml = renderTournamentGroup(finalFourMatches, 'Final Four', 'final-four-group');
+  return [regularHtml, semifinalHtml, finalFourHtml].filter(Boolean).join('');
 }
 
 function formatMatchDateGroupLabel(date) {
@@ -3075,7 +3117,14 @@ function renderOpenMatchGroup(matches) {
 }
 
 function renderPartienByDate(matches) {
-  const sortedMatches = [...matches].sort(compareMatchesBySchedule);
+  const regularMatches = matches.filter(match => getMatchStage(match) === 'league');
+  const semifinalMatches = matches
+    .filter(match => getMatchStage(match) === 'semifinal')
+    .sort(compareMatchesBySchedule);
+  const finalFourMatches = matches
+    .filter(match => getMatchStage(match) === 'final-four')
+    .sort(compareMatchesBySchedule);
+  const sortedMatches = [...regularMatches].sort(compareMatchesBySchedule);
   const scheduledMatches = sortedMatches.filter(hasScheduledDateTime);
   const openMatches = sortedMatches.filter(match => !hasScheduledDateTime(match));
   const dateGroups = [...new Set(scheduledMatches.map(match => toDateKey(match.datum)))];
@@ -3084,7 +3133,9 @@ function renderPartienByDate(matches) {
     scheduledMatches.filter(match => toDateKey(match.datum) === date)
   )).join('');
   const openHtml = renderOpenMatchGroup(openMatches);
-  return [scheduledHtml, openHtml].filter(Boolean).join('');
+  const semifinalHtml = renderTournamentGroup(semifinalMatches, 'Halbfinale', 'semifinal-group');
+  const finalFourHtml = renderTournamentGroup(finalFourMatches, 'Final Four', 'final-four-group');
+  return [scheduledHtml, openHtml, semifinalHtml, finalFourHtml].filter(Boolean).join('');
 }
 
 function renderPartien() {
@@ -3098,7 +3149,10 @@ function renderPartien() {
     ? renderPartienByDate(visibleMatches)
     : renderPartienByMatchday(visibleMatches);
 
-  document.getElementById('spielplan').innerHTML = spielplanHtml || '<div class="empty-state">Keine Partien für diese Auswahl.</div>';
+  const emptyMatchesText = PADEL_DATA.matches.length === 0
+    ? 'Der Spielplan folgt.'
+    : 'Keine Partien für diese Auswahl.';
+  document.getElementById('spielplan').innerHTML = spielplanHtml || `<div class="empty-state">${emptyMatchesText}</div>`;
 }
 
 // ── CALCULATOR ────────────────────────────────────────────────────

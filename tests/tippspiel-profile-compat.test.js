@@ -167,7 +167,10 @@ test('score derivation handles straight sets and a deciding match tiebreak', () 
   const scoreReader = tippspielSource.match(
     /function readResultScore\(form\) \{[\s\S]*?(?=\n  function updateResultSummary)/
   )?.[0] || '';
-  const readResultScore = vm.runInNewContext(`(${scoreReader.replace('function readResultScore', 'function')})`);
+  const readResultScore = vm.runInNewContext(`(() => {
+    const SINGLE_SET_PREDICTIONS = ['6:0', '6:1', '6:2', '6:3', '6:4', '7:5', '7:6', '0:6', '1:6', '2:6', '3:6', '4:6', '5:7', '6:7'];
+    return (${scoreReader.replace('function readResultScore', 'function')});
+  })()`);
   const formFor = values => ({
     querySelector(selector) {
       const [, setIndex, teamIndex] = selector.match(/data-score-set="(\d)".*data-score-team="(\d)"/);
@@ -182,6 +185,28 @@ test('score derivation handles straight sets and a deciding match tiebreak', () 
   assert.deepEqual(
     JSON.parse(JSON.stringify(readResultScore(formFor([[6, 2], [3, 6], [4, 10]])))),
     { actualSets: '1:2', winner: 2, resultDetails: '6:2, 3:6 – 4:10' }
+  );
+});
+
+test('score derivation stores one-set finals as 1:0 or 0:1', () => {
+  const scoreReader = tippspielSource.match(
+    /function readResultScore\(form\) \{[\s\S]*?(?=\n  function updateResultSummary)/
+  )?.[0] || '';
+  const readResultScore = vm.runInNewContext(`(() => {
+    const SINGLE_SET_PREDICTIONS = ['6:0', '6:1', '6:2', '6:3', '6:4', '7:5', '7:6', '0:6', '1:6', '2:6', '3:6', '4:6', '5:7', '6:7'];
+    return (${scoreReader.replace('function readResultScore', 'function')});
+  })()`);
+  const form = {
+    dataset: { resultFormat: 'single-set' },
+    querySelector(selector) {
+      const [, setIndex, teamIndex] = selector.match(/data-score-set="(\d)".*data-score-team="(\d)"/);
+      return { value: setIndex === '0' ? ['7', '5'][Number(teamIndex)] : '' };
+    }
+  };
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(readResultScore(form))),
+    { actualSets: '1:0', winner: 1, resultDetails: '7:5' }
   );
 });
 

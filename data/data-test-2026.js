@@ -2,6 +2,13 @@ window.PADEL_SEASON = {
   id: "test-2026",
   label: "Test-Saison",
   title: "Padel-Liga · Test-Saison",
+  competition: {
+    tournamentMode: "none",
+    qualificationPlaces: 0,
+    homeRankingLimit: 4,
+    regularScheduleLocked: false,
+    predictionsEnabled: true
+  },
   startDate: "2026-07-01",
   databaseResults: true,
   resultsEntryEnabled: true,
@@ -16,7 +23,9 @@ window.PADEL_SEASON = {
   ],
   matchdays: [
     { spieltag: 1, startDate: "2026-07-15", endDate: "2026-07-16" },
-    { spieltag: 2, startDate: "2026-12-01", endDate: "2026-12-03" }
+    { spieltag: 2, startDate: "2026-12-01", endDate: "2026-12-03" },
+    { spieltag: 3, startDate: "2026-08-24", endDate: "2026-08-28" },
+    { spieltag: 4, startDate: "2026-12-08", endDate: "2026-12-15" }
   ],
   participants: [
     { playerId: "ludi_gmx", startElo: 800 },
@@ -88,6 +97,96 @@ window.PADEL_SEASON = {
       winner: null,
       team1: { playerIds: ["ludwig_w", "ludi_gmx"] },
       team2: { playerIds: ["ludi_gmail", "agnes_k"] }
+    },
+    {
+      id: "test-2026-partie-5",
+      type: "season",
+      seasonId: "test-2026",
+      countsForRanking: true,
+      countsForElo: true,
+      matchday: 3,
+      date: "2026-08-24",
+      time: "18.00",
+      result: null,
+      sets: null,
+      winner: null,
+      team1: { playerIds: ["ludi_gmx", "ludwig_w"] },
+      team2: { playerIds: ["ludi_gmail", "agnes_k"] }
+    },
+    {
+      id: "test-2026-partie-6",
+      type: "season",
+      seasonId: "test-2026",
+      countsForRanking: true,
+      countsForElo: true,
+      matchday: 3,
+      date: "2026-08-26",
+      time: "18.00",
+      result: null,
+      sets: null,
+      winner: null,
+      team1: { playerIds: ["ludi_gmail", "greta_p"] },
+      team2: { playerIds: ["ludi_gmx", "raphael_h"] }
+    },
+    {
+      id: "test-2026-partie-7",
+      type: "season",
+      seasonId: "test-2026",
+      countsForRanking: true,
+      countsForElo: true,
+      matchday: 3,
+      date: "2026-08-28",
+      time: "18.00",
+      result: null,
+      sets: null,
+      winner: null,
+      team1: { playerIds: ["ludi_gmx", "luca_w"] },
+      team2: { playerIds: ["ludi_gmail", "lukas_p"] }
+    },
+    {
+      id: "test-2026-partie-8",
+      type: "season",
+      seasonId: "test-2026",
+      countsForRanking: true,
+      countsForElo: true,
+      matchday: 4,
+      date: "2026-12-08",
+      time: "18.00",
+      result: null,
+      sets: null,
+      winner: null,
+      team1: { playerIds: ["ludi_gmail", "ludwig_w"] },
+      team2: { playerIds: ["ludi_gmx", "greta_p"] }
+    },
+    {
+      id: "test-2026-partie-9",
+      type: "season",
+      seasonId: "test-2026",
+      countsForRanking: true,
+      countsForElo: true,
+      matchday: 4,
+      date: "2026-12-10",
+      time: "18.00",
+      result: null,
+      sets: null,
+      winner: null,
+      team1: { playerIds: ["ludi_gmx", "raphael_h"] },
+      team2: { playerIds: ["ludi_gmail", "luca_w"] }
+    },
+    {
+      id: "test-2026-partie-10",
+      type: "season",
+      seasonId: "test-2026",
+      countsForRanking: true,
+      countsForElo: true,
+      matchday: 4,
+      date: "2026-12-15",
+      time: "18.00",
+      result: null,
+      sets: null,
+      winner: null,
+      team1: { playerIds: ["ludi_gmail", "agnes_k"] },
+      team2: { playerIds: ["ludi_gmx", "lukas_p"] }
     }
   ],
   articles: []

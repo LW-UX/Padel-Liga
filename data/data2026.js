@@ -2,6 +2,14 @@ window.PADEL_SEASON = {
   "id": "2026",
   "label": "Sommer 2026",
   "title": "Padel-Liga Sommer 2026",
+  "resultsEntryEnabled": true,
+  "competition": {
+    "tournamentMode": "direct-final-four",
+    "qualificationPlaces": 4,
+    "homeRankingLimit": 4,
+    "regularScheduleLocked": true,
+    "predictionsEnabled": false
+  },
   "eloFinalDate": "2026-10-01",
   "organizations": [
     "Headsquare",
