@@ -36,6 +36,10 @@ const correctedLotzMigration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260901142000_correct_lotz_training_player.sql'),
   'utf8'
 );
+const weightedTrainingMigration = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20260903110000_weighted_training_profile_matches.sql'),
+  'utf8'
+);
 
 function evaluateRelationshipLeaders(matches) {
   const functionSource = app.match(
@@ -74,7 +78,11 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /image\.onload = \(\) => \{\s*image\.hidden = false;\s*placeholder\.hidden = true;/);
   assert.match(players, /id: "chris_m"[^\n]+profileEmoji: "👨"/);
   assert.match(players, /id: "agnes_k"[^\n]+profileEmoji: "👩"/);
-  assert.match(html, /class="match-scope-toggle" aria-label="Partien filtern"[\s\S]*data-player-profile-filter="training"/);
+  assert.doesNotMatch(html, /data-player-profile-filter|aria-label="Partien filtern"/);
+  assert.match(html, /class="secondary-button player-profile-show-all"[^>]*data-player-profile-show-all/);
+  assert.match(app, /const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;/);
+  assert.match(app, /matches\.slice\(0, PLAYER_PROFILE_MATCH_PREVIEW_LIMIT\)/);
+  assert.match(app, /matches\.length <= PLAYER_PROFILE_MATCH_PREVIEW_LIMIT/);
   assert.match(html, /class="widget player-profile-widget player-profile-relationships"[\s\S]*id="player-profile-relationships"/);
   assert.match(app, /record\.matches >= 3/);
   assert.match(app, /\['Lieblingspartner', leaders\.favoritePartner/);
@@ -123,6 +131,25 @@ test('profile relationship leaders require three matches and use win rate', () =
   assert.equal(neutralLeaders.favoritePartner, null);
   assert.equal(neutralLeaders.favoriteOpponent, null);
   assert.equal(neutralLeaders.fearedOpponent, null);
+});
+
+test('single-set trainings count as half a profile match without counting tiebreaks', () => {
+  const weightedLeaders = evaluateRelationshipLeaders([
+    { outcome: 'win', matchWeight: 1, partnerNames: ['Partner Gewicht'], opponentNames: ['Gegner Gewicht'] },
+    { outcome: 'win', matchWeight: 1, partnerNames: ['Partner Gewicht'], opponentNames: ['Gegner Gewicht'] },
+    { outcome: 'loss', matchWeight: 0.5, partnerNames: ['Partner Gewicht'], opponentNames: ['Gegner Gewicht'] },
+    { outcome: 'loss', matchWeight: 0.5, partnerNames: ['Partner Gewicht'], opponentNames: ['Gegner Gewicht'] }
+  ]);
+
+  assert.equal(weightedLeaders.favoritePartner.matches, 3);
+  assert.equal(weightedLeaders.favoritePartner.wins, 2);
+  assert.equal(weightedLeaders.favoritePartner.losses, 1);
+  assert.match(weightedTrainingMigration, /where team_one <= 7 and team_two <= 7/);
+  assert.match(weightedTrainingMigration, /p_kind = 'training' and set_count = 1 then 0\.5::numeric/);
+  assert.match(weightedTrainingMigration, /'matches', coalesce\(\(select sum\(match_weight\) from scored_career\), 0\)/);
+  assert.match(weightedTrainingMigration, /'wins', coalesce\(\(select sum\(match_weight\) from scored_career where outcome = 'win'\), 0\)/);
+  assert.match(weightedTrainingMigration, /'matchWeight', history\.match_weight/);
+  assert.match(app, /toLocaleString\('de-DE'/);
 });
 
 test('training rounds stay grouped and incomplete scores are visibly unranked', () => {

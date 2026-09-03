@@ -21,14 +21,15 @@
       <div class="account-player-area">
         <section class="account-section">
           <div class="account-section-heading">
-            <h3 class="sh-title">Ligaspiele</h3>
+            <h3 class="sh-title">Spieleübersicht</h3>
+            <button class="secondary-button">Training hinzufügen</button>
           </div>
-          <div class="account-task-list prediction-match-list">
-            <section class="prediction-match-group">
+          <div class="account-task-list prediction-match-list" id="result-task-list">
+            <section class="prediction-match-group" data-result-task-group="review">
               <div class="widget-label">Zu bestätigen</div>
               <div class="account-task-list">
                 <div class="result-task-wrap">
-                  <article class="account-task-card result-task-card">
+                  <article class="account-task-card result-task-card is-actionable">
                     <div class="account-task-meta"><span class="widget-label">Test-Liga · Partie 2</span><span class="account-task-status is-open">Zu bestätigen</span></div>
                     <div class="result-card-timing">16.07.2026 · 18.00 Uhr</div>
                     <div class="account-task-matchup"><strong>Ludi GMX &amp; Greta P.</strong><span>gegen</span><strong>Ludi Gmail &amp; Ludwig W.</strong></div>
@@ -36,22 +37,57 @@
                     <div class="account-task-actions result-review-actions"><button class="primary-button">Ergebnis bestätigen</button><button class="secondary-button">Alternative eingeben</button></div>
                   </article>
                 </div>
-                <article class="account-task-card training-task-card">
-                  <div class="account-task-meta"><span>Training 7</span><span>15.07.2026 · 19.00 Uhr</span></div>
+                <article class="account-task-card training-task-card is-actionable">
+                  <div class="account-task-meta"><span class="widget-label">Training 7</span><span class="account-task-status is-open">Zu bestätigen</span></div>
+                  <div class="result-card-timing">15.07.2026 · 19.00 Uhr</div>
                   <div class="training-player-line">Ludi GMX · Greta P. · Ludi Gmail · Ludwig W.</div>
                   <div class="training-round-result"><span>Ludi GMX &amp; Greta P.</span><strong>6:3</strong><span>Ludi Gmail &amp; Ludwig W.</span></div>
                   <div class="account-task-actions"><button class="primary-button">Training bestätigen</button></div>
                 </article>
+                <div class="result-task-wrap">
+                  <article class="account-task-card result-task-card is-waiting">
+                    <div class="account-task-meta"><span class="widget-label">Test-Liga · Partie 6</span><span class="account-task-status">Auf Bestätigung warten</span></div>
+                    <div class="result-card-timing">26.08.2026 · 18.00 Uhr</div>
+                    <div class="account-task-matchup"><strong>Ludi Gmail &amp; Greta P.</strong><span>gegen</span><strong>Ludi GMX &amp; Raphael H.</strong></div>
+                    <div class="result-proposal"><span>Dein Vorschlag</span><strong>2:0 · 6:3, 6:4</strong></div>
+                    <div class="account-task-actions"><span class="account-waiting">Auf Bestätigung warten</span></div>
+                  </article>
+                </div>
               </div>
             </section>
+            <section class="prediction-match-group" data-result-task-group="past">
+              <div class="widget-label">Ergebnis eintragen</div>
+              <article class="account-task-card result-task-card is-actionable">
+                <div class="account-task-meta"><span class="widget-label">Test-Liga · Partie 5</span><span class="account-task-status is-open">Offen</span></div>
+                <div class="result-card-timing">24.08.2026 · 18.00 Uhr</div>
+                <div class="account-task-matchup"><strong>Ludi GMX &amp; Ludwig W.</strong><span>gegen</span><strong>Ludi Gmail &amp; Agnes K.</strong></div>
+                <button class="primary-button">Zur Bestätigung senden</button>
+              </article>
+            </section>
+            <section class="prediction-match-group" data-result-task-group="future">
+              <div class="widget-label">Terminierte Spiele</div>
+              <article class="account-task-card result-task-card">
+                <div class="account-task-meta"><span class="widget-label">Test-Liga · Partie 8</span><span class="account-task-status">Terminiert</span></div>
+                <div class="result-card-timing">08.12.2026 · 18.00 Uhr</div>
+                <div class="account-task-matchup"><strong>Ludi Gmail &amp; Ludwig W.</strong><span>gegen</span><strong>Ludi GMX &amp; Greta P.</strong></div>
+                <div class="scheduled-result-actions"><button class="secondary-button">Ergebnis eintragen</button></div>
+              </article>
+            </section>
+            <section class="prediction-match-group" data-result-task-group="planned">
+              <div class="widget-label">Geplante Spiele</div>
+              <article class="account-task-card result-task-card">
+                <div class="account-task-meta"><span class="widget-label">Test-Liga · Partie 9</span><span class="account-task-status">Geplant</span></div>
+                <div class="account-task-matchup"><strong>Ludi GMX &amp; Raphael H.</strong><span>gegen</span><strong>Ludi Gmail &amp; Luca W.</strong></div>
+                <form class="match-schedule-form">
+                  <div class="result-entry-timing">
+                    <label><span>Datum</span><input type="date"></label>
+                    <label><span>Uhrzeit</span><input type="time"></label>
+                  </div>
+                  <div class="match-schedule-actions"><button class="secondary-button">Terminieren</button></div>
+                </form>
+              </article>
+            </section>
           </div>
-        </section>
-        <section class="account-section">
-          <div class="account-section-heading">
-            <h3 class="sh-title">Trainingsspiele</h3>
-            <button class="secondary-button">Training hinzufügen</button>
-          </div>
-          <div class="account-empty">Keine offenen Trainings.</div>
         </section>
       </div>
     </div>

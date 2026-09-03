@@ -13,9 +13,9 @@ let activeCalculatorMatchId = null;
 let calculatorAutoTip = false;
 let playerProfileChart = null;
 let playerProfileData = null;
-let playerProfileFilter = 'all';
 let playerProfileExpanded = false;
 let playerProfileRequestId = 0;
+const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;
 let playerProfileLastTrigger = null;
 
 function getViewerStorageKey() {
@@ -724,6 +724,7 @@ function getLocalPlayerProfile(playerId) {
         return {
           id: match.id,
           kind: 'league',
+          matchWeight: 1,
           date: toDateKey(match.datum),
           seasonId: selectedSeason.id,
           seasonLabel: PADEL_DATA.label || selectedSeason.label,
@@ -840,6 +841,15 @@ function formatProfileSignedValue(value) {
   return number > 0 ? `+${number}` : String(number);
 }
 
+function formatProfileMatchCount(value) {
+  const number = Number(value || 0);
+  if (!Number.isFinite(number)) return '0';
+  return number.toLocaleString('de-DE', {
+    minimumFractionDigits: Number.isInteger(number) ? 0 : 1,
+    maximumFractionDigits: 1
+  });
+}
+
 function renderPlayerProfileAchievements(achievements = []) {
   const target = document.getElementById('player-profile-achievements');
   if (!target) return;
@@ -874,8 +884,8 @@ function renderPlayerProfileStats(summary = {}) {
   if (!target) return;
   const stats = [
     [summary.currentElo ?? '—', `Elo · Peak ${summary.peakElo ?? '—'}`],
-    [summary.matches ?? 0, 'Partien'],
-    [`${summary.wins ?? 0}:${summary.losses ?? 0}`, 'Partien G:V'],
+    [formatProfileMatchCount(summary.matches), 'Partien'],
+    [`${formatProfileMatchCount(summary.wins)}:${formatProfileMatchCount(summary.losses)}`, 'Partien G:V'],
     [`${summary.gamesFor ?? 0}:${summary.gamesAgainst ?? 0}`, 'Spiele G:V'],
     [formatProfileSignedValue(summary.gameDiff), 'Spieldifferenz', Number(summary.gameDiff) > 0 ? 'positive' : '']
   ];
@@ -889,6 +899,22 @@ function renderPlayerProfileStats(summary = {}) {
 
 function getPlayerProfileSeasonColor(index) {
   return COLORS[index % COLORS.length] || '#d9ff22';
+}
+
+function getPlayerProfileSegmentColor(context, pointColors = []) {
+  const startColor = pointColors[context.p0DataIndex] || '#d9ff22';
+  const endColor = pointColors[context.p1DataIndex] || startColor;
+  if (startColor === endColor) return startColor;
+
+  const xScale = context.chart?.scales?.x;
+  const startX = xScale?.getPixelForValue(context.p0DataIndex);
+  const endX = xScale?.getPixelForValue(context.p1DataIndex);
+  if (!Number.isFinite(startX) || !Number.isFinite(endX) || startX === endX) return startColor;
+
+  const gradient = context.chart.ctx.createLinearGradient(startX, 0, endX, 0);
+  gradient.addColorStop(0, startColor);
+  gradient.addColorStop(1, endColor);
+  return gradient;
 }
 
 function renderPlayerProfileEloChart(eloSeries = []) {
@@ -916,18 +942,23 @@ function renderPlayerProfileEloChart(eloSeries = []) {
     <span style="--profile-season-color:${getPlayerProfileSeasonColor(index)}"><i></i>${escapeHtml(seasonLabel || seasonId)}</span>
   `).join('');
 
-  const datasets = seasons.map(([seasonId, seasonLabel], index) => ({
-    label: seasonLabel || seasonId,
-    data: series.map(item => item.seasonId === seasonId ? Number(item.elo) : null),
-    borderColor: getPlayerProfileSeasonColor(index),
+  const seasonColors = new Map(seasons.map(([seasonId], index) => [seasonId, getPlayerProfileSeasonColor(index)]));
+  const pointColors = series.map(item => seasonColors.get(item.seasonId) || '#d9ff22');
+  const datasets = [{
+    label: 'Elo',
+    data: values,
+    borderColor: pointColors[0],
     backgroundColor: 'transparent',
     borderWidth: 3,
     pointRadius: 4,
     pointHoverRadius: 5,
-    pointBackgroundColor: getPlayerProfileSeasonColor(index),
+    pointBackgroundColor: pointColors,
+    pointBorderColor: pointColors,
     tension: 0.2,
-    spanGaps: true
-  }));
+    segment: {
+      borderColor: context => getPlayerProfileSegmentColor(context, pointColors)
+    }
+  }];
   const minElo = Math.max(0, Math.floor((Math.min(...values) - 60) / 50) * 50);
   const maxElo = Math.ceil((Math.max(...values) + 60) / 50) * 50;
   playerProfileChart = new Chart(canvas.getContext('2d'), {
@@ -939,7 +970,11 @@ function renderPlayerProfileEloChart(eloSeries = []) {
       interaction: { mode: 'nearest', intersect: true },
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: item => `${item.dataset.label}: ${item.parsed.y} Elo` } }
+        tooltip: {
+          callbacks: {
+            label: item => `${series[item.dataIndex]?.seasonLabel || series[item.dataIndex]?.seasonId || 'Elo'}: ${item.parsed.y} Elo`
+          }
+        }
       },
       scales: {
         x: { grid: { color: '#252b38' }, ticks: { color: '#858895', maxTicksLimit: 6 } },
@@ -974,20 +1009,22 @@ function getPlayerProfileRelationshipLeaders(matches = []) {
   const partners = new Map();
   const opponents = new Map();
 
-  const recordResult = (records, name, outcome) => {
+  const recordResult = (records, name, outcome, matchWeight) => {
     if (!name || !['win', 'loss', 'draw'].includes(outcome)) return;
     const record = records.get(name) || { name, matches: 0, wins: 0, losses: 0, draws: 0 };
-    record.matches += 1;
+    record.matches += matchWeight;
     const resultKey = outcome === 'win' ? 'wins' : outcome === 'loss' ? 'losses' : 'draws';
-    record[resultKey] += 1;
+    record[resultKey] += matchWeight;
     records.set(name, record);
   };
 
   matches.forEach(match => {
+    const rawMatchWeight = Number(match.matchWeight ?? 1);
+    const matchWeight = Number.isFinite(rawMatchWeight) && rawMatchWeight > 0 ? rawMatchWeight : 1;
     [...new Set(match.partnerNames || [])]
-      .forEach(name => recordResult(partners, name, match.outcome));
+      .forEach(name => recordResult(partners, name, match.outcome, matchWeight));
     [...new Set(match.opponentNames || [])]
-      .forEach(name => recordResult(opponents, name, match.outcome));
+      .forEach(name => recordResult(opponents, name, match.outcome, matchWeight));
   });
 
   const eligible = records => [...records.values()]
@@ -1030,11 +1067,11 @@ function renderPlayerProfileRelationships(matches = []) {
 
   const formatRecord = record => {
     const parts = [
-      `${record.wins} ${record.wins === 1 ? 'Sieg' : 'Siege'}`,
-      `${record.losses} ${record.losses === 1 ? 'Niederlage' : 'Niederlagen'}`
+      `${formatProfileMatchCount(record.wins)} ${record.wins === 1 ? 'Sieg' : 'Siege'}`,
+      `${formatProfileMatchCount(record.losses)} ${record.losses === 1 ? 'Niederlage' : 'Niederlagen'}`
     ];
-    if (record.draws) parts.push(`${record.draws} Unentschieden`);
-    parts.push(`${record.matches} Partien`);
+    if (record.draws) parts.push(`${formatProfileMatchCount(record.draws)} Unentschieden`);
+    parts.push(`${formatProfileMatchCount(record.matches)} Partien`);
     return parts.join(' · ');
   };
 
@@ -1063,12 +1100,6 @@ function orientProfileResult(resultDetails, team) {
   const value = String(resultDetails || '—');
   if (Number(team) !== 2) return value;
   return value.replace(/(\d+)\s*:\s*(\d+)/g, (_, left, right) => `${right}:${left}`);
-}
-
-function getFilteredPlayerProfileMatches() {
-  const matches = playerProfileData?.matches || [];
-  if (playerProfileFilter === 'all') return matches;
-  return matches.filter(match => match.kind === playerProfileFilter);
 }
 
 function getPlayerProfileTrainingSessionId(match) {
@@ -1108,24 +1139,18 @@ function groupPlayerProfileMatches(matches = []) {
 }
 
 function getVisiblePlayerProfileMatchGroups(matches) {
-  const groups = groupPlayerProfileMatches(matches);
-  if (playerProfileExpanded) return groups;
-  const visible = [];
-  let visibleMatchCount = 0;
-  for (const group of groups) {
-    if (visibleMatchCount >= 6) break;
-    visible.push(group);
-    visibleMatchCount += group.matches.length;
-  }
-  return visible;
+  const visibleMatches = playerProfileExpanded
+    ? matches
+    : matches.slice(0, PLAYER_PROFILE_MATCH_PREVIEW_LIMIT);
+  return groupPlayerProfileMatches(visibleMatches);
 }
 
 function renderPlayerProfileHistory() {
   const target = document.getElementById('player-profile-match-list');
   const showAll = document.getElementById('player-profile-show-all');
   if (!target || !showAll) return;
-  const filtered = getFilteredPlayerProfileMatches();
-  const visibleGroups = getVisiblePlayerProfileMatchGroups(filtered);
+  const matches = playerProfileData?.matches || [];
+  const visibleGroups = getVisiblePlayerProfileMatchGroups(matches);
   if (!visibleGroups.length) {
     target.innerHTML = '<div class="empty-state">Noch keine vergangenen Partien.</div>';
   } else {
@@ -1154,15 +1179,14 @@ function renderPlayerProfileHistory() {
       return `<section class="player-profile-match-group${group.kind === 'training' ? ' training' : ''}" data-profile-match-group="${escapeHtml(group.key)}">${rows}</section>`;
     }).join('');
   }
-  showAll.hidden = playerProfileExpanded || filtered.length <= 6;
-  showAll.textContent = `Alle ${filtered.length} Partien`;
+  showAll.hidden = playerProfileExpanded || matches.length <= PLAYER_PROFILE_MATCH_PREVIEW_LIMIT;
+  showAll.textContent = `Alle ${matches.length} Partien anzeigen`;
 }
 
 function renderPlayerProfile(profile) {
   const identity = profile.identity || {};
   const knownPlayer = (window.PADEL_PLAYERS || []).find(player => player.id === identity.id);
   playerProfileData = profile;
-  playerProfileFilter = 'all';
   playerProfileExpanded = false;
   document.getElementById('player-profile-name').textContent = identity.displayName || 'Spielerprofil';
   const profileCompany = identity.company || 'Padel-Liga';
@@ -1183,9 +1207,6 @@ function renderPlayerProfile(profile) {
   renderPlayerProfileStats(profile.summary || {});
   renderPlayerProfileParticipations(profile.participations || []);
   renderPlayerProfileRelationships(profile.matches || []);
-  document.querySelectorAll('[data-player-profile-filter]').forEach(button => {
-    button.classList.toggle('active', button.dataset.playerProfileFilter === 'all');
-  });
   renderPlayerProfileHistory();
   document.getElementById('player-profile-state').hidden = true;
   document.getElementById('player-profile-content').hidden = false;
@@ -1237,17 +1258,6 @@ document.addEventListener('click', event => {
   const playerProfileCloseControl = event.target.closest('[data-player-profile-close]');
   if (playerProfileCloseControl) {
     closePlayerProfile();
-    return;
-  }
-
-  const playerProfileFilterControl = event.target.closest('[data-player-profile-filter]');
-  if (playerProfileFilterControl) {
-    playerProfileFilter = playerProfileFilterControl.dataset.playerProfileFilter;
-    playerProfileExpanded = false;
-    document.querySelectorAll('[data-player-profile-filter]').forEach(button => {
-      button.classList.toggle('active', button === playerProfileFilterControl);
-    });
-    renderPlayerProfileHistory();
     return;
   }
 

@@ -12,7 +12,7 @@
   <script src="../data/players.js?v=2026-09-01-profile-emojis"></script>
   <script src="../data/seasons.js"></script>
   <script src="../data/supabase-config.js"></script>
-  <link rel="stylesheet" href="../style.css?v=2026-09-03-secondary-dropdown-button">
+  <link rel="stylesheet" href="../style.css?v=2026-09-03-four-game-groups">
 </head>
 <body class="tip-page">
 <header class="site-header">
@@ -120,13 +120,7 @@
         <div class="account-player-area" id="account-player-area" hidden>
           <section class="account-section" id="open-results-section">
             <div class="account-section-heading">
-              <h3 class="sh-title">Ligaspiele</h3>
-            </div>
-            <div class="account-task-list prediction-match-list" id="result-task-list"></div>
-          </section>
-          <section class="account-section">
-            <div class="account-section-heading">
-              <h3 class="sh-title">Trainingsspiele</h3>
+              <h3 class="sh-title">Spieleübersicht</h3>
               <button class="secondary-button" type="button" data-training-toggle>Training hinzufügen</button>
             </div>
             <form class="training-form" id="training-form" hidden>
@@ -139,7 +133,7 @@
               <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
               <button class="primary-button" type="submit">Training zur Bestätigung senden</button>
             </form>
-            <div class="account-task-list" id="training-task-list"></div>
+            <div class="account-task-list prediction-match-list" id="result-task-list"></div>
           </section>
         </div>
       </div>
@@ -148,7 +142,7 @@
   </div>
 </dialog>
 
-<script src="../js/tippspiel.js?v=2026-09-01-authenticated-player-highlight"></script>
+<script src="../js/tippspiel.js?v=2026-09-03-four-game-groups"></script>
 <script src="../js/tipp-page.js?v=2026-09-01-season-picker"></script>
 </body>
 </html>

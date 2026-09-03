@@ -595,12 +595,6 @@
       font-size: 0.69rem;
       text-transform: uppercase;
     }
-    .player-profile-history-heading {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-    }
     #player-profile-relationships { margin-top: 18px; }
     .player-profile-relationships .stat-shift-value { font-family: 'DM Mono', monospace; }
     .player-profile-match-list { margin-top: 20px; }
@@ -663,17 +657,8 @@
     .player-profile-match-season { text-align: right; }
     .player-profile-show-all {
       width: 100%;
-      min-height: 54px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: var(--surface2);
-      color: var(--text);
-      cursor: pointer;
-      font: inherit;
-      font-weight: 600;
       margin-top: 24px;
     }
-    .player-profile-show-all:hover { border-color: var(--accent); }
     @media (max-width: 1024px) {
       .player-profile-identity-row {
         grid-template-columns: 168px minmax(0, 1fr);
@@ -725,7 +710,6 @@
       .player-profile-stat:last-child { grid-column: 1 / -1; border-bottom: 0; }
       .player-profile-stat-value { font-size: 2.4rem; }
       .player-profile-chart-wrap { height: 210px; }
-      .player-profile-history-heading { align-items: flex-start; gap: 8px; }
       .player-profile-match {
         grid-template-columns: 34px minmax(0, 1fr) auto;
         gap: 8px 12px;
@@ -1018,7 +1002,7 @@
       padding: 1rem;
     }
     .account-games-empty[hidden] { display: none; }
-    .account-player-area { display: grid; gap: 28px; }
+    .account-player-area { display: grid; }
     .account-player-area[hidden] { display: none; }
     .account-section {
       display: grid;
@@ -1028,15 +1012,27 @@
     }
     .account-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .account-task-list { display: grid; gap: 10px; }
-    #result-task-list { gap: 32px; }
+    #result-task-list { gap: 24px; }
+    #result-task-list > .prediction-match-group {
+      gap: 14px;
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+    }
     .result-task-wrap { display: grid; gap: 6px; }
     .account-task-card {
       display: grid;
+      gap: 14px;
       border: 1px solid var(--border);
       border-radius: 12px;
       background: var(--surface);
       padding: 1rem;
     }
+    .account-task-card.is-actionable {
+      border-color: var(--accent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    .account-task-card.is-waiting { background: color-mix(in srgb, var(--surface) 62%, var(--bg)); }
+    .account-task-card.is-waiting > :not(.account-task-actions) { opacity: 0.58; }
     .account-task-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--dim); font: 0.72rem 'DM Mono', monospace; }
     .account-task-status {
       border: 1px solid var(--border);
@@ -1066,7 +1062,11 @@
       padding-top: 13px;
     }
     .result-entry-timing { display: grid; grid-template-columns: minmax(150px, 200px) minmax(120px, 160px); gap: 8px; }
+    .match-schedule-form { display: grid; gap: 14px; }
+    .match-schedule-actions,
+    .scheduled-result-actions { display: flex; justify-content: flex-end; }
     .result-entry-form label,
+    .match-schedule-form label,
     .training-form label {
       display: flex;
       align-items: center;
@@ -1077,6 +1077,7 @@
     }
     .result-entry-form input,
     .result-entry-form select,
+    .match-schedule-form input,
     .training-form input,
     .training-form select {
       width: 100%;
@@ -1172,6 +1173,7 @@
     .account-empty,
     .account-waiting { color: var(--dim); font-size: 0.85rem; }
     .account-waiting { display: inline-flex; align-items: center; min-height: 36px; }
+    .training-waiting-actions { display: inline-flex; align-items: center; gap: 12px; }
     .training-form { display: grid; gap: 10px; border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem; }
     .training-form[hidden] { display: none; }
     .training-form-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -2495,8 +2497,16 @@
       .auth-dialog-card { padding: 1.1rem; }
       .account-header { align-items: center; gap: 12px; padding-right: 38px; }
       .account-header h2 { font-size: 1.65rem; }
+      .account-section { min-width: 0; }
+      .account-section-heading { min-width: 0; }
+      .account-section-heading .sh-title { font-size: 1.65rem; }
+      .account-section-heading .secondary-button { font-size: 0.68rem; padding-inline: 0.6rem; }
+      #result-task-list,
+      #result-task-list > .prediction-match-group,
+      #result-task-list .account-task-list { min-width: 0; }
       .result-entry-timing { grid-template-columns: 1fr 1fr; }
-      .account-section-heading { align-items: flex-start; }
+      .result-entry-timing label { min-width: 0; flex-direction: column; align-items: stretch; gap: 4px; }
+      .account-section-heading { align-items: center; }
       .account-task-matchup { grid-template-columns: 1fr; text-align: left; }
       .account-task-matchup strong:last-child { text-align: left; }
       .account-task-matchup > span { display: none; }

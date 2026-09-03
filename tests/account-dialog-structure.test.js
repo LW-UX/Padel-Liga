@@ -26,7 +26,7 @@ test('both account dialogs only expose games and place logout in the header', ()
   assert.match(style, /\.auth-dialog \{[\s\S]*width: min\(calc\(100vw - 28px\), 640px\);/);
 });
 
-test('both account dialogs omit completed games and former result controls', () => {
+test('both account dialogs expose one four-group game overview', () => {
   pages.forEach(source => {
     assert.doesNotMatch(source, /id="result-task-scope"/);
     assert.doesNotMatch(source, /id="admin-played-list"/);
@@ -34,8 +34,9 @@ test('both account dialogs omit completed games and former result controls', () 
     assert.doesNotMatch(source, /id="admin-all-matches"/);
     assert.doesNotMatch(source, /id="training-history"/);
     assert.match(source, /id="open-results-section"[\s\S]*data-training-toggle/);
-    assert.match(source, /<h3 class="sh-title">Ligaspiele<\/h3>/);
-    assert.match(source, /<h3 class="sh-title">Trainingsspiele<\/h3>/);
+    assert.match(source, /<h3 class="sh-title">Spieleübersicht<\/h3>/);
+    assert.doesNotMatch(source, /<h3 class="sh-title">Trainingsspiele<\/h3>/);
+    assert.doesNotMatch(source, /id="training-task-list"/);
     assert.match(source, /<button class="secondary-button"[^>]*data-auth-logout/);
     assert.match(source, /<button class="secondary-button"[^>]*data-training-toggle/);
     assert.match(source, /data-auth-logout>Ausloggen<\/button>/);
@@ -56,6 +57,9 @@ test('both account dialogs omit completed games and former result controls', () 
   assert.doesNotMatch(style, /\.prediction-group-title/);
   assert.doesNotMatch(style, /\.auth-logout-button|\.compact-button|\.account-task-count|\.account-task-league/);
   assert.doesNotMatch(style, /\.picker-toggle-chevron/);
+  assert.match(style, /#result-task-list > \.prediction-match-group \{[\s\S]*border-top: 1px solid var\(--border\);[\s\S]*padding-top: 24px;/);
+  assert.match(style, /\.account-task-card\.is-actionable \{[\s\S]*border-color: var\(--accent\);/);
+  assert.match(style, /\.account-task-card\.is-waiting[\s\S]*opacity: 0\.58/);
   assert.match(style, /\.result-entry-actions \{[\s\S]*align-items: center;[\s\S]*justify-content: space-between;/);
   assert.doesNotMatch(style, /\.result-entry-actions \{[^}]*border-top:/);
 });

@@ -157,39 +157,52 @@
     const scopedTasks = includeAll
       ? tasks
       : tasks.filter(task => [1, 2].includes(Number(task?.my_team)));
-    const resultEntries = scopedTasks.filter(task => task.task_type === 'enter' && task.scheduled_date);
+    const resultEntries = scopedTasks.filter(task => task.task_type === 'enter');
+    const scheduledEntries = resultEntries.filter(task => task.scheduled_date && task.display_time);
 
     return [
       {
         key: 'review',
         label: 'Zu bestätigen',
-        tasks: scopedTasks.filter(task => task.task_type === 'review').sort(compareBySchedule)
+        tasks: scopedTasks
+          .filter(task => task.task_type === 'review' || task.task_type === 'waiting')
+          .sort(compareBySchedule)
       },
       {
         key: 'past',
         label: 'Ergebnis eintragen',
-        tasks: resultEntries
+        tasks: scheduledEntries
           .filter(task => getMatchTimestamp({ datum: task.scheduled_date, uhrzeit: task.display_time }) <= now)
           .sort(compareBySchedule)
       },
       {
         key: 'future',
         label: 'Terminierte Spiele',
-        tasks: resultEntries
+        tasks: scheduledEntries
           .filter(task => getMatchTimestamp({ datum: task.scheduled_date, uhrzeit: task.display_time }) > now)
           .sort(compareBySchedule)
+      },
+      {
+        key: 'planned',
+        label: 'Geplante Spiele',
+        tasks: resultEntries
+          .filter(task => !task.scheduled_date || !task.display_time)
+          .sort((first, second) => Number(first.matchday) - Number(second.matchday)
+            || String(first.match_id).localeCompare(String(second.match_id), 'de', { numeric: true }))
       }
     ];
   }
 
   function getActionableResultTasks() {
-    return getPlayerResultTaskGroups(
+    const groups = getPlayerResultTaskGroups(
       state.resultTasks,
       Date.now(),
       state.profile?.app_role === 'admin'
-    )
-      .slice(0, 2)
-      .flatMap(group => group.tasks);
+    );
+    return [
+      ...groups.find(group => group.key === 'review').tasks.filter(task => task.task_type === 'review'),
+      ...groups.find(group => group.key === 'past').tasks
+    ];
   }
 
   function publishAuthenticatedPlayer() {
@@ -474,10 +487,10 @@
     </div>`;
   }
 
-  function renderResultForm(task, counter = false) {
+  function renderResultForm(task, counter = false, collapsed = false) {
     const initialResult = counter ? task.proposed_result : '';
     const matchFormat = task.match_format || 'best-of-three';
-    return `<form class="result-entry-form ${counter ? 'is-counterproposal' : ''}" data-result-submit="${escapeHtml(task.match_id)}" data-result-format="${escapeHtml(matchFormat)}" ${counter ? 'hidden' : ''}>
+    return `<form class="result-entry-form ${counter ? 'is-counterproposal' : ''}" data-result-submit="${escapeHtml(task.match_id)}" data-result-format="${escapeHtml(matchFormat)}" ${counter || collapsed ? 'hidden' : ''}>
       <div class="result-entry-timing">
         <label>
           <span>Datum</span>
@@ -488,7 +501,6 @@
           <input type="time" name="playedTime" required value="${escapeHtml(getResultFormTime(task))}">
         </label>
       </div>
-      ${counter ? '' : renderTaskMatchup(task)}
       ${renderScoreCounters(initialResult, matchFormat)}
       <div class="result-entry-actions">
         <div class="result-entry-summary" data-result-summary>Satzergebnis wird automatisch berechnet.</div>
@@ -497,13 +509,31 @@
     </form>`;
   }
 
+  function renderScheduleForm(task) {
+    return `<form class="match-schedule-form" data-match-schedule="${escapeHtml(task.match_id)}">
+      <div class="result-entry-timing">
+        <label>
+          <span>Datum</span>
+          <input type="date" name="scheduledDate" required>
+        </label>
+        <label>
+          <span>Uhrzeit</span>
+          <input type="time" name="scheduledTime" required>
+        </label>
+      </div>
+      <div class="match-schedule-actions">
+        <button class="secondary-button" type="submit">Terminieren</button>
+      </div>
+    </form>`;
+  }
+
   function renderResultTaskStatus(task) {
     if (task.task_type === 'completed') return '<span class="account-task-status is-complete">Bestätigt</span>';
-    if (task.task_type === 'waiting') return '<span class="account-task-status is-open">In Bestätigung</span>';
+    if (task.task_type === 'waiting') return '<span class="account-task-status">Auf Bestätigung warten</span>';
     if (task.task_type === 'review') return '<span class="account-task-status is-open">Zu bestätigen</span>';
     return isResultTaskOpen(task)
       ? '<span class="account-task-status is-open">Offen</span>'
-      : '<span class="account-task-status">Geplant</span>';
+      : `<span class="account-task-status">${task.scheduled_date && task.display_time ? 'Terminiert' : 'Geplant'}</span>`;
   }
 
   function renderProposedResult(task, ownProposal = false) {
@@ -513,7 +543,7 @@
     </div>`;
   }
 
-  function renderResultTaskBody(task) {
+  function renderResultTaskBody(task, groupKey) {
     if (task.task_type === 'completed') {
       return `<div class="result-proposal">
         <span>Bestätigtes Ergebnis</span>
@@ -522,7 +552,7 @@
     }
     if (task.task_type === 'waiting') {
       return `${renderProposedResult(task, true)}
-        <div class="account-task-actions"><span class="account-waiting">Wartet auf die Bestätigung des anderen Teams.</span></div>`;
+        <div class="account-task-actions"><span class="account-waiting">Auf Bestätigung warten</span></div>`;
     }
     if (task.task_type === 'review') {
       return `${renderProposedResult(task)}
@@ -532,32 +562,40 @@
         </div>
         ${renderResultForm(task, true)}`;
     }
+    if (groupKey === 'planned') return renderScheduleForm(task);
+    if (groupKey === 'future') {
+      return `<div class="account-task-actions scheduled-result-actions">
+          <button class="secondary-button" type="button" data-result-entry-toggle="${escapeHtml(task.match_id)}">Ergebnis eintragen</button>
+        </div>
+        ${renderResultForm(task, false, true)}`;
+    }
     return renderResultForm(task);
   }
 
-  function renderResultTaskCard(task) {
-    const formOwnsMatchup = !['completed', 'waiting', 'review'].includes(task.task_type);
+  function renderResultTaskCard(task, groupKey) {
+    const isActionable = task.task_type === 'review' || groupKey === 'past';
+    const isWaiting = task.task_type === 'waiting';
     return `<div class="result-task-wrap">
-      <article class="account-task-card result-task-card">
+      <article class="account-task-card result-task-card${isActionable ? ' is-actionable' : ''}${isWaiting ? ' is-waiting' : ''}">
         <div class="account-task-meta">
           <span class="widget-label">${escapeHtml(getTaskLeagueLabel(task))} · Partie ${escapeHtml(getTaskNumber(task))}</span>
           ${renderResultTaskStatus(task)}
         </div>
-        ${formOwnsMatchup ? '' : `<div class="result-card-timing">${escapeHtml(formatTaskDate(
+        ${groupKey === 'planned' ? '' : `<div class="result-card-timing">${escapeHtml(formatTaskDate(
           task.task_type === 'completed' ? task.scheduled_date : task.proposed_played_on || task.scheduled_date,
           task.task_type === 'completed' ? task.display_time : task.proposed_played_time || task.display_time
         ))}</div>`}
-        ${formOwnsMatchup ? '' : renderTaskMatchup(task)}
-        ${renderResultTaskBody(task)}
+        ${renderTaskMatchup(task)}
+        ${renderResultTaskBody(task, groupKey)}
       </article>
     </div>`;
   }
 
   function renderResultTaskGroups(target, groups, trainingTasks = []) {
     if (!target) return;
-    const groupedItems = groups.map((group, groupIndex) => {
+    const groupedItems = groups.map(group => {
       const items = group.tasks.map(task => ({ kind: 'league', task }));
-      if (groupIndex === 0) {
+      if (group.key === 'review') {
         trainingTasks.forEach((task, index) => items.push({ kind: 'training', task, index }));
         items.sort((first, second) => getMatchTimestamp({
           datum: first.kind === 'training' ? first.task.played_on : first.task.scheduled_date,
@@ -569,23 +607,23 @@
       }
       return { ...group, items };
     });
-    const visibleGroups = groupedItems.filter(group => group.items.length);
-    target.innerHTML = visibleGroups.length
-      ? visibleGroups.map(group => `<section class="prediction-match-group" data-result-task-group="${group.key}">
+    target.innerHTML = groupedItems
+      .map(group => `<section class="prediction-match-group" data-result-task-group="${group.key}">
           <div class="widget-label">${escapeHtml(group.label)}</div>
-          <div class="account-task-list">${group.items.map(item => item.kind === 'training'
-            ? renderTrainingTaskCard(item.task, item.index)
-            : renderResultTaskCard(item.task)).join('')}</div>
-        </section>`).join('')
-      : '<div class="account-empty">Aktuell gibt es keine Spiele für dein Spielerprofil.</div>';
+          ${group.items.length
+            ? `<div class="account-task-list">${group.items.map(item => item.kind === 'training'
+                ? renderTrainingTaskCard(item.task, item.index)
+                : renderResultTaskCard(item.task, group.key)).join('')}</div>`
+            : '<div class="account-empty">Derzeit keine Partie.</div>'}
+        </section>`)
+      .join('');
   }
 
   function renderResultTasks() {
     const isAdmin = state.profile?.app_role === 'admin';
     const groups = getPlayerResultTaskGroups(state.resultTasks, Date.now(), isAdmin);
-    const trainingConfirmations = state.trainingTasks
-      .filter(task => !task.created_by_me && isTrainingTaskVisible(task));
-    renderResultTaskGroups(document.getElementById('result-task-list'), groups, trainingConfirmations);
+    const visibleTrainingTasks = state.trainingTasks.filter(isTrainingTaskVisible);
+    renderResultTaskGroups(document.getElementById('result-task-list'), groups, visibleTrainingTasks);
   }
 
   function getPlayerName(playerId) {
@@ -644,25 +682,20 @@
 
   function renderTrainingTaskCard(task, index) {
     const rounds = Array.isArray(task.rounds) ? task.rounds : [];
-    return `<article class="account-task-card training-task-card">
-      <div class="account-task-meta"><span>Training ${escapeHtml(task.training_number || index + 1)}</span><span>${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</span></div>
+    return `<article class="account-task-card training-task-card${task.created_by_me ? ' is-waiting' : ' is-actionable'}">
+      <div class="account-task-meta">
+        <span class="widget-label">Training ${escapeHtml(task.training_number || index + 1)}</span>
+        <span class="account-task-status${task.created_by_me ? '' : ' is-open'}">${task.created_by_me ? 'Auf Bestätigung warten' : 'Zu bestätigen'}</span>
+      </div>
+      <div class="result-card-timing">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>
       <div class="training-player-line">${task.player_ids.map(id => escapeHtml(getPlayerName(id))).join(' · ')}</div>
       ${rounds.map(round => `<div class="training-round-result${round.is_complete === false ? ' incomplete' : ''}"><span>${round.team_one_ids.map(getPlayerName).map(escapeHtml).join(' &amp; ')}</span><strong title="${round.is_complete === false ? 'Abgebrochen · ohne Wertung' : 'Vollständiges Ergebnis'}">${escapeHtml(round.result_details)}</strong><span>${round.team_two_ids.map(getPlayerName).map(escapeHtml).join(' &amp; ')}</span></div>`).join('')}
       <div class="account-task-actions">
         ${task.created_by_me
-          ? `<span class="account-waiting">Wartet auf Bestätigung</span><button class="text-link" type="button" data-training-edit="${task.session_id}">Bearbeiten</button><button class="text-link" type="button" data-training-delete="${task.session_id}">Löschen</button>`
+          ? `<span class="account-waiting">Auf Bestätigung warten</span><span class="training-waiting-actions"><button class="text-link" type="button" data-training-edit="${task.session_id}">Bearbeiten</button><button class="text-link" type="button" data-training-delete="${task.session_id}">Löschen</button></span>`
           : `<button class="primary-button" type="button" data-training-confirm="${task.session_id}">Training bestätigen</button>`}
       </div>
     </article>`;
-  }
-
-  function renderTraining() {
-    const taskTarget = document.getElementById('training-task-list');
-    const ownTrainingTasks = state.trainingTasks
-      .filter(task => task.created_by_me && isTrainingTaskVisible(task));
-    if (taskTarget) taskTarget.innerHTML = ownTrainingTasks.length
-      ? ownTrainingTasks.map(renderTrainingTaskCard).join('')
-      : '<div class="account-empty">Keine offenen Trainings.</div>';
   }
 
   function render() {
@@ -671,7 +704,6 @@
     renderMatches();
     renderLeaderboard();
     renderResultTasks();
-    renderTraining();
   }
 
   async function loadProfile() {
@@ -938,6 +970,29 @@
     }
   }
 
+  async function handleScheduleSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const data = new FormData(form);
+    const button = form.querySelector('[type="submit"]');
+    if (button) button.disabled = true;
+    setAuthMessage('Partie wird terminiert …');
+    try {
+      const { error } = await state.client.rpc('schedule_match', {
+        p_match_id: form.dataset.matchSchedule,
+        p_scheduled_date: String(data.get('scheduledDate') || ''),
+        p_scheduled_time: String(data.get('scheduledTime') || '')
+      });
+      if (error) throw error;
+      setAuthMessage('Partie wurde terminiert.', 'success');
+      await refresh();
+    } catch (error) {
+      setAuthMessage(error.message || 'Die Partie konnte nicht terminiert werden.', 'error');
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
   async function handleResultSubmit(event) {
     event.preventDefault();
     const form = event.target;
@@ -1180,6 +1235,17 @@
         }
         return;
       }
+      const resultEntryToggle = event.target.closest('[data-result-entry-toggle]');
+      if (resultEntryToggle) {
+        const card = resultEntryToggle.closest('.result-task-card');
+        const form = card?.querySelector('.result-entry-form:not(.is-counterproposal)');
+        if (form) {
+          form.hidden = !form.hidden;
+          resultEntryToggle.textContent = form.hidden ? 'Ergebnis eintragen' : 'Eingabe schließen';
+          if (!form.hidden) updateResultSummary(form);
+        }
+        return;
+      }
       const scoreStep = event.target.closest('[data-result-score-step]');
       if (scoreStep) {
         const input = scoreStep.parentElement?.querySelector('[data-result-score]');
@@ -1238,7 +1304,8 @@
     document.getElementById('auth-form')?.addEventListener('submit', handleAuthSubmit);
     document.getElementById('training-form')?.addEventListener('submit', handleTrainingSubmit);
     document.addEventListener('submit', event => {
-      if (event.target.matches('[data-result-submit]')) handleResultSubmit(event);
+      if (event.target.matches('[data-match-schedule]')) handleScheduleSubmit(event);
+      else if (event.target.matches('[data-result-submit]')) handleResultSubmit(event);
     });
     document.addEventListener('input', event => {
       if (event.target.matches('[data-result-score]')) {

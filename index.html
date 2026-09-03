@@ -22,7 +22,7 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-03-secondary-dropdown-button">
+  <link rel="stylesheet" href="style.css?v=2026-09-03-profile-history-list">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -454,16 +454,9 @@
       </article>
 
       <article class="widget player-profile-widget player-profile-history">
-        <div class="player-profile-history-heading">
-          <div class="player-profile-section-heading"><h3 class="widget-label">Vergangene Partien</h3></div>
-          <div class="match-scope-toggle" aria-label="Partien filtern">
-            <button class="active" type="button" data-player-profile-filter="all">Alle</button>
-            <button type="button" data-player-profile-filter="league">Liga</button>
-            <button type="button" data-player-profile-filter="training">Training</button>
-          </div>
-        </div>
+        <div class="player-profile-section-heading"><h3 class="widget-label">Vergangene Partien</h3></div>
         <div class="player-profile-match-list" id="player-profile-match-list"></div>
-        <button class="player-profile-show-all" id="player-profile-show-all" type="button" data-player-profile-show-all hidden></button>
+        <button class="secondary-button player-profile-show-all" id="player-profile-show-all" type="button" data-player-profile-show-all hidden></button>
       </article>
     </div>
   </div>
@@ -505,13 +498,7 @@
         <div class="account-player-area" id="account-player-area" hidden>
           <section class="account-section" id="open-results-section">
             <div class="account-section-heading">
-              <h3 class="sh-title">Ligaspiele</h3>
-            </div>
-            <div class="account-task-list prediction-match-list" id="result-task-list"></div>
-          </section>
-          <section class="account-section">
-            <div class="account-section-heading">
-              <h3 class="sh-title">Trainingsspiele</h3>
+              <h3 class="sh-title">Spieleübersicht</h3>
               <button class="secondary-button" type="button" data-training-toggle>Training hinzufügen</button>
             </div>
             <form class="training-form" id="training-form" hidden>
@@ -524,7 +511,7 @@
               <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
               <button class="primary-button" type="submit">Training zur Bestätigung senden</button>
             </form>
-            <div class="account-task-list" id="training-task-list"></div>
+            <div class="account-task-list prediction-match-list" id="result-task-list"></div>
           </section>
         </div>
       </div>
@@ -533,7 +520,7 @@
   </div>
 </dialog>
 
-<script src="js/tippspiel.js?v=2026-09-01-authenticated-player-highlight"></script>
-<script src="js/app.js?v=2026-09-03-unscheduled-matches"></script>
+<script src="js/tippspiel.js?v=2026-09-03-four-game-groups"></script>
+<script src="js/app.js?v=2026-09-03-weighted-training-matches"></script>
 </body>
 </html>

@@ -121,29 +121,41 @@ test('games are player-scoped for players and unfiltered for admins', () => {
     { match_id: 'admin-only', my_team: null, task_type: 'review', scheduled_date: '2026-08-28', display_time: '18:00' },
     { match_id: 'review', my_team: 2, task_type: 'review', scheduled_date: '2026-08-30', display_time: '18:00' },
     { match_id: 'past', my_team: 1, task_type: 'enter', scheduled_date: '2026-08-31', display_time: '18:00:00' },
-    { match_id: 'waiting', my_team: 1, task_type: 'waiting', scheduled_date: '2026-08-29', display_time: '18:00' }
+    { match_id: 'waiting', my_team: 1, task_type: 'waiting', scheduled_date: '2026-08-29', display_time: '18:00' },
+    { match_id: 'planned', matchday: 3, my_team: 1, task_type: 'enter', scheduled_date: null, display_time: null }
   ], now);
 
   assert.deepEqual(
     JSON.parse(JSON.stringify(groups.map(group => [group.key, group.tasks.map(task => task.match_id)]))),
-    [['review', ['review']], ['past', ['past']], ['future', ['future']]]
+    [['review', ['waiting', 'review']], ['past', ['past']], ['future', ['future']], ['planned', ['planned']]]
   );
   const adminGroups = getGroups([
     { match_id: 'admin-review', my_team: null, task_type: 'review', scheduled_date: '2026-08-28', display_time: '18:00' },
     { match_id: 'admin-past', my_team: null, task_type: 'enter', scheduled_date: '2026-08-31', display_time: '18:00' },
-    { match_id: 'admin-future', my_team: null, task_type: 'enter', scheduled_date: '2026-09-02', display_time: '18:00' }
+    { match_id: 'admin-future', my_team: null, task_type: 'enter', scheduled_date: '2026-09-02', display_time: '18:00' },
+    { match_id: 'admin-planned', matchday: 4, my_team: null, task_type: 'enter', scheduled_date: null, display_time: null }
   ], now, true);
   assert.deepEqual(
     JSON.parse(JSON.stringify(adminGroups.map(group => [group.key, group.tasks.map(task => task.match_id)]))),
-    [['review', ['admin-review']], ['past', ['admin-past']], ['future', ['admin-future']]]
+    [['review', ['admin-review']], ['past', ['admin-past']], ['future', ['admin-future']], ['planned', ['admin-planned']]]
   );
 });
 
-test('training confirmations join the first group and own trainings stay in training management', () => {
+test('all pending trainings join the confirmation group and own trainings stay editable', () => {
   assert.match(tippspielSource, /function isTrainingTaskVisible\(task\)[\s\S]*app_role === 'admin'/);
-  assert.match(tippspielSource, /const trainingConfirmations = state\.trainingTasks[\s\S]*!task\.created_by_me && isTrainingTaskVisible\(task\)/);
+  assert.match(tippspielSource, /const visibleTrainingTasks = state\.trainingTasks\.filter\(isTrainingTaskVisible\)/);
   assert.match(tippspielSource, /trainingTasks\.forEach\([\s\S]*kind: 'training'/);
-  assert.match(tippspielSource, /const ownTrainingTasks = state\.trainingTasks[\s\S]*task\.created_by_me && isTrainingTaskVisible\(task\)/);
+  assert.match(tippspielSource, /task\.created_by_me[\s\S]*Auf Bestätigung warten[\s\S]*data-training-edit[\s\S]*data-training-delete/);
+  assert.doesNotMatch(tippspielSource, /function renderTraining\(\)/);
+});
+
+test('scheduling and future result entry use their dedicated secondary actions', () => {
+  assert.match(tippspielSource, /data-match-schedule="\$\{escapeHtml\(task\.match_id\)\}"/);
+  assert.match(tippspielSource, /class="secondary-button" type="submit">Terminieren<\/button>/);
+  assert.match(tippspielSource, /data-result-entry-toggle="\$\{escapeHtml\(task\.match_id\)\}"/);
+  assert.match(tippspielSource, /state\.client\.rpc\('schedule_match'/);
+  assert.match(tippspielSource, /p_scheduled_date:/);
+  assert.match(tippspielSource, /p_scheduled_time:/);
 });
 
 test('account names are derived from email and cannot be submitted by the user', () => {
