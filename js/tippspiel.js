@@ -665,52 +665,240 @@
       || playerId;
   }
 
+  function renderTrainingTaskTeam(playerIds = []) {
+    return playerIds.map(playerId => {
+      const isAuthenticated = playerId === state.profile?.player_id;
+      return `<span class="account-task-player-name${isAuthenticated ? ' is-authenticated' : ''}">${escapeHtml(getPlayerName(playerId))}</span>`;
+    }).join('<span class="mc-player-sep">&amp;</span>');
+  }
+
+  function getTrainingFormatConfig(format = 'one_set') {
+    return {
+      one_set: { regularSetCount: 1, sectionCount: 1, label: '1 Satz' },
+      two_sets: { regularSetCount: 2, sectionCount: 2, label: '2 Sätze' },
+      two_sets_match_tiebreak: { regularSetCount: 2, sectionCount: 3, label: '2 Sätze + Match-Tiebreak', hasMatchTiebreak: true },
+      three_sets: { regularSetCount: 3, sectionCount: 3, label: '3 Sätze' }
+    }[format] || { regularSetCount: 1, sectionCount: 1, label: '1 Satz' };
+  }
+
+  function getTrainingRoundFormat(round = {}) {
+    if (getTrainingFormatConfig(round.result_format).label !== '1 Satz' || round.result_format === 'one_set') {
+      return round.result_format;
+    }
+    if (Number(round.set_count) === 3) {
+      return /\s[–-]\s/.test(String(round.result_details || '')) ? 'two_sets_match_tiebreak' : 'three_sets';
+    }
+    return Number(round.set_count) === 2 ? 'two_sets' : 'one_set';
+  }
+
+  function parseTrainingSetSegment(value) {
+    const match = String(value || '').match(/^\s*(\d+)\s*:\s*(\d+)(?:\s*\(\s*(\d+)\s*:\s*(\d+)\s*\))?\s*$/);
+    return match ? {
+      score: [Number(match[1]), Number(match[2])],
+      tiebreak: match[3] === undefined ? [] : [Number(match[3]), Number(match[4])]
+    } : { score: [], tiebreak: [] };
+  }
+
+  function parseTrainingResultValues(resultDetails = '', format = 'one_set') {
+    const config = getTrainingFormatConfig(format);
+    const [regularPart = '', matchTiebreakPart = ''] = String(resultDetails || '').split(/\s*[–-]\s*/, 2);
+    const parsedSets = regularPart.split(/\s*,\s*/).filter(Boolean).map(parseTrainingSetSegment);
+    return {
+      sets: Array.from({ length: config.regularSetCount }, (_, index) => parsedSets[index] || { score: [], tiebreak: [] }),
+      matchTiebreak: parseScorePair(matchTiebreakPart)
+    };
+  }
+
+  function renderTrainingResultDetails(round) {
+    const [regularPart = '', matchTiebreakPart = ''] = String(round.result_details || '').split(/\s*[–-]\s*/, 2);
+    const regularParts = regularPart.split(/\s*,\s*/).filter(Boolean);
+    const renderedSets = regularParts.map(part => {
+      const parsed = parseTrainingSetSegment(part);
+      const classification = window.PadelScoreInput.classifyRegularSet(parsed.score[0], parsed.score[1]);
+      const className = classification.state === 'complete' ? '' : ' class="training-result-partial"';
+      return `<span${className}>${escapeHtml(part)}</span>`;
+    });
+    if (matchTiebreakPart) {
+      const matchTiebreak = parseScorePair(matchTiebreakPart);
+      const classification = window.PadelScoreInput.classifyTiebreak(matchTiebreak[0], matchTiebreak[1], 10);
+      const className = classification.state === 'complete' ? '' : ' class="training-result-partial"';
+      renderedSets.push(`<span class="training-result-divider">–</span><span${className}>${escapeHtml(matchTiebreakPart)}</span>`);
+    }
+    return renderedSets.join('<span class="training-result-divider">,</span>');
+  }
+
+  function renderTrainingTaskRound(task, round, roundIndex, roundCount) {
+    const proposalLabel = task.created_by_me ? 'Dein Vorschlag' : 'Vorschlag des anderen Teams';
+    const roundLabel = roundCount > 1 ? ` · Spiel ${roundIndex + 1}` : '';
+    return `<div class="training-task-round">
+      <div class="account-task-matchup">
+        <strong>${renderTrainingTaskTeam(round.team_one_ids)}</strong>
+        <span>vs.</span>
+        <strong>${renderTrainingTaskTeam(round.team_two_ids)}</strong>
+      </div>
+      <div class="result-proposal">
+        <span>${proposalLabel}${roundLabel}<br>${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</span>
+        <strong class="training-result-details" title="${round.is_complete === false ? 'Vollständige Sätze werden einzeln gewertet' : 'Vollständiges Ergebnis'}">${renderTrainingResultDetails(round)}</strong>
+      </div>
+    </div>`;
+  }
+
+  function readTrainingScorePair(round, kind, setIndex) {
+    return [0, 1].map(teamIndex => {
+      const input = round.querySelector(`[data-score-kind="${kind}"][data-score-set="${setIndex}"][data-score-team="${teamIndex}"]`);
+      const raw = String(input?.value ?? '').trim();
+      return raw === '' ? null : Number(raw);
+    });
+  }
+
   function readTrainingRoundValues() {
-    return [...document.querySelectorAll('[data-training-round]')].map(round => ({
-      pairing: round.querySelector('[name="pairing"]')?.value || 'ab_cd',
-      result: round.querySelector('[name="roundResult"]')?.value || '',
-      resultFormat: round.querySelector('[name="resultFormat"]')?.value || 'one_set',
-      roundStatus: round.querySelector('[name="roundStatus"]')?.value || 'complete'
-    }));
+    return [...document.querySelectorAll('[data-training-round]')].map(round => {
+      const resultFormat = round.querySelector('[name="resultFormat"]')?.value || 'one_set';
+      const config = getTrainingFormatConfig(resultFormat);
+      return {
+        pairing: round.querySelector('[name="pairing"]')?.value || 'ab_cd',
+        resultFormat,
+        sets: Array.from({ length: config.regularSetCount }, (_, setIndex) => ({
+          score: readTrainingScorePair(round, 'set', setIndex),
+          tiebreak: readTrainingScorePair(round, 'set-tiebreak', setIndex)
+        })),
+        matchTiebreak: config.hasMatchTiebreak ? readTrainingScorePair(round, 'match-tiebreak', 0) : [null, null]
+      };
+    });
+  }
+
+  function renderTrainingPicker({ label, name, value, options, menuId }) {
+    const selected = options.find(option => option.value === value) || options[0];
+    return `<div class="training-picker" data-training-picker>
+      <span class="training-picker-label">${escapeHtml(label)}</span>
+      <input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(selected?.value || '')}">
+      <button class="secondary-button secondary-button--dropdown training-picker-toggle" type="button" data-training-picker-toggle aria-haspopup="listbox" aria-expanded="false" aria-controls="${escapeHtml(menuId)}">
+        <span data-training-picker-label>${escapeHtml(selected?.label || 'Auswählen')}</span>
+      </button>
+      <div class="viewer-menu training-picker-menu" id="${escapeHtml(menuId)}" role="listbox" aria-label="${escapeHtml(label)} auswählen">
+        ${options.map(option => `<button
+          class="viewer-option training-picker-option${option.value === selected?.value ? ' active' : ''}"
+          type="button"
+          role="option"
+          aria-selected="${option.value === selected?.value}"
+          data-training-picker-value="${escapeHtml(option.value)}"
+        ><span>${escapeHtml(option.label)}</span>${option.meta ? `<span>${escapeHtml(option.meta)}</span>` : ''}</button>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  function renderTrainingScoreCounters(value, format) {
+    const config = getTrainingFormatConfig(format);
+    const sets = value?.sets || [];
+    const regularScores = sets.map(set => set.score || []);
+    const regularSetsComplete = regularScores.length === config.regularSetCount
+      && regularScores.every(score => window.PadelScoreInput.classifyRegularSet(score[0], score[1]).state === 'complete');
+    const decisionEnabled = Boolean(config.hasMatchTiebreak && regularSetsComplete && hasSplitFirstTwoSets(regularScores));
+    return `<div class="result-score-entry training-score-entry">
+      ${Array.from({ length: config.regularSetCount }, (_, setIndex) => {
+        const set = sets[setIndex] || { score: [], tiebreak: [] };
+        const needsTiebreak = Math.max(...(set.score || [])) === 7 && Math.min(...(set.score || [])) === 6;
+        return `<div class="result-score-set" data-result-regular-set="${setIndex}">
+          ${renderScorePair(`Satz ${setIndex + 1}`, 'set', setIndex, set.score, false, false)}
+          <div class="result-score-tiebreak" data-result-set-tiebreak="${setIndex}" ${needsTiebreak ? '' : 'hidden'}>
+            <span class="result-score-label">Satz-Tiebreak</span>
+            ${renderScorePair(`Satz ${setIndex + 1}, Satz-Tiebreak`, 'set-tiebreak', setIndex, set.tiebreak, !needsTiebreak, false)}
+          </div>
+        </div>`;
+      }).join('')}
+      ${config.hasMatchTiebreak ? `<div class="result-score-set" data-result-decision>
+        ${renderScorePair('Match-Tiebreak', 'match-tiebreak', 0, value?.matchTiebreak || [], !decisionEnabled, false)}
+      </div>` : ''}
+    </div>`;
   }
 
   function renderTrainingRounds(preserved = []) {
     const target = document.getElementById('training-rounds');
     if (!target) return;
-    target.innerHTML = Array.from({ length: state.trainingRoundCount }, (_, index) => `
-      <div class="training-round-field" data-training-round="${index}">
-        <div class="training-round-title">Spielergebnis ${index + 1}</div>
-        <label><span>Paarung</span><select name="pairing">
-          <option value="ab_cd">Spieler 1 + 2 gegen 3 + 4</option>
-          <option value="ac_bd">Spieler 1 + 3 gegen 2 + 4</option>
-          <option value="ad_bc">Spieler 1 + 4 gegen 2 + 3</option>
-        </select></label>
-        <label><span>Ergebnis</span><input name="roundResult" required placeholder="6:3 oder 6:3, 4:6"></label>
-        <label><span>Ergebnisformat</span><select name="resultFormat"><option value="one_set">1 Satz</option><option value="two_sets">2 Sätze</option><option value="two_sets_match_tiebreak">2 Sätze + Match-Tiebreak</option><option value="three_sets">3 Sätze</option></select></label>
-        <label><span>Status</span><select name="roundStatus"><option value="complete">Vollständig</option><option value="incomplete">Abgebrochen · ohne Wertung</option></select></label>
-        ${index ? '<button class="text-link" type="button" data-training-round-remove="' + index + '">Entfernen</button>' : ''}
-      </div>
-    `).join('');
-    [...target.querySelectorAll('[data-training-round]')].forEach((round, index) => {
-      const value = preserved[index];
-      if (!value) return;
-      round.querySelector('[name="pairing"]').value = value.pairing;
-      round.querySelector('[name="roundResult"]').value = value.result;
-      round.querySelector('[name="resultFormat"]').value = value.resultFormat;
-      round.querySelector('[name="roundStatus"]').value = value.roundStatus;
+    const pairingOptions = [
+      { value: 'ab_cd', label: 'Spieler 1 + 2 vs. 3 + 4' },
+      { value: 'ac_bd', label: 'Spieler 1 + 3 vs. 2 + 4' },
+      { value: 'ad_bc', label: 'Spieler 1 + 4 vs. 2 + 3' }
+    ];
+    const formatOptions = [
+      { value: 'one_set', label: '1 Satz' },
+      { value: 'two_sets', label: '2 Sätze' },
+      { value: 'two_sets_match_tiebreak', label: '2 Sätze + Match-Tiebreak' },
+      { value: 'three_sets', label: '3 Sätze' }
+    ];
+    target.innerHTML = Array.from({ length: state.trainingRoundCount }, (_, index) => {
+      const value = preserved[index] || { pairing: 'ab_cd', resultFormat: 'one_set', sets: [], matchTiebreak: [] };
+      return `<div class="training-round-field" data-training-round="${index}">
+        <div class="training-round-head">
+          ${renderTrainingPicker({ label: 'Paarung', name: 'pairing', value: value.pairing, options: pairingOptions, menuId: `training-pairing-menu-${index}` })}
+          ${renderTrainingPicker({ label: 'Ergebnisformat', name: 'resultFormat', value: value.resultFormat, options: formatOptions, menuId: `training-format-menu-${index}` })}
+          <button class="training-round-remove" type="button" data-training-round-remove="${index}" aria-label="${index === 0 ? 'Trainingseingabe schließen' : `Spielergebnis ${index + 1} entfernen`}">×</button>
+        </div>
+        ${renderTrainingScoreCounters(value, value.resultFormat)}
+        <div class="result-entry-summary training-round-summary" data-training-round-summary aria-live="polite">Satzergebnis wird automatisch berechnet.</div>
+      </div>`;
+    }).join('');
+    target.querySelectorAll('[data-training-round]').forEach(updateTrainingRoundSummary);
+  }
+
+  function renderTrainingForm(playerIds = null, roundValues = []) {
+    const target = document.getElementById('training-player-fields');
+    if (!target || !state.players.length) return;
+    target.innerHTML = Array.from({ length: 4 }, (_, index) => {
+      const selectedId = playerIds?.[index] || (index === 0 ? state.profile?.player_id || '' : '');
+      return renderTrainingPicker({
+        label: `Spieler ${index + 1}`,
+        name: 'playerId',
+        value: selectedId,
+        options: [{ value: '', label: 'Auswählen' }, ...state.players.map(player => ({ value: player.id, label: player.display_name, meta: player.initials || '' }))],
+        menuId: `training-player-menu-${index}`
+      });
+    }).join('');
+    renderTrainingRounds(roundValues);
+  }
+
+  function closeTrainingPickerMenus(exceptPicker = null) {
+    document.querySelectorAll('[data-training-picker].open').forEach(picker => {
+      if (picker === exceptPicker) return;
+      picker.classList.remove('open');
+      picker.querySelector('[data-training-picker-toggle]')?.setAttribute('aria-expanded', 'false');
     });
   }
 
-  function renderTrainingForm() {
-    const target = document.getElementById('training-player-fields');
-    if (!target || !state.players.length) return;
-    const options = state.players.map(player => `<option value="${escapeHtml(player.id)}">${escapeHtml(player.display_name)}</option>`).join('');
-    target.innerHTML = Array.from({ length: 4 }, (_, index) => `
-      <label><span>Spieler ${index + 1}</span><select name="playerId" required><option value="">Auswählen</option>${options}</select></label>
-    `).join('');
-    const ownPlayer = target.querySelector('[name="playerId"]');
-    if (ownPlayer && state.profile?.player_id) ownPlayer.value = state.profile.player_id;
-    renderTrainingRounds();
+  function setTrainingPickerValue(picker, value) {
+    if (!picker) return;
+    const input = picker.querySelector('input[type="hidden"]');
+    const label = picker.querySelector('[data-training-picker-label]');
+    const selectedOption = [...picker.querySelectorAll('[data-training-picker-value]')]
+      .find(option => option.dataset.trainingPickerValue === value);
+    if (input) input.value = selectedOption ? value : '';
+    if (label) label.textContent = selectedOption?.querySelector('span')?.textContent || 'Auswählen';
+    picker.querySelectorAll('[data-training-picker-value]').forEach(option => {
+      const isSelected = option === selectedOption;
+      option.classList.toggle('active', isSelected);
+      option.setAttribute('aria-selected', String(isSelected));
+    });
+  }
+
+  function toggleTrainingPickerMenu(toggle) {
+    const picker = toggle.closest('[data-training-picker]');
+    if (!picker) return;
+    const shouldOpen = !picker.classList.contains('open');
+    closeTrainingPickerMenus(picker);
+    picker.classList.toggle('open', shouldOpen);
+    toggle.setAttribute('aria-expanded', String(shouldOpen));
+  }
+
+  function selectTrainingPickerOption(option) {
+    const picker = option.closest('[data-training-picker]');
+    const inputName = picker?.querySelector('input[type="hidden"]')?.name;
+    setTrainingPickerValue(picker, option.dataset.trainingPickerValue);
+    if (inputName === 'resultFormat') {
+      const preserved = readTrainingRoundValues();
+      renderTrainingRounds(preserved);
+    }
+    closeTrainingPickerMenus();
+    setTrainingMessage('');
   }
 
   function renderTrainingTaskCard(task, index) {
@@ -718,16 +906,14 @@
     const hasAuthenticatedPlayer = Boolean(state.profile?.player_id && task.player_ids.includes(state.profile.player_id));
     return `<article class="account-task-card training-task-card${hasAuthenticatedPlayer ? ' has-authenticated-player' : ''}${task.created_by_me ? ' is-waiting' : ' is-actionable'}">
       <div class="account-task-meta">
-        <span class="widget-label">Training ${escapeHtml(task.training_number || index + 1)}</span>
+        <span class="widget-label">Training · Partie ${escapeHtml(task.training_number || index + 1)}</span>
         <span class="account-task-status${task.created_by_me ? '' : ' is-open'}">${task.created_by_me ? 'Auf Bestätigung warten' : 'Zu bestätigen'}</span>
       </div>
-      <div class="result-card-timing">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>
-      <div class="training-player-line">${task.player_ids.map(id => escapeHtml(getPlayerName(id))).join(' · ')}</div>
-      ${rounds.map(round => `<div class="training-round-result${round.is_complete === false ? ' incomplete' : ''}"><span>${round.team_one_ids.map(getPlayerName).map(escapeHtml).join(' &amp; ')}</span><strong title="${round.is_complete === false ? 'Abgebrochen · ohne Wertung' : 'Vollständiges Ergebnis'}">${escapeHtml(round.result_details)}</strong><span>${round.team_two_ids.map(getPlayerName).map(escapeHtml).join(' &amp; ')}</span></div>`).join('')}
-      <div class="account-task-actions">
+      <div class="training-task-rounds">${rounds.map((round, roundIndex) => renderTrainingTaskRound(task, round, roundIndex, rounds.length)).join('')}</div>
+      <div class="account-task-actions${task.created_by_me ? '' : ' result-review-actions'}">
         ${task.created_by_me
-          ? `<span class="account-waiting">Auf Bestätigung warten</span><span class="training-waiting-actions"><button class="text-link" type="button" data-training-edit="${task.session_id}">Bearbeiten</button><button class="text-link" type="button" data-training-delete="${task.session_id}">Löschen</button></span>`
-          : `<button class="primary-button" type="button" data-training-confirm="${task.session_id}">Training bestätigen</button>`}
+          ? '<span class="account-waiting">Auf Bestätigung warten</span>'
+          : `<button class="primary-button" type="button" data-training-confirm="${task.session_id}">Training bestätigen</button><button class="secondary-button" type="button" data-training-edit="${task.session_id}">Alternative eingeben</button>`}
       </div>
     </article>`;
   }
@@ -910,6 +1096,7 @@
   function getFriendlyAuthError(error) {
     const message = String(error?.message || 'Anmeldung fehlgeschlagen.');
     if (/invalid login credentials/i.test(message)) return 'E-Mail oder Passwort stimmen nicht.';
+    if (/refresh token|jwt.*expired|invalid.*token/i.test(message)) return 'Deine Sitzung ist abgelaufen. Bitte ausloggen und erneut einloggen.';
     if (/already registered/i.test(message)) return 'Für diese E-Mail gibt es bereits ein Konto.';
     if (/password/i.test(message) && /characters/i.test(message)) return 'Das Passwort muss mindestens 8 Zeichen lang sein.';
     return message;
@@ -1168,13 +1355,28 @@
     };
   }
 
+  function setTrainingMessage(message, type = '') {
+    const target = document.querySelector('[data-training-message]');
+    if (!target) return;
+    target.textContent = message || '';
+    target.className = `training-form-message ${type}`.trim();
+  }
+
+  function handleTrainingInvalid(event) {
+    const form = event.currentTarget;
+    if (form.querySelector(':invalid') !== event.target) return;
+    const label = event.target.closest('label')?.querySelector('span')?.textContent?.trim() || 'Pflichtfeld';
+    setTrainingMessage(`Bitte „${label}“ ausfüllen.`, 'error');
+  }
+
   async function handleTrainingSubmit(event) {
     event.preventDefault();
     const form = event.currentTarget;
+    setTrainingMessage('');
     const data = new FormData(form);
     const playerIds = data.getAll('playerId').map(String);
     if (new Set(playerIds).size !== 4 || playerIds.some(id => !id)) {
-      setAuthMessage('Bitte vier verschiedene Spieler auswählen.', 'error');
+      setTrainingMessage('Bitte vier verschiedene Spieler auswählen.', 'error');
       return;
     }
     let rounds;
@@ -1191,12 +1393,12 @@
         };
       });
     } catch (error) {
-      setAuthMessage(error.message, 'error');
+      setTrainingMessage(error.message, 'error');
       return;
     }
     const button = form.querySelector('[type="submit"]');
     button.disabled = true;
-    setAuthMessage('Training wird gespeichert …');
+    setTrainingMessage('Training wird gespeichert …');
     const rpcName = state.editingTrainingId ? 'replace_pending_training_session' : 'create_training_session';
     const payload = {
       p_played_on: String(data.get('playedOn')),
@@ -1205,12 +1407,15 @@
       p_rounds: rounds
     };
     if (state.editingTrainingId) payload.p_session_id = Number(state.editingTrainingId);
-    const { error } = await state.client.rpc(rpcName, payload);
-    button.disabled = false;
-    if (error) {
-      setAuthMessage(error.message, 'error');
+    try {
+      const { error } = await state.client.rpc(rpcName, payload);
+      if (error) throw error;
+    } catch (error) {
+      setTrainingMessage(getFriendlyAuthError(error), 'error');
+      button.disabled = false;
       return;
     }
+    button.disabled = false;
     form.reset();
     form.hidden = true;
     state.trainingRoundCount = 1;
@@ -1229,7 +1434,9 @@
     form.hidden = false;
     form.querySelector('[name="playedOn"]').value = task.played_on;
     form.querySelector('[name="displayTime"]').value = String(task.display_time).slice(0, 5);
-    [...form.querySelectorAll('[name="playerId"]')].forEach((select, index) => { select.value = task.player_ids[index] || ''; });
+    [...form.querySelectorAll('[data-training-player-picker]')].forEach((picker, index) => {
+      setTrainingPlayerPickerValue(picker, task.player_ids[index] || '');
+    });
     [...form.querySelectorAll('[data-training-round]')].forEach((roundElement, index) => {
       const round = task.rounds[index];
       if (!round) return;
@@ -1291,6 +1498,7 @@
 
   function bindEvents() {
     document.addEventListener('click', async event => {
+      if (!event.target.closest('[data-training-player-picker]')) closeTrainingPlayerMenus();
       const open = event.target.closest('[data-auth-open]');
       if (open) {
         openAuthDialog();
@@ -1361,6 +1569,16 @@
         }
         return;
       }
+      const trainingPlayerToggle = event.target.closest('[data-training-player-toggle]');
+      if (trainingPlayerToggle) {
+        toggleTrainingPlayerMenu(trainingPlayerToggle);
+        return;
+      }
+      const trainingPlayerOption = event.target.closest('[data-training-player-id]');
+      if (trainingPlayerOption) {
+        selectTrainingPlayer(trainingPlayerOption);
+        return;
+      }
       if (event.target.closest('[data-training-round-add]')) {
         const preserved = readTrainingRoundValues();
         state.trainingRoundCount += 1;
@@ -1397,7 +1615,9 @@
     });
 
     document.getElementById('auth-form')?.addEventListener('submit', handleAuthSubmit);
-    document.getElementById('training-form')?.addEventListener('submit', handleTrainingSubmit);
+    const trainingForm = document.getElementById('training-form');
+    trainingForm?.addEventListener('submit', handleTrainingSubmit);
+    trainingForm?.addEventListener('invalid', handleTrainingInvalid, true);
     document.addEventListener('submit', event => {
       if (event.target.matches('[data-match-schedule]')) handleScheduleSubmit(event);
       else if (event.target.matches('[data-result-submit]')) handleResultSubmit(event);
@@ -1423,6 +1643,9 @@
     document.addEventListener('focusin', event => {
       const scoreControl = event.target.closest('[data-result-score], [data-result-score-step]');
       if (scoreControl) window.PadelScoreInput.setActivePair(scoreControl.closest('.result-score-pair'));
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeTrainingPlayerMenus();
     });
     document.getElementById('auth-dialog')?.addEventListener('click', event => {
       if (event.target === event.currentTarget) closeAuthDialog();

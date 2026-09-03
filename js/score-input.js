@@ -29,6 +29,47 @@
       || (winnerScore > target && winnerScore - loserScore === 2);
   }
 
+  function classifyRegularSet(rawTeamOne, rawTeamTwo) {
+    const rawValues = [rawTeamOne, rawTeamTwo].map(value => String(value ?? '').trim());
+    if (!rawValues[0] && !rawValues[1]) return { state: 'empty' };
+    if (!rawValues[0] || !rawValues[1]) return { state: 'invalid', message: 'Score unvollständig' };
+
+    const values = rawValues.map(Number);
+    if (values.some(value => !Number.isInteger(value) || value < 0)) {
+      return { state: 'invalid', message: 'Nur ganze Zahlen ab 0' };
+    }
+    const score = { team1: values[0], team2: values[1] };
+    if (isValidRegularSet(score)) return { state: 'complete', team1: values[0], team2: values[1] };
+
+    const winnerScore = Math.max(...values);
+    const loserScore = Math.min(...values);
+    const isReachablePartial = winnerScore <= 5
+      || (winnerScore === 6 && loserScore >= 5);
+    return isReachablePartial
+      ? { state: 'partial', team1: values[0], team2: values[1] }
+      : { state: 'invalid', message: 'Kein erreichbarer Satzstand' };
+  }
+
+  function classifyTiebreak(rawTeamOne, rawTeamTwo, target) {
+    const rawValues = [rawTeamOne, rawTeamTwo].map(value => String(value ?? '').trim());
+    if (!rawValues[0] && !rawValues[1]) return { state: 'empty' };
+    if (!rawValues[0] || !rawValues[1]) return { state: 'invalid', message: 'Score unvollständig' };
+
+    const values = rawValues.map(Number);
+    if (values.some(value => !Number.isInteger(value) || value < 0)) {
+      return { state: 'invalid', message: 'Nur ganze Zahlen ab 0' };
+    }
+    const score = { team1: values[0], team2: values[1] };
+    if (isValidTiebreak(score, target)) return { state: 'complete', team1: values[0], team2: values[1] };
+
+    const winnerScore = Math.max(...values);
+    const scoreDifference = Math.abs(values[0] - values[1]);
+    const isReachablePartial = winnerScore < target || scoreDifference < 2;
+    return isReachablePartial
+      ? { state: 'partial', team1: values[0], team2: values[1] }
+      : { state: 'invalid', message: 'Kein erreichbarer Tiebreak-Stand' };
+  }
+
   function sanitizeScoreValue(value) {
     return String(value ?? '').replace(/[^\d]/g, '').slice(0, 2);
   }
@@ -56,6 +97,8 @@
   }
 
   window.PadelScoreInput = Object.freeze({
+    classifyRegularSet,
+    classifyTiebreak,
     initializePairValues,
     isValidRegularSet,
     isValidTiebreak,

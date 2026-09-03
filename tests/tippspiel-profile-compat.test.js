@@ -174,7 +174,30 @@ test('all pending trainings join the confirmation group and own trainings stay e
   assert.match(tippspielSource, /const visibleTrainingTasks = state\.trainingTasks\.filter\(isTrainingTaskVisible\)/);
   assert.match(tippspielSource, /trainingTasks\.forEach\([\s\S]*kind: 'training'/);
   assert.match(tippspielSource, /task\.created_by_me[\s\S]*Auf Bestätigung warten[\s\S]*data-training-edit[\s\S]*data-training-delete/);
+  assert.match(tippspielSource, /data-training-confirm="\$\{task\.session_id\}"[\s\S]*Alternative eingeben/);
   assert.doesNotMatch(tippspielSource, /function renderTraining\(\)/);
+});
+
+test('training review cards reuse the league proposal structure and styles', () => {
+  assert.match(tippspielSource, /Training · Partie \$\{escapeHtml\(task\.training_number \|\| index \+ 1\)\}/);
+  assert.match(tippspielSource, /function renderTrainingTaskRound\(task, round, roundIndex, roundCount\)/);
+  assert.match(tippspielSource, /class="account-task-matchup"[\s\S]*<span>vs\.<\/span>/);
+  assert.match(tippspielSource, /class="result-proposal"/);
+  assert.match(tippspielSource, /account-task-actions\$\{task\.created_by_me \? '' : ' result-review-actions'\}/);
+  assert.doesNotMatch(tippspielSource, /class="training-player-line"|class="training-round-result/);
+});
+
+test('training player selection reuses the custom page viewer dropdown', () => {
+  assert.doesNotMatch(tippspielSource, /<select name="playerId"/);
+  assert.match(tippspielSource, /class="training-player-picker" data-training-player-picker/);
+  assert.match(tippspielSource, /type="hidden" name="playerId"/);
+  assert.match(tippspielSource, /secondary-button secondary-button--dropdown training-player-toggle/);
+  assert.match(tippspielSource, /viewer-menu training-player-menu/);
+  assert.match(tippspielSource, /viewer-option training-player-option/);
+  assert.match(tippspielSource, /function setTrainingPlayerPickerValue\(picker, playerId\)/);
+  assert.match(tippspielSource, /data-training-player-toggle/);
+  assert.match(tippspielSource, /data-training-player-id/);
+  assert.match(styleSource, /\.training-player-picker\.open \.training-player-menu/);
 });
 
 test('scheduling and future result entry use their dedicated secondary actions', () => {
@@ -366,6 +389,10 @@ test('training distinguishes three regular sets from two sets plus match tiebrea
   });
 
   assert.deepEqual(
+    JSON.parse(JSON.stringify(getTrainingResultData(roundFor('one_set', '6:3')))),
+    { resultDetails: '6:3', setCount: 1 }
+  );
+  assert.deepEqual(
     JSON.parse(JSON.stringify(getTrainingResultData(roundFor('two_sets_match_tiebreak', '6:3, 4:6, 10:7')))),
     { resultDetails: '6:3, 4:6 – 10:7', setCount: 3 }
   );
@@ -381,6 +408,17 @@ test('training distinguishes three regular sets from two sets plus match tiebrea
     () => getTrainingResultData(roundFor('two_sets_match_tiebreak', '6:3, 6:4, 10:7')),
     /nur nach einem Satzstand von 1:1/
   );
+});
+
+test('training validation is shown inside the training form before any RPC call', () => {
+  ['index.html', 'tipp/index.html'].forEach(relativePath => {
+    const source = fs.readFileSync(path.join(__dirname, '..', relativePath), 'utf8');
+    assert.match(source, /data-training-message role="status" aria-live="polite"/);
+  });
+  assert.match(tippspielSource, /function handleTrainingInvalid\(event\)/);
+  assert.match(tippspielSource, /trainingForm\?\.addEventListener\('invalid', handleTrainingInvalid, true\)/);
+  assert.match(tippspielSource, /setTrainingMessage\('Bitte vier verschiedene Spieler auswählen\.', 'error'\)/);
+  assert.match(tippspielSource, /setTrainingMessage\(getFriendlyAuthError\(error\), 'error'\)/);
 });
 
 test('result submission and confirmation refresh in place without closing the account dialog', () => {

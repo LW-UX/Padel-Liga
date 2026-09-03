@@ -12,7 +12,7 @@
   <script src="../data/players.js?v=2026-09-01-profile-emojis"></script>
   <script src="../data/seasons.js"></script>
   <script src="../data/supabase-config.js"></script>
-  <link rel="stylesheet" href="../style.css?v=2026-09-03-outlined-task-status">
+  <link rel="stylesheet" href="../style.css?v=2026-09-03-training-player-picker">
 </head>
 <body class="tip-page">
 <header class="site-header">
@@ -131,6 +131,7 @@
               <div class="training-player-fields" id="training-player-fields"></div>
               <div class="training-rounds" id="training-rounds"></div>
               <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
+              <div class="training-form-message" data-training-message role="status" aria-live="polite"></div>
               <button class="primary-button" type="submit">Training zur Bestätigung senden</button>
             </form>
             <div class="account-task-list prediction-match-list" id="result-task-list"></div>
@@ -143,7 +144,7 @@
 </dialog>
 
 <script src="../js/score-input.js?v=2026-09-03-shared-score-input"></script>
-<script src="../js/tippspiel.js?v=2026-09-03-personal-task-border"></script>
+<script src="../js/tippspiel.js?v=2026-09-03-training-player-picker"></script>
 <script src="../js/tipp-page.js?v=2026-09-01-season-picker"></script>
 </body>
 </html>
