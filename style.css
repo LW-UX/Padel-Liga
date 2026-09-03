@@ -1163,7 +1163,7 @@
     .account-empty,
     .account-waiting { color: var(--dim); font-size: 0.85rem; }
     .account-waiting { display: inline-flex; align-items: center; min-height: 36px; }
-    .training-form { display: grid; container-type: inline-size; gap: 10px; border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem; }
+    .training-form { display: grid; gap: 10px; border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem; }
     .training-form[hidden] { display: none; }
     .training-form-message { min-height: 1.25rem; color: var(--dim); font-size: 0.82rem; }
     .training-form-message.error { color: var(--negativ); }
@@ -1178,6 +1178,7 @@
     .training-rounds { display: grid; gap: 16px; }
     .training-round-field { display: grid; gap: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
     .training-round-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; gap: 8px; }
+    .training-score-entry { grid-template-columns: repeat(3, auto); gap: 10px; }
     .training-round-remove {
       display: grid;
       width: 40px;
@@ -1199,22 +1200,6 @@
     .training-result-details { display: inline-flex; align-items: baseline; justify-content: flex-end; flex-wrap: wrap; gap: 0.2rem; }
     .training-result-divider { color: var(--dim); }
     .training-result-partial { color: var(--dim); font-style: italic; font-weight: 500; opacity: 0.68; }
-    @container (max-width: 600px) {
-      .training-player-fields { grid-template-columns: 1fr; }
-      .training-round-head {
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: center;
-      }
-      .training-round-head .training-picker { grid-column: 1; }
-      .training-round-head .training-picker:nth-child(1) { grid-row: 1; }
-      .training-round-head .training-picker:nth-child(2) { grid-row: 2; }
-      .training-round-head .training-round-remove {
-        grid-column: 2;
-        grid-row: 1 / span 2;
-      }
-      .training-round-head .training-picker:nth-child(2) .training-picker-menu { right: auto; left: 0; }
-      .training-score-entry { grid-template-columns: 1fr; }
-    }
     .standalone-ranking-panel { position: static; max-width: 760px; margin: 0 auto; }
     .tip-page .prediction-main { max-width: 820px; margin: 0 auto; }
 
@@ -2548,22 +2533,10 @@
       .result-proposal { align-items: flex-start; flex-direction: column; }
       .result-proposal strong { text-align: left; }
       .result-score-entry { grid-template-columns: 1fr; }
+      .training-score-entry { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
       .result-review-actions > button { flex: 1 1 0; min-width: 0; }
       .result-entry-actions .primary-button { width: auto; min-width: 0; }
       .training-form-meta { grid-template-columns: 1fr 1fr; }
-      .training-player-fields { grid-template-columns: 1fr; }
-      .training-round-head {
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: center;
-      }
-      .training-round-head .training-picker { grid-column: 1; }
-      .training-round-head .training-picker:nth-child(1) { grid-row: 1; }
-      .training-round-head .training-picker:nth-child(2) { grid-row: 2; }
-      .training-round-head .training-round-remove {
-        grid-column: 2;
-        grid-row: 1 / span 2;
-      }
-      .training-round-head .training-picker:nth-child(2) .training-picker-menu { right: auto; left: 0; }
       .training-picker-toggle { min-width: 0; }
       main { padding-left: 0.75rem; padding-right: 0.75rem; }
       .sh-with-control {
