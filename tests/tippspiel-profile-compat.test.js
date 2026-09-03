@@ -4,6 +4,34 @@ const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
 const tippspielSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'tippspiel.js'), 'utf8');
+const appSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'utf8');
+const styleSource = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
+const scoreInputSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'score-input.js'), 'utf8');
+const scoreInput = vm.runInNewContext(`(() => { const window = {}; ${scoreInputSource}\nreturn window.PadelScoreInput; })()`);
+
+function getResultScoreReader() {
+  const scoreLogic = tippspielSource.match(
+    /function readResultScorePair\(form, kind, setIndex\) \{[\s\S]*?(?=\n  function updateResultSummary)/
+  )?.[0] || '';
+  return vm.runInNewContext(`(() => { ${scoreLogic}\nreturn readResultScore; })()`, {
+    window: { PadelScoreInput: scoreInput }
+  });
+}
+
+function resultFormFor({ sets = [], setTiebreaks = [], matchTiebreak = [], format = 'best-of-three' }) {
+  return {
+    dataset: { resultFormat: format },
+    querySelector(selector) {
+      const kind = selector.match(/data-score-kind="([^"]+)"/)?.[1];
+      const setIndex = Number(selector.match(/data-score-set="(\d+)"/)?.[1]);
+      const teamIndex = Number(selector.match(/data-score-team="(\d+)"/)?.[1]);
+      const values = kind === 'set' ? sets[setIndex]
+        : kind === 'set-tiebreak' ? setTiebreaks[setIndex]
+          : matchTiebreak;
+      return { value: values?.[teamIndex] ?? '' };
+    }
+  };
+}
 
 test('legacy profiles without app_role still publish their player id', async () => {
   const publishedPlayerIds = [];
@@ -171,55 +199,133 @@ test('detailed score counters derive the set result and winner', () => {
   )?.[0] || '';
   assert.match(scoreReader, /const actualSets = `\$\{setWins\[0\]\}:\$\{setWins\[1\]\}`/);
   assert.match(scoreReader, /winner: setWins\[0\] === 2 \? 1 : 2/);
-  assert.match(scoreReader, /Bei 1:1 bitte auch das Entscheidungsergebnis eingeben/);
+  assert.match(scoreReader, /Bei 1:1 bitte auch den Match-Tiebreak eingeben/);
   assert.doesNotMatch(tippspielSource, /name="actualSets"/);
 });
 
 test('score derivation handles straight sets and a deciding match tiebreak', () => {
-  const scoreReader = tippspielSource.match(
-    /function readResultScore\(form\) \{[\s\S]*?(?=\n  function updateResultSummary)/
-  )?.[0] || '';
-  const readResultScore = vm.runInNewContext(`(() => {
-    const SINGLE_SET_PREDICTIONS = ['6:0', '6:1', '6:2', '6:3', '6:4', '7:5', '7:6', '0:6', '1:6', '2:6', '3:6', '4:6', '5:7', '6:7'];
-    return (${scoreReader.replace('function readResultScore', 'function')});
-  })()`);
-  const formFor = values => ({
-    querySelector(selector) {
-      const [, setIndex, teamIndex] = selector.match(/data-score-set="(\d)".*data-score-team="(\d)"/);
-      return { value: values[setIndex]?.[teamIndex] ?? '' };
-    }
-  });
+  const readResultScore = getResultScoreReader();
 
   assert.deepEqual(
-    JSON.parse(JSON.stringify(readResultScore(formFor([[6, 4], [6, 3], ['', '']])))),
+    JSON.parse(JSON.stringify(readResultScore(resultFormFor({ sets: [[6, 4], [6, 3]] })))),
     { actualSets: '2:0', winner: 1, resultDetails: '6:4, 6:3' }
   );
   assert.deepEqual(
-    JSON.parse(JSON.stringify(readResultScore(formFor([[6, 2], [3, 6], [4, 10]])))),
+    JSON.parse(JSON.stringify(readResultScore(resultFormFor({ sets: [[6, 2], [3, 6]], matchTiebreak: [4, 10] })))),
     { actualSets: '1:2', winner: 2, resultDetails: '6:2, 3:6 – 4:10' }
   );
 });
 
 test('score derivation stores one-set finals as 1:0 or 0:1', () => {
-  const scoreReader = tippspielSource.match(
-    /function readResultScore\(form\) \{[\s\S]*?(?=\n  function updateResultSummary)/
-  )?.[0] || '';
-  const readResultScore = vm.runInNewContext(`(() => {
-    const SINGLE_SET_PREDICTIONS = ['6:0', '6:1', '6:2', '6:3', '6:4', '7:5', '7:6', '0:6', '1:6', '2:6', '3:6', '4:6', '5:7', '6:7'];
-    return (${scoreReader.replace('function readResultScore', 'function')});
-  })()`);
-  const form = {
-    dataset: { resultFormat: 'single-set' },
-    querySelector(selector) {
-      const [, setIndex, teamIndex] = selector.match(/data-score-set="(\d)".*data-score-team="(\d)"/);
-      return { value: setIndex === '0' ? ['7', '5'][Number(teamIndex)] : '' };
-    }
-  };
+  const readResultScore = getResultScoreReader();
 
   assert.deepEqual(
-    JSON.parse(JSON.stringify(readResultScore(form))),
+    JSON.parse(JSON.stringify(readResultScore(resultFormFor({ sets: [[7, 5]], format: 'single-set' })))),
     { actualSets: '1:0', winner: 1, resultDetails: '7:5' }
   );
+});
+
+test('official result entry validates regular sets and both tiebreak types', () => {
+  const readResultScore = getResultScoreReader();
+  const combined = resultFormFor({
+    sets: [[7, 6], [6, 7]],
+    setTiebreaks: [[7, 4], [8, 10]],
+    matchTiebreak: [10, 6]
+  });
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(readResultScore(combined))),
+    { actualSets: '2:1', winner: 1, resultDetails: '7:6 (7:4), 6:7 (8:10) – 10:6' }
+  );
+  assert.throws(
+    () => readResultScore(resultFormFor({ sets: [[6, 5], [6, 2]] })),
+    /Nur 6:X, 7:5 oder 7:6/
+  );
+  assert.throws(
+    () => readResultScore(resultFormFor({ sets: [[7, 6], [6, 2]] })),
+    /Satz-Tiebreak fehlt/
+  );
+  assert.throws(
+    () => readResultScore(resultFormFor({ sets: [[7, 6], [6, 2]], setTiebreaks: [[8, 5]] })),
+    /regelkonformen Endstand/
+  );
+  assert.throws(
+    () => readResultScore(resultFormFor({ sets: [[7, 6], [6, 2]], setTiebreaks: [[4, 7]] })),
+    /Sieger stimmen nicht überein/
+  );
+  assert.throws(
+    () => readResultScore(resultFormFor({ sets: [[6, 2], [3, 6]], matchTiebreak: [11, 8] })),
+    /regelkonformen Endstand/
+  );
+});
+
+test('result counters start empty, initialize their pair, and highlight only while active', () => {
+  assert.doesNotMatch(tippspielSource, /placeholder="0"/);
+  assert.match(tippspielSource, /type="text"\s+inputmode="numeric"\s+pattern="\[0-9\]\*"\s+maxlength="2"/);
+  assert.match(tippspielSource, /class="calculator-score-pair result-score-pair"/);
+  assert.match(tippspielSource, /class="calculator-score-field result-score-counter"/);
+  assert.match(tippspielSource, /class="calculator-step"/);
+  assert.match(styleSource, /\.calculator-score-pair\.calculator-score-pair-active \.calculator-score-field/);
+  assert.match(styleSource, /\.calculator-score-field input \{[\s\S]*?min-width: 0;[\s\S]*?min-height: 0;[\s\S]*?padding: 0;/);
+  assert.doesNotMatch(styleSource, /\.result-score-pair\.is-framed/);
+  assert.doesNotMatch(tippspielSource, /<span>Satz [12]<\/span>/);
+  assert.match(tippspielSource, /data-result-set-tiebreak/);
+  assert.match(tippspielSource, />Satz-Tiebreak<\/span>/);
+  assert.doesNotMatch(tippspielSource, />Match-Tiebreak<\/span>/);
+  assert.match(tippspielSource, /renderScorePair\('Match-Tiebreak'/);
+
+  const initializerSource = tippspielSource.match(
+    /function initializeResultScorePair\(input\) \{[\s\S]*?\n  \}/
+  )?.[0] || '';
+  const initializeResultScorePair = vm.runInNewContext(
+    `(() => { ${initializerSource}\nreturn initializeResultScorePair; })()`,
+    { window: { PadelScoreInput: scoreInput } }
+  );
+  const first = { value: '1' };
+  const second = { value: '' };
+  const pair = { querySelectorAll: () => [first, second] };
+  first.closest = second.closest = () => pair;
+  initializeResultScorePair(first);
+  assert.equal(second.value, '0');
+  first.value = '3';
+  second.value = '4';
+  initializeResultScorePair(first);
+  assert.equal(second.value, '4');
+});
+
+test('result entry exposes live validation messages beside the submit action', () => {
+  assert.match(tippspielSource, /data-result-summary aria-live="polite"/);
+  assert.match(tippspielSource, /target\.textContent = error\.message \|\| 'Bitte das Ergebnis prüfen\.'/);
+  assert.match(tippspielSource, /target\.classList\.add\(\/fehlt\/i\.test\(target\.textContent\) \? 'is-partial' : 'is-invalid'\)/);
+  assert.match(styleSource, /\.result-entry-summary\.is-invalid \{ color: var\(--negativ\); \}/);
+  assert.match(styleSource, /\.result-entry-summary\.is-partial \{ color: var\(--accent\); \}/);
+});
+
+test('account matchups reuse the muted player separator', () => {
+  assert.match(tippspielSource, /join\('<span class="mc-player-sep">&amp;<\/span>'\)/);
+});
+
+test('calculator enforces a regulation match-tiebreak endpoint', () => {
+  const calculatorValidation = appSource.match(
+    /function parseCalculatorScorePair\(rawTeam1, rawTeam2\) \{[\s\S]*?(?=\nfunction formatCalculatorScore)/
+  )?.[0] || '';
+  const validateMatchTiebreak = vm.runInNewContext(
+    `(() => { ${calculatorValidation}\nreturn validateMatchTiebreak; })()`,
+    { window: { PadelScoreInput: scoreInput } }
+  );
+  assert.equal(validateMatchTiebreak('10', '8').invalid, undefined);
+  assert.equal(validateMatchTiebreak('11', '9').invalid, undefined);
+  assert.equal(validateMatchTiebreak('11', '8').invalid, true);
+});
+
+test('calculator and result entry share score parsing, validation, and counter state helpers', () => {
+  assert.match(appSource, /window\.PadelScoreInput\.parseScorePair/);
+  assert.match(appSource, /window\.PadelScoreInput\.isValidRegularSet/);
+  assert.match(appSource, /window\.PadelScoreInput\.isValidTiebreak/);
+  assert.match(appSource, /window\.PadelScoreInput\.initializePairValues/);
+  assert.match(tippspielSource, /window\.PadelScoreInput\.isValidRegularSet/);
+  assert.match(tippspielSource, /window\.PadelScoreInput\.isValidTiebreak/);
+  assert.match(tippspielSource, /window\.PadelScoreInput\.initializePairValues/);
+  assert.match(tippspielSource, /window\.PadelScoreInput\.setActivePair/);
 });
 
 test('decision counters unlock only at 1:1 and share the action row with their status', () => {

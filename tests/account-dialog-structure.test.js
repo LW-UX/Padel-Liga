@@ -50,7 +50,7 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(pages[0], /class="secondary-button secondary-button--dropdown"[^>]*data-viewer-toggle/);
   assert.match(pages[1], /class="secondary-button secondary-button--dropdown"[^>]*data-season-toggle/);
   assert.match(style, /\.sh-title \{[^}]*font-size: 2rem;[^}]*font-weight: 400;/);
-  assert.match(style, /\.secondary-button \{[\s\S]*font: 500 0\.78rem 'DM Mono', monospace;[\s\S]*background: var\(--surface\);/);
+  assert.match(style, /\.secondary-button \{[\s\S]*font-family: 'DM Sans', sans-serif;[\s\S]*font-size: 0\.78rem;[\s\S]*font-weight: 500;/);
   assert.match(style, /\.secondary-button--dropdown \{[^}]*position: relative;[^}]*padding-right: 2\.1rem;/);
   assert.doesNotMatch(style, /\.picker-toggle/);
   assert.doesNotMatch(style, /\.calculator-reset-button/);

@@ -242,7 +242,8 @@
         </svg>${taskCount ? `<span class="auth-task-badge">${taskCount}</span>` : ''}`
       : 'Login';
     button.classList.toggle('is-authenticated', isLoggedIn);
-    button.setAttribute('aria-label', isLoggedIn ? `Konto von ${displayName} öffnen` : 'Einloggen');
+    button.classList.toggle('secondary-button', isLoggedIn);
+    button.setAttribute('aria-label', isLoggedIn ? `Spieleübersicht von ${displayName} öffnen` : 'Einloggen');
     button.title = isLoggedIn ? displayName : '';
     guestView.hidden = isLoggedIn;
     accountView.hidden = !isLoggedIn;
@@ -413,10 +414,28 @@
     return task.league_label || task.league_id || 'Liga';
   }
 
+  function parseScorePair(value) {
+    const match = String(value || '').trim().match(/^(\d+)\s*:\s*(\d+)$/);
+    return match ? [Number(match[1]), Number(match[2])] : [];
+  }
+
   function parseResultScores(resultDetails) {
-    return [...String(resultDetails || '').matchAll(/(\d+)\s*:\s*(\d+)/g)]
-      .slice(0, 3)
-      .map(match => [Number(match[1]), Number(match[2])]);
+    const [regularPart = '', matchTiebreakPart = ''] = String(resultDetails || '').split(/\s*[–-]\s*/, 2);
+    const sets = regularPart
+      .split(/\s*,\s*/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(part => {
+        const match = part.match(/^\s*(\d+)\s*:\s*(\d+)(?:\s*\(\s*(\d+)\s*:\s*(\d+)\s*\))?\s*$/);
+        return match ? {
+          score: [Number(match[1]), Number(match[2])],
+          tiebreak: match[3] === undefined ? [] : [Number(match[3]), Number(match[4])]
+        } : { score: [], tiebreak: [] };
+      });
+    return {
+      sets,
+      matchTiebreak: parseScorePair(matchTiebreakPart)
+    };
   }
 
   function hasSplitFirstTwoSets(scores) {
@@ -425,39 +444,52 @@
       && (scores[0][0] > scores[0][1]) !== (scores[1][0] > scores[1][1]);
   }
 
+  function renderScorePair(label, kind, setIndex, score = [], disabled = false, required = false) {
+    return `<div class="calculator-score-pair result-score-pair">
+      ${[1, 2].map((team, teamIndex) => `<div class="calculator-score-field result-score-counter">
+        <button class="calculator-step" type="button" data-result-score-step="-1" aria-label="${label}, Team ${team}: eins abziehen"${disabled ? ' disabled' : ''}>−</button>
+        <input
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          maxlength="2"
+          ${required ? 'required' : ''}
+          name="${kind}_${setIndex}_${teamIndex}"
+          data-result-score
+          data-score-kind="${kind}"
+          data-score-set="${setIndex}"
+          data-score-team="${teamIndex}"
+          value="${score[teamIndex] ?? ''}"
+          aria-label="${label}, Team ${team}"
+          ${disabled ? 'disabled' : ''}
+        >
+        <button class="calculator-step" type="button" data-result-score-step="1" aria-label="${label}, Team ${team}: eins addieren"${disabled ? ' disabled' : ''}>+</button>
+      </div>`).join('<span class="result-score-colon">:</span>')}
+    </div>`;
+  }
+
   function renderScoreCounters(resultDetails = '', format = 'best-of-three') {
     const values = parseResultScores(resultDetails);
-    const decisionEnabled = hasSplitFirstTwoSets(values);
-    const labels = format === 'single-set' ? ['Satz'] : ['Satz 1', 'Satz 2', 'Entscheidung'];
+    const regularSetCount = format === 'single-set' ? 1 : 2;
+    const regularScores = values.sets.map(set => set.score);
+    const decisionEnabled = format !== 'single-set' && hasSplitFirstTwoSets(regularScores);
     return `<div class="result-score-entry">
-      ${labels.map((label, setIndex) => {
-        const score = values[setIndex] || [];
-        const decisionDisabled = setIndex === 2 && !decisionEnabled;
-        return `<div class="result-score-set"${setIndex === 2 ? ' data-result-decision' : ''}>
-          <span>${label}</span>
-          <div class="result-score-pair">
-            ${[1, 2].map((team, teamIndex) => `<div class="result-score-counter">
-              <button type="button" data-result-score-step="-1" aria-label="${label}, Team ${team}: eins abziehen"${decisionDisabled ? ' disabled' : ''}>−</button>
-              <input
-                type="number"
-                inputmode="numeric"
-                min="0"
-                max="99"
-                ${format === 'single-set' || setIndex < 2 ? 'required' : ''}
-                name="score_${setIndex}_${teamIndex}"
-                data-result-score
-                data-score-set="${setIndex}"
-                data-score-team="${teamIndex}"
-                value="${score[teamIndex] ?? ''}"
-                placeholder="0"
-                aria-label="${label}, Team ${team}"
-                ${decisionDisabled ? 'disabled' : ''}
-              >
-              <button type="button" data-result-score-step="1" aria-label="${label}, Team ${team}: eins addieren"${decisionDisabled ? ' disabled' : ''}>+</button>
-            </div>`).join('<span class="result-score-colon">:</span>')}
+      ${Array.from({ length: regularSetCount }, (_, setIndex) => {
+        const set = values.sets[setIndex] || { score: [], tiebreak: [] };
+        const label = format === 'single-set' ? 'Satz' : `Satz ${setIndex + 1}`;
+        const needsTiebreak = Math.max(...set.score) === 7 && Math.min(...set.score) === 6;
+        return `<div class="result-score-set" data-result-regular-set="${setIndex}">
+          ${format === 'single-set' ? '<span class="result-score-label">Satz</span>' : ''}
+          ${renderScorePair(label, 'set', setIndex, set.score, false, true)}
+          <div class="result-score-tiebreak" data-result-set-tiebreak="${setIndex}" ${needsTiebreak ? '' : 'hidden'}>
+            <span class="result-score-label">Satz-Tiebreak</span>
+            ${renderScorePair(`${label}, Satz-Tiebreak`, 'set-tiebreak', setIndex, set.tiebreak, !needsTiebreak, needsTiebreak)}
           </div>
         </div>`;
       }).join('')}
+      ${format === 'single-set' ? '' : `<div class="result-score-set" data-result-decision>
+        ${renderScorePair('Match-Tiebreak', 'match-tiebreak', 0, values.matchTiebreak, !decisionEnabled, decisionEnabled)}
+      </div>`}
     </div>`;
   }
 
@@ -473,7 +505,7 @@
           ? `<span class="account-task-player-name is-authenticated">${escapedName}</span>`
           : escapedName;
       })
-      .join(' &amp; ');
+      .join('<span class="mc-player-sep">&amp;</span>');
   }
 
   function renderTaskMatchup(task) {
@@ -482,7 +514,7 @@
       : '';
     return `<div class="account-task-matchup">
       <strong>${renderTaskTeamLabel(task.team_one_label, authenticatedPlayerName)}</strong>
-      <span>gegen</span>
+      <span>vs.</span>
       <strong>${renderTaskTeamLabel(task.team_two_label, authenticatedPlayerName)}</strong>
     </div>`;
   }
@@ -503,7 +535,7 @@
       </div>
       ${renderScoreCounters(initialResult, matchFormat)}
       <div class="result-entry-actions">
-        <div class="result-entry-summary" data-result-summary>Satzergebnis wird automatisch berechnet.</div>
+        <div class="result-entry-summary" data-result-summary aria-live="polite">Satzergebnis wird automatisch berechnet.</div>
         <button class="primary-button" type="submit">${state.profile?.app_role === 'admin' ? 'Ergebnis eintragen' : counter ? 'Alternative senden' : 'Zur Bestätigung senden'}</button>
       </div>
     </form>`;
@@ -881,93 +913,150 @@
     return message;
   }
 
-  function readResultScore(form) {
-    const format = form.dataset?.resultFormat || 'best-of-three';
-    const scores = [0, 1, 2].map(setIndex => [0, 1].map(teamIndex => {
-      const input = form.querySelector(`[data-score-set="${setIndex}"][data-score-team="${teamIndex}"]`);
+  function readResultScorePair(form, kind, setIndex) {
+    return [0, 1].map(teamIndex => {
+      const input = form.querySelector(`[data-score-kind="${kind}"][data-score-set="${setIndex}"][data-score-team="${teamIndex}"]`);
       const raw = String(input?.value ?? '').trim();
       return raw === '' ? null : Number(raw);
-    }));
+    });
+  }
+
+  function isValidTiebreakScore(score, target) {
+    return window.PadelScoreInput.isValidTiebreak(
+      window.PadelScoreInput.parseScorePair(score[0], score[1]),
+      target
+    );
+  }
+
+  function validateResultSet(score, label) {
+    if (score.every(value => value === null)) throw new Error(`${label} fehlt.`);
+    if (!score.every(value => Number.isInteger(value) && value >= 0)) throw new Error(`${label}: Score unvollständig.`);
+    if (score[0] === score[1]) throw new Error(`${label} benötigt einen eindeutigen Sieger.`);
+    if (!window.PadelScoreInput.isValidRegularSet(window.PadelScoreInput.parseScorePair(score[0], score[1]))) {
+      throw new Error(`${label}: Nur 6:X, 7:5 oder 7:6 sind gültig.`);
+    }
+    return score[0] > score[1] ? 1 : 2;
+  }
+
+  function validateSetTiebreak(form, score, setIndex, setWinner, label) {
+    const needsTiebreak = Math.max(...score) === 7 && Math.min(...score) === 6;
+    if (!needsTiebreak) return null;
+    const tiebreak = readResultScorePair(form, 'set-tiebreak', setIndex);
+    if (tiebreak.some(value => value === null)) throw new Error(`${label}: Satz-Tiebreak fehlt.`);
+    if (!isValidTiebreakScore(tiebreak, 7)) {
+      throw new Error(`${label}: Der Satz-Tiebreak benötigt einen regelkonformen Endstand.`);
+    }
+    const tiebreakWinner = tiebreak[0] > tiebreak[1] ? 1 : 2;
+    if (tiebreakWinner !== setWinner) throw new Error(`${label}: Satz- und Tiebreak-Sieger stimmen nicht überein.`);
+    return tiebreak;
+  }
+
+  function formatResultSet(score, tiebreak = null) {
+    return `${score[0]}:${score[1]}${tiebreak ? ` (${tiebreak[0]}:${tiebreak[1]})` : ''}`;
+  }
+
+  function readResultScore(form) {
+    const format = form.dataset?.resultFormat || 'best-of-three';
+    const regularSetCount = format === 'single-set' ? 1 : 2;
+    const scores = Array.from({ length: regularSetCount }, (_, setIndex) => readResultScorePair(form, 'set', setIndex));
+    const setWinners = scores.map((score, setIndex) => validateResultSet(
+      score,
+      format === 'single-set' ? 'Der Satz' : `Satz ${setIndex + 1}`
+    ));
+    const setTiebreaks = scores.map((score, setIndex) => validateSetTiebreak(
+      form,
+      score,
+      setIndex,
+      setWinners[setIndex],
+      format === 'single-set' ? 'Der Satz' : `Satz ${setIndex + 1}`
+    ));
+    const regularResult = scores.map((score, index) => formatResultSet(score, setTiebreaks[index])).join(', ');
+
     if (format === 'single-set') {
-      const [first, second] = scores[0];
-      if (![first, second].every(value => Number.isInteger(value) && value >= 0)) {
-        throw new Error('Bitte beide Ergebnisse für den Satz eingeben.');
-      }
-      if (first === second) throw new Error('Der Satz benötigt einen eindeutigen Sieger.');
-      if (!SINGLE_SET_PREDICTIONS.includes(`${first}:${second}`)) {
-        throw new Error('Bitte einen gültigen Satzendstand eingeben.');
-      }
       return {
-        actualSets: first > second ? '1:0' : '0:1',
-        winner: first > second ? 1 : 2,
-        resultDetails: `${first}:${second}`
+        actualSets: setWinners[0] === 1 ? '1:0' : '0:1',
+        winner: setWinners[0],
+        resultDetails: regularResult
       };
     }
-    if (scores.slice(0, 2).some(score => score.some(value => !Number.isInteger(value) || value < 0))) {
-      throw new Error('Bitte beide Ergebnisse für Satz 1 und Satz 2 eingeben.');
-    }
-    if (scores.slice(0, 2).some(([first, second]) => first === second)) {
-      throw new Error('Ein Satz benötigt einen eindeutigen Sieger.');
-    }
 
-    const firstTwoWins = scores.slice(0, 2).reduce((wins, [first, second]) => {
-      wins[first > second ? 0 : 1] += 1;
+    const firstTwoWins = setWinners.reduce((wins, winner) => {
+      wins[winner - 1] += 1;
       return wins;
     }, [0, 0]);
-    const decidingStarted = scores[2].some(value => value !== null);
+    const matchTiebreak = readResultScorePair(form, 'match-tiebreak', 0);
+    const decidingStarted = matchTiebreak.some(value => value !== null);
     if (firstTwoWins[0] === firstTwoWins[1] && !decidingStarted) {
-      throw new Error('Bei 1:1 bitte auch das Entscheidungsergebnis eingeben.');
+      throw new Error('Bei 1:1 bitte auch den Match-Tiebreak eingeben.');
     }
     if (firstTwoWins[0] !== firstTwoWins[1] && decidingStarted) {
-      throw new Error('Bei einem Ergebnis von 2:0 ist keine Entscheidung mehr nötig.');
+      throw new Error('Bei einem Ergebnis von 2:0 ist kein Match-Tiebreak mehr nötig.');
     }
-    if (decidingStarted && scores[2].some(value => !Number.isInteger(value) || value < 0)) {
-      throw new Error('Bitte beide Werte für die Entscheidung eingeben.');
-    }
-    if (decidingStarted && scores[2][0] === scores[2][1]) {
-      throw new Error('Die Entscheidung benötigt einen eindeutigen Sieger.');
+    if (decidingStarted && !isValidTiebreakScore(matchTiebreak, 10)) {
+      throw new Error('Der Match-Tiebreak benötigt einen regelkonformen Endstand.');
     }
 
-    const usedScores = decidingStarted ? scores : scores.slice(0, 2);
-    const setWins = usedScores.reduce((wins, [first, second]) => {
-      wins[first > second ? 0 : 1] += 1;
-      return wins;
-    }, [0, 0]);
+    const setWins = [...firstTwoWins];
+    if (decidingStarted) setWins[matchTiebreak[0] > matchTiebreak[1] ? 0 : 1] += 1;
     const actualSets = `${setWins[0]}:${setWins[1]}`;
     return {
       actualSets,
       winner: setWins[0] === 2 ? 1 : 2,
-      resultDetails: usedScores
-        .map((score, index) => `${index === 2 ? '– ' : ''}${score[0]}:${score[1]}`)
-        .join(', ')
-        .replace(', –', ' –')
+      resultDetails: decidingStarted ? `${regularResult} – ${matchTiebreak[0]}:${matchTiebreak[1]}` : regularResult
     };
   }
 
   function updateResultSummary(form) {
     if (!form) return;
     const format = form.dataset?.resultFormat || 'best-of-three';
-    const firstTwoScores = [0, 1].map(setIndex => [0, 1].map(teamIndex => {
-      const input = form.querySelector(`[data-score-set="${setIndex}"][data-score-team="${teamIndex}"]`);
-      const raw = String(input?.value ?? '').trim();
-      return raw === '' ? null : Number(raw);
-    }));
-    const decisionEnabled = format !== 'single-set' && hasSplitFirstTwoSets(firstTwoScores);
+    const regularSetCount = format === 'single-set' ? 1 : 2;
+    const regularScores = Array.from({ length: regularSetCount }, (_, setIndex) => readResultScorePair(form, 'set', setIndex));
+    regularScores.forEach((score, setIndex) => {
+      const needsTiebreak = score.every(Number.isInteger) && Math.max(...score) === 7 && Math.min(...score) === 6;
+      const tiebreak = form.querySelector(`[data-result-set-tiebreak="${setIndex}"]`);
+      if (tiebreak) tiebreak.hidden = !needsTiebreak;
+      tiebreak?.querySelectorAll('input, button').forEach(control => {
+        if (!needsTiebreak && control.matches('input')) control.value = '';
+        if (control.matches('input')) control.required = needsTiebreak;
+        control.disabled = !needsTiebreak;
+      });
+    });
+    const validRegularScores = regularScores.every(score => window.PadelScoreInput.isValidRegularSet(
+      window.PadelScoreInput.parseScorePair(score[0], score[1])
+    ));
+    const decisionEnabled = format !== 'single-set' && validRegularScores && hasSplitFirstTwoSets(regularScores);
     form.querySelector('[data-result-decision]')?.querySelectorAll('input, button').forEach(control => {
       if (!decisionEnabled && control.matches('input')) control.value = '';
+      if (control.matches('input')) control.required = decisionEnabled;
       control.disabled = !decisionEnabled;
     });
 
     const target = form.querySelector('[data-result-summary]');
     if (!target) return;
+    target.classList.remove('is-valid', 'is-invalid', 'is-partial');
     try {
       const result = readResultScore(form);
       target.textContent = `${result.resultDetails} · automatisch ${result.actualSets}`;
       target.classList.add('is-valid');
     } catch (error) {
-      target.textContent = 'Satzergebnis wird automatisch berechnet.';
-      target.classList.remove('is-valid');
+      const hasStarted = [...form.querySelectorAll('[data-result-score]:not(:disabled)')]
+        .some(input => String(input.value).trim() !== '');
+      if (!hasStarted) {
+        target.textContent = 'Satzergebnis wird automatisch berechnet.';
+        return;
+      }
+      target.textContent = error.message || 'Bitte das Ergebnis prüfen.';
+      target.classList.add(/fehlt/i.test(target.textContent) ? 'is-partial' : 'is-invalid');
     }
+  }
+
+  function initializeResultScorePair(input) {
+    if (!input || String(input.value).trim() === '') return;
+    const pair = input.closest('.result-score-pair');
+    const inputs = [...(pair?.querySelectorAll('[data-result-score]') || [])];
+    const changedTeamIndex = inputs.indexOf(input);
+    const nextValues = window.PadelScoreInput.initializePairValues(inputs.map(field => field.value), changedTeamIndex);
+    inputs.forEach((field, teamIndex) => { field.value = nextValues[teamIndex]; });
   }
 
   async function handleScheduleSubmit(event) {
@@ -1250,8 +1339,12 @@
       if (scoreStep) {
         const input = scoreStep.parentElement?.querySelector('[data-result-score]');
         if (!input) return;
-        const current = Number(input.value || 0);
-        input.value = String(Math.max(0, Math.min(99, current + Number(scoreStep.dataset.resultScoreStep))));
+        const step = Number(scoreStep.dataset.resultScoreStep);
+        const value = window.PadelScoreInput.stepScoreValue(input.value, step);
+        if (value === null) return;
+        input.value = value;
+        if (step > 0) initializeResultScorePair(input);
+        window.PadelScoreInput.setActivePair(input.closest('.result-score-pair'));
         updateResultSummary(input.closest('[data-result-submit]'));
         return;
       }
@@ -1309,8 +1402,25 @@
     });
     document.addEventListener('input', event => {
       if (event.target.matches('[data-result-score]')) {
+        event.target.value = window.PadelScoreInput.sanitizeScoreValue(event.target.value);
+        initializeResultScorePair(event.target);
+        window.PadelScoreInput.setActivePair(event.target.closest('.result-score-pair'));
         updateResultSummary(event.target.closest('[data-result-submit]'));
       }
+    });
+    document.addEventListener('pointerdown', event => {
+      const scoreControl = event.target.closest('[data-result-score], [data-result-score-step]');
+      if (!scoreControl) return;
+      window.PadelScoreInput.setActivePair(scoreControl.closest('.result-score-pair'));
+      const input = event.target.closest('[data-result-score]');
+      if (input && input.value) {
+        input.value = '';
+        updateResultSummary(input.closest('[data-result-submit]'));
+      }
+    });
+    document.addEventListener('focusin', event => {
+      const scoreControl = event.target.closest('[data-result-score], [data-result-score-step]');
+      if (scoreControl) window.PadelScoreInput.setActivePair(scoreControl.closest('.result-score-pair'));
     });
     document.getElementById('auth-dialog')?.addEventListener('click', event => {
       if (event.target === event.currentTarget) closeAuthDialog();

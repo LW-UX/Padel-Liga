@@ -1398,7 +1398,11 @@ document.addEventListener('input', event => {
 
 document.addEventListener('pointerdown', event => {
   const calculatorScoreControl = event.target.closest('[data-calculator-score], [data-calculator-step]');
-  setActiveCalculatorScorePair(calculatorScoreControl?.closest('.calculator-score-pair') || null);
+  if (calculatorScoreControl) {
+    setActiveCalculatorScorePair(calculatorScoreControl.closest('.calculator-score-pair'));
+  } else if (!event.target.closest('[data-result-score], [data-result-score-step]')) {
+    setActiveCalculatorScorePair(null);
+  }
 
   const calculatorScoreInput = event.target.closest('[data-calculator-score]');
   if (!calculatorScoreInput) return;
@@ -1419,7 +1423,7 @@ document.addEventListener('mouseout', event => {
 
 document.addEventListener('focusin', event => {
   const calculatorScoreControl = event.target.closest('[data-calculator-score], [data-calculator-step]');
-  setActiveCalculatorScorePair(calculatorScoreControl?.closest('.calculator-score-pair') || null);
+  if (calculatorScoreControl) setActiveCalculatorScorePair(calculatorScoreControl.closest('.calculator-score-pair'));
 
   const calculatorScoreInput = event.target.closest('[data-calculator-score]');
   if (calculatorScoreInput) {
@@ -3279,30 +3283,14 @@ function getCalculatorPair(entry, part) {
 }
 
 function parseCalculatorScorePair(rawTeam1, rawTeam2) {
-  const rawValues = [rawTeam1, rawTeam2].map(value => String(value ?? '').trim());
-  if (!rawValues[0] && !rawValues[1]) return { empty: true };
-  if (!rawValues[0] || !rawValues[1]) return { invalid: true, message: 'Score unvollständig' };
-
-  const values = rawValues.map(Number);
-  if (values.some(value => !Number.isInteger(value) || value < 0)) {
-    return { invalid: true, message: 'Nur ganze Zahlen ab 0' };
-  }
-
-  if (values[0] === values[1]) return { invalid: true, message: 'Gewinner notwendig' };
-
-  return { team1: values[0], team2: values[1], winner: values[0] > values[1] ? 1 : 2 };
+  return window.PadelScoreInput.parseScorePair(rawTeam1, rawTeam2);
 }
 
 function validateRegularSet(rawTeam1, rawTeam2) {
   const score = parseCalculatorScorePair(rawTeam1, rawTeam2);
   if (score.empty || score.invalid) return score;
 
-  const winnerScore = Math.max(score.team1, score.team2);
-  const loserScore = Math.min(score.team1, score.team2);
-  const isValid = (winnerScore === 6 && loserScore <= 4) ||
-    (winnerScore === 7 && (loserScore === 5 || loserScore === 6));
-
-  if (!isValid) {
+  if (!window.PadelScoreInput.isValidRegularSet(score)) {
     return { invalid: true, message: '6:X, 7:5 oder 7:6 eintragen' };
   }
 
@@ -3313,11 +3301,8 @@ function validateMatchTiebreak(rawTeam1, rawTeam2) {
   const score = parseCalculatorScorePair(rawTeam1, rawTeam2);
   if (score.empty || score.invalid) return score;
 
-  const winnerScore = Math.max(score.team1, score.team2);
-  const loserScore = Math.min(score.team1, score.team2);
-
-  if (winnerScore < 10 || winnerScore - loserScore < 2) {
-    return { invalid: true, message: 'Match-Tiebreak bis mind. 10 mit 2 Pkt. Abstand' };
+  if (!window.PadelScoreInput.isValidTiebreak(score, 10)) {
+    return { invalid: true, message: 'Match-Tiebreak bis 10, danach genau 2 Pkt. Abstand' };
   }
 
   return score;
@@ -3438,7 +3423,7 @@ function updateCalculatorScore(input) {
   const entry = getCalculatorEntry(input.dataset.calculatorMatchId);
   const part = input.dataset.calculatorPart;
   const teamIndex = Number(input.dataset.calculatorTeam);
-  const value = input.value.replace(/[^\d]/g, '').slice(0, 2);
+  const value = window.PadelScoreInput.sanitizeScoreValue(input.value);
 
   input.value = value;
   entry[part][teamIndex] = value;
@@ -3463,16 +3448,14 @@ function clearCalculatorScoreInput(input) {
 
 function initializeCalculatorPairDefaults(matchId, part, changedTeamIndex) {
   const entry = getCalculatorEntry(matchId);
-  if (!entry[part][changedTeamIndex]) return;
-
-  const otherTeamIndex = changedTeamIndex === 0 ? 1 : 0;
-  if (entry[part][otherTeamIndex] !== '') return;
-
-  entry[part][otherTeamIndex] = '0';
-  const otherInput = document.querySelector(
-    `[data-calculator-score][data-calculator-match-id="${CSS.escape(matchId)}"][data-calculator-part="${CSS.escape(part)}"][data-calculator-team="${otherTeamIndex}"]`
-  );
-  if (otherInput) otherInput.value = '0';
+  const nextValues = window.PadelScoreInput.initializePairValues(entry[part], changedTeamIndex);
+  entry[part] = nextValues;
+  nextValues.forEach((value, teamIndex) => {
+    const input = document.querySelector(
+      `[data-calculator-score][data-calculator-match-id="${CSS.escape(matchId)}"][data-calculator-part="${CSS.escape(part)}"][data-calculator-team="${teamIndex}"]`
+    );
+    if (input) input.value = value;
+  });
 }
 
 function stepCalculatorScore(button) {
@@ -3483,9 +3466,8 @@ function stepCalculatorScore(button) {
   const teamIndex = Number(button.dataset.calculatorTeam);
   const delta = Number(button.dataset.calculatorStep);
   const entry = getCalculatorEntry(matchId);
-  const current = Number(entry[part][teamIndex]);
-  const nextValue = Math.max(0, (Number.isFinite(current) ? current : 0) + delta);
-  const value = String(nextValue).slice(0, 2);
+  const value = window.PadelScoreInput.stepScoreValue(entry[part][teamIndex], delta);
+  if (value === null) return;
   const input = document.querySelector(
     `[data-calculator-score][data-calculator-match-id="${CSS.escape(matchId)}"][data-calculator-part="${CSS.escape(part)}"][data-calculator-team="${teamIndex}"]`
   );
@@ -3542,11 +3524,7 @@ function setActiveCalculatorMatch(matchId, rerender = true) {
 }
 
 function setActiveCalculatorScorePair(scorePair) {
-  document.querySelectorAll('.calculator-score-pair-active').forEach(element => {
-    element.classList.remove('calculator-score-pair-active');
-  });
-
-  if (scorePair) scorePair.classList.add('calculator-score-pair-active');
+  window.PadelScoreInput.setActivePair(scorePair);
 }
 
 function syncCalculatorActiveMatchCard() {
