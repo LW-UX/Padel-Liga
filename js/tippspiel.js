@@ -607,8 +607,9 @@
   function renderResultTaskCard(task, groupKey) {
     const isActionable = task.task_type === 'review' || groupKey === 'past';
     const isWaiting = task.task_type === 'waiting';
+    const hasAuthenticatedPlayer = [1, 2].includes(Number(task.my_team));
     return `<div class="result-task-wrap">
-      <article class="account-task-card result-task-card${isActionable ? ' is-actionable' : ''}${isWaiting ? ' is-waiting' : ''}">
+      <article class="account-task-card result-task-card${hasAuthenticatedPlayer ? ' has-authenticated-player' : ''}${isActionable ? ' is-actionable' : ''}${isWaiting ? ' is-waiting' : ''}">
         <div class="account-task-meta">
           <span class="widget-label">${escapeHtml(getTaskLeagueLabel(task))} · Partie ${escapeHtml(getTaskNumber(task))}</span>
           ${renderResultTaskStatus(task)}
@@ -714,7 +715,8 @@
 
   function renderTrainingTaskCard(task, index) {
     const rounds = Array.isArray(task.rounds) ? task.rounds : [];
-    return `<article class="account-task-card training-task-card${task.created_by_me ? ' is-waiting' : ' is-actionable'}">
+    const hasAuthenticatedPlayer = Boolean(state.profile?.player_id && task.player_ids.includes(state.profile.player_id));
+    return `<article class="account-task-card training-task-card${hasAuthenticatedPlayer ? ' has-authenticated-player' : ''}${task.created_by_me ? ' is-waiting' : ' is-actionable'}">
       <div class="account-task-meta">
         <span class="widget-label">Training ${escapeHtml(task.training_number || index + 1)}</span>
         <span class="account-task-status${task.created_by_me ? '' : ' is-open'}">${task.created_by_me ? 'Auf Bestätigung warten' : 'Zu bestätigen'}</span>

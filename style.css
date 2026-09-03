@@ -788,25 +788,25 @@
       border-radius: 999px;
       cursor: pointer;
       font-family: 'DM Sans', sans-serif;
-      font-size: 0.84rem;
+      font-size: 0.85rem;
       font-weight: 700;
-      padding: 0.55rem 1rem;
+      padding: 0.5rem 0.85rem;
     }
     .primary-button { background: var(--accent); color: #07080c; }
     .secondary-button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 36px;
+      min-height: 38px;
       border: 1px solid var(--border);
       border-radius: 999px;
       background: var(--surface);
       color: var(--text);
       cursor: pointer;
       font-family: 'DM Sans', sans-serif;
-      font-size: 0.78rem;
+      font-size: 0.85rem;
       font-weight: 500;
-      padding: 0.45rem 0.85rem;
+      padding: 0.5rem 0.85rem;
       transition: all 0.15s;
       white-space: nowrap;
     }
@@ -841,7 +841,7 @@
     }
     .primary-button:disabled { cursor: wait; opacity: 0.55; }
     .prediction-match-list { display: grid; gap: 20px; }
-    .prediction-match-group { display: grid; gap: 10px; }
+    .prediction-match-group { display: grid; }
     .prediction-match-group > .widget-label { margin-bottom: 0; }
     .prediction-match-card {
       display: grid;
@@ -1024,22 +1024,25 @@
       border-top: 1px solid var(--border);
       padding-top: 24px;
     }
-    .account-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .account-task-list { display: grid; gap: 10px; }
-    #result-task-list { gap: 24px; }
+    .account-section-heading { display: flex; align-items: center; justify-content: space-between; }
+    .account-task-list { display: grid; gap: 18px; }
+    #result-task-list { gap: 40px; }
     #result-task-list > .prediction-match-group {
-      gap: 14px;
       border-top: 1px solid var(--border);
-      padding-top: 24px;
+      padding-top: 18px;
     }
     .result-task-wrap { display: grid; gap: 6px; }
     .account-task-card {
       display: grid;
-      gap: 14px;
+      gap: 12px;
       border: 1px solid var(--border);
       border-radius: 12px;
       background: var(--surface);
       padding: 1rem;
+    }
+    .account-task-card.has-authenticated-player {
+      border-color: var(--accent2);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent2) 18%, transparent);
     }
     .account-task-card.is-actionable {
       border-color: var(--accent);
@@ -1052,31 +1055,30 @@
       border: 1px solid var(--border);
       border-radius: 999px;
       color: var(--dim);
-      font: 0.64rem 'DM Sans', sans-serif;
+      font: 0.7rem 'DM Sans', sans-serif;
       padding: 0.2rem 0.45rem;
       white-space: nowrap;
     }
     .account-task-status.is-open { border-color: var(--accent); background: var(--accent); color: #07080c; font-weight: 700; }
     .account-task-status.is-complete { border-color: color-mix(in srgb, var(--positiv) 45%, var(--border)); color: var(--positiv); }
-    .result-card-timing { color: var(--dim); font: 0.74rem 'DM Mono', monospace; }
+    .result-card-timing { color: var(--dim); font: 0.85rem 'DM Sans', sans-serif; letter-spacing: 0.02rem; }
     .account-task-matchup { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; font-size: 1rem; }
     .account-task-matchup strong:last-child { text-align: right; }
-    .account-task-matchup > span { color: var(--dim); font-size: 0.72rem; }
+    .account-task-matchup > span { color: var(--dim); font-size: 0.85rem; }
     .account-task-player-name.is-authenticated { color: var(--accent2); }
     .result-proposal { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 8px; background: var(--surface2); padding: 0.7rem; }
-    .result-proposal span { color: var(--dim); font-size: 0.72rem; }
-    .result-proposal strong { font-family: 'DM Mono', monospace; font-size: 0.82rem; text-align: right; }
+    .result-proposal span { color: var(--dim); font-size: 0.85rem; }
+    .result-proposal strong { font-family: 'DM Sans', sans-serif; font-size: 0.85rem; text-align: right; letter-spacing: 0.02rem; }
     .account-task-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
     .result-review-actions { justify-content: flex-end; flex-wrap: nowrap; }
-    .result-review-actions > button { min-width: 190px; }
-    .result-entry-form { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    .result-entry-form { display: grid; grid-template-columns: 1fr; gap: 12px; }
     .result-entry-form[hidden] { display: none; }
     .result-entry-form.is-counterproposal {
       border-top: 1px solid var(--border);
-      padding-top: 13px;
+      padding-top: 12px;
     }
     .result-entry-timing { display: grid; grid-template-columns: minmax(150px, 200px) minmax(120px, 160px); gap: 8px; }
-    .match-schedule-form { display: grid; gap: 14px; }
+    .match-schedule-form { display: grid; }
     .match-schedule-actions,
     .scheduled-result-actions { display: flex; justify-content: flex-end; }
     .result-entry-form label,
@@ -1084,6 +1086,7 @@
     .training-form label {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 8px;
       color: var(--dim);
       font-size: 0.85rem;
@@ -1094,13 +1097,13 @@
     .match-schedule-form input,
     .training-form input,
     .training-form select {
-      width: 100%;
+      width: 70%;
       min-height: 40px;
       border: 1px solid var(--border);
       border-radius: 8px;
       background: var(--surface);
       color: var(--text);
-      font: 0.86rem 'DM Sans', sans-serif;
+      font: 0.85rem 'DM Sans', sans-serif;
       padding: 0.55rem 0.65rem;
     }
     .result-score-entry {
@@ -1143,7 +1146,8 @@
     .result-entry-summary {
       flex: 1 1 auto;
       color: var(--dim);
-      font: 0.7rem 'DM Mono', monospace;
+      font: 0.7rem 'DM Sans', sans-serif;
+      letter-spacing: 0.02rem;
       text-align: left;
     }
     .result-entry-summary.is-valid { color: var(--positiv); }
@@ -2383,7 +2387,7 @@
     }
     .calculator-status {
       color: var(--muted);
-      font-size: 0.82rem;
+      font-size: 0.7rem;
       line-height: 1.35;
       min-width: 0;
       text-align: right;

@@ -304,6 +304,17 @@ test('account matchups reuse the muted player separator', () => {
   assert.match(tippspielSource, /join\('<span class="mc-player-sep">&amp;<\/span>'\)/);
 });
 
+test('account cards use accent2 for viewer participation while actionable yellow stays dominant', () => {
+  assert.match(tippspielSource, /const hasAuthenticatedPlayer = \[1, 2\]\.includes\(Number\(task\.my_team\)\)/);
+  assert.match(tippspielSource, /task\.player_ids\.includes\(state\.profile\.player_id\)/);
+  assert.match(tippspielSource, /hasAuthenticatedPlayer \? ' has-authenticated-player' : ''/);
+  const personalRule = styleSource.indexOf('.account-task-card.has-authenticated-player');
+  const actionableRule = styleSource.indexOf('.account-task-card.is-actionable');
+  assert.ok(personalRule >= 0 && actionableRule > personalRule);
+  assert.match(styleSource.slice(personalRule, actionableRule), /border-color: var\(--accent2\)/);
+  assert.match(styleSource.slice(actionableRule), /border-color: var\(--accent\)/);
+});
+
 test('calculator enforces a regulation match-tiebreak endpoint', () => {
   const calculatorValidation = appSource.match(
     /function parseCalculatorScorePair\(rawTeam1, rawTeam2\) \{[\s\S]*?(?=\nfunction formatCalculatorScore)/
