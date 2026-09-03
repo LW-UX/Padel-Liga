@@ -115,8 +115,8 @@ async function mergeDatabaseResults(rawSeason) {
       if (!stored) throw new Error(`Die Datenbank-Partie ${match.id} fehlt.`);
       return {
         ...match,
-        date: stored.scheduled_date || match.date,
-        time: stored.display_time ? String(stored.display_time).slice(0, 5).replace(':', '.') : match.time,
+        date: stored.scheduled_date ?? null,
+        time: stored.display_time ? String(stored.display_time).slice(0, 5).replace(':', '.') : null,
         result: stored.result_details,
         sets: stored.actual_sets,
         winner: stored.winner

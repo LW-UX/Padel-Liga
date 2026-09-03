@@ -14,7 +14,7 @@ window.PADEL_SEASONS = [
   {
     id: "test-2026",
     label: "Test-Saison",
-    file: "data/data-test-2026.js",
+    file: "data/data-test-2026.js?v=2026-09-03-unscheduled-matches",
     default: false
   }
 ];

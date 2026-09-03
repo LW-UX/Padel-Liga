@@ -146,26 +146,6 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
-    .picker-toggle {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 168px;
-      min-height: 36px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: var(--surface);
-      color: var(--text);
-      cursor: pointer;
-      font: 600 0.85rem 'DM Sans', sans-serif;
-      padding: 0.45rem 0.85rem;
-      white-space: nowrap;
-    }
-    .picker-toggle:hover,
-    .picker-toggle:focus-visible,
-    .season-picker.open .picker-toggle,
-    .viewer-picker.open .picker-toggle { border-color: var(--accent); color: var(--accent); }
     .context-link {
       display: inline-flex;
       align-items: center;
@@ -292,26 +272,6 @@
       position: relative;
       flex: 0 0 auto;
     }
-    .picker-toggle::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      right: 0.85rem;
-      width: 6px;
-      height: 6px;
-      border-right: 1.5px solid currentColor;
-      border-bottom: 1.5px solid currentColor;
-      transform: translateY(-65%) rotate(45deg);
-      transform-origin: center;
-      transition: transform 160ms ease;
-    }
-    .picker-toggle[data-auth-logout]::after,
-    .picker-toggle[data-training-toggle]::after { content: none; }
-    .season-picker.open .picker-toggle::after,
-    .viewer-picker.open .picker-toggle::after {
-      transform: translateY(-35%) rotate(225deg);
-    }
-
     .viewer-label-short { display: none; }
     .viewer-menu,
     .season-menu {
@@ -826,8 +786,7 @@
     .prediction-login-hint span,
     .prediction-session-note { color: var(--dim); font-size: 0.86rem; }
     .prediction-session-note strong { color: var(--text); }
-    .primary-button,
-    .secondary-button {
+    .primary-button {
       min-height: 38px;
       border: 1px solid var(--accent);
       border-radius: 999px;
@@ -838,7 +797,50 @@
       padding: 0.55rem 1rem;
     }
     .primary-button { background: var(--accent); color: #07080c; }
-    .secondary-button { background: transparent; color: var(--dim); border-color: var(--border); }
+    .secondary-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font: 500 0.78rem 'DM Mono', monospace;
+      padding: 0.45rem 0.85rem;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .secondary-button:hover,
+    .secondary-button:focus-visible { border-color: var(--accent); color: var(--accent); }
+    .secondary-button--dropdown {
+      position: relative;
+      min-width: 168px;
+      padding-right: 2.1rem;
+    }
+    .secondary-button--dropdown::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: 0.85rem;
+      width: 6px;
+      height: 6px;
+      border-right: 1.5px solid currentColor;
+      border-bottom: 1.5px solid currentColor;
+      transform: translateY(-65%) rotate(45deg);
+      transform-origin: center;
+      transition: transform 160ms ease;
+    }
+    .season-picker.open .secondary-button--dropdown,
+    .viewer-picker.open .secondary-button--dropdown {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .season-picker.open .secondary-button--dropdown::after,
+    .viewer-picker.open .secondary-button--dropdown::after {
+      transform: translateY(-35%) rotate(225deg);
+    }
     .primary-button:disabled { cursor: wait; opacity: 0.55; }
     .prediction-match-list { display: grid; gap: 20px; }
     .prediction-match-group { display: grid; gap: 10px; }
@@ -2033,22 +2035,6 @@
       transition: all 0.15s; white-space: nowrap;
     }
     .fb-toggle:hover { border-color: var(--accent); color: var(--accent); }
-    .calculator-reset-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 36px;
-      border-radius: 999px;
-      background: var(--surface);
-      color: var(--text);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.78rem;
-      padding: 0.45rem 0.85rem;
-    }
-    .calculator-reset-button:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
     .chart-wrap { position: relative; height: 620px; }
     .placement-chart-wrap { position: relative; height: 520px; }
     .chart-custom-tooltip {
@@ -2466,10 +2452,9 @@
       .hero-topbar { align-items: flex-start; margin-bottom: 0.65rem; }
       .context-actions { gap: 5px; }
       .season-picker > span { display: none; }
-      .picker-toggle { min-height: 34px; font-size: 0.7rem; padding: 0.4rem 0.7rem; }
-      .season-picker .picker-toggle { width: 132px; min-width: 132px; }
+      .season-picker .secondary-button--dropdown { width: 132px; min-width: 132px; }
       .context-link { font-size: 0.75rem; }
-      .picker-toggle::after { right: 0.65rem; }
+      .secondary-button--dropdown::after { right: 0.65rem; }
       .season-menu {
         width: min(240px, calc(100vw - 1.5rem));
         max-height: 420px;
@@ -2490,7 +2475,7 @@
         max-width: 34px !important;
         padding: 0;
       }
-      .viewer-picker .picker-toggle { width: 96px; min-width: 96px; }
+      .viewer-picker .secondary-button--dropdown { width: 96px; min-width: 96px; }
       .site-nav {
         width: calc(100% - 1.5rem);
         margin-bottom: 1.25rem;

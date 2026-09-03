@@ -1,6 +1,6 @@
 # Projektentscheidungen Padel-Liga
 
-Stand: 2. September 2026
+Stand: 3. September 2026
 
 Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell beschlossene Zielbild. Bei neuen oder geänderten Entscheidungen wird sie zusammen mit der jeweiligen Umsetzung aktualisiert.
 
@@ -15,9 +15,10 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 ## Aktueller Umsetzungsstand
 
+- Die Migration `20260903100000_unset_test_match_schedule.sql` wurde am 3. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Die Partien 7, 9 und 10 der Test-Saison bleiben mit ihren Mannschaften und Spieltagen bestehen, besitzen aber kein Datum, keine Uhrzeit und keinen daraus abgeleiteten Sperrzeitpunkt mehr.
 - Die Migration `20260902120000_season_tournament_automation.sql` wurde am 2. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. „Sommer 2026“ ist wieder die aktive Standardsaison und für Ergebniseingaben freigeschaltet; „Winter 2026“ bleibt auswählbar. Die saisonabhängige Turnierfortschreibung, Formatprüfung, Elo-Erweiterung, Tippspielwertung und automatische Auszeichnungsvergabe sind live.
 - Die Migration `20260902100000_winter_2026_season.sql` wurde am 2. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Die zehn bestätigten Winter-Teilnehmer werden mit ihren übernommenen Sommer-End-Elo-Werten öffentlich ausgeliefert. Die zunächst durch diese Migration gesetzte Winter-Standardsaison wurde mit `20260902120000_season_tournament_automation.sql` planmäßig wieder durch Sommer 2026 ersetzt.
-- Die Migration `20260902110000_add_test_result_matches.sql` wurde am 2. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Die Test-Saison enthält nun zehn Partien; die sechs ergänzten offenen Partien verteilen sich auf drei vergangene August-Termine und drei zukünftige Dezember-Termine. Ludi GMX und Ludi Gmail stehen sich darin jeweils als Gegner gegenüber.
+- Die Migration `20260902110000_add_test_result_matches.sql` wurde am 2. September 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Die Test-Saison enthält seitdem zehn Partien. Die ursprünglich für die Partien 7, 9 und 10 eingetragenen Termine wurden am 3. September wieder entfernt; Ludi GMX und Ludi Gmail stehen sich in allen sechs ergänzten Partien jeweils als Gegner gegenüber.
 - Die projektbezogene Supabase-MCP-Verbindung ist im Repository vorbereitet. Sie verwendet wegen der derzeit fehlerhaften OAuth-Erkennung der installierten Codex-Version einen lokal geschützten persönlichen Zugriffsschlüssel.
 - Die Migration `20260717100000_player_results_training_test_season.sql` wurde am 17. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet.
 - Die Migration `20260723160000_profile_result_tabs_actual_time.sql` wurde am 23. Juli 2026 vollständig und erfolgreich auf die Supabase-Produktionsdatenbank angewendet. Die neue Ergebnisfunktion mit tatsächlichem Datum und tatsächlicher Uhrzeit ist im Supabase-Schema-Cache verfügbar.
@@ -49,7 +50,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Der Hinweis „Jetzt auch als App!“ auf der Startseite kann über ein X im Kasten für den aktuellen Browser-Tab geschlossen werden. Er bleibt bei Reloads innerhalb dieses Tabs ausgeblendet und erscheint nach dem Schließen des Tabs beim nächsten Besuch wieder.
 - Gibt es für den aktuellen Zeitraum noch keinen veröffentlichten Artikel, zeigt die Startseite weiterhin den zeitlich jüngsten bereits veröffentlichten Artikel. Unveröffentlichte Artikelplatzhalter werden dabei nicht angezeigt.
 - Die Saisonauswahl steht rechts oben auf Höhe der Eyebrow oberhalb des Loginbereichs.
-- Saison- und Spielerauswahl verwenden denselben Dropdown-Button mit einheitlicher Höhe, Typografie, Rahmen-, Hover- und Pfeildarstellung; nur die responsive Breite richtet sich nach dem jeweiligen Inhalt und Platzbedarf.
+- Saison- und Spielerauswahl verwenden die zentrale Gestaltung für sekundäre Buttons. Ein gemeinsamer Dropdown-Modifier ergänzt ausschließlich Chevron, den geöffneten Zustand und den dafür notwendigen Innenabstand; nur die responsive Breite richtet sich nach dem jeweiligen Inhalt und Platzbedarf.
 - Das Tippspiel liegt auf einer eigenen Seite unter `/Padel-Liga/tipp/`.
 - Auf der Ligaseite steht neben der Saisonauswahl der Link „Zum Tippspiel“, auf der Tippseite „Zur Liga“.
 - Die Tippseite trägt die Überschrift „PADELTIPP“ statt „PADELLIGA“.
@@ -143,7 +144,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Admins sehen Ergebnisvorschläge, fällige Partien und zukünftige terminierte Partien vollständig in den nach Aufgabenart sortierten Gruppen. Bestätigte beziehungsweise abgeschlossene Ligapartien erscheinen nicht im Konto-Dialog, da sie bereits öffentlich unter „Partien“ sichtbar sind.
 - Ein vom Admin neu eingegebenes oder alternativ eingetragenes Ergebnis wird unmittelbar als offizielles Ergebnis übernommen, aktualisiert Tabelle und Elo und erzeugt keinen Bestätigungsvorschlag.
 - Als letzter Bereich folgt immer die Trainingsverwaltung mit eigenen noch wartenden Trainings und der Möglichkeit, ein neues Trainingsspiel anzulegen. Trainings, die das aktive Profil bestätigen muss, werden nicht zusätzlich dort, sondern in der ersten Gruppe „Zu bestätigen“ angezeigt.
-- „Ausloggen“ und „Training hinzufügen“ verwenden dieselbe pillenförmige Button-Gestaltung wie die bestehenden Auswahl-Buttons, enthalten aber bewusst weder Chevron noch ein anderes Icon. Sichtbare Spielanzahlen entfallen in den Bereichs- und Gruppenüberschriften. Die Kombination aus Liga und „Partie X“ innerhalb einer Spielkarte verwendet ebenfalls die allgemeine Widget-Label-Gestaltung.
+- Der bisherige „Zurücksetzen“-Button des Turnierrechners definiert künftig die zentrale Gestaltung für sekundäre Buttons: pillenförmig, dunkler Flächenhintergrund, heller Text und Akzentfarbe bei Hover beziehungsweise Fokus. „Zurücksetzen“, „Ausloggen“ und „Training hinzufügen“ sowie weitere sekundäre Aktionen verwenden einheitlich diese Gestaltung. Sichtbare Spielanzahlen entfallen in den Bereichs- und Gruppenüberschriften. Die Kombination aus Liga und „Partie X“ innerhalb einer Spielkarte verwendet ebenfalls die allgemeine Widget-Label-Gestaltung.
 - Der öffentliche Spielplan zeigt keinen internen Bestätigungsstatus.
 - Spielerprofil und Konto-/Ergebnisdialog verwenden denselben runden Schließen-Button. Er bleibt beim Scrollen des jeweiligen Modalinhalts fest rechts oben stehen. Solange ein Modal geöffnet ist, bleibt die Seite dahinter vollständig scrollgesperrt; Scrollbewegungen am Anfang oder Ende des Modalinhalts werden nicht an den Hintergrund weitergereicht.
 - Der Konto-/Ergebnisdialog für Spieler und Admins verwendet wie das öffentliche Spielerprofil den schwarzen Seitenhintergrund, ist auf `min(calc(100vw - 28px), 640px)` begrenzt und bleibt auf die Spieleingabe zugeschnitten. Die Bereiche „Ligaspiele“ und „Trainingsspiele“ stehen frei auf der Dialogfläche, beginnen jeweils mit einer Trennlinie und verwenden dieselbe 2-rem-Überschriftklasse wie die öffentlichen Hauptbereiche. Zwischen den Bereichen sowie zwischen den Ligaspiel-Untergruppen besteht ein klarer vertikaler Abstand. Die Untergruppen verwenden die allgemeine Widget-Label-Gestaltung. Ausschließlich die einzelnen Spielkarten erhalten wie in der Partienansicht einen hervorgehobenen Hintergrund. Die Ergebnis-Counter verwenden die kompakte, vollständig gerundete Gestaltung des Rechners. Die Entscheidungscounter sind bis zu einem gültigen Satzstand von 1:1 deaktiviert. Der automatische Ergebnishinweis steht links auf derselben Höhe wie die primäre Aktion; eine Trennlinie vor dieser Aktionszeile gibt es nicht.
@@ -151,6 +152,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 ## Temporäre Test-Saison
 
 - Es gibt eine öffentlich sichtbare Test-Saison mit zehn Testspielen.
+- Die Partien 7, 9 und 10 sind geplant und ihren jeweiligen Spieltagen zugeordnet, aber ohne Datum und Uhrzeit noch nicht terminiert.
 - Die Testprofile `Ludi GMX` und `Ludi Gmail` sind über vorab hinterlegte Konten zugeordnet; `Ludwig W.` besitzt ein Spielerprofil mit Adminrolle.
 - In allen zehn Testspielen stehen `Ludi GMX` und `Ludi Gmail` in gegnerischen Teams; ihre jeweiligen Partner wechseln.
 - Die übrigen Plätze werden mit Spielern aus der normalen Spielerliste besetzt.

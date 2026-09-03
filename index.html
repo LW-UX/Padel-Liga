@@ -22,7 +22,7 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-01-account-actions-no-icons">
+  <link rel="stylesheet" href="style.css?v=2026-09-03-secondary-dropdown-button">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -42,7 +42,7 @@
       <div class="context-actions">
         <div class="season-picker" id="season-picker">
           <span>Saison</span>
-          <button class="picker-toggle" type="button" data-season-toggle aria-haspopup="listbox" aria-expanded="false">
+          <button class="secondary-button secondary-button--dropdown" type="button" data-season-toggle aria-haspopup="listbox" aria-expanded="false">
             <span id="season-picker-label"></span>
           </button>
           <div class="season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
@@ -54,7 +54,7 @@
       <h1><button class="hero-home-button" type="button" data-nav-target="start" aria-label="Zur Startseite">PADEL<em>LIGA</em></button></h1>
       <div class="hero-actions">
         <div class="viewer-picker" id="viewer-picker">
-          <button class="picker-toggle" type="button" data-viewer-toggle aria-haspopup="listbox" aria-expanded="false">
+          <button class="secondary-button secondary-button--dropdown" type="button" data-viewer-toggle aria-haspopup="listbox" aria-expanded="false">
             <span class="viewer-label-full" id="viewer-label-full">Spieler auswählen</span>
             <span class="viewer-label-short" id="viewer-label-short">Auswählen</span>
           </button>
@@ -335,7 +335,7 @@
           </span>
         </div>
       </div>
-      <button type="button" class="fb-toggle calculator-reset-button" data-calculator-reset>Zurücksetzen</button>
+      <button type="button" class="secondary-button" data-calculator-reset>Zurücksetzen</button>
     </div>
     <div class="calculator-layout">
       <div class="calculator-mobile-game-area">
@@ -498,7 +498,7 @@
           <h2 id="account-display-name"></h2>
           <p class="auth-account-email" id="account-email"></p>
         </div>
-        <button class="picker-toggle" type="button" data-auth-logout>Ausloggen</button>
+        <button class="secondary-button" type="button" data-auth-logout>Ausloggen</button>
       </div>
       <div id="account-games-panel">
         <div class="account-games-empty" id="account-games-empty" hidden>Als Tipper hast du keine eigenen Liga- oder Trainingsspiele.</div>
@@ -512,7 +512,7 @@
           <section class="account-section">
             <div class="account-section-heading">
               <h3 class="sh-title">Trainingsspiele</h3>
-              <button class="picker-toggle" type="button" data-training-toggle>Training hinzufügen</button>
+              <button class="secondary-button" type="button" data-training-toggle>Training hinzufügen</button>
             </div>
             <form class="training-form" id="training-form" hidden>
               <div class="training-form-meta">
@@ -534,6 +534,6 @@
 </dialog>
 
 <script src="js/tippspiel.js?v=2026-09-01-authenticated-player-highlight"></script>
-<script src="js/app.js?v=2026-09-01-match-sorting"></script>
+<script src="js/app.js?v=2026-09-03-unscheduled-matches"></script>
 </body>
 </html>
