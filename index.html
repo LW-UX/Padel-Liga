@@ -22,7 +22,7 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-03-training-player-picker">
+  <link rel="stylesheet" href="style.css?v=2026-09-03-header-actions">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -40,14 +40,14 @@
     <div class="hero-topbar">
       <div class="hero-eyebrow" id="hero-orgs">Headsquare × Hanako × Envidual</div>
       <div class="context-actions">
+        <a class="context-link" id="tippspiel-link" href="tipp/">Zum Tippspiel</a>
         <div class="season-picker" id="season-picker">
-          <span>Saison</span>
           <button class="secondary-button secondary-button--dropdown" type="button" data-season-toggle aria-haspopup="listbox" aria-expanded="false">
             <span id="season-picker-label"></span>
           </button>
           <div class="season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
         </div>
-        <a class="context-link" id="tippspiel-link" href="tipp/">Zum Tippspiel</a>
+        <button class="auth-button" id="auth-button" type="button" data-auth-open>Login</button>
       </div>
     </div>
     <div class="hero-title-row">
@@ -60,7 +60,6 @@
           </button>
           <div class="viewer-menu" id="viewer-menu" role="listbox"></div>
         </div>
-        <button class="auth-button" id="auth-button" type="button" data-auth-open>Login</button>
       </div>
     </div>
   </div>
@@ -521,8 +520,8 @@
   </div>
 </dialog>
 
-<script src="js/score-input.js?v=2026-09-03-shared-score-input"></script>
-<script src="js/tippspiel.js?v=2026-09-03-training-player-picker"></script>
-<script src="js/app.js?v=2026-09-03-shared-score-input"></script>
+<script src="js/score-input.js?v=2026-09-03-training-counters"></script>
+<script src="js/tippspiel.js?v=2026-09-03-training-counters"></script>
+<script src="js/app.js?v=2026-09-03-training-counters"></script>
 </body>
 </html>

@@ -718,13 +718,14 @@
       const className = classification.state === 'complete' ? '' : ' class="training-result-partial"';
       return `<span${className}>${escapeHtml(part)}</span>`;
     });
+    const regularResult = renderedSets.join('<span class="training-result-divider">,</span>');
     if (matchTiebreakPart) {
       const matchTiebreak = parseScorePair(matchTiebreakPart);
       const classification = window.PadelScoreInput.classifyTiebreak(matchTiebreak[0], matchTiebreak[1], 10);
       const className = classification.state === 'complete' ? '' : ' class="training-result-partial"';
-      renderedSets.push(`<span class="training-result-divider">–</span><span${className}>${escapeHtml(matchTiebreakPart)}</span>`);
+      return `${regularResult}<span class="training-result-divider">–</span><span${className}>${escapeHtml(matchTiebreakPart)}</span>`;
     }
-    return renderedSets.join('<span class="training-result-divider">,</span>');
+    return regularResult;
   }
 
   function renderTrainingTaskRound(task, round, roundIndex, roundCount) {
@@ -1321,38 +1322,160 @@
     return [[playerIds[0], playerIds[1]], [playerIds[2], playerIds[3]]];
   }
 
-  function getTrainingResultData(round) {
-    const resultFormat = round.querySelector('[name="resultFormat"]').value;
-    const rawResult = round.querySelector('[name="roundResult"]').value.trim();
-    const scores = [...rawResult.matchAll(/(\d+)\s*:\s*(\d+)/g)]
-      .map(match => [Number(match[1]), Number(match[2])]);
-    const expectedCounts = { one_set: 1, two_sets: 2, two_sets_match_tiebreak: 3, three_sets: 3 };
-    const setCount = expectedCounts[resultFormat];
+  function getTrainingSetData(round, setIndex) {
+    const label = `Satz ${setIndex + 1}`;
+    const score = readTrainingScorePair(round, 'set', setIndex);
+    const classification = window.PadelScoreInput.classifyRegularSet(score[0], score[1]);
+    if (classification.state === 'invalid') {
+      throw new Error(`${label}: Nur erreichbare Zwischenstände sowie 6:X, 7:5 oder 7:6 sind gültig.`);
+    }
+    if (classification.state === 'empty') {
+      return {
+        state: 'empty',
+        score,
+        tiebreak: [null, null],
+        details: '',
+        payload: { team_one: null, team_two: null, tiebreak_team_one: null, tiebreak_team_two: null }
+      };
+    }
 
-    if (!setCount || scores.length !== setCount || scores.some(score => score[0] === score[1])) {
-      throw new Error('Das Ergebnis passt nicht zum gewählten Ergebnisformat.');
-    }
-    if ((resultFormat === 'two_sets_match_tiebreak' || resultFormat === 'three_sets') && !hasSplitFirstTwoSets(scores)) {
-      throw new Error('Ein dritter Ergebnisabschnitt ist nur nach einem Satzstand von 1:1 möglich.');
-    }
-    if (resultFormat === 'two_sets_match_tiebreak') {
-      const winnerScore = Math.max(...scores[2]);
-      const loserScore = Math.min(...scores[2]);
-      if (winnerScore < 10 || winnerScore - loserScore < 2) {
-        throw new Error('Der Match-Tiebreak geht bis mindestens 10 und benötigt zwei Punkte Abstand.');
+    let tiebreak = [null, null];
+    const needsTiebreak = classification.state === 'complete'
+      && Math.max(...score) === 7
+      && Math.min(...score) === 6;
+    if (needsTiebreak) {
+      tiebreak = readTrainingScorePair(round, 'set-tiebreak', setIndex);
+      const tiebreakClassification = window.PadelScoreInput.classifyTiebreak(tiebreak[0], tiebreak[1], 7);
+      if (tiebreakClassification.state !== 'complete') {
+        throw new Error(`${label}: Der Satz-Tiebreak benötigt einen regelkonformen Endstand.`);
       }
-    }
-    if (resultFormat === 'three_sets' && Math.max(...scores[2]) > 7) {
-      throw new Error('Beim Format „3 Sätze“ darf der dritte Ergebnisabschnitt kein Match-Tiebreak sein.');
+      const setWinner = score[0] > score[1] ? 1 : 2;
+      const tiebreakWinner = tiebreak[0] > tiebreak[1] ? 1 : 2;
+      if (setWinner !== tiebreakWinner) {
+        throw new Error(`${label}: Satz- und Tiebreak-Sieger stimmen nicht überein.`);
+      }
     }
 
     return {
-      resultDetails: scores
-        .map(([first, second], index) => `${resultFormat === 'two_sets_match_tiebreak' && index === 2 ? '– ' : ''}${first}:${second}`)
-        .join(', ')
-        .replace(', –', ' –'),
-      setCount
+      state: classification.state,
+      score,
+      tiebreak,
+      details: `${score[0]}:${score[1]}${needsTiebreak ? ` (${tiebreak[0]}:${tiebreak[1]})` : ''}`,
+      payload: {
+        team_one: score[0],
+        team_two: score[1],
+        tiebreak_team_one: needsTiebreak ? tiebreak[0] : null,
+        tiebreak_team_two: needsTiebreak ? tiebreak[1] : null
+      }
     };
+  }
+
+  function getTrainingResultData(round) {
+    const resultFormat = round.querySelector('[name="resultFormat"]').value;
+    const config = getTrainingFormatConfig(resultFormat);
+    const sets = Array.from({ length: config.regularSetCount }, (_, setIndex) => getTrainingSetData(round, setIndex));
+    let foundEmptySet = false;
+    sets.forEach(set => {
+      if (set.state === 'empty') foundEmptySet = true;
+      else if (foundEmptySet) throw new Error('Zwischen ausgefüllten Sätzen darf kein Satz leer bleiben.');
+    });
+    const enteredSets = sets.filter(set => set.state !== 'empty');
+    if (!enteredSets.length || !enteredSets.some(set => set.score.some(value => Number(value) > 0))) {
+      throw new Error('Bitte mindestens einen Spielstand eingeben.');
+    }
+
+    const completedSetCount = sets.filter(set => set.state === 'complete').length;
+    const regularScores = sets.map(set => set.score);
+    let matchTiebreak = { state: 'empty', score: [null, null], details: '' };
+    if (config.hasMatchTiebreak) {
+      const firstTwoComplete = sets.every(set => set.state === 'complete');
+      const splitSets = firstTwoComplete && hasSplitFirstTwoSets(regularScores);
+      const score = readTrainingScorePair(round, 'match-tiebreak', 0);
+      const classification = window.PadelScoreInput.classifyTiebreak(score[0], score[1], 10);
+      if (firstTwoComplete && !splitSets) {
+        throw new Error('Beim Format „2 Sätze + Match-Tiebreak“ müssen die ersten beiden Sätze 1:1 enden.');
+      }
+      if (!splitSets && classification.state !== 'empty') {
+        throw new Error('Der Match-Tiebreak wird erst nach einem Satzstand von 1:1 eingegeben.');
+      }
+      if (classification.state === 'invalid') {
+        throw new Error('Der Match-Tiebreak benötigt einen erreichbaren Zwischen- oder Endstand.');
+      }
+      matchTiebreak = {
+        state: splitSets ? classification.state : 'empty',
+        score,
+        details: splitSets && classification.state !== 'empty' ? `${score[0]}:${score[1]}` : ''
+      };
+    }
+
+    const regularResult = enteredSets.map(set => set.details).join(', ');
+    const resultDetails = matchTiebreak.details ? `${regularResult} – ${matchTiebreak.details}` : regularResult;
+    const isComplete = sets.every(set => set.state === 'complete')
+      && (!config.hasMatchTiebreak || matchTiebreak.state === 'complete');
+    return {
+      resultDetails,
+      resultFormat,
+      setCount: config.sectionCount,
+      isComplete,
+      completedSetCount,
+      matchWeight: completedSetCount * 0.5,
+      sets: sets.map(set => set.payload),
+      matchTiebreak: config.hasMatchTiebreak ? {
+        team_one: matchTiebreak.score[0],
+        team_two: matchTiebreak.score[1]
+      } : null
+    };
+  }
+
+  function isTrainingSetComplete(round, setIndex) {
+    try {
+      return getTrainingSetData(round, setIndex).state === 'complete';
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  function updateTrainingRoundSummary(round) {
+    if (!round) return;
+    const format = round.querySelector('[name="resultFormat"]')?.value || 'one_set';
+    const config = getTrainingFormatConfig(format);
+    const scores = Array.from({ length: config.regularSetCount }, (_, setIndex) => readTrainingScorePair(round, 'set', setIndex));
+    scores.forEach((score, setIndex) => {
+      const needsTiebreak = score.every(Number.isInteger) && Math.max(...score) === 7 && Math.min(...score) === 6;
+      const tiebreak = round.querySelector(`[data-result-set-tiebreak="${setIndex}"]`);
+      if (tiebreak) tiebreak.hidden = !needsTiebreak;
+      tiebreak?.querySelectorAll('input, button').forEach(control => {
+        if (!needsTiebreak && control.matches('input')) control.value = '';
+        control.disabled = !needsTiebreak;
+      });
+    });
+
+    const decisionEnabled = Boolean(config.hasMatchTiebreak
+      && scores.every((_score, setIndex) => isTrainingSetComplete(round, setIndex))
+      && hasSplitFirstTwoSets(scores));
+    round.querySelector('[data-result-decision]')?.querySelectorAll('input, button').forEach(control => {
+      if (!decisionEnabled && control.matches('input')) control.value = '';
+      control.disabled = !decisionEnabled;
+    });
+
+    const target = round.querySelector('[data-training-round-summary]');
+    if (!target) return;
+    target.classList.remove('is-valid', 'is-invalid', 'is-partial');
+    const hasStarted = [...round.querySelectorAll('[data-result-score]:not(:disabled)')]
+      .some(input => String(input.value).trim() !== '');
+    if (!hasStarted) {
+      target.textContent = 'Satzergebnis wird automatisch berechnet.';
+      return;
+    }
+    try {
+      const result = getTrainingResultData(round);
+      const weightLabel = result.matchWeight.toLocaleString('de-DE');
+      target.textContent = `${result.resultDetails} · ${result.isComplete ? 'vollständig' : 'unvollständig'} · ${weightLabel} Wertung`;
+      target.classList.add(result.isComplete ? 'is-valid' : 'is-partial');
+    } catch (error) {
+      target.textContent = error.message || 'Bitte das Ergebnis prüfen.';
+      target.classList.add('is-invalid');
+    }
   }
 
   function setTrainingMessage(message, type = '') {
@@ -1360,6 +1483,18 @@
     if (!target) return;
     target.textContent = message || '';
     target.className = `training-form-message ${type}`.trim();
+  }
+
+  function closeTrainingForm() {
+    const form = document.getElementById('training-form');
+    if (!form) return;
+    form.reset();
+    form.hidden = true;
+    state.trainingRoundCount = 1;
+    state.editingTrainingId = null;
+    closeTrainingPickerMenus();
+    setTrainingMessage('');
+    renderTrainingForm();
   }
 
   function handleTrainingInvalid(event) {
@@ -1387,9 +1522,9 @@
         return {
           team_one_ids: teamOne,
           team_two_ids: teamTwo,
-          result_details: result.resultDetails,
-          set_count: result.setCount,
-          is_complete: round.querySelector('[name="roundStatus"]').value === 'complete'
+          result_format: result.resultFormat,
+          sets: result.sets,
+          match_tiebreak: result.matchTiebreak
         };
       });
     } catch (error) {
@@ -1430,26 +1565,17 @@
     const form = document.getElementById('training-form');
     state.editingTrainingId = Number(sessionId);
     state.trainingRoundCount = Math.max(1, task.rounds?.length || 1);
-    renderTrainingForm();
-    form.hidden = false;
-    form.querySelector('[name="playedOn"]').value = task.played_on;
-    form.querySelector('[name="displayTime"]').value = String(task.display_time).slice(0, 5);
-    [...form.querySelectorAll('[data-training-player-picker]')].forEach((picker, index) => {
-      setTrainingPlayerPickerValue(picker, task.player_ids[index] || '');
-    });
-    [...form.querySelectorAll('[data-training-round]')].forEach((roundElement, index) => {
-      const round = task.rounds[index];
-      if (!round) return;
+    const roundValues = (task.rounds || []).map(round => {
       const [a, b, c, d] = task.player_ids;
       const teamOne = new Set(round.team_one_ids);
       const pairing = teamOne.has(a) && teamOne.has(c) ? 'ac_bd' : teamOne.has(a) && teamOne.has(d) ? 'ad_bc' : 'ab_cd';
-      roundElement.querySelector('[name="pairing"]').value = pairing;
-      roundElement.querySelector('[name="roundResult"]').value = round.result_details;
-      roundElement.querySelector('[name="resultFormat"]').value = Number(round.set_count) === 3
-        ? (String(round.result_details).includes('–') ? 'two_sets_match_tiebreak' : 'three_sets')
-        : Number(round.set_count) === 2 ? 'two_sets' : 'one_set';
-      roundElement.querySelector('[name="roundStatus"]').value = round.is_complete === false ? 'incomplete' : 'complete';
+      const resultFormat = getTrainingRoundFormat(round);
+      return { pairing, resultFormat, ...parseTrainingResultValues(round.result_details, resultFormat) };
     });
+    renderTrainingForm(task.player_ids, roundValues);
+    form.hidden = false;
+    form.querySelector('[name="playedOn"]').value = task.played_on;
+    form.querySelector('[name="displayTime"]').value = String(task.display_time).slice(0, 5);
   }
 
   async function confirmTraining(sessionId) {
@@ -1457,13 +1583,6 @@
     const { error } = await state.client.rpc('confirm_training_session', { p_session_id: Number(sessionId) });
     if (error) return setAuthMessage(error.message, 'error');
     setAuthMessage('Training bestätigt.', 'success');
-    await refresh();
-  }
-
-  async function deleteTraining(sessionId) {
-    const { error } = await state.client.rpc('delete_my_pending_training', { p_session_id: Number(sessionId) });
-    if (error) return setAuthMessage(error.message, 'error');
-    setAuthMessage('Training gelöscht.', 'success');
     await refresh();
   }
 
@@ -1498,7 +1617,7 @@
 
   function bindEvents() {
     document.addEventListener('click', async event => {
-      if (!event.target.closest('[data-training-player-picker]')) closeTrainingPlayerMenus();
+      if (!event.target.closest('[data-training-picker]')) closeTrainingPickerMenus();
       const open = event.target.closest('[data-auth-open]');
       if (open) {
         openAuthDialog();
@@ -1555,7 +1674,9 @@
         input.value = value;
         if (step > 0) initializeResultScorePair(input);
         window.PadelScoreInput.setActivePair(input.closest('.result-score-pair'));
-        updateResultSummary(input.closest('[data-result-submit]'));
+        const trainingRound = input.closest('[data-training-round]');
+        if (trainingRound) updateTrainingRoundSummary(trainingRound);
+        else updateResultSummary(input.closest('[data-result-submit]'));
         return;
       }
       const trainingToggle = event.target.closest('[data-training-toggle]');
@@ -1566,17 +1687,19 @@
           state.editingTrainingId = null;
           state.trainingRoundCount = 1;
           renderTrainingForm();
+        } else {
+          closeTrainingForm();
         }
         return;
       }
-      const trainingPlayerToggle = event.target.closest('[data-training-player-toggle]');
-      if (trainingPlayerToggle) {
-        toggleTrainingPlayerMenu(trainingPlayerToggle);
+      const trainingPickerToggle = event.target.closest('[data-training-picker-toggle]');
+      if (trainingPickerToggle) {
+        toggleTrainingPickerMenu(trainingPickerToggle);
         return;
       }
-      const trainingPlayerOption = event.target.closest('[data-training-player-id]');
-      if (trainingPlayerOption) {
-        selectTrainingPlayer(trainingPlayerOption);
+      const trainingPickerOption = event.target.closest('[data-training-picker-value]');
+      if (trainingPickerOption) {
+        selectTrainingPickerOption(trainingPickerOption);
         return;
       }
       if (event.target.closest('[data-training-round-add]')) {
@@ -1587,8 +1710,13 @@
       }
       const removeRound = event.target.closest('[data-training-round-remove]');
       if (removeRound) {
+        const removeIndex = Number(removeRound.dataset.trainingRoundRemove);
+        if (removeIndex === 0) {
+          closeTrainingForm();
+          return;
+        }
         const preserved = readTrainingRoundValues();
-        preserved.splice(Number(removeRound.dataset.trainingRoundRemove), 1);
+        preserved.splice(removeIndex, 1);
         state.trainingRoundCount = Math.max(1, state.trainingRoundCount - 1);
         renderTrainingRounds(preserved);
         return;
@@ -1601,11 +1729,6 @@
       const editTrainingButton = event.target.closest('[data-training-edit]');
       if (editTrainingButton) {
         editTraining(editTrainingButton.dataset.trainingEdit);
-        return;
-      }
-      const deleteTrainingButton = event.target.closest('[data-training-delete]');
-      if (deleteTrainingButton) {
-        await deleteTraining(deleteTrainingButton.dataset.trainingDelete);
         return;
       }
       const prediction = event.target.closest('[data-prediction-match]');
@@ -1627,7 +1750,9 @@
         event.target.value = window.PadelScoreInput.sanitizeScoreValue(event.target.value);
         initializeResultScorePair(event.target);
         window.PadelScoreInput.setActivePair(event.target.closest('.result-score-pair'));
-        updateResultSummary(event.target.closest('[data-result-submit]'));
+        const trainingRound = event.target.closest('[data-training-round]');
+        if (trainingRound) updateTrainingRoundSummary(trainingRound);
+        else updateResultSummary(event.target.closest('[data-result-submit]'));
       }
     });
     document.addEventListener('pointerdown', event => {
@@ -1637,7 +1762,9 @@
       const input = event.target.closest('[data-result-score]');
       if (input && input.value) {
         input.value = '';
-        updateResultSummary(input.closest('[data-result-submit]'));
+        const trainingRound = input.closest('[data-training-round]');
+        if (trainingRound) updateTrainingRoundSummary(trainingRound);
+        else updateResultSummary(input.closest('[data-result-submit]'));
       }
     });
     document.addEventListener('focusin', event => {
@@ -1645,7 +1772,7 @@
       if (scoreControl) window.PadelScoreInput.setActivePair(scoreControl.closest('.result-score-pair'));
     });
     document.addEventListener('keydown', event => {
-      if (event.key === 'Escape') closeTrainingPlayerMenus();
+      if (event.key === 'Escape') closeTrainingPickerMenus();
     });
     document.getElementById('auth-dialog')?.addEventListener('click', event => {
       if (event.target === event.currentTarget) closeAuthDialog();

@@ -24,6 +24,36 @@
             <h3 class="sh-title">Spieleübersicht</h3>
             <button class="secondary-button">Training hinzufügen</button>
           </div>
+          <form class="training-form">
+            <div class="training-form-meta">
+              <label><span>Datum</span><input type="date" value="2026-09-03"></label>
+              <label><span>Uhrzeit</span><input type="time" value="17:30"></label>
+            </div>
+            <div class="training-player-fields">
+              <div class="training-picker"><span class="training-picker-label">Spieler 1</span><button class="secondary-button secondary-button--dropdown training-picker-toggle">Ludi GMX</button></div>
+              <div class="training-picker"><span class="training-picker-label">Spieler 2</span><button class="secondary-button secondary-button--dropdown training-picker-toggle">Greta P.</button></div>
+              <div class="training-picker"><span class="training-picker-label">Spieler 3</span><button class="secondary-button secondary-button--dropdown training-picker-toggle">Ludi Gmail</button></div>
+              <div class="training-picker"><span class="training-picker-label">Spieler 4</span><button class="secondary-button secondary-button--dropdown training-picker-toggle">Ludwig W.</button></div>
+            </div>
+            <div class="training-rounds">
+              <div class="training-round-field">
+                <div class="training-round-head">
+                  <div class="training-picker"><span class="training-picker-label">Paarung</span><button class="secondary-button secondary-button--dropdown training-picker-toggle">Spieler 1 + 2 vs. 3 + 4</button></div>
+                  <div class="training-picker"><span class="training-picker-label">Ergebnisformat</span><button class="secondary-button secondary-button--dropdown training-picker-toggle">3 Sätze</button></div>
+                  <button class="training-round-remove" type="button" aria-label="Trainingseingabe schließen">×</button>
+                </div>
+                <div class="result-score-entry training-score-entry">
+                  <div class="result-score-set"><div class="calculator-score-pair result-score-pair calculator-score-pair-active"><div class="calculator-score-field result-score-counter"><button class="calculator-step">−</button><input value="6"><button class="calculator-step">+</button></div><span class="result-score-colon">:</span><div class="calculator-score-field result-score-counter"><button class="calculator-step">−</button><input value="4"><button class="calculator-step">+</button></div></div></div>
+                  <div class="result-score-set"><div class="calculator-score-pair result-score-pair"><div class="calculator-score-field result-score-counter"><button class="calculator-step">−</button><input value="4"><button class="calculator-step">+</button></div><span class="result-score-colon">:</span><div class="calculator-score-field result-score-counter"><button class="calculator-step">−</button><input value="1"><button class="calculator-step">+</button></div></div></div>
+                  <div class="result-score-set"><div class="calculator-score-pair result-score-pair"><div class="calculator-score-field result-score-counter"><button class="calculator-step">−</button><input value="4"><button class="calculator-step">+</button></div><span class="result-score-colon">:</span><div class="calculator-score-field result-score-counter"><button class="calculator-step">−</button><input value="1"><button class="calculator-step">+</button></div></div></div>
+                </div>
+                <div class="result-entry-summary training-round-summary is-partial">6:4, 4:1, 4:1 · unvollständig · 0,5 Wertung</div>
+              </div>
+            </div>
+            <button class="secondary-button" type="button">Weiteres Spielergebnis</button>
+            <div class="training-form-message"></div>
+            <button class="primary-button" type="submit">Training zur Bestätigung senden</button>
+          </form>
           <div class="account-task-list prediction-match-list" id="result-task-list">
             <section class="prediction-match-group" data-result-task-group="review">
               <div class="spieltag-label"><span>Zu bestätigen</span></div>

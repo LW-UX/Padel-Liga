@@ -40,6 +40,10 @@ const weightedTrainingMigration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260903120000_weighted_training_profile_matches.sql'),
   'utf8'
 );
+const trainingCounterMigration = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20260903170000_training_counter_scores.sql'),
+  'utf8'
+);
 
 function evaluateRelationshipLeaders(matches) {
   const functionSource = app.match(
@@ -133,37 +137,38 @@ test('profile relationship leaders require three matches and use win rate', () =
   assert.equal(neutralLeaders.fearedOpponent, null);
 });
 
-test('single-set trainings count as half a profile match without counting tiebreaks', () => {
+test('completed training sets use separate half-weight wins and losses', () => {
   const weightedLeaders = evaluateRelationshipLeaders([
     { outcome: 'win', matchWeight: 1, partnerNames: ['Partner Gewicht'], opponentNames: ['Gegner Gewicht'] },
     { outcome: 'win', matchWeight: 1, partnerNames: ['Partner Gewicht'], opponentNames: ['Gegner Gewicht'] },
-    { outcome: 'loss', matchWeight: 0.5, partnerNames: ['Partner Gewicht'], opponentNames: ['Gegner Gewicht'] },
-    { outcome: 'loss', matchWeight: 0.5, partnerNames: ['Partner Gewicht'], opponentNames: ['Gegner Gewicht'] }
+    { outcome: 'draw', matchWeight: 1, winWeight: 0.5, lossWeight: 0.5, partnerNames: ['Partner Gewicht'], opponentNames: ['Gegner Gewicht'] }
   ]);
 
   assert.equal(weightedLeaders.favoritePartner.matches, 3);
-  assert.equal(weightedLeaders.favoritePartner.wins, 2);
-  assert.equal(weightedLeaders.favoritePartner.losses, 1);
-  assert.match(weightedTrainingMigration, /where team_one <= 7 and team_two <= 7/);
-  assert.match(weightedTrainingMigration, /p_kind = 'training' and set_count = 1 then 0\.5::numeric/);
-  assert.match(weightedTrainingMigration, /'matches', coalesce\(\(select sum\(match_weight\) from scored_career\), 0\)/);
-  assert.match(weightedTrainingMigration, /'wins', coalesce\(\(select sum\(match_weight\) from scored_career where outcome = 'win'\), 0\)/);
-  assert.match(weightedTrainingMigration, /'matchWeight', history\.match_weight/);
+  assert.equal(weightedLeaders.favoritePartner.wins, 2.5);
+  assert.equal(weightedLeaders.favoritePartner.losses, 0.5);
+  assert.match(trainingCounterMigration, /training_regular_set_state\(team_one, team_two\) = 'complete'/);
+  assert.match(trainingCounterMigration, /then \(private\.profile_training_metrics\(p_result_details\)\)\[1\] \* 0\.5::numeric/);
+  assert.match(trainingCounterMigration, /'wins', coalesce\(\(select sum\(win_weight\) from scored_career\), 0\)/);
+  assert.match(trainingCounterMigration, /'losses', coalesce\(\(select sum\(loss_weight\) from scored_career\), 0\)/);
+  assert.match(trainingCounterMigration, /'matchWeight', history\.match_weight/);
+  assert.match(trainingCounterMigration, /'winWeight', history\.win_weight/);
+  assert.match(trainingCounterMigration, /'lossWeight', history\.loss_weight/);
   assert.match(app, /toLocaleString\('de-DE'/);
 });
 
-test('training rounds stay grouped and incomplete scores are visibly unranked', () => {
+test('training rounds stay grouped and only incomplete score parts are dimmed', () => {
   assert.match(app, /function groupPlayerProfileMatches\(matches = \[\]\)/);
   assert.match(app, /data-profile-match-group=/);
   assert.match(app, /showDate = index === 0/);
   assert.match(app, /showSeason = index === group\.matches\.length - 1/);
-  assert.match(app, /match\.isComplete !== false/);
-  assert.match(app, /Abgebrochen, ohne Wertung/);
+  assert.match(app, /Number\(match\.matchWeight\) > 0/);
+  assert.match(app, /player-profile-score-partial/);
+  assert.match(app, /renderProfileResultDetails\(match\)/);
   assert.match(incompleteTrainingMigration, /add column if not exists is_complete boolean not null default true/);
   assert.match(incompleteTrainingMigration, /set_count in \(1, 2, 3\)/);
   assert.match(incompleteTrainingMigration, /set_count not in \(1, 2, 3\)/);
-  assert.match(incompleteTrainingMigration, /when not round\.is_complete then 'unfinished'/);
-  assert.match(incompleteTrainingMigration, /scored_career as \([\s\S]*?select \* from career where is_complete/);
+  assert.match(trainingCounterMigration, /scored_career as \([\s\S]*?select \* from career where match_weight > 0/);
   assert.match(incompleteTrainingMigration, /'trainingSessionId', history\.training_session_id/);
   assert.match(incompleteTrainingMigration, /'trainingRoundNumber', history\.training_round_number/);
 });

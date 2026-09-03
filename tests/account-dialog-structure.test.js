@@ -12,6 +12,8 @@ const pages = [
 
 test('both account dialogs only expose games and place logout in the header', () => {
   pages.forEach(source => {
+    assert.match(source, /class="context-actions"[\s\S]*(?:tippspiel-link|liga-link)[\s\S]*data-season-toggle[\s\S]*data-auth-open/);
+    assert.doesNotMatch(source, /<span>Saison<\/span>/);
     assert.doesNotMatch(source, /class="account-tabs"/);
     assert.doesNotMatch(source, /account-settings-panel/);
     assert.doesNotMatch(source, /name="displayName"/);

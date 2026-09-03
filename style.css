@@ -139,12 +139,6 @@
       position: relative;
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      color: var(--dim);
-      font-size: 0.68rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
     }
     .context-link {
       display: inline-flex;
@@ -284,7 +278,7 @@
       position: relative;
       flex: 0 0 auto;
     }
-    .training-player-picker { position: relative; display: grid; gap: 4px; min-width: 0; }
+    .training-picker { position: relative; display: grid; gap: 4px; min-width: 0; }
     .viewer-label-short { display: none; }
     .viewer-menu,
     .season-menu {
@@ -306,7 +300,7 @@
     }
     .viewer-picker.open .viewer-menu,
     .season-picker.open .season-menu,
-    .training-player-picker.open .training-player-menu { display: grid; gap: 2px; }
+    .training-picker.open .training-picker-menu { display: grid; gap: 2px; }
     .viewer-option,
     .season-option {
       display: flex;
@@ -660,6 +654,9 @@
       font-weight: 600;
       white-space: nowrap;
     }
+    .player-profile-training-score { display: inline-flex; align-items: baseline; gap: 0.18rem; }
+    .player-profile-score-divider { color: var(--dim); }
+    .player-profile-score-partial { color: var(--dim); font-style: italic; font-weight: 500; opacity: 0.68; }
     .player-profile-match.win .player-profile-match-score { color: var(--positiv); }
     .player-profile-match.loss .player-profile-match-score { color: var(--negativ); }
     .player-profile-match.unfinished .player-profile-match-score {
@@ -834,13 +831,13 @@
     }
     .season-picker.open .secondary-button--dropdown,
     .viewer-picker.open .secondary-button--dropdown,
-    .training-player-picker.open .secondary-button--dropdown {
+    .training-picker.open .secondary-button--dropdown {
       border-color: var(--accent);
       color: var(--accent);
     }
     .season-picker.open .secondary-button--dropdown::after,
     .viewer-picker.open .secondary-button--dropdown::after,
-    .training-player-picker.open .secondary-button--dropdown::after {
+    .training-picker.open .secondary-button--dropdown::after {
       transform: translateY(-35%) rotate(225deg);
     }
     .primary-button:disabled { cursor: wait; opacity: 0.55; }
@@ -1166,25 +1163,58 @@
     .account-empty,
     .account-waiting { color: var(--dim); font-size: 0.85rem; }
     .account-waiting { display: inline-flex; align-items: center; min-height: 36px; }
-    .training-waiting-actions { display: inline-flex; align-items: center; gap: 12px; }
-    .training-form { display: grid; gap: 10px; border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem; }
+    .training-form { display: grid; container-type: inline-size; gap: 10px; border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem; }
     .training-form[hidden] { display: none; }
     .training-form-message { min-height: 1.25rem; color: var(--dim); font-size: 0.82rem; }
     .training-form-message.error { color: var(--negativ); }
     .training-form-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .training-player-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .training-player-picker-label { color: var(--dim); font-size: 0.85rem; font-weight: 600; }
-    .training-player-toggle { justify-content: flex-start; width: 100%; min-width: 0; text-align: left; }
-    .training-player-toggle > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-    .training-player-menu { right: auto; left: 0; width: max(100%, 240px); }
-    .training-player-picker:nth-child(even) .training-player-menu { right: 0; left: auto; }
-    .training-rounds { display: grid; gap: 8px; }
-    .training-round-field { display: grid; grid-template-columns: 1.2fr 1fr 0.7fr 1fr auto; align-items: end; gap: 8px; border-top: 1px solid var(--border); padding-top: 10px; }
-    .training-round-title { grid-column: 1 / -1; color: var(--text); font-size: 0.85rem; font-weight: 700; }
+    .training-picker-label { color: var(--dim); font-size: 0.85rem; font-weight: 600; }
+    .training-picker-toggle { justify-content: flex-start; width: 100%; min-width: 0; text-align: left; }
+    .training-picker-toggle > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .training-picker-menu { right: auto; left: 0; width: max(100%, 260px); }
+    .training-player-fields .training-picker:nth-child(even) .training-picker-menu,
+    .training-round-head .training-picker:nth-child(2) .training-picker-menu { right: 0; left: auto; }
+    .training-rounds { display: grid; gap: 16px; }
+    .training-round-field { display: grid; gap: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
+    .training-round-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; gap: 8px; }
+    .training-round-remove {
+      display: grid;
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: transparent;
+      color: var(--dim);
+      font: 1.2rem/1 'DM Sans', sans-serif;
+      cursor: pointer;
+      place-items: center;
+    }
+    .training-round-remove:hover,
+    .training-round-remove:focus-visible { border-color: var(--accent); color: var(--accent); }
+    .training-round-summary { min-height: 1rem; }
     .training-task-rounds { display: grid; gap: 14px; }
     .training-task-round { display: grid; gap: 14px; }
     .training-task-round + .training-task-round { border-top: 1px solid var(--border); padding-top: 14px; }
-    .result-proposal .training-result-incomplete { color: var(--dim); font-style: italic; font-weight: 500; opacity: 0.68; }
+    .training-result-details { display: inline-flex; align-items: baseline; justify-content: flex-end; flex-wrap: wrap; gap: 0.2rem; }
+    .training-result-divider { color: var(--dim); }
+    .training-result-partial { color: var(--dim); font-style: italic; font-weight: 500; opacity: 0.68; }
+    @container (max-width: 600px) {
+      .training-player-fields { grid-template-columns: 1fr; }
+      .training-round-head {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+      }
+      .training-round-head .training-picker { grid-column: 1; }
+      .training-round-head .training-picker:nth-child(1) { grid-row: 1; }
+      .training-round-head .training-picker:nth-child(2) { grid-row: 2; }
+      .training-round-head .training-round-remove {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+      }
+      .training-round-head .training-picker:nth-child(2) .training-picker-menu { right: auto; left: 0; }
+      .training-score-entry { grid-template-columns: 1fr; }
+    }
     .standalone-ranking-panel { position: static; max-width: 760px; margin: 0 auto; }
     .tip-page .prediction-main { max-width: 820px; margin: 0 auto; }
 
@@ -2459,7 +2489,6 @@
       }
       .hero-topbar { align-items: flex-start; margin-bottom: 0.65rem; }
       .context-actions { gap: 5px; }
-      .season-picker > span { display: none; }
       .season-picker .secondary-button--dropdown { width: 132px; min-width: 132px; }
       .context-link { font-size: 0.75rem; }
       .secondary-button--dropdown::after { right: 0.65rem; }
@@ -2521,9 +2550,21 @@
       .result-score-entry { grid-template-columns: 1fr; }
       .result-review-actions > button { flex: 1 1 0; min-width: 0; }
       .result-entry-actions .primary-button { width: auto; min-width: 0; }
-      .training-form-meta,
-      .training-player-fields { grid-template-columns: 1fr 1fr; }
-      .training-round-field { grid-template-columns: 1fr; }
+      .training-form-meta { grid-template-columns: 1fr 1fr; }
+      .training-player-fields { grid-template-columns: 1fr; }
+      .training-round-head {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+      }
+      .training-round-head .training-picker { grid-column: 1; }
+      .training-round-head .training-picker:nth-child(1) { grid-row: 1; }
+      .training-round-head .training-picker:nth-child(2) { grid-row: 2; }
+      .training-round-head .training-round-remove {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+      }
+      .training-round-head .training-picker:nth-child(2) .training-picker-menu { right: auto; left: 0; }
+      .training-picker-toggle { min-width: 0; }
       main { padding-left: 0.75rem; padding-right: 0.75rem; }
       .sh-with-control {
         align-items: flex-start;

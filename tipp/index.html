@@ -12,7 +12,7 @@
   <script src="../data/players.js?v=2026-09-01-profile-emojis"></script>
   <script src="../data/seasons.js"></script>
   <script src="../data/supabase-config.js"></script>
-  <link rel="stylesheet" href="../style.css?v=2026-09-03-training-player-picker">
+  <link rel="stylesheet" href="../style.css?v=2026-09-03-header-actions">
 </head>
 <body class="tip-page">
 <header class="site-header">
@@ -20,21 +20,18 @@
     <div class="hero-topbar">
       <div class="hero-eyebrow">TIPPSPIEL</div>
       <div class="context-actions">
+        <a class="context-link" id="liga-link" href="../">Zur Liga</a>
         <div class="season-picker" id="season-picker">
-          <span>Saison</span>
           <button class="secondary-button secondary-button--dropdown" type="button" data-season-toggle aria-haspopup="listbox" aria-expanded="false">
             <span id="season-picker-label"></span>
           </button>
           <div class="season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
         </div>
-        <a class="context-link" id="liga-link" href="../">Zur Liga</a>
+        <button class="auth-button" id="auth-button" type="button" data-auth-open>Login</button>
       </div>
     </div>
     <div class="hero-title-row">
       <h1><button class="hero-home-button" type="button" data-tip-nav="tippen" aria-label="Zur Tippseite">PADEL<em>TIPP</em></button></h1>
-      <div class="hero-actions">
-        <button class="auth-button" id="auth-button" type="button" data-auth-open>Login</button>
-      </div>
     </div>
   </div>
 </header>
@@ -143,8 +140,8 @@
   </div>
 </dialog>
 
-<script src="../js/score-input.js?v=2026-09-03-shared-score-input"></script>
-<script src="../js/tippspiel.js?v=2026-09-03-training-player-picker"></script>
+<script src="../js/score-input.js?v=2026-09-03-training-counters"></script>
+<script src="../js/tippspiel.js?v=2026-09-03-training-counters"></script>
 <script src="../js/tipp-page.js?v=2026-09-01-season-picker"></script>
 </body>
 </html>

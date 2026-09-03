@@ -169,11 +169,12 @@ test('games are player-scoped for players and unfiltered for admins', () => {
   );
 });
 
-test('all pending trainings join the confirmation group and own trainings stay editable', () => {
+test('all pending trainings join the confirmation group and own proposals stay locked', () => {
   assert.match(tippspielSource, /function isTrainingTaskVisible\(task\)[\s\S]*app_role === 'admin'/);
   assert.match(tippspielSource, /const visibleTrainingTasks = state\.trainingTasks\.filter\(isTrainingTaskVisible\)/);
   assert.match(tippspielSource, /trainingTasks\.forEach\([\s\S]*kind: 'training'/);
-  assert.match(tippspielSource, /task\.created_by_me[\s\S]*Auf Bestätigung warten[\s\S]*data-training-edit[\s\S]*data-training-delete/);
+  assert.match(tippspielSource, /task\.created_by_me[\s\S]*Auf Bestätigung warten/);
+  assert.doesNotMatch(tippspielSource, /data-training-delete|function deleteTraining/);
   assert.match(tippspielSource, /data-training-confirm="\$\{task\.session_id\}"[\s\S]*Alternative eingeben/);
   assert.doesNotMatch(tippspielSource, /function renderTraining\(\)/);
 });
@@ -187,17 +188,17 @@ test('training review cards reuse the league proposal structure and styles', () 
   assert.doesNotMatch(tippspielSource, /class="training-player-line"|class="training-round-result/);
 });
 
-test('training player selection reuses the custom page viewer dropdown', () => {
+test('all training selectors reuse the custom page viewer dropdown', () => {
   assert.doesNotMatch(tippspielSource, /<select name="playerId"/);
-  assert.match(tippspielSource, /class="training-player-picker" data-training-player-picker/);
-  assert.match(tippspielSource, /type="hidden" name="playerId"/);
-  assert.match(tippspielSource, /secondary-button secondary-button--dropdown training-player-toggle/);
-  assert.match(tippspielSource, /viewer-menu training-player-menu/);
-  assert.match(tippspielSource, /viewer-option training-player-option/);
-  assert.match(tippspielSource, /function setTrainingPlayerPickerValue\(picker, playerId\)/);
-  assert.match(tippspielSource, /data-training-player-toggle/);
-  assert.match(tippspielSource, /data-training-player-id/);
-  assert.match(styleSource, /\.training-player-picker\.open \.training-player-menu/);
+  assert.doesNotMatch(tippspielSource, /<select name="pairing"|<select name="resultFormat"/);
+  assert.match(tippspielSource, /function renderTrainingPicker\(/);
+  assert.match(tippspielSource, /type="hidden" name="\$\{escapeHtml\(name\)\}"/);
+  assert.match(tippspielSource, /secondary-button secondary-button--dropdown training-picker-toggle/);
+  assert.match(tippspielSource, /viewer-menu training-picker-menu/);
+  assert.match(tippspielSource, /viewer-option training-picker-option/);
+  assert.match(tippspielSource, /data-training-picker-toggle/);
+  assert.match(tippspielSource, /data-training-picker-value/);
+  assert.match(styleSource, /\.training-picker\.open \.training-picker-menu/);
 });
 
 test('scheduling and future result entry use their dedicated secondary actions', () => {
@@ -360,6 +361,11 @@ test('calculator and result entry share score parsing, validation, and counter s
   assert.match(tippspielSource, /window\.PadelScoreInput\.isValidTiebreak/);
   assert.match(tippspielSource, /window\.PadelScoreInput\.initializePairValues/);
   assert.match(tippspielSource, /window\.PadelScoreInput\.setActivePair/);
+  assert.equal(scoreInput.classifyRegularSet('6', '4').state, 'complete');
+  assert.equal(scoreInput.classifyRegularSet('4', '1').state, 'partial');
+  assert.equal(scoreInput.classifyRegularSet('7', '4').state, 'invalid');
+  assert.equal(scoreInput.classifyTiebreak('10', '8', 10).state, 'complete');
+  assert.equal(scoreInput.classifyTiebreak('7', '5', 10).state, 'partial');
 });
 
 test('decision counters unlock only at 1:1 and share the action row with their status', () => {
@@ -370,44 +376,73 @@ test('decision counters unlock only at 1:1 and share the action row with their s
 });
 
 test('training distinguishes three regular sets from two sets plus match tiebreak', () => {
-  assert.match(tippspielSource, /value="two_sets_match_tiebreak">2 Sätze \+ Match-Tiebreak/);
-  assert.match(tippspielSource, /value="three_sets">3 Sätze/);
+  assert.match(tippspielSource, /value: 'two_sets_match_tiebreak', label: '2 Sätze \+ Match-Tiebreak'/);
+  assert.match(tippspielSource, /value: 'three_sets', label: '3 Sätze'/);
   assert.doesNotMatch(tippspielSource, /3 Sätze \/ Match-Tiebreak/);
+  assert.match(tippspielSource, /function renderTrainingScoreCounters\([\s\S]*data-result-decision/);
+  assert.match(tippspielSource, /result_format: result\.resultFormat/);
+  assert.match(tippspielSource, /sets: result\.sets/);
+  assert.match(tippspielSource, /match_tiebreak: result\.matchTiebreak/);
+  assert.doesNotMatch(tippspielSource, /name="roundResult"|name="roundStatus"/);
+});
+
+test('training round scoring counts every completed regular set by half', () => {
   const splitSource = tippspielSource.match(
     /function hasSplitFirstTwoSets\(scores\) \{[\s\S]*?(?=\n  function renderScoreCounters)/
   )?.[0] || '';
-  const trainingResultSource = tippspielSource.match(
-    /function getTrainingResultData\(round\) \{[\s\S]*?(?=\n  async function handleTrainingSubmit)/
-  )?.[0] || '';
+  const formatSource = tippspielSource.match(/function getTrainingFormatConfig\([\s\S]*?(?=\n  function getTrainingRoundFormat)/)?.[0] || '';
+  const readSource = tippspielSource.match(/function readTrainingScorePair\([\s\S]*?(?=\n  function readTrainingRoundValues)/)?.[0] || '';
+  const setSource = tippspielSource.match(/function getTrainingSetData\([\s\S]*?(?=\n  function getTrainingResultData)/)?.[0] || '';
+  const resultSource = tippspielSource.match(/function getTrainingResultData\([\s\S]*?(?=\n  function isTrainingSetComplete)/)?.[0] || '';
   const getTrainingResultData = vm.runInNewContext(
-    `(() => { ${splitSource}\n${trainingResultSource}\nreturn getTrainingResultData; })()`
+    `(() => { ${splitSource}\n${formatSource}\n${readSource}\n${setSource}\n${resultSource}\nreturn getTrainingResultData; })()`,
+    { window: { PadelScoreInput: scoreInput } }
   );
-  const roundFor = (resultFormat, result) => ({
+  const roundFor = (resultFormat, sets, matchTiebreak = []) => ({
     querySelector(selector) {
-      return { value: selector.includes('resultFormat') ? resultFormat : result };
+      if (selector === '[name="resultFormat"]') return { value: resultFormat };
+      const kind = selector.match(/data-score-kind="([^"]+)"/)?.[1];
+      const setIndex = Number(selector.match(/data-score-set="(\d+)"/)?.[1]);
+      const teamIndex = Number(selector.match(/data-score-team="(\d+)"/)?.[1]);
+      const value = kind === 'set' ? sets[setIndex]?.score?.[teamIndex]
+        : kind === 'set-tiebreak' ? sets[setIndex]?.tiebreak?.[teamIndex]
+          : matchTiebreak[teamIndex];
+      return { value: value ?? '' };
     }
   });
 
-  assert.deepEqual(
-    JSON.parse(JSON.stringify(getTrainingResultData(roundFor('one_set', '6:3')))),
-    { resultDetails: '6:3', setCount: 1 }
-  );
-  assert.deepEqual(
-    JSON.parse(JSON.stringify(getTrainingResultData(roundFor('two_sets_match_tiebreak', '6:3, 4:6, 10:7')))),
-    { resultDetails: '6:3, 4:6 – 10:7', setCount: 3 }
-  );
-  assert.deepEqual(
-    JSON.parse(JSON.stringify(getTrainingResultData(roundFor('three_sets', '6:3, 4:6, 6:4')))),
-    { resultDetails: '6:3, 4:6, 6:4', setCount: 3 }
-  );
+  const twoComplete = getTrainingResultData(roundFor('three_sets', [
+    { score: [6, 2] }, { score: [6, 4] }, { score: [4, 2] }
+  ]));
+  assert.equal(twoComplete.resultDetails, '6:2, 6:4, 4:2');
+  assert.equal(twoComplete.completedSetCount, 2);
+  assert.equal(twoComplete.matchWeight, 1);
+  assert.equal(twoComplete.isComplete, false);
+
+  const oneComplete = getTrainingResultData(roundFor('three_sets', [
+    { score: [6, 4] }, { score: [4, 1] }, { score: [4, 1] }
+  ]));
+  assert.equal(oneComplete.completedSetCount, 1);
+  assert.equal(oneComplete.matchWeight, 0.5);
+  assert.equal(oneComplete.isComplete, false);
+
+  const matchTiebreak = getTrainingResultData(roundFor('two_sets_match_tiebreak', [
+    { score: [6, 3] }, { score: [4, 6] }
+  ], [10, 7]));
+  assert.equal(matchTiebreak.resultDetails, '6:3, 4:6 – 10:7');
+  assert.equal(matchTiebreak.matchWeight, 1);
+  assert.equal(matchTiebreak.isComplete, true);
+
   assert.throws(
-    () => getTrainingResultData(roundFor('three_sets', '6:3, 4:6, 10:7')),
-    /kein Match-Tiebreak/
+    () => getTrainingResultData(roundFor('three_sets', [{ score: [6, 4] }, {}, { score: [4, 1] }])),
+    /kein Satz leer/
   );
-  assert.throws(
-    () => getTrainingResultData(roundFor('two_sets_match_tiebreak', '6:3, 6:4, 10:7')),
-    /nur nach einem Satzstand von 1:1/
-  );
+});
+
+test('training result rows have one remove action and the first closes the form', () => {
+  assert.match(tippspielSource, /data-training-round-remove="\$\{index\}"/);
+  assert.match(tippspielSource, /removeIndex === 0[\s\S]*closeTrainingForm\(\)/);
+  assert.match(tippspielSource, /preserved\.splice\(removeIndex, 1\)/);
 });
 
 test('training validation is shown inside the training form before any RPC call', () => {

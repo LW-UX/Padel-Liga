@@ -1009,22 +1009,29 @@ function getPlayerProfileRelationshipLeaders(matches = []) {
   const partners = new Map();
   const opponents = new Map();
 
-  const recordResult = (records, name, outcome, matchWeight) => {
-    if (!name || !['win', 'loss', 'draw'].includes(outcome)) return;
+  const recordResult = (records, name, match) => {
+    if (!name) return;
+    const rawMatchWeight = Number(match.matchWeight ?? 1);
+    const matchWeight = Number.isFinite(rawMatchWeight) && rawMatchWeight >= 0 ? rawMatchWeight : 1;
+    if (matchWeight === 0) return;
+    const fallbackWinWeight = match.outcome === 'win' ? matchWeight : 0;
+    const fallbackLossWeight = match.outcome === 'loss' ? matchWeight : 0;
+    const winWeight = Number.isFinite(Number(match.winWeight)) ? Number(match.winWeight) : fallbackWinWeight;
+    const lossWeight = Number.isFinite(Number(match.lossWeight)) ? Number(match.lossWeight) : fallbackLossWeight;
+    const drawWeight = Math.max(0, matchWeight - winWeight - lossWeight);
     const record = records.get(name) || { name, matches: 0, wins: 0, losses: 0, draws: 0 };
     record.matches += matchWeight;
-    const resultKey = outcome === 'win' ? 'wins' : outcome === 'loss' ? 'losses' : 'draws';
-    record[resultKey] += matchWeight;
+    record.wins += winWeight;
+    record.losses += lossWeight;
+    record.draws += drawWeight;
     records.set(name, record);
   };
 
   matches.forEach(match => {
-    const rawMatchWeight = Number(match.matchWeight ?? 1);
-    const matchWeight = Number.isFinite(rawMatchWeight) && rawMatchWeight > 0 ? rawMatchWeight : 1;
     [...new Set(match.partnerNames || [])]
-      .forEach(name => recordResult(partners, name, match.outcome, matchWeight));
+      .forEach(name => recordResult(partners, name, match));
     [...new Set(match.opponentNames || [])]
-      .forEach(name => recordResult(opponents, name, match.outcome, matchWeight));
+      .forEach(name => recordResult(opponents, name, match));
   });
 
   const eligible = records => [...records.values()]
@@ -1102,6 +1109,24 @@ function orientProfileResult(resultDetails, team) {
   return value.replace(/(\d+)\s*:\s*(\d+)/g, (_, left, right) => `${right}:${left}`);
 }
 
+function renderProfileResultDetails(match) {
+  const orientedResult = orientProfileResult(match.resultDetails, match.team);
+  if (match.kind !== 'training') return escapeHtml(orientedResult);
+  const [regularPart = '', matchTiebreakPart = ''] = orientedResult.split(/\s*[–-]\s*/, 2);
+  const rendered = regularPart.split(/\s*,\s*/).filter(Boolean).map(part => {
+    const score = part.match(/^(\d+)\s*:\s*(\d+)/);
+    const classification = window.PadelScoreInput.classifyRegularSet(score?.[1], score?.[2]);
+    return `<span${classification.state === 'complete' ? '' : ' class="player-profile-score-partial"'}>${escapeHtml(part)}</span>`;
+  });
+  const regularResult = rendered.join('<span class="player-profile-score-divider">,</span>');
+  if (matchTiebreakPart) {
+    const score = matchTiebreakPart.match(/^(\d+)\s*:\s*(\d+)/);
+    const classification = window.PadelScoreInput.classifyTiebreak(score?.[1], score?.[2], 10);
+    return `<span class="player-profile-training-score">${regularResult}<span class="player-profile-score-divider">–</span><span${classification.state === 'complete' ? '' : ' class="player-profile-score-partial"'}>${escapeHtml(matchTiebreakPart)}</span></span>`;
+  }
+  return `<span class="player-profile-training-score">${regularResult}</span>`;
+}
+
 function getPlayerProfileTrainingSessionId(match) {
   if (match?.kind !== 'training') return null;
   if (match.trainingSessionId !== null && match.trainingSessionId !== undefined) {
@@ -1157,7 +1182,10 @@ function renderPlayerProfileHistory() {
     target.innerHTML = visibleGroups.map(group => {
       const rows = group.matches.map((match, index) => {
         const isComplete = match.isComplete !== false;
-        const outcome = isComplete && ['win', 'loss', 'draw'].includes(match.outcome)
+        const hasWeightedResult = match.kind === 'training'
+          ? Number(match.matchWeight) > 0
+          : isComplete;
+        const outcome = hasWeightedResult && ['win', 'loss', 'draw'].includes(match.outcome)
           ? match.outcome
           : 'unfinished';
         const outcomeLabel = outcome === 'win' ? 'S' : outcome === 'loss' ? 'N' : outcome === 'draw' ? 'U' : '–';
@@ -1172,7 +1200,7 @@ function renderPlayerProfileHistory() {
           <div class="player-profile-match-date">${showDate ? escapeHtml(formatProfileDate(match.date)) : ''}</div>
           <div class="player-profile-match-outcome ${outcome}" aria-label="${outcomeAriaLabel}">${outcomeLabel}</div>
           <div class="player-profile-match-teams">mit ${escapeHtml(partner)} <span>vs.</span> ${escapeHtml(opponents)}</div>
-          <div class="player-profile-match-score"${isComplete ? '' : ' title="Abgebrochen · ohne Wertung"'}>${escapeHtml(orientProfileResult(match.resultDetails, match.team))}</div>
+          <div class="player-profile-match-score"${isComplete ? '' : ' title="Vollständige Sätze werden einzeln gewertet"'}>${renderProfileResultDetails(match)}</div>
           <div class="player-profile-match-season">${showSeason ? escapeHtml(match.kind === 'training' ? 'Training' : match.seasonLabel || 'Liga') : ''}</div>
         </article>`;
       }).join('');
