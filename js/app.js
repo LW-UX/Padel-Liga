@@ -3760,14 +3760,16 @@ function renderCalculatorRanking() {
   const previousMiniPositions = getCalculatorRowPositions(miniRanking, '.calculator-mini-rank-row');
   const rankedPlayers = getRankedPlayers(getCalculatorSimulatedMatches());
   const activePlayerIds = getActiveCalculatorPlayerIds();
+  const qualificationPlaces = getCompetitionConfig().qualificationPlaces;
 
   renderCalculatorMiniRanking(rankedPlayers, previousMiniPositions, activePlayerIds);
   body.innerHTML = rankedPlayers.map((player, index) => {
     const diffStr = player.stats.partien > 0 ? formatStatDiff(player.stats.spielDiff) : '—';
     const diffClass = getStatDiffClass(player.stats.spielDiff);
     const activeMatchClass = activePlayerIds.has(player.id) ? 'calculator-active-match-player' : '';
+    const qualificationClass = index < qualificationPlaces ? 'top-four-highlight' : '';
 
-    return `<tr class="calculator-ranking-row r${Math.min(index + 1, 4)} ${index < 4 ? 'top-four-highlight' : ''} ${activeMatchClass} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-calculator-player="${escapeHtml(player.id)}">
+    return `<tr class="calculator-ranking-row r${Math.min(index + 1, 4)} ${qualificationClass} ${activeMatchClass} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-calculator-player="${escapeHtml(player.id)}">
       <td class="rn l">${index + 1}</td>
       <td class="l">${renderPlayerProfileLink(player, 'pname')}</td>
       <td class="num-val">${player.stats.partien}</td>
@@ -3781,11 +3783,13 @@ function renderCalculatorRanking() {
 function renderCalculatorMiniRanking(rankedPlayers, previousPositions = null, activePlayerIds = new Set()) {
   const miniRanking = document.getElementById('calculator-mini-ranking');
   if (!miniRanking) return;
+  const qualificationPlaces = getCompetitionConfig().qualificationPlaces;
 
   miniRanking.innerHTML = rankedPlayers.map((player, index) => {
     const activeMatchClass = activePlayerIds.has(player.id) ? 'calculator-active-match-player' : '';
+    const qualificationClass = index < qualificationPlaces ? 'top-four-highlight' : '';
     return `
-    <div class="calculator-mini-rank-row ${index < 4 ? 'top-four-highlight' : ''} ${activeMatchClass} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-calculator-player="${escapeHtml(player.id)}">
+    <div class="calculator-mini-rank-row ${qualificationClass} ${activeMatchClass} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-calculator-player="${escapeHtml(player.id)}">
       <span class="calculator-mini-rank-pos">${index + 1}</span>
       <span class="calculator-mini-rank-initials">${escapeHtml(player.initials || player.name)}</span>
     </div>`;

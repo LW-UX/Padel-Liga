@@ -193,6 +193,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 - Ein Klick auf einen Spielernamen im Rechner öffnet ausschließlich das öffentliche Spielerprofil und verändert keine simulierten Ergebnisse.
 - Die bisherige 6:2-/6:2-Schnellwahl liegt auf den beiden Wahrscheinlichkeitswerten. Die linke beziehungsweise rechte Wahrscheinlichkeit setzt das zugehörige Team als Sieger und darf vorhandene Eingaben überschreiben; ein vorhandener Match-Tiebreak wird dabei entfernt.
+- Die simulierte Tabelle kennzeichnet die Qualifikationsplätze saisonabhängig und verwendet dafür dieselben Platz- und Markierungsfarben wie die reguläre Rangliste. Im Winter-Top-8-Modus gilt diese einheitliche Kennzeichnung in der großen und mobilen Kurzrangliste für die Plätze 1 bis 8.
 - Der Rechner erfasst bei 7:6 beziehungsweise 6:7 weiterhin keine Punkte des Satz-Tiebreaks. Match-Tiebreak-Endstände sind bis 10 und bei einer Verlängerung ausschließlich mit exakt zwei Punkten Abstand gültig.
 
 ## Noch nicht abschließend festgelegt

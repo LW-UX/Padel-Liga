@@ -71,3 +71,12 @@ test('public APIs expose competition stage and result format additively', () => 
   assert.match(migration, /'stage', replace\(match\.competition_stage/);
   assert.match(migration, /match_format text,[\s\S]*competition_stage text/);
 });
+
+test('the calculator reuses the ranking colors for all Winter qualification places', () => {
+  const styles = fs.readFileSync(path.join(repositoryRoot, 'style.css'), 'utf8');
+  assert.match(appSource, /const qualificationPlaces = getCompetitionConfig\(\)\.qualificationPlaces/);
+  assert.match(appSource, /index < qualificationPlaces \? 'top-four-highlight' : ''/);
+  assert.doesNotMatch(appSource, /calculator-secondary-qualifier/);
+  assert.match(styles, /table\.rt tbody tr\.top-four-highlight td:first-child[\s\S]*var\(--dim\)/);
+  assert.match(styles, /calculator-mini-rank-row\.top-four-highlight[\s\S]*var\(--dim\)/);
+});
