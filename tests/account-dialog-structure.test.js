@@ -57,7 +57,7 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.doesNotMatch(style, /\.prediction-group-title/);
   assert.doesNotMatch(style, /\.auth-logout-button|\.compact-button|\.account-task-count|\.account-task-league/);
   assert.doesNotMatch(style, /\.picker-toggle-chevron/);
-  assert.match(style, /#result-task-list > \.prediction-match-group \{[\s\S]*border-top: 1px solid var\(--border\);[\s\S]*padding-top: 24px;/);
+  assert.match(style, /#result-task-list > \.prediction-match-group \{[\s\S]*border-top: 1px solid var\(--border\);[\s\S]*padding-top: 18px;/);
   assert.match(style, /\.account-task-card\.is-actionable \{[\s\S]*border-color: var\(--accent\);/);
   assert.match(style, /\.account-task-card\.is-waiting[\s\S]*opacity: 0\.58/);
   assert.match(style, /\.result-entry-actions \{[\s\S]*align-items: center;[\s\S]*justify-content: space-between;/);

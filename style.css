@@ -1050,7 +1050,7 @@
     }
     .account-task-card.is-waiting { background: color-mix(in srgb, var(--surface) 62%, var(--bg)); }
     .account-task-card.is-waiting > :not(.account-task-actions) { opacity: 0.58; }
-    .account-task-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--dim); font: 0.72rem 'DM Mono', monospace; }
+    .account-task-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--dim); }
     .account-task-status {
       border: 1px solid var(--border);
       border-radius: 999px;
@@ -1059,7 +1059,7 @@
       padding: 0.2rem 0.45rem;
       white-space: nowrap;
     }
-    .account-task-status.is-open { border-color: var(--accent); background: var(--accent); color: #07080c; font-weight: 700; }
+    .account-task-status.is-open { border-color: var(--accent); background: transparent; color: var(--accent); }
     .account-task-status.is-complete { border-color: color-mix(in srgb, var(--positiv) 45%, var(--border)); color: var(--positiv); }
     .result-card-timing { color: var(--dim); font: 0.85rem 'DM Sans', sans-serif; letter-spacing: 0.02rem; }
     .account-task-matchup { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; font-size: 1rem; }
