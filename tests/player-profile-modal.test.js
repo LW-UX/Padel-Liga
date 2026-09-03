@@ -37,7 +37,7 @@ const correctedLotzMigration = fs.readFileSync(
   'utf8'
 );
 const weightedTrainingMigration = fs.readFileSync(
-  path.join(root, 'supabase/migrations/20260903110000_weighted_training_profile_matches.sql'),
+  path.join(root, 'supabase/migrations/20260903120000_weighted_training_profile_matches.sql'),
   'utf8'
 );
 

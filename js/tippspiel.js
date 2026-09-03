@@ -581,10 +581,10 @@
           <span class="widget-label">${escapeHtml(getTaskLeagueLabel(task))} · Partie ${escapeHtml(getTaskNumber(task))}</span>
           ${renderResultTaskStatus(task)}
         </div>
-        ${groupKey === 'planned' ? '' : `<div class="result-card-timing">${escapeHtml(formatTaskDate(
+        ${groupKey === 'future' ? `<div class="result-card-timing">${escapeHtml(formatTaskDate(
           task.task_type === 'completed' ? task.scheduled_date : task.proposed_played_on || task.scheduled_date,
           task.task_type === 'completed' ? task.display_time : task.proposed_played_time || task.display_time
-        ))}</div>`}
+        ))}</div>` : ''}
         ${renderTaskMatchup(task)}
         ${renderResultTaskBody(task, groupKey)}
       </article>
@@ -609,7 +609,7 @@
     });
     target.innerHTML = groupedItems
       .map(group => `<section class="prediction-match-group" data-result-task-group="${group.key}">
-          <div class="widget-label">${escapeHtml(group.label)}</div>
+          <div class="spieltag-label"><span>${escapeHtml(group.label)}</span></div>
           ${group.items.length
             ? `<div class="account-task-list">${group.items.map(item => item.kind === 'training'
                 ? renderTrainingTaskCard(item.task, item.index)

@@ -47,6 +47,7 @@ test('all four groups render even when they are empty', () => {
     assert.match(tippspiel, new RegExp(`label: '${label}'`));
   });
   assert.match(tippspiel, /group\.items\.length[\s\S]*Derzeit keine Partie\./);
+  assert.match(tippspiel, /<div class="spieltag-label"><span>\$\{escapeHtml\(group\.label\)\}<\/span><\/div>/);
   assert.doesNotMatch(tippspiel, /visibleGroups/);
 });
 
@@ -54,4 +55,9 @@ test('waiting proposals remain visible but do not count as actionable tasks', ()
   assert.match(tippspiel, /task\.task_type === 'review' \|\| task\.task_type === 'waiting'/);
   assert.match(tippspiel, /group\.key === 'review'\)\.tasks\.filter\(task => task\.task_type === 'review'\)/);
   assert.match(tippspiel, /Auf Bestätigung warten/);
+});
+
+test('review and result-entry cards do not repeat their prefilled date and time', () => {
+  assert.match(tippspiel, /\$\{groupKey === 'future' \? `<div class="result-card-timing">/);
+  assert.doesNotMatch(tippspiel, /groupKey === 'planned' \? '' : `<div class="result-card-timing">/);
 });
