@@ -1103,6 +1103,13 @@ function formatProfileDate(value) {
     : '—';
 }
 
+function renderPlayerProfileNames(names = [], fallback = '—') {
+  if (!names.length) return escapeHtml(fallback);
+  return names
+    .map(name => escapeHtml(name))
+    .join('<span class="mc-player-sep">&amp;</span>');
+}
+
 function orientProfileResult(resultDetails, team) {
   const value = String(resultDetails || '—');
   if (Number(team) !== 2) return value;
@@ -1192,14 +1199,14 @@ function renderPlayerProfileHistory() {
         const outcomeAriaLabel = outcome === 'win'
           ? 'Sieg'
           : outcome === 'loss' ? 'Niederlage' : outcome === 'draw' ? 'Unentschieden' : 'Abgebrochen, ohne Wertung';
-        const partner = (match.partnerNames || []).join(' / ') || 'ohne Partner';
-        const opponents = (match.opponentNames || []).join(' / ') || '—';
+        const partner = renderPlayerProfileNames(match.partnerNames, 'ohne Partner');
+        const opponents = renderPlayerProfileNames(match.opponentNames);
         const showDate = index === 0;
         const showSeason = index === group.matches.length - 1;
         return `<article class="player-profile-match ${outcome}">
           <div class="player-profile-match-date">${showDate ? escapeHtml(formatProfileDate(match.date)) : ''}</div>
           <div class="player-profile-match-outcome ${outcome}" aria-label="${outcomeAriaLabel}">${outcomeLabel}</div>
-          <div class="player-profile-match-teams">mit ${escapeHtml(partner)} <span>vs.</span> ${escapeHtml(opponents)}</div>
+          <div class="player-profile-match-teams">mit ${partner} <span>vs.</span> ${opponents}</div>
           <div class="player-profile-match-score"${isComplete ? '' : ' title="Vollständige Sätze werden einzeln gewertet"'}>${renderProfileResultDetails(match)}</div>
           <div class="player-profile-match-season">${showSeason ? escapeHtml(match.kind === 'training' ? 'Training' : match.seasonLabel || 'Liga') : ''}</div>
         </article>`;

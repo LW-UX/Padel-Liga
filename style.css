@@ -2471,9 +2471,15 @@
       }
       .hero-eyebrow {
         font-size: 0.62rem;
+        white-space: nowrap;
       }
-      .hero-topbar { align-items: flex-start; margin-bottom: 0.65rem; }
-      .context-actions { gap: 5px; }
+      .hero-topbar {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: 1rem;
+        margin-bottom: 0.65rem;
+      }
+      .context-actions { gap: 5px; width: 100%; }
       .season-picker .secondary-button--dropdown { width: 132px; min-width: 132px; }
       .context-link { font-size: 0.75rem; }
       .secondary-button--dropdown::after { right: 0.65rem; }

@@ -44,6 +44,14 @@ const trainingCounterMigration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260903170000_training_counter_scores.sql'),
   'utf8'
 );
+const septemberTrainingMigration = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20260908183000_import_september_training_sessions.sql'),
+  'utf8'
+);
+const trainingMatchTiebreakMigration = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20260908184000_training_match_tiebreak_outcomes.sql'),
+  'utf8'
+);
 
 function evaluateRelationshipLeaders(matches) {
   const functionSource = app.match(
@@ -87,6 +95,9 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;/);
   assert.match(app, /matches\.slice\(0, PLAYER_PROFILE_MATCH_PREVIEW_LIMIT\)/);
   assert.match(app, /matches\.length <= PLAYER_PROFILE_MATCH_PREVIEW_LIMIT/);
+  assert.match(app, /function renderPlayerProfileNames\(names = \[\], fallback = '—'\)/);
+  assert.match(app, /join\('<span class="mc-player-sep">&amp;<\/span>'\)/);
+  assert.doesNotMatch(app, /\(match\.partnerNames \|\| \[\]\)\.join\(' \/ '\)/);
   assert.match(html, /class="widget player-profile-widget player-profile-relationships"[\s\S]*id="player-profile-relationships"/);
   assert.match(app, /record\.matches >= 3/);
   assert.match(app, /\['Lieblingspartner', leaders\.favoritePartner/);
@@ -184,6 +195,25 @@ test('historical trainings preserve sessions, match tiebreaks, and the unfinishe
   assert.match(historicalTrainingMigration, /array\['andreas_l', 'luca_w'\], array\['niklas_k', 'chris_m'\]/);
   assert.match(correctedLotzMigration, /array_replace\(player_ids, 'andreas_l', 'christoph_l'\)/);
   assert.match(correctedLotzMigration, /array_replace\(team_one_ids, 'andreas_l', 'christoph_l'\)/);
+});
+
+test('September trainings preserve completed and partial set weighting', () => {
+  assert.match(septemberTrainingMigration, /date '2026-09-02', time '17:00'/);
+  assert.match(septemberTrainingMigration, /array\['marco_m', 'andreas_l'\], array\['greta_p', 'niklas_k'\],[\s\S]*?'6:1', 1, true, 'one_set'/);
+  assert.match(septemberTrainingMigration, /array\['greta_p', 'andreas_l'\], array\['niklas_k', 'marco_m'\],[\s\S]*?'6:1', 1, true, 'one_set'/);
+  assert.match(septemberTrainingMigration, /array\['niklas_k', 'andreas_l'\], array\['greta_p', 'marco_m'\],[\s\S]*?'4:3', 1, false, 'one_set'/);
+  assert.match(septemberTrainingMigration, /date '2026-09-08', time '12:15'/);
+  assert.match(septemberTrainingMigration, /array\['marco_m', 'ludwig_w'\], array\['marcel_m', 'jonas_l'\],[\s\S]*?'6:4, 6:3, 4:2', 3, false, 'three_sets'/);
+});
+
+test('a completed training match tiebreak resolves the full match outcome', () => {
+  assert.match(trainingMatchTiebreakMigration, /set_summary\.completed_count = 2/);
+  assert.match(trainingMatchTiebreakMigration, /set_summary\.team_one_wins = 1/);
+  assert.match(trainingMatchTiebreakMigration, /set_summary\.team_two_wins = 1/);
+  assert.match(trainingMatchTiebreakMigration, /private\.training_tiebreak_state\([\s\S]*?10[\s\S]*?\) = 'complete'/);
+  assert.match(trainingMatchTiebreakMigration, /match_tiebreak_team_one > match_tiebreak_team_two then 2 else 0/);
+  assert.match(trainingMatchTiebreakMigration, /match_tiebreak_team_two > match_tiebreak_team_one then 2 else 0/);
+  assert.match(trainingMatchTiebreakMigration, /team_one_games,[\s\S]*?team_two_games/);
 });
 
 test('calculator presets are rendered on both probability buttons', () => {
