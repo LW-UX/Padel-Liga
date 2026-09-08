@@ -7,6 +7,8 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
+const scoreInput = fs.readFileSync(path.join(root, 'js/score-input.js'), 'utf8');
+const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 const players = fs.readFileSync(path.join(root, 'data/players.js'), 'utf8');
 const profileMigration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260901130000_public_player_profiles.sql'),
@@ -64,6 +66,28 @@ function evaluateRelationshipLeaders(matches) {
     `${functionSource[0].replace(/\n\nfunction renderPlayerProfileRelationships$/, '')}\nresult = getPlayerProfileRelationshipLeaders(matches);`,
     context
   );
+  return context.result;
+}
+
+function evaluateProfileResultDetails(match) {
+  const functionSource = app.match(
+    /function orientProfileResult\(resultDetails, team\) \{[\s\S]*?(?=\nfunction getPlayerProfileTrainingSessionId)/
+  );
+  assert.ok(functionSource, 'profile result rendering helpers should be present');
+  const context = {
+    match,
+    result: null,
+    window: {},
+    escapeHtml: value => String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;')
+  };
+  vm.createContext(context);
+  vm.runInContext(scoreInput, context);
+  vm.runInContext(`${functionSource[0]}\nresult = renderProfileResultDetails(match);`, context);
   return context.result;
 }
 
@@ -182,6 +206,46 @@ test('training rounds stay grouped and only incomplete score parts are dimmed', 
   assert.match(trainingCounterMigration, /scored_career as \([\s\S]*?select \* from career where match_weight > 0/);
   assert.match(incompleteTrainingMigration, /'trainingSessionId', history\.training_session_id/);
   assert.match(incompleteTrainingMigration, /'trainingRoundNumber', history\.training_round_number/);
+});
+
+test('profile results use consistent separators and de-emphasize set tiebreaks', () => {
+  const leagueResult = evaluateProfileResultDetails({
+    kind: 'league',
+    resultDetails: '7:6 (7:4), 6:7 (8:10) – 10:6',
+    team: 1
+  });
+  const trainingResult = evaluateProfileResultDetails({
+    kind: 'training',
+    resultDetails: '6:4, 6:3, 4:2',
+    team: 1
+  });
+  const oneSetResult = evaluateProfileResultDetails({
+    kind: 'training',
+    resultDetails: '6:2',
+    team: 1
+  });
+
+  assert.equal(
+    leagueResult,
+    '<span class="player-profile-result"><span class="player-profile-score-set">7:6 <span class="player-profile-set-tiebreak">(7:4)</span></span><span class="player-profile-score-divider">,</span> <span class="player-profile-score-set">6:7 <span class="player-profile-set-tiebreak">(8:10)</span></span> <span class="player-profile-score-divider">–</span> <span class="player-profile-match-tiebreak">10:6</span></span>'
+  );
+  assert.equal(
+    trainingResult,
+    '<span class="player-profile-result"><span class="player-profile-score-set">6:4</span><span class="player-profile-score-divider">,</span> <span class="player-profile-score-set">6:3</span><span class="player-profile-score-divider">,</span> <span class="player-profile-score-set player-profile-score-partial">4:2</span></span>'
+  );
+  assert.equal(
+    oneSetResult,
+    '<span class="player-profile-result"><span class="player-profile-score-set">6:2</span></span>'
+  );
+  assert.match(style, /\.player-profile-set-tiebreak \{[^}]*font-size: 0\.78em;[^}]*font-style: normal;[^}]*font-weight: 400;/);
+});
+
+test('only training result circles use outcome-colored outlines', () => {
+  assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome \{[^}]*border: 1px solid currentColor;[^}]*background: transparent;/);
+  assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome\.win \{ color: var\(--positiv\); \}/);
+  assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome\.loss \{ color: var\(--negativ\); \}/);
+  assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome\.draw,[\s\S]*\.player-profile-match-group\.training \.player-profile-match-outcome\.unfinished \{ color: var\(--dim\); \}/);
+  assert.match(style, /\.player-profile-match-outcome \{[\s\S]*background: var\(--positiv\);[\s\S]*color: #07100d;/);
 });
 
 test('historical trainings preserve sessions, match tiebreaks, and the unfinished round', () => {

@@ -998,7 +998,7 @@ function renderPlayerProfileParticipations(participations = []) {
         ${escapeHtml(participation.seasonLabel)}
       </div>
       <div class="player-profile-participation-rank r${Math.min(Number(participation.rank) || 4, 4)}">${participation.rank ? `${participation.rank}.` : '—'}</div>
-      <div class="player-profile-participation-meta">
+      <div class="stat-meta-line">
         ${participation.isActive ? 'Laufend · ' : ''}${participation.matches ?? 0} P · ${participation.wins ?? 0}:${participation.losses ?? 0} · ${formatProfileSignedValue(participation.gameDiff)}
       </div>
     </div>
@@ -1116,22 +1116,42 @@ function orientProfileResult(resultDetails, team) {
   return value.replace(/(\d+)\s*:\s*(\d+)/g, (_, left, right) => `${right}:${left}`);
 }
 
+function renderProfileScoreSet(rawSet, kind) {
+  const value = String(rawSet || '').trim();
+  const score = value.match(/^(\d+)\s*:\s*(\d+)(?:\s*\(\s*(\d+)\s*:\s*(\d+)\s*\))?$/);
+  if (!score) return `<span class="player-profile-score-set">${escapeHtml(value)}</span>`;
+
+  const [, teamOne, teamTwo, tiebreakOne, tiebreakTwo] = score;
+  const classification = kind === 'training'
+    ? window.PadelScoreInput.classifyRegularSet(teamOne, teamTwo)
+    : { state: 'complete' };
+  const partialClass = classification.state === 'complete' ? '' : ' player-profile-score-partial';
+  const setTiebreak = tiebreakOne === undefined
+    ? ''
+    : ` <span class="player-profile-set-tiebreak">(${tiebreakOne}:${tiebreakTwo})</span>`;
+  return `<span class="player-profile-score-set${partialClass}">${teamOne}:${teamTwo}${setTiebreak}</span>`;
+}
+
 function renderProfileResultDetails(match) {
   const orientedResult = orientProfileResult(match.resultDetails, match.team);
-  if (match.kind !== 'training') return escapeHtml(orientedResult);
   const [regularPart = '', matchTiebreakPart = ''] = orientedResult.split(/\s*[–-]\s*/, 2);
-  const rendered = regularPart.split(/\s*,\s*/).filter(Boolean).map(part => {
-    const score = part.match(/^(\d+)\s*:\s*(\d+)/);
-    const classification = window.PadelScoreInput.classifyRegularSet(score?.[1], score?.[2]);
-    return `<span${classification.state === 'complete' ? '' : ' class="player-profile-score-partial"'}>${escapeHtml(part)}</span>`;
-  });
-  const regularResult = rendered.join('<span class="player-profile-score-divider">,</span>');
+  const regularResult = regularPart
+    .split(/\s*,\s*/)
+    .filter(Boolean)
+    .map(part => renderProfileScoreSet(part, match.kind))
+    .join('<span class="player-profile-score-divider">,</span> ');
   if (matchTiebreakPart) {
-    const score = matchTiebreakPart.match(/^(\d+)\s*:\s*(\d+)/);
-    const classification = window.PadelScoreInput.classifyTiebreak(score?.[1], score?.[2], 10);
-    return `<span class="player-profile-training-score">${regularResult}<span class="player-profile-score-divider">–</span><span${classification.state === 'complete' ? '' : ' class="player-profile-score-partial"'}>${escapeHtml(matchTiebreakPart)}</span></span>`;
+    const score = matchTiebreakPart.match(/^(\d+)\s*:\s*(\d+)$/);
+    const classification = match.kind === 'training'
+      ? window.PadelScoreInput.classifyTiebreak(score?.[1], score?.[2], 10)
+      : { state: 'complete' };
+    const partialClass = classification.state === 'complete' ? '' : ' player-profile-score-partial';
+    const renderedTiebreak = score
+      ? `${score[1]}:${score[2]}`
+      : escapeHtml(matchTiebreakPart.trim());
+    return `<span class="player-profile-result">${regularResult} <span class="player-profile-score-divider">–</span> <span class="player-profile-match-tiebreak${partialClass}">${renderedTiebreak}</span></span>`;
   }
-  return `<span class="player-profile-training-score">${regularResult}</span>`;
+  return `<span class="player-profile-result">${regularResult}</span>`;
 }
 
 function getPlayerProfileTrainingSessionId(match) {
