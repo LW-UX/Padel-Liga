@@ -1222,7 +1222,9 @@ function renderPlayerProfileHistory() {
         const partner = renderPlayerProfileNames(match.partnerNames, 'ohne Partner');
         const opponents = renderPlayerProfileNames(match.opponentNames);
         const showDate = index === 0;
-        const showSeason = index === group.matches.length - 1;
+        const showSeason = group.kind === 'training'
+          ? index === 0
+          : index === group.matches.length - 1;
         return `<article class="player-profile-match ${outcome}">
           <div class="player-profile-match-date">${showDate ? escapeHtml(formatProfileDate(match.date)) : ''}</div>
           <div class="player-profile-match-outcome ${outcome}" aria-label="${outcomeAriaLabel}">${outcomeLabel}</div>

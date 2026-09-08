@@ -196,7 +196,7 @@ test('training rounds stay grouped and only incomplete score parts are dimmed', 
   assert.match(app, /function groupPlayerProfileMatches\(matches = \[\]\)/);
   assert.match(app, /data-profile-match-group=/);
   assert.match(app, /showDate = index === 0/);
-  assert.match(app, /showSeason = index === group\.matches\.length - 1/);
+  assert.match(app, /showSeason = group\.kind === 'training'[\s\S]*?\? index === 0[\s\S]*?: index === group\.matches\.length - 1/);
   assert.match(app, /Number\(match\.matchWeight\) > 0/);
   assert.match(app, /player-profile-score-partial/);
   assert.match(app, /renderProfileResultDetails\(match\)/);
