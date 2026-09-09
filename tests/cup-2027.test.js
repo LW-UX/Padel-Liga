@@ -20,19 +20,29 @@ const migration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260909130000_cup_2027.sql'),
   'utf8'
 );
+const achievementMigration = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20260909150000_marcel_ligacup_2027_champion.sql'),
+  'utf8'
+);
 
 test('Cup 2027 is selectable without replacing Sommer 2026 as default', () => {
   const { PADEL_SEASONS } = loadWindowScript('data/seasons.js');
   const cupOption = PADEL_SEASONS.find(season => season.id === 'cup-2027');
 
   assert.equal(PADEL_SEASONS.find(season => season.default)?.id, '2026');
+  assert.equal(
+    PADEL_SEASONS.findIndex(season => season.id === 'cup-2027'),
+    PADEL_SEASONS.findIndex(season => season.id === 'winter-2026') + 1
+  );
   assert.deepEqual(JSON.parse(JSON.stringify(cupOption)), {
     id: 'cup-2027',
     label: 'Cup 2027',
+    visualTheme: 'cup',
     file: 'data/data-cup-2027.js',
     default: false
   });
   assert.match(app, /const staticFallbacks = \[\.\.\.staticOptions\.values\(\)\]/);
+  assert.match(app, /window\.PADEL_SEASONS = orderSeasonOptions\(\[\.\.\.databaseOptions, \.\.\.staticFallbacks\]\)/);
 });
 
 test('Cup 2027 prepares seven knockout matches and sixteen open quarterfinal places', () => {
@@ -82,4 +92,12 @@ test('Cup migration extends public competition values without assigning players'
   assert.match(migration, /'cup-2027',[\s\S]*'Cup 2027'[\s\S]*'2027-01-01'[\s\S]*false/);
   assert.equal((migration.match(/'cup-2027-(?:quarterfinal|semifinal|final)-\d+'/g) || []).length, 7);
   assert.doesNotMatch(migration, /insert into public\.(?:season_players|match_players)/);
+});
+
+test('Cup final awards Champion and Finale badges automatically', () => {
+  assert.match(achievementMigration, /kind in \('winner', 'final_four', 'finalist', 'custom'\)/);
+  assert.match(achievementMigration, /selected_season\.tournament_mode <> 'knockout_redraw'/);
+  assert.match(achievementMigration, /'winner',\s*'Champion',[\s\S]*?200[\s\S]*?member\.team = new\.winner/);
+  assert.match(achievementMigration, /'finalist',\s*'Finale',[\s\S]*?100[\s\S]*?member\.team <> new\.winner/);
+  assert.match(achievementMigration, /matches_award_knockout_final_achievements/);
 });

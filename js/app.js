@@ -17,6 +17,13 @@ let playerProfileExpanded = false;
 let playerProfileRequestId = 0;
 const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;
 const PLAYER_PROFILE_ACHIEVEMENT_LIMIT = 4;
+const PROFILE_SEASON_COLORS = Object.freeze({
+  summer: '#FF8A5B',
+  winter: '#B794F6',
+  cup: '#50B7F5',
+  neutral: '#7E828B'
+});
+const DEFAULT_PROFILE_SEASON_COLOR = PROFILE_SEASON_COLORS.neutral;
 let playerProfileLastTrigger = null;
 
 function getViewerStorageKey() {
@@ -62,8 +69,20 @@ function applyAppHintVisibility() {
   if (hint && isAppHintDismissed()) hint.hidden = true;
 }
 
+function orderSeasonOptions(seasons = []) {
+  const ordered = [...seasons];
+  const cupIndex = ordered.findIndex(season => season.id === 'cup-2027');
+  const winterIndexBeforeMove = ordered.findIndex(season => season.id === 'winter-2026');
+  if (cupIndex < 0 || winterIndexBeforeMove < 0 || cupIndex === winterIndexBeforeMove + 1) return ordered;
+
+  const [cup] = ordered.splice(cupIndex, 1);
+  const winterIndex = ordered.findIndex(season => season.id === 'winter-2026');
+  ordered.splice(winterIndex + 1, 0, cup);
+  return ordered;
+}
+
 function getSeasonOptions() {
-  return Array.isArray(window.PADEL_SEASONS) ? window.PADEL_SEASONS : [];
+  return orderSeasonOptions(Array.isArray(window.PADEL_SEASONS) ? window.PADEL_SEASONS : []);
 }
 
 function getRequestedSeasonId() {
@@ -141,13 +160,15 @@ async function loadDatabaseSeasonOptions() {
     ...staticOptions.get(season.id),
     id: season.id,
     label: season.label,
+    startDate: season.starts_on,
+    visualTheme: season.visual_theme || staticOptions.get(season.id)?.visualTheme || 'neutral',
     default: Boolean(season.is_active)
   }));
   const databaseIds = new Set(databaseOptions.map(season => season.id));
   const staticFallbacks = [...staticOptions.values()]
     .filter(season => !databaseIds.has(season.id))
     .map(season => ({ ...season, default: false }));
-  window.PADEL_SEASONS = [...databaseOptions, ...staticFallbacks];
+  window.PADEL_SEASONS = orderSeasonOptions([...databaseOptions, ...staticFallbacks]);
 }
 
 async function loadDatabaseSeasonPayload(seasonId) {
@@ -923,13 +944,25 @@ function formatProfileGameDiffPerMatch(gameDiff, matches) {
 }
 
 function getPlayerProfileAchievementHighlights(achievements = []) {
-  const kindOrder = { winner: 0, final_four: 1, custom: 2 };
+  const kindOrder = { winner: 0, final_four: 1, finalist: 1, custom: 2 };
   return [...achievements]
     .sort((left, right) =>
       (kindOrder[left.kind] ?? 3) - (kindOrder[right.kind] ?? 3)
       || String(right.achievedOn || '').localeCompare(String(left.achievedOn || ''))
     )
     .slice(0, PLAYER_PROFILE_ACHIEVEMENT_LIMIT);
+}
+
+function getSeasonVisualTheme(seasonId, seasons = getSeasonOptions()) {
+  return seasons.find(season => season.id === seasonId)?.visualTheme || 'neutral';
+}
+
+function getPlayerProfileSeasonColor(seasonId, seasons = getSeasonOptions()) {
+  return PROFILE_SEASON_COLORS[getSeasonVisualTheme(seasonId, seasons)] || DEFAULT_PROFILE_SEASON_COLOR;
+}
+
+function getPlayerProfileAchievementContext(achievement, seasons = getSeasonOptions()) {
+  return getSeasonVisualTheme(achievement?.seasonId, seasons) === 'cup' ? 'cup' : 'league';
 }
 
 function renderPlayerProfileAchievements(achievements = []) {
@@ -940,12 +973,16 @@ function renderPlayerProfileAchievements(achievements = []) {
   target.innerHTML = highlights.map(achievement => {
     const kind = achievement.kind === 'winner'
       ? 'winner'
-      : achievement.kind === 'final_four' ? 'final-four' : 'custom';
+      : achievement.kind === 'final_four'
+        ? 'final-four'
+        : achievement.kind === 'finalist' ? 'finalist' : 'custom';
     const title = kind === 'winner'
-      ? 'Gewinner'
-      : kind === 'final-four' ? 'Final 4' : achievement.title;
+      ? 'Champion'
+      : kind === 'final-four' ? 'Final 4'
+        : kind === 'finalist' ? 'Finale' : achievement.title;
+    const context = getPlayerProfileAchievementContext(achievement);
     return `
-    <div class="player-profile-achievement player-profile-achievement-${kind}">
+    <div class="player-profile-achievement player-profile-achievement-${kind} player-profile-achievement-${context}">
       <svg class="player-profile-achievement-laurel" aria-hidden="true" focusable="false">
         <use href="#achievement-laurel-left"></use>
       </svg>
@@ -984,12 +1021,8 @@ function renderPlayerProfileStats(summary = {}) {
   `).join('');
 }
 
-function getPlayerProfileSeasonColor(index) {
-  return COLORS[index % COLORS.length] || '#d9ff22';
-}
-
 function getPlayerProfileSegmentColor(context, pointColors = []) {
-  const startColor = pointColors[context.p0DataIndex] || '#d9ff22';
+  const startColor = pointColors[context.p0DataIndex] || DEFAULT_PROFILE_SEASON_COLOR;
   const endColor = pointColors[context.p1DataIndex] || startColor;
   if (startColor === endColor) return startColor;
 
@@ -1025,12 +1058,12 @@ function renderPlayerProfileEloChart(eloSeries = []) {
   const labels = series.map(item => formatProfileDate(item.date));
   const values = series.map(item => Number(item.elo));
   range.textContent = `${values[0]} → ${values[values.length - 1]}`;
-  legend.innerHTML = seasons.map(([seasonId, seasonLabel], index) => `
-    <span style="--profile-season-color:${getPlayerProfileSeasonColor(index)}"><i></i>${escapeHtml(seasonLabel || seasonId)}</span>
+  legend.innerHTML = seasons.map(([seasonId, seasonLabel]) => `
+    <span style="--profile-season-color:${getPlayerProfileSeasonColor(seasonId)}"><i></i>${escapeHtml(seasonLabel || seasonId)}</span>
   `).join('');
 
-  const seasonColors = new Map(seasons.map(([seasonId], index) => [seasonId, getPlayerProfileSeasonColor(index)]));
-  const pointColors = series.map(item => seasonColors.get(item.seasonId) || '#d9ff22');
+  const seasonColors = new Map(seasons.map(([seasonId]) => [seasonId, getPlayerProfileSeasonColor(seasonId)]));
+  const pointColors = series.map(item => seasonColors.get(item.seasonId) || DEFAULT_PROFILE_SEASON_COLOR);
   const datasets = [{
     label: 'Elo',
     data: values,
@@ -1071,6 +1104,16 @@ function renderPlayerProfileEloChart(eloSeries = []) {
   });
 }
 
+function orderPlayerProfileParticipations(participations = [], seasons = getSeasonOptions()) {
+  const startDates = new Map(seasons.map(season => [season.id, season.startDate || '']));
+  return [...participations].sort((left, right) => {
+    const leftStartDate = String(left.startDate || left.startsOn || startDates.get(left.seasonId) || '');
+    const rightStartDate = String(right.startDate || right.startsOn || startDates.get(right.seasonId) || '');
+    const dateOrder = rightStartDate.localeCompare(leftStartDate);
+    return dateOrder || String(right.seasonId || '').localeCompare(String(left.seasonId || ''));
+  });
+}
+
 function renderPlayerProfileParticipations(participations = []) {
   const target = document.getElementById('player-profile-participations');
   if (!target) return;
@@ -1078,8 +1121,9 @@ function renderPlayerProfileParticipations(participations = []) {
     target.innerHTML = '<div class="empty-state">Noch keine Liga-Teilnahme.</div>';
     return;
   }
-  target.innerHTML = participations.map((participation, index) => `
-    <div class="player-profile-participation" style="--profile-season-color:${getPlayerProfileSeasonColor(index)}">
+  const orderedParticipations = orderPlayerProfileParticipations(participations);
+  target.innerHTML = orderedParticipations.map(participation => `
+    <div class="player-profile-participation" style="--profile-season-color:${getPlayerProfileSeasonColor(participation.seasonId)}">
       <div class="player-profile-participation-name">
         <span class="player-profile-participation-marker"><i></i></span>
         ${escapeHtml(participation.seasonLabel)}

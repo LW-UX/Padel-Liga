@@ -73,6 +73,8 @@
       --negativ:    #FF3F5E;
       --gold:       #FFD000;
       --silver:     #ADC8D8;
+      --cup-gold:   #C59600;
+      --cup-silver: #7F98A8;
       --bronze:     #C97B2E;
       --text:       #F3F4F1;
       --muted:      #7E828B;
@@ -454,7 +456,7 @@
     }
     .player-profile-identity-row {
       display: grid;
-      grid-template-columns: 168px minmax(240px, 1fr) minmax(50px, auto);
+      grid-template-columns: 168px minmax(240px, 1fr) minmax(50px, 420px);
       align-items: center;
       gap: 32px;
       padding: 40px 80px 0px 40px;
@@ -476,9 +478,11 @@
       margin-bottom: 0;
     }
     .player-profile-achievements {
-      display: grid;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: center;
+      justify-content: center;
       gap: 12px;
-      justify-items: stretch;
     }
     .player-profile-achievement {
       display: flex;
@@ -487,7 +491,12 @@
       text-align: center;
     }
     .player-profile-achievement-winner { --achievement-color: var(--gold); }
-    .player-profile-achievement-final-four { --achievement-color: var(--silver); }
+    .player-profile-achievement-final-four,
+    .player-profile-achievement-finalist { --achievement-color: var(--silver); }
+    .player-profile-achievement-winner.player-profile-achievement-cup { --achievement-color: var(--cup-gold); }
+    .player-profile-achievement-final-four.player-profile-achievement-cup,
+    .player-profile-achievement-finalist.player-profile-achievement-cup { --achievement-color: var(--cup-silver); }
+    .player-profile-achievement-custom { --achievement-color: var(--accent2); }
     .achievement-symbols {
       position: absolute;
       width: 0;
@@ -696,12 +705,11 @@
 
     @media (max-width: 999px) {
       .player-profile-match {
-        grid-template-columns: 34px minmax(0, 1fr) auto;
+        grid-template-columns: 30px minmax(0, 1fr) auto;
         gap: 8px 12px;
-        padding: 13px 0;
       }
       .player-profile-match-group.training { padding: 4px 0px; }
-      .player-profile-match-group.training .player-profile-match { padding: 5px 0; }
+      .player-profile-match-group.training .player-profile-match { padding: 4px 0; }
       .player-profile-match-date { grid-column: 1; grid-row: 1; }
       .player-profile-match-outcome { grid-row: 2; }
       .player-profile-match-teams { grid-row: 2; }
@@ -729,17 +737,13 @@
       .player-profile-avatar { width: 116px; border-radius: 20px; }
       .player-profile-avatar-placeholder { font-size: 4.5rem; }
       .player-profile-achievements {
-        grid-column: 1 / -1;
-        grid-template-columns: 1fr;
         gap: 8px;
         min-width: 0;
         width: 100%;
       }
-      .player-profile-achievement {
-        grid-template-columns: 44px minmax(0, 1fr) 44px;
-      }
-      .player-profile-achievement-laurel { width: 36px; height: 64px; }
+      .player-profile-achievement-laurel { width: 24px; height: 44px; }
       .player-profile-achievement-title { font-size: 1.8rem; }
+      .player-profile-achievement-subtitle { letter-spacing: -0.03rem; }
       .player-profile-stats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }

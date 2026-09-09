@@ -115,6 +115,20 @@ function evaluateProfileSummaryFormats(wins, matches, gameDiff) {
   return JSON.parse(JSON.stringify(context.result));
 }
 
+function evaluateParticipationOrder(participations, seasons) {
+  const functionSource = app.match(
+    /function orderPlayerProfileParticipations\(participations = \[\], seasons = getSeasonOptions\(\)\) \{[\s\S]*?\n\}/
+  );
+  assert.ok(functionSource, 'profile participation ordering helper should be present');
+  const context = { participations, seasons, result: null };
+  vm.createContext(context);
+  vm.runInContext(
+    `${functionSource[0]}\nresult = orderPlayerProfileParticipations(participations, seasons);`,
+    context
+  );
+  return JSON.parse(JSON.stringify(context.result));
+}
+
 function evaluateAchievementHighlights(achievements) {
   const limitSource = app.match(/const PLAYER_PROFILE_ACHIEVEMENT_LIMIT = 4;/);
   const functionSource = app.match(
@@ -140,11 +154,11 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /profileCompanyElement\.classList\.add\(`firma-\$\{profileCompany\}`\)/);
   assert.match(app, /achievement\.kind === 'winner'/);
   assert.match(app, /achievement\.kind === 'final_four'/);
-  assert.match(app, /kind === 'winner'\s*\? 'Gewinner'/);
+  assert.match(app, /achievement\.kind === 'finalist'/);
+  assert.match(app, /kind === 'winner'\s*\? 'Champion'/);
   assert.match(app, /kind === 'final-four' \? 'Final 4'/);
+  assert.match(app, /kind === 'finalist' \? 'Finale'/);
   assert.match(app, /getPlayerProfileAchievementHighlights\(achievements\)/);
-  assert.match(style, /@media \(max-width: 1024px\) \{[\s\S]*?\.player-profile-achievements \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
-  assert.match(style, /@media \(max-width: 768px\) \{[\s\S]*?\.player-profile-achievements \{[\s\S]*?grid-template-columns: 1fr;/);
   assert.match(html, /id="achievement-laurel-left"/);
   assert.match(html, /id="achievement-laurel-right"/);
   assert.match(app, /<use href="#achievement-laurel-left"><\/use>/);
@@ -169,6 +183,7 @@ test('public player profile is a separate accessible dialog', () => {
   assert.doesNotMatch(html, /data-player-profile-filter|aria-label="Partien filtern"/);
   assert.match(html, /class="secondary-button player-profile-show-all"[^>]*data-player-profile-show-all/);
   assert.match(app, /const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;/);
+  assert.match(app, /startDate: season\.starts_on/);
   assert.match(app, /matches\.slice\(0, PLAYER_PROFILE_MATCH_PREVIEW_LIMIT\)/);
   assert.match(app, /matches\.length <= PLAYER_PROFILE_MATCH_PREVIEW_LIMIT/);
   assert.match(style, /\.player-profile-show-all\[hidden\] \{ display: none; \}/);
@@ -195,12 +210,13 @@ test('player profiles sort achievements by value and recency and show at most fo
     { id: 2, kind: 'winner', achievedOn: '2025-12-01' },
     { id: 3, kind: 'custom', achievedOn: '2028-01-01' },
     { id: 4, kind: 'winner', achievedOn: '2026-08-01' },
-    { id: 5, kind: 'final_four', achievedOn: '2027-07-01' }
+    { id: 5, kind: 'finalist', achievedOn: '2027-07-01' },
+    { id: 6, kind: 'final_four', achievedOn: '2027-06-01' }
   ];
 
   assert.deepEqual(evaluateAchievementHighlights([]), []);
-  assert.deepEqual(evaluateAchievementHighlights(achievements).map(item => item.id), [4, 2, 5, 1]);
-  assert.deepEqual(achievements.map(item => item.id), [1, 2, 3, 4, 5]);
+  assert.deepEqual(evaluateAchievementHighlights(achievements).map(item => item.id), [4, 2, 5, 6]);
+  assert.deepEqual(achievements.map(item => item.id), [1, 2, 3, 4, 5, 6]);
 });
 
 test('profile summary derives win rate and game difference per weighted match', () => {
@@ -220,6 +236,23 @@ test('profile summary derives win rate and game difference per weighted match', 
     winRate: '—',
     gameDiffPerMatch: '—'
   });
+});
+
+test('profile participations show the newest season first', () => {
+  const participations = [
+    { seasonId: '2026', seasonLabel: 'Sommer 2026', isActive: true },
+    { seasonId: 'winter-2026', seasonLabel: 'Winter 2026', isActive: false }
+  ];
+  const seasons = [
+    { id: '2026', startDate: '2026-05-11' },
+    { id: 'winter-2026', startDate: '2026-10-01' }
+  ];
+
+  assert.deepEqual(
+    evaluateParticipationOrder(participations, seasons).map(participation => participation.seasonId),
+    ['winter-2026', '2026']
+  );
+  assert.deepEqual(participations.map(participation => participation.seasonId), ['2026', 'winter-2026']);
 });
 
 test('player names open profiles by stable id and team cards no longer apply presets', () => {
