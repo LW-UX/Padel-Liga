@@ -88,6 +88,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 ## Konten, Rollen und Spielerzuordnung
 
+- Der Anmelde- und Registrierungsdialog trägt auf Liga- und Tippseite einheitlich die Beschriftung „Dein Padel-Konto“, da derselbe Zugang für Liga, Cup und Tippspiel gilt.
 - Es gibt die Rollen `tipper`, `player` und `admin`.
 - Nicht als Spieler vorab zugeordnete Nutzer dürfen mit einer freigegebenen Firmen-E-Mail selbst ein Konto erstellen und erhalten die Rolle `tipper`. Registrierungen mit anderen Domains werden abgelehnt.
 - Für die öffentliche Selbstregistrierung sind ausschließlich `envidual.com`, `headsquare.group` und `hanako-health.com` zugelassen. Groß- und Kleinschreibung der eingegebenen E-Mail spielt dabei keine Rolle. Admins dürfen Spieler dagegen mit jeder gültigen E-Mail-Adresse vorbereiten und einladen; die vorab hinterlegte Einzeladresse wird für diesen Zugang freigegeben.
