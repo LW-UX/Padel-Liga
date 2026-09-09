@@ -715,12 +715,6 @@ function applySeasonMetadata() {
       </button>
     `).join('');
   }
-  const predictionLink = document.getElementById('tippspiel-link');
-  if (predictionLink) {
-    predictionLink.href = `tipp/?saison=${encodeURIComponent(selectedSeason.id)}`;
-    predictionLink.hidden = cupSeason;
-  }
-
   const sortToggle = document.getElementById('match-sort-toggle');
   const scopeToggle = document.getElementById('match-scope-toggle');
   if (sortToggle) sortToggle.hidden = cupSeason;

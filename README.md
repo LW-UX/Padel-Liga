@@ -203,6 +203,8 @@ Existiert für diese E-Mail bereits ein Konto, erzeugt der Ablauf kein Duplikat.
 
 Die Migration `20260909200000_player_invitations.sql` und die Edge Function `invite-player` sind in Produktion aktiv. **Allow new users to sign up** bleibt aktiviert; die Begrenzung erfolgt durch Domainliste und Auth Hook. Für den zuverlässigen Versand an Arbeits-E-Mail-Adressen ist ein eigener SMTP-Dienst in Supabase erforderlich. Die optionale Function-Variable `PUBLIC_SITE_URL` kann die Zieladresse der Einladung überschreiben; ohne sie wird `https://lw-ux.github.io/Padel-Liga/` verwendet.
 
+Die vorbereitete Einladungsvorlage verwendet den Betreff „Dein Zugang zur Padel-Liga“. Ihr versionierter HTML-Stand liegt unter `supabase/templates/invite.html`. Supabase erlaubt die produktive Aktivierung einer eigenen Auth-Mailvorlage erst nach der Einrichtung eines eigenen SMTP-Anbieters; mit dem Standard-Mailversand des kostenlosen Tarifs wird die Änderung abgelehnt.
+
 Die Datei `data/supabase-config.js` enthält ausschließlich die öffentliche Projekt-URL und den öffentlichen Publishable Key. Ein Supabase Secret Key gehört weder in diese Datei noch an eine andere Stelle im Repository. Schreibzugriffe sind zusätzlich durch Row Level Security abgesichert: Benutzer können nur ihr eigenes Profil und ihre eigenen, noch offenen Tipps bearbeiten.
 
 Für E-Mail-Bestätigungen sollte unter **Supabase → Authentication → URL Configuration** die veröffentlichte Adresse als Site URL und Redirect URL eingetragen sein:
