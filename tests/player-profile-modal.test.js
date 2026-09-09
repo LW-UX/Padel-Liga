@@ -58,6 +58,10 @@ const correctedSeptember2025TrainingMigration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260909140000_correct_september_2025_training_result.sql'),
   'utf8'
 );
+const finalFourProfileMigration = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20260909210000_final_four_profile_groups.sql'),
+  'utf8'
+);
 
 function evaluateRelationshipLeaders(matches) {
   const functionSource = app.match(
@@ -184,8 +188,8 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(html, /class="secondary-button player-profile-show-all"[^>]*data-player-profile-show-all/);
   assert.match(app, /const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;/);
   assert.match(app, /startDate: season\.starts_on/);
-  assert.match(app, /matches\.slice\(0, PLAYER_PROFILE_MATCH_PREVIEW_LIMIT\)/);
-  assert.match(app, /matches\.length <= PLAYER_PROFILE_MATCH_PREVIEW_LIMIT/);
+  assert.match(app, /const groups = groupPlayerProfileMatches\(matches\)/);
+  assert.match(app, /visibleMatchCount >= PLAYER_PROFILE_MATCH_PREVIEW_LIMIT/);
   assert.match(style, /\.player-profile-show-all\[hidden\] \{ display: none; \}/);
   assert.match(app, /function renderPlayerProfileNames\(names = \[\], fallback = '—'\)/);
   assert.match(app, /join\('<span class="mc-player-sep">&amp;<\/span>'\)/);
@@ -328,6 +332,21 @@ test('training rounds stay grouped and only incomplete score parts are dimmed', 
   assert.match(trainingCounterMigration, /scored_career as \([\s\S]*?select \* from career where match_weight > 0/);
   assert.match(incompleteTrainingMigration, /'trainingSessionId', history\.training_session_id/);
   assert.match(incompleteTrainingMigration, /'trainingRoundNumber', history\.training_round_number/);
+});
+
+test('Final4 profile matches form one half-weight league-styled group', () => {
+  assert.match(app, /function getPlayerProfileFinalFourId\(match\)/);
+  assert.match(app, /finalFourGroups = new Map\(\)/);
+  assert.match(app, /group\.kind === 'final-four'/);
+  assert.match(app, /return seasonCode \? `FINAL4 \$\{seasonCode\}` : 'FINAL4'/);
+  assert.match(app, /kind === 'final-four' \? 0\.5 : 1/);
+  assert.match(app, /showDate = index === 0/);
+  assert.match(app, /index === group\.matches\.length - 1/);
+  assert.doesNotMatch(style, /player-profile-match-group\.final-four \.player-profile-match-outcome/);
+  assert.match(finalFourProfileMigration, /match\.competition_stage = 'final_four' then 'final-four'/);
+  assert.match(finalFourProfileMigration, /when p_kind = 'final-four' then 0\.5::numeric/);
+  assert.match(finalFourProfileMigration, /source\.kind = 'final-four' and source\.outcome = 'win' then 0\.5::numeric/);
+  assert.match(finalFourProfileMigration, /source\.kind = 'final-four' and source\.outcome = 'loss' then 0\.5::numeric/);
 });
 
 test('profile results use consistent separators and de-emphasize set tiebreaks', () => {

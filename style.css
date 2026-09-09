@@ -708,8 +708,10 @@
         grid-template-columns: 30px minmax(0, 1fr) auto;
         gap: 8px 12px;
       }
-      .player-profile-match-group.training { padding: 4px 0px; }
-      .player-profile-match-group.training .player-profile-match { padding: 4px 0; }
+      .player-profile-match-group.training,
+      .player-profile-match-group.final-four { padding: 4px 0px; }
+      .player-profile-match-group.training .player-profile-match,
+      .player-profile-match-group.final-four .player-profile-match { padding: 4px 0; }
       .player-profile-match-date { grid-column: 1; grid-row: 1; }
       .player-profile-match-outcome { grid-row: 2; }
       .player-profile-match-teams { grid-row: 2; }
@@ -1001,7 +1003,8 @@
     .auth-form { display: grid; gap: 12px; }
     .auth-form label[hidden] { display: none !important; }
     .auth-form label { display: grid; gap: 5px; color: var(--dim); font-size: 0.78rem; font-weight: 600; }
-    .auth-form input {
+    .auth-form input,
+    .auth-form select {
       width: 100%;
       min-height: 44px;
       border: 1px solid var(--border);
@@ -1013,7 +1016,20 @@
       outline: none;
       padding: 0.65rem 0.75rem;
     }
-    .auth-form input:focus { border-color: var(--accent); }
+    .auth-form select {
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, var(--dim) 50%), linear-gradient(135deg, var(--dim) 50%, transparent 50%);
+      background-position: calc(100% - 16px) 19px, calc(100% - 11px) 19px;
+      background-repeat: no-repeat;
+      background-size: 5px 5px, 5px 5px;
+      padding-right: 2.25rem;
+    }
+    .auth-form input:focus,
+    .auth-form select:focus { border-color: var(--accent); }
+    .auth-form-link { justify-self: center; margin-top: 0; }
+    .auth-dialog-copy { color: var(--dim); font-size: 0.88rem; line-height: 1.5; margin: -0.35rem 0 1rem; }
+    .player-email-privacy { color: var(--dim); font-size: 0.75rem; line-height: 1.45; }
+    .player-email-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
     .auth-message { min-height: 1.25rem; color: var(--dim); font-size: 0.82rem; margin-top: 0.8rem; }
     .auth-message.error { color: var(--negativ); }
     .auth-message.success { color: var(--positiv); }
@@ -1026,6 +1042,7 @@
       margin-bottom: 1.35rem;
     }
     .account-header > div { min-width: 0; }
+    .account-header-actions { display: flex; align-items: center; gap: 8px; }
     .account-header h2 { margin-bottom: 0.65rem; }
     .auth-account-email { color: var(--dim); font-size: 0.88rem; margin: 0; overflow-wrap: anywhere; }
     .account-games-empty {
@@ -1246,6 +1263,8 @@
     }
     .sh-meta { font-size: 0.85rem; color: var(--dim); }
     .section-subheading { margin-top: 2.5rem; }
+    #rangliste > #final-four-ranking-section:first-child .section-subheading,
+    #league-calculator[hidden] + #final-four-calculator .section-subheading { margin-top: 0; }
     .match-scope-toggle {
       display: inline-flex;
       flex: 0 0 auto;
@@ -2700,6 +2719,9 @@
       .auth-dialog { max-height: 94vh; }
       .auth-dialog-card { padding: 1.1rem; }
       .account-header { align-items: center; gap: 12px; padding-right: 38px; }
+      .account-header-actions { align-items: stretch; flex-direction: column; }
+      .account-header-actions .secondary-button { min-height: 34px; font-size: 0.7rem; padding: 0.4rem 0.65rem; }
+      .player-email-actions { align-items: stretch; flex-direction: column; }
       .account-header h2 { font-size: 1.65rem; }
       .account-section { min-width: 0; }
       .account-section-heading { min-width: 0; }
@@ -3141,3 +3163,28 @@
       .prediction-option { min-height: 40px; font-size: 0.9rem; }
       table.prediction-ranking-table { min-width: 100%; }
     }
+
+    /* Final4 uses the league calculator's desktop and mobile components. */
+    .calculator-score-line.calculator-single-set {
+      display: flex;
+      justify-content: center;
+    }
+    .final-four-calculator-winner { margin-top: 1rem; color: var(--accent); font-size: 0.9rem; }
+    .final-four-outcomes-panel { margin-top: 18px; }
+    #final-four-outcomes-note { line-height: 1.6; margin: 0; }
+    .final-four-outcome-row { padding-top: 1rem; margin-top: 1rem; border-top: 1px solid var(--border); }
+    .final-four-outcome-winner { margin-bottom: 0.65rem; }
+    .final-four-outcome-scores { display: flex; flex-wrap: wrap; gap: 8px; }
+    .final-four-outcome-score { font-family: 'DM Mono', monospace; padding: 0.4rem 0.8rem; }
+    .final-four-outcome-score[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+    .final-four-eliminated-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px;
+      padding-top: 1rem;
+      margin-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .final-four-eliminated-players { display: inline-flex; flex-wrap: wrap; gap: 5px; }
+    #final-four-calculator-mini-ranking { display: grid; }

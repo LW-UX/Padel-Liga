@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Einladungsmodal – Vorschau</title>
+  <link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+  <dialog class="auth-dialog player-invite-dialog" id="player-invite-dialog" aria-labelledby="player-invite-title">
+    <button class="modal-close-button auth-dialog-close" type="button" aria-label="Einladung schließen">×</button>
+    <div class="auth-dialog-card">
+      <div class="widget-label">Kontoverwaltung</div>
+      <h2 id="player-invite-title">Spielerzugänge</h2>
+      <p class="auth-dialog-copy">Ordne zuerst die Arbeits-E-Mail zu. Die Einladung kannst du direkt oder später versenden.</p>
+      <form class="auth-form">
+        <label>
+          <span>Spieler</span>
+          <select required>
+            <option>Spieler auswählen</option>
+            <option>Agnes K.</option>
+            <option>Andreas L.</option>
+          </select>
+        </label>
+        <label>
+          <span>Arbeits-E-Mail</span>
+          <input type="email" required placeholder="vorname.nachname@firma.de">
+        </label>
+        <p class="player-email-privacy">Die Adresse wird nur als nicht lesbarer Prüfwert gespeichert und später nicht angezeigt.</p>
+        <div class="player-email-actions">
+          <button class="secondary-button" type="submit">E-Mail zuordnen</button>
+          <button class="primary-button" type="submit">Zuordnen &amp; Einladung senden</button>
+        </div>
+      </form>
+      <div class="auth-message" role="status"></div>
+    </div>
+  </dialog>
+  <script>document.getElementById('player-invite-dialog').showModal();</script>
+</body>
+</html>

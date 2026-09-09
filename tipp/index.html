@@ -101,6 +101,17 @@
         <label><span>E-Mail</span><input type="email" name="email" autocomplete="email" required placeholder="vorname.nachname@firma.de"></label>
         <label><span>Passwort</span><input type="password" name="password" autocomplete="current-password" minlength="8" required></label>
         <button class="primary-button" id="auth-submit" type="submit">Einloggen</button>
+        <button class="text-link auth-form-link" id="auth-password-reset" type="button" data-password-reset>Passwort vergessen?</button>
+      </form>
+    </div>
+    <div id="auth-password-view" hidden>
+      <div class="widget-label">Dein Zugang</div>
+      <h2 id="auth-password-title">Passwort festlegen</h2>
+      <p class="auth-dialog-copy">Lege ein persönliches Passwort mit mindestens 8 Zeichen fest.</p>
+      <form id="auth-password-form" class="auth-form">
+        <label><span>Neues Passwort</span><input type="password" name="password" autocomplete="new-password" minlength="8" required></label>
+        <label><span>Passwort wiederholen</span><input type="password" name="passwordConfirmation" autocomplete="new-password" minlength="8" required></label>
+        <button class="primary-button" type="submit">Passwort speichern</button>
       </form>
     </div>
     <div id="auth-account-view" hidden>
@@ -110,7 +121,10 @@
           <h2 id="account-display-name"></h2>
           <p class="auth-account-email" id="account-email"></p>
         </div>
-        <button class="secondary-button" type="button" data-auth-logout>Ausloggen</button>
+        <div class="account-header-actions">
+          <button class="secondary-button" id="player-invite-open" type="button" data-player-invite-open hidden>Spieler-E-Mails</button>
+          <button class="secondary-button" type="button" data-auth-logout>Ausloggen</button>
+        </div>
       </div>
       <div id="account-games-panel">
         <div class="account-games-empty" id="account-games-empty" hidden>Als Tipper hast du keine eigenen Liga- oder Trainingsspiele.</div>
@@ -140,8 +154,32 @@
   </div>
 </dialog>
 
+<dialog class="auth-dialog player-invite-dialog" id="player-invite-dialog" aria-labelledby="player-invite-title">
+  <button class="modal-close-button auth-dialog-close" type="button" data-player-invite-close aria-label="Einladung schließen">×</button>
+  <div class="auth-dialog-card">
+    <div class="widget-label">Kontoverwaltung</div>
+    <h2 id="player-invite-title">Spielerzugänge</h2>
+    <p class="auth-dialog-copy">Ordne zuerst die Arbeits-E-Mail zu. Die Einladung kannst du direkt oder später versenden.</p>
+    <form id="player-invite-form" class="auth-form">
+      <label>
+        <span>Spieler</span>
+        <select id="player-invite-player" name="playerId" required>
+          <option value="">Spieler auswählen</option>
+        </select>
+      </label>
+      <label><span>Arbeits-E-Mail</span><input type="email" name="email" autocomplete="email" required placeholder="vorname.nachname@firma.de"></label>
+      <p class="player-email-privacy">Die Adresse wird nur als nicht lesbarer Prüfwert gespeichert und später nicht angezeigt.</p>
+      <div class="player-email-actions">
+        <button class="secondary-button" type="submit" data-player-email-action="assign">E-Mail zuordnen</button>
+        <button class="primary-button" type="submit" data-player-email-action="invite">Zuordnen &amp; Einladung senden</button>
+      </div>
+    </form>
+    <div class="auth-message" id="player-invite-message" role="status" aria-live="polite"></div>
+  </div>
+</dialog>
+
 <script src="../js/score-input.js?v=2026-09-03-training-counters"></script>
-<script src="../js/tippspiel.js?v=2026-09-03-training-counters"></script>
+<script src="../js/tippspiel.js?v=2026-09-09-task-lineups"></script>
 <script src="../js/tipp-page.js?v=2026-09-01-season-picker"></script>
 </body>
 </html>

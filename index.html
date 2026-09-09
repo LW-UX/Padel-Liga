@@ -22,7 +22,7 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-09-profile-season-themes">
+  <link rel="stylesheet" href="style.css?v=2026-09-09-season-phases">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -68,7 +68,7 @@
 <nav class="site-nav" aria-label="Hauptnavigation">
   <button data-section="rangliste">Rangliste</button>
   <button id="partien-nav-button" data-section="partien">Partien</button>
-  <button data-section="rechner">Rechner</button>
+  <button id="calculator-nav-button" data-section="rechner">Rechner</button>
   <button data-section="verlauf">Statistik</button>
   <button data-section="infos">Infos</button>
 </nav>
@@ -96,7 +96,7 @@
           <div id="home-ranking"></div>
           <div class="home-widget-links">
             <button class="text-link inline-link" data-nav-target="rangliste">Zur Rangliste</button>
-            <div class="home-widget-note">
+            <div class="home-widget-note" id="home-calculator-link">
               <span>Prognose wagen?</span>
               <button class="text-link inline-link" data-nav-target="rechner">Zum Rechner</button>
             </div>
@@ -213,34 +213,36 @@
       </table>
     </div>
     <div class="sh-meta ranking-note">Sortierung: Punkte pro Teilnehmer · Spiel-Differenz</div>
-    <div class="sh section-subheading">
-      <div class="sh-title">FINAL FOUR</div>
-      <div class="sh-meta" id="ff-meta"></div>
+    <div id="final-four-ranking-section">
+      <div class="sh section-subheading">
+        <div class="sh-title">FINAL FOUR</div>
+        <div class="sh-meta" id="ff-meta"></div>
+      </div>
+      <div class="ranking-wrap">
+        <table class="rt final-four-table">
+          <colgroup>
+            <col class="col-rank">
+            <col class="col-name">
+            <col class="col-games">
+            <col class="col-wins">
+            <col class="col-gv">
+            <col class="col-diff">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="l rn">#</th>
+              <th class="l">Spieler</th>
+              <th>Partien</th>
+              <th>Siege</th>
+              <th>G:V</th>
+              <th>Diff.</th>
+            </tr>
+          </thead>
+          <tbody id="ff-body"></tbody>
+        </table>
+      </div>
+      <div class="sh-meta ranking-note">Sortierung: Siege · Spiel-Differenz · Ausgangsplatzierung</div>
     </div>
-    <div class="ranking-wrap">
-      <table class="rt final-four-table">
-        <colgroup>
-          <col class="col-rank">
-          <col class="col-name">
-          <col class="col-games">
-          <col class="col-wins">
-          <col class="col-gv">
-          <col class="col-diff">
-        </colgroup>
-        <thead>
-          <tr>
-            <th class="l rn">#</th>
-            <th class="l">Spieler</th>
-            <th>Partien</th>
-            <th>Siege</th>
-            <th>G:V</th>
-            <th>Diff.</th>
-          </tr>
-        </thead>
-        <tbody id="ff-body"></tbody>
-      </table>
-    </div>
-    <div class="sh-meta ranking-note">Sortierung: Siege · Spiel-Differenz · direkter Vergleich · Ausgangsplatzierung</div>
   </section>
 
   <!-- STATISTIK -->
@@ -325,56 +327,99 @@
 
   <!-- RECHNER -->
   <section id="rechner" class="section">
-    <div class="sh sh-with-control">
-      <div class="sh-heading">
-        <div class="sh-title sh-title-with-help">LIGARECHNER
+    <div id="league-calculator">
+      <div class="sh sh-with-control">
+        <div class="sh-heading">
+          <div class="sh-title sh-title-with-help">LIGARECHNER
+            <span class="th-help-wrap">
+              <span class="help-icon" tabindex="0" aria-label="Turnierrechner erklären">?</span>
+              <span class="help-tooltip">Ergebnisse gibst du satzweise als 6:x oder x:6 ein.<br>Ein Klick auf die Wahrscheinlichkeit eines Teams setzt es direkt mit 6:2, 6:2 als Sieger ein.<br>Ein Klick auf einen Namen öffnet das Spielerprofil.</span>
+            </span>
+          </div>
+        </div>
+        <button type="button" class="secondary-button" data-calculator-reset>Zurücksetzen</button>
+      </div>
+      <div class="calculator-layout">
+        <div class="calculator-mobile-game-area">
+          <div class="calculator-match-column">
+            <div class="calculator-autotip-bar" id="calculator-autotip-bar">
+              <button type="button" class="calculator-autotip-switch" data-calculator-autotip role="switch" aria-checked="false" aria-label="Auto-Tipp: alle Partien nach Siegwahrscheinlichkeit tippen">
+                <span class="calculator-autotip-track"><span class="calculator-autotip-knob"></span></span>
+                <span class="calculator-autotip-text">Auto-Tipp</span>
+              </button>
+            </div>
+            <div id="calculator-matches" class="calculator-match-list"></div>
+          </div>
+          <aside class="calculator-mobile-mini-ranking" aria-label="Kurzrangliste">
+            <div class="calculator-mini-title">Tabelle</div>
+            <div id="calculator-mini-ranking"></div>
+          </aside>
+        </div>
+        <div class="calculator-panel calculator-ranking-panel">
+          <div class="widget-label">Simulierte Tabelle</div>
+          <div class="ranking-wrap calculator-ranking-wrap">
+            <table class="rt calculator-ranking-table">
+              <colgroup>
+                <col class="col-rank">
+                <col class="col-name">
+                <col class="col-games">
+                <col class="col-points">
+                <col class="col-diff">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th class="l rn">#</th>
+                  <th class="l">Spieler</th>
+                  <th>Partien</th>
+                  <th>Punkte</th>
+                  <th>Diff.</th>
+                </tr>
+              </thead>
+              <tbody id="calculator-ranking-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="final-four-calculator" hidden>
+      <div class="sh sh-with-control section-subheading">
+        <div class="sh-title sh-title-with-help">FINAL4-RECHNER
           <span class="th-help-wrap">
-            <span class="help-icon" tabindex="0" aria-label="Turnierrechner erklären">?</span>
-            <span class="help-tooltip">Ergebnisse gibst du satzweise als 6:x oder x:6 ein.<br>Ein Klick auf die Wahrscheinlichkeit eines Teams setzt es direkt mit 6:2, 6:2 als Sieger ein.<br>Ein Klick auf einen Namen öffnet das Spielerprofil.</span>
+            <span class="help-icon" tabindex="0" aria-label="Final4-Rechner erklären">?</span>
+            <span class="help-tooltip">Jede der drei Partien besteht aus einem Satz. Trage die Ergebnisse ein, um die Final4-Tabelle live zu berechnen.<br>Nach zwei gültigen Sätzen siehst du, welcher Endstand im verbleibenden Satz welchen Gesamtsieger ergibt.<br>Alle Eingaben sind Simulationen. Zurücksetzen stellt die bestätigten Ergebnisse wieder her.</span>
           </span>
         </div>
+        <button type="button" class="secondary-button" data-calculator-reset="final-four">Zurücksetzen</button>
       </div>
-      <button type="button" class="secondary-button" data-calculator-reset>Zurücksetzen</button>
-    </div>
-    <div class="calculator-layout">
-      <div class="calculator-mobile-game-area">
-        <div class="calculator-match-column">
-          <div class="calculator-autotip-bar" id="calculator-autotip-bar">
-            <button type="button" class="calculator-autotip-switch" data-calculator-autotip role="switch" aria-checked="false" aria-label="Auto-Tipp: alle Partien nach Siegwahrscheinlichkeit tippen">
-              <span class="calculator-autotip-track"><span class="calculator-autotip-knob"></span></span>
-              <span class="calculator-autotip-text">Auto-Tipp</span>
-            </button>
+      <div class="calculator-layout">
+        <div class="calculator-mobile-game-area">
+          <div class="calculator-match-column">
+            <div id="final-four-calculator-matches" class="calculator-match-list"></div>
           </div>
-          <div id="calculator-matches" class="calculator-match-list"></div>
+          <aside class="calculator-mobile-mini-ranking" aria-label="Final4-Kurzrangliste">
+            <div class="calculator-mini-title">Tabelle</div>
+            <div id="final-four-calculator-mini-ranking"></div>
+          </aside>
         </div>
-        <aside class="calculator-mobile-mini-ranking" aria-label="Kurzrangliste">
-          <div class="calculator-mini-title">Tabelle</div>
-          <div id="calculator-mini-ranking"></div>
-        </aside>
+        <div class="calculator-panel calculator-ranking-panel">
+          <div class="widget-label">Simulierte Final4-Tabelle</div>
+          <div class="ranking-wrap calculator-ranking-wrap">
+            <table class="rt calculator-ranking-table">
+              <colgroup>
+                <col class="col-rank"><col class="col-name"><col class="col-games"><col class="col-points"><col class="col-diff">
+              </colgroup>
+              <thead><tr><th class="l rn">#</th><th class="l">Spieler</th><th>Partien</th><th>Siege</th><th>Diff.</th></tr></thead>
+              <tbody id="final-four-calculator-ranking-body"></tbody>
+            </table>
+          </div>
+          <p class="sh-meta final-four-ranking-note">Siege · Spiel-Differenz · Ausgangsplatzierung</p>
+          <div class="final-four-calculator-winner" id="final-four-calculator-winner" role="status"></div>
+        </div>
       </div>
-      <div class="calculator-panel calculator-ranking-panel">
-        <div class="widget-label">Simulierte Tabelle</div>
-        <div class="ranking-wrap calculator-ranking-wrap">
-          <table class="rt calculator-ranking-table">
-            <colgroup>
-              <col class="col-rank">
-              <col class="col-name">
-              <col class="col-games">
-              <col class="col-points">
-              <col class="col-diff">
-            </colgroup>
-            <thead>
-              <tr>
-                <th class="l rn">#</th>
-                <th class="l">Spieler</th>
-                <th>Partien</th>
-                <th>Punkte</th>
-                <th>Diff.</th>
-              </tr>
-            </thead>
-            <tbody id="calculator-ranking-body"></tbody>
-          </table>
-        </div>
+      <div class="calculator-panel final-four-outcomes-panel">
+        <div class="widget-label">Wer gewinnt bei welchem Ergebnis?</div>
+        <p class="sh-meta" id="final-four-outcomes-note" role="status"></p>
+        <div id="final-four-calculator-outcomes"></div>
       </div>
     </div>
   </section>
@@ -481,6 +526,23 @@
           <input type="password" name="password" autocomplete="current-password" minlength="8" required placeholder="Mindestens 8 Zeichen">
         </label>
         <button class="primary-button" id="auth-submit" type="submit">Einloggen</button>
+        <button class="text-link auth-form-link" id="auth-password-reset" type="button" data-password-reset>Passwort vergessen?</button>
+      </form>
+    </div>
+    <div id="auth-password-view" hidden>
+      <div class="widget-label">Dein Zugang</div>
+      <h2 id="auth-password-title">Passwort festlegen</h2>
+      <p class="auth-dialog-copy">Lege ein persönliches Passwort mit mindestens 8 Zeichen fest.</p>
+      <form id="auth-password-form" class="auth-form">
+        <label>
+          <span>Neues Passwort</span>
+          <input type="password" name="password" autocomplete="new-password" minlength="8" required>
+        </label>
+        <label>
+          <span>Passwort wiederholen</span>
+          <input type="password" name="passwordConfirmation" autocomplete="new-password" minlength="8" required>
+        </label>
+        <button class="primary-button" type="submit">Passwort speichern</button>
       </form>
     </div>
     <div id="auth-account-view" hidden>
@@ -490,7 +552,10 @@
           <h2 id="account-display-name"></h2>
           <p class="auth-account-email" id="account-email"></p>
         </div>
-        <button class="secondary-button" type="button" data-auth-logout>Ausloggen</button>
+        <div class="account-header-actions">
+          <button class="secondary-button" id="player-invite-open" type="button" data-player-invite-open hidden>Spieler-E-Mails</button>
+          <button class="secondary-button" type="button" data-auth-logout>Ausloggen</button>
+        </div>
       </div>
       <div id="account-games-panel">
         <div class="account-games-empty" id="account-games-empty" hidden>Als Tipper hast du keine eigenen Liga- oder Trainingsspiele.</div>
@@ -520,8 +585,35 @@
   </div>
 </dialog>
 
+<dialog class="auth-dialog player-invite-dialog" id="player-invite-dialog" aria-labelledby="player-invite-title">
+  <button class="modal-close-button auth-dialog-close" type="button" data-player-invite-close aria-label="Einladung schließen">×</button>
+  <div class="auth-dialog-card">
+    <div class="widget-label">Kontoverwaltung</div>
+    <h2 id="player-invite-title">Spielerzugänge</h2>
+    <p class="auth-dialog-copy">Ordne zuerst die Arbeits-E-Mail zu. Die Einladung kannst du direkt oder später versenden.</p>
+    <form id="player-invite-form" class="auth-form">
+      <label>
+        <span>Spieler</span>
+        <select id="player-invite-player" name="playerId" required>
+          <option value="">Spieler auswählen</option>
+        </select>
+      </label>
+      <label>
+        <span>Arbeits-E-Mail</span>
+        <input type="email" name="email" autocomplete="email" required placeholder="vorname.nachname@firma.de">
+      </label>
+      <p class="player-email-privacy">Die Adresse wird nur als nicht lesbarer Prüfwert gespeichert und später nicht angezeigt.</p>
+      <div class="player-email-actions">
+        <button class="secondary-button" type="submit" data-player-email-action="assign">E-Mail zuordnen</button>
+        <button class="primary-button" type="submit" data-player-email-action="invite">Zuordnen &amp; Einladung senden</button>
+      </div>
+    </form>
+    <div class="auth-message" id="player-invite-message" role="status" aria-live="polite"></div>
+  </div>
+</dialog>
+
 <script src="js/score-input.js?v=2026-09-03-training-counters"></script>
-<script src="js/tippspiel.js?v=2026-09-03-training-counters"></script>
-<script src="js/app.js?v=2026-09-09-profile-season-themes"></script>
+<script src="js/tippspiel.js?v=2026-09-09-task-lineups"></script>
+<script src="js/app.js?v=2026-09-09-final4-tiebreak"></script>
 </body>
 </html>

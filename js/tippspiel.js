@@ -4,18 +4,22 @@
     '6:0', '6:1', '6:2', '6:3', '6:4', '7:5', '7:6',
     '0:6', '1:6', '2:6', '3:6', '4:6', '5:7', '6:7'
   ];
+  const requestedAuthFlow = String(window.location?.search || '')
+    .match(/(?:^|[?&])auth=(invite|recovery)(?:&|$)/)?.[1] || null;
   const state = {
     client: null,
     season: null,
     session: null,
     profile: null,
     authMode: 'login',
+    passwordFlow: requestedAuthFlow,
     databaseMatches: new Map(),
     predictions: new Map(),
     leaderboard: [],
     resultTasks: [],
     trainingTasks: [],
     players: [],
+    invitationPlayers: [],
     trainingRoundCount: 1,
     editingTrainingId: null,
     extendedPlayerFeatures: true,
@@ -229,6 +233,12 @@
     }));
   }
 
+  function publishOfficialResultChange(matchId = null) {
+    window.dispatchEvent(new CustomEvent('padel:official-result-changed', {
+      detail: { matchId }
+    }));
+  }
+
   function isMissingAppRoleColumn(error) {
     const message = `${error?.message || ''} ${error?.details || ''}`.toLowerCase();
     return message.includes('app_role') && (
@@ -243,9 +253,11 @@
     const button = document.getElementById('auth-button');
     const guestView = document.getElementById('auth-guest-view');
     const accountView = document.getElementById('auth-account-view');
-    if (!button || !guestView || !accountView) return;
+    const passwordView = document.getElementById('auth-password-view');
+    if (!button || !guestView || !accountView || !passwordView) return;
 
     const isLoggedIn = Boolean(state.session?.user);
+    const isSettingPassword = isLoggedIn && ['invite', 'recovery'].includes(state.passwordFlow);
     const displayName = getProfileDisplayName();
     const taskCount = getActionableResultTasks().length
       + state.trainingTasks.filter(task => !task.created_by_me && isTrainingTaskVisible(task)).length;
@@ -259,7 +271,11 @@
     button.setAttribute('aria-label', isLoggedIn ? `Spieleübersicht von ${displayName} öffnen` : 'Einloggen');
     button.title = isLoggedIn ? displayName : '';
     guestView.hidden = isLoggedIn;
-    accountView.hidden = !isLoggedIn;
+    accountView.hidden = !isLoggedIn || isSettingPassword;
+    passwordView.hidden = !isSettingPassword;
+
+    const dialog = document.getElementById('auth-dialog');
+    dialog?.setAttribute('aria-labelledby', isSettingPassword ? 'auth-password-title' : isLoggedIn ? 'account-display-name' : 'auth-dialog-title');
 
     if (isLoggedIn) {
       document.getElementById('account-display-name').textContent = displayName;
@@ -268,6 +284,8 @@
       if (playerArea) playerArea.hidden = !isPlayerAccount() || !state.extendedPlayerFeatures;
       const gamesEmpty = document.getElementById('account-games-empty');
       if (gamesEmpty) gamesEmpty.hidden = isPlayerAccount() && state.extendedPlayerFeatures;
+      const inviteButton = document.getElementById('player-invite-open');
+      if (inviteButton) inviteButton.hidden = state.profile?.app_role !== 'admin';
     }
   }
 
@@ -419,6 +437,18 @@
 
   function getTaskNumber(task) {
     return task.match_id.match(/\d+$/)?.[0] || task.match_id;
+  }
+
+  function getTaskMatchLabel(task) {
+    if (task.display_label) return task.display_label;
+    const number = getTaskNumber(task);
+    switch (task.competition_stage) {
+      case 'quarterfinal': return `Viertelfinale ${number}`;
+      case 'semifinal': return `Halbfinale ${number}`;
+      case 'final_four': return `Final ${number}`;
+      case 'final': return 'Finale';
+      default: return `Partie ${number}`;
+    }
   }
 
   function getTaskLeagueLabel(task) {
@@ -625,7 +655,7 @@
     return `<div class="result-task-wrap">
       <article class="account-task-card result-task-card${hasAuthenticatedPlayer ? ' has-authenticated-player' : ''}${isActionable ? ' is-actionable' : ''}${isWaiting ? ' is-waiting' : ''}">
         <div class="account-task-meta">
-          <span class="widget-label">${escapeHtml(getTaskLeagueLabel(task))} · Partie ${escapeHtml(getTaskNumber(task))}</span>
+          <span class="widget-label">${escapeHtml(getTaskLeagueLabel(task))} · ${escapeHtml(getTaskMatchLabel(task))}</span>
           ${renderResultTaskStatus(task)}
         </div>
         ${groupKey === 'future' ? `<div class="result-card-timing">${escapeHtml(formatMatchAt(task.proposed_match_at || task.match_at))}</div>` : ''}
@@ -975,6 +1005,15 @@
     publishAuthenticatedPlayer();
   }
 
+  function hasCompleteMatchLineup(match) {
+    const players = match?.match_players || [];
+    return players.length === 4
+      && players.every(player => player.player_id)
+      && new Set(players.map(player => player.player_id)).size === 4
+      && players.filter(player => Number(player.team) === 1).length === 2
+      && players.filter(player => Number(player.team) === 2).length === 2;
+  }
+
   async function loadPlayerTools() {
     state.resultTasks = [];
     state.trainingTasks = [];
@@ -989,7 +1028,21 @@
     const error = playersResponse.error || resultResponse.error || trainingTaskResponse.error;
     if (error) throw error;
     state.players = playersResponse.data || [];
-    state.resultTasks = resultResponse.data || [];
+    const resultTasks = resultResponse.data || [];
+    if (resultTasks.length) {
+      const { data: taskMatches, error: taskMatchesError } = await state.client
+        .from('matches')
+        .select('id, display_label, match_players(player_id, team)')
+        .in('id', resultTasks.map(task => task.match_id));
+      if (taskMatchesError) throw taskMatchesError;
+      const matchesById = new Map((taskMatches || []).map(match => [match.id, match]));
+      state.resultTasks = resultTasks
+        .filter(task => hasCompleteMatchLineup(matchesById.get(task.match_id)))
+        .map(task => ({
+          ...task,
+          display_label: matchesById.get(task.match_id).display_label
+        }));
+    }
     state.trainingTasks = trainingTaskResponse.data || [];
     renderTrainingForm();
   }
@@ -1045,16 +1098,18 @@
       button.classList.toggle('active', button.dataset.authMode === state.authMode);
     });
     const passwordInput = document.querySelector('#auth-form [name="password"]');
-    passwordInput.autocomplete = state.authMode === 'signup' ? 'new-password' : 'current-password';
+    if (passwordInput) passwordInput.autocomplete = state.authMode === 'signup' ? 'new-password' : 'current-password';
+    const resetButton = document.getElementById('auth-password-reset');
+    if (resetButton) resetButton.hidden = state.authMode === 'signup';
     document.getElementById('auth-dialog-title').textContent = state.authMode === 'signup' ? 'Konto erstellen' : 'Einloggen';
     document.getElementById('auth-submit').textContent = state.authMode === 'signup' ? 'Konto erstellen' : 'Einloggen';
-    setAuthMessage('');
+    setAuthMessage(state.authMode === 'signup' ? 'Die Registrierung ist nur mit einer freigegebenen Firmen-E-Mail möglich.' : '');
   }
 
   function openAuthDialog() {
     const dialog = document.getElementById('auth-dialog');
     renderAuthState();
-    setAuthMessage('');
+    setAuthMessage(state.authMode === 'signup' ? 'Die Registrierung ist nur mit einer freigegebenen Firmen-E-Mail möglich.' : '');
     if (!dialog.open) dialog.showModal();
   }
 
@@ -1075,20 +1130,14 @@
 
     try {
       if (state.authMode === 'signup') {
-        const isWebPage = ['http:', 'https:'].includes(window.location.protocol);
-        const emailRedirectTo = isWebPage
-          ? new URL(window.location.pathname, window.location.origin).href
-          : undefined;
         const { data, error } = await state.client.auth.signUp({
           email,
           password,
-          options: {
-            ...(emailRedirectTo ? { emailRedirectTo } : {})
-          }
+          options: { emailRedirectTo: getAuthRedirectUrl() }
         });
         if (error) throw error;
         if (!data.session) {
-          setAuthMessage('Fast geschafft: Bitte bestätige die E-Mail von Supabase und logge dich danach ein.', 'success');
+          setAuthMessage('Bitte bestätige deine E-Mail und logge dich danach ein.', 'success');
           return;
         }
       } else {
@@ -1111,6 +1160,169 @@
     if (/already registered/i.test(message)) return 'Für diese E-Mail gibt es bereits ein Konto.';
     if (/password/i.test(message) && /characters/i.test(message)) return 'Das Passwort muss mindestens 8 Zeichen lang sein.';
     return message;
+  }
+
+  function getAuthRedirectUrl(flow) {
+    if (!['http:', 'https:'].includes(window.location.protocol)) return undefined;
+    const redirectUrl = new URL(window.location.pathname, window.location.origin);
+    if (flow) redirectUrl.searchParams.set('auth', flow);
+    return redirectUrl.href;
+  }
+
+  async function requestPasswordReset() {
+    const emailInput = document.querySelector('#auth-form [name="email"]');
+    const email = String(emailInput?.value || '').trim();
+    if (!email || !emailInput?.checkValidity()) {
+      emailInput?.reportValidity();
+      setAuthMessage('Bitte gib zuerst deine E-Mail-Adresse ein.', 'error');
+      return;
+    }
+
+    setAuthMessage('Link wird gesendet …');
+    const { error } = await state.client.auth.resetPasswordForEmail(email, {
+      redirectTo: getAuthRedirectUrl('recovery')
+    });
+    if (error) setAuthMessage(getFriendlyAuthError(error), 'error');
+    else setAuthMessage('Du erhältst gleich eine E-Mail zum Zurücksetzen deines Passworts.', 'success');
+  }
+
+  function finishPasswordFlow() {
+    state.passwordFlow = null;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('auth');
+    window.history.replaceState({}, '', `${url.pathname}${url.search}`);
+    renderAuthState();
+  }
+
+  async function handlePasswordSubmit(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const password = String(formData.get('password') || '');
+    const confirmation = String(formData.get('passwordConfirmation') || '');
+    if (password !== confirmation) {
+      setAuthMessage('Die beiden Passwörter stimmen nicht überein.', 'error');
+      return;
+    }
+
+    const submit = form.querySelector('button[type="submit"]');
+    submit.disabled = true;
+    setAuthMessage('Passwort wird gespeichert …');
+    const { error } = await state.client.auth.updateUser({ password });
+    if (error) setAuthMessage(getFriendlyAuthError(error), 'error');
+    else {
+      form.reset();
+      finishPasswordFlow();
+      setAuthMessage('Dein Passwort wurde gespeichert.', 'success');
+    }
+    submit.disabled = false;
+  }
+
+  function setPlayerInviteMessage(message, type = '') {
+    const target = document.getElementById('player-invite-message');
+    if (!target) return;
+    target.textContent = message || '';
+    target.className = `auth-message ${type}`.trim();
+  }
+
+  function renderInvitePlayerOptions() {
+    const select = document.getElementById('player-invite-player');
+    if (!select) return;
+    const selectedValue = select.value;
+    select.replaceChildren(new Option('Spieler auswählen', ''));
+    state.invitationPlayers.forEach(player => {
+      const suffix = player.account_status === 'active'
+        ? ' · Konto vorhanden'
+        : player.account_status === 'pending'
+          ? ' · Einladung offen'
+          : player.account_status === 'assigned' ? ' · E-Mail hinterlegt' : '';
+      const option = new Option(`${player.display_name}${suffix}`, player.player_id);
+      option.disabled = player.account_status === 'active';
+      select.add(option);
+    });
+    if (state.invitationPlayers.some(player => player.player_id === selectedValue && player.account_status !== 'active')) {
+      select.value = selectedValue;
+    }
+  }
+
+  async function openPlayerInviteDialog() {
+    if (state.profile?.app_role !== 'admin') return;
+    closeAuthDialog();
+    state.invitationPlayers = [];
+    renderInvitePlayerOptions();
+    const select = document.getElementById('player-invite-player');
+    if (select) select.disabled = true;
+    setPlayerInviteMessage('Spieler werden geladen …');
+    const dialog = document.getElementById('player-invite-dialog');
+    if (dialog && !dialog.open) dialog.showModal();
+
+    const { data, error } = await state.client.rpc('get_admin_player_invitation_options');
+    if (error) setPlayerInviteMessage(getFriendlyAuthError(error), 'error');
+    else {
+      state.invitationPlayers = data || [];
+      renderInvitePlayerOptions();
+      setPlayerInviteMessage('');
+    }
+    if (select) select.disabled = Boolean(error);
+  }
+
+  function closePlayerInviteDialog() {
+    document.getElementById('player-invite-dialog')?.close();
+  }
+
+  async function getFunctionErrorMessage(error) {
+    try {
+      const payload = await error?.context?.json();
+      if (payload?.error) return String(payload.error);
+    } catch (_error) {
+      // The generic SDK error below still gives the admin a useful failure state.
+    }
+    return String(error?.message || 'Die Einladung konnte nicht gesendet werden.');
+  }
+
+  async function handlePlayerInviteSubmit(event) {
+    event.preventDefault();
+    if (state.profile?.app_role !== 'admin') return;
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const action = event.submitter?.dataset.playerEmailAction === 'invite' ? 'invite' : 'assign';
+    const buttons = [...form.querySelectorAll('button[type="submit"]')];
+    buttons.forEach(button => { button.disabled = true; });
+    setPlayerInviteMessage(action === 'invite' ? 'Einladung wird gesendet …' : 'E-Mail wird zugeordnet …');
+
+    const payload = {
+      p_player_id: String(formData.get('playerId') || ''),
+      p_email: String(formData.get('email') || '').trim()
+    };
+    const response = action === 'invite'
+      ? await state.client.functions.invoke('invite-player', {
+          body: { playerId: payload.p_player_id, email: payload.p_email }
+        })
+      : await state.client.rpc('save_player_email_assignment', payload);
+    const { data, error } = response;
+    if (error) {
+      setPlayerInviteMessage(
+        action === 'invite' ? await getFunctionErrorMessage(error) : getFriendlyAuthError(error),
+        'error'
+      );
+    }
+    else {
+      const invitedPlayer = state.invitationPlayers.find(player => player.player_id === String(formData.get('playerId') || ''));
+      if (invitedPlayer) {
+        invitedPlayer.account_status = data?.status === 'linked'
+          ? 'active'
+          : action === 'invite' || data?.status === 'reinvite' ? 'pending' : 'assigned';
+      }
+      form.reset();
+      renderInvitePlayerOptions();
+      setPlayerInviteMessage(
+        data?.status === 'linked'
+          ? 'Das bestehende Konto wurde mit dem Spieler verknüpft.'
+          : action === 'invite' ? 'E-Mail wurde zugeordnet und die Einladung gesendet.' : 'Arbeits-E-Mail wurde hinterlegt.',
+        'success'
+      );
+    }
+    buttons.forEach(button => { button.disabled = false; });
   }
 
   function readResultScorePair(form, kind, setIndex) {
@@ -1291,6 +1503,7 @@
     const playedOn = String(data.get('playedOn') || '');
     const playedTime = String(data.get('playedTime') || '');
     const button = form.querySelector('[type="submit"]');
+    const resultIsOfficialImmediately = state.profile?.app_role === 'admin';
     try {
       const { resultDetails, actualSets, winner } = readResultScore(form);
       button.disabled = true;
@@ -1303,8 +1516,9 @@
         p_match_at: buildMatchAtValue(playedOn, playedTime)
       });
       if (error) throw error;
-      setAuthMessage(state.profile?.app_role === 'admin' ? 'Ergebnis wurde direkt eingetragen.' : 'Ergebnis wurde an das andere Team gesendet.', 'success');
+      setAuthMessage(resultIsOfficialImmediately ? 'Ergebnis wurde direkt eingetragen.' : 'Ergebnis wurde an das andere Team gesendet.', 'success');
       await refresh();
+      if (resultIsOfficialImmediately) publishOfficialResultChange(form.dataset.resultSubmit);
     } catch (error) {
       setAuthMessage(error.message || 'Das Ergebnis konnte nicht gespeichert werden.', 'error');
     } finally {
@@ -1320,6 +1534,7 @@
       if (error) throw error;
       setAuthMessage('Ergebnis bestätigt. Tabelle und Elo wurden aktualisiert.', 'success');
       await refresh();
+      publishOfficialResultChange();
     } catch (error) {
       setAuthMessage(error.message || 'Das Ergebnis konnte nicht bestätigt werden.', 'error');
     } finally {
@@ -1643,6 +1858,18 @@
         setAuthMode(mode.dataset.authMode);
         return;
       }
+      if (event.target.closest('[data-password-reset]')) {
+        await requestPasswordReset();
+        return;
+      }
+      if (event.target.closest('[data-player-invite-open]')) {
+        await openPlayerInviteDialog();
+        return;
+      }
+      if (event.target.closest('[data-player-invite-close]')) {
+        closePlayerInviteDialog();
+        return;
+      }
       if (event.target.closest('[data-auth-logout]')) {
         await state.client.auth.signOut();
         closeAuthDialog();
@@ -1759,6 +1986,8 @@
     });
 
     document.getElementById('auth-form')?.addEventListener('submit', handleAuthSubmit);
+    document.getElementById('auth-password-form')?.addEventListener('submit', handlePasswordSubmit);
+    document.getElementById('player-invite-form')?.addEventListener('submit', handlePlayerInviteSubmit);
     const trainingForm = document.getElementById('training-form');
     trainingForm?.addEventListener('submit', handleTrainingSubmit);
     trainingForm?.addEventListener('invalid', handleTrainingInvalid, true);
@@ -1798,6 +2027,9 @@
     document.getElementById('auth-dialog')?.addEventListener('click', event => {
       if (event.target === event.currentTarget) closeAuthDialog();
     });
+    document.getElementById('player-invite-dialog')?.addEventListener('click', event => {
+      if (event.target === event.currentTarget) closePlayerInviteDialog();
+    });
   }
 
   async function init(season) {
@@ -1824,12 +2056,26 @@
       return;
     }
     state.session = session;
-    state.client.auth.onAuthStateChange((_event, nextSession) => {
+    state.client.auth.onAuthStateChange((event, nextSession) => {
+      if (event === 'PASSWORD_RECOVERY') state.passwordFlow = 'recovery';
       state.session = nextSession;
-      window.setTimeout(refresh, 0);
+      window.setTimeout(async () => {
+        await refresh();
+        if (nextSession && ['invite', 'recovery'].includes(state.passwordFlow)) openAuthDialog();
+      }, 0);
     });
     await refresh();
+    if (state.session && ['invite', 'recovery'].includes(state.passwordFlow)) openAuthDialog();
+    else if (!state.session && ['invite', 'recovery'].includes(state.passwordFlow)) {
+      openAuthDialog();
+      setAuthMessage('Dieser Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.', 'error');
+    }
   }
 
-  window.PadelTippspiel = { init, refresh, render };
+  function setSeasonData(season) {
+    state.season = season;
+    render();
+  }
+
+  window.PadelTippspiel = { init, refresh, render, setSeasonData };
 })();

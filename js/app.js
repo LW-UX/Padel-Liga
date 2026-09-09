@@ -9,8 +9,11 @@ let matchSortMode = 'matchday';
 let rankingSortMode = 'points';
 let rankingViewMode = 'compact';
 let calculatorResults = new Map();
+let finalFourCalculatorResults = new Map();
 let activeCalculatorMatchId = null;
 let calculatorAutoTip = false;
+let activeSeasonRefreshPromise = null;
+let seasonRefreshRequested = false;
 let playerProfileChart = null;
 let playerProfileData = null;
 let playerProfileExpanded = false;
@@ -267,6 +270,43 @@ function getCompetitionConfig() {
     regularScheduleLocked: Boolean(competition.regularScheduleLocked),
     predictionsEnabled: competition.predictionsEnabled !== false
   };
+}
+
+function isCompletedSeasonMatch(match) {
+  return match?.sieger !== null && match?.sieger !== undefined
+    && match?.saetze !== null && match?.saetze !== undefined;
+}
+
+function hasAssignedMatchPlayers(match) {
+  return match?.team1?.playerIds?.length === 2 && match?.team2?.playerIds?.length === 2;
+}
+
+function getSeasonDisplayPhase(season = PADEL_DATA) {
+  if (season?.completedAt) return 'completed';
+
+  const matches = season?.matches || [];
+  const competition = season?.competition || {};
+  const tournamentMode = competition.tournamentMode || 'none';
+  const leagueMatches = matches.filter(match => getMatchStage(match) === 'league');
+  const leagueComplete = Boolean(competition.regularScheduleLocked)
+    && leagueMatches.length > 0
+    && leagueMatches.every(isCompletedSeasonMatch);
+  if (!leagueComplete) return 'league';
+
+  const finalFourMatches = matches.filter(match => getMatchStage(match) === 'final-four');
+  const finalFourReady = finalFourMatches.length === 3 && finalFourMatches.every(hasAssignedMatchPlayers);
+  if (tournamentMode === 'direct-final-four') {
+    return finalFourReady ? 'final-four' : 'league';
+  }
+
+  if (tournamentMode === 'top8-semifinals') {
+    const semifinalMatches = matches.filter(match => getMatchStage(match) === 'semifinal');
+    if (semifinalMatches.length !== 2) return 'league';
+    if (!semifinalMatches.every(isCompletedSeasonMatch)) return 'semifinal';
+    return finalFourReady ? 'final-four' : 'semifinal';
+  }
+
+  return 'league';
 }
 
 function countsForElo(match) {
@@ -566,15 +606,11 @@ function hydrateSeasonData(rawSeason) {
   };
 }
 
-async function loadActiveSeason() {
-  await loadDatabaseSeasonOptions();
-  selectedSeason = getDefaultSeasonOption();
-  if (!selectedSeason) throw new Error('Keine Saison in data/seasons.js gefunden.');
-
+async function loadSeasonData(season) {
   window.PADEL_SEASON = null;
-  if (selectedSeason.file) await loadScript(selectedSeason.file);
+  if (season.file) await loadScript(season.file);
   const staticSeason = window.PADEL_SEASON ? normalizeLegacySeason(window.PADEL_SEASON) : null;
-  const databaseSeason = await loadDatabaseSeasonPayload(selectedSeason.id);
+  const databaseSeason = await loadDatabaseSeasonPayload(season.id);
   const databaseSeasonIsComplete = Boolean(
     databaseSeason
     && (!staticSeason || databaseSeason.matches?.length >= staticSeason.matches?.length)
@@ -589,10 +625,32 @@ async function loadActiveSeason() {
     : await mergeDatabaseResults(staticSeason);
 
   if (!rawSeason?.participants || !rawSeason?.matches) {
-    throw new Error(`Saison ${selectedSeason.id} ist unvollständig.`);
+    throw new Error(`Saison ${season.id} ist unvollständig.`);
   }
 
-  PADEL_DATA = hydrateSeasonData(rawSeason);
+  return hydrateSeasonData(rawSeason);
+}
+
+async function loadActiveSeason() {
+  await loadDatabaseSeasonOptions();
+  selectedSeason = getDefaultSeasonOption();
+  if (!selectedSeason) throw new Error('Keine Saison in data/seasons.js gefunden.');
+  PADEL_DATA = await loadSeasonData(selectedSeason);
+}
+
+function updateSeasonPhaseLayout(phase = getSeasonDisplayPhase()) {
+  document.body.dataset.seasonPhase = phase;
+
+  const rankingSection = document.getElementById('rangliste');
+  const finalFourRanking = document.getElementById('final-four-ranking-section');
+  if (rankingSection && finalFourRanking) {
+    const finalFourIsPrimary = ['final-four', 'completed'].includes(phase) && getFinalFourMatches().length === 3;
+    if (finalFourIsPrimary) rankingSection.prepend(finalFourRanking);
+    else rankingSection.append(finalFourRanking);
+  }
+
+  const leagueCalculator = document.getElementById('league-calculator');
+  if (leagueCalculator) leagueCalculator.hidden = phase !== 'league';
 }
 
 function applySeasonMetadata() {
@@ -602,6 +660,8 @@ function applySeasonMetadata() {
   const organizationLabel = organizations.join('  ×  ');
   const heroOrganizations = document.getElementById('hero-orgs');
   const cupSeason = isCupSeason();
+  const displayPhase = getSeasonDisplayPhase();
+  const calculatorUnavailable = cupSeason || displayPhase === 'completed';
 
   document.title = title;
   document.querySelectorAll('[data-season-label]').forEach(element => {
@@ -619,11 +679,17 @@ function applySeasonMetadata() {
   }
 
   document.querySelectorAll('nav button[data-section]').forEach(button => {
-    button.hidden = cupSeason && !['partien', 'infos'].includes(button.dataset.section);
+    button.hidden = (cupSeason && !['partien', 'infos'].includes(button.dataset.section))
+      || (button.dataset.section === 'rechner' && calculatorUnavailable);
   });
   document.querySelectorAll('main > .section').forEach(section => {
-    section.hidden = cupSeason && !['partien', 'infos'].includes(section.id);
+    section.hidden = (cupSeason && !['partien', 'infos'].includes(section.id))
+      || (section.id === 'rechner' && calculatorUnavailable);
   });
+
+  const homeCalculatorLink = document.getElementById('home-calculator-link');
+  if (homeCalculatorLink) homeCalculatorLink.hidden = calculatorUnavailable;
+  updateSeasonPhaseLayout(displayPhase);
 
   const matchesNavButton = document.getElementById('partien-nav-button');
   const matchesTitle = document.getElementById('partien-title');
@@ -661,6 +727,7 @@ function applySeasonMetadata() {
   if (scopeToggle) scopeToggle.hidden = cupSeason;
 
   if (cupSeason) nav('partien', matchesNavButton);
+  else if (calculatorUnavailable && document.getElementById('rechner')?.classList.contains('active')) nav('rangliste');
 }
 
 function resetSeasonState() {
@@ -673,6 +740,7 @@ function resetSeasonState() {
   rankingSortMode = 'points';
   rankingViewMode = 'compact';
   calculatorResults = new Map();
+  finalFourCalculatorResults = new Map();
   activeCalculatorMatchId = null;
   calculatorAutoTip = false;
   activeP = new Set(PADEL_DATA.players.map(player => player.id));
@@ -680,6 +748,49 @@ function resetSeasonState() {
   placementChart?.destroy();
   chart = null;
   placementChart = null;
+}
+
+async function refreshActiveSeasonView() {
+  if (!selectedSeason?.id) return null;
+  seasonRefreshRequested = true;
+  if (activeSeasonRefreshPromise) return activeSeasonRefreshPromise;
+
+  activeSeasonRefreshPromise = (async () => {
+    while (seasonRefreshRequested) {
+      seasonRefreshRequested = false;
+      const selectedSeasonId = selectedSeason.id;
+      await loadDatabaseSeasonOptions();
+      selectedSeason = getSeasonOptions().find(season => season.id === selectedSeasonId) || selectedSeason;
+      PADEL_DATA = await loadSeasonData(selectedSeason);
+
+      calculatorResults = new Map();
+      finalFourCalculatorResults = new Map();
+      activeCalculatorMatchId = null;
+      calculatorAutoTip = false;
+      activeP = new Set(PADEL_DATA.players.map(player => player.id));
+      chart?.destroy();
+      placementChart?.destroy();
+      chart = null;
+      placementChart = null;
+
+      applySeasonMetadata();
+      updateViewerPicker();
+      renderHome();
+      renderRanking();
+      renderPartien();
+      renderCalculator();
+      renderStatistik();
+      renderInfos();
+      window.PadelTippspiel?.setSeasonData?.(PADEL_DATA);
+      if (document.getElementById('verlauf')?.classList.contains('active')) initChart();
+    }
+  })().catch(error => {
+    console.error('Die Saisonansicht konnte nach dem Ergebnis nicht aktualisiert werden:', error);
+  }).finally(() => {
+    activeSeasonRefreshPromise = null;
+  });
+
+  return activeSeasonRefreshPromise;
 }
 
 function isMobileViewport() {
@@ -799,6 +910,9 @@ window.PadelLigaSetAuthenticatedPlayer = setAuthenticatedPlayer;
 window.addEventListener('padel:authenticated-player', event => {
   setAuthenticatedPlayer(event.detail?.playerId || null);
 });
+window.addEventListener('padel:official-result-changed', () => {
+  void refreshActiveSeasonView();
+});
 
 function isMissingPlayerProfileRpc(error) {
   return error?.code === 'PGRST202'
@@ -832,10 +946,11 @@ function getLocalPlayerProfile(playerId) {
         const team = getProfilePlayerTeam(match, player.id, player.name);
         const ownTeam = team === 1 ? match.team1.spieler : match.team2.spieler;
         const opponents = team === 1 ? match.team2.spieler : match.team1.spieler;
+        const kind = getMatchStage(match) === 'final-four' ? 'final-four' : 'league';
         return {
           id: match.id,
-          kind: 'league',
-          matchWeight: 1,
+          kind,
+          matchWeight: kind === 'final-four' ? 0.5 : 1,
           date: toDateKey(match.datum),
           seasonId: selectedSeason.id,
           seasonLabel: PADEL_DATA.label || selectedSeason.label,
@@ -868,6 +983,11 @@ function getLocalPlayerProfile(playerId) {
     seasonLabel: PADEL_DATA?.label || selectedSeason?.label
   }));
   const eloValues = eloSeries.map(item => item.elo);
+  const weightedMatchCount = matches.reduce((total, match) => total + Number(match.matchWeight || 0), 0);
+  const weightedWinCount = matches.reduce((total, match) =>
+    total + (match.outcome === 'win' ? Number(match.matchWeight || 0) : 0), 0);
+  const weightedLossCount = matches.reduce((total, match) =>
+    total + (match.outcome === 'loss' ? Number(match.matchWeight || 0) : 0), 0);
   const rankedPlayers = profileSeasonEnabled ? getRankedPlayers(PADEL_DATA.matches) : [];
   const rankedPlayer = rankedPlayers.find(item => item.id === player.id);
   const participation = rankedPlayer ? [{
@@ -893,9 +1013,9 @@ function getLocalPlayerProfile(playerId) {
     summary: {
       currentElo: eloValues.length ? eloValues[eloValues.length - 1] : null,
       peakElo: eloValues.length ? Math.max(...eloValues) : null,
-      matches: matches.length,
-      wins: matches.filter(item => item.outcome === 'win').length,
-      losses: matches.filter(item => item.outcome === 'loss').length,
+      matches: weightedMatchCount,
+      wins: weightedWinCount,
+      losses: weightedLossCount,
       gamesFor,
       gamesAgainst,
       gameDiff: gamesFor - gamesAgainst
@@ -1338,39 +1458,71 @@ function getPlayerProfileTrainingSessionId(match) {
   return String(match.id || '').match(/^training-(\d+)-\d+$/)?.[1] || null;
 }
 
+function getPlayerProfileFinalFourId(match) {
+  if (match?.kind !== 'final-four' || !match.seasonId) return null;
+  return String(match.seasonId);
+}
+
+function getPlayerProfileMatchLabel(match) {
+  if (match.kind === 'training') return 'Training';
+  if (match.kind !== 'final-four') return match.seasonLabel || 'Liga';
+
+  const seasonLabel = String(match.seasonLabel || '');
+  const seasonPrefix = /^Sommer\b/i.test(seasonLabel)
+    ? 'SO'
+    : /^Winter\b/i.test(seasonLabel) ? 'WI' : '';
+  const year = seasonLabel.match(/\b(?:20)?(\d{2})\b/)?.[1] || '';
+  const seasonCode = `${seasonPrefix}${year}`;
+  return seasonCode ? `FINAL4 ${seasonCode}` : 'FINAL4';
+}
+
 function groupPlayerProfileMatches(matches = []) {
   const groups = [];
   const trainingGroups = new Map();
+  const finalFourGroups = new Map();
   matches.forEach(match => {
     const sessionId = getPlayerProfileTrainingSessionId(match);
-    if (!sessionId) {
+    const finalFourId = getPlayerProfileFinalFourId(match);
+    if (!sessionId && !finalFourId) {
       groups.push({ key: `match-${match.id}`, kind: match.kind, matches: [match] });
       return;
     }
-    const key = `training-${sessionId}`;
-    let group = trainingGroups.get(key);
+    const isFinalFour = Boolean(finalFourId);
+    const key = isFinalFour ? `final-four-${finalFourId}` : `training-${sessionId}`;
+    const groupMap = isFinalFour ? finalFourGroups : trainingGroups;
+    let group = groupMap.get(key);
     if (!group) {
-      group = { key, kind: 'training', matches: [] };
-      trainingGroups.set(key, group);
+      group = { key, kind: isFinalFour ? 'final-four' : 'training', matches: [] };
+      groupMap.set(key, group);
       groups.push(group);
     }
     group.matches.push(match);
   });
   groups.forEach(group => {
-    if (group.kind !== 'training') return;
-    group.matches.sort((left, right) =>
-      Number(left.trainingRoundNumber || String(left.id).split('-').at(-1))
-      - Number(right.trainingRoundNumber || String(right.id).split('-').at(-1))
-    );
+    if (group.kind === 'training') {
+      group.matches.sort((left, right) =>
+        Number(left.trainingRoundNumber || String(left.id).split('-').at(-1))
+        - Number(right.trainingRoundNumber || String(right.id).split('-').at(-1))
+      );
+    } else if (group.kind === 'final-four') {
+      group.matches.sort((left, right) => String(left.id).localeCompare(String(right.id), 'de', { numeric: true }));
+    }
   });
   return groups;
 }
 
 function getVisiblePlayerProfileMatchGroups(matches) {
-  const visibleMatches = playerProfileExpanded
-    ? matches
-    : matches.slice(0, PLAYER_PROFILE_MATCH_PREVIEW_LIMIT);
-  return groupPlayerProfileMatches(visibleMatches);
+  const groups = groupPlayerProfileMatches(matches);
+  if (playerProfileExpanded) return groups;
+
+  const visibleGroups = [];
+  let visibleMatchCount = 0;
+  for (const group of groups) {
+    if (visibleMatchCount >= PLAYER_PROFILE_MATCH_PREVIEW_LIMIT) break;
+    visibleGroups.push(group);
+    visibleMatchCount += group.matches.length;
+  }
+  return visibleGroups;
 }
 
 function renderPlayerProfileHistory() {
@@ -1409,10 +1561,10 @@ function renderPlayerProfileHistory() {
             <div class="player-profile-match-team-line"><span>vs.</span> ${opponents}</div>
           </div>
           <div class="player-profile-match-score"${isComplete ? '' : ' title="Vollständige Sätze werden einzeln gewertet"'}>${renderProfileResultDetails(match)}</div>
-          <div class="player-profile-match-season">${showSeason ? escapeHtml(match.kind === 'training' ? 'Training' : match.seasonLabel || 'Liga') : ''}</div>
+          <div class="player-profile-match-season">${showSeason ? escapeHtml(getPlayerProfileMatchLabel(match)) : ''}</div>
         </article>`;
       }).join('');
-      return `<section class="player-profile-match-group${group.kind === 'training' ? ' training' : ''}" data-profile-match-group="${escapeHtml(group.key)}">${rows}</section>`;
+      return `<section class="player-profile-match-group ${escapeHtml(group.kind || '')}" data-profile-match-group="${escapeHtml(group.key)}">${rows}</section>`;
     }).join('');
   }
   showAll.hidden = playerProfileExpanded || matches.length <= PLAYER_PROFILE_MATCH_PREVIEW_LIMIT;
@@ -1584,7 +1736,23 @@ document.addEventListener('click', event => {
 
   const calculatorResetControl = event.target.closest('[data-calculator-reset]');
   if (calculatorResetControl) {
-    resetCalculator();
+    if (calculatorResetControl.dataset.calculatorReset === 'final-four') {
+      finalFourCalculatorResults = new Map();
+      activeCalculatorMatchId = null;
+      renderFinalFourCalculator();
+      syncCalculatorActiveMatchCard();
+    } else resetCalculator();
+    return;
+  }
+
+  const finalFourOutcome = event.target.closest('[data-final-four-score]');
+  if (finalFourOutcome) {
+    const matchId = finalFourOutcome.dataset.calculatorMatchId;
+    getCalculatorEntry(matchId).set1 = finalFourOutcome.dataset.finalFourScore.split(':');
+    setActiveCalculatorMatch(matchId, false);
+    syncCalculatorScoreInputs(matchId);
+    renderCalculatorMatchStatus(matchId);
+    renderFinalFourCalculatorRanking();
     return;
   }
 
@@ -2002,25 +2170,7 @@ function getSingleSetGameDiff(match, playerName) {
   return getSingleSetGameStats(match, playerName).diff;
 }
 
-function getFinalFourHeadToHeadWins(playerName, opponentName, matches) {
-  return matches.filter(match => {
-    if (match.sieger === null) return false;
-
-    const playerTeam = getPlayerMatchTeamIndex({ name: playerName }, match);
-    const opponentTeam = getPlayerMatchTeamIndex({ name: opponentName }, match);
-    return playerTeam && opponentTeam && playerTeam !== opponentTeam && match.sieger === playerTeam;
-  }).length;
-}
-
-function compareFinalFourHeadToHead(a, b, matches) {
-  const aWins = getFinalFourHeadToHeadWins(a.name, b.name, matches);
-  const bWins = getFinalFourHeadToHeadWins(b.name, a.name, matches);
-
-  return aWins === bWins ? 0 : bWins - aWins;
-}
-
-function getFinalFourStats() {
-  const matches = getFinalFourMatches();
+function getFinalFourStats(matches = getFinalFourMatches()) {
   const names = getFinalFourPlayerNames(matches);
 
   return {
@@ -2056,7 +2206,6 @@ function getFinalFourStats() {
     }).sort((a, b) =>
       b.siege - a.siege ||
       b.diff - a.diff ||
-      compareFinalFourHeadToHead(a, b, matches) ||
       a.seed - b.seed
     )
   };
@@ -3330,6 +3479,19 @@ function matchesCurrentMatchScope(match) {
   return true;
 }
 
+function getSeasonStageOrder(phase = getSeasonDisplayPhase()) {
+  if (phase === 'semifinal') return ['semifinal', 'league', 'finalFour'];
+  if (['final-four', 'completed'].includes(phase)) return ['finalFour', 'semifinal', 'league'];
+  return ['league', 'semifinal', 'finalFour'];
+}
+
+function joinSeasonPhaseSections(sections) {
+  return getSeasonStageOrder()
+    .map(stage => sections[stage])
+    .filter(Boolean)
+    .join('');
+}
+
 function renderPartienByMatchday(matches) {
   const regularMatches = matches.filter(match => getMatchStage(match) === 'league');
   const semifinalMatches = matches
@@ -3348,7 +3510,11 @@ function renderPartienByMatchday(matches) {
   }).join('');
   const semifinalHtml = renderTournamentGroup(semifinalMatches, 'Halbfinale', 'semifinal-group');
   const finalFourHtml = renderTournamentGroup(finalFourMatches, 'Final Four', 'final-four-group');
-  return [regularHtml, semifinalHtml, finalFourHtml].filter(Boolean).join('');
+  return joinSeasonPhaseSections({
+    league: regularHtml,
+    semifinal: semifinalHtml,
+    finalFour: finalFourHtml
+  });
 }
 
 function formatMatchDateGroupLabel(date) {
@@ -3397,7 +3563,11 @@ function renderPartienByDate(matches) {
   const openHtml = renderOpenMatchGroup(openMatches);
   const semifinalHtml = renderTournamentGroup(semifinalMatches, 'Halbfinale', 'semifinal-group');
   const finalFourHtml = renderTournamentGroup(finalFourMatches, 'Final Four', 'final-four-group');
-  return [scheduledHtml, openHtml, semifinalHtml, finalFourHtml].filter(Boolean).join('');
+  return joinSeasonPhaseSections({
+    league: scheduledHtml + openHtml,
+    semifinal: semifinalHtml,
+    finalFour: finalFourHtml
+  });
 }
 
 function renderCupTrophy() {
@@ -3574,22 +3744,28 @@ function setCalculatorAutoTip(on) {
   updateCalculatorAutoTipUi();
 }
 
-function deactivateCalculatorAutoTip() {
+function deactivateCalculatorAutoTip(matchId) {
+  if (getMatchStage(PADEL_DATA.matches.find(match => match.id === matchId)) === 'final-four') return;
   if (!calculatorAutoTip) return;
   calculatorAutoTip = false;
   updateCalculatorAutoTipUi();
 }
 
 function getCalculatorEntry(matchId) {
-  if (!calculatorResults.has(matchId)) {
-    calculatorResults.set(matchId, {
-      set1: ['', ''],
+  const match = PADEL_DATA.matches.find(item => item.id === matchId);
+  const isFinalFour = getMatchStage(match) === 'final-four';
+  const results = isFinalFour ? finalFourCalculatorResults : calculatorResults;
+  if (!results.has(matchId)) {
+    const officialScore = isFinalFour && match.sieger !== null
+      ? String(match.ergebnis || '').match(/(\d+)\s*:\s*(\d+)/) : null;
+    results.set(matchId, {
+      set1: officialScore ? [officialScore[1], officialScore[2]] : ['', ''],
       set2: ['', ''],
       tb: ['', '']
     });
   }
 
-  return calculatorResults.get(matchId);
+  return results.get(matchId);
 }
 
 function getCalculatorPair(entry, part) {
@@ -3638,6 +3814,18 @@ function getCalculatorStatusClass(status) {
 function parseCalculatorResult(match) {
   const entry = getCalculatorEntry(match.id);
   const firstSet = validateRegularSet(...getCalculatorPair(entry, 'set1'));
+  if (isSingleSetMatch(match) || getMatchStage(match) === 'final-four') {
+    if (firstSet.empty || firstSet.invalid) return {
+      status: firstSet.empty ? 'empty' : 'invalid', message: firstSet.message || '',
+      displaySaetze: '—', displayErgebnis: '', showTiebreak: false
+    };
+    const ergebnis = formatCalculatorScore(firstSet);
+    const saetze = firstSet.winner === 1 ? '1:0' : '0:1';
+    return {
+      status: 'complete', message: '', displaySaetze: saetze, displayErgebnis: ergebnis,
+      showTiebreak: false, match: { ...match, ergebnis, saetze, sieger: firstSet.winner }
+    };
+  }
   const secondSet = validateRegularSet(...getCalculatorPair(entry, 'set2'));
   const matchTiebreak = validateMatchTiebreak(...getCalculatorPair(entry, 'tb'));
 
@@ -3732,7 +3920,7 @@ function getCalculatorSimulatedMatches() {
 }
 
 function updateCalculatorScore(input) {
-  deactivateCalculatorAutoTip();
+  deactivateCalculatorAutoTip(input.dataset.calculatorMatchId);
   setActiveCalculatorMatch(input.dataset.calculatorMatchId, false);
   const entry = getCalculatorEntry(input.dataset.calculatorMatchId);
   const part = input.dataset.calculatorPart;
@@ -3749,7 +3937,7 @@ function updateCalculatorScore(input) {
 function clearCalculatorScoreInput(input) {
   if (!input.value) return;
 
-  deactivateCalculatorAutoTip();
+  deactivateCalculatorAutoTip(input.dataset.calculatorMatchId);
   const entry = getCalculatorEntry(input.dataset.calculatorMatchId);
   const part = input.dataset.calculatorPart;
   const teamIndex = Number(input.dataset.calculatorTeam);
@@ -3773,8 +3961,8 @@ function initializeCalculatorPairDefaults(matchId, part, changedTeamIndex) {
 }
 
 function stepCalculatorScore(button) {
-  deactivateCalculatorAutoTip();
   const matchId = button.dataset.calculatorMatchId;
+  deactivateCalculatorAutoTip(matchId);
   setActiveCalculatorMatch(matchId, false);
   const part = button.dataset.calculatorPart;
   const teamIndex = Number(button.dataset.calculatorTeam);
@@ -3808,12 +3996,13 @@ function syncCalculatorScoreInputs(matchId) {
 function applyCalculatorStraightSetsPreset(matchId, winnerTeamIndex) {
   if (!matchId || !Number.isInteger(winnerTeamIndex)) return;
 
-  deactivateCalculatorAutoTip();
+  deactivateCalculatorAutoTip(matchId);
   const entry = getCalculatorEntry(matchId);
   const winnerScores = winnerTeamIndex === 0 ? ['6', '2'] : ['2', '6'];
 
   entry.set1 = [...winnerScores];
-  entry.set2 = [...winnerScores];
+  const match = PADEL_DATA.matches.find(item => item.id === matchId);
+  entry.set2 = isSingleSetMatch(match) || getMatchStage(match) === 'final-four' ? ['', ''] : [...winnerScores];
   entry.tb = ['', ''];
 
   setActiveCalculatorMatch(matchId, false);
@@ -3939,7 +4128,7 @@ function renderCalculatorProbabilityButton(match, teamIndex, probability) {
     class="calculator-probability-button mc-result-prob"
     data-calculator-preset-team="${teamIndex}"
     data-calculator-match-id="${escapeHtml(match.id)}"
-    aria-label="${teamLabel} mit 6 zu 2, 6 zu 2 als Sieger einsetzen"
+    aria-label="${teamLabel} mit ${isSingleSetMatch(match) || getMatchStage(match) === 'final-four' ? '6 zu 2' : '6 zu 2, 6 zu 2'} als Sieger einsetzen"
   >${probability}%</button>`;
 }
 
@@ -3949,7 +4138,9 @@ function renderCalculatorLiveInner(match) {
   // Sobald getippt wird: durchgehend laufender Satzstand (0:0 → 1:0/0:1 → …),
   // Wahrscheinlichkeit links/rechts daneben (wie die Partien-Cards).
   if (isCalculatorEntryStarted(match)) {
-    const standing = getCalculatorSetStanding(match);
+    const standing = getMatchStage(match) === 'final-four'
+      ? getCalculatorPair(getCalculatorEntry(match.id), 'set1').map(value => value || '0').join(':')
+      : getCalculatorSetStanding(match);
     const left = probability ? renderCalculatorProbabilityButton(match, 0, probability.team1) : '';
     const right = probability ? renderCalculatorProbabilityButton(match, 1, probability.team2) : '';
     return `<div class="mc-result-row">${left}<div class="mc-score-main">${escapeHtml(standing)}</div>${right}</div>`;
@@ -4003,6 +4194,7 @@ function renderCalculatorMatchCard(match) {
   const set2 = getCalculatorPair(entry, 'set2');
   const tb = getCalculatorPair(entry, 'tb');
   const result = parseCalculatorResult(match);
+  const singleSet = isSingleSetMatch(match) || getMatchStage(match) === 'final-four';
 
   return `<article class="calculator-match-card ${result.match ? 'calculator-match-complete' : ''} ${isViewerMatch(match) ? 'viewer-match' : ''} ${activeCalculatorMatchId === match.id ? 'calculator-match-active' : ''}" data-calculator-match-card="${escapeHtml(match.id)}">
     <div class="calculator-match-head">
@@ -4014,30 +4206,31 @@ function renderCalculatorMatchCard(match) {
       ${renderCalculatorLiveResultHtml(match)}
       <div class="calculator-match-team calculator-match-team-2">${renderTeamPlayers(match.team2.spieler)}</div>
     </div>
-    <div class="calculator-score-line">
+    <div class="calculator-score-line ${singleSet ? 'calculator-single-set' : ''}">
       <div class="calculator-score-pair">
         ${renderCalculatorScoreInput(match, 'set1', 0, 'Team 1 Satz 1', set1[0])}
         <span>:</span>
         ${renderCalculatorScoreInput(match, 'set1', 1, 'Team 2 Satz 1', set1[1])}
       </div>
-      <span class="calculator-set-separator">|</span>
+      ${singleSet ? '' : `<span class="calculator-set-separator">|</span>
       <div class="calculator-score-pair">
         ${renderCalculatorScoreInput(match, 'set2', 0, 'Team 1 Satz 2', set2[0])}
         <span>:</span>
         ${renderCalculatorScoreInput(match, 'set2', 1, 'Team 2 Satz 2', set2[1])}
-      </div>
+      </div>`}
     </div>
-    <div class="calculator-tiebreak-line" id="calculator-tiebreak-${match.id}" ${result.showTiebreak ? '' : 'hidden'}>
+    ${singleSet ? '' : `<div class="calculator-tiebreak-line" id="calculator-tiebreak-${match.id}" ${result.showTiebreak ? '' : 'hidden'}>
       <span class="calculator-score-pair">
         ${renderCalculatorScoreInput(match, 'tb', 0, 'Team 1 Match-Tiebreak', tb[0])}
         <span>:</span>
         ${renderCalculatorScoreInput(match, 'tb', 1, 'Team 2 Match-Tiebreak', tb[1])}
       </span>
-    </div>
+    </div>`}
   </article>`;
 }
 
 function renderCalculatorRanking() {
+  renderFinalFourCalculatorRanking();
   const body = document.getElementById('calculator-ranking-body');
   if (!body) return;
 
@@ -4123,13 +4316,107 @@ function renderCalculator() {
   const matchContainer = document.getElementById('calculator-matches');
   if (!matchContainer) return;
 
+  const displayPhase = getSeasonDisplayPhase();
+  const leagueCalculator = document.getElementById('league-calculator');
+  if (leagueCalculator) leagueCalculator.hidden = displayPhase !== 'league';
+
   const openMatches = getOpenMatches();
   matchContainer.innerHTML = openMatches.length
     ? openMatches.map(renderCalculatorMatchCard).join('')
     : '<div class="empty-state">Keine offenen Partien.</div>';
   syncCalculatorActiveMatchCard();
   updateCalculatorAutoTipUi();
+  renderFinalFourCalculator();
   renderCalculatorRanking();
+}
+
+// Final4 shares score controls and ranking rules with the existing calculators.
+function getFinalFourCalculatorMatches() {
+  return getFinalFourMatches().map(match => parseCalculatorResult(match).match || {
+    ...match, sieger: null, ergebnis: null, saetze: null
+  });
+}
+
+function getFinalFourCalculatorOutcomes(matches, targetId) {
+  const target = matches.find(match => match.id === targetId);
+  if (matches.length !== 3 || !target || matches.some(match => match.id !== targetId && match.sieger === null)) return [];
+  const winningScores = [[6, 0], [6, 1], [6, 2], [6, 3], [6, 4], [7, 5], [7, 6]];
+  return [...winningScores, ...winningScores.map(([a, b]) => [b, a])].map(([a, b]) => {
+    const score = `${a}:${b}`;
+    const simulated = matches.map(match => match.id === targetId
+      ? { ...match, ergebnis: score, sieger: a > b ? 1 : 2, saetze: a > b ? '1:0' : '0:1' }
+      : match);
+    return { score, winner: getFinalFourStats(simulated).stats[0] };
+  });
+}
+
+function getFinalFourEliminatedPlayerNames(stats, outcomes) {
+  if (!outcomes.length) return [];
+  const possibleWinnerNames = new Set(outcomes.map(outcome => outcome.winner.name));
+  return stats.map(player => player.name).filter(name => !possibleWinnerNames.has(name));
+}
+
+function renderFinalFourCalculatorRanking() {
+  const body = document.getElementById('final-four-calculator-ranking-body');
+  if (!body) return;
+  const matches = getFinalFourCalculatorMatches();
+  const { stats } = getFinalFourStats(matches);
+  const mini = document.getElementById('final-four-calculator-mini-ranking');
+  const previous = getCalculatorRowPositions(body, '.calculator-ranking-row');
+  const previousMini = getCalculatorRowPositions(mini, '.calculator-mini-rank-row');
+  const players = stats.map(stat => ({ ...PADEL_DATA.players.find(player => player.name === stat.name), ...stat }));
+  body.innerHTML = players.map((player, index) => `<tr class="calculator-ranking-row r${index + 1} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-calculator-player="${escapeHtml(player.id || player.name)}">
+    <td class="rn l">${index + 1}</td>
+    <td class="l">${renderPlayerProfileLink(player, 'pname')}</td>
+    <td class="num-val">${player.partien}</td>
+    <td class="punkte-val">${player.siege}</td>
+    <td class="num-val"><span class="${getStatDiffClass(player.diff)}">${formatStatDiff(player.diff)}</span></td>
+  </tr>`).join('');
+  mini.innerHTML = players.map((player, index) => `<div class="calculator-mini-rank-row ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-calculator-player="${escapeHtml(player.id || player.name)}" title="${escapeHtml(player.name)}">
+    <span class="calculator-mini-rank-pos">${index + 1}</span>
+    <span class="calculator-mini-rank-initials">${escapeHtml(player.initials || `P${player.seed}`)}</span>
+  </div>`).join('');
+  animateCalculatorRows(body, '.calculator-ranking-row', previous);
+  animateCalculatorRows(mini, '.calculator-mini-rank-row', previousMini);
+  const completed = matches.filter(match => match.sieger !== null).length;
+  document.getElementById('final-four-calculator-winner').textContent = completed === 3
+    ? `Gesamtsieger der Simulation: ${stats[0].name}`
+    : `${completed} von 3 Sätzen gewertet`;
+
+  const openMatches = matches.filter(match => match.sieger === null);
+  const target = openMatches.length === 1 ? openMatches[0]
+    : matches.find(match => match.id === activeCalculatorMatchId) || matches[matches.length - 1];
+  const outcomes = getFinalFourCalculatorOutcomes(matches, target?.id);
+  document.getElementById('final-four-outcomes-note').textContent = outcomes.length
+    ? 'Alle möglichen Endstände bei unveränderten anderen Sätzen. Ergebnis anklicken zum Übernehmen.'
+    : 'Trage zwei vollständige Sätze ein. Dann siehst du hier die möglichen Gesamtsieger für jeden Endstand des verbleibenden Satzes.';
+  const grouped = new Map();
+  outcomes.forEach(outcome => {
+    if (!grouped.has(outcome.winner.name)) grouped.set(outcome.winner.name, []);
+    grouped.get(outcome.winner.name).push(outcome.score);
+  });
+  const outcomeRows = [...grouped].map(([name, scores]) => `<div class="final-four-outcome-row">
+    <div class="final-four-outcome-winner">${renderPlayerProfileLink(name, 'pname')}<span class="sh-meta"> gewinnt bei</span></div>
+    <div class="final-four-outcome-scores">${scores.map(score => `<button type="button" class="secondary-button final-four-outcome-score" data-calculator-match-id="${escapeHtml(target.id)}" data-final-four-score="${score}" aria-label="${escapeHtml(formatMatchNumberLabel(target))}: ${score} einsetzen – ${escapeHtml(name)} gewinnt" aria-pressed="${target.ergebnis === score}">${score}</button>`).join('')}</div>
+  </div>`).join('');
+  const eliminatedPlayerNames = getFinalFourEliminatedPlayerNames(stats, outcomes);
+  const eliminatedRow = eliminatedPlayerNames.length
+    ? `<div class="final-four-eliminated-row">
+        <span class="sh-meta">${eliminatedPlayerNames.length === 1 ? 'Kann' : 'Können'} nicht mehr gewinnen:</span>
+        <span class="final-four-eliminated-players">${eliminatedPlayerNames.map(name => renderPlayerProfileLink(name, 'pname')).join('<span aria-hidden="true"> · </span>')}</span>
+      </div>`
+    : '';
+  document.getElementById('final-four-calculator-outcomes').innerHTML = outcomeRows + eliminatedRow;
+}
+
+function renderFinalFourCalculator() {
+  const section = document.getElementById('final-four-calculator');
+  if (!section) return;
+  const matches = getFinalFourMatches();
+  section.hidden = matches.length !== 3;
+  if (section.hidden) return;
+  document.getElementById('final-four-calculator-matches').innerHTML = matches.map(renderCalculatorMatchCard).join('');
+  renderFinalFourCalculatorRanking();
 }
 
 function getMatchdayInfo(spieltag) {

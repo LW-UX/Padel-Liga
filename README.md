@@ -25,6 +25,7 @@ padel-liga/
 │   ├── supabase-config.js         Öffentliche Supabase-Verbindungsdaten
 │   └── info.js                   Globale Regeln und allgemeine Infos
 ├── supabase/
+│   ├── functions/                Geschützte serverseitige Funktionen
 │   └── migrations/               Datenbankschema, Rechte und Startdaten
 ├── docs/
 │   └── PROJECT_DECISIONS.md      Fortlaufendes Projektgedächtnis
@@ -184,15 +185,23 @@ Der Konto-Dialog trennt „Spiele“ und „Einstellungen“. Unter „Spiele“
 
 Spieler können im Konto-Dialog ein saisonunabhängiges Training mit Datum, Uhrzeit und genau vier Spielern anlegen. Eine Trainingskarte kann mehrere Spielabschnitte mit wechselnden Paarungen derselben vier Spieler enthalten. Jeder Abschnitt enthält einen oder zwei tatsächlich gespielte Sätze; ein Stand von 1:1 ist zulässig. Ein anderer beteiligter Spieler muss das Training bestätigen. Trainings verändern kein Elo.
 
-## Registrierung nach E-Mail-Domain
+## Firmenregistrierung und Spielereinladungen
 
-Die Migration legt die geschützte Tabelle `private.signup_email_domains` sowie den Hook `private.hook_restrict_signup_by_email_domain` an. Solange keine Domains eingetragen sind, bleiben Registrierungen wie bisher möglich. Sobald die erlaubten Domains gepflegt sind, wird der Hook unter **Authentication → Hooks → Before User Created** aktiviert:
+Nutzer dürfen mit einer freigegebenen Firmen-E-Mail weiterhin selbst ein Tippkonto erstellen. Die geschützte Tabelle `private.signup_email_domains` und der Hook `private.hook_restrict_signup_by_email_domain` begrenzen diese Registrierung auf die eingetragenen Domains. Solange die Tabelle leer oder der Hook nicht aktiviert ist, bleibt die Registrierung für alle E-Mail-Domains offen. Der Hook wird in Supabase unter **Authentication → Hooks → Before User Created** mit folgendem Ziel aktiviert:
 
 ```text
 pg-functions://postgres/private/hook_restrict_signup_by_email_domain
 ```
 
-Bereits vorhandene Konten bleiben davon unberührt. Einzelne vorab hinterlegte Spieler-E-Mail-Adressen sind auch außerhalb der später freigegebenen Domains zulässig.
+Zugelassen sind ausschließlich `envidual.com`, `headsquare.group` und `hanako-health.com`. Die Domainmigration `20260909220000_company_signup_domains.sql` gleicht die Allowlist genau auf diese drei Werte ab.
+
+Spieler können zusätzlich gezielt vorbereitet und eingeladen werden. Ein Admin öffnet im eigenen Konto „Spieler-E-Mails“, wählt das Spielerprofil aus und trägt die eindeutige Arbeits-E-Mail ein. Mit „E-Mail zuordnen“ wird die Adresse nur mit dem Spieler verknüpft; „Zuordnen & Einladung senden“ verschickt zusätzlich die Supabase-Einladung. Der Spieler öffnet den persönlichen Link und legt auf der Webseite sein Passwort selbst fest.
+
+Die Adresse muss zu einer der drei freigegebenen Firmen-Domains gehören. Sie wird ausschließlich als Hash gespeichert und kann deshalb später nicht im Klartext angezeigt werden. Die Spielerliste zeigt stattdessen „E-Mail hinterlegt“, „Einladung offen“ oder „Konto vorhanden“. Vor dem Versand einer Einladung lässt sich eine fehlerhafte Zuordnung durch erneute Eingabe ersetzen.
+
+Existiert für diese E-Mail bereits ein Konto, erzeugt der Ablauf kein Duplikat. Das vorhandene Konto wird mit dem Spielerprofil verbunden, sofern keine widersprüchliche Zuordnung besteht. Eine Spieler-ID und eine E-Mail dürfen jeweils nur einmal verwendet werden.
+
+Die Migration `20260909200000_player_invitations.sql` und die Edge Function `invite-player` sind in Produktion aktiv. **Allow new users to sign up** bleibt aktiviert; die Begrenzung erfolgt durch Domainliste und Auth Hook. Für den zuverlässigen Versand an Arbeits-E-Mail-Adressen ist ein eigener SMTP-Dienst in Supabase erforderlich. Die optionale Function-Variable `PUBLIC_SITE_URL` kann die Zieladresse der Einladung überschreiben; ohne sie wird `https://lw-ux.github.io/Padel-Liga/` verwendet.
 
 Die Datei `data/supabase-config.js` enthält ausschließlich die öffentliche Projekt-URL und den öffentlichen Publishable Key. Ein Supabase Secret Key gehört weder in diese Datei noch an eine andere Stelle im Repository. Schreibzugriffe sind zusätzlich durch Row Level Security abgesichert: Benutzer können nur ihr eigenes Profil und ihre eigenen, noch offenen Tipps bearbeiten.
 
