@@ -115,6 +115,24 @@ function getSupabaseClient() {
   return window.PADEL_SUPABASE_CLIENT;
 }
 
+function getBerlinDateTimeParts(value) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return { date: null, time: null };
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Berlin',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23'
+  }).formatToParts(date).map(part => [part.type, part.value]));
+  return {
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    time: `${parts.hour}.${parts.minute}`
+  };
+}
+
 async function mergeDatabaseResults(rawSeason) {
   if (!rawSeason.databaseResults) return rawSeason;
   const client = getSupabaseClient();
@@ -122,7 +140,7 @@ async function mergeDatabaseResults(rawSeason) {
   const matchIds = rawSeason.matches.map(match => match.id);
   const { data: databaseMatches, error: matchError } = await client
     .from('matches')
-    .select('id, scheduled_date, display_time, result_details, actual_sets, winner')
+    .select('id, match_at, result_details, actual_sets, winner')
     .in('id', matchIds);
   if (matchError) throw matchError;
 
@@ -133,10 +151,12 @@ async function mergeDatabaseResults(rawSeason) {
     matches: rawSeason.matches.map(match => {
       const stored = matchesById.get(match.id);
       if (!stored) throw new Error(`Die Datenbank-Partie ${match.id} fehlt.`);
+      const matchTime = getBerlinDateTimeParts(stored.match_at);
       return {
         ...match,
-        date: stored.scheduled_date ?? null,
-        time: stored.display_time ? String(stored.display_time).slice(0, 5).replace(':', '.') : null,
+        matchAt: stored.match_at,
+        date: matchTime.date,
+        time: matchTime.time,
         result: stored.result_details,
         sets: stored.actual_sets,
         winner: stored.winner
@@ -313,13 +333,14 @@ function hydrateTeam(team, playersById) {
 }
 
 function hydrateMatch(match, playersById) {
+  const matchTime = match.matchAt ? getBerlinDateTimeParts(match.matchAt) : null;
   return {
     ...match,
     // Die Oberfläche nutzt vorerst diese bisherigen Feldnamen. Die gepflegten
     // Rohdaten verwenden für Saison- und Trainingsspiele dasselbe Schema.
     spieltag: match.matchday ?? null,
-    datum: match.date ?? null,
-    uhrzeit: match.time ?? null,
+    datum: matchTime?.date ?? match.date ?? null,
+    uhrzeit: matchTime?.time ?? match.time ?? null,
     ergebnis: match.result ?? null,
     saetze: match.sets ?? null,
     sieger: match.winner ?? null,
@@ -458,7 +479,24 @@ function hydrateSeasonData(rawSeason) {
         leagueConfig,
         `Teilnehmer ${participant.playerId}`
       ),
-      startElo: Number(participant.startElo)
+      startElo: Number(participant.startElo),
+      endElo: participant.endElo === null || participant.endElo === undefined
+        ? null
+        : Number(participant.endElo),
+      currentElo: participant.currentElo === null || participant.currentElo === undefined
+        ? null
+        : Number(participant.currentElo),
+      history: Array.isArray(participant.eloHistory)
+        ? participant.eloHistory.map(entry => ({
+            ...entry,
+            date: entry.date || getBerlinDateTimeParts(entry.matchAt).date,
+            label: entry.label || '',
+            elo: Number(entry.elo),
+            oldElo: entry.oldElo === null || entry.oldElo === undefined ? null : Number(entry.oldElo),
+            delta: entry.delta === null || entry.delta === undefined ? null : Number(entry.delta),
+            interveningEvents: Array.isArray(entry.interveningEvents) ? entry.interveningEvents : []
+          }))
+        : null
     };
   });
 
@@ -510,7 +548,14 @@ function hydrateSeasonData(rawSeason) {
     matches: allMatches,
     trainingMatches
   };
-  calculateSeasonEloHistory(completeSeason);
+  if (completeSeason.players.every(player => Array.isArray(player.history))) {
+    completeSeason.players.forEach(player => {
+      player.history.sort((left, right) => String(left.matchAt || left.date || '')
+        .localeCompare(String(right.matchAt || right.date || '')));
+    });
+  } else {
+    calculateSeasonEloHistory(completeSeason);
+  }
 
   return {
     ...completeSeason,
@@ -1046,8 +1091,8 @@ function renderPlayerProfileEloChart(eloSeries = []) {
   if (!canvas || !range || !legend) return;
 
   const series = eloSeries
-    .filter(item => Number.isFinite(Number(item.elo)))
-    .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+    .filter(item => ['initial', 'match', undefined].includes(item.eventType) && Number.isFinite(Number(item.elo)))
+    .sort((a, b) => String(a.matchAt || a.date || '').localeCompare(String(b.matchAt || b.date || '')));
   if (!series.length || !window.Chart) {
     range.textContent = 'Keine Elo-Daten';
     legend.innerHTML = '';
@@ -1055,7 +1100,7 @@ function renderPlayerProfileEloChart(eloSeries = []) {
   }
 
   const seasons = [...new Map(series.map(item => [item.seasonId, item.seasonLabel || item.seasonId])).entries()];
-  const labels = series.map(item => formatProfileDate(item.date));
+  const labels = series.map(item => formatProfileDate(item.matchAt || item.date));
   const values = series.map(item => Number(item.elo));
   range.textContent = `${values[0]} → ${values[values.length - 1]}`;
   legend.innerHTML = seasons.map(([seasonId, seasonLabel]) => `
@@ -1777,8 +1822,11 @@ function getLatestPlayerElo(player) {
 }
 
 function getLatestPlayerEloValue(player) {
+  if (player.currentElo !== null && player.currentElo !== undefined
+    && Number.isFinite(Number(player.currentElo))) return Number(player.currentElo);
+
   const latestHistory = (player.history || [])
-    .map((h, index) => ({ ...h, index, dateValue: new Date(h.date).getTime() }))
+    .map((h, index) => ({ ...h, index, dateValue: new Date(h.matchAt || h.date).getTime() }))
     .filter(h => Number.isFinite(h.dateValue) && Number.isFinite(Number(h.elo)))
     .sort((a, b) => b.dateValue - a.dateValue || b.index - a.index)[0];
 
@@ -1809,11 +1857,20 @@ function getHistoryOrderKey(historyEntry) {
     : null;
   if (historyMatch) return getMatchOrderKey(historyMatch);
 
+  if (historyEntry.matchAt) return `${historyEntry.matchAt}|${historyEntry.matchId || ''}`;
   const dateKey = toDateKey(historyEntry.date) || '0000-00-00';
   return `${dateKey}|0000|0000`;
 }
 
 function getPlayerEloBeforeMatch(player, match) {
+  const matchHistory = (player.history || []).find(historyEntry =>
+    historyEntry.matchId === match?.id
+      && historyEntry.oldElo !== null
+      && historyEntry.oldElo !== undefined
+      && Number.isFinite(Number(historyEntry.oldElo))
+  );
+  if (matchHistory) return Number(matchHistory.oldElo);
+
   const matchOrderKey = getMatchOrderKey(match);
   const latestHistoryBeforeMatch = (player.history || [])
     .map((historyEntry, index) => ({
@@ -4326,8 +4383,13 @@ function getChartEvents() {
     });
   });
 
-  const finalDate = toDateKey(PADEL_DATA.eloFinalDate);
-  if (finalDate) {
+  const hasStoredSeasonEnd = PADEL_DATA.players.some(player =>
+    (player.history || []).some(entry => entry.eventType === 'season-end')
+  );
+  const finalDate = PADEL_DATA.completedAt && !hasStoredSeasonEnd
+    ? toDateKey(PADEL_DATA.eloFinalDate)
+    : null;
+  if (finalDate && !hasStoredSeasonEnd) {
     events.set('final', {
       key: 'final',
       date: finalDate,
@@ -4411,15 +4473,23 @@ function getPlayerMatchEloTooltipData(playerName, match) {
   const historyEntry = getPlayerHistoryEntryForMatch(player, match);
   if (!historyEntry) return { elo: '', delta: '', deltaClass: 'neu' };
 
-  const previousHistoryEntry = getPlayerPreviousHistoryEntry(player, historyEntry);
   const elo = Number(historyEntry.elo);
-  const previousElo = previousHistoryEntry ? Number(previousHistoryEntry.elo) : null;
-  const delta = previousElo === null ? null : elo - previousElo;
+  const previousHistoryEntry = getPlayerPreviousHistoryEntry(player, historyEntry);
+  const oldElo = historyEntry.oldElo !== null && historyEntry.oldElo !== undefined
+    && Number.isFinite(Number(historyEntry.oldElo))
+    ? Number(historyEntry.oldElo)
+    : previousHistoryEntry ? Number(previousHistoryEntry.elo) : null;
+  const delta = historyEntry.delta !== null && historyEntry.delta !== undefined
+    && Number.isFinite(Number(historyEntry.delta))
+    ? Number(historyEntry.delta)
+    : oldElo === null ? null : elo - oldElo;
 
   return {
     elo,
+    oldElo,
     delta: formatEloDelta(delta),
-    deltaClass: getDeltaClass(delta)
+    deltaClass: getDeltaClass(delta),
+    interveningEvents: historyEntry.interveningEvents || []
   };
 }
 
@@ -4482,15 +4552,21 @@ function getOrCreateFormTooltip() {
 function renderEloStyleTooltipItem({
   playerName,
   elo,
+  oldElo = null,
   delta,
   deltaClass = 'neu',
   gameLabel = '',
   matchContext = null,
+  interveningEvents = [],
   showElo = true
 }) {
   return `<div class="elo-tooltip-item">
     <div class="elo-tooltip-name">${escapeHtml(playerName)}</div>
-    ${showElo ? `<div class="elo-tooltip-main">Elo: ${escapeHtml(elo)} ${delta ? `<span class="elo-tooltip-delta ${deltaClass}">${escapeHtml(delta)}</span>` : ''}</div>` : ''}
+    ${interveningEvents.length ? `<div class="elo-tooltip-intervening">
+      <span>Zwischenzeitlich</span>
+      ${interveningEvents.map(event => `<div>${escapeHtml(event.seasonLabel || event.seasonId)} · ${escapeHtml(event.matchLabel || 'Partie')}: <strong class="${getDeltaClass(Number(event.delta))}">${escapeHtml(formatEloDelta(Number(event.delta)))} Elo</strong></div>`).join('')}
+    </div>` : ''}
+    ${showElo ? `<div class="elo-tooltip-main">${oldElo !== null && oldElo !== undefined && Number.isFinite(Number(oldElo)) ? `${escapeHtml(oldElo)} → ` : ''}${escapeHtml(elo)} Elo ${delta ? `<span class="elo-tooltip-delta ${deltaClass}">${escapeHtml(delta)}</span>` : ''}</div>` : ''}
     ${matchContext ? `
       <div>Ergebnis: ${escapeHtml(matchContext.result)}</div>
       <div>Mit: ${escapeHtml(matchContext.partner)}</div>
@@ -4613,14 +4689,18 @@ function externalEloTooltip(context) {
         : item.dataset.deltas?.[item.dataIndex] < 0 ? 'neg' : 'neu';
       const gameLabel = item.dataset.gameLabels?.[item.dataIndex] || '';
       const matchContext = item.dataset.matchContexts?.[item.dataIndex];
+      const oldElo = item.dataset.oldElos?.[item.dataIndex];
+      const interveningEvents = item.dataset.interveningEvents?.[item.dataIndex] || [];
 
       return renderEloStyleTooltipItem({
         playerName: item.dataset.label,
         elo: item.parsed.y,
+        oldElo,
         delta,
         deltaClass,
         gameLabel,
-        matchContext
+        matchContext,
+        interveningEvents
       });
     }).join('')}
   `;
@@ -4683,7 +4763,9 @@ function getPlayerSeries(player, events) {
     deltaLabels: [],
     gameLabels: [],
     eventTitles: [],
-    matchContexts: []
+    matchContexts: [],
+    oldElos: [],
+    interveningEvents: []
   };
 
   events.forEach(event => {
@@ -4695,6 +4777,8 @@ function getPlayerSeries(player, events) {
       series.gameLabels.push(hasFinalValue ? 'Final' : '');
       series.eventTitles.push(hasFinalValue ? 'Final' : '');
       series.matchContexts.push(null);
+      series.oldElos.push(null);
+      series.interveningEvents.push([]);
       return;
     }
 
@@ -4706,11 +4790,23 @@ function getPlayerSeries(player, events) {
       series.gameLabels.push('');
       series.eventTitles.push('');
       series.matchContexts.push(null);
+      series.oldElos.push(null);
+      series.interveningEvents.push([]);
       return;
     }
 
     const elo = Number(historyEntry.elo);
-    const delta = previousElo === null ? null : elo - previousElo;
+    const isSeasonBoundary = ['season-start', 'season-end'].includes(historyEntry.eventType);
+    const oldElo = !isSeasonBoundary
+      && historyEntry.oldElo !== null && historyEntry.oldElo !== undefined
+      && Number.isFinite(Number(historyEntry.oldElo))
+      ? Number(historyEntry.oldElo)
+      : isSeasonBoundary ? null : previousElo;
+    const delta = !isSeasonBoundary
+      && historyEntry.delta !== null && historyEntry.delta !== undefined
+      && Number.isFinite(Number(historyEntry.delta))
+      ? Number(historyEntry.delta)
+      : isSeasonBoundary || oldElo === null ? null : elo - oldElo;
     previousElo = elo;
 
     series.eloValues.push(elo);
@@ -4721,6 +4817,8 @@ function getPlayerSeries(player, events) {
       ? event.gameLabel
       : event.match ? formatMatchMeta(event.match) : formatMatchDate({ datum: event.date }));
     series.matchContexts.push(getPlayerMatchContext(player.name, event.match));
+    series.oldElos.push(oldElo);
+    series.interveningEvents.push(historyEntry.interveningEvents || []);
   });
 
   return series;
@@ -4816,6 +4914,8 @@ function initChart() {
       gameLabels: series.gameLabels,
       eventTitles: series.eventTitles,
       matchContexts: series.matchContexts,
+      oldElos: series.oldElos,
+      interveningEvents: series.interveningEvents,
       finalPointIndex,
       borderColor: color,
       backgroundColor: 'transparent',

@@ -66,8 +66,8 @@
   function isPredictionOpen(match) {
     const databaseMatch = state.databaseMatches.get(match.id);
     if (!databaseMatch || databaseMatch.betting_open !== true || getActualSets(match)) return false;
-    if (!databaseMatch.lock_at) return match.sieger === null;
-    return match.sieger === null && new Date(databaseMatch.lock_at).getTime() > Date.now();
+    if (!databaseMatch.match_at) return match.sieger === null;
+    return match.sieger === null && new Date(databaseMatch.match_at).getTime() > Date.now();
   }
 
   function getPredictionWinner(value, format) {
@@ -87,8 +87,9 @@
 
   function formatMatchDate(match) {
     const databaseMatch = state.databaseMatches.get(match.id);
-    const dateValue = databaseMatch?.scheduled_date || match.datum;
-    const timeValue = databaseMatch?.display_time || match.uhrzeit;
+    const matchTime = getBerlinMatchAtParts(databaseMatch?.match_at);
+    const dateValue = matchTime.date || match.datum;
+    const timeValue = matchTime.time || match.uhrzeit;
     if (!dateValue) return `Spieltag ${match.spieltag}`;
     const date = new Date(`${dateValue}T12:00:00`);
     const dateLabel = Number.isNaN(date.getTime())
@@ -102,6 +103,26 @@
     const time = /^\d{1,2}:\d{2}$/.test(rawTime) ? `${rawTime}:00` : rawTime;
     const timestamp = new Date(`${match.datum || '9999-12-31'}T${time}`).getTime();
     return Number.isNaN(timestamp) ? 0 : timestamp;
+  }
+
+  function getMatchAtTimestamp(value, fallback = Number.POSITIVE_INFINITY) {
+    const timestamp = value ? new Date(value).getTime() : NaN;
+    return Number.isNaN(timestamp) ? fallback : timestamp;
+  }
+
+  function getBerlinMatchAtParts(value) {
+    const date = value ? new Date(value) : null;
+    if (!date || Number.isNaN(date.getTime())) return { date: null, time: null };
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Berlin',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).formatToParts(date).map(part => [part.type, part.value]));
+    return { date: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}` };
+  }
+
+  function buildMatchAtValue(dateValue, timeValue) {
+    return `${dateValue}T${timeValue}:00`;
   }
 
   function renderTeam(team) {
@@ -140,25 +161,17 @@
     if (typeof task?.is_open === 'boolean') return task.is_open;
     if (task?.task_type === 'review' || task?.task_type === 'waiting') return true;
     if (task?.task_type === 'completed') return false;
-    return getMatchTimestamp({
-      datum: task?.scheduled_date,
-      uhrzeit: task?.display_time
-    }) <= Date.now();
+    return getMatchAtTimestamp(task?.match_at) <= Date.now();
   }
 
   function getPlayerResultTaskGroups(tasks = [], now = Date.now(), includeAll = false) {
-    const compareBySchedule = (first, second) => getMatchTimestamp({
-      datum: first.scheduled_date,
-      uhrzeit: first.display_time
-    }) - getMatchTimestamp({
-      datum: second.scheduled_date,
-      uhrzeit: second.display_time
-    });
+    const compareBySchedule = (first, second) => getMatchAtTimestamp(first.match_at)
+      - getMatchAtTimestamp(second.match_at);
     const scopedTasks = includeAll
       ? tasks
       : tasks.filter(task => [1, 2].includes(Number(task?.my_team)));
     const resultEntries = scopedTasks.filter(task => task.task_type === 'enter');
-    const scheduledEntries = resultEntries.filter(task => task.scheduled_date && task.display_time);
+    const scheduledEntries = resultEntries.filter(task => task.match_at);
 
     return [
       {
@@ -172,21 +185,21 @@
         key: 'past',
         label: 'Ergebnis eintragen',
         tasks: scheduledEntries
-          .filter(task => getMatchTimestamp({ datum: task.scheduled_date, uhrzeit: task.display_time }) <= now)
+          .filter(task => getMatchAtTimestamp(task.match_at) <= now)
           .sort(compareBySchedule)
       },
       {
         key: 'future',
         label: 'Terminierte Spiele',
         tasks: scheduledEntries
-          .filter(task => getMatchTimestamp({ datum: task.scheduled_date, uhrzeit: task.display_time }) > now)
+          .filter(task => getMatchAtTimestamp(task.match_at) > now)
           .sort(compareBySchedule)
       },
       {
         key: 'planned',
         label: 'Geplante Spiele',
         tasks: resultEntries
-          .filter(task => !task.scheduled_date || !task.display_time)
+          .filter(task => !task.match_at)
           .sort((first, second) => Number(first.matchday) - Number(second.matchday)
             || String(first.match_id).localeCompare(String(second.match_id), 'de', { numeric: true }))
       }
@@ -382,8 +395,9 @@
     return `${label}${time ? ` · ${time} Uhr` : ''}`;
   }
 
-  function normalizeTimeInput(value) {
-    return String(value || '').slice(0, 5).replace('.', ':');
+  function formatMatchAt(value) {
+    const { date, time } = getBerlinMatchAtParts(value);
+    return formatTaskDate(date, time);
   }
 
   function getTodayInputValue() {
@@ -393,15 +407,12 @@
   }
 
   function getResultFormDate(task) {
-    if (task.proposed_played_on) return task.proposed_played_on;
-    return task.scheduled_date || getTodayInputValue();
+    return getBerlinMatchAtParts(task.proposed_match_at || task.match_at).date || getTodayInputValue();
   }
 
   function getResultFormTime(task) {
-    const proposed = normalizeTimeInput(task.proposed_played_time);
-    if (proposed) return proposed;
-    const scheduled = normalizeTimeInput(task.display_time);
-    if (scheduled) return scheduled;
+    const stored = getBerlinMatchAtParts(task.proposed_match_at || task.match_at).time;
+    if (stored) return stored;
     const now = new Date();
     return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   }
@@ -541,20 +552,21 @@
     </form>`;
   }
 
-  function renderScheduleForm(task) {
-    return `<form class="match-schedule-form" data-match-schedule="${escapeHtml(task.match_id)}">
+  function renderScheduleForm(task, collapsed = false) {
+    const matchTime = getBerlinMatchAtParts(task.match_at);
+    return `<form class="match-schedule-form" data-match-schedule="${escapeHtml(task.match_id)}" ${collapsed ? 'hidden' : ''}>
       <div class="result-entry-timing">
         <label>
           <span>Datum</span>
-          <input type="date" name="scheduledDate" required>
+          <input type="date" name="scheduledDate" required value="${escapeHtml(matchTime.date || '')}">
         </label>
         <label>
           <span>Uhrzeit</span>
-          <input type="time" name="scheduledTime" required>
+          <input type="time" name="scheduledTime" required value="${escapeHtml(matchTime.time || '')}">
         </label>
       </div>
       <div class="match-schedule-actions">
-        <button class="secondary-button" type="submit">Terminieren</button>
+        <button class="secondary-button" type="submit">${task.match_at ? 'Termin speichern' : 'Terminieren'}</button>
       </div>
     </form>`;
   }
@@ -565,12 +577,12 @@
     if (task.task_type === 'review') return '<span class="account-task-status is-open">Zu bestätigen</span>';
     return isResultTaskOpen(task)
       ? '<span class="account-task-status is-open">Offen</span>'
-      : `<span class="account-task-status">${task.scheduled_date && task.display_time ? 'Terminiert' : 'Geplant'}</span>`;
+      : `<span class="account-task-status">${task.match_at ? 'Terminiert' : 'Geplant'}</span>`;
   }
 
   function renderProposedResult(task, ownProposal = false) {
     return `<div class="result-proposal">
-      <span>${ownProposal ? 'Dein Vorschlag' : 'Vorschlag des anderen Teams'}<br>${escapeHtml(formatTaskDate(task.proposed_played_on, task.proposed_played_time))}</span>
+      <span>${ownProposal ? 'Dein Vorschlag' : 'Vorschlag des anderen Teams'}<br>${escapeHtml(formatMatchAt(task.proposed_match_at))}</span>
       <strong>${escapeHtml(task.proposed_sets)} · ${escapeHtml(task.proposed_result)}</strong>
     </div>`;
   }
@@ -598,8 +610,10 @@
     if (groupKey === 'future') {
       return `<div class="account-task-actions scheduled-result-actions">
           <button class="secondary-button" type="button" data-result-entry-toggle="${escapeHtml(task.match_id)}">Ergebnis eintragen</button>
+          <button class="secondary-button" type="button" data-match-schedule-toggle="${escapeHtml(task.match_id)}">Termin ändern</button>
         </div>
-        ${renderResultForm(task, false, true)}`;
+        ${renderResultForm(task, false, true)}
+        ${renderScheduleForm(task, true)}`;
     }
     return renderResultForm(task);
   }
@@ -614,10 +628,7 @@
           <span class="widget-label">${escapeHtml(getTaskLeagueLabel(task))} · Partie ${escapeHtml(getTaskNumber(task))}</span>
           ${renderResultTaskStatus(task)}
         </div>
-        ${groupKey === 'future' ? `<div class="result-card-timing">${escapeHtml(formatTaskDate(
-          task.task_type === 'completed' ? task.scheduled_date : task.proposed_played_on || task.scheduled_date,
-          task.task_type === 'completed' ? task.display_time : task.proposed_played_time || task.display_time
-        ))}</div>` : ''}
+        ${groupKey === 'future' ? `<div class="result-card-timing">${escapeHtml(formatMatchAt(task.proposed_match_at || task.match_at))}</div>` : ''}
         ${renderTaskMatchup(task)}
         ${renderResultTaskBody(task, groupKey)}
       </article>
@@ -630,13 +641,12 @@
       const items = group.tasks.map(task => ({ kind: 'league', task }));
       if (group.key === 'review') {
         trainingTasks.forEach((task, index) => items.push({ kind: 'training', task, index }));
-        items.sort((first, second) => getMatchTimestamp({
-          datum: first.kind === 'training' ? first.task.played_on : first.task.scheduled_date,
-          uhrzeit: first.task.display_time
-        }) - getMatchTimestamp({
-          datum: second.kind === 'training' ? second.task.played_on : second.task.scheduled_date,
-          uhrzeit: second.task.display_time
-        }));
+        items.sort((first, second) => {
+          const getItemTimestamp = item => item.kind === 'training'
+            ? getMatchTimestamp({ datum: item.task.played_on, uhrzeit: item.task.display_time })
+            : getMatchAtTimestamp(item.task.match_at);
+          return getItemTimestamp(first) - getItemTimestamp(second);
+        });
       }
       return { ...group, items };
     });
@@ -999,7 +1009,7 @@
     const [{ data: matches, error: matchesError }, { data: leaderboard, error: leaderboardError }] = await Promise.all([
       state.client
         .from('matches')
-        .select('id, format, competition_stage, betting_open, actual_sets, result_details, lock_at, scheduled_date, display_time')
+        .select('id, format, competition_stage, betting_open, actual_sets, result_details, match_at')
         .eq('season_id', seasonId),
       state.client.rpc('get_prediction_leaderboard', { p_season_id: seasonId })
     ]);
@@ -1259,8 +1269,10 @@
     try {
       const { error } = await state.client.rpc('schedule_match', {
         p_match_id: form.dataset.matchSchedule,
-        p_scheduled_date: String(data.get('scheduledDate') || ''),
-        p_scheduled_time: String(data.get('scheduledTime') || '')
+        p_match_at: buildMatchAtValue(
+          String(data.get('scheduledDate') || ''),
+          String(data.get('scheduledTime') || '')
+        )
       });
       if (error) throw error;
       setAuthMessage('Partie wurde terminiert.', 'success');
@@ -1288,8 +1300,7 @@
         p_result_details: resultDetails,
         p_actual_sets: actualSets,
         p_winner: winner,
-        p_played_on: playedOn,
-        p_played_time: playedTime
+        p_match_at: buildMatchAtValue(playedOn, playedTime)
       });
       if (error) throw error;
       setAuthMessage(state.profile?.app_role === 'admin' ? 'Ergebnis wurde direkt eingetragen.' : 'Ergebnis wurde an das andere Team gesendet.', 'success');
@@ -1661,6 +1672,16 @@
           form.hidden = !form.hidden;
           resultEntryToggle.textContent = form.hidden ? 'Ergebnis eintragen' : 'Eingabe schließen';
           if (!form.hidden) updateResultSummary(form);
+        }
+        return;
+      }
+      const scheduleToggle = event.target.closest('[data-match-schedule-toggle]');
+      if (scheduleToggle) {
+        const card = scheduleToggle.closest('.result-task-card');
+        const form = card?.querySelector('.match-schedule-form');
+        if (form) {
+          form.hidden = !form.hidden;
+          scheduleToggle.textContent = form.hidden ? 'Termin ändern' : 'Termin schließen';
         }
         return;
       }

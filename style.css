@@ -2115,6 +2115,22 @@
       color: var(--text);
       margin-bottom: 0.2rem;
     }
+    .elo-tooltip-intervening {
+      border-left: 2px solid var(--accent2);
+      color: var(--muted);
+      margin: 0.35rem 0 0.5rem;
+      padding-left: 0.55rem;
+    }
+    .elo-tooltip-intervening > span {
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      margin-bottom: 0.2rem;
+      text-transform: uppercase;
+    }
+    .elo-tooltip-intervening strong { font-family: 'DM Mono', monospace; }
+    .elo-tooltip-intervening strong.pos { color: var(--green); }
+    .elo-tooltip-intervening strong.neg { color: var(--red); }
     .elo-tooltip-delta {
       font-family: 'DM Mono', monospace;
       font-weight: 700;

@@ -123,8 +123,8 @@ test('delegated result forms submit the form itself with the actual date and tim
     /async function handleResultSubmit\(event\) \{[\s\S]*?(?=\n  async function confirmResult)/
   )?.[0] || '';
   assert.match(resultHandler, /const form = event\.target;/);
-  assert.match(resultHandler, /p_played_on: playedOn/);
-  assert.match(resultHandler, /p_played_time: playedTime/);
+  assert.match(resultHandler, /p_match_at: buildMatchAtValue\(playedOn, playedTime\)/);
+  assert.doesNotMatch(resultHandler, /p_played_on:|p_played_time:/);
   assert.doesNotMatch(resultHandler, /const form = event\.currentTarget;/);
 });
 
@@ -137,7 +137,7 @@ test('result tasks load across seasons without a separate admin archive', () => 
 
 test('games are player-scoped for players and unfiltered for admins', () => {
   const timestampSource = tippspielSource.match(
-    /function getMatchTimestamp\(match\) \{[\s\S]*?(?=\n  function renderTeam)/
+    /function getMatchAtTimestamp\(value, fallback = Number\.POSITIVE_INFINITY\) \{[\s\S]*?(?=\n  function getBerlinMatchAtParts)/
   )?.[0] || '';
   const groupingSource = tippspielSource.match(
     /function getPlayerResultTaskGroups\(tasks = \[\], now = Date\.now\(\), includeAll = false\) \{[\s\S]*?(?=\n  function getActionableResultTasks)/
@@ -145,12 +145,12 @@ test('games are player-scoped for players and unfiltered for admins', () => {
   const getGroups = vm.runInNewContext(`(() => { ${timestampSource}\n${groupingSource}\nreturn getPlayerResultTaskGroups; })()`);
   const now = new Date('2026-09-01T12:00:00').getTime();
   const groups = getGroups([
-    { match_id: 'future', my_team: 1, task_type: 'enter', scheduled_date: '2026-09-02', display_time: '18:00' },
-    { match_id: 'admin-only', my_team: null, task_type: 'review', scheduled_date: '2026-08-28', display_time: '18:00' },
-    { match_id: 'review', my_team: 2, task_type: 'review', scheduled_date: '2026-08-30', display_time: '18:00' },
-    { match_id: 'past', my_team: 1, task_type: 'enter', scheduled_date: '2026-08-31', display_time: '18:00:00' },
-    { match_id: 'waiting', my_team: 1, task_type: 'waiting', scheduled_date: '2026-08-29', display_time: '18:00' },
-    { match_id: 'planned', matchday: 3, my_team: 1, task_type: 'enter', scheduled_date: null, display_time: null }
+    { match_id: 'future', my_team: 1, task_type: 'enter', match_at: '2026-09-02T16:00:00Z' },
+    { match_id: 'admin-only', my_team: null, task_type: 'review', match_at: '2026-08-28T16:00:00Z' },
+    { match_id: 'review', my_team: 2, task_type: 'review', match_at: '2026-08-30T16:00:00Z' },
+    { match_id: 'past', my_team: 1, task_type: 'enter', match_at: '2026-08-31T16:00:00Z' },
+    { match_id: 'waiting', my_team: 1, task_type: 'waiting', match_at: '2026-08-29T16:00:00Z' },
+    { match_id: 'planned', matchday: 3, my_team: 1, task_type: 'enter', match_at: null }
   ], now);
 
   assert.deepEqual(
@@ -158,10 +158,10 @@ test('games are player-scoped for players and unfiltered for admins', () => {
     [['review', ['waiting', 'review']], ['past', ['past']], ['future', ['future']], ['planned', ['planned']]]
   );
   const adminGroups = getGroups([
-    { match_id: 'admin-review', my_team: null, task_type: 'review', scheduled_date: '2026-08-28', display_time: '18:00' },
-    { match_id: 'admin-past', my_team: null, task_type: 'enter', scheduled_date: '2026-08-31', display_time: '18:00' },
-    { match_id: 'admin-future', my_team: null, task_type: 'enter', scheduled_date: '2026-09-02', display_time: '18:00' },
-    { match_id: 'admin-planned', matchday: 4, my_team: null, task_type: 'enter', scheduled_date: null, display_time: null }
+    { match_id: 'admin-review', my_team: null, task_type: 'review', match_at: '2026-08-28T16:00:00Z' },
+    { match_id: 'admin-past', my_team: null, task_type: 'enter', match_at: '2026-08-31T16:00:00Z' },
+    { match_id: 'admin-future', my_team: null, task_type: 'enter', match_at: '2026-09-02T16:00:00Z' },
+    { match_id: 'admin-planned', matchday: 4, my_team: null, task_type: 'enter', match_at: null }
   ], now, true);
   assert.deepEqual(
     JSON.parse(JSON.stringify(adminGroups.map(group => [group.key, group.tasks.map(task => task.match_id)]))),
@@ -203,11 +203,12 @@ test('all training selectors reuse the custom page viewer dropdown', () => {
 
 test('scheduling and future result entry use their dedicated secondary actions', () => {
   assert.match(tippspielSource, /data-match-schedule="\$\{escapeHtml\(task\.match_id\)\}"/);
-  assert.match(tippspielSource, /class="secondary-button" type="submit">Terminieren<\/button>/);
+  assert.match(tippspielSource, /task\.match_at \? 'Termin speichern' : 'Terminieren'/);
   assert.match(tippspielSource, /data-result-entry-toggle="\$\{escapeHtml\(task\.match_id\)\}"/);
+  assert.match(tippspielSource, /data-match-schedule-toggle="\$\{escapeHtml\(task\.match_id\)\}">Termin ändern/);
   assert.match(tippspielSource, /state\.client\.rpc\('schedule_match'/);
-  assert.match(tippspielSource, /p_scheduled_date:/);
-  assert.match(tippspielSource, /p_scheduled_time:/);
+  assert.match(tippspielSource, /p_match_at: buildMatchAtValue\(/);
+  assert.doesNotMatch(tippspielSource, /p_scheduled_date:|p_scheduled_time:/);
 });
 
 test('account names are derived from email and cannot be submitted by the user', () => {

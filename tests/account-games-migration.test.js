@@ -8,7 +8,7 @@ const migration = fs.readFileSync(
   'utf8'
 );
 const resultMigration = fs.readFileSync(
-  path.join(__dirname, '..', 'supabase', 'migrations', '20260723160000_profile_result_tabs_actual_time.sql'),
+  path.join(__dirname, '..', 'supabase', 'migrations', '20260909170000_global_elo_match_time.sql'),
   'utf8'
 );
 
@@ -38,6 +38,6 @@ test('admin result entry becomes official immediately without a proposal', () =>
   )?.[0] || '';
   assert.match(adminBranch, /update public\.matches/);
   assert.match(adminBranch, /result_details = trim\(p_result_details\)/);
-  assert.match(adminBranch, /perform private\.recalculate_season_elo\(selected_match\.season_id\)/);
+  assert.match(adminBranch, /perform pg_advisory_xact_lock\(70317, 20270909\)/);
   assert.doesNotMatch(adminBranch, /insert into public\.result_proposals/);
 });

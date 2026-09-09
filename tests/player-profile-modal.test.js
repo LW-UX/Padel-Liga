@@ -164,7 +164,7 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /<use href="#achievement-laurel-left"><\/use>/);
   assert.match(app, /<use href="#achievement-laurel-right"><\/use>/);
   assert.match(html, /id="player-profile-elo-chart"/);
-  assert.match(app, /const labels = series\.map\(item => formatProfileDate\(item\.date\)\)/);
+  assert.match(app, /const labels = series\.map\(item => formatProfileDate\(item\.matchAt \|\| item\.date\)\)/);
   assert.doesNotMatch(app, /const labels = series\.map\(item => item\.label/);
   assert.match(app, /function renderProfileMatchCount\(value\)[\s\S]*?player-profile-stat-fraction/);
   assert.match(app, /renderProfileMatchCount\(summary\.matches\), 'Partien', '', true/);
@@ -191,7 +191,7 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /join\('<span class="mc-player-sep">&amp;<\/span>'\)/);
   assert.match(app, /player-profile-match-team-line"><span>mit<\/span>[\s\S]*?player-profile-match-team-line"><span>vs\.<\/span>/);
   assert.match(style, /@media \(max-width: 1199px\) \{[\s\S]*?\.player-profile-match-teams \{[\s\S]*?flex-direction: column;/);
-  assert.match(style, /@media \(max-width: 999px\) \{[\s\S]*?\.player-profile-match \{[\s\S]*?grid-template-columns: 34px minmax\(0, 1fr\) auto;/);
+  assert.match(style, /@media \(max-width: 999px\) \{[\s\S]*?\.player-profile-match \{[\s\S]*?grid-template-columns: 30px minmax\(0, 1fr\) auto;/);
   assert.doesNotMatch(app, /\(match\.partnerNames \|\| \[\]\)\.join\(' \/ '\)/);
   assert.match(html, /class="widget player-profile-widget player-profile-relationships"[\s\S]*id="player-profile-relationships"/);
   assert.match(app, /record\.matches >= 3/);
@@ -359,11 +359,11 @@ test('profile results use consistent separators and de-emphasize set tiebreaks',
     oneSetResult,
     '<span class="player-profile-result"><span class="player-profile-score-set">6:2</span></span>'
   );
-  assert.match(style, /\.player-profile-set-tiebreak \{[^}]*font-size: 0\.78em;[^}]*font-style: normal;[^}]*font-weight: 400;/);
+  assert.match(style, /\.player-profile-set-tiebreak \{ font-size: 0\.7rem; \}/);
 });
 
 test('only training result circles use outcome-colored outlines', () => {
-  assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome \{[^}]*border: 1px solid currentColor;[^}]*background: transparent;/);
+  assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome \{[^}]*border: 2px solid currentColor;[^}]*background: transparent;/);
   assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome\.win \{ color: var\(--positiv\); \}/);
   assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome\.loss \{ color: var\(--negativ\); \}/);
   assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome\.draw,[\s\S]*\.player-profile-match-group\.training \.player-profile-match-outcome\.unfinished \{ color: var\(--dim\); \}/);
