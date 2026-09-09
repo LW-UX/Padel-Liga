@@ -197,7 +197,7 @@ Zugelassen sind ausschließlich `envidual.com`, `headsquare.group` und `hanako-h
 
 Spieler können zusätzlich gezielt vorbereitet und eingeladen werden. Ein Admin öffnet im eigenen Konto „Spieler-E-Mails“, wählt das Spielerprofil aus und trägt die eindeutige Arbeits-E-Mail ein. Mit „E-Mail zuordnen“ wird die Adresse nur mit dem Spieler verknüpft; „Zuordnen & Einladung senden“ verschickt zusätzlich die Supabase-Einladung. Der Spieler öffnet den persönlichen Link und legt auf der Webseite sein Passwort selbst fest.
 
-Die Adresse muss zu einer der drei freigegebenen Firmen-Domains gehören. Sie wird ausschließlich als Hash gespeichert und kann deshalb später nicht im Klartext angezeigt werden. Die Spielerliste zeigt stattdessen „E-Mail hinterlegt“, „Einladung offen“ oder „Konto vorhanden“. Vor dem Versand einer Einladung lässt sich eine fehlerhafte Zuordnung durch erneute Eingabe ersetzen.
+Die Begrenzung auf die drei Firmen-Domains gilt nur für die öffentliche Selbstregistrierung. Ein Admin darf einem Spieler jede gültige E-Mail-Adresse zuordnen und diese Adresse damit gezielt für die Einladung freigeben. Sie wird ausschließlich als Hash gespeichert und kann deshalb später nicht im Klartext angezeigt werden. Die Spielerliste zeigt stattdessen „E-Mail hinterlegt“, „Einladung offen“ oder „Konto vorhanden“. Vor dem Versand einer Einladung lässt sich eine fehlerhafte Zuordnung durch erneute Eingabe ersetzen.
 
 Existiert für diese E-Mail bereits ein Konto, erzeugt der Ablauf kein Duplikat. Das vorhandene Konto wird mit dem Spielerprofil verbunden, sofern keine widersprüchliche Zuordnung besteht. Eine Spieler-ID und eine E-Mail dürfen jeweils nur einmal verwendet werden.
 

@@ -25,6 +25,10 @@ const strictDomainMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260909230000_strict_company_signup_domains.sql'),
   'utf8'
 );
+const adminEmailExceptionMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260909250000_admin_invitation_email_exceptions.sql'),
+  'utf8'
+);
 
 test('company users can register while admins also get a player invitation dialog', () => {
   pages.forEach(source => {
@@ -53,8 +57,7 @@ test('invitation preparation is restricted to admins and preserves unique player
   assert.match(migration, /profile\.app_role = 'admin'/);
   assert.match(migration, /Nur Admins können Spieler-E-Mails zuordnen/);
   assert.match(migration, /extensions\.digest\(normalized_email, 'sha256'\)/);
-  assert.match(migration, /private\.signup_email_domains[\s\S]*allowed_domain\.domain = requested_domain/);
-  assert.match(migration, /Diese E-Mail-Domain ist nicht für Spielerzugänge freigegeben/);
+  assert.doesNotMatch(migration, /signup_email_domains/);
   assert.match(migration, /Diese E-Mail-Adresse ist bereits einem anderen Spieler zugeordnet/);
   assert.match(migration, /Für diesen Spieler besteht bereits ein Konto mit einer anderen E-Mail-Adresse/);
   assert.match(migration, /insert into public\.profiles[\s\S]*p_player_id[\s\S]*on conflict \(id\) do update/);
@@ -75,7 +78,7 @@ test('invitation email is sent only by the server-side function', () => {
   assert.doesNotMatch(client, /SUPABASE_SERVICE_ROLE_KEY|serviceRoleKey|inviteUserByEmail/);
 });
 
-test('self-registration is restricted to the three approved company domains', () => {
+test('public self-registration is restricted while admin-assigned emails may use any domain', () => {
   assert.match(domainMigration, /'envidual\.com'/);
   assert.match(domainMigration, /'headsquare\.group'/);
   assert.match(domainMigration, /'hanako-health\.com'/);
@@ -83,4 +86,7 @@ test('self-registration is restricted to the three approved company domains', ()
   assert.match(domainMigration, /where domain not in/);
   assert.match(strictDomainMigration, /allowed_domain\.domain = requested_domain/);
   assert.doesNotMatch(strictDomainMigration, /player_email_allowlist/);
+  assert.match(adminEmailExceptionMigration, /private\.player_email_allowlist/);
+  assert.match(adminEmailExceptionMigration, /or exists \(select 1 from private\.signup_email_domains where domain = requested_domain\)/);
+  assert.doesNotMatch(adminEmailExceptionMigration, /nicht für Spielerzugänge freigegeben/);
 });

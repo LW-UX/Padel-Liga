@@ -1,44 +1,5 @@
 begin;
 
-create or replace function public.get_admin_player_invitation_options()
-returns table (
-  player_id text,
-  display_name text,
-  account_status text
-)
-language plpgsql
-stable
-security definer
-set search_path = ''
-as $$
-begin
-  if not exists (
-    select 1
-    from public.profiles as profile
-    where profile.id = (select auth.uid())
-      and profile.app_role = 'admin'
-  ) then
-    raise exception 'Nur Admins können Kontostatus einsehen.';
-  end if;
-
-  return query
-  select
-    player.id,
-    player.display_name,
-    case
-      when auth_user.email_confirmed_at is not null then 'active'
-      when profile.id is not null then 'pending'
-      when allowlist.player_id is not null then 'assigned'
-      else 'none'
-    end
-  from public.players as player
-  left join public.profiles as profile on profile.player_id = player.id
-  left join auth.users as auth_user on auth_user.id = profile.id
-  left join private.player_email_allowlist as allowlist on allowlist.player_id = player.id
-  order by player.display_name;
-end;
-$$;
-
 create or replace function public.save_player_email_assignment(
   p_player_id text,
   p_email text
@@ -120,8 +81,7 @@ begin
     invitation_role,
     'player'::public.app_role
   )
-  into invitation_role
-  ;
+  into invitation_role;
 
   invitation_role := coalesce(invitation_role, 'player'::public.app_role);
 
@@ -158,9 +118,37 @@ begin
 end;
 $$;
 
+create or replace function private.hook_restrict_signup_by_email_domain(event jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  requested_email text := lower(trim(event -> 'user' ->> 'email'));
+  requested_domain text := split_part(requested_email, '@', 2);
+begin
+  if exists (
+    select 1
+    from private.player_email_allowlist
+    where email_hash = extensions.digest(requested_email, 'sha256')
+  )
+    or exists (select 1 from private.signup_email_domains where domain = requested_domain) then
+    return '{}'::jsonb;
+  end if;
+
+  return jsonb_build_object('error', jsonb_build_object(
+    'http_code', 403,
+    'message', 'Für diese E-Mail-Domain ist keine Registrierung möglich.'
+  ));
+end;
+$$;
+
 revoke execute on function public.save_player_email_assignment(text, text) from public, anon;
 grant execute on function public.save_player_email_assignment(text, text) to authenticated;
-revoke execute on function public.get_admin_player_invitation_options() from public, anon;
-grant execute on function public.get_admin_player_invitation_options() to authenticated;
+grant usage on schema private to supabase_auth_admin;
+grant select on private.player_email_allowlist, private.signup_email_domains to supabase_auth_admin;
+grant execute on function private.hook_restrict_signup_by_email_domain(jsonb) to supabase_auth_admin;
+revoke execute on function private.hook_restrict_signup_by_email_domain(jsonb) from public, anon, authenticated;
 
 commit;

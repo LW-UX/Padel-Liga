@@ -2206,6 +2206,7 @@ function getFinalFourStats(matches = getFinalFourMatches()) {
     }).sort((a, b) =>
       b.siege - a.siege ||
       b.diff - a.diff ||
+      b.gamesWon - a.gamesWon ||
       a.seed - b.seed
     )
   };

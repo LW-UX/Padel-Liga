@@ -12,6 +12,7 @@ window.PADEL_PLAYERS = [
   { id: "luca_w", name: "Luca W.", initials: "LW", firma: "Envidual", profileEmoji: "👨" },
   { id: "ludi_gmail", name: "Ludi Gmail", initials: "LGML", firma: "Test", profileEmoji: "👨" },
   { id: "ludi_gmx", name: "Ludi GMX", initials: "LGMX", firma: "Test", profileEmoji: "👨" },
+  { id: "ludi_ionos", name: "Ludi Ionos", initials: "LION", firma: "Test", profileEmoji: "👨" },
   { id: "ludwig_w", name: "Ludwig W.", initials: "LuW", firma: "Envidual", profileEmoji: "👨" },
   { id: "lukas_p", name: "Lukas P.", initials: "LP", firma: "Headsquare", profileEmoji: "👨" },
   { id: "marcel_m", name: "Marcel M.", initials: "MzM", firma: "Envidual", profileEmoji: "👨" },

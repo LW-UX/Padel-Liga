@@ -17,7 +17,7 @@ const achievementCleanupMigration = fs.readFileSync(
   'utf8'
 );
 const finalFourTiebreakMigration = fs.readFileSync(
-  path.join(repositoryRoot, 'supabase/migrations/20260909240000_final_four_tiebreak_order.sql'),
+  path.join(repositoryRoot, 'supabase/migrations/20260909260000_final_four_games_won_tiebreak.sql'),
   'utf8'
 );
 const appSource = fs.readFileSync(path.join(repositoryRoot, 'js/app.js'), 'utf8');
@@ -44,10 +44,11 @@ test('Winter freezes the top eight, promotes both winning pairs and preserves le
   assert.match(migration, /qualified_from_match_id/);
 });
 
-test('Final4 winner uses wins, game difference, and original seed only', () => {
-  assert.match(appSource, /b\.siege - a\.siege \|\|[\s\S]*b\.diff - a\.diff \|\|[\s\S]*a\.seed - b\.seed/);
+test('Final4 winner uses wins, game difference, games won, and original seed', () => {
+  assert.match(appSource, /b\.siege - a\.siege \|\|[\s\S]*b\.diff - a\.diff \|\|[\s\S]*b\.gamesWon - a\.gamesWon \|\|[\s\S]*a\.seed - b\.seed/);
   assert.doesNotMatch(appSource, /compareFinalFourHeadToHead|getFinalFourHeadToHeadWins/);
-  assert.match(finalFourTiebreakMigration, /order by finalist\.wins desc, finalist\.game_diff desc, finalist\.seed/);
+  assert.match(finalFourTiebreakMigration, /as games_won/);
+  assert.match(finalFourTiebreakMigration, /order by finalist\.wins desc, finalist\.game_diff desc, finalist\.games_won desc, finalist\.seed/);
   assert.doesNotMatch(finalFourTiebreakMigration, /head_to_head|best_base/);
   assert.match(finalFourTiebreakMigration, /create or replace function private\.award_tournament_winner/);
   assert.match(finalFourTiebreakMigration, /commit;\s*$/);

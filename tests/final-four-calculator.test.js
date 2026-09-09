@@ -64,7 +64,7 @@ test('Final4 simulations do not change league matches and league requires two se
   assert.equal(run(`getCalculatorEntry('league1').set2 = ['6', '4']; parseCalculatorResult(PADEL_DATA.matches[3]).status`), 'complete');
 });
 
-test('last-set scenarios include every valid end score and resolve game difference and seed ties', () => {
+test('last-set scenarios include every valid end score and use the full Final4 ranking order', () => {
   const run = setup();
   assert.equal(run(`getFinalFourCalculatorOutcomes(getFinalFourCalculatorMatches(), 'ff3').length`), 0);
   run(`setScore('ff1', '6:2'); setScore('ff2', '2:6');`);
@@ -81,6 +81,7 @@ test('last-set scenarios include every valid end score and resolve game differen
   assert.equal(run(`getFinalFourCalculatorOutcomes(getFinalFourCalculatorMatches(), 'ff3').find(row => row.score === '6:0').winner.name`), 'A');
   assert.equal(run(`getFinalFourCalculatorOutcomes(getFinalFourCalculatorMatches(), 'ff3').find(row => row.score === '6:4').winner.name`), 'A');
   assert.equal(run(`getFinalFourCalculatorOutcomes(getFinalFourCalculatorMatches(), 'ff3').find(row => row.score === '7:6').winner.name`), 'B');
+  assert.match(source, /b\.siege - a\.siege \|\|[\s\S]*b\.diff - a\.diff \|\|[\s\S]*b\.gamesWon - a\.gamesWon \|\|[\s\S]*a\.seed - b\.seed/);
   // Enumerating a scenario must never mutate entered or official results.
   assert.equal(run(`getCalculatorEntry('ff3').set1.join(':')`), ':');
   assert.equal(run(`PADEL_DATA.matches.every(match => match.sieger === null)`), true);
