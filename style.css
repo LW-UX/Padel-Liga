@@ -544,6 +544,7 @@
       line-height: 1;
     }
     .player-profile-stat-value.positive { color: var(--positiv); }
+    .player-profile-stat-value.negative { color: var(--negativ); }
     .player-profile-section-heading {
       display: flex;
       align-items: center;

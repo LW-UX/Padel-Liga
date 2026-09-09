@@ -1066,6 +1066,13 @@ function formatProfileSignedValue(value) {
   return number > 0 ? `+${number}` : String(number);
 }
 
+function getPlayerProfileSignedValueClass(value) {
+  const number = Number(value);
+  if (number > 0) return 'positive';
+  if (number < 0) return 'negative';
+  return '';
+}
+
 function formatProfileMatchCount(value) {
   const number = Number(value || 0);
   if (!Number.isFinite(number)) return '0';
@@ -1169,8 +1176,8 @@ function renderPlayerProfileStats(summary = {}) {
     [`${renderProfileMatchCount(summary.wins)}:${renderProfileMatchCount(summary.losses)}`, 'Partien G:V', '', true],
     [formatProfileWinRate(summary.wins, summary.matches), 'Siegquote'],
     [`${summary.gamesFor ?? 0}:${summary.gamesAgainst ?? 0}`, 'Spiele G:V'],
-    [formatProfileSignedValue(summary.gameDiff), 'Spieldifferenz', Number(summary.gameDiff) > 0 ? 'positive' : ''],
-    [formatProfileGameDiffPerMatch(summary.gameDiff, summary.matches), 'Ø Spieldifferenz', gameDiffPerMatch > 0 ? 'positive' : '']
+    [formatProfileSignedValue(summary.gameDiff), 'Spieldifferenz', getPlayerProfileSignedValueClass(summary.gameDiff)],
+    [formatProfileGameDiffPerMatch(summary.gameDiff, summary.matches), 'Ø Spieldifferenz', getPlayerProfileSignedValueClass(gameDiffPerMatch)]
   ];
   target.innerHTML = stats.map(([value, label, valueClass = '', valueIsHtml = false]) => `
     <div class="player-profile-stat">
@@ -2996,7 +3003,7 @@ function renderRankingDeviationFact(targetId, fromMode, toMode, topDirection = '
   const { up, down } = getRankingDeviationGroups(fromMode, toMode, topDirection);
   const renderShiftItem = item => `<div class="stat-shift-item">
     <div class="stat-shift-head">
-      <span class="stat-shift-name ${isSelectedPlayer(item.player.name) ? 'viewer-player' : ''}">${item.player.name}</span>
+      ${renderPlayerProfileLink(item.player, `stat-shift-name ${isSelectedPlayer(item.player.name) ? 'viewer-player' : ''}`)}
       <span class="stat-shift-value ${getDeltaClass(item.delta)}">${formatSignedInteger(item.delta)}</span>
     </div>
     <div class="stat-meta-line">${toMode === 'elo'
@@ -3113,7 +3120,7 @@ function renderFinalFourForecast() {
       <div class="mini-rank-row r${index + 1}">
         <span class="mini-rank-pos">${index + 1}</span>
         <div>
-          <div class="mini-rank-name ${isSelectedPlayer(item.player.name) ? 'viewer-player' : ''}">${escapeHtml(item.player.name)}</div>
+          ${renderPlayerProfileLink(item.player, `mini-rank-name ${isSelectedPlayer(item.player.name) ? 'viewer-player' : ''}`)}
           <div class="stat-meta-line">${formatDecimal(item.projectedPoints)} erwartete Punkte · ${item.currentPoints} aktuell</div>
         </div>
       </div>
@@ -3171,7 +3178,7 @@ function renderTimePerformance() {
         <div class="stat-shift-label">Früher Vogel</div>
         <div class="stat-time-row">
           <div class="stat-time-text">
-            <div class="mini-rank-name ${isSelectedPlayer(earliest.player.name) ? 'viewer-player' : ''}">${escapeHtml(earliest.player.name)}</div>
+            ${renderPlayerProfileLink(earliest.player, `mini-rank-name ${isSelectedPlayer(earliest.player.name) ? 'viewer-player' : ''}`)}
             <div class="stat-meta-line">Ø aus ${earliest.count} Partien</div>
           </div>
           <span class="stat-split-value">${formatAverageMatchTime(earliest.averageMinutes)}</span>
@@ -3181,7 +3188,7 @@ function renderTimePerformance() {
         <div class="stat-shift-label">Langschläfer</div>
         <div class="stat-time-row">
           <div class="stat-time-text">
-            <div class="mini-rank-name ${isSelectedPlayer(latest.player.name) ? 'viewer-player' : ''}">${escapeHtml(latest.player.name)}</div>
+            ${renderPlayerProfileLink(latest.player, `mini-rank-name ${isSelectedPlayer(latest.player.name) ? 'viewer-player' : ''}`)}
             <div class="stat-meta-line">Ø aus ${latest.count} Partien</div>
           </div>
           <span class="stat-split-value">${formatAverageMatchTime(latest.averageMinutes)}</span>
@@ -3218,7 +3225,7 @@ function renderSetDominance() {
       <div class="mini-rank-row r${index + 1}">
         <span class="mini-rank-pos">${index + 1}</span>
         <div>
-          <div class="mini-rank-name ${isSelectedPlayer(item.player.name) ? 'viewer-player' : ''}">${escapeHtml(item.player.name)}</div>
+          ${renderPlayerProfileLink(item.player, `mini-rank-name ${isSelectedPlayer(item.player.name) ? 'viewer-player' : ''}`)}
           <div class="stat-meta-line">${formatSignedDecimal(item.averageDiff)} Spiele pro Partie · ${formatStatDiff(item.stats.spielDiff)} gesamt</div>
         </div>
       </div>

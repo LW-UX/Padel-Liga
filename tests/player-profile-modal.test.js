@@ -174,7 +174,9 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /renderProfileMatchCount\(summary\.matches\), 'Partien', '', true/);
   assert.match(app, /renderProfileMatchCount\(summary\.wins\).*renderProfileMatchCount\(summary\.losses\)/);
   assert.match(app, /'Partien G:V'[\s\S]*?'Siegquote'[\s\S]*?'Spiele G:V'[\s\S]*?'Spieldifferenz'[\s\S]*?'Ø Spieldifferenz'/);
-  assert.match(app, /'Ø Spieldifferenz', gameDiffPerMatch > 0 \? 'positive' : ''/);
+  assert.match(app, /'Spieldifferenz', getPlayerProfileSignedValueClass\(summary\.gameDiff\)/);
+  assert.match(app, /'Ø Spieldifferenz', getPlayerProfileSignedValueClass\(gameDiffPerMatch\)/);
+  assert.match(style, /\.player-profile-stat-value\.negative \{ color: var\(--negativ\); \}/);
   assert.match(style, /\.player-profile-stat-fraction \{ font-size: 0\.58em; \}/);
   assert.match(style, /\.player-profile-stats \{[\s\S]*?grid-template-columns: repeat\(7, minmax\(0, 1fr\)\);/);
   assert.match(style, /\.player-profile-stat:first-child \{ grid-column: 1 \/ -1; border-right: 0; \}/);
@@ -263,6 +265,24 @@ test('player names open profiles by stable id and team cards no longer apply pre
   assert.match(app, /data-player-profile-id="\$\{escapeHtml\(playerId\)\}"/);
   assert.match(app, /function renderTeamPlayers\(players\)/);
   assert.doesNotMatch(app, /class="calculator-match-team" role="button"/);
+});
+
+test('all player names in statistic facts open the public profile', () => {
+  const rankingDeviation = app.match(/function renderRankingDeviationFact[\s\S]*?(?=\nfunction getMatchLeaguePoints)/)?.[0] || '';
+  const finalFourForecast = app.match(/function renderFinalFourForecast[\s\S]*?(?=\nfunction formatAverageMatchTime)/)?.[0] || '';
+  const timePerformance = app.match(/function renderTimePerformance[\s\S]*?(?=\nfunction renderSetDominance)/)?.[0] || '';
+  const setDominance = app.match(/function renderSetDominance[\s\S]*?(?=\nfunction renderDominantMatches)/)?.[0] || '';
+  const dominantMatches = app.match(/function renderDominantMatches[\s\S]*?(?=\nfunction renderBiggestUpsets)/)?.[0] || '';
+  const biggestUpsets = app.match(/function renderBiggestUpsets[\s\S]*?(?=\nfunction renderStatistik)/)?.[0] || '';
+  const statTeamPlayers = app.match(/function renderStatTeamPlayers[\s\S]*?(?=\nfunction getWinnerTeam)/)?.[0] || '';
+
+  assert.match(rankingDeviation, /renderPlayerProfileLink\(item\.player/);
+  assert.match(finalFourForecast, /renderPlayerProfileLink\(item\.player/);
+  assert.equal((timePerformance.match(/renderPlayerProfileLink\(/g) || []).length, 2);
+  assert.match(setDominance, /renderPlayerProfileLink\(item\.player/);
+  assert.match(dominantMatches, /renderStatTeamPlayers\(getWinnerTeam\(item\.match\)\)/);
+  assert.match(biggestUpsets, /renderStatTeamPlayers\(getWinnerTeam\(item\.match\)\)/);
+  assert.match(statTeamPlayers, /renderTeamPlayers\(players\)/);
 });
 
 test('profile relationship leaders require three matches and use win rate', () => {
