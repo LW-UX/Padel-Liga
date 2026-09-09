@@ -10,6 +10,8 @@ Technische Implementierungsdetails ohne dauerhafte fachliche Bedeutung gehören 
 
 Der Nutzer arbeitet ausschließlich über Codex und verwendet kein Terminal. Fordere ihn nicht dazu auf, Shell-, CLI-, Git- oder Datenbankbefehle selbst auszuführen. Führe notwendige und autorisierte Befehle mit den verfügbaren Werkzeugen selbst aus. Bitte den Nutzer nur um unvermeidbare sichtbare Freigaben, Anmeldungen oder fachliche Entscheidungen und erkläre diese ohne technische Vorkenntnisse vorauszusetzen.
 
+Ausnahme: Pushes nach GitHub führt der Nutzer selbst durch. Codex bereitet Änderungen lokal vor und prüft sie, führt aber keine GitHub-Pushes aus. Das gilt auch für gleichwertige Veröffentlichungen von Code über die GitHub-API oder andere Werkzeuge. Aufforderungen zum Veröffentlichen sind entsprechend als lokale Vorbereitung für den anschließenden Push durch den Nutzer zu behandeln.
+
 ## Tests
 
 Erstelle nicht automatisch für jede Änderung einen neuen Testfall. Ergänze oder ändere Tests nur, wenn sie einen sinnvollen dauerhaften Schutz bieten, insbesondere bei fachlicher Logik, behobenen Fehlern mit Wiederholungsrisiko, sicherheits- oder datenrelevantem Verhalten sowie komplexen Abläufen. Kleine visuelle Anpassungen, reine Textänderungen und vergleichbar risikoarme Änderungen benötigen ohne ausdrücklichen Wunsch des Nutzers keinen eigenen Testfall. Führe vorhandene passende Tests weiterhin in einem dem Risiko angemessenen Umfang aus.
