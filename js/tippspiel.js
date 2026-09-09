@@ -20,6 +20,7 @@
     trainingTasks: [],
     players: [],
     invitationPlayers: [],
+    invitationDraft: null,
     trainingRoundCount: 1,
     editingTrainingId: null,
     extendedPlayerFeatures: true,
@@ -1087,9 +1088,16 @@
   }
 
   function setAuthMessage(message, type = '') {
-    const target = document.getElementById('auth-message');
-    target.textContent = message || '';
-    target.className = `auth-message ${type}`.trim();
+    const accountMessageIsVisible = Boolean(state.session?.user)
+      && !['invite', 'recovery'].includes(state.passwordFlow);
+    const targetId = accountMessageIsVisible ? 'account-auth-message' : 'auth-message';
+
+    ['auth-message', 'account-auth-message'].forEach(id => {
+      const target = document.getElementById(id);
+      if (!target) return;
+      target.textContent = id === targetId ? message || '' : '';
+      target.className = `auth-message${id === 'account-auth-message' ? ' account-auth-message' : ''}${id === targetId && type ? ` ${type}` : ''}`;
+    });
   }
 
   function setAuthMode(mode) {
@@ -1225,6 +1233,89 @@
     target.className = `auth-message ${type}`.trim();
   }
 
+  const PLAYER_INVITE_SUBJECT = 'Du bist zur Padel-Liga eingeladen';
+
+  function buildPlayerInviteCopy(actionLink) {
+    return `Du bist zur Padel-Liga eingeladen
+
+Für dich wurde ein persönliches Spielerprofil vorbereitet. Lege über den folgenden Link dein eigenes Passwort fest und aktiviere deinen Zugang.
+
+Zugang einrichten
+${actionLink}
+
+Mit deinem Spielerzugang kannst du:
+
+- deine anstehenden Partien und offenen Aufgaben sehen,
+- Termine für deine Partien eintragen,
+- Spielergebnisse melden und Vorschläge bestätigen,
+- Trainings erfassen und bestätigen.
+
+Dein persönliches Passwort stellt sicher, dass nur du Aktionen für dein Spielerprofil ausführen kannst. Der Administrator kennt dein Passwort nicht.
+
+Falls du diese Einladung nicht erwartet hast, kannst du diese E-Mail ignorieren.
+
+Viele Grüße
+Dein Hanako-Leben-Squad`;
+  }
+
+  function buildPlayerInviteHtml(actionLink) {
+    const safeLink = escapeHtml(actionLink);
+    return `<p><strong>Du bist zur Padel-Liga eingeladen</strong></p>
+<p>Für dich wurde ein persönliches Spielerprofil vorbereitet. Lege über den folgenden Link dein eigenes Passwort fest und aktiviere deinen Zugang.</p>
+<p><a href="${safeLink}"><strong>Zugang einrichten</strong></a></p>
+<p>Mit deinem Spielerzugang kannst du:</p>
+<ul>
+  <li>deine anstehenden Partien und offenen Aufgaben sehen,</li>
+  <li>Termine für deine Partien eintragen,</li>
+  <li>Spielergebnisse melden und Vorschläge bestätigen,</li>
+  <li>Trainings erfassen und bestätigen.</li>
+</ul>
+<p>Dein persönliches Passwort stellt sicher, dass nur du Aktionen für dein Spielerprofil ausführen kannst. Der Administrator kennt dein Passwort nicht.</p>
+<p>Falls du diese Einladung nicht erwartet hast, kannst du diese E-Mail ignorieren.</p>
+<p>Viele Grüße<br>Dein Hanako-Leben-Squad</p>`;
+  }
+
+  function renderPlayerInviteDraft() {
+    const output = document.getElementById('player-invite-output');
+    const subject = document.getElementById('player-invite-subject');
+    const copy = document.getElementById('player-invite-copy');
+    if (!output || !subject || !copy) return;
+    output.hidden = !state.invitationDraft;
+    subject.value = state.invitationDraft?.subject || '';
+    copy.innerHTML = state.invitationDraft?.html || '';
+  }
+
+  function clearPlayerInviteDraft() {
+    state.invitationDraft = null;
+    renderPlayerInviteDraft();
+  }
+
+  async function copyPlayerInviteText(value, successMessage, htmlValue = '') {
+    if (!value) return;
+    try {
+      if (htmlValue && navigator.clipboard?.write && window.ClipboardItem) {
+        await navigator.clipboard.write([new ClipboardItem({
+          'text/plain': new Blob([value], { type: 'text/plain' }),
+          'text/html': new Blob([htmlValue], { type: 'text/html' })
+        })]);
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = value;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.append(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
+      }
+      setPlayerInviteMessage(successMessage, 'success');
+    } catch (_error) {
+      setPlayerInviteMessage('Kopieren war nicht möglich. Markiere den Text bitte direkt im Feld.', 'error');
+    }
+  }
+
   function renderInvitePlayerOptions() {
     const select = document.getElementById('player-invite-player');
     if (!select) return;
@@ -1249,6 +1340,7 @@
     if (state.profile?.app_role !== 'admin') return;
     closeAuthDialog();
     state.invitationPlayers = [];
+    clearPlayerInviteDraft();
     renderInvitePlayerOptions();
     const select = document.getElementById('player-invite-player');
     if (select) select.disabled = true;
@@ -1277,7 +1369,7 @@
     } catch (_error) {
       // The generic SDK error below still gives the admin a useful failure state.
     }
-    return String(error?.message || 'Die Einladung konnte nicht gesendet werden.');
+    return String(error?.message || 'Die Einladung konnte nicht vorbereitet werden.');
   }
 
   async function handlePlayerInviteSubmit(event) {
@@ -1285,16 +1377,17 @@
     if (state.profile?.app_role !== 'admin') return;
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const action = event.submitter?.dataset.playerEmailAction === 'invite' ? 'invite' : 'assign';
+    const action = event.submitter?.dataset.playerEmailAction === 'prepare' ? 'prepare' : 'assign';
     const buttons = [...form.querySelectorAll('button[type="submit"]')];
     buttons.forEach(button => { button.disabled = true; });
-    setPlayerInviteMessage(action === 'invite' ? 'Einladung wird gesendet …' : 'E-Mail wird zugeordnet …');
+    clearPlayerInviteDraft();
+    setPlayerInviteMessage(action === 'prepare' ? 'Einladungslink wird erstellt …' : 'E-Mail wird zugeordnet …');
 
     const payload = {
       p_player_id: String(formData.get('playerId') || ''),
       p_email: String(formData.get('email') || '').trim()
     };
-    const response = action === 'invite'
+    const response = action === 'prepare'
       ? await state.client.functions.invoke('invite-player', {
           body: { playerId: payload.p_player_id, email: payload.p_email }
         })
@@ -1302,7 +1395,7 @@
     const { data, error } = response;
     if (error) {
       setPlayerInviteMessage(
-        action === 'invite' ? await getFunctionErrorMessage(error) : getFriendlyAuthError(error),
+        action === 'prepare' ? await getFunctionErrorMessage(error) : getFriendlyAuthError(error),
         'error'
       );
     }
@@ -1311,14 +1404,23 @@
       if (invitedPlayer) {
         invitedPlayer.account_status = data?.status === 'linked'
           ? 'active'
-          : action === 'invite' || data?.status === 'reinvite' ? 'pending' : 'assigned';
+          : action === 'prepare' ? 'pending' : 'assigned';
+      }
+      if (data?.status === 'prepared' && data?.actionLink) {
+        state.invitationDraft = {
+          actionLink: data.actionLink,
+          subject: PLAYER_INVITE_SUBJECT,
+          message: buildPlayerInviteCopy(data.actionLink),
+          html: buildPlayerInviteHtml(data.actionLink)
+        };
+        renderPlayerInviteDraft();
       }
       form.reset();
       renderInvitePlayerOptions();
       setPlayerInviteMessage(
         data?.status === 'linked'
           ? 'Das bestehende Konto wurde mit dem Spieler verknüpft.'
-          : action === 'invite' ? 'E-Mail wurde zugeordnet und die Einladung gesendet.' : 'Arbeits-E-Mail wurde hinterlegt.',
+          : action === 'prepare' ? 'Die Einladung ist vorbereitet und kann jetzt kopiert werden.' : 'Arbeits-E-Mail wurde hinterlegt.',
         'success'
       );
     }
@@ -1458,7 +1560,7 @@
         return;
       }
       target.textContent = error.message || 'Bitte das Ergebnis prüfen.';
-      target.classList.add(/fehlt/i.test(target.textContent) ? 'is-partial' : 'is-invalid');
+      target.classList.add(/fehlt|Match-Tiebreak eingeben/i.test(target.textContent) ? 'is-partial' : 'is-invalid');
     }
   }
 
@@ -1705,10 +1807,7 @@
   }
 
   function setTrainingMessage(message, type = '') {
-    const target = document.querySelector('[data-training-message]');
-    if (!target) return;
-    target.textContent = message || '';
-    target.className = `training-form-message ${type}`.trim();
+    setAuthMessage(message, type);
   }
 
   function closeTrainingForm() {
@@ -1868,6 +1967,18 @@
       }
       if (event.target.closest('[data-player-invite-close]')) {
         closePlayerInviteDialog();
+        return;
+      }
+      if (event.target.closest('[data-player-invite-copy-link]')) {
+        await copyPlayerInviteText(state.invitationDraft?.actionLink, 'Einladungslink wurde kopiert.');
+        return;
+      }
+      if (event.target.closest('[data-player-invite-copy-message]')) {
+        await copyPlayerInviteText(
+          state.invitationDraft?.message,
+          'Nachricht und Link wurden kopiert.',
+          state.invitationDraft?.html
+        );
         return;
       }
       if (event.target.closest('[data-auth-logout]')) {

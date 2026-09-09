@@ -1,19 +1,20 @@
 #!/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node
 
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const projectRef = 'ufpaeluwcqynzudhmrro';
-const resource = `https://mcp.supabase.com/mcp?project_ref=${projectRef}&features=database`;
+const resource = `https://mcp.supabase.com/mcp?project_ref=${projectRef}&features=database,functions`;
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const migrationsDirectory = resolve(repositoryRoot, 'supabase/migrations');
+const functionsDirectory = resolve(repositoryRoot, 'supabase/functions');
 const tokenFile = resolve(repositoryRoot, '.codex-secrets/supabase-access-token');
 
 const [command, argument] = process.argv.slice(2);
 
 if (!command) {
-  fail('Aufruf: supabase-mcp.mjs <list-migrations|apply-migration|execute-sql> [Datei]');
+  fail('Aufruf: supabase-mcp.mjs <list-tools|list-migrations|apply-migration|execute-sql|list-functions|get-function|deploy-function> [Datei oder Function]');
 }
 
 let accessToken;
@@ -93,6 +94,26 @@ function requireFilePath(path, { migration = false } = {}) {
   return absolutePath;
 }
 
+function requireFunctionPath(slug) {
+  if (!slug || !/^[a-z0-9-]+$/.test(slug)) fail('Eine gültige Function muss angegeben werden.');
+  return resolve(functionsDirectory, slug);
+}
+
+async function readFunctionFiles(directory, current = directory) {
+  const files = [];
+  for (const entry of await readdir(current, { withFileTypes: true })) {
+    const absolutePath = resolve(current, entry.name);
+    if (entry.isDirectory()) files.push(...await readFunctionFiles(directory, absolutePath));
+    else if (entry.isFile()) {
+      files.push({
+        name: relative(directory, absolutePath),
+        content: await readFile(absolutePath, 'utf8')
+      });
+    }
+  }
+  return files;
+}
+
 await rpc('initialize', {
   protocolVersion: '2025-03-26',
   capabilities: {},
@@ -100,7 +121,9 @@ await rpc('initialize', {
 });
 await rpc('notifications/initialized', undefined, true);
 
-if (command === 'list-migrations') {
+if (command === 'list-tools') {
+  console.log(JSON.stringify(await rpc('tools/list', {}), null, 2));
+} else if (command === 'list-migrations') {
   printToolResult(await rpc('tools/call', { name: 'list_migrations', arguments: {} }));
 } else if (command === 'apply-migration') {
   const migrationPath = requireFilePath(argument, { migration: true });
@@ -116,6 +139,27 @@ if (command === 'list-migrations') {
   printToolResult(await rpc('tools/call', {
     name: 'execute_sql',
     arguments: { query }
+  }));
+} else if (command === 'list-functions') {
+  printToolResult(await rpc('tools/call', { name: 'list_edge_functions', arguments: {} }));
+} else if (command === 'get-function') {
+  if (!argument) fail('Eine Function muss angegeben werden.');
+  printToolResult(await rpc('tools/call', {
+    name: 'get_edge_function',
+    arguments: { function_slug: argument }
+  }));
+} else if (command === 'deploy-function') {
+  const functionPath = requireFunctionPath(argument);
+  const files = await readFunctionFiles(functionPath);
+  if (!files.some((file) => file.name === 'index.ts')) fail('Der Function-Einstieg index.ts fehlt.');
+  printToolResult(await rpc('tools/call', {
+    name: 'deploy_edge_function',
+    arguments: {
+      name: argument,
+      entrypoint_path: 'index.ts',
+      verify_jwt: true,
+      files
+    }
   }));
 } else {
   fail(`Unbekannter Befehl: ${command}`);

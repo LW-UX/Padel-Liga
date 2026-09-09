@@ -48,15 +48,21 @@ Deno.serve(async (request) => {
     const redirectUrl = new URL(siteUrl);
     redirectUrl.searchParams.set("auth", "invite");
 
-    const { error: invitationError } = await serviceClient.auth.admin.inviteUserByEmail(email, {
-      redirectTo: redirectUrl.href,
+    const linkType = preparation?.status === "reinvite" ? "magiclink" : "invite";
+    const { data: linkData, error: invitationError } = await serviceClient.auth.admin.generateLink({
+      type: linkType,
+      email,
+      options: { redirectTo: redirectUrl.href },
     });
     if (invitationError) return jsonResponse({ error: invitationError.message }, 400);
 
-    return jsonResponse({ status: "invited" });
+    const actionLink = linkData?.properties?.action_link;
+    if (!actionLink) return jsonResponse({ error: "Der Einladungslink konnte nicht erstellt werden." }, 500);
+
+    return jsonResponse({ status: "prepared", actionLink });
   } catch (error) {
     return jsonResponse({
-      error: error instanceof Error ? error.message : "Die Einladung konnte nicht gesendet werden.",
+      error: error instanceof Error ? error.message : "Die Einladung konnte nicht vorbereitet werden.",
     }, 500);
   }
 });

@@ -1030,9 +1030,41 @@
     .auth-dialog-copy { color: var(--dim); font-size: 0.88rem; line-height: 1.5; margin: -0.35rem 0 1rem; }
     .player-email-privacy { color: var(--dim); font-size: 0.75rem; line-height: 1.45; }
     .player-email-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+    .player-invite-output {
+      display: grid;
+      gap: 12px;
+      border-top: 1px solid var(--border);
+      margin-top: 1rem;
+      padding-top: 1rem;
+    }
+    .player-invite-output[hidden] { display: none; }
+    .player-invite-output label { display: grid; gap: 5px; color: var(--dim); font-size: 0.78rem; font-weight: 600; }
+    .player-invite-output input,
+    .player-invite-preview {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      outline: none;
+      padding: 0.65rem 0.75rem;
+    }
+    .player-invite-output input { min-height: 44px; }
+    .player-invite-preview { min-height: 290px; font-weight: 400; }
+    .player-invite-preview p { margin: 0 0 1rem; }
+    .player-invite-preview p:last-child { margin-bottom: 0; }
+    .player-invite-preview ul { margin: 0 0 1rem; padding-left: 1.2rem; }
+    .player-invite-preview a { color: var(--accent); pointer-events: none; }
+    .player-invite-output input:focus,
+    .player-invite-preview:focus-within { border-color: var(--accent); }
+    .player-invite-expiry { color: var(--dim); font-size: 0.75rem; line-height: 1.45; margin: 0; }
     .auth-message { min-height: 1.25rem; color: var(--dim); font-size: 0.82rem; margin-top: 0.8rem; }
     .auth-message.error { color: var(--negativ); }
     .auth-message.success { color: var(--positiv); }
+    .account-auth-message:empty { display: none; }
     .account-header {
       display: flex;
       align-items: center;
@@ -1201,8 +1233,6 @@
     .account-waiting { display: inline-flex; align-items: center; min-height: 36px; }
     .training-form { display: grid; gap: 10px; border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem; }
     .training-form[hidden] { display: none; }
-    .training-form-message { min-height: 1.25rem; color: var(--dim); font-size: 0.82rem; }
-    .training-form-message.error { color: var(--negativ); }
     .training-form-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .training-player-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .training-picker-label { color: var(--dim); font-size: 0.85rem; font-weight: 600; }

@@ -320,7 +320,7 @@ test('result counters start empty, initialize their pair, and highlight only whi
 test('result entry exposes live validation messages beside the submit action', () => {
   assert.match(tippspielSource, /data-result-summary aria-live="polite"/);
   assert.match(tippspielSource, /target\.textContent = error\.message \|\| 'Bitte das Ergebnis prüfen\.'/);
-  assert.match(tippspielSource, /target\.classList\.add\(\/fehlt\/i\.test\(target\.textContent\) \? 'is-partial' : 'is-invalid'\)/);
+  assert.match(tippspielSource, /target\.classList\.add\(\/fehlt\|Match-Tiebreak eingeben\/i\.test\(target\.textContent\) \? 'is-partial' : 'is-invalid'\)/);
   assert.match(styleSource, /\.result-entry-summary\.is-invalid \{ color: var\(--negativ\); \}/);
   assert.match(styleSource, /\.result-entry-summary\.is-partial \{ color: var\(--accent\); \}/);
 });

@@ -39,7 +39,9 @@ test('company users can register while admins also get a player invitation dialo
     assert.match(source, /id="player-invite-dialog"/);
     assert.match(source, /id="player-invite-form"[\s\S]*name="playerId"[\s\S]*name="email"/);
     assert.match(source, /data-player-email-action="assign">E-Mail zuordnen/);
-    assert.match(source, /data-player-email-action="invite">Zuordnen &amp; Einladung senden/);
+    assert.match(source, /data-player-email-action="prepare">Zuordnen &amp; Einladung vorbereiten/);
+    assert.match(source, /id="player-invite-output"[\s\S]*data-player-invite-copy-link[\s\S]*data-player-invite-copy-message/);
+    assert.doesNotMatch(source, /data-player-invite-open-outlook|In Outlook öffnen/);
   });
   assert.match(client, /auth\.signUp\(/);
   assert.match(client, /Registrierung ist nur mit einer freigegebenen Firmen-E-Mail möglich/);
@@ -71,11 +73,21 @@ test('invitation preparation is restricted to admins and preserves unique player
   assert.match(client, /E-Mail hinterlegt/);
 });
 
-test('invitation email is sent only by the server-side function', () => {
+test('invitation link is generated only by the server-side function', () => {
   assert.match(edgeFunction, /Deno\.env\.get\("SUPABASE_SERVICE_ROLE_KEY"\)/);
   assert.match(edgeFunction, /userClient\.rpc\([\s\S]*"save_player_email_assignment"/);
-  assert.match(edgeFunction, /serviceClient\.auth\.admin\.inviteUserByEmail/);
-  assert.doesNotMatch(client, /SUPABASE_SERVICE_ROLE_KEY|serviceRoleKey|inviteUserByEmail/);
+  assert.match(edgeFunction, /serviceClient\.auth\.admin\.generateLink/);
+  assert.match(edgeFunction, /linkData\?\.properties\?\.action_link/);
+  assert.doesNotMatch(edgeFunction, /inviteUserByEmail/);
+  assert.doesNotMatch(client, /SUPABASE_SERVICE_ROLE_KEY|serviceRoleKey|generateLink/);
+  assert.match(client, /Du bist zur Padel-Liga eingeladen/);
+  assert.match(client, /Zugang einrichten\n\$\{actionLink\}/);
+  assert.match(client, /deine anstehenden Partien und offenen Aufgaben sehen/);
+  assert.match(client, /Dein Hanako-Leben-Squad/);
+  assert.match(client, /buildPlayerInviteHtml/);
+  assert.match(client, /'text\/html': new Blob/);
+  assert.match(client, /navigator\.clipboard\?\.writeText/);
+  assert.doesNotMatch(client, /In Outlook öffnen|player-invite-open-outlook/);
 });
 
 test('public self-registration is restricted while admin-assigned emails may use any domain', () => {

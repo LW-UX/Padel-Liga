@@ -22,7 +22,7 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-09-season-phases">
+  <link rel="stylesheet" href="style.css?v=2026-09-09-account-message">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -550,6 +550,7 @@
           <div class="widget-label">Dein Konto</div>
           <h2 id="account-display-name"></h2>
           <p class="auth-account-email" id="account-email"></p>
+          <div class="auth-message account-auth-message" id="account-auth-message" role="status" aria-live="polite"></div>
         </div>
         <div class="account-header-actions">
           <button class="secondary-button" id="player-invite-open" type="button" data-player-invite-open hidden>Spieler-E-Mails</button>
@@ -572,7 +573,6 @@
               <div class="training-player-fields" id="training-player-fields"></div>
               <div class="training-rounds" id="training-rounds"></div>
               <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
-              <div class="training-form-message" data-training-message role="status" aria-live="polite"></div>
               <button class="primary-button" type="submit">Training zur Bestätigung senden</button>
             </form>
             <div class="account-task-list prediction-match-list" id="result-task-list"></div>
@@ -580,7 +580,7 @@
         </div>
       </div>
     </div>
-    <div class="auth-message" id="auth-message" role="status"></div>
+    <div class="auth-message" id="auth-message" role="status" aria-live="polite"></div>
   </div>
 </dialog>
 
@@ -589,7 +589,7 @@
   <div class="auth-dialog-card">
     <div class="widget-label">Kontoverwaltung</div>
     <h2 id="player-invite-title">Spielerzugänge</h2>
-    <p class="auth-dialog-copy">Ordne zuerst die Arbeits-E-Mail zu. Die Einladung kannst du direkt oder später versenden.</p>
+    <p class="auth-dialog-copy">Ordne die Arbeits-E-Mail zu und erstelle bei Bedarf eine persönliche Einladung für den manuellen Versand.</p>
     <form id="player-invite-form" class="auth-form">
       <label>
         <span>Spieler</span>
@@ -604,15 +604,31 @@
       <p class="player-email-privacy">Die Adresse wird nur als nicht lesbarer Prüfwert gespeichert und später nicht angezeigt.</p>
       <div class="player-email-actions">
         <button class="secondary-button" type="submit" data-player-email-action="assign">E-Mail zuordnen</button>
-        <button class="primary-button" type="submit" data-player-email-action="invite">Zuordnen &amp; Einladung senden</button>
+        <button class="primary-button" type="submit" data-player-email-action="prepare">Zuordnen &amp; Einladung vorbereiten</button>
       </div>
     </form>
     <div class="auth-message" id="player-invite-message" role="status" aria-live="polite"></div>
+    <section class="player-invite-output" id="player-invite-output" hidden>
+      <div class="widget-label">Einladung vorbereitet</div>
+      <label>
+        <span>Betreff</span>
+        <input id="player-invite-subject" type="text" readonly>
+      </label>
+      <label>
+        <span>Nachricht und persönlicher Link</span>
+        <div class="player-invite-preview" id="player-invite-copy"></div>
+      </label>
+      <p class="player-invite-expiry">Der Link ist zeitlich begrenzt. Versende die Einladung am besten direkt; bei Bedarf kannst du einen neuen Link erstellen.</p>
+      <div class="player-email-actions">
+        <button class="secondary-button" type="button" data-player-invite-copy-link>Link kopieren</button>
+        <button class="primary-button" type="button" data-player-invite-copy-message>Nachricht kopieren</button>
+      </div>
+    </section>
   </div>
 </dialog>
 
 <script src="js/score-input.js?v=2026-09-03-training-counters"></script>
-<script src="js/tippspiel.js?v=2026-09-09-task-lineups"></script>
+<script src="js/tippspiel.js?v=2026-09-09-tiebreak-hint"></script>
 <script src="js/app.js?v=2026-09-09-final4-games-won"></script>
 </body>
 </html>

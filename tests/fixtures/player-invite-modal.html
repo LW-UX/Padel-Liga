@@ -12,7 +12,7 @@
     <div class="auth-dialog-card">
       <div class="widget-label">Kontoverwaltung</div>
       <h2 id="player-invite-title">Spielerzugänge</h2>
-      <p class="auth-dialog-copy">Ordne zuerst die Arbeits-E-Mail zu. Die Einladung kannst du direkt oder später versenden.</p>
+      <p class="auth-dialog-copy">Ordne die Arbeits-E-Mail zu und erstelle bei Bedarf eine persönliche Einladung für den manuellen Versand.</p>
       <form class="auth-form">
         <label>
           <span>Spieler</span>
@@ -29,10 +29,37 @@
         <p class="player-email-privacy">Die Adresse wird nur als nicht lesbarer Prüfwert gespeichert und später nicht angezeigt.</p>
         <div class="player-email-actions">
           <button class="secondary-button" type="submit">E-Mail zuordnen</button>
-          <button class="primary-button" type="submit">Zuordnen &amp; Einladung senden</button>
+          <button class="primary-button" type="submit">Zuordnen &amp; Einladung vorbereiten</button>
         </div>
       </form>
       <div class="auth-message" role="status"></div>
+      <section class="player-invite-output">
+        <div class="widget-label">Einladung vorbereitet</div>
+        <label><span>Betreff</span><input type="text" value="Du bist zur Padel-Liga eingeladen" readonly></label>
+        <label>
+          <span>Nachricht und persönlicher Link</span>
+          <div class="player-invite-preview">
+            <p><strong>Du bist zur Padel-Liga eingeladen</strong></p>
+            <p>Für dich wurde ein persönliches Spielerprofil vorbereitet. Lege über den folgenden Link dein eigenes Passwort fest und aktiviere deinen Zugang.</p>
+            <p><a href="https://example.com/invite"><strong>Zugang einrichten</strong></a></p>
+            <p>Mit deinem Spielerzugang kannst du:</p>
+            <ul>
+              <li>deine anstehenden Partien und offenen Aufgaben sehen,</li>
+              <li>Termine für deine Partien eintragen,</li>
+              <li>Spielergebnisse melden und Vorschläge bestätigen,</li>
+              <li>Trainings erfassen und bestätigen.</li>
+            </ul>
+            <p>Dein persönliches Passwort stellt sicher, dass nur du Aktionen für dein Spielerprofil ausführen kannst. Der Administrator kennt dein Passwort nicht.</p>
+            <p>Falls du diese Einladung nicht erwartet hast, kannst du diese E-Mail ignorieren.</p>
+            <p>Viele Grüße<br>Dein Hanako-Leben-Squad</p>
+          </div>
+        </label>
+        <p class="player-invite-expiry">Der Link ist zeitlich begrenzt. Versende die Einladung am besten direkt; bei Bedarf kannst du einen neuen Link erstellen.</p>
+        <div class="player-email-actions">
+          <button class="secondary-button" type="button">Link kopieren</button>
+          <button class="primary-button" type="button">Nachricht kopieren</button>
+        </div>
+      </section>
     </div>
   </dialog>
   <script>document.getElementById('player-invite-dialog').showModal();</script>
