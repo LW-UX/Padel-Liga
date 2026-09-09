@@ -54,6 +54,10 @@ const trainingMatchTiebreakMigration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260908184000_training_match_tiebreak_outcomes.sql'),
   'utf8'
 );
+const correctedSeptember2025TrainingMigration = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20260909140000_correct_september_2025_training_result.sql'),
+  'utf8'
+);
 
 function evaluateRelationshipLeaders(matches) {
   const functionSource = app.match(
@@ -91,6 +95,42 @@ function evaluateProfileResultDetails(match) {
   return context.result;
 }
 
+function evaluateProfileSummaryFormats(wins, matches, gameDiff) {
+  const functionSource = app.match(
+    /function formatProfileSignedValue\(value\) \{[\s\S]*?(?=\nfunction renderPlayerProfileAchievements)/
+  );
+  assert.ok(functionSource, 'profile summary formatting helpers should be present');
+  const context = {
+    wins,
+    matches,
+    gameDiff,
+    result: null,
+    escapeHtml: value => String(value ?? '')
+  };
+  vm.createContext(context);
+  vm.runInContext(
+    `${functionSource[0]}\nresult = { winRate: formatProfileWinRate(wins, matches), gameDiffPerMatch: formatProfileGameDiffPerMatch(gameDiff, matches) };`,
+    context
+  );
+  return JSON.parse(JSON.stringify(context.result));
+}
+
+function evaluateAchievementHighlights(achievements) {
+  const limitSource = app.match(/const PLAYER_PROFILE_ACHIEVEMENT_LIMIT = 4;/);
+  const functionSource = app.match(
+    /function getPlayerProfileAchievementHighlights\(achievements = \[\]\) \{[\s\S]*?\n\}/
+  );
+  assert.ok(limitSource, 'profile achievement limit should be present');
+  assert.ok(functionSource, 'profile achievement selection helper should be present');
+  const context = { achievements, result: null };
+  vm.createContext(context);
+  vm.runInContext(
+    `${limitSource[0]}\n${functionSource[0]}\nresult = getPlayerProfileAchievementHighlights(achievements);`,
+    context
+  );
+  return JSON.parse(JSON.stringify(context.result));
+}
+
 test('public player profile is a separate accessible dialog', () => {
   assert.match(html, /<dialog class="player-profile-dialog" id="player-profile-dialog" aria-labelledby="player-profile-name">/);
   assert.match(html, /<button class="modal-close-button player-profile-close"[^>]*data-player-profile-close/);
@@ -102,6 +142,9 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /achievement\.kind === 'final_four'/);
   assert.match(app, /kind === 'winner'\s*\? 'Gewinner'/);
   assert.match(app, /kind === 'final-four' \? 'Final 4'/);
+  assert.match(app, /getPlayerProfileAchievementHighlights\(achievements\)/);
+  assert.match(style, /@media \(max-width: 1024px\) \{[\s\S]*?\.player-profile-achievements \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
+  assert.match(style, /@media \(max-width: 768px\) \{[\s\S]*?\.player-profile-achievements \{[\s\S]*?grid-template-columns: 1fr;/);
   assert.match(html, /id="achievement-laurel-left"/);
   assert.match(html, /id="achievement-laurel-right"/);
   assert.match(app, /<use href="#achievement-laurel-left"><\/use>/);
@@ -109,6 +152,15 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(html, /id="player-profile-elo-chart"/);
   assert.match(app, /const labels = series\.map\(item => formatProfileDate\(item\.date\)\)/);
   assert.doesNotMatch(app, /const labels = series\.map\(item => item\.label/);
+  assert.match(app, /function renderProfileMatchCount\(value\)[\s\S]*?player-profile-stat-fraction/);
+  assert.match(app, /renderProfileMatchCount\(summary\.matches\), 'Partien', '', true/);
+  assert.match(app, /renderProfileMatchCount\(summary\.wins\).*renderProfileMatchCount\(summary\.losses\)/);
+  assert.match(app, /'Partien G:V'[\s\S]*?'Siegquote'[\s\S]*?'Spiele G:V'[\s\S]*?'Spieldifferenz'[\s\S]*?'Ø Spieldifferenz'/);
+  assert.match(app, /'Ø Spieldifferenz', gameDiffPerMatch > 0 \? 'positive' : ''/);
+  assert.match(style, /\.player-profile-stat-fraction \{ font-size: 0\.58em; \}/);
+  assert.match(style, /\.player-profile-stats \{[\s\S]*?grid-template-columns: repeat\(7, minmax\(0, 1fr\)\);/);
+  assert.match(style, /\.player-profile-stat:first-child \{ grid-column: 1 \/ -1; border-right: 0; \}/);
+  assert.doesNotMatch(style, /\.player-profile-stat:last-child \{ grid-column: 1 \/ -1;/);
   assert.match(html, /id="player-profile-avatar-placeholder"/);
   assert.match(app, /identity\.profileEmoji \|\| knownPlayer\?\.profileEmoji/);
   assert.match(app, /image\.onload = \(\) => \{\s*image\.hidden = false;\s*placeholder\.hidden = true;/);
@@ -119,8 +171,12 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;/);
   assert.match(app, /matches\.slice\(0, PLAYER_PROFILE_MATCH_PREVIEW_LIMIT\)/);
   assert.match(app, /matches\.length <= PLAYER_PROFILE_MATCH_PREVIEW_LIMIT/);
+  assert.match(style, /\.player-profile-show-all\[hidden\] \{ display: none; \}/);
   assert.match(app, /function renderPlayerProfileNames\(names = \[\], fallback = '—'\)/);
   assert.match(app, /join\('<span class="mc-player-sep">&amp;<\/span>'\)/);
+  assert.match(app, /player-profile-match-team-line"><span>mit<\/span>[\s\S]*?player-profile-match-team-line"><span>vs\.<\/span>/);
+  assert.match(style, /@media \(max-width: 1199px\) \{[\s\S]*?\.player-profile-match-teams \{[\s\S]*?flex-direction: column;/);
+  assert.match(style, /@media \(max-width: 999px\) \{[\s\S]*?\.player-profile-match \{[\s\S]*?grid-template-columns: 34px minmax\(0, 1fr\) auto;/);
   assert.doesNotMatch(app, /\(match\.partnerNames \|\| \[\]\)\.join\(' \/ '\)/);
   assert.match(html, /class="widget player-profile-widget player-profile-relationships"[\s\S]*id="player-profile-relationships"/);
   assert.match(app, /record\.matches >= 3/);
@@ -131,6 +187,39 @@ test('public player profile is a separate accessible dialog', () => {
   assert.doesNotMatch(html, /player-profile-cover|player-profile-cover-image/);
   assert.doesNotMatch(app, /cover\.webp|Coverbild von/);
   assert.match(html, /<\/svg>\s*<button class="modal-close-button player-profile-close"[\s\S]*<div class="player-profile-shell">/);
+});
+
+test('player profiles sort achievements by value and recency and show at most four badges', () => {
+  const achievements = [
+    { id: 1, kind: 'final_four', achievedOn: '2026-06-01' },
+    { id: 2, kind: 'winner', achievedOn: '2025-12-01' },
+    { id: 3, kind: 'custom', achievedOn: '2028-01-01' },
+    { id: 4, kind: 'winner', achievedOn: '2026-08-01' },
+    { id: 5, kind: 'final_four', achievedOn: '2027-07-01' }
+  ];
+
+  assert.deepEqual(evaluateAchievementHighlights([]), []);
+  assert.deepEqual(evaluateAchievementHighlights(achievements).map(item => item.id), [4, 2, 5, 1]);
+  assert.deepEqual(achievements.map(item => item.id), [1, 2, 3, 4, 5]);
+});
+
+test('profile summary derives win rate and game difference per weighted match', () => {
+  assert.deepEqual(evaluateProfileSummaryFormats(6, 10, 24), {
+    winRate: '60 %',
+    gameDiffPerMatch: '+2,4'
+  });
+  assert.deepEqual(evaluateProfileSummaryFormats(2.5, 4, -10), {
+    winRate: '63 %',
+    gameDiffPerMatch: '-2,5'
+  });
+  assert.deepEqual(evaluateProfileSummaryFormats(0, 2, 0), {
+    winRate: '0 %',
+    gameDiffPerMatch: '0,0'
+  });
+  assert.deepEqual(evaluateProfileSummaryFormats(0, 0, 0), {
+    winRate: '—',
+    gameDiffPerMatch: '—'
+  });
 });
 
 test('player names open profiles by stable id and team cards no longer apply presets', () => {
@@ -259,6 +348,15 @@ test('historical trainings preserve sessions, match tiebreaks, and the unfinishe
   assert.match(historicalTrainingMigration, /array\['andreas_l', 'luca_w'\], array\['niklas_k', 'chris_m'\]/);
   assert.match(correctedLotzMigration, /array_replace\(player_ids, 'andreas_l', 'christoph_l'\)/);
   assert.match(correctedLotzMigration, /array_replace\(team_one_ids, 'andreas_l', 'christoph_l'\)/);
+});
+
+test('the September 2025 training correction mirrors all three set results', () => {
+  assert.match(correctedSeptember2025TrainingMigration, /date '2025-09-19'/);
+  assert.match(correctedSeptember2025TrainingMigration, /time '07:00'/);
+  assert.match(correctedSeptember2025TrainingMigration, /round\.team_one_ids = array\['raphael_h', 'marco_m'\]::text\[\]/);
+  assert.match(correctedSeptember2025TrainingMigration, /round\.team_two_ids = array\['ludwig_w', 'luca_w'\]::text\[\]/);
+  assert.match(correctedSeptember2025TrainingMigration, /set result_details = '0:6, 4:6, 4:6'/);
+  assert.match(correctedSeptember2025TrainingMigration, /round\.result_details = '6:0, 6:4, 6:4'/);
 });
 
 test('September trainings preserve completed and partial set weighting', () => {

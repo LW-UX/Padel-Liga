@@ -18,11 +18,11 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="data/players.js?v=2026-09-01-profile-emojis"></script>
-  <script src="data/seasons.js"></script>
+  <script src="data/seasons.js?v=2026-09-09-cup-2027"></script>
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-08-profile-result-rendering">
+  <link rel="stylesheet" href="style.css?v=2026-09-09-cup-2027">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -51,7 +51,7 @@
       </div>
     </div>
     <div class="hero-title-row">
-      <h1><button class="hero-home-button" type="button" data-nav-target="start" aria-label="Zur Startseite">PADEL<em>LIGA</em></button></h1>
+      <h1><button class="hero-home-button" id="hero-home-button" type="button" data-nav-target="start" aria-label="Zur Startseite">PADEL<em>LIGA</em></button></h1>
       <div class="hero-actions">
         <div class="viewer-picker" id="viewer-picker">
           <button class="secondary-button secondary-button--dropdown" type="button" data-viewer-toggle aria-haspopup="listbox" aria-expanded="false">
@@ -67,7 +67,7 @@
 
 <nav class="site-nav" aria-label="Hauptnavigation">
   <button data-section="rangliste">Rangliste</button>
-  <button data-section="partien">Partien</button>
+  <button id="partien-nav-button" data-section="partien">Partien</button>
   <button data-section="rechner">Rechner</button>
   <button data-section="verlauf">Statistik</button>
   <button data-section="infos">Infos</button>
@@ -307,7 +307,7 @@
   <section id="partien" class="section">
     <div class="sh sh-with-control">
       <div class="sh-heading">
-        <div class="sh-title">PARTIEN</div>
+        <div class="sh-title" id="partien-title">PARTIEN</div>
         <div class="sh-meta" id="sp-meta"></div>
       </div>
       <div class="match-scope-toggle ranking-sort-toggle" id="match-sort-toggle" aria-label="Partien sortieren">
@@ -522,6 +522,6 @@
 
 <script src="js/score-input.js?v=2026-09-03-training-counters"></script>
 <script src="js/tippspiel.js?v=2026-09-03-training-counters"></script>
-<script src="js/app.js?v=2026-09-08-profile-result-rendering"></script>
+<script src="js/app.js?v=2026-09-09-cup-2027-sorted-profile-achievements"></script>
 </body>
 </html>

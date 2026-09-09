@@ -1,5 +1,11 @@
 window.PADEL_SEASONS = [
   {
+    id: "cup-2027",
+    label: "Cup 2027",
+    file: "data/data-cup-2027.js",
+    default: false
+  },
+  {
     id: "winter-2026",
     label: "Winter 2026",
     file: "data/data-winter-2026.js",

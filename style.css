@@ -83,6 +83,7 @@
       --row-alt:    #0E1017;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    [hidden] { display: none !important; }
     html { scroll-behavior: smooth; scrollbar-gutter: stable; }
     html.instant-scroll,
     html.instant-scroll * {
@@ -258,6 +259,7 @@
       background: color-mix(in srgb, var(--accent) 8%, var(--surface));
     }
     .site-nav.tip-site-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .is-cup-season .site-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .auth-task-badge {
       position: absolute;
       top: -6px;
@@ -475,7 +477,7 @@
     }
     .player-profile-achievements {
       display: grid;
-      gap: 20px;
+      gap: 12px;
       justify-items: stretch;
     }
     .player-profile-achievement {
@@ -515,8 +517,9 @@
     }
     .player-profile-stats {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(7, minmax(0, 1fr));
     }
+    .player-profile-stat-fraction { font-size: 0.58em; }
     .player-profile-stat {
       border-right: 1px solid var(--border);
       padding: 12px 12px 10px;
@@ -576,12 +579,12 @@
     .player-profile-participations {
       display: grid;
       margin-top: 18px;
+      gap: 18px;
     }
     .player-profile-participation {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 4px 12px;
-      padding: 8px 0;
     }
     .player-profile-participation:last-child { border-bottom: 0; }
     .player-profile-participation-name { font-size: 1rem; font-weight: 500; }
@@ -597,7 +600,7 @@
     .player-profile-participation-rank.r3 { color: var(--bronze); }
     #player-profile-relationships { margin-top: 18px; }
     .player-profile-relationships .stat-shift-value { font-family: 'DM Mono', monospace; }
-    .player-profile-match-list { margin-top: 20px; }
+    .player-profile-match-list { margin-top: 8px; }
     .player-profile-match-group {
       padding: 4px 0;
     }
@@ -638,6 +641,17 @@
     .player-profile-match-group.training .player-profile-match-outcome.loss { color: var(--negativ); }
     .player-profile-match-group.training .player-profile-match-outcome.draw,
     .player-profile-match-group.training .player-profile-match-outcome.unfinished { color: var(--dim); }
+    .player-profile-match-teams {
+      display: flex;
+      align-items: baseline;
+      gap: 0.25rem;
+    }
+    .player-profile-match-team-line {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.25rem;
+      text-wrap: nowrap;
+    }
     .player-profile-match-teams span { color: var(--muted); }
     .player-profile-match-score {
       font-family: 'DM Sans', sans-serif;
@@ -660,15 +674,39 @@
       width: 100%;
       margin-top: 24px;
     }
+    .player-profile-show-all[hidden] { display: none; }
+    @media (max-width: 1199px) {
+      .player-profile-match-teams {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 2px;
+      }
+    }
     @media (max-width: 1024px) {
       .player-profile-identity-row {
         grid-template-columns: 168px minmax(0, 1fr);
       }
       .player-profile-achievements {
         grid-column: 1 / -1;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         justify-self: center;
-        width: min(100%, 480px);
+        width: min(100%, 760px);
       }
+    }
+
+    @media (max-width: 999px) {
+      .player-profile-match {
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+        gap: 8px 12px;
+        padding: 13px 0;
+      }
+      .player-profile-match-group.training { padding: 4px 0px; }
+      .player-profile-match-group.training .player-profile-match { padding: 5px 0; }
+      .player-profile-match-date { grid-column: 1; grid-row: 1; }
+      .player-profile-match-outcome { grid-row: 2; }
+      .player-profile-match-teams { grid-row: 2; }
+      .player-profile-match-score { grid-column: 3; grid-row: 2; text-align: right; min-height: 44px; }
+      .player-profile-match-season { grid-column: 3; grid-row: 1; }
     }
 
     @media (max-width: 768px) {
@@ -686,42 +724,30 @@
         grid-template-columns: 116px minmax(0, 1fr);
         gap: 20px;
         min-height: 0;
-        padding: 80px 28px 28px;
+        padding: 40px 12px 12px;
       }
       .player-profile-avatar { width: 116px; border-radius: 20px; }
       .player-profile-avatar-placeholder { font-size: 4.5rem; }
-      .player-profile-identity h2 { font-size: clamp(1.85rem, 8vw, 2.5rem); }
       .player-profile-achievements {
         grid-column: 1 / -1;
+        grid-template-columns: 1fr;
+        gap: 8px;
         min-width: 0;
         width: 100%;
       }
       .player-profile-achievement {
         grid-template-columns: 44px minmax(0, 1fr) 44px;
-        gap: 10px;
       }
-      .player-profile-achievement-laurel { width: 44px; height: 80px; }
-      .player-profile-achievement-title { font-size: 2rem; }
-      .player-profile-achievement-subtitle { font-size: 0.82rem; white-space: normal; }
+      .player-profile-achievement-laurel { width: 36px; height: 64px; }
+      .player-profile-achievement-title { font-size: 1.8rem; }
       .player-profile-stats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
-      .player-profile-stat { min-height: 94px; border-bottom: 1px solid var(--border); padding: 20px 25px; }
-      .player-profile-stat:nth-child(even) { border-right: 0; }
-      .player-profile-stat:last-child { grid-column: 1 / -1; border-bottom: 0; }
-      .player-profile-stat-value { font-size: 2.4rem; }
+      .player-profile-stat { border-bottom: 1px solid var(--border); }
+      .player-profile-stat:first-child { grid-column: 1 / -1; border-right: 0; }
+      .player-profile-stat:nth-child(odd) { border-right: 0; }
+      .player-profile-stat:nth-last-child(-n + 2) { border-bottom: 0; }
       .player-profile-chart-wrap { height: 210px; }
-      .player-profile-match {
-        grid-template-columns: 34px minmax(0, 1fr) auto;
-        gap: 8px 12px;
-        padding: 13px 0;
-      }
-      .player-profile-match-group.training { padding: 4px 8px; }
-      .player-profile-match-group.training .player-profile-match { padding: 5px 0; }
-      .player-profile-match-date { grid-column: 2; grid-row: 2; }
-      .player-profile-match-outcome { grid-row: 1 / span 2; }
-      .player-profile-match-score { grid-column: 3; grid-row: 1 / span 2; }
-      .player-profile-match-season { grid-column: 2; grid-row: 2; margin-left: 82px; text-align: left; }
     }
 
 
@@ -2134,6 +2160,148 @@
     .mc-pending-label { font-size: 0.85rem; color: var(--dim); text-align: center; }
     .mc-nr { font-family: 'DM Mono', monospace; font-size: 0.85rem; color: var(--dim); text-align: left; }
 
+    /* ── CUP BRACKET ── */
+    .cup-bracket {
+      display: grid;
+      gap: 24px;
+      padding: 8px 0 32px;
+    }
+    .cup-trophy {
+      width: 132px;
+      margin: 0 auto -8px;
+      color: var(--accent);
+      filter: drop-shadow(0 0 22px color-mix(in srgb, var(--accent) 20%, transparent));
+    }
+    .cup-trophy svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .cup-trophy-glow {
+      fill: color-mix(in srgb, var(--accent) 9%, transparent);
+      stroke: none;
+    }
+    .cup-trophy-line {
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 3;
+    }
+    .cup-trophy-accent { fill: var(--accent2); }
+    .cup-round {
+      display: grid;
+      gap: 12px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .cup-round-final { max-width: 360px; }
+    .cup-round-semifinal { max-width: 780px; }
+    .cup-round-quarterfinal { max-width: 1100px; }
+    .cup-round-title {
+      color: var(--dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .cup-round-matches { display: grid; gap: 12px; }
+    .cup-round-final .cup-round-matches { grid-template-columns: 1fr; }
+    .cup-round-semifinal .cup-round-matches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cup-round-quarterfinal .cup-round-matches { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .cup-match-card {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: linear-gradient(145deg, color-mix(in srgb, var(--surface) 92%, var(--accent) 8%), var(--surface));
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
+    }
+    .cup-match-label {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--accent);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .cup-match-team {
+      display: flex;
+      min-height: 58px;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 11px 10px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      text-align: center;
+    }
+    .cup-match-team .mc-player-name { min-width: 0; }
+    .cup-match-team.is-winner { color: var(--text); font-weight: 700; }
+    .cup-match-team.is-winner::before { content: '✓'; color: var(--accent); }
+    .cup-match-team.is-loser { opacity: 0.55; }
+    .cup-match-status {
+      display: flex;
+      min-height: 40px;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 7px 10px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.12);
+      color: var(--dim);
+      font-size: 0.76rem;
+      text-align: center;
+    }
+    .cup-match-status strong {
+      color: var(--text);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 400;
+      letter-spacing: 0.05em;
+    }
+    .cup-redraw {
+      display: flex;
+      width: min(82%, 880px);
+      align-items: center;
+      gap: 14px;
+      margin: 0 auto;
+      color: var(--dim);
+    }
+    .cup-redraw-line {
+      height: 1px;
+      flex: 1;
+      background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 55%, var(--border)));
+    }
+    .cup-redraw-line:last-child { transform: scaleX(-1); }
+    .cup-redraw-label {
+      flex: 0 0 auto;
+      padding: 6px 12px;
+      border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      .cup-bracket { gap: 20px; padding-top: 0; }
+      .cup-trophy { width: 104px; margin-bottom: -10px; }
+      .cup-round,
+      .cup-round-final,
+      .cup-round-semifinal,
+      .cup-round-quarterfinal { max-width: 520px; }
+      .cup-round-semifinal .cup-round-matches,
+      .cup-round-quarterfinal .cup-round-matches { grid-template-columns: 1fr; }
+      .cup-match-team { min-height: 52px; }
+      .cup-redraw { width: 100%; gap: 7px; }
+      .cup-redraw-label { flex: 0 1 auto; padding: 6px 9px; font-size: 0.64rem; }
+    }
+
     /* ── CALCULATOR ── */
     .calculator-layout {
       display: grid;
@@ -2493,7 +2661,7 @@
         max-width: 34px !important;
         padding: 0;
       }
-      .viewer-picker .secondary-button--dropdown { width: 96px; min-width: 96px; }
+      .viewer-picker .secondary-button--dropdown { min-width: 96px; }
       .site-nav {
         width: calc(100% - 1.5rem);
         margin-bottom: 1.25rem;
@@ -2544,7 +2712,7 @@
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
         gap: 0.35rem 0.8rem;
-        margin-bottom: 0;
+        margin-bottom: 1.5rem;
       }
       #rangliste .sh-heading,
       #partien .sh-heading {

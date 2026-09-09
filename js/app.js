@@ -16,6 +16,7 @@ let playerProfileData = null;
 let playerProfileExpanded = false;
 let playerProfileRequestId = 0;
 const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;
+const PLAYER_PROFILE_ACHIEVEMENT_LIMIT = 4;
 let playerProfileLastTrigger = null;
 
 function getViewerStorageKey() {
@@ -136,12 +137,17 @@ async function loadDatabaseSeasonOptions() {
   if (!Array.isArray(data) || !data.length) return;
 
   const staticOptions = new Map(getSeasonOptions().map(season => [season.id, season]));
-  window.PADEL_SEASONS = data.map(season => ({
+  const databaseOptions = data.map(season => ({
     ...staticOptions.get(season.id),
     id: season.id,
     label: season.label,
     default: Boolean(season.is_active)
   }));
+  const databaseIds = new Set(databaseOptions.map(season => season.id));
+  const staticFallbacks = [...staticOptions.values()]
+    .filter(season => !databaseIds.has(season.id))
+    .map(season => ({ ...season, default: false }));
+  window.PADEL_SEASONS = [...databaseOptions, ...staticFallbacks];
 }
 
 async function loadDatabaseSeasonPayload(seasonId) {
@@ -203,8 +209,12 @@ function countsForRanking(match) {
 }
 
 function getMatchStage(match) {
-  if (['league', 'semifinal', 'final-four'].includes(match?.stage)) return match.stage;
+  if (['league', 'quarterfinal', 'semifinal', 'final-four', 'final'].includes(match?.stage)) return match.stage;
   return countsForRanking(match) ? 'league' : 'final-four';
+}
+
+function isCupSeason() {
+  return getCompetitionConfig().tournamentMode === 'knockout-redraw';
 }
 
 function getCompetitionConfig() {
@@ -525,6 +535,7 @@ function applySeasonMetadata() {
   const organizations = PADEL_DATA.organizations || [];
   const organizationLabel = organizations.join('  ×  ');
   const heroOrganizations = document.getElementById('hero-orgs');
+  const cupSeason = isCupSeason();
 
   document.title = title;
   document.querySelectorAll('[data-season-label]').forEach(element => {
@@ -532,6 +543,30 @@ function applySeasonMetadata() {
   });
   if (heroOrganizations) heroOrganizations.textContent = organizationLabel;
   document.body.classList.toggle('is-test-season', Boolean(PADEL_DATA.resultsEntryEnabled));
+  document.body.classList.toggle('is-cup-season', cupSeason);
+
+  const heroButton = document.getElementById('hero-home-button');
+  if (heroButton) {
+    heroButton.innerHTML = cupSeason ? 'PADEL<em>CUP</em>' : 'PADEL<em>LIGA</em>';
+    heroButton.dataset.navTarget = cupSeason ? 'partien' : 'start';
+    heroButton.setAttribute('aria-label', cupSeason ? 'Zum Turnierbaum' : 'Zur Startseite');
+  }
+
+  document.querySelectorAll('nav button[data-section]').forEach(button => {
+    button.hidden = cupSeason && !['partien', 'infos'].includes(button.dataset.section);
+  });
+  document.querySelectorAll('main > .section').forEach(section => {
+    section.hidden = cupSeason && !['partien', 'infos'].includes(section.id);
+  });
+
+  const matchesNavButton = document.getElementById('partien-nav-button');
+  const matchesTitle = document.getElementById('partien-title');
+  if (matchesNavButton) matchesNavButton.textContent = cupSeason ? 'Turnierbaum' : 'Partien';
+  if (matchesTitle) matchesTitle.textContent = cupSeason ? 'TURNIERBAUM' : 'PARTIEN';
+
+  const viewerPicker = document.getElementById('viewer-picker');
+  if (viewerPicker) viewerPicker.hidden = cupSeason;
+
   const seasonLabel = document.getElementById('season-picker-label');
   const seasonMenu = document.getElementById('season-menu');
   if (seasonLabel && seasonMenu) {
@@ -549,7 +584,17 @@ function applySeasonMetadata() {
     `).join('');
   }
   const predictionLink = document.getElementById('tippspiel-link');
-  if (predictionLink) predictionLink.href = `tipp/?saison=${encodeURIComponent(selectedSeason.id)}`;
+  if (predictionLink) {
+    predictionLink.href = `tipp/?saison=${encodeURIComponent(selectedSeason.id)}`;
+    predictionLink.hidden = cupSeason;
+  }
+
+  const sortToggle = document.getElementById('match-sort-toggle');
+  const scopeToggle = document.getElementById('match-scope-toggle');
+  if (sortToggle) sortToggle.hidden = cupSeason;
+  if (scopeToggle) scopeToggle.hidden = cupSeason;
+
+  if (cupSeason) nav('partien', matchesNavButton);
 }
 
 function resetSeasonState() {
@@ -850,10 +895,47 @@ function formatProfileMatchCount(value) {
   });
 }
 
+function renderProfileMatchCount(value) {
+  const formatted = formatProfileMatchCount(value);
+  const match = formatted.match(/^(.*)(,5)$/);
+  return match
+    ? `${escapeHtml(match[1])}<span class="player-profile-stat-fraction">${escapeHtml(match[2])}</span>`
+    : escapeHtml(formatted);
+}
+
+function formatProfileWinRate(wins, matches) {
+  const winCount = Number(wins);
+  const matchCount = Number(matches);
+  if (!Number.isFinite(winCount) || !Number.isFinite(matchCount) || matchCount <= 0) return '—';
+  return `${Math.round((winCount / matchCount) * 100)} %`;
+}
+
+function formatProfileGameDiffPerMatch(gameDiff, matches) {
+  const difference = Number(gameDiff);
+  const matchCount = Number(matches);
+  if (!Number.isFinite(difference) || !Number.isFinite(matchCount) || matchCount <= 0) return '—';
+  const average = difference / matchCount;
+  const formatted = average.toLocaleString('de-DE', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+  return average > 0 ? `+${formatted}` : formatted;
+}
+
+function getPlayerProfileAchievementHighlights(achievements = []) {
+  const kindOrder = { winner: 0, final_four: 1, custom: 2 };
+  return [...achievements]
+    .sort((left, right) =>
+      (kindOrder[left.kind] ?? 3) - (kindOrder[right.kind] ?? 3)
+      || String(right.achievedOn || '').localeCompare(String(left.achievedOn || ''))
+    )
+    .slice(0, PLAYER_PROFILE_ACHIEVEMENT_LIMIT);
+}
+
 function renderPlayerProfileAchievements(achievements = []) {
   const target = document.getElementById('player-profile-achievements');
   if (!target) return;
-  const highlights = achievements.slice(0, 2);
+  const highlights = getPlayerProfileAchievementHighlights(achievements);
   target.hidden = highlights.length === 0;
   target.innerHTML = highlights.map(achievement => {
     const kind = achievement.kind === 'winner'
@@ -882,16 +964,21 @@ function renderPlayerProfileAchievements(achievements = []) {
 function renderPlayerProfileStats(summary = {}) {
   const target = document.getElementById('player-profile-stats');
   if (!target) return;
+  const gameDiffPerMatch = Number(summary.matches) > 0
+    ? Number(summary.gameDiff) / Number(summary.matches)
+    : null;
   const stats = [
     [summary.currentElo ?? '—', `Elo · Peak ${summary.peakElo ?? '—'}`],
-    [formatProfileMatchCount(summary.matches), 'Partien'],
-    [`${formatProfileMatchCount(summary.wins)}:${formatProfileMatchCount(summary.losses)}`, 'Partien G:V'],
+    [renderProfileMatchCount(summary.matches), 'Partien', '', true],
+    [`${renderProfileMatchCount(summary.wins)}:${renderProfileMatchCount(summary.losses)}`, 'Partien G:V', '', true],
+    [formatProfileWinRate(summary.wins, summary.matches), 'Siegquote'],
     [`${summary.gamesFor ?? 0}:${summary.gamesAgainst ?? 0}`, 'Spiele G:V'],
-    [formatProfileSignedValue(summary.gameDiff), 'Spieldifferenz', Number(summary.gameDiff) > 0 ? 'positive' : '']
+    [formatProfileSignedValue(summary.gameDiff), 'Spieldifferenz', Number(summary.gameDiff) > 0 ? 'positive' : ''],
+    [formatProfileGameDiffPerMatch(summary.gameDiff, summary.matches), 'Ø Spieldifferenz', gameDiffPerMatch > 0 ? 'positive' : '']
   ];
-  target.innerHTML = stats.map(([value, label, valueClass = '']) => `
+  target.innerHTML = stats.map(([value, label, valueClass = '', valueIsHtml = false]) => `
     <div class="player-profile-stat">
-      <div class="player-profile-stat-value ${valueClass}">${escapeHtml(value)}</div>
+      <div class="player-profile-stat-value ${valueClass}">${valueIsHtml ? value : escapeHtml(value)}</div>
       <div class="stat-meta-line">${escapeHtml(label)}</div>
     </div>
   `).join('');
@@ -1228,7 +1315,10 @@ function renderPlayerProfileHistory() {
         return `<article class="player-profile-match ${outcome}">
           <div class="player-profile-match-date">${showDate ? escapeHtml(formatProfileDate(match.date)) : ''}</div>
           <div class="player-profile-match-outcome ${outcome}" aria-label="${outcomeAriaLabel}">${outcomeLabel}</div>
-          <div class="player-profile-match-teams">mit ${partner} <span>vs.</span> ${opponents}</div>
+          <div class="player-profile-match-teams">
+            <div class="player-profile-match-team-line"><span>mit</span> ${partner}</div>
+            <div class="player-profile-match-team-line"><span>vs.</span> ${opponents}</div>
+          </div>
           <div class="player-profile-match-score"${isComplete ? '' : ' title="Vollständige Sätze werden einzeln gewertet"'}>${renderProfileResultDetails(match)}</div>
           <div class="player-profile-match-season">${showSeason ? escapeHtml(match.kind === 'training' ? 'Training' : match.seasonLabel || 'Liga') : ''}</div>
         </article>`;
@@ -3209,9 +3299,75 @@ function renderPartienByDate(matches) {
   return [scheduledHtml, openHtml, semifinalHtml, finalFourHtml].filter(Boolean).join('');
 }
 
+function renderCupTrophy() {
+  return `<div class="cup-trophy" aria-hidden="true">
+    <svg viewBox="0 0 160 150" role="presentation" focusable="false">
+      <path class="cup-trophy-glow" d="M42 18h76v26c0 28-15 49-38 55-23-6-38-27-38-55V18Z"/>
+      <path class="cup-trophy-line" d="M46 20h68v23c0 28-14 46-34 52-20-6-34-24-34-52V20Z"/>
+      <path class="cup-trophy-line" d="M46 31H25v12c0 22 11 34 29 37M114 31h21v12c0 22-11 34-29 37"/>
+      <path class="cup-trophy-line" d="M80 95v25M59 137h42M65 120h30v17H65z"/>
+      <path class="cup-trophy-accent" d="m80 35 5 11 12 2-9 8 3 12-11-6-11 6 3-12-9-8 12-2 5-11Z"/>
+    </svg>
+  </div>`;
+}
+
+function renderCupMatchCard(match) {
+  const isPlayed = match.sieger !== null;
+  const teamOneClass = isPlayed ? (match.sieger === 1 ? ' is-winner' : ' is-loser') : '';
+  const teamTwoClass = isPlayed ? (match.sieger === 2 ? ' is-winner' : ' is-loser') : '';
+  const status = isPlayed
+    ? `<strong>${escapeHtml(match.saetze || '—')}</strong><span>${escapeHtml(match.ergebnis || '')}</span>`
+    : `<strong>VS</strong><span>${escapeHtml(hasScheduledDateTime(match) ? formatMatchDate(match) : 'Noch offen')}</span>`;
+
+  return `<article class="cup-match-card${isPlayed ? ' is-played' : ''}">
+    <div class="cup-match-label">${escapeHtml(getMatchDisplayLabel(match))}</div>
+    <div class="cup-match-team${teamOneClass}">${renderTeamPlayers(match.team1.spieler)}</div>
+    <div class="cup-match-status">${status}</div>
+    <div class="cup-match-team${teamTwoClass}">${renderTeamPlayers(match.team2.spieler)}</div>
+  </article>`;
+}
+
+function renderCupRound(matches, stage, title, className) {
+  const stageMatches = matches
+    .filter(match => getMatchStage(match) === stage)
+    .sort(compareMatchesByNumber);
+
+  return `<section class="cup-round ${className}" aria-labelledby="cup-${stage}-title">
+    <div class="cup-round-title" id="cup-${stage}-title">${title}</div>
+    <div class="cup-round-matches">${stageMatches.map(renderCupMatchCard).join('')}</div>
+  </section>`;
+}
+
+function renderCupRedraw(label) {
+  return `<div class="cup-redraw" aria-label="${escapeHtml(label)}">
+    <span class="cup-redraw-line"></span>
+    <span class="cup-redraw-label">${escapeHtml(label)}</span>
+    <span class="cup-redraw-line"></span>
+  </div>`;
+}
+
+function renderCupBracket(matches) {
+  return `<div class="cup-bracket">
+    ${renderCupTrophy()}
+    ${renderCupRound(matches, 'final', 'Finale', 'cup-round-final')}
+    ${renderCupRedraw('4 Sieger · Teams und Gegner neu auslosen')}
+    ${renderCupRound(matches, 'semifinal', 'Halbfinale', 'cup-round-semifinal')}
+    ${renderCupRedraw('8 Sieger · Teams und Gegner neu auslosen')}
+    ${renderCupRound(matches, 'quarterfinal', 'Viertelfinale', 'cup-round-quarterfinal')}
+  </div>`;
+}
+
 function renderPartien() {
   updateMatchScopeToggle();
   updateMatchSortToggle();
+
+  if (isCupSeason()) {
+    const played = PADEL_DATA.matches.filter(match => match.sieger !== null).length;
+    document.getElementById('sp-meta').textContent = `${played}/${PADEL_DATA.matches.length}`;
+    document.getElementById('spielplan').innerHTML = renderCupBracket(PADEL_DATA.matches);
+    return;
+  }
+
   const regularMatches = PADEL_DATA.matches.filter(countsForRanking);
   const played = regularMatches.filter(m => m.sieger !== null).length;
   document.getElementById('sp-meta').textContent = `${played}/${regularMatches.length}`;
