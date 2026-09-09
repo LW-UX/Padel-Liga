@@ -8,6 +8,14 @@ const migration = fs.readFileSync(
   path.join(repositoryRoot, 'supabase/migrations/20260902120000_season_tournament_automation.sql'),
   'utf8'
 );
+const cupAchievementMigration = fs.readFileSync(
+  path.join(repositoryRoot, 'supabase/migrations/20260909150000_marcel_ligacup_2027_champion.sql'),
+  'utf8'
+);
+const achievementCleanupMigration = fs.readFileSync(
+  path.join(repositoryRoot, 'supabase/migrations/20260909180000_remove_temporary_achievements.sql'),
+  'utf8'
+);
 const appSource = fs.readFileSync(path.join(repositoryRoot, 'js/app.js'), 'utf8');
 const tippspielSource = fs.readFileSync(path.join(repositoryRoot, 'js/tippspiel.js'), 'utf8');
 
@@ -46,6 +54,23 @@ test('started follow-up rounds are protected and advancement is idempotent', () 
   assert.match(migration, /on conflict \(season_id, stage, seed\) do nothing/g);
   assert.match(migration, /not exists \([\s\S]*achievement\.kind = 'final_four'/);
   assert.match(migration, /not exists \([\s\S]*achievement\.kind = 'winner'/);
+});
+
+test('temporary badges are removed without disabling automatic season awards', () => {
+  assert.match(achievementCleanupMigration, /^begin;/);
+  assert.match(achievementCleanupMigration, /temporary_achievements[\s\S]*marcel_m[\s\S]*ludwig_w/);
+  assert.match(achievementCleanupMigration, /delete from public\.player_achievements/);
+  assert.match(achievementCleanupMigration, /to_regprocedure\('private\.award_final_four_players\(text\)'\)/);
+  assert.match(achievementCleanupMigration, /to_regprocedure\('private\.award_tournament_winner\(text\)'\)/);
+  assert.match(achievementCleanupMigration, /to_regprocedure\('private\.award_knockout_final_achievements_after_result\(\)'\)/);
+  assert.match(achievementCleanupMigration, /database_trigger\.tgname = 'matches_advance_tournament'/);
+  assert.match(achievementCleanupMigration, /database_trigger\.tgname = 'matches_award_knockout_final_achievements'/);
+  assert.doesNotMatch(achievementCleanupMigration, /drop (?:trigger|function)/i);
+  assert.match(migration, /perform private\.award_final_four_players\(p_season_id\)/);
+  assert.match(migration, /perform private\.award_tournament_winner\(p_season_id\)/);
+  assert.match(cupAchievementMigration, /'winner',[\s\n]*'Champion'/);
+  assert.match(cupAchievementMigration, /'finalist',[\s\n]*'Finale'/);
+  assert.match(achievementCleanupMigration, /commit;\s*$/);
 });
 
 test('one-set tips use exact 4, correct winner 2 and wrong winner 0 points', () => {

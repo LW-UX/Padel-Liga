@@ -286,8 +286,10 @@ begin
   end loop;
 
   delete from public.match_elo_changes as change
-  using public.matches as match
+  using public.matches as match, public.seasons as season
   where change.match_id = match.id
+    and season.id = match.season_id
+    and season.counts_for_profile
     and (
       match.id = p_replay_id
       or (match.match_at, match.id) >= (p_replay_at, p_replay_id)

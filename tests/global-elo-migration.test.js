@@ -9,6 +9,10 @@ const migration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260909170000_global_elo_match_time.sql'),
   'utf8'
 );
+const preservationMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20260909190000_preserve_non_official_elo_history.sql'),
+  'utf8'
+);
 const app = fs.readFileSync(path.join(root, 'js', 'app.js'), 'utf8');
 const tippspiel = fs.readFileSync(path.join(root, 'js', 'tippspiel.js'), 'utf8');
 const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
@@ -70,6 +74,16 @@ test('global Elo replay is chronological, serialized, and correction-safe', () =
   assert.match(replayTrigger, /private\.recalculate_global_elo_from_point\(replay_at, new\.id\)/);
   assert.match(migration, /after update of match_at, result_details, actual_sets, winner, counts_for_elo/);
   assert.match(migration, /perform pg_advisory_xact_lock\(70317, 20270909\)[\s\S]*update public\.matches/);
+});
+
+test('global Elo replay never deletes excluded test-season history', () => {
+  for (const source of [migration, preservationMigration]) {
+    assert.match(source, /delete from public\.match_elo_changes as change[\s\S]*using public\.matches as match, public\.seasons as season/);
+    assert.match(source, /season\.id = match\.season_id[\s\S]*season\.counts_for_profile[\s\S]*match\.id = p_replay_id/);
+  }
+  assert.match(preservationMigration, /^begin;/);
+  assert.match(preservationMigration, /create or replace function private\.recalculate_global_elo_from_point/);
+  assert.match(preservationMigration, /commit;\s*$/);
 });
 
 test('completed competitions freeze and later corrections refresh season-end snapshots', () => {
