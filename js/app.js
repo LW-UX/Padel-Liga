@@ -1226,6 +1226,7 @@ function renderPlayerProfileEloChart(eloSeries = []) {
   const datasets = [{
     label: 'Elo',
     data: values,
+    seasonLabels: series.map(item => item.seasonLabel || item.seasonId || 'Elo'),
     borderColor: pointColors[0],
     backgroundColor: 'transparent',
     borderWidth: 3,
@@ -1250,9 +1251,8 @@ function renderPlayerProfileEloChart(eloSeries = []) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          callbacks: {
-            label: item => `${series[item.dataIndex]?.seasonLabel || series[item.dataIndex]?.seasonId || 'Elo'}: ${item.parsed.y} Elo`
-          }
+          enabled: false,
+          external: externalPlayerProfileEloTooltip
         }
       },
       scales: {
@@ -1810,6 +1810,9 @@ document.addEventListener('pointerdown', event => {
 });
 
 document.addEventListener('mouseover', event => {
+  const helpIcon = event.target.closest('.help-icon');
+  if (helpIcon) positionHelpTooltip(helpIcon);
+
   const formChip = event.target.closest('[data-form-match-id]');
   if (formChip) showFormTooltip(formChip);
 });
@@ -1820,6 +1823,9 @@ document.addEventListener('mouseout', event => {
 });
 
 document.addEventListener('focusin', event => {
+  const helpIcon = event.target.closest('.help-icon');
+  if (helpIcon) positionHelpTooltip(helpIcon);
+
   const calculatorScoreControl = event.target.closest('[data-calculator-score], [data-calculator-step]');
   if (calculatorScoreControl) setActiveCalculatorScorePair(calculatorScoreControl.closest('.calculator-score-pair'));
 
@@ -4806,13 +4812,14 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
-function getOrCreateChartTooltip(chartInstance, className = 'chart-custom-tooltip') {
+function getOrCreateChartTooltip(chartInstance, variantClass = '') {
   const parent = chartInstance.canvas.parentNode;
-  let tooltip = parent.querySelector(`.${className}`);
+  const selector = `.chart-custom-tooltip${variantClass ? `.${variantClass}` : ''}`;
+  let tooltip = parent.querySelector(selector);
 
   if (!tooltip) {
     tooltip = document.createElement('div');
-    tooltip.className = className;
+    tooltip.className = ['chart-custom-tooltip', variantClass].filter(Boolean).join(' ');
     parent.appendChild(tooltip);
   }
 
@@ -4859,6 +4866,32 @@ function renderEloStyleTooltipItem({
   </div>`;
 }
 
+function positionHelpTooltip(anchor) {
+  const wrapper = anchor.closest('.th-help-wrap');
+  if (!wrapper) return;
+
+  const wrapperRect = wrapper.getBoundingClientRect();
+  const anchorRect = anchor.getBoundingClientRect();
+  const anchorViewportX = anchorRect.left + anchorRect.width / 2;
+  const anchorOffsetX = anchorViewportX - wrapperRect.left;
+  const anchorOffsetY = anchorRect.top - wrapperRect.top;
+  const opensRight = anchorViewportX <= window.innerWidth / 2;
+
+  wrapper.style.setProperty('--help-tooltip-anchor-x', `${anchorOffsetX}px`);
+  wrapper.style.setProperty('--help-tooltip-anchor-y', `${anchorOffsetY}px`);
+  wrapper.classList.toggle('help-tooltip-opens-right', opensRight);
+  wrapper.classList.toggle('help-tooltip-opens-left', !opensRight);
+}
+
+function getChartTooltipHorizontalTransform(chartInstance, tooltip) {
+  const canvasRect = chartInstance.canvas.getBoundingClientRect();
+  const anchorViewportX = canvasRect.left + tooltip.caretX;
+
+  return anchorViewportX <= window.innerWidth / 2
+    ? 'translate(12px, -50%)'
+    : 'translate(calc(-100% - 12px), -50%)';
+}
+
 function positionChartTooltip(chartInstance, tooltip, tooltipEl) {
   const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
@@ -4880,7 +4913,7 @@ function positionChartTooltip(chartInstance, tooltip, tooltipEl) {
 
   tooltipEl.style.left = `${tooltip.caretX}px`;
   tooltipEl.style.top = `${tooltip.caretY}px`;
-  tooltipEl.style.transform = 'translate(12px, -50%)';
+  tooltipEl.style.transform = getChartTooltipHorizontalTransform(chartInstance, tooltip);
 }
 
 function positionFormTooltip(anchor, tooltipEl) {
@@ -4950,9 +4983,36 @@ function hideFormTooltip() {
   if (tooltipEl) tooltipEl.style.opacity = 0;
 }
 
+function externalPlayerProfileEloTooltip(context) {
+  const { chart: chartInstance, tooltip } = context;
+  const tooltipEl = getOrCreateChartTooltip(chartInstance, 'player-profile-chart-tooltip');
+
+  if (tooltip.opacity === 0) {
+    tooltipEl.style.opacity = 0;
+    return;
+  }
+
+  const item = tooltip.dataPoints?.[0];
+  if (!item) {
+    tooltipEl.style.opacity = 0;
+    return;
+  }
+
+  const seasonLabel = item.dataset.seasonLabels?.[item.dataIndex] || 'Elo';
+  tooltipEl.innerHTML = `
+    ${item.label ? `<div class="elo-tooltip-title">${escapeHtml(item.label)}</div>` : ''}
+    ${renderEloStyleTooltipItem({
+      playerName: seasonLabel,
+      elo: item.parsed.y
+    })}
+  `;
+
+  positionChartTooltip(chartInstance, tooltip, tooltipEl);
+}
+
 function externalEloTooltip(context) {
   const { chart: chartInstance, tooltip } = context;
-  const tooltipEl = getOrCreateChartTooltip(chartInstance);
+  const tooltipEl = getOrCreateChartTooltip(chartInstance, 'elo-chart-tooltip');
 
   if (tooltip.opacity === 0) {
     tooltipEl.style.opacity = 0;
@@ -4992,7 +5052,7 @@ function externalEloTooltip(context) {
 
 function externalPlacementTooltip(context) {
   const { chart: chartInstance, tooltip } = context;
-  const tooltipEl = getOrCreateChartTooltip(chartInstance);
+  const tooltipEl = getOrCreateChartTooltip(chartInstance, 'placement-chart-tooltip');
 
   if (tooltip.opacity === 0) {
     tooltipEl.style.opacity = 0;

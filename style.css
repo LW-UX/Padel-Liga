@@ -560,7 +560,7 @@
       font-size: 0.7rem;
       letter-spacing: 0.12em;
     }
-    .player-profile-chart-wrap { height: 270px; margin-top: 18px; }
+    .player-profile-chart-wrap { position: relative; height: 270px; margin-top: 18px; }
     .player-profile-chart-legend {
       display: flex;
       flex-wrap: wrap;
@@ -1991,7 +1991,7 @@
       position: absolute;
       right: 0;
       top: calc(100% + 8px);
-      z-index: 60;
+      z-index: 1001;
       width: 260px;
       padding: 0.65rem 0.75rem;
       border: 1px solid var(--border);
@@ -2009,6 +2009,25 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.12s ease;
+    }
+    .ranking-help-header {
+      position: relative;
+      z-index: 1000;
+    }
+    @media (min-width: 769px) {
+      .th-help-wrap.help-tooltip-opens-right .help-tooltip,
+      .th-help-wrap.help-tooltip-opens-left .help-tooltip {
+        top: var(--help-tooltip-anchor-y);
+        transform: none;
+      }
+      .th-help-wrap.help-tooltip-opens-right .help-tooltip {
+        right: auto;
+        left: calc(var(--help-tooltip-anchor-x) + 10px);
+      }
+      .th-help-wrap.help-tooltip-opens-left .help-tooltip {
+        right: calc(100% - var(--help-tooltip-anchor-x) + 10px);
+        left: auto;
+      }
     }
     table.ranking-table th:hover .help-tooltip,
     .th-help-wrap:hover .help-tooltip,
@@ -2125,7 +2144,7 @@
     .chart-custom-tooltip {
       position: absolute;
       z-index: 10;
-      min-width: 210px;
+      max-width: calc(100% - 24px);
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.08s ease;
@@ -2139,9 +2158,16 @@
       padding: 0.7rem 0.8rem;
       box-shadow: 0 14px 36px rgba(0,0,0,0.35);
     }
+    .elo-chart-tooltip { width: 260px; }
+    .placement-chart-tooltip { width: 220px; }
+    .player-profile-chart-tooltip {
+      width: auto;
+      min-width: 210px;
+    }
     .form-custom-tooltip {
       position: fixed;
       z-index: 1000;
+      width: 260px;
       max-width: min(260px, calc(100vw - 24px));
     }
     .elo-tooltip-title {
