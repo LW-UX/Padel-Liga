@@ -1807,7 +1807,10 @@ Dein Hanako-Leben-Squad`;
   }
 
   function setTrainingMessage(message, type = '') {
-    setAuthMessage(message, type);
+    const target = document.querySelector('[data-training-message]');
+    if (!target) return;
+    target.textContent = message || '';
+    target.className = `auth-message training-message${type ? ` ${type}` : ''}`;
   }
 
   function closeTrainingForm() {
@@ -1876,6 +1879,7 @@ Dein Hanako-Leben-Squad`;
       return;
     }
     button.disabled = false;
+    setTrainingMessage('');
     form.reset();
     form.hidden = true;
     state.trainingRoundCount = 1;
@@ -1888,6 +1892,7 @@ Dein Hanako-Leben-Squad`;
     const task = state.trainingTasks.find(item => Number(item.session_id) === Number(sessionId));
     if (!task) return;
     const form = document.getElementById('training-form');
+    setTrainingMessage('');
     state.editingTrainingId = Number(sessionId);
     state.trainingRoundCount = Math.max(1, task.rounds?.length || 1);
     const roundValues = (task.rounds || []).map(round => {
@@ -2043,6 +2048,7 @@ Dein Hanako-Leben-Squad`;
         const form = document.getElementById('training-form');
         form.hidden = !form.hidden;
         if (!form.hidden) {
+          setTrainingMessage('');
           state.editingTrainingId = null;
           state.trainingRoundCount = 1;
           renderTrainingForm();

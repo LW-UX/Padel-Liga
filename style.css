@@ -1066,6 +1066,8 @@
     .auth-message.error { color: var(--negativ); }
     .auth-message.success { color: var(--positiv); }
     .account-auth-message:empty { display: none; }
+    .training-message { margin: 0; }
+    .training-message:empty { display: none; }
     .account-header {
       display: flex;
       align-items: center;

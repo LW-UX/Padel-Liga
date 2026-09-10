@@ -451,10 +451,31 @@ test('training validation is shown inside the training form before any RPC call'
     const source = fs.readFileSync(path.join(__dirname, '..', relativePath), 'utf8');
     assert.match(source, /data-training-message role="status" aria-live="polite"/);
   });
+  const messageSetter = tippspielSource.match(
+    /function setTrainingMessage\(message, type = ''\) \{[\s\S]*?(?=\n  function closeTrainingForm)/
+  )?.[0] || '';
+  assert.match(messageSetter, /document\.querySelector\('\[data-training-message\]'\)/);
+  assert.doesNotMatch(messageSetter, /setAuthMessage/);
+
+  const submitHandler = tippspielSource.match(
+    /async function handleTrainingSubmit\(event\) \{[\s\S]*?(?=\n  function editTraining)/
+  )?.[0] || '';
+  const rpcIndex = submitHandler.indexOf('state.client.rpc(rpcName, payload)');
+  assert.ok(rpcIndex > 0, 'training submit should contain its RPC call');
+  const beforeRpc = submitHandler.slice(0, rpcIndex);
+  assert.match(beforeRpc, /setTrainingMessage\('Bitte vier verschiedene Spieler auswählen\.', 'error'\);\n      return;/);
+  assert.match(beforeRpc, /setTrainingMessage\(error\.message, 'error'\);\n      return;/);
+
   assert.match(tippspielSource, /function handleTrainingInvalid\(event\)/);
   assert.match(tippspielSource, /trainingForm\?\.addEventListener\('invalid', handleTrainingInvalid, true\)/);
-  assert.match(tippspielSource, /setTrainingMessage\('Bitte vier verschiedene Spieler auswählen\.', 'error'\)/);
   assert.match(tippspielSource, /setTrainingMessage\(getFriendlyAuthError\(error\), 'error'\)/);
+});
+
+test('training messages reset across every form lifecycle transition', () => {
+  assert.match(tippspielSource, /function closeTrainingForm\(\)[\s\S]*setTrainingMessage\(''\);[\s\S]*renderTrainingForm\(\);/);
+  assert.match(tippspielSource, /function editTraining\(sessionId\)[\s\S]*const form = document\.getElementById\('training-form'\);\n    setTrainingMessage\(''\);/);
+  assert.match(tippspielSource, /if \(!form\.hidden\) \{\n          setTrainingMessage\(''\);[\s\S]*renderTrainingForm\(\);/);
+  assert.match(tippspielSource, /button\.disabled = false;\n    setTrainingMessage\(''\);\n    form\.reset\(\);[\s\S]*setAuthMessage\('Training wurde zur Bestätigung gesendet\.', 'success'\);/);
 });
 
 test('result submission and confirmation refresh in place without closing the account dialog', () => {

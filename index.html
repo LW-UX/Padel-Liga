@@ -22,7 +22,7 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-10-all-time-statistics">
+  <link rel="stylesheet" href="style.css?v=2026-09-10-training-message">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -579,6 +579,7 @@
               </div>
               <div class="training-player-fields" id="training-player-fields"></div>
               <div class="training-rounds" id="training-rounds"></div>
+              <div class="auth-message training-message" data-training-message role="status" aria-live="polite"></div>
               <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
               <button class="primary-button" type="submit">Training zur Bestätigung senden</button>
             </form>
@@ -635,7 +636,7 @@
 </dialog>
 
 <script src="js/score-input.js?v=2026-09-03-training-counters"></script>
-<script src="js/tippspiel.js?v=2026-09-09-tiebreak-hint"></script>
+<script src="js/tippspiel.js?v=2026-09-10-training-message"></script>
 <script src="js/app.js?v=2026-09-10-all-time-statistics"></script>
 </body>
 </html>
