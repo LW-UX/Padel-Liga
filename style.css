@@ -1406,6 +1406,18 @@
       gap: 18px;
       margin-bottom: 1.5rem;
     }
+    .stats-heading { align-items: center; }
+    .statistics-load-error {
+      margin: -0.5rem 0 1.5rem;
+      border: 1px solid color-mix(in srgb, var(--negativ) 55%, var(--border));
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--negativ) 8%, transparent);
+      color: var(--negativ);
+      padding: 0.75rem 0.9rem;
+      font-size: 0.88rem;
+    }
+    .statistics-load-error[hidden],
+    [data-season-only-statistic][hidden] { display: none; }
     .stats-facts-grid {
       margin-top: 1.5rem;
       margin-bottom: 0;

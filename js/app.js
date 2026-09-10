@@ -18,6 +18,11 @@ let playerProfileChart = null;
 let playerProfileData = null;
 let playerProfileExpanded = false;
 let playerProfileRequestId = 0;
+let statisticsMode = 'season';
+let allTimeStatisticsData = null;
+let allTimeStatisticsPromise = null;
+let statisticsLoadError = '';
+let statisticsPlayerFilters = new Map();
 const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;
 const PLAYER_PROFILE_ACHIEVEMENT_LIMIT = 4;
 const PROFILE_SEASON_COLORS = Object.freeze({
@@ -203,6 +208,15 @@ async function loadDatabaseSeasonPayload(seasonId) {
     throw error;
   }
   return data || null;
+}
+
+async function loadDatabaseAllTimeStatisticsPayload() {
+  const client = getSupabaseClient();
+  if (!client) throw new Error('Supabase ist für die All-Time-Statistik nicht konfiguriert.');
+  const { data, error } = await client.rpc('get_public_all_time_statistics');
+  if (error) throw error;
+  if (!data?.players || !data?.matches) throw new Error('Die All-Time-Daten sind unvollständig.');
+  return data;
 }
 
 function normalizeLegacySeason(rawSeason) {
@@ -606,6 +620,71 @@ function hydrateSeasonData(rawSeason) {
   };
 }
 
+function hydrateAllTimeStatisticsData(rawData) {
+  const centralPlayers = new Map((window.PADEL_PLAYERS || []).map(player => [player.id, player]));
+  const players = rawData.players.map(entry => {
+    const player = centralPlayers.get(entry.playerId);
+    if (!player) throw new Error(`Unbekannte All-Time-Spieler-ID ${entry.playerId}.`);
+
+    return {
+      ...player,
+      currentElo: entry.currentElo === null || entry.currentElo === undefined
+        ? null
+        : Number(entry.currentElo),
+      history: (entry.eloHistory || []).map(historyEntry => ({
+        ...historyEntry,
+        date: historyEntry.date || getBerlinDateTimeParts(historyEntry.matchAt).date,
+        elo: Number(historyEntry.elo),
+        oldElo: historyEntry.oldElo === null || historyEntry.oldElo === undefined
+          ? null
+          : Number(historyEntry.oldElo),
+        delta: historyEntry.delta === null || historyEntry.delta === undefined
+          ? null
+          : Number(historyEntry.delta),
+        interveningEvents: []
+      }))
+    };
+  });
+  const playerIds = new Set(players.map(player => player.id));
+  const matches = rawData.matches.map(match => {
+    const hydratedMatch = hydrateMatch(match, centralPlayers);
+    const matchPlayerIds = [...hydratedMatch.team1.playerIds, ...hydratedMatch.team2.playerIds];
+    if (matchPlayerIds.length !== 4 || matchPlayerIds.some(playerId => !playerIds.has(playerId))) {
+      throw new Error(`Ungültige All-Time-Spielerzuordnung für ${match.id}.`);
+    }
+    return hydratedMatch;
+  });
+
+  return {
+    id: 'all-time',
+    label: 'All-Time',
+    players,
+    matches,
+    completedAt: null,
+    eloFinalDate: null
+  };
+}
+
+async function loadAllTimeStatisticsData() {
+  if (allTimeStatisticsData) return allTimeStatisticsData;
+  if (allTimeStatisticsPromise) return allTimeStatisticsPromise;
+
+  allTimeStatisticsPromise = loadDatabaseAllTimeStatisticsPayload()
+    .then(hydrateAllTimeStatisticsData)
+    .then(data => {
+      allTimeStatisticsData = data;
+      if (!statisticsPlayerFilters.has('all-time')) {
+        statisticsPlayerFilters.set('all-time', new Set(data.players.map(player => player.id)));
+      }
+      return data;
+    })
+    .finally(() => {
+      allTimeStatisticsPromise = null;
+    });
+
+  return allTimeStatisticsPromise;
+}
+
 async function loadSeasonData(season) {
   window.PADEL_SEASON = null;
   if (season.file) await loadScript(season.file);
@@ -737,7 +816,13 @@ function resetSeasonState() {
   finalFourCalculatorResults = new Map();
   activeCalculatorMatchId = null;
   calculatorAutoTip = false;
-  activeP = new Set(PADEL_DATA.players.map(player => player.id));
+  statisticsMode = 'season';
+  allTimeStatisticsData = null;
+  allTimeStatisticsPromise = null;
+  statisticsLoadError = '';
+  statisticsPlayerFilters = new Map([
+    ['season', new Set(PADEL_DATA.players.map(player => player.id))]
+  ]);
   chart?.destroy();
   placementChart?.destroy();
   chart = null;
@@ -761,7 +846,20 @@ async function refreshActiveSeasonView() {
       finalFourCalculatorResults = new Map();
       activeCalculatorMatchId = null;
       calculatorAutoTip = false;
-      activeP = new Set(PADEL_DATA.players.map(player => player.id));
+      allTimeStatisticsData = null;
+      allTimeStatisticsPromise = null;
+      statisticsPlayerFilters.set('season', new Set(PADEL_DATA.players.map(player => player.id)));
+      statisticsPlayerFilters.delete('all-time');
+      if (statisticsMode === 'all-time') {
+        try {
+          await loadAllTimeStatisticsData();
+          statisticsLoadError = '';
+        } catch (error) {
+          statisticsMode = 'season';
+          statisticsLoadError = 'Die All-Time-Statistik konnte nicht aktualisiert werden.';
+          console.error(error);
+        }
+      }
       chart?.destroy();
       placementChart?.destroy();
       chart = null;
@@ -1717,6 +1815,12 @@ document.addEventListener('click', event => {
     return;
   }
 
+  const statisticsModeControl = event.target.closest('[data-statistics-mode]');
+  if (statisticsModeControl) {
+    void setStatisticsMode(statisticsModeControl.dataset.statisticsMode);
+    return;
+  }
+
   const homeArticleControl = event.target.closest('[data-expand-home-article]');
   if (homeArticleControl) {
     expandHomeArticle();
@@ -2026,9 +2130,9 @@ function getMatchOrderKey(match) {
   return `${dateKey}|${String(minutes).padStart(4, '0')}|${String(matchNumber).padStart(4, '0')}`;
 }
 
-function getHistoryOrderKey(historyEntry) {
+function getHistoryOrderKey(historyEntry, data = PADEL_DATA) {
   const historyMatch = historyEntry.matchId
-    ? PADEL_DATA.matches.find(match => match.id === historyEntry.matchId)
+    ? data.matches.find(match => match.id === historyEntry.matchId)
     : null;
   if (historyMatch) return getMatchOrderKey(historyMatch);
 
@@ -2037,7 +2141,7 @@ function getHistoryOrderKey(historyEntry) {
   return `${dateKey}|0000|0000`;
 }
 
-function getPlayerEloBeforeMatch(player, match) {
+function getPlayerEloBeforeMatch(player, match, data = PADEL_DATA) {
   const matchHistory = (player.history || []).find(historyEntry =>
     historyEntry.matchId === match?.id
       && historyEntry.oldElo !== null
@@ -2051,7 +2155,7 @@ function getPlayerEloBeforeMatch(player, match) {
     .map((historyEntry, index) => ({
       ...historyEntry,
       index,
-      orderKey: getHistoryOrderKey(historyEntry)
+      orderKey: getHistoryOrderKey(historyEntry, data)
     }))
     .filter(historyEntry =>
       historyEntry.orderKey < matchOrderKey &&
@@ -2074,8 +2178,8 @@ function getWeightedTeamElo(teamElos) {
   return weakerElo * TEAM_ELO_WEAKER_WEIGHT + strongerElo * (1 - TEAM_ELO_WEAKER_WEIGHT);
 }
 
-function getMatchWinProbabilityFromElos(match, getEloValue) {
-  const playersByName = new Map(PADEL_DATA.players.map(p => [p.name, p]));
+function getMatchWinProbabilityFromElos(match, getEloValue, data = PADEL_DATA) {
+  const playersByName = new Map(data.players.map(p => [p.name, p]));
   const team1 = match.team1.spieler.map(name => playersByName.get(name));
   const team2 = match.team2.spieler.map(name => playersByName.get(name));
 
@@ -2099,8 +2203,12 @@ function getMatchWinProbability(match) {
   return getMatchWinProbabilityFromElos(match, getLatestPlayerEloValue);
 }
 
-function getHistoricalMatchWinProbability(match) {
-  return getMatchWinProbabilityFromElos(match, getPlayerEloBeforeMatch);
+function getHistoricalMatchWinProbability(match, data = PADEL_DATA) {
+  return getMatchWinProbabilityFromElos(
+    match,
+    (player, historicalMatch) => getPlayerEloBeforeMatch(player, historicalMatch, data),
+    data
+  );
 }
 
 function renderFirmenRanking() {
@@ -2769,14 +2877,92 @@ function renderStatTeamPlayers(players) {
   return `<span class="stat-team-players">${renderTeamPlayers(players)}</span>`;
 }
 
+function isAllTimeStatistics() {
+  return statisticsMode === 'all-time';
+}
+
+function getStatisticsData() {
+  return isAllTimeStatistics() && allTimeStatisticsData ? allTimeStatisticsData : PADEL_DATA;
+}
+
+function getStatisticsMatches() {
+  const matches = getStatisticsData()?.matches || [];
+  return isAllTimeStatistics()
+    ? matches.filter(match => match.sieger !== null && match.saetze)
+    : matches.filter(countsForRanking);
+}
+
+function getStatisticsPlayers() {
+  return getStatisticsData()?.players || [];
+}
+
+function getStatisticsPlayerFilter() {
+  const key = isAllTimeStatistics() ? 'all-time' : 'season';
+  if (!statisticsPlayerFilters.has(key)) {
+    statisticsPlayerFilters.set(key, new Set(getStatisticsPlayers().map(player => player.id)));
+  }
+  return statisticsPlayerFilters.get(key);
+}
+
+function formatStatisticsMatchLabel(match) {
+  const matchLabel = formatMatchNumberLabel(match);
+  return isAllTimeStatistics() && match.seasonLabel
+    ? `${match.seasonLabel} · ${matchLabel}`
+    : matchLabel;
+}
+
+function renderStatisticsModeState({ loading = false } = {}) {
+  document.querySelectorAll('[data-statistics-mode]').forEach(button => {
+    const active = button.dataset.statisticsMode === statisticsMode;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+    button.disabled = loading;
+  });
+  document.querySelectorAll('[data-season-only-statistic]').forEach(element => {
+    element.hidden = isAllTimeStatistics();
+  });
+
+  const errorTarget = document.getElementById('statistics-load-error');
+  if (errorTarget) {
+    errorTarget.textContent = statisticsLoadError;
+    errorTarget.hidden = !statisticsLoadError;
+  }
+}
+
+async function setStatisticsMode(mode) {
+  const nextMode = mode === 'all-time' ? 'all-time' : 'season';
+  if (nextMode === statisticsMode && !(nextMode === 'all-time' && !allTimeStatisticsData)) return;
+
+  statisticsLoadError = '';
+  if (nextMode === 'all-time') {
+    renderStatisticsModeState({ loading: true });
+    try {
+      await loadAllTimeStatisticsData();
+    } catch (error) {
+      statisticsLoadError = 'Die All-Time-Statistik konnte nicht geladen werden. Bitte versuche es später erneut.';
+      renderStatisticsModeState();
+      console.error(error);
+      return;
+    }
+  }
+
+  statisticsMode = nextMode;
+  chart?.destroy();
+  placementChart?.destroy();
+  chart = null;
+  placementChart = null;
+  renderStatistik();
+  if (document.getElementById('verlauf')?.classList.contains('active')) initChart();
+}
+
 function getWinnerTeam(match) {
   if (match.sieger === 1) return match.team1.spieler;
   if (match.sieger === 2) return match.team2.spieler;
   return [];
 }
 
-function getWinnerProbability(match) {
-  const probability = getHistoricalMatchWinProbability(match);
+function getWinnerProbability(match, data = getStatisticsData()) {
+  const probability = getHistoricalMatchWinProbability(match, data);
   if (!probability || match.sieger === null) return null;
 
   return match.sieger === 1 ? probability.team1 : probability.team2;
@@ -2833,23 +3019,43 @@ function parseRegularSetScore(rawSet) {
   return [Number(match[1]), Number(match[2])];
 }
 
+function getRegularSetScores(match) {
+  const scoreCount = isSingleSetMatch(match) ? 1 : 2;
+  return [...String(match?.ergebnis || '').matchAll(/(\d+)\s*:\s*(\d+)/g)]
+    .map(score => parseRegularSetScore(`${score[1]}:${score[2]}`))
+    .filter(Boolean)
+    .slice(0, scoreCount);
+}
+
+function getPlayerSetDominance(player, matches = []) {
+  let spielDiff = 0;
+  let setCount = 0;
+
+  matches
+    .filter(match => match.sieger !== null && match.ergebnis)
+    .filter(match => match.team1.spieler.includes(player.name) || match.team2.spieler.includes(player.name))
+    .forEach(match => {
+      const isTeam1 = match.team1.spieler.includes(player.name);
+      getRegularSetScores(match).forEach(([team1Games, team2Games]) => {
+        spielDiff += isTeam1 ? team1Games - team2Games : team2Games - team1Games;
+        setCount += 1;
+      });
+    });
+
+  return { spielDiff, setCount };
+}
+
 function getNormalizedWinnerSetAverages() {
   const setTotals = [
     { winnerGames: 0, loserGames: 0, count: 0 },
     { winnerGames: 0, loserGames: 0, count: 0 }
   ];
   const matchDiffs = [];
-  const playedMatches = PADEL_DATA.matches
-    .filter(countsForRanking)
+  const playedMatches = getStatisticsMatches()
     .filter(match => match.sieger !== null && match.ergebnis);
 
   playedMatches.forEach(match => {
-    const regularResult = String(match.ergebnis).split('–')[0];
-    const sets = regularResult
-      .split(',')
-      .map(parseRegularSetScore)
-      .filter(Boolean)
-      .slice(0, 2);
+    const sets = getRegularSetScores(match);
 
     sets.forEach(([team1Games, team2Games], index) => {
       const winnerGames = match.sieger === 1 ? team1Games : team2Games;
@@ -2886,12 +3092,12 @@ function getNormalizedWinnerSetAverages() {
 }
 
 function getPlayedMatchesWithProbability() {
-  return PADEL_DATA.matches
-    .filter(countsForRanking)
+  const data = getStatisticsData();
+  return getStatisticsMatches()
     .filter(match => match.sieger !== null)
     .map(match => ({
       match,
-      probability: getHistoricalMatchWinProbability(match)
+      probability: getHistoricalMatchWinProbability(match, data)
     }))
     .filter(item => item.probability);
 }
@@ -3137,9 +3343,9 @@ function formatAverageMatchTime(minutes) {
   return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 }
 
-function getPlayerAverageMatchTime(player) {
-  const times = getPlayerMatches(player)
-    .filter(countsForRanking)
+function getPlayerAverageMatchTime(player, matches = getStatisticsMatches()) {
+  const times = matches
+    .filter(match => match.team1.spieler.includes(player.name) || match.team2.spieler.includes(player.name))
     .filter(match => match.sieger !== null && match.uhrzeit)
     .map(getMatchTimeMinutes)
     .filter(minutes => Number.isFinite(minutes) && minutes < 24 * 60);
@@ -3155,8 +3361,9 @@ function renderTimePerformance() {
   const target = document.getElementById('stats-time-performance');
   if (!target) return;
 
-  const playerTimes = PADEL_DATA.players
-    .map(getPlayerAverageMatchTime)
+  const matches = getStatisticsMatches();
+  const playerTimes = getStatisticsPlayers()
+    .map(player => getPlayerAverageMatchTime(player, matches))
     .filter(item => Number.isFinite(item.averageMinutes))
     .sort((a, b) =>
       a.averageMinutes - b.averageMinutes ||
@@ -3202,20 +3409,25 @@ function renderSetDominance() {
   const target = document.getElementById('stats-set-dominance');
   if (!target) return;
 
-  const dominantPlayers = PADEL_DATA.players
+  const matches = getStatisticsMatches();
+  const dominantPlayers = getStatisticsPlayers()
     .map(player => {
-      const stats = getPlayerStats(player);
+      const stats = isAllTimeStatistics()
+        ? getPlayerSetDominance(player, matches)
+        : getPlayerStats(player, matches);
       return {
         player,
         stats,
-        averageDiff: stats.partien > 0 ? stats.spielDiff / stats.partien : null
+        averageDiff: isAllTimeStatistics()
+          ? stats.setCount > 0 ? stats.spielDiff / stats.setCount : null
+          : stats.partien > 0 ? stats.spielDiff / stats.partien : null
       };
     })
     .filter(item => Number.isFinite(item.averageDiff))
     .sort((a, b) =>
       b.averageDiff - a.averageDiff ||
       b.stats.spielDiff - a.stats.spielDiff ||
-      b.stats.partien - a.stats.partien ||
+      (b.stats.setCount || b.stats.partien) - (a.stats.setCount || a.stats.partien) ||
       a.player.name.localeCompare(b.player.name, 'de')
     )
     .slice(0, 3);
@@ -3226,7 +3438,7 @@ function renderSetDominance() {
         <span class="mini-rank-pos">${index + 1}</span>
         <div>
           ${renderPlayerProfileLink(item.player, `mini-rank-name ${isSelectedPlayer(item.player.name) ? 'viewer-player' : ''}`)}
-          <div class="stat-meta-line">${formatSignedDecimal(item.averageDiff)} Spiele pro Partie · ${formatStatDiff(item.stats.spielDiff)} gesamt</div>
+          <div class="stat-meta-line">${formatSignedDecimal(item.averageDiff)} Spiele pro ${isAllTimeStatistics() ? 'Satz' : 'Partie'} · ${formatStatDiff(item.stats.spielDiff)} gesamt</div>
         </div>
       </div>
     `).join('')
@@ -3234,8 +3446,7 @@ function renderSetDominance() {
 }
 
 function renderDominantMatches() {
-  const dominantMatches = PADEL_DATA.matches
-    .filter(countsForRanking)
+  const dominantMatches = getStatisticsMatches()
     .filter(match => match.sieger !== null)
     .map(match => ({ match, gameStats: getMatchGameStats(match) }))
     .filter(item => Number.isFinite(item.gameStats.diff) && item.gameStats.diff > 0)
@@ -3252,7 +3463,7 @@ function renderDominantMatches() {
         <span class="mini-rank-pos">${index + 1}</span>
         <div>
           <div class="mini-rank-name">${renderStatTeamPlayers(getWinnerTeam(item.match))}</div>
-          <div class="stat-meta-line">${formatMatchNumberLabel(item.match)} · ${formatWinnerResult(item.match)} · +${item.gameStats.diff}</div>
+          <div class="stat-meta-line">${formatStatisticsMatchLabel(item.match)} · ${formatWinnerResult(item.match)} · +${item.gameStats.diff}</div>
         </div>
       </div>
     `).join('')
@@ -3278,7 +3489,7 @@ function renderBiggestUpsets() {
         <span class="mini-rank-pos">${index + 1}</span>
         <div>
           <div class="mini-rank-name">${renderStatTeamPlayers(getWinnerTeam(item.match))}</div>
-          <div class="stat-meta-line">${formatMatchNumberLabel(item.match)} · nur ${item.winnerProbability}% Siegchance</div>
+          <div class="stat-meta-line">${formatStatisticsMatchLabel(item.match)} · nur ${item.winnerProbability}% Siegchance</div>
         </div>
       </div>
     `).join('')
@@ -3286,13 +3497,16 @@ function renderBiggestUpsets() {
 }
 
 function renderStatistik() {
+  renderStatisticsModeState();
   renderFavoriteCheck();
   renderDominantMatches();
   renderBiggestUpsets();
   renderAverageSetScoreFact();
-  renderRankingDeviationFact('stats-elo-points-deviation', 'points', 'elo', 'positive');
-  renderRankingDeviationFact('stats-points-placement-deviation', 'points', 'placement', 'positive');
-  renderFinalFourForecast();
+  if (!isAllTimeStatistics()) {
+    renderRankingDeviationFact('stats-elo-points-deviation', 'points', 'elo', 'positive');
+    renderRankingDeviationFact('stats-points-placement-deviation', 'points', 'placement', 'positive');
+    renderFinalFourForecast();
+  }
   renderTimePerformance();
   renderSetDominance();
 }
@@ -4484,7 +4698,12 @@ const CHART_GRAY_MIX = 0.28;
 
 let chart = null;
 let placementChart = null;
-let activeP = new Set();
+
+function getChartBaseColor(player, fallbackIndex = 0) {
+  const centralIndex = (window.PADEL_PLAYERS || []).findIndex(item => item.id === player?.id);
+  const colorIndex = centralIndex >= 0 ? centralIndex : fallbackIndex;
+  return COLORS[colorIndex % COLORS.length];
+}
 
 function hexToRgb(color) {
   const value = color.replace('#', '');
@@ -4562,8 +4781,8 @@ function getPlacementChartPointRadius(playerName, hasPlayed, hasBye) {
 function updateChartViewerFocus() {
   if (chart) {
     chart.data.datasets.forEach((dataset, index) => {
-      const player = PADEL_DATA.players[index];
-      const color = getEloChartColor(COLORS[index], player.name);
+      const player = chart.$players[index];
+      const color = getEloChartColor(getChartBaseColor(player, index), player.name);
       dataset.borderColor = color;
       dataset.pointBackgroundColor = color;
       dataset.pointBorderColor = color;
@@ -4578,7 +4797,7 @@ function updateChartViewerFocus() {
   if (placementChart) {
     placementChart.data.datasets.forEach((dataset, index) => {
       const player = PADEL_DATA.players[index];
-      const color = getPlacementChartColor(COLORS[index], player.name);
+      const color = getPlacementChartColor(getChartBaseColor(player, index), player.name);
       const playedFlags = dataset.playedFlags;
       const byeFlags = dataset.byeFlags;
       dataset.borderColor = color;
@@ -4645,24 +4864,29 @@ function getHistoryEventKey(historyEntry) {
 function formatChartEventLabel(event) {
   if (event.gameLabel === 'Start' || event.gameLabel === 'Final') return [event.gameLabel];
 
-  const dateLabel = event.match
-    ? formatMatchDate(event.match)
-    : new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+  const parsedDate = parseDateValue(event.match?.datum || event.date);
+  const dateLabel = parsedDate
+    ? parsedDate.toLocaleDateString('de-DE', isAllTimeStatistics()
+      ? { day: '2-digit', month: '2-digit', year: '2-digit' }
+      : { day: '2-digit', month: '2-digit' })
+    : '';
 
   return [dateLabel, event.gameLabel];
 }
 
-function getChartEvents() {
+function getChartEvents(data = getStatisticsData()) {
   const events = new Map();
 
-  PADEL_DATA.players.forEach(player => {
+  data.players.forEach(player => {
     (player.history || []).forEach((historyEntry, index) => {
       const date = toDateKey(historyEntry.date);
       const elo = Number(historyEntry.elo);
       if (!date || !Number.isFinite(elo)) return;
 
       const gameLabel = normalizeGameLabel(historyEntry.label);
-      const match = historyEntry.matchId ? getMatchById(historyEntry.matchId) : null;
+      const match = historyEntry.matchId
+        ? data.matches.find(item => item.id === historyEntry.matchId) || null
+        : null;
       const key = getHistoryEventKey(historyEntry);
 
       if (!events.has(key)) {
@@ -4671,6 +4895,7 @@ function getChartEvents() {
           date,
           gameLabel,
           match,
+          matchAt: historyEntry.matchAt || match?.matchAt || null,
           index,
           label: null
         });
@@ -4678,11 +4903,11 @@ function getChartEvents() {
     });
   });
 
-  const hasStoredSeasonEnd = PADEL_DATA.players.some(player =>
+  const hasStoredSeasonEnd = data.players.some(player =>
     (player.history || []).some(entry => entry.eventType === 'season-end')
   );
-  const finalDate = PADEL_DATA.completedAt && !hasStoredSeasonEnd
-    ? toDateKey(PADEL_DATA.eloFinalDate)
+  const finalDate = data.completedAt && !hasStoredSeasonEnd
+    ? toDateKey(data.eloFinalDate)
     : null;
   if (finalDate && !hasStoredSeasonEnd) {
     events.set('final', {
@@ -4698,6 +4923,9 @@ function getChartEvents() {
 
   return [...events.values()]
     .sort((a, b) => {
+      const timeCompare = String(a.matchAt || '').localeCompare(String(b.matchAt || ''));
+      if (a.matchAt && b.matchAt && timeCompare) return timeCompare;
+
       const dateCompare = a.date.localeCompare(b.date);
       if (dateCompare) return dateCompare;
 
@@ -4709,8 +4937,8 @@ function getChartEvents() {
       const bIsFinal = b.gameLabel === 'Final';
       if (aIsFinal !== bIsFinal) return aIsFinal ? 1 : -1;
 
-      const timeCompare = (a.match ? getMatchTimeMinutes(a.match) : 0) - (b.match ? getMatchTimeMinutes(b.match) : 0);
-      if (timeCompare) return timeCompare;
+      const minuteCompare = (a.match ? getMatchTimeMinutes(a.match) : 0) - (b.match ? getMatchTimeMinutes(b.match) : 0);
+      if (minuteCompare) return minuteCompare;
 
       return getMatchNumber(a.match || a.gameLabel) - getMatchNumber(b.match || b.gameLabel);
     })
@@ -5162,9 +5390,12 @@ function getPlayerSeries(player, events) {
     series.deltas.push(delta);
     series.deltaLabels.push(formatEloDelta(delta));
     series.gameLabels.push(event.gameLabel);
-    series.eventTitles.push(event.gameLabel === 'Start' || event.gameLabel === 'Final'
+    const eventTitle = event.gameLabel === 'Start' || event.gameLabel === 'Final'
       ? event.gameLabel
-      : event.match ? formatMatchMeta(event.match) : formatMatchDate({ datum: event.date }));
+      : event.match ? formatMatchMeta(event.match) : formatMatchDate({ datum: event.date });
+    series.eventTitles.push(isAllTimeStatistics() && event.match?.seasonLabel
+      ? `${event.match.seasonLabel} · ${eventTitle}`
+      : eventTitle);
     series.matchContexts.push(getPlayerMatchContext(player.name, event.match));
     series.oldElos.push(oldElo);
     series.interveningEvents.push(historyEntry.interveningEvents || []);
@@ -5246,17 +5477,21 @@ const eloFinalStraightSegmentPlugin = {
 
 function initChart() {
   if (chart) {
-    initPlacementChart();
+    if (!isAllTimeStatistics()) initPlacementChart();
     return;
   }
-  const chartEvents = getChartEvents();
+  const data = getStatisticsData();
+  const players = data.players;
+  const activePlayers = getStatisticsPlayerFilter();
+  const chartEvents = getChartEvents(data);
   const finalPointIndex = chartEvents.findIndex(event => event.isFinal);
 
-  const datasets = PADEL_DATA.players.map((p, i) => {
+  const datasets = players.map((p, i) => {
     const series = getPlayerSeries(p, chartEvents);
-    const color = getEloChartColor(COLORS[i], p.name);
+    const color = getEloChartColor(getChartBaseColor(p, i), p.name);
     return {
       label: p.name,
+      playerId: p.id,
       data: series.eloValues,
       deltas: series.deltas,
       deltaLabels: series.deltaLabels,
@@ -5276,7 +5511,8 @@ function initChart() {
       pointRadius: getEloChartPointRadius(p.name),
       pointHoverRadius: 5,
       tension: 0.3,
-      spanGaps: true
+      spanGaps: true,
+      hidden: !activePlayers.has(p.id)
     };
   });
 
@@ -5284,7 +5520,11 @@ function initChart() {
   chart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: chartEvents.map(event => new Date(event.date).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})),
+      labels: chartEvents.map(event => new Date(event.date).toLocaleDateString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        ...(isAllTimeStatistics() ? { year: '2-digit' } : {})
+      })),
       datasets
     },
     plugins: [eloFinalStraightSegmentPlugin],
@@ -5309,7 +5549,8 @@ function initChart() {
       }
     }
   });
-  initPlacementChart();
+  chart.$players = players;
+  if (!isAllTimeStatistics()) initPlacementChart();
   renderFilter();
 }
 
@@ -5338,14 +5579,15 @@ function initPlacementChart() {
   const datasets = PADEL_DATA.players.map((p, i) => {
     const playedFlags = playedByPlayer.get(p.name);
     const byeFlags = byeByPlayer.get(p.name);
-    const color = getPlacementChartColor(COLORS[i], p.name);
+    const baseColor = getChartBaseColor(p, i);
+    const color = getPlacementChartColor(baseColor, p.name);
     return {
       label: p.name,
       data: placementsByPlayer.get(p.name),
       playedFlags,
       byeFlags,
       statsByPoint: statsByPlayer.get(p.name),
-      baseColor: COLORS[i],
+      baseColor,
       borderColor: color,
       backgroundColor: 'transparent',
       pointBackgroundColor: playedFlags.map(hasMatch => hasMatch ? color : 'transparent'),
@@ -5413,11 +5655,13 @@ function initPlacementChart() {
 }
 
 function renderFilter() {
-  document.getElementById('filter-row').innerHTML = PADEL_DATA.players.map((p,i) => {
-    const on = activeP.has(p.id);
+  const activePlayers = getStatisticsPlayerFilter();
+  document.getElementById('filter-row').innerHTML = getStatisticsPlayers().map((p,i) => {
+    const on = activePlayers.has(p.id);
+    const color = getChartBaseColor(p, i);
     return `<button
       class="fb ${on?'on':''}"
-      style="${on ? `--player-color:${COLORS[i]};` : ''}"
+      style="${on ? `--player-color:${color};` : ''}"
       data-player-toggle-id="${p.id}"
       data-player-toggle-index="${i}"
     >${p.name}</button>`;
@@ -5426,16 +5670,20 @@ function renderFilter() {
 
 function toggleP(id, i, btn) {
   const ds = chart.data.datasets[i];
+  const activePlayers = getStatisticsPlayerFilter();
+  const player = getStatisticsPlayers()[i];
+  const color = getChartBaseColor(player, i);
   ds.hidden = !ds.hidden;
-  if (ds.hidden) { activeP.delete(id); btn.classList.remove('on'); btn.style = ''; }
-  else { activeP.add(id); btn.classList.add('on'); btn.style = `--player-color:${COLORS[i]};`; }
+  if (ds.hidden) { activePlayers.delete(id); btn.classList.remove('on'); btn.style = ''; }
+  else { activePlayers.add(id); btn.classList.add('on'); btn.style = `--player-color:${color};`; }
   chart.update();
 }
 
 function toggleAll(on) {
-  PADEL_DATA.players.forEach((p, i) => {
+  const activePlayers = getStatisticsPlayerFilter();
+  getStatisticsPlayers().forEach((p, i) => {
     chart.data.datasets[i].hidden = !on;
-    if (on) activeP.add(p.id); else activeP.delete(p.id);
+    if (on) activePlayers.add(p.id); else activePlayers.delete(p.id);
   });
   chart.update();
   renderFilter();

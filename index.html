@@ -22,7 +22,7 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-09-account-message">
+  <link rel="stylesheet" href="style.css?v=2026-09-10-all-time-statistics">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -246,7 +246,14 @@
 
   <!-- STATISTIK -->
   <section id="verlauf" class="section">
-    <div class="sh"><div class="sh-title">STATISTIK</div></div>
+    <div class="sh sh-with-control stats-heading">
+      <div class="sh-title">STATISTIK</div>
+      <div class="match-scope-toggle" id="statistics-mode-toggle" aria-label="Statistikzeitraum auswählen">
+        <button type="button" class="active" aria-pressed="true" data-statistics-mode="season">Saison</button>
+        <button type="button" aria-pressed="false" data-statistics-mode="all-time">All-Time</button>
+      </div>
+    </div>
+    <div class="statistics-load-error" id="statistics-load-error" role="status" hidden></div>
     <div class="stats-grid">
       <article class="widget">
         <div class="widget-label">Favoriten-Check</div>
@@ -275,11 +282,11 @@
         <div id="stats-set-dominance"></div>
       </article>
     </div>
-    <div class="chart-box stats-chart-box">
+    <div class="chart-box stats-chart-box" data-season-only-statistic>
       <div class="chart-box-title widget-label">Platzierungen nach Spieltag</div>
       <div class="placement-chart-wrap"><canvas id="placementChart"></canvas></div>
     </div>
-    <div class="stats-grid stats-facts-grid">
+    <div class="stats-grid stats-facts-grid" data-season-only-statistic>
       <article class="widget">
         <div class="widget-label" id="stats-qualification-forecast-label">Final-Four-Prognose</div>
         <div id="stats-final-four-forecast"></div>
@@ -629,6 +636,6 @@
 
 <script src="js/score-input.js?v=2026-09-03-training-counters"></script>
 <script src="js/tippspiel.js?v=2026-09-09-tiebreak-hint"></script>
-<script src="js/app.js?v=2026-09-09-statistic-profile-links"></script>
+<script src="js/app.js?v=2026-09-10-all-time-statistics"></script>
 </body>
 </html>

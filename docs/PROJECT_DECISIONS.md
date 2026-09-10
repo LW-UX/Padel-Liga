@@ -1,6 +1,6 @@
 # Projektentscheidungen Padel-Liga
 
-Stand: 9. September 2026
+Stand: 10. September 2026
 
 Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell beschlossene Zielbild. Bei neuen oder geänderten Entscheidungen wird sie zusammen mit der jeweiligen Umsetzung aktualisiert.
 
@@ -16,6 +16,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 ## Aktueller Umsetzungsstand
 
+- Der Umschalter zwischen Saison- und All-Time-Statistik ist im Repository umgesetzt. Die zugehörige öffentliche Datenfunktion liegt als Migration `20260910100000_public_all_time_statistics.sql` bereit, ist aber noch nicht auf die Supabase-Produktionsdatenbank angewendet.
 - Die Migration `20260909270000_add_ludi_ionos_test_player.sql` wurde am 9. September 2026 auf die Supabase-Produktionsdatenbank angewendet. Das neue Testprofil `Ludi Ionos` besitzt weder Konto noch E-Mail- oder Saisonzuordnung und steht damit für einen vollständigen Einladungs- und Passwortvergabe-Test bereit.
 - Die Migration `20260909260000_final_four_games_won_tiebreak.sql` wurde am 9. September 2026 auf die Supabase-Produktionsdatenbank angewendet. Final4-Rangliste, Rechner und offizielle Gewinnerermittlung verwenden einheitlich Siege, Spiel-Differenz, gewonnene Spiele und Ausgangsplatzierung.
 - Die Migration `20260909240000_final_four_tiebreak_order.sql` wurde am 9. September 2026 auf die Supabase-Produktionsdatenbank angewendet. Final4-Rangliste, Rechner und offizielle Gewinnerermittlung verwenden einheitlich Siege, Spiel-Differenz und Ausgangsplatzierung; der direkte Vergleich wurde entfernt.
@@ -70,6 +71,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 ## Saisonauswahl und Seitenaufteilung
 
+- Die Statistikseite startet in der saisonbezogenen Ansicht und bietet einen nicht persistenten Umschalter auf „All-Time“. Die All-Time-Ansicht umfasst alle abgeschlossenen offiziellen Liga-, Final-Four- und Cup-Partien sowie alle Spieler mit mindestens einer solchen Partie; Training, nicht offizielle Test-Saisons und offene Partien bleiben ausgeschlossen. Platzierungen nach Spieltag, Qualifikationsprognose, Lospech/Losglück und Über-/Underperformance sind ausschließlich saisonbezogen und werden dort ausgeblendet. Die Satzdominanz wird im All-Time-Modus als durchschnittliche Spieldifferenz je regulärem Satz berechnet.
 - Die Saison „Cup 2027“ verwendet den Seitenkopf „PADELCUP“ und besitzt ausschließlich die Hauptbereiche „Turnierbaum“ und „Infos“. Beim Öffnen der Saison wird direkt der Turnierbaum angezeigt; das Logo führt ebenfalls dorthin. Startseite, Rangliste, Rechner, Statistik, Spielerauswahl und Tippspiellink werden im Cup-Modus ausgeblendet.
 - Ranglisten, Partien und Rechner folgen automatisch der erreichten Saisonphase. Bis zum Abschluss des gesperrten Ligaspielplans stehen die Ligainhalte oben. In einer Top-8-Saison stehen anschließend die Halbfinalspiele oben; sobald beide Halbfinals abgeschlossen und die vier Final4-Spieler eingesetzt sind, stehen Final4-Rangliste und Final4-Spiele oben. Abgeschlossene frühere Phasen bleiben jeweils darunter sichtbar. Nach dem Ligabschluss verschwindet der Ligarechner; der Final4-Rechner bleibt während der Halbfinals mit seinen Finalisten-Platzhaltern sichtbar. Nach dem offiziellen Saisonabschluss über `completed_at` verschwindet der gesamte Rechnerbereich einschließlich Navigation und Startseitenlink.
 - In der Saisonauswahl steht „Cup 2027“ unmittelbar nach „Winter 2026“, unabhängig von der chronologischen Sortierung der Datenbank. Die aktive Standardsaison bleibt davon unberührt.
@@ -129,6 +131,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 ## Elo
 
+- Der All-Time-Elo-Score auf der Statistikseite zeigt für alle Karriere-Spieler jeweils genau einen globalen Initialpunkt und danach eine durchgehende Linie aller echten offiziellen Elo-Partien über Saison- und Wettbewerbsgrenzen hinweg. Spielerfarben bleiben zwischen Saison- und All-Time-Ansicht stabil; Saison und Partie werden im Tooltip ausgewiesen.
 - Elo wird für bestätigte offizielle Liga- und Cup-Partien mit `counts_for_elo = true` berechnet, auch wenn das Ergebnis über den Seitenlogin eingetragen wurde. Nur reguläre Ligapartien verändern die Ligapunkte.
 - Jede Ergebnisbestätigung nimmt vor der globalen Berechnung eine transaktionsgebundene Datenbanksperre. Dadurch werden gleichzeitige Bestätigungen serialisiert; die Sperre wird mit Commit oder Rollback automatisch freigegeben.
 - Bei einer späteren Korrektur von Spielzeit, Ergebnis oder Sieger wird ab der früheren betroffenen Position die korrigierte Partie samt allen chronologisch nachfolgenden offiziellen Partien neu berechnet. Bereits abgeschlossene Saisonend-Snapshots ab diesem Zeitpunkt werden konsistent aktualisiert.
