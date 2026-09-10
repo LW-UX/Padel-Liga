@@ -16,7 +16,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 ## Aktueller Umsetzungsstand
 
-- Der Umschalter zwischen Saison- und All-Time-Statistik ist im Repository umgesetzt. Die zugehörige öffentliche Datenfunktion liegt als Migration `20260910100000_public_all_time_statistics.sql` bereit, ist aber noch nicht auf die Supabase-Produktionsdatenbank angewendet.
+- Der Umschalter zwischen Saison- und All-Time-Statistik ist im Repository umgesetzt. Die zugehörige öffentliche Datenfunktion aus Migration `20260910100000_public_all_time_statistics.sql` wurde am 10. September 2026 auf die Supabase-Produktionsdatenbank angewendet und anonym gegen den offiziellen Datenbestand geprüft.
 - Die Migration `20260909270000_add_ludi_ionos_test_player.sql` wurde am 9. September 2026 auf die Supabase-Produktionsdatenbank angewendet. Das neue Testprofil `Ludi Ionos` besitzt weder Konto noch E-Mail- oder Saisonzuordnung und steht damit für einen vollständigen Einladungs- und Passwortvergabe-Test bereit.
 - Die Migration `20260909260000_final_four_games_won_tiebreak.sql` wurde am 9. September 2026 auf die Supabase-Produktionsdatenbank angewendet. Final4-Rangliste, Rechner und offizielle Gewinnerermittlung verwenden einheitlich Siege, Spiel-Differenz, gewonnene Spiele und Ausgangsplatzierung.
 - Die Migration `20260909240000_final_four_tiebreak_order.sql` wurde am 9. September 2026 auf die Supabase-Produktionsdatenbank angewendet. Final4-Rangliste, Rechner und offizielle Gewinnerermittlung verwenden einheitlich Siege, Spiel-Differenz und Ausgangsplatzierung; der direkte Vergleich wurde entfernt.

@@ -5,14 +5,16 @@ const test = require('node:test');
 
 const root = path.join(__dirname, '..');
 const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
-const pages = [
-  fs.readFileSync(path.join(root, 'index.html'), 'utf8'),
-  fs.readFileSync(path.join(root, 'tipp', 'index.html'), 'utf8')
-];
+const ligaPage = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const tippspielPage = fs.readFileSync(path.join(root, 'tipp', 'index.html'), 'utf8');
+const pages = [ligaPage, tippspielPage];
 
-test('both account dialogs only expose games and place logout in the header', () => {
+test('pages keep their intended context links and account dialogs place logout in the header', () => {
+  assert.match(ligaPage, /class="context-actions"[\s\S]*data-season-toggle[\s\S]*data-auth-open/);
+  assert.doesNotMatch(ligaPage, /id="tippspiel-link"/);
+  assert.match(tippspielPage, /class="context-actions"[\s\S]*id="liga-link"[\s\S]*data-season-toggle[\s\S]*data-auth-open/);
+
   pages.forEach(source => {
-    assert.match(source, /class="context-actions"[\s\S]*(?:tippspiel-link|liga-link)[\s\S]*data-season-toggle[\s\S]*data-auth-open/);
     assert.doesNotMatch(source, /<span>Saison<\/span>/);
     assert.doesNotMatch(source, /class="account-tabs"/);
     assert.doesNotMatch(source, /account-settings-panel/);
