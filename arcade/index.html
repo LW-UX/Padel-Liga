@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1119">
+  <title>PadelArcade</title>
+  <link rel="icon" href="../favicon.ico" sizes="any">
+  <link rel="stylesheet" href="arcade.css?v=2026-09-11">
+</head>
+<body>
+  <div class="arcade-shell">
+    <header class="arcade-header">
+      <a id="back-link" class="back-link" href="../">← <span>Zurück zur Liga</span></a>
+      <h1>Padel<span>Arcade</span></h1>
+      <span class="edition">1P <span aria-hidden="true">●</span> RETRO DOUBLES</span>
+    </header>
+
+    <main class="game-layout" id="game">
+      <aside class="field-notes" aria-label="Spielanleitung">
+        <p class="eyebrow">01 / STEUERUNG</p>
+        <h2>Zwei Balken.<br>Ein Team.</h2>
+        <div class="key-grid" aria-hidden="true"><span>↑</span><span>←</span><span>↓</span><span>→</span></div>
+        <p>Pfeiltasten oder WASD.<br>Mit der Maus im Feld ziehen.</p>
+        <p>Beide Balken bewegen sich identisch. Jeder bleibt in seinem Bereich.</p>
+        <p class="note"><span aria-hidden="true">↗</span> Zum Netz beschleunigen gibt Druck. Volle Kraft geht gegen die Wand!</p>
+        <p class="micro">LEERTASTE / P = PAUSE</p>
+      </aside>
+
+      <section class="arena" aria-label="Padel-Spielfeld">
+        <div class="scoreboard" aria-label="Spielstand">
+          <div class="team-label human-label">DU <strong id="human-score">0</strong></div>
+          <div class="score-goal"><span>BIS 7</span><small>BEI 6:6 ENTSCHEIDET DER NÄCHSTE PUNKT</small></div>
+          <div class="team-label computer-label"><strong id="computer-score">0</strong> CPU</div>
+        </div>
+        <div class="court-wrap">
+          <canvas id="court" width="272" height="496" tabindex="0" aria-label="PadelArcade. Du spielst unten mit den gelben Balken. Bewegen mit Pfeiltasten oder WASD." aria-describedby="rules-text">Zum Spielen wird ein Browser mit Canvas-Unterstützung benötigt.</canvas>
+          <div class="game-overlay" id="game-overlay">
+            <p class="eyebrow" id="overlay-label">EINE KURZE PADELPAUSE</p>
+            <h2 id="overlay-title">Bereit?</h2>
+            <p id="overlay-text">Dein Doppel ist gelb.<br>Triff den Ball automatisch.</p>
+            <button id="start-button" class="primary" type="button" disabled>Spiel lädt …</button>
+          </div>
+        </div>
+        <p id="status" class="status" role="status" aria-live="polite">Bereit für eine kurze Partie?</p>
+      </section>
+
+      <aside class="field-notes right-notes" aria-label="Regeln und Ballhöhe">
+        <p class="eyebrow">02 / SO LÄUFT’S</p>
+        <h2>Erst Boden.<br>Dann Wand.</h2>
+        <p id="rules-text">Volleys erlaubt. Beim zweiten Bodenkontakt endet der Punkt. Im Netz ist der Ball sofort verloren.</p>
+        <div class="height-demo" aria-hidden="true"><span></span><i></i><b></b></div>
+        <p>Der Schatten zeigt die Position am Boden. Hohe Bälle fliegen über die Balken.</p>
+        <p>Das kleine Quadrat zeigt den nächsten Aufprall. Orange bedeutet Wandgefahr.</p>
+        <p class="micro">PADEL-ARCADE MIT VEREINFACHTEN REGELN · AUTOMATISCHES ANSPIEL</p>
+      </aside>
+    </main>
+
+    <footer class="controls">
+      <div class="power-display">
+        <label for="power">SCHLAGDRUCK <span id="power-label">RUHIG</span></label>
+        <meter id="power" min="0" max="1" low="0.6" high="0.85" optimum="0.35" value="0">0 %</meter>
+      </div>
+      <div id="joystick" class="joystick" role="group" aria-label="Touch-Steuerung: In die gewünschte Richtung ziehen"><span></span></div>
+      <div class="action-buttons">
+        <button id="pause-button" type="button" disabled>Pause</button>
+        <button id="reset-button" type="button" disabled>Neustart</button>
+        <label class="fps-label"><select id="fps" aria-label="Bildrate"><option value="60">60 FPS</option><option value="30">30 FPS</option></select></label>
+        <details class="mobile-help"><summary>So geht’s</summary><div>Pfeiltasten / WASD, im Feld ziehen oder den Stick bewegen. Du spielst unten in Gelb. Treffer sind automatisch, hohe Bälle fliegen darüber. Der Schatten zeigt die Bodenposition. Erst Boden, dann Wand; Volleys sind erlaubt. Zweimal Boden oder Netz beendet den Punkt. Volle Vorwärtskraft riskiert einen Wandfehler. Ein oranges Zielquadrat warnt davor. Automatisches Anspiel, zuerst 7 Punkte gewinnt.</div></details>
+      </div>
+    </footer>
+  </div>
+  <noscript><p>Bitte JavaScript aktivieren, um PadelArcade zu spielen. <a href="../">Zurück zur Liga</a></p></noscript>
+  <script type="module" src="main.mjs?v=2026-09-11"></script>
+</body>
+</html>

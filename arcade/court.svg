@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 272 496" shape-rendering="crispEdges">
+  <defs>
+    <pattern id="mesh" width="4" height="4" patternUnits="userSpaceOnUse"><path d="M0 0H4V4" fill="none" stroke="#577593" stroke-width="1"/></pattern>
+    <pattern id="turf" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M1 2h1M5 6h1" stroke="#477aa8" opacity=".28"/></pattern>
+  </defs>
+  <path fill="#070e1b" d="M0 0h272v496H0z"/>
+  <path fill="#344e85" d="M4 4h264v488H4z"/>
+  <path fill="#122c52" d="M8 8h256v480H8z"/>
+  <path fill="#7295b8" d="M12 12h248v472H12z"/>
+  <path fill="#376591" d="M24 24h224v448H24z"/>
+  <path fill="#214c7a" d="M24 24h224v68H24zm0 380h224v68H24z"/>
+  <path fill="url(#turf)" d="M24 24h224v448H24z"/>
+  <path fill="url(#mesh)" d="M12 114h10v268H12zm238 0h10v268h-10z"/>
+  <path stroke="#18314e" stroke-width="3" fill="none" d="m12 12 12 12m224 0 12-12M12 484l12-12m224 0 12 12M56 12l3 12m46-12 1 12m61-12-1 12m50-12-3 12M56 484l3-12m46 12 1-12m61 12-1-12m50 12-3-12M12 66l12 5m-12 43 12 5m-12 263 12-5m-12 53 12-5m224-354 12-5m-12 53 12-5m-12 263 12 5m-12 43 12 5"/>
+  <path stroke="#d9e6de" stroke-width="2" fill="none" d="M24 24h224v448H24zM24 92h224M24 404h224M136 88v157m0 6v157"/>
+  <path stroke="#071324" stroke-width="6" d="M18 250h236"/>
+  <path stroke="#dce6de" stroke-width="2" d="M20 245h232"/>
+  <path stroke="#8caaa9" stroke-width="1" stroke-dasharray="2 2" d="M22 248h228M22 251h228"/>
+  <path fill="#101e30" d="M16 242h7v13h-7zm233 0h7v13h-7z"/>
+  <path stroke="#bdc9cd" stroke-width="1" opacity=".6" d="M14 16v94m244-94v94M14 386v94m244-94v94M18 16h235M18 480h235"/>
+</svg>

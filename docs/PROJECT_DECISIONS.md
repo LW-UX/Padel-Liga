@@ -1,6 +1,6 @@
 # Projektentscheidungen Padel-Liga
 
-Stand: 10. September 2026
+Stand: 11. September 2026
 
 Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell beschlossene Zielbild. Bei neuen oder geänderten Entscheidungen wird sie zusammen mit der jeweiligen Umsetzung aktualisiert.
 
@@ -242,6 +242,16 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Die bisherige 6:2-/6:2-Schnellwahl liegt auf den beiden Wahrscheinlichkeitswerten. Die linke beziehungsweise rechte Wahrscheinlichkeit setzt das zugehörige Team als Sieger und darf vorhandene Eingaben überschreiben; ein vorhandener Match-Tiebreak wird dabei entfernt.
 - Die simulierte Tabelle kennzeichnet die Qualifikationsplätze saisonabhängig und verwendet dafür dieselben Platz- und Markierungsfarben wie die reguläre Rangliste. Im Winter-Top-8-Modus gilt diese einheitliche Kennzeichnung in der großen und mobilen Kurzrangliste für die Plätze 1 bis 8.
 - Der Rechner erfasst bei 7:6 beziehungsweise 6:7 weiterhin keine Punkte des Satz-Tiebreaks. Match-Tiebreak-Endstände sind bis 10 und bei einer Verlängerung ausschließlich mit exakt zwei Punkten Abstand gültig.
+
+## PadelArcade
+
+- „PadelArcade“ ist ein öffentliches, eigenständiges Retro-Minispiel unter `/arcade/` relativ zur Ligaseite. Ein runder Spiel-Icon-Link zwischen Saisonauswahl und Login-/Profil-Icon öffnet es im gleichen Tab. „Zurück zur Liga“ übernimmt die gewählte Saison. Das Spiel ist saisonunabhängig und auch im Cup erreichbar.
+- Die erste Version ist ein spielbarer Kern in pixeliger 2D-Draufsicht mit berechneter Ballhöhe, blauem Court nach der Bildvorlage, gelbem eigenem Doppel und korallfarbenem Computerdoppel. Schatten und Verbindungslinie zeigen die Bodenposition; hohe Bälle werden markiert, der nächste Aufprall wird als kleines Quadrat angezeigt. Ein orangefarbenes Ziel warnt vor direktem Wandkontakt.
+- Beide Balken eines Teams sind fest gekoppelt und bewegen sich identisch nach links/rechts sowie vor/zurück. Jeder bleibt im linken beziehungsweise rechten eigenen Bereich. Es gibt weder einen aktiven Spieler noch Spielerwechsel. Tastatur, Mausziehen und ein Touch-Joystick werden unterstützt.
+- Schläge erfolgen automatisch innerhalb einer festen Schlaghöhe. Die Trefferstelle bestimmt die Richtung, die Court-Position die grundlegende Flugkurve und die geglättete tatsächliche Vorwärtsgeschwindigkeit das Tempo. Maximale Vorwärtskraft verlängert die Flugbahn über die gegnerische Grundlinie hinaus und verursacht beim direkten Wandkontakt einen Fehler. Beschleunigung und Laufgeschwindigkeit sind begrenzt; Eingabesprünge geben keine zusätzliche Kraft.
+- Es gelten vereinfachte Arcade-Regeln: erst Boden im gegnerischen Feld, dann Wand beziehungsweise Zaun; Volleys sind im laufenden Ballwechsel erlaubt; der zweite Bodenkontakt beendet den Punkt. Jeder Netzkontakt beendet den Punkt, Netzroller entfallen. Automatisches sicheres Anspiel mit verpflichtendem ersten Aufspringen ersetzt den echten Aufschlag. Keine Ausflüge aus dem Court, kein gesonderter Lob und keine zusätzliche Anti-Netzstehen-Mechanik in der ersten Version.
+- Gespielt wird gegen einen Computer mit begrenzter Reaktion und denselben Bewegungsgrenzen bis sieben Punkte; bei 6:6 entscheidet der nächste Punkt. Es gibt Pause und Neustart. Tabwechsel oder Fokusverlust pausiert, ein Reload startet neu. 30 und 60 FPS sind auswählbar; die Spielgeschwindigkeit bleibt gleich.
+- Keine Anmeldung, Speicherung von Ergebnissen, Liga-/Elo-Auswirkung, Datenbankanbindung oder Online-Mehrspielerfunktion. Der Spielcode bleibt als eigener Baustein getrennt; kleine Einbindungsergänzungen in `app.js` sind bei Bedarf zulässig.
 
 ## Noch nicht abschließend festgelegt
 

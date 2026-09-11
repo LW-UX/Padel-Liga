@@ -219,6 +219,22 @@
       color: var(--accent);
       filter: none;
     }
+    .arcade-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: var(--surface);
+      color: var(--text);
+      text-decoration: none;
+    }
+    .arcade-link svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .arcade-link:hover, .arcade-link:focus-visible { color: var(--accent); border-color: var(--accent); }
+    .arcade-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
     .auth-user-icon {
       width: 20px;
       height: 20px;
