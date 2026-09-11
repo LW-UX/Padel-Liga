@@ -110,6 +110,21 @@ test('speed is capped diagonally and hitting a boundary removes the forward powe
   for (let i = 0; i < 300; i++) p.moveTeam(t, { x: 0, y: -1 }, p.C.step);
   near(t.power, 0); near(t.vy, 0);
 });
+test('both teams start and stop within 100 ms and reverse within 150 ms', async () => {
+  const p = await physics;
+  for (const side of [0, 1]) {
+    const t = p.createState().teams[side];
+    for (let i = 0; i < 6; i++) p.moveTeam(t, { x: 1, y: 0 }, p.C.step);
+    near(t.vx, p.C.speed);
+    for (let i = 0; i < 9; i++) p.moveTeam(t, { x: -1, y: 0 }, p.C.step);
+    near(t.vx, -p.C.speed);
+    for (let i = 0; i < 6; i++) p.moveTeam(t, { x: 0, y: 0 }, p.C.step);
+    near(t.vx, 0);
+    const stoppedAt = t.offset;
+    p.moveTeam(t, { x: 0, y: 0 }, p.C.step);
+    near(t.offset, stoppedAt);
+  }
+});
 test('seven points ends the game including 7:6, with pause and reset supported', async () => {
   const { p, s } = await scenario({}); s.score = [6, 6];
   p.awardPoint(s, 1, 'Test'); assert.equal(s.phase, 'over'); assert.deepEqual(s.score, [6, 7]);
@@ -145,4 +160,18 @@ test('arcade page uses isolated modules and same-tab navigation preserves the se
   const link = { getAttribute: () => 'arcade/', href: '' };
   vm.runInNewContext(source, { URL, URLSearchParams, document: { getElementById: () => link }, window: { location: { href: 'https://example.test/Padel-Liga/?saison=winter-2026', search: '?saison=winter-2026' } } });
   assert.equal(link.href, 'https://example.test/Padel-Liga/arcade/?saison=winter-2026');
+});
+
+test('computer speed stays below the player limit including diagonal movement', async () => {
+  const { createComputer } = await import('../arcade/computer.mjs');
+  const p = await physics;
+  for (const [offset, y, expected] of [[1.8, 3.2, 0.82 * 0.95], [0, 8, 0.65 * 0.95], [1.8, 8, 0.95]]) {
+    const state = p.createState();
+    state.ball.lastHit = 0;
+    Object.assign(state.teams[0], { offset, y });
+    const input = createComputer().read(state);
+    near(Math.hypot(input.x, input.y), expected);
+    p.moveTeam(state.teams[0], input, 0.1);
+    near(Math.hypot(state.teams[0].vx, state.teams[0].vy), p.C.speed * expected);
+  }
 });

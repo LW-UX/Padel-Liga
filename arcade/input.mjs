@@ -41,7 +41,9 @@ export function createInput(canvas, joystick, getTeam, onToggle) {
     let x = (e.clientX - rect.left - rect.width / 2) / radius;
     let y = (e.clientY - rect.top - rect.height / 2) / radius;
     const length = Math.max(1, Math.hypot(x, y)); x /= length; y /= length;
-    stick = { x, y }; target = null;
+    // Reach full movement before the thumb reaches the edge; keep the knob under the thumb.
+    const response = Math.min(1.6, 1 / (Math.hypot(x, y) || 1));
+    stick = { x: x * response, y: y * response }; target = null;
     knob.style.transform = `translate(${x * radius}px, ${y * radius}px)`;
   }
   joystick.addEventListener('pointerdown', e => {

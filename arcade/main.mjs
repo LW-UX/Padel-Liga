@@ -33,6 +33,10 @@ async function mount() {
   const menuButton = document.getElementById('menu-open');
   const actions = document.querySelector('.action-buttons');
   const controls = document.querySelector('.controls');
+  const game = document.getElementById('game');
+  const arena = document.querySelector('.arena');
+  const instructions = document.querySelector('.field-notes');
+  const rules = document.querySelector('.right-notes');
   const mobileControls = matchMedia('(pointer: coarse), (max-width: 800px)');
   let frameId = 0, previous = null, lastPaint = -Infinity, displayedPhase = '';
   let input, roundId = crypto.randomUUID();
@@ -46,8 +50,15 @@ async function mount() {
   }
   input = createInput(canvas, document.getElementById('joystick'), () => state.teams[1], toggle);
   function arrangeControls() {
-    if (mobileControls.matches) document.getElementById('menu-actions').append(actions);
-    else { menu.close(); controls.insertBefore(actions, menuButton); }
+    if (mobileControls.matches) {
+      document.getElementById('menu-actions').append(actions);
+      document.getElementById('mobile-instructions').append(instructions, rules);
+    } else {
+      menu.close();
+      controls.insertBefore(actions, menuButton);
+      game.insertBefore(instructions, arena);
+      game.append(rules);
+    }
   }
   arrangeControls();
   mobileControls.addEventListener('change', arrangeControls);

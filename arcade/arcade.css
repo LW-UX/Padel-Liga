@@ -11,6 +11,7 @@ h1.sh-title { font-size: clamp(32px, 4vw, 48px); line-height: 1; }
 h1 span { color: var(--accent); }
 .game-layout { max-width: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(140px, 1fr) minmax(0, 470px) minmax(140px, 1fr); gap: 32px; min-height: 0; }
 .field-notes { padding-top: 58px; max-width: 215px; }
+.touch-instruction { display: none; }
 .right-notes { justify-self: end; }
 .eyebrow { margin-bottom: 14px; }
 h2.sh-title { line-height: 1.1; margin-bottom: 22px; }
@@ -44,6 +45,8 @@ canvas { display: block; width: 100%; height: 100%; object-fit: contain; image-r
 .height-demo i { position: absolute; height: 32px; border-left: 1px dashed #738393; left: 27px; top: 13px; }
 .height-demo b { position: absolute; width: 14px; height: 4px; background: #445467; left: 20px; bottom: 1px; }
 .controls { border-top: 1px solid var(--border); display: flex; gap: 24px; align-items: center; justify-content: center; padding-top: 12px; position: relative; }
+.controls, .controls * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.controls { touch-action: manipulation; }
 .power-display { width: 190px; }
 .power-display label { display: flex; justify-content: space-between; font-size: 8px; letter-spacing: .5px; }
 #power-label { color: var(--accent); }
@@ -75,7 +78,6 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
   .mobile-help { display: block; font-size: 10px; }
   .mobile-help summary { list-style: none; padding: 8px 7px; min-height: 36px; font-size: 9px; line-height: 18px; }
   .mobile-help summary::-webkit-details-marker { display: none; }
-  .mobile-help div { padding-top: 14px; font-size: 13px; }
 }
 @media (pointer: coarse), (max-width: 800px) {
   .joystick { display: grid; flex: 0 0 78px; width: 78px; height: 78px; border: 1px solid var(--border); border-radius: 50%; place-items: center; touch-action: none; background: linear-gradient(transparent 49%, var(--border) 49%, var(--border) 51%, transparent 51%), linear-gradient(90deg, transparent 49%, var(--border) 49%, var(--border) 51%, transparent 51%), var(--surface); }
@@ -119,7 +121,17 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
 .game-menu .mobile-help { display: block; }
 .game-menu .mobile-help summary { display: flex; list-style: none; }
 .game-menu .mobile-help summary::-webkit-details-marker { display: none; }
-.game-menu .mobile-help div { padding-top: 14px; font-size: 13px; color: var(--dim); }
+.game-menu .mobile-instructions { display: grid; gap: 24px; padding-top: 24px; }
+.game-menu .field-notes { display: block; max-width: none; padding: 0; justify-self: stretch; }
+.game-menu .field-notes + .field-notes { border-top: 1px solid var(--border); padding-top: 24px; }
+.game-menu .field-notes .sh-meta { font-size: 1rem; }
+.game-menu .field-notes .micro { font-size: .75rem; }
+.game-menu .field-notes p:last-child { margin-bottom: 0; }
+.game-menu .desktop-instruction, .game-menu .key-grid { display: none; }
+.game-menu .touch-instruction { display: block; }
+@media (pointer: coarse) and (min-width: 801px) {
+  .game-layout { grid-template-columns: minmax(0, 470px); justify-content: center; }
+}
 
 /* The leaderboard occupies the page content, without a dialog or a second game loop. */
 .arcade-shell.show-leaderboard { grid-template-rows: auto minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); }

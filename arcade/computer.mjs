@@ -19,7 +19,11 @@ export function createComputer() {
           target = { offset: offsets[errors[0] <= errors[1] ? 0 : 1], y };
         } else target = { offset: team.offset * 0.7, y: 3.2 };
       }
-      return { x: clamp((target.offset - team.offset) * 2.1, -0.82, 0.82), y: clamp((target.y - team.y) * 1.5, -0.65, 0.65) };
+      const x = clamp((target.offset - team.offset) * 2.1, -0.82, 0.82);
+      const y = clamp((target.y - team.y) * 1.5, -0.65, 0.65);
+      // Normalize before slowing down so diagonal movement is also 5% slower.
+      const scale = 0.95 / Math.max(1, Math.hypot(x, y));
+      return { x: x * scale, y: y * scale };
     }
   };
 }

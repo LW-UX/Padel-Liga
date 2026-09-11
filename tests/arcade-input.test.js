@@ -57,3 +57,16 @@ test('keyboard input clears on blur and a held pause key toggles only once', asy
     assert.equal(h.toggles(), 1);
   } finally { h.close(); }
 });
+test('short joystick movements respond immediately and release without a stale direction', async () => {
+  const h = await inputHarness();
+  try {
+    event(h.joystick, 'pointerdown', { pointerId: 1, clientX: 60, clientY: 50 });
+    assert.deepEqual(h.input.read(), { x: 0.5, y: 0 });
+    event(h.joystick, 'pointermove', { pointerId: 1, clientX: 40, clientY: 50 });
+    assert.deepEqual(h.input.read(), { x: -0.5, y: 0 });
+    event(h.joystick, 'pointermove', { pointerId: 1, clientX: 70, clientY: 30 });
+    assert.ok(Math.abs(Math.hypot(h.input.read().x, h.input.read().y) - 1) < 1e-6);
+    event(h.joystick, 'pointerup', { pointerId: 1 });
+    assert.deepEqual(h.input.read(), { x: 0, y: 0 });
+  } finally { h.close(); }
+});

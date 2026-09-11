@@ -3,7 +3,7 @@
 export const C = Object.freeze({
   width: 10, length: 20, net: 10, netHeight: 0.9, gravity: 12,
   radius: 0.12, paddleWidth: 1.4, paddleDepth: 0.28, reach: 1.65,
-  maxOffset: 1.8, speed: 5.2, acceleration: 20, step: 1 / 60,
+  maxOffset: 1.8, speed: 5.2, acceleration: 78, step: 1 / 60,
   bounce: 0.76, wallBounce: 0.86, targetScore: 7
 });
 export const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
