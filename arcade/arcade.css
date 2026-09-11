@@ -59,6 +59,7 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
 #fps { appearance: none; -webkit-appearance: none; width: 72px; padding-right: 18px; }
 .joystick { display: none; }
 .mobile-help { display: none; }
+.mobile-menu-button { display: none; }
 @media (max-height: 690px) and (min-width: 801px) { .field-notes { padding-top: 20px; } .field-notes p:not(.eyebrow) { margin-bottom: 12px; } .key-grid { margin: 12px 0; } .height-demo { margin: 8px 0; } }
 @media (max-width: 800px) {
   .arcade-shell { padding: max(10px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom)); gap: 8px; }
@@ -74,7 +75,7 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
   .mobile-help { display: block; font-size: 10px; }
   .mobile-help summary { list-style: none; padding: 8px 7px; min-height: 36px; font-size: 9px; line-height: 18px; }
   .mobile-help summary::-webkit-details-marker { display: none; }
-  .mobile-help div { position: absolute; z-index: 3; bottom: calc(100% + 8px); left: 0; right: 0; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); font-size: 12px; }
+  .mobile-help div { padding-top: 14px; font-size: 13px; }
 }
 @media (pointer: coarse), (max-width: 800px) {
   .joystick { display: grid; flex: 0 0 78px; width: 78px; height: 78px; border: 1px solid var(--border); border-radius: 50%; place-items: center; touch-action: none; background: linear-gradient(transparent 49%, var(--border) 49%, var(--border) 51%, transparent 51%), linear-gradient(90deg, transparent 49%, var(--border) 49%, var(--border) 51%, transparent 51%), var(--surface); }
@@ -95,6 +96,30 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
   .field-notes { display: none; } .game-layout { grid-template-columns: 1fr; }
   .game-overlay { padding: 9px; } .game-overlay h2 { font-size: 20px; margin: 3px; } .game-overlay p { margin: 6px; } .game-overlay .eyebrow { display: none; }
 }
+
+@media (pointer: coarse), (max-width: 800px) {
+  .controls { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .controls .power-display { width: 100%; max-width: 105px; min-width: 0; }
+  .controls > .action-buttons { display: none; }
+  .mobile-menu-button { display: inline-flex; justify-self: end; min-height: 44px; }
+  .controls .joystick { justify-self: center; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .controls { display: flex; }
+  .mobile-menu-button { align-self: center; }
+}
+.game-menu { margin: auto; width: min(360px, calc(100vw - 28px)); max-height: calc(100dvh - 32px); padding: 24px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 20px; overflow: auto; overscroll-behavior: contain; }
+.game-menu::backdrop { background: rgba(3,4,8,.82); backdrop-filter: blur(6px); }
+.game-menu-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.game-menu-header h2 { margin: 0; }
+.game-menu .modal-close-button { position: static; flex-shrink: 0; }
+.game-menu .action-buttons { display: grid; grid-template-columns: 1fr; max-width: none; gap: 12px; }
+.game-menu .action-buttons button, .game-menu #fps, .game-menu .mobile-help summary { width: 100%; min-height: 44px; font-size: .85rem; justify-content: center; }
+.game-menu .fps-label::after { top: 11px; right: 14px; }
+.game-menu .mobile-help { display: block; }
+.game-menu .mobile-help summary { display: flex; list-style: none; }
+.game-menu .mobile-help summary::-webkit-details-marker { display: none; }
+.game-menu .mobile-help div { padding-top: 14px; font-size: 13px; color: var(--dim); }
 
 /* The leaderboard occupies the page content, without a dialog or a second game loop. */
 .arcade-shell.show-leaderboard { grid-template-rows: auto minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); }

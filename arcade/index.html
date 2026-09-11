@@ -7,7 +7,7 @@
   <title>PadelArcade</title>
   <link rel="icon" href="../favicon.ico" sizes="any">
   <link rel="stylesheet" href="../style.css?v=2026-09-11-arcade">
-  <link rel="stylesheet" href="arcade.css?v=2026-09-11-score-time">
+  <link rel="stylesheet" href="arcade.css?v=2026-09-11-mobile-menu">
 </head>
 <body>
   <div class="arcade-shell">
@@ -99,10 +99,18 @@
         <button class="secondary-button" id="leaderboard-open" type="button">Bestenliste</button>
         <details class="mobile-help"><summary class="secondary-button">So geht’s</summary><div>Pfeiltasten / WASD, im Feld ziehen oder den Stick bewegen. Du spielst unten in Gelb. Treffer sind automatisch, hohe Bälle fliegen darüber. Der Schatten zeigt die Bodenposition. Erst Boden, dann Wand; Volleys sind erlaubt. Zweimal Boden oder Netz beendet den Punkt. Volle Vorwärtskraft riskiert einen Wandfehler. Ein oranges Zielquadrat warnt davor. Automatisches Anspiel, zuerst 7 Punkte gewinnt.</div></details>
       </div>
+      <button class="secondary-button mobile-menu-button" id="menu-open" type="button" aria-haspopup="dialog" aria-controls="game-menu" disabled>Menü</button>
     </footer>
   </div>
+  <dialog id="game-menu" class="game-menu" aria-labelledby="game-menu-title">
+    <header class="game-menu-header">
+      <h2 class="sh-title" id="game-menu-title">Menü</h2>
+      <button class="modal-close-button" id="menu-close" type="button" aria-label="Menü schließen" autofocus>×</button>
+    </header>
+    <div id="menu-actions"></div>
+  </dialog>
   <noscript><p>Bitte JavaScript aktivieren, um PadelArcade zu spielen. <a href="../">Zurück zur Liga</a></p></noscript>
   <script src="../data/supabase-config.js"></script>
-  <script type="module" src="main.mjs?v=2026-09-11-score-time"></script>
+  <script type="module" src="main.mjs?v=2026-09-11-mobile-menu"></script>
 </body>
 </html>

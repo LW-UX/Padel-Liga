@@ -29,17 +29,38 @@ async function mount() {
   const power = document.getElementById('power');
   const powerLabel = document.getElementById('power-label');
   const fps = document.getElementById('fps');
+  const menu = document.getElementById('game-menu');
+  const menuButton = document.getElementById('menu-open');
+  const actions = document.querySelector('.action-buttons');
+  const controls = document.querySelector('.controls');
+  const mobileControls = matchMedia('(pointer: coarse), (max-width: 800px)');
   let frameId = 0, previous = null, lastPaint = -Infinity, displayedPhase = '';
   let input, roundId = crypto.randomUUID();
   const simulation = createClock(() => step(state, input.read(), computer.read(state)));
   function toggle() {
-    if (!document.getElementById('leaderboard').hidden) return;
+    if (menu.open || !document.getElementById('leaderboard').hidden) return;
     cancelAnimationFrame(frameId); frameId = 0; previous = null;
     if (state.phase === 'rally' || state.phase === 'point') pause(state);
     else if (state.phase !== 'over') start(state);
     input.clear(); simulation.reset(); update(); render(state); schedule();
   }
   input = createInput(canvas, document.getElementById('joystick'), () => state.teams[1], toggle);
+  function arrangeControls() {
+    if (mobileControls.matches) document.getElementById('menu-actions').append(actions);
+    else { menu.close(); controls.insertBefore(actions, menuButton); }
+  }
+  arrangeControls();
+  mobileControls.addEventListener('change', arrangeControls);
+  menuButton.addEventListener('click', () => { stopForVisibility(); menu.showModal(); });
+  document.getElementById('menu-close').addEventListener('click', () => menu.close());
+  menu.addEventListener('click', event => {
+    if (event.target !== menu) return;
+    const rect = menu.getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) menu.close();
+  });
+  actions.addEventListener('click', event => {
+    if (event.target.closest('#pause-button, #reset-button, #leaderboard-open')) menu.close();
+  }, { capture: true });
   const leaderboard = mountLeaderboard({ pauseGame: stopForVisibility });
   function update() {
     humanScore.textContent = state.score[1]; computerScore.textContent = state.score[0];
@@ -102,7 +123,7 @@ async function mount() {
   document.addEventListener('visibilitychange', () => { if (document.hidden) stopForVisibility(); });
   window.addEventListener('blur', stopForVisibility);
   window.addEventListener('pagehide', stopForVisibility);
-  startButton.disabled = false; resetButton.disabled = false;
+  startButton.disabled = false; resetButton.disabled = false; menuButton.disabled = false;
   update(); render(state);
 }
 mount().catch(error => {
