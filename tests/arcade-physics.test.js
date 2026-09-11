@@ -70,7 +70,7 @@ test('a back-wall return can be hit from behind a paddle', async () => {
 test('neutral centre shots clear the net and land inside from front and back', async () => {
   const p = await physics;
   for (const y of [11, 14, 19]) for (const z of [0.1, 0.8, 1.6]) {
-    const { s } = await scenario({ x: 5, y, z });
+    const { s } = await scenario({ x: 5, y, z, lastHit: 0 });
     p.hitBall(s, 1, 5);
     const netTime = (10 - y) / s.ball.vy;
     assert.ok(p.heightAt(s.ball, netTime) > p.C.netHeight + p.C.radius);
@@ -80,7 +80,7 @@ test('neutral centre shots clear the net and land inside from front and back', a
 test('full forward power physically hits the back wall before landing on both sides', async () => {
   const p = await physics;
   for (const side of [0, 1]) for (const y of side ? [11, 14, 19] : [1, 6, 9]) for (const z of [0.05, 0.8, 1.6]) {
-    const { s } = await scenario({ x: 5, y, z, lastHit: side });
+    const { s } = await scenario({ x: 5, y, z, lastHit: 1 - side });
     s.teams[side].power = 1; p.hitBall(s, side, 5);
     assert.equal(p.predictLanding(s.ball).fault, true);
     for (let i = 0; i < 300 && s.phase === 'rally'; i++) p.simulateBall(s, p.C.step);
@@ -173,5 +173,49 @@ test('computer speed stays below the player limit including diagonal movement', 
     near(Math.hypot(input.x, input.y), expected);
     p.moveTeam(state.teams[0], input, 0.1);
     near(Math.hypot(state.teams[0].vx, state.teams[0].vy), p.C.speed * expected);
+  }
+});
+
+test('a second distinct paddle contact by the same team loses the point on either side', async () => {
+  for (const side of [0, 1]) {
+    const { p, s } = await scenario({ x: 2.5, y: side ? 17.6 : 2.4, vy: side ? -12 : 12, lastHit: side, bounces: 1 });
+    p.simulateBall(s, .04);
+    assert.equal(s.score[1 - side], 1);
+    assert.match(s.message, /Doppelkontakt/);
+    assert.equal(s.rallyHits, 0);
+    p.simulateBall(s, .1); assert.equal(s.score[1 - side], 1);
+  }
+});
+
+test('one continuous stroke overlap is not a double contact, but a later return is', async () => {
+  for (const side of [0, 1]) {
+    const { p, s } = await scenario({ x: 2.5, y: side ? 16.6 : 3.4, vy: side ? 12 : -12, lastHit: 1 - side });
+    p.simulateBall(s, .02);
+    assert.equal(s.rallyHits, 1);
+    for (let i = 0; i < 20; i++) p.simulateBall(s, p.C.step);
+    assert.equal(s.phase, 'rally'); assert.equal(s.ball.contactSide, null);
+    assert.equal(s.rallyHits, 1);
+    Object.assign(s.ball, { x: 2.5, y: side ? 17.6 : 2.4, z: 1, vz: 0, vy: side ? -12 : 12, bounces: 1 });
+    p.simulateBall(s, .04);
+    assert.equal(s.score[1 - side], 1); assert.match(s.message, /Doppelkontakt/);
+  }
+});
+
+test('a legal opponent-court bounce followed by an untouched return into the net wins for the hitter', async () => {
+  for (const side of [0, 1]) {
+    const { p, s } = await scenario({ y: side ? 9.8 : 10.2, vy: side ? 10 : -10, z: .5, lastHit: side, bounces: 1 });
+    p.simulateBall(s, .03);
+    assert.equal(s.score[side], 1); assert.match(s.message, /Nach Aufsprung/);
+  }
+});
+
+test('an opponent touch resets the bounce rule: their next shot into the net is their fault', async () => {
+  for (const side of [0, 1]) {
+    const { p, s } = await scenario({ x: 2.5, y: side ? 3 : 17, lastHit: side, bounces: 1 });
+    p.hitBall(s, 1 - side, 2.5);
+    assert.equal(s.ball.bounces, 0);
+    Object.assign(s.ball, { x: 5, y: side ? 9.8 : 10.2, vy: side ? 10 : -10, z: .5, vz: 0 });
+    p.simulateBall(s, .03);
+    assert.equal(s.score[side], 1); assert.match(s.message, /Im Netz/);
   }
 });

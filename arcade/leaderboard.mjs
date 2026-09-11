@@ -6,9 +6,20 @@ export function formatDuration(ms) {
   const seconds = Math.floor(hundredths / 100);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')},${String(hundredths % 100).padStart(2, '0')}`;
 }
+const entryDateFormatter = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: '2-digit',
+  hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+});
+export function formatEntryDate(value) {
+  if (!value) return '–';
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '–';
+  const parts = Object.fromEntries(entryDateFormatter.formatToParts(date).map(part => [part.type, part.value]));
+  return `${parts.day}/${parts.month}/${parts.year} ${parts.hour}:${parts.minute}`;
+}
 export function winningEntry(state, roundId) {
   if (state.phase !== 'over' || state.winner !== 1 || state.score[1] !== 7 || state.score[0] < 0 || state.score[0] > 6) return null;
-  return Object.freeze({ roundId, humanScore: 7, computerScore: state.score[0], durationMs: Math.round(state.time * 1000) });
+  return Object.freeze({ roundId, humanScore: 7, computerScore: state.score[0], durationMs: Math.round(state.time * 1000), bestRally: state.bestRally });
 }
 export function createLeaderboardApi(config, fetcher = fetch) {
   async function rpc(method, body) {
@@ -30,7 +41,7 @@ export function createLeaderboardApi(config, fetcher = fetch) {
   }
   return {
     list: (roundId = null) => rpc('get_arcade_leaderboard', { p_round_id: roundId }),
-    save: (entry, name) => rpc('submit_arcade_win', { p_round_id: entry.roundId, p_name: normalizeName(name), p_human_score: entry.humanScore, p_computer_score: entry.computerScore, p_duration_ms: entry.durationMs })
+    save: (entry, name) => rpc('submit_arcade_win', { p_round_id: entry.roundId, p_name: normalizeName(name), p_human_score: entry.humanScore, p_computer_score: entry.computerScore, p_duration_ms: entry.durationMs, p_best_rally: entry.bestRally })
   };
 }
 export function mountLeaderboard({ pauseGame, api = createLeaderboardApi(window.PADEL_SUPABASE_CONFIG) }) {
@@ -52,9 +63,15 @@ export function mountLeaderboard({ pauseGame, api = createLeaderboardApi(window.
     const row = document.createElement('tr');
     row.classList.toggle('is-own-result', entry.isOwn === true);
     if (entry.isOwn) row.setAttribute('aria-label', 'Dein Ergebnis');
-    for (const value of [entry.rank, entry.name, `7:${entry.computerScore}`, formatDuration(entry.durationMs)]) {
+    for (const value of [entry.rank, entry.name, `7:${entry.computerScore}`, formatDuration(entry.durationMs), entry.bestRally ?? '–']) {
       const cell = document.createElement('td'); cell.textContent = value; row.append(cell);
     }
+    const date = document.createElement('time');
+    date.className = 'ranking-date';
+    date.textContent = formatEntryDate(entry.createdAt);
+    if (date.textContent !== '–') date.dateTime = entry.createdAt;
+    date.title = 'Eingetragen · deutsche Ortszeit';
+    row.children[1].append(date);
     target.append(row);
   }
   async function load(notice = '') {
@@ -68,7 +85,7 @@ export function mountLeaderboard({ pauseGame, api = createLeaderboardApi(window.
       for (const entry of data.entries) appendEntry(body, entry);
       if (data.ownEntry) {
         const labelRow = document.createElement('tr'), label = document.createElement('th');
-        label.colSpan = 4; label.scope = 'rowgroup'; label.textContent = 'Dein Ergebnis';
+        label.colSpan = 5; label.scope = 'rowgroup'; label.textContent = 'Dein Ergebnis';
         labelRow.append(label); ownBody.append(labelRow);
         appendEntry(ownBody, data.ownEntry); ownBody.hidden = false;
       }
@@ -83,7 +100,7 @@ export function mountLeaderboard({ pauseGame, api = createLeaderboardApi(window.
   function showWin() {
     view(); ++generation; form.hidden = false; list.hidden = true; retry.hidden = true;
     message.textContent = ''; name.value = ''; saveButton.disabled = false;
-    result.textContent = `Dein Sieg: 7:${pending.computerScore} · Spielzeit ${formatDuration(pending.durationMs)}`;
+    result.textContent = `Dein Sieg: 7:${pending.computerScore} · Spielzeit ${formatDuration(pending.durationMs)} · Längster Ballwechsel: ${pending.bestRally} Schläge`;
     name.focus();
   }
   form.addEventListener('submit', async event => {

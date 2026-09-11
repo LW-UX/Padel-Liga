@@ -17,7 +17,7 @@ export function createState() {
   return {
     phase: 'ready', resumePhase: 'rally', score: [0, 0], time: 0,
     teams: [0, 1].map(side => ({ side, offset: 0, y: side ? 17 : 3, vx: 0, vy: 0, power: 0 })),
-    ball: { x: 2.5, y: 17, z: 0.8, vx: 0, vy: 0, vz: 0, lastHit: 1, bounces: 0, feed: true },
+    ball: { x: 2.5, y: 17, z: 0.8, vx: 0, vy: 0, vz: 0, lastHit: 1, bounces: 0, feed: true, contactSide: null },
     message: 'Bereit für eine kurze Partie?', rallyHits: 0, bestRally: 0,
     pointTimer: 0, effects: [], winner: null
   };
@@ -38,7 +38,7 @@ export function feed(state) {
   const server = total % 2 ? 0 : 1;
   state.teams.forEach(t => Object.assign(t, { offset: 0, y: t.side ? 17 : 3, vx: 0, vy: 0, power: 0 }));
   const x = total % 4 < 2 ? 2.5 : 7.5;
-  Object.assign(state.ball, { x, y: server ? 17 : 3, z: 0.8, lastHit: server, bounces: 0, feed: true });
+  Object.assign(state.ball, { x, y: server ? 17 : 3, z: 0.8, lastHit: server, bounces: 0, feed: true, contactSide: null });
   // Safe automatic opening ball; it is intentionally not an official serve.
   const t = 1.6;
   state.ball.vx = 0;
@@ -76,6 +76,11 @@ export function moveTeam(team, input, dt) {
 }
 export function hitBall(state, side, paddleX, team = state.teams[side]) {
   const b = state.ball;
+  if (!b.feed && b.lastHit === side) {
+    awardPoint(state, 1 - side, 'Doppelkontakt');
+    return;
+  }
+  b.contactSide = side;
   const direction = side ? -1 : 1;
   const offset = clamp((b.x - paddleX) / (C.paddleWidth / 2 + C.radius), -1, 1);
   const targetY = side ? 2.8 : 17.2;
@@ -138,13 +143,22 @@ export function simulateBall(state, dt, origins = state.teams.map(t => ({ ...t }
       const netTime = (C.net - b.y) / b.vy;
       if (netTime > EPS) add(netTime, 'net', 1);
     }
-    const receiver = 1 - b.lastHit;
-    if (!b.feed || b.bounces > 0) {
-      const team = state.teams[receiver], origin = origins[receiver];
+    // A stroke starts inside the paddle's collision volume. Suppress that same
+    // continuous overlap until the ball leaves it, then count a new contact.
+    if (b.contactSide != null) {
+      const team = state.teams[b.contactSide], origin = origins[b.contactSide];
+      const touching = b.z <= C.reach && [2.5, 7.5].some(base =>
+        Math.abs(b.x - (base + origin.offset + team.vx * elapsed)) <= C.paddleWidth / 2 + C.radius + EPS
+        && Math.abs(b.y - (origin.y + team.vy * elapsed)) <= C.paddleDepth / 2 + C.radius + EPS);
+      if (!touching) b.contactSide = null;
+    }
+    for (const side of [0, 1]) {
+      if (b.contactSide === side || (b.feed && (b.bounces === 0 || side === b.lastHit))) continue;
+      const team = state.teams[side], origin = origins[side];
       for (const base of [2.5, 7.5]) {
         const paddle = { x: base + origin.offset + team.vx * elapsed, y: origin.y + team.vy * elapsed, vx: team.vx, vy: team.vy };
         const t = paddleTime(b, paddle, remaining);
-        if (t !== null) add(t, 'paddle', 3, { side: receiver, x: paddle.x + team.vx * t });
+        if (t !== null) add(t, 'paddle', 3, { side, x: paddle.x + team.vx * t });
       }
     }
     events.sort((a, c) => Math.abs(a.time - c.time) < EPS ? a.priority - c.priority : a.time - c.time);
@@ -166,7 +180,10 @@ export function simulateBall(state, dt, origins = state.teams.map(t => ({ ...t }
         state.effects.push({ x: b.x, y: b.y, age: 0, kind: 'wall' });
       }
     } else if (event.type === 'net') {
-      if (b.z <= C.netHeight + C.radius) awardPoint(state, 1 - b.lastHit, 'Im Netz');
+      if (b.z <= C.netHeight + C.radius) {
+        const returned = b.bounces > 0;
+        awardPoint(state, returned ? b.lastHit : 1 - b.lastHit, returned ? 'Nach Aufsprung zurück ins Netz' : 'Im Netz');
+      }
     } else {
       hitBall(state, event.side, event.x);
     }

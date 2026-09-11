@@ -2,7 +2,7 @@ import { createState, createClock, start, pause, reset, step } from './physics.m
 import { createComputer } from './computer.mjs';
 import { createInput } from './input.mjs';
 import { createRenderer } from './renderer.mjs';
-import { mountLeaderboard, formatDuration } from './leaderboard.mjs';
+import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-11-details';
 import { OnlineSession, generateCode, normalizeCode } from './online.mjs';
 
 const back = document.getElementById('back-link');

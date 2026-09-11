@@ -7,7 +7,7 @@
   <title>PadelArcade</title>
   <link rel="icon" href="../favicon.ico" sizes="any">
   <link rel="stylesheet" href="../style.css?v=2026-09-11-arcade">
-  <link rel="stylesheet" href="arcade.css?v=2026-09-11-local-duel">
+  <link rel="stylesheet" href="arcade.css?v=2026-09-11-leaderboard-details">
 </head>
 <body>
   <div class="arcade-shell">
@@ -61,7 +61,7 @@
       <aside class="field-notes right-notes" aria-label="Regeln und Ballhöhe">
         <p class="hero-eyebrow eyebrow">02 / SO LÄUFT’S</p>
         <h2 class="sh-title">Erst Boden.<br>Dann Wand.</h2>
-        <p class="sh-meta" id="rules-text">Volleys erlaubt. Beim zweiten Bodenkontakt endet der Punkt. Im Netz ist der Ball sofort verloren.</p>
+        <p class="sh-meta" id="rules-text">Volleys erlaubt. Beim zweiten Bodenkontakt endet der Punkt. Ein zweiter Teamkontakt ist ein Fehler. Ein Schlag ins Netz verliert den Punkt; springt der Ball nach gültigem Aufprall unberührt zurück ins Netz, gewinnt das schlagende Team.</p>
         <div class="height-demo" aria-hidden="true"><span></span><i></i><b></b></div>
         <p class="sh-meta">Der Schatten zeigt die Position am Boden. Hohe Bälle fliegen über die Balken.</p>
         <p class="sh-meta">Das kleine Quadrat zeigt den nächsten Aufprall. Orange bedeutet Wandgefahr.</p>
@@ -74,7 +74,7 @@
         <h2 class="sh-title" id="leaderboard-title" tabindex="-1">Globale Bestenliste</h2>
         <button class="secondary-button" id="leaderboard-back" type="button">Zum Spiel</button>
       </div>
-      <p class="sh-meta">Top 8 gegen den Computer · Ergebnis vor Spielzeit · Pausen zählen nicht mit.</p>
+      <p class="sh-meta">Top 8 gegen den Computer · Ergebnis vor Spielzeit · Pausen zählen nicht mit. Längster Ballwechsel in Schlägen, ohne Einfluss auf den Rang.</p>
       <form id="win-form" class="arcade-win-form" hidden>
         <p class="hero-eyebrow">Gewonnen!</p>
         <p id="win-result" class="sh-meta"></p>
@@ -90,7 +90,7 @@
       <button id="leaderboard-retry" class="secondary-button" type="button" hidden>Erneut laden</button>
       <div id="leaderboard-results" hidden>
         <table class="arcade-ranking"><caption class="sr-only">Globale PadelArcade-Bestenliste</caption>
-          <thead><tr><th scope="col">Platz</th><th scope="col">Name</th><th scope="col">Ergebnis</th><th scope="col">Zeit</th></tr></thead>
+          <thead><tr><th scope="col">Platz</th><th scope="col">Name</th><th scope="col">Ergebnis</th><th scope="col">Zeit</th><th scope="col" title="Anzahl der Schläge im längsten Ballwechsel">Längster Spielzug</th></tr></thead>
           <tbody id="leaderboard-rows"></tbody>
           <tbody id="leaderboard-own" hidden></tbody>
         </table>
@@ -143,6 +143,6 @@
   </dialog>
   <noscript><p>Bitte JavaScript aktivieren, um PadelArcade zu spielen. <a href="../">Zurück zur Liga</a></p></noscript>
   <script src="../data/supabase-config.js"></script>
-  <script type="module" src="main.mjs?v=2026-09-11-local-duel"></script>
+  <script type="module" src="main.mjs?v=2026-09-11-leaderboard-details"></script>
 </body>
 </html>

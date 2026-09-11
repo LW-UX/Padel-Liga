@@ -9,9 +9,9 @@ test('only a completed human win creates an immutable leaderboard entry', async 
     { phase: 'rally', winner: 1, score: [0, 7], time: 30 },
     { phase: 'over', winner: 1, score: [7, 7], time: 30 }
   ]) assert.equal(winningEntry(state, 'round'), null);
-  const state = { phase: 'over', winner: 1, score: [2, 7], time: 45.6784 };
-  const entry = winningEntry(state, 'round'); state.score[0] = 0;
-  assert.deepEqual(entry, { roundId: 'round', humanScore: 7, computerScore: 2, durationMs: 45678 });
+  const state = { phase: 'over', winner: 1, score: [2, 7], time: 45.6784, bestRally: 12 };
+  const entry = winningEntry(state, 'round'); state.score[0] = 0; state.bestRally = 0;
+  assert.deepEqual(entry, { roundId: 'round', humanScore: 7, computerScore: 2, durationMs: 45678, bestRally: 12 });
   assert.ok(Object.isFrozen(entry));
 });
 test('playing time stops during pause and after a match, and resets for a new match', async () => {
@@ -34,10 +34,10 @@ test('saving retries reuse the same round and public API payload excludes league
   const api = createLeaderboardApi({ url: 'https://example.test', publishableKey: 'public-key' }, async (url, options) => {
     calls.push({ url, options }); return { ok: true, json: async () => ({ rank: 1 }) };
   });
-  const entry = { roundId: 'same-round', humanScore: 7, computerScore: 2, durationMs: 34000 };
+  const entry = { roundId: 'same-round', humanScore: 7, computerScore: 2, durationMs: 34000, bestRally: 18 };
   await api.save(entry, ' Ludi '); await api.save(entry, ' Ludi '); await api.list('same-round');
   assert.equal(calls[0].options.body, calls[1].options.body);
-  assert.deepEqual(JSON.parse(calls[0].options.body), { p_round_id: 'same-round', p_name: 'Ludi', p_human_score: 7, p_computer_score: 2, p_duration_ms: 34000 });
+  assert.deepEqual(JSON.parse(calls[0].options.body), { p_round_id: 'same-round', p_name: 'Ludi', p_human_score: 7, p_computer_score: 2, p_duration_ms: 34000, p_best_rally: 18 });
   assert.deepEqual(JSON.parse(calls[2].options.body), { p_round_id: 'same-round' });
   assert.equal(calls[0].options.headers.apikey, 'public-key');
 });
@@ -69,4 +69,12 @@ test('a server-side name rejection is shown as a name error rather than a connec
   const { createLeaderboardApi } = await leaderboard;
   const api = createLeaderboardApi({ url: 'https://example.test', publishableKey: 'public' }, async () => ({ ok: false, status: 400, json: async () => ({ message: 'ARCADE_NAME_BLOCKED' }) }));
   await assert.rejects(api.save({ roundId: 'round' }, 'Ludi'), /Name ist nicht erlaubt/);
+});
+
+test('entry dates use dd/mm/yy hh:mm in Berlin, including winter, summer and date rollover', async () => {
+  const { formatEntryDate } = await leaderboard;
+  assert.equal(formatEntryDate('2026-09-11T12:05:59Z'), '11/09/26 14:05');
+  assert.equal(formatEntryDate('2026-01-01T23:07:00Z'), '02/01/26 00:07');
+  assert.equal(formatEntryDate('2026-07-01T22:07:00Z'), '02/07/26 00:07');
+  for (const value of [null, undefined, '', 'invalid']) assert.equal(formatEntryDate(value), '–');
 });

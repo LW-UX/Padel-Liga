@@ -21,14 +21,27 @@ begin
   if not (select relrowsecurity from pg_class where oid = 'public.arcade_wins'::regclass) then
     raise exception 'RLS must be enabled';
   end if;
-  perform public.submit_arcade_win(v_id, ' QASieg ', 7, 2, 60000);
-  perform public.submit_arcade_win(v_id, 'QASieg', 7, 2, 60000);
+  perform public.submit_arcade_win(v_id, ' QASieg ', 7, 2, 60000, 12);
+  perform public.submit_arcade_win(v_id, 'QASieg', 7, 2, 60000, 12);
   if (select count(*) from public.arcade_wins where round_id = v_id) <> 1 then
     raise exception 'Retry duplicated the result';
   end if;
   if (select display_name from public.arcade_wins where round_id = v_id) <> 'QASieg' then
     raise exception 'Name was not trimmed';
   end if;
+  if (select best_rally from public.arcade_wins where round_id = v_id) is distinct from 12 then
+    raise exception 'Longest rally was not stored';
+  end if;
+  begin
+    perform public.submit_arcade_win(v_id, 'QASieg', 7, 2, 60000, 99);
+    raise exception 'Retry replaced longest rally';
+  exception when invalid_parameter_value then null;
+  end;
+  begin
+    perform public.submit_arcade_win(v_second, 'QARally', 7, 2, 60000, -1);
+    raise exception 'Negative rally accepted';
+  exception when invalid_parameter_value then null;
+  end;
   begin
     perform public.submit_arcade_win(v_second, 'QAVerlust', 4, 7, 60000);
     raise exception 'Loss was accepted';
@@ -62,7 +75,7 @@ begin
   select 1 + count(*) into v_rank from public.arcade_wins
     where computer_score < 1 or (computer_score = 1 and duration_ms < 90000);
   if (v_result->>'rank')::bigint <> v_rank then raise exception 'Wrong rank'; end if;
-  if (public.submit_arcade_win(v_id, 'QASieg', 7, 2, 60000)->>'rank')::bigint <= v_rank then
+  if (public.submit_arcade_win(v_id, 'QASieg', 7, 2, 60000, 12)->>'rank')::bigint <= v_rank then
     raise exception 'Score must precede time';
   end if;
   for i in 1..9 loop
@@ -85,14 +98,26 @@ begin
   for i in 1..9 loop
     perform public.submit_arcade_win(gen_random_uuid(), 'QAGleich' || i, 7, 0, 1);
   end loop;
-  perform public.submit_arcade_win(v_tied, 'QAGleichEigen', 7, 0, 1);
+  perform public.submit_arcade_win(v_tied, 'QAGleichEigen', 7, 0, 1, 999);
   update public.arcade_wins set created_at = clock_timestamp() + interval '1 day' where round_id = v_tied;
   v_result := public.get_arcade_leaderboard(v_tied);
   if v_result->'ownEntry'->>'name' is distinct from 'QAGleichEigen'
     or (v_result->'ownEntry'->>'rank')::bigint is distinct from 1::bigint then
     raise exception 'Tied own result outside eight rows is missing';
   end if;
+  if (v_result->'ownEntry'->>'bestRally')::integer is distinct from 999
+    or (v_result->'ownEntry'->>'createdAt')::timestamptz is distinct from
+      (select created_at from public.arcade_wins where round_id = v_tied) then
+    raise exception 'Own entry details missing';
+  end if;
   v_result := public.get_arcade_leaderboard();
+  if not ((v_result->'entries'->0) ? 'bestRally')
+    or not ((v_result->'entries'->0) ? 'createdAt') then
+    raise exception 'Top eight details missing';
+  end if;
+  if (select best_rally from public.arcade_wins where round_id = v_second) is not null then
+    raise exception 'Legacy clients must retain unknown rally';
+  end if;
   if jsonb_array_length(v_result->'entries') > 8 then raise exception 'Top eight exceeds limit'; end if;
   if (v_result->'entries'->0) ? 'round_id' then raise exception 'Round token is public'; end if;
 end;

@@ -146,15 +146,19 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
 .arcade-ranking { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 16px; }
 .arcade-ranking th, .arcade-ranking td { padding: 12px 8px; text-align: left; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
 .arcade-ranking th { color: var(--dim); font-size: .75rem; font-weight: 600; }
-.arcade-ranking th:first-child { width: 14%; }
-.arcade-ranking th:nth-child(2) { width: 42%; }
-.arcade-ranking th:nth-child(3), .arcade-ranking th:nth-child(4) { width: 22%; }
+.arcade-ranking thead th:first-child { width: 10%; }
+.arcade-ranking thead th:nth-child(2) { width: 34%; }
+.arcade-ranking thead th:nth-child(3) { width: 17%; }
+.arcade-ranking thead th:nth-child(4) { width: 20%; }
+.arcade-ranking thead th:nth-child(5) { width: 19%; }
+.ranking-date { display: block; margin-top: 5px; color: var(--dim); font-size: .75rem; font-variant-numeric: tabular-nums; overflow-wrap: normal; }
 .arcade-ranking tr:nth-child(even) { background: var(--surface); }
 .arcade-ranking td:nth-child(n+3) { font-variant-numeric: tabular-nums; white-space: nowrap; }
 @media (max-width: 800px) {
   .leaderboard-heading h2.sh-title { font-size: 1.65rem; }
   .leaderboard-heading .secondary-button { font-size: .7rem; }
   .arcade-ranking th, .arcade-ranking td { padding: 10px 4px; font-size: .72rem; }
+  .ranking-date { font-size: .65rem; }
 }
 
 .arcade-ranking .is-own-result { color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
@@ -192,4 +196,26 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
 .local-duel .power-display { width: 150px; }
 @media (pointer: coarse), (max-width: 800px) {
   .local-duel .controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+}
+
+@media (pointer: coarse), (max-width: 800px) {
+  #local-open, #local-mode { display: none !important; }
+}
+
+/* Keep the pointer available whenever a game overlay or dialog is visible. */
+body:not(:has(dialog[open])) .court-wrap:has(> .game-overlay[hidden]) > canvas { cursor: none; }
+
+/* Prevent long-press selection on the entire mobile arcade surface. */
+@media (pointer: coarse), (max-width: 800px) {
+  html, body, body * {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-user-drag: none;
+  }
+  input, textarea {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+  }
 }

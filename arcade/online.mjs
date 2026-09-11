@@ -24,7 +24,7 @@ export function perspective(state, side) {
     view.winner = view.winner === null ? null : 1 - view.winner;
     view.teams.reverse();
     view.teams.forEach((t, i) => Object.assign(t, { side: i, offset: -t.offset, y: C.length - t.y, vx: -t.vx, vy: -t.vy }));
-    Object.assign(view.ball, { x: C.width - view.ball.x, y: C.length - view.ball.y, vx: -view.ball.vx, vy: -view.ball.vy, lastHit: 1 - view.ball.lastHit });
+    Object.assign(view.ball, { x: C.width - view.ball.x, y: C.length - view.ball.y, vx: -view.ball.vx, vy: -view.ball.vy, lastHit: 1 - view.ball.lastHit, contactSide: view.ball.contactSide == null ? null : 1 - view.ball.contactSide });
     view.effects.forEach(e => Object.assign(e, { x: C.width - e.x, y: C.length - e.y }));
   }
   if (['point', 'over'].includes(view.phase)) view.message = `${view.winner === 1 ? 'Dein Punkt' : 'Punkt Gegner'} · ${view.message.split(' · ').slice(1).join(' · ')}`;
