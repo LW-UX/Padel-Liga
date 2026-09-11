@@ -137,7 +137,7 @@ test('arcade page uses isolated modules and same-tab navigation preserves the se
   const root = path.resolve(__dirname, '..');
   const html = fs.readFileSync(path.join(root, 'arcade/index.html'), 'utf8');
   const league = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  assert.ok(!/app\.js|supabase|chart\.js|<dialog/.test(html));
+  assert.ok(!/app\.js|supabase-js|chart\.js|<dialog/.test(html));
   assert.match(html, /Padel<span>Arcade/);
   assert.match(league, /id="arcade-link" href="arcade\/"/);
   const source = fs.readFileSync(path.join(root, 'js/arcade-link.js'), 'utf8');

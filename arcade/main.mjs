@@ -2,6 +2,7 @@ import { createState, createClock, start, pause, reset, step } from './physics.m
 import { createComputer } from './computer.mjs';
 import { createInput } from './input.mjs';
 import { createRenderer } from './renderer.mjs';
+import { mountLeaderboard, formatDuration } from './leaderboard.mjs';
 
 const back = document.getElementById('back-link');
 const season = new URLSearchParams(location.search).get('saison');
@@ -28,15 +29,17 @@ async function mount() {
   const powerLabel = document.getElementById('power-label');
   const fps = document.getElementById('fps');
   let frameId = 0, previous = null, lastPaint = -Infinity, displayedPhase = '';
-  let input;
+  let input, roundId = crypto.randomUUID();
   const simulation = createClock(() => step(state, input.read(), computer.read(state)));
   function toggle() {
+    if (!document.getElementById('leaderboard').hidden) return;
     cancelAnimationFrame(frameId); frameId = 0; previous = null;
     if (state.phase === 'rally' || state.phase === 'point') pause(state);
     else if (state.phase !== 'over') start(state);
     input.clear(); simulation.reset(); update(); render(state); schedule();
   }
   input = createInput(canvas, document.getElementById('joystick'), () => state.teams[1], toggle);
+  const leaderboard = mountLeaderboard({ pauseGame: stopForVisibility });
   function update() {
     humanScore.textContent = state.score[1]; computerScore.textContent = state.score[0];
     if (status.textContent !== state.message) status.textContent = state.message;
@@ -50,9 +53,10 @@ async function mount() {
     pauseButton.textContent = state.phase === 'paused' ? 'Weiter' : 'Pause';
     if (state.phase === 'over') {
       overlayTitle.textContent = state.winner === 1 ? 'Gewonnen!' : 'Revanche?';
-      overlayText.textContent = `${state.score[1]} : ${state.score[0]} · Längster Ballwechsel: ${state.bestRally} Schläge`;
+      overlayText.textContent = `${state.score[1]} : ${state.score[0]} · Spielzeit ${formatDuration(Math.round(state.time * 1000))}`;
       startButton.textContent = 'Noch eine Partie';
       startButton.focus({ preventScroll: true });
+      leaderboard.finish(state, roundId);
     } else if (state.phase === 'paused') {
       overlayTitle.textContent = 'Pause'; overlayText.textContent = 'Kurz durchatmen. Dein Spiel wartet.';
       startButton.textContent = 'Weiterspielen';
@@ -82,14 +86,14 @@ async function mount() {
     update(); render(state);
   }
   startButton.addEventListener('click', () => {
-    if (state.phase === 'over') { reset(state); computer.reset(); }
+    if (state.phase === 'over') { reset(state); computer.reset(); leaderboard.reset(); roundId = crypto.randomUUID(); }
     start(state); input.clear(); simulation.reset(); previous = null; update(); render(state);
     canvas.focus({ preventScroll: true }); schedule();
   });
   pauseButton.addEventListener('click', () => { toggle(); canvas.focus({ preventScroll: true }); });
   resetButton.addEventListener('click', () => {
     cancelAnimationFrame(frameId); frameId = 0; previous = null;
-    reset(state); computer.reset(); input.clear(); simulation.reset(); update(); render(state);
+    reset(state); computer.reset(); leaderboard.reset(); roundId = crypto.randomUUID(); input.clear(); simulation.reset(); update(); render(state);
     startButton.focus({ preventScroll: true });
   });
   document.addEventListener('visibilitychange', () => { if (document.hidden) stopForVisibility(); });

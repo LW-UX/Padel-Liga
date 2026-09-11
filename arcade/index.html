@@ -6,55 +6,84 @@
   <meta name="theme-color" content="#07080C">
   <title>PadelArcade</title>
   <link rel="icon" href="../favicon.ico" sizes="any">
-  <link rel="stylesheet" href="arcade.css?v=2026-09-11-league-ui">
+  <link rel="stylesheet" href="../style.css?v=2026-09-11-arcade">
+  <link rel="stylesheet" href="arcade.css?v=2026-09-11-leaderboard">
 </head>
 <body>
   <div class="arcade-shell">
     <header class="arcade-header">
-      <a id="back-link" class="back-link" href="../">← <span>Zurück zur Liga</span></a>
-      <h1>Padel<span>Arcade</span></h1>
-      <span class="edition">1P <span aria-hidden="true">●</span> RETRO DOUBLES</span>
+      <a id="back-link" class="context-link back-link" href="../"><span>Zurück zur Liga</span></a>
+      <h1 class="sh-title">Padel<span>Arcade</span></h1>
     </header>
 
     <main class="game-layout" id="game">
       <aside class="field-notes" aria-label="Spielanleitung">
-        <p class="eyebrow">01 / STEUERUNG</p>
-        <h2>Zwei Balken.<br>Ein Team.</h2>
+        <p class="hero-eyebrow eyebrow">01 / STEUERUNG</p>
+        <h2 class="sh-title">Zwei Balken.<br>Ein Team.</h2>
         <div class="key-grid" aria-hidden="true"><span>↑</span><span>←</span><span>↓</span><span>→</span></div>
-        <p>Pfeiltasten oder WASD.<br>Mit der Maus im Feld ziehen.</p>
-        <p>Beide Balken bewegen sich identisch. Jeder bleibt in seinem Bereich.</p>
-        <p class="note"><span aria-hidden="true">↗</span> Zum Netz beschleunigen gibt Druck. Volle Kraft geht gegen die Wand!</p>
-        <p class="micro">LEERTASTE / P = PAUSE</p>
+        <p class="sh-meta">Pfeiltasten oder WASD.<br>Mit der Maus im Feld ziehen.</p>
+        <p class="sh-meta">Beide Balken bewegen sich identisch. Jeder bleibt in seinem Bereich.</p>
+        <p class="sh-meta note"><span aria-hidden="true">↗</span> Zum Netz beschleunigen gibt Druck. Volle Kraft geht gegen die Wand!</p>
+        <p class="widget-label micro">LEERTASTE / P = PAUSE</p>
       </aside>
 
       <section class="arena" aria-label="Padel-Spielfeld">
         <div class="scoreboard" aria-label="Spielstand">
-          <div class="team-label human-label">DU <strong id="human-score">0</strong></div>
+          <div class="team-label human-label">DU <strong class="mc-score-main" id="human-score">0</strong></div>
           <div class="score-goal"><span>BIS 7</span><small>BEI 6:6 ENTSCHEIDET DER NÄCHSTE PUNKT</small></div>
-          <div class="team-label computer-label"><strong id="computer-score">0</strong> CPU</div>
+          <div class="team-label computer-label"><strong class="mc-score-main" id="computer-score">0</strong> CPU</div>
         </div>
         <div class="court-wrap">
           <canvas id="court" width="272" height="496" tabindex="0" aria-label="PadelArcade. Du spielst unten mit den gelben Balken. Bewegen mit Pfeiltasten oder WASD." aria-describedby="rules-text">Zum Spielen wird ein Browser mit Canvas-Unterstützung benötigt.</canvas>
           <div class="game-overlay" id="game-overlay">
-            <p class="eyebrow" id="overlay-label">EINE KURZE PADELPAUSE</p>
-            <h2 id="overlay-title">Bereit?</h2>
+            <p class="hero-eyebrow eyebrow" id="overlay-label">EINE KURZE PADELPAUSE</p>
+            <h2 class="sh-title" id="overlay-title">Bereit?</h2>
             <p id="overlay-text">Dein Doppel ist gelb.<br>Triff den Ball automatisch.</p>
-            <button id="start-button" class="primary" type="button" disabled>Spiel lädt …</button>
+            <button id="enter-win" class="primary-button" type="button" hidden>Sieg eintragen</button>
+            <button id="start-button" class="primary-button" type="button" disabled>Spiel lädt …</button>
           </div>
         </div>
-        <p id="status" class="status" role="status" aria-live="polite">Bereit für eine kurze Partie?</p>
+        <p id="status" class="sh-meta status" role="status" aria-live="polite">Bereit für eine kurze Partie?</p>
       </section>
 
       <aside class="field-notes right-notes" aria-label="Regeln und Ballhöhe">
-        <p class="eyebrow">02 / SO LÄUFT’S</p>
-        <h2>Erst Boden.<br>Dann Wand.</h2>
-        <p id="rules-text">Volleys erlaubt. Beim zweiten Bodenkontakt endet der Punkt. Im Netz ist der Ball sofort verloren.</p>
+        <p class="hero-eyebrow eyebrow">02 / SO LÄUFT’S</p>
+        <h2 class="sh-title">Erst Boden.<br>Dann Wand.</h2>
+        <p class="sh-meta" id="rules-text">Volleys erlaubt. Beim zweiten Bodenkontakt endet der Punkt. Im Netz ist der Ball sofort verloren.</p>
         <div class="height-demo" aria-hidden="true"><span></span><i></i><b></b></div>
-        <p>Der Schatten zeigt die Position am Boden. Hohe Bälle fliegen über die Balken.</p>
-        <p>Das kleine Quadrat zeigt den nächsten Aufprall. Orange bedeutet Wandgefahr.</p>
-        <p class="micro">PADEL-ARCADE MIT VEREINFACHTEN REGELN · AUTOMATISCHES ANSPIEL</p>
+        <p class="sh-meta">Der Schatten zeigt die Position am Boden. Hohe Bälle fliegen über die Balken.</p>
+        <p class="sh-meta">Das kleine Quadrat zeigt den nächsten Aufprall. Orange bedeutet Wandgefahr.</p>
+        <p class="widget-label micro">PADEL-ARCADE MIT VEREINFACHTEN REGELN · AUTOMATISCHES ANSPIEL</p>
       </aside>
     </main>
+
+    <section id="leaderboard" class="leaderboard-panel" aria-labelledby="leaderboard-title" hidden>
+      <div class="leaderboard-heading">
+        <h2 class="sh-title" id="leaderboard-title" tabindex="-1">Globale Bestenliste</h2>
+        <button class="secondary-button" id="leaderboard-back" type="button">Zum Spiel</button>
+      </div>
+      <p class="sh-meta">Top 8 gegen den Computer · Ergebnis vor Spielzeit · Pausen zählen nicht mit.</p>
+      <form id="win-form" class="arcade-win-form" hidden>
+        <p class="hero-eyebrow">Gewonnen!</p>
+        <p id="win-result" class="sh-meta"></p>
+        <label for="winner-name">Dein Name in der öffentlichen Bestenliste</label>
+        <input id="winner-name" name="winner" type="text" maxlength="16" pattern="[\p{L}\p{Nd}]+" required autocomplete="nickname" aria-describedby="winner-name-hint" placeholder="Dein Name">
+        <p id="winner-name-hint" class="sh-meta">Maximal 16 Zeichen. Nur Buchstaben und Zahlen, keine Leerzeichen oder Sonderzeichen.</p>
+        <div class="leaderboard-form-actions">
+          <button id="save-win" class="primary-button" type="submit">Eintragen &amp; Bestenliste</button>
+          <button id="skip-win" class="secondary-button" type="button">Nur Bestenliste ansehen</button>
+        </div>
+      </form>
+      <p id="leaderboard-message" class="sh-meta" role="status" aria-live="polite"></p>
+      <button id="leaderboard-retry" class="secondary-button" type="button" hidden>Erneut laden</button>
+      <div id="leaderboard-results" hidden>
+        <table class="arcade-ranking"><caption class="sr-only">Globale PadelArcade-Bestenliste</caption>
+          <thead><tr><th scope="col">Platz</th><th scope="col">Name</th><th scope="col">Ergebnis</th><th scope="col">Zeit</th></tr></thead>
+          <tbody id="leaderboard-rows"></tbody>
+          <tbody id="leaderboard-own" hidden></tbody>
+        </table>
+      </div>
+    </section>
 
     <footer class="controls">
       <div class="power-display">
@@ -63,14 +92,16 @@
       </div>
       <div id="joystick" class="joystick" role="group" aria-label="Touch-Steuerung: In die gewünschte Richtung ziehen"><span></span></div>
       <div class="action-buttons">
-        <button id="pause-button" type="button" disabled>Pause</button>
-        <button id="reset-button" type="button" disabled>Neustart</button>
-        <label class="fps-label"><select id="fps" aria-label="Bildrate"><option value="60">60 FPS</option><option value="30">30 FPS</option></select></label>
-        <details class="mobile-help"><summary>So geht’s</summary><div>Pfeiltasten / WASD, im Feld ziehen oder den Stick bewegen. Du spielst unten in Gelb. Treffer sind automatisch, hohe Bälle fliegen darüber. Der Schatten zeigt die Bodenposition. Erst Boden, dann Wand; Volleys sind erlaubt. Zweimal Boden oder Netz beendet den Punkt. Volle Vorwärtskraft riskiert einen Wandfehler. Ein oranges Zielquadrat warnt davor. Automatisches Anspiel, zuerst 7 Punkte gewinnt.</div></details>
+        <button class="secondary-button" id="pause-button" type="button" disabled>Pause</button>
+        <button class="secondary-button" id="reset-button" type="button" disabled>Neustart</button>
+        <label class="fps-label"><select class="secondary-button" id="fps" aria-label="Bildrate"><option value="60">60 FPS</option><option value="30">30 FPS</option></select></label>
+        <button class="secondary-button" id="leaderboard-open" type="button">Bestenliste</button>
+        <details class="mobile-help"><summary class="secondary-button">So geht’s</summary><div>Pfeiltasten / WASD, im Feld ziehen oder den Stick bewegen. Du spielst unten in Gelb. Treffer sind automatisch, hohe Bälle fliegen darüber. Der Schatten zeigt die Bodenposition. Erst Boden, dann Wand; Volleys sind erlaubt. Zweimal Boden oder Netz beendet den Punkt. Volle Vorwärtskraft riskiert einen Wandfehler. Ein oranges Zielquadrat warnt davor. Automatisches Anspiel, zuerst 7 Punkte gewinnt.</div></details>
       </div>
     </footer>
   </div>
   <noscript><p>Bitte JavaScript aktivieren, um PadelArcade zu spielen. <a href="../">Zurück zur Liga</a></p></noscript>
-  <script type="module" src="main.mjs?v=2026-09-11"></script>
+  <script src="../data/supabase-config.js"></script>
+  <script type="module" src="main.mjs?v=2026-09-11-leaderboard"></script>
 </body>
 </html>
