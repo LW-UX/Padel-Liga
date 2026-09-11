@@ -3,6 +3,7 @@ import { createComputer } from './computer.mjs';
 import { createInput } from './input.mjs';
 import { createRenderer } from './renderer.mjs';
 import { mountLeaderboard, formatDuration } from './leaderboard.mjs';
+import { OnlineSession, generateCode, normalizeCode } from './online.mjs';
 
 const back = document.getElementById('back-link');
 const season = new URLSearchParams(location.search).get('saison');
@@ -39,10 +40,20 @@ async function mount() {
   const rules = document.querySelector('.right-notes');
   const mobileControls = matchMedia('(pointer: coarse), (max-width: 800px)');
   let frameId = 0, previous = null, lastPaint = -Infinity, displayedPhase = '';
+  const onlineMenu = document.getElementById('online-menu');
+  const modeButton = document.getElementById('mode-button');
+  const roomInfo = document.getElementById('room-info');
+  const onlineButton = document.getElementById('online-open');
+  const leaveButton = document.getElementById('leave-room');
+  const localButton = document.getElementById('local-open');
+  const opponentPower = document.getElementById('opponent-power');
+  let local = false;
+  let online = null, networkTimer = null;
   let input, roundId = crypto.randomUUID();
-  const simulation = createClock(() => step(state, input.read(), computer.read(state)));
+  const simulation = createClock(() => step(state, input.read(), local ? input.readOpponent() : computer.read(state)));
   function toggle() {
-    if (menu.open || !document.getElementById('leaderboard').hidden) return;
+    if (menu.open || onlineMenu.open || !document.getElementById('leaderboard').hidden) return;
+    if (online) { input.clear(); if (['playing', 'countdown'].includes(online.stage)) online.requestPause(); else online.requestReady(); return; }
     cancelAnimationFrame(frameId); frameId = 0; previous = null;
     if (state.phase === 'rally' || state.phase === 'point') pause(state);
     else if (state.phase !== 'over') start(state);
@@ -74,12 +85,21 @@ async function mount() {
   }, { capture: true });
   const leaderboard = mountLeaderboard({ pauseGame: stopForVisibility });
   function update() {
+    if (online) Object.assign(state, online.view());
     humanScore.textContent = state.score[1]; computerScore.textContent = state.score[0];
     gameTime.textContent = formatDuration(Math.round(state.time * 1000));
-    if (status.textContent !== state.message) status.textContent = state.message;
+    const message = local && ['point', 'over'].includes(state.phase)
+      ? state.message.replace(/^(Dein Punkt|Punkt Computer)/, state.winner === 1 ? 'Punkt Pfeiltasten' : 'Punkt WASD') : state.message;
+    if (!online && status.textContent !== message) status.textContent = message;
     power.value = state.teams[1].power;
     powerLabel.textContent = power.value > 0.85 ? 'ZU HART!' : power.value > 0.45 ? 'DRUCK' : 'RUHIG';
     power.closest('.power-display').classList.toggle('danger', power.value > 0.85);
+    if (local) {
+      opponentPower.value = state.teams[0].power;
+      document.getElementById('opponent-power-label').textContent = opponentPower.value > .85 ? 'ZU HART!' : opponentPower.value > .45 ? 'DRUCK' : 'RUHIG';
+      opponentPower.closest('.power-display').classList.toggle('danger', opponentPower.value > .85);
+    }
+    if (online) { updateOnline(); return; }
     if (displayedPhase === state.phase) return;
     displayedPhase = state.phase;
     overlay.hidden = ['rally', 'point'].includes(state.phase);
@@ -87,22 +107,26 @@ async function mount() {
     pauseButton.disabled = ['ready', 'over'].includes(state.phase);
     pauseButton.textContent = state.phase === 'paused' ? 'Weiter' : 'Pause';
     if (state.phase === 'over') {
-      overlayTitle.textContent = state.winner === 1 ? 'Gewonnen!' : 'Revanche?';
+      overlayTitle.textContent = local ? (state.winner === 1 ? 'Pfeiltasten gewinnen!' : 'WASD gewinnt!') : state.winner === 1 ? 'Gewonnen!' : 'Revanche?';
       overlayText.textContent = `${state.score[1]} : ${state.score[0]} · Spielzeit ${formatDuration(Math.round(state.time * 1000))}`;
       startButton.textContent = 'Noch eine Partie';
       startButton.focus({ preventScroll: true });
-      leaderboard.finish(state, roundId);
+      if (!local) leaderboard.finish(state, roundId);
     } else if (state.phase === 'paused') {
-      overlayTitle.textContent = 'Pause'; overlayText.textContent = 'Kurz durchatmen. Dein Spiel wartet.';
+      overlayTitle.textContent = 'Pause'; overlayText.textContent = local ? 'Gemeinsame Pause. Weiter mit Leertaste / P oder dem Button.' : 'Kurz durchatmen. Dein Spiel wartet.';
       startButton.textContent = 'Weiterspielen';
     } else if (state.phase === 'ready') {
-      overlayTitle.textContent = 'Bereit?'; overlayText.textContent = 'Dein Doppel ist gelb. Triff den Ball automatisch.';
-      startButton.textContent = 'Spiel starten';
+      overlayTitle.textContent = local ? 'Zu zweit bereit?' : 'Bereit?'; overlayText.textContent = local ? 'Gelb unten: Pfeiltasten. Korall oben: WASD. Ihr trefft automatisch.' : 'Dein Doppel ist gelb. Triff den Ball automatisch.';
+      startButton.textContent = local ? 'Spiel starten' : 'Gegen Computer';
     }
   }
   function frame(now) {
     frameId = 0;
-    if (previous !== null) simulation.advance((now - previous) / 1000);
+    if (previous !== null) {
+      if (online) online.advance((now - previous) / 1000);
+      else simulation.advance((now - previous) / 1000);
+    }
+    if (online) Object.assign(state, online.view());
     previous = now;
     const interval = 1000 / Number(fps.value);
     if (now - lastPaint >= interval - 0.5 || displayedPhase !== state.phase) {
@@ -112,29 +136,137 @@ async function mount() {
     schedule();
   }
   function schedule() {
-    if (!frameId && !document.hidden && ['rally', 'point'].includes(state.phase)) frameId = requestAnimationFrame(frame);
+    if (!frameId && !document.hidden && (online ? !online.closed : ['rally', 'point'].includes(state.phase))) frameId = requestAnimationFrame(frame);
     else if (!['rally', 'point'].includes(state.phase)) previous = null;
   }
   function stopForVisibility() {
+    if (online) online.requestPause();
     pause(state); input.clear(); simulation.reset(); previous = null;
     cancelAnimationFrame(frameId); frameId = 0;
     update(); render(state);
   }
   startButton.addEventListener('click', () => {
+    if (online) { input.clear(); online.requestReady(); canvas.focus({ preventScroll: true }); return; }
     if (state.phase === 'over') { reset(state); computer.reset(); leaderboard.reset(); roundId = crypto.randomUUID(); }
     start(state); input.clear(); simulation.reset(); previous = null; update(); render(state);
     canvas.focus({ preventScroll: true }); schedule();
   });
   pauseButton.addEventListener('click', () => { toggle(); canvas.focus({ preventScroll: true }); });
   resetButton.addEventListener('click', () => {
+    if (online) return;
     cancelAnimationFrame(frameId); frameId = 0; previous = null;
     reset(state); computer.reset(); leaderboard.reset(); roundId = crypto.randomUUID(); input.clear(); simulation.reset(); update(); render(state);
     startButton.focus({ preventScroll: true });
   });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) stopForVisibility(); });
-  window.addEventListener('blur', stopForVisibility);
-  window.addEventListener('pagehide', stopForVisibility);
+  document.addEventListener('visibilitychange', () => {
+    online?.setVisible(!document.hidden);
+    if (document.hidden) stopForVisibility(); else { previous = null; schedule(); }
+  });
+  window.addEventListener('blur', () => { online?.setVisible(false); stopForVisibility(); });
+  window.addEventListener('focus', () => { online?.setVisible(!document.hidden); previous = null; schedule(); });
+  window.addEventListener('pagehide', () => { online?.leave(); stopForVisibility(); });
+  function setText(element, value) { if (element.textContent !== value) element.textContent = value; }
+  function updateOnline() {
+    displayedPhase = state.phase;
+    const stage = online.stage;
+    const interrupted = online.suspended;
+    overlay.classList.add('online-overlay');
+    overlay.hidden = stage === 'playing' && !interrupted;
+    roomInfo.hidden = !['waiting', 'paused'].includes(stage) || interrupted;
+    setText(document.getElementById('room-code'), online.code);
+    setText(document.getElementById('room-players'), online.peer
+      ? `Du: ${online.ready[online.side] ? 'bereit' : 'noch nicht bereit'} · Gegner: ${online.ready[1 - online.side] ? 'bereit' : 'noch nicht bereit'}`
+      : '1 von 2 Spielern');
+    setText(document.getElementById('opponent-label'), 'GEGNER');
+    document.getElementById('enter-win').hidden = true;
+    document.getElementById('leaderboard-after-game').hidden = true;
+    onlineButton.hidden = true; localButton.hidden = true; leaveButton.hidden = false;
+    startButton.hidden = !['waiting', 'paused', 'over'].includes(stage) || interrupted;
+    startButton.disabled = !online.peer || !online.connected || interrupted || !online.visible || !online.peerVisible;
+    setText(startButton, online.ready[online.side] ? 'Doch nicht bereit' : stage === 'over' ? 'Bereit zur Revanche' : stage === 'paused' ? 'Bereit zum Weiterspielen' : 'Bereit');
+    pauseButton.disabled = !['playing', 'countdown'].includes(stage);
+    setText(pauseButton, 'Pause'); resetButton.hidden = true;
+    setText(modeButton, 'Raum verlassen');
+    const titles = { connecting: 'Verbinden …', waiting: 'Warteraum', countdown: 'Gleich geht’s los', paused: 'Pause', over: state.winner === 1 ? 'Gewonnen!' : 'Revanche?', ended: 'Spiel beendet' };
+    setText(overlayTitle, interrupted ? 'Verbindung fehlt' : stage === 'countdown'
+      ? String(Math.max(1, Math.ceil((online.role === 'host' ? online.countdownUntil - online.now() : online.countdown) / 1000)))
+      : titles[stage] || '');
+    setText(overlayText, stage === 'over' ? `${state.score[1]} : ${state.score[0]} · Spielzeit ${formatDuration(Math.round(state.time * 1000))}` : online.message);
+    setText(status, interrupted || stage !== 'playing' ? online.message : state.message);
+  }
+  function showModes() {
+    if (online) { exitRoom(); return; }
+    stopForVisibility(); menu.close();
+    document.getElementById('join-message').textContent = '';
+    onlineMenu.showModal(); document.getElementById('create-room').focus();
+  }
+  function exitRoom() {
+    const room = online; online = null; room?.leave(); clearInterval(networkTimer); networkTimer = null;
+    cancelAnimationFrame(frameId); frameId = 0; previous = null;
+    reset(state); computer.reset(); leaderboard.reset(); input.clear(); simulation.reset(); roundId = crypto.randomUUID();
+    overlay.classList.remove('online-overlay'); roomInfo.hidden = true; leaveButton.hidden = true;
+    onlineButton.hidden = false; localButton.hidden = false; startButton.hidden = false; startButton.disabled = false;
+    resetButton.hidden = false; modeButton.textContent = 'Spielmodus';
+    document.getElementById('opponent-label').textContent = 'CPU'; displayedPhase = '';
+    menu.close(); update(); render(state); startButton.focus({ preventScroll: true });
+  }
+  function enterRoom(role, code) {
+    if (online) return;
+    try {
+      code = normalizeCode(code);
+      const room = new OnlineSession({ role, code, config: window.PADEL_SUPABASE_CONFIG, readInput: () => input.read(), onChange: () => {
+        if (!online) return;
+        if (online.closed) clearInterval(networkTimer);
+        if (!frameId || document.hidden) { update(); render(state); }
+        schedule();
+      } });
+      stopForVisibility(); leaderboard.reset(); input.clear();
+      setLocalMode(false);
+      online = room; previous = null; displayedPhase = '';
+      onlineMenu.close(); menu.close();
+      online.setVisible(!document.hidden);
+      networkTimer = setInterval(() => online?.tick(), 50);
+      update(); render(state); schedule(); canvas.focus({ preventScroll: true });
+    } catch (error) { document.getElementById('join-message').textContent = error.message; }
+  }
+  function setLocalMode(enabled) {
+    local = enabled; input.setLocalMultiplayer(enabled);
+    document.body.classList.toggle('local-duel', enabled);
+    document.getElementById('human-label').textContent = enabled ? 'PFEILE' : 'DU';
+    document.getElementById('opponent-label').textContent = enabled ? 'WASD' : 'CPU';
+    document.getElementById('local-instruction').hidden = !enabled;
+    document.getElementById('opponent-power-display').hidden = !enabled;
+    document.getElementById('power-caption').textContent = enabled ? 'PFEILE · DRUCK' : 'SCHLAGDRUCK';
+    document.getElementById('joystick').hidden = enabled;
+    localButton.hidden = enabled;
+    canvas.setAttribute('aria-label', enabled
+      ? 'PadelArcade zu zweit. Gelb unten mit Pfeiltasten, Korall oben mit WASD. Leertaste oder P pausiert für beide.'
+      : 'PadelArcade. Du spielst unten mit den gelben Balken. Bewegen mit Pfeiltasten oder WASD.');
+  }
+  function chooseLocalMode(enabled) {
+    onlineMenu.close(); menu.close(); stopForVisibility();
+    setLocalMode(enabled); reset(state); computer.reset(); leaderboard.reset();
+    roundId = crypto.randomUUID(); displayedPhase = ''; simulation.reset();
+    update(); render(state); startButton.focus({ preventScroll: true });
+  }
+  localButton.addEventListener('click', () => chooseLocalMode(true));
+  document.getElementById('local-mode').addEventListener('click', () => chooseLocalMode(true));
+  onlineButton.addEventListener('click', showModes);
+  modeButton.addEventListener('click', showModes);
+  document.getElementById('online-close').addEventListener('click', () => onlineMenu.close());
+  document.getElementById('create-room').addEventListener('click', () => enterRoom('host', generateCode()));
+  document.getElementById('join-room-form').addEventListener('submit', event => {
+    event.preventDefault(); enterRoom('guest', document.getElementById('join-code').value);
+  });
+  document.getElementById('solo-mode').addEventListener('click', () => { chooseLocalMode(false); startButton.click(); });
+  leaveButton.addEventListener('click', exitRoom);
+  document.getElementById('copy-room-code').addEventListener('click', async () => {
+    if (!online) return;
+    try { await navigator.clipboard.writeText(online.code); status.textContent = 'Raumcode kopiert.'; }
+    catch { status.textContent = `Raumcode: ${online.code}`; }
+  });
   startButton.disabled = false; resetButton.disabled = false; menuButton.disabled = false;
+  onlineButton.disabled = false; localButton.disabled = false; modeButton.disabled = false;
   update(); render(state);
 }
 mount().catch(error => {

@@ -3,6 +3,7 @@ import { C, clamp } from './physics.mjs';
 export function createInput(canvas, joystick, getTeam, onToggle) {
   const abort = new AbortController(), options = { signal: abort.signal };
   const keys = new Set();
+  let localMultiplayer = false;
   let drag = null, target = null, stick = { x: 0, y: 0 }, stickId = null;
   const knob = joystick.querySelector('span');
   const movementKeys = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'KeyW', 'KeyA', 'KeyS', 'KeyD']);
@@ -18,7 +19,9 @@ export function createInput(canvas, joystick, getTeam, onToggle) {
   window.addEventListener('keyup', e => keys.delete(e.code), options);
   window.addEventListener('blur', clear, options);
   canvas.addEventListener('pointerdown', e => {
-    if (drag || e.button !== 0) return;
+    if (e.button !== 0) return;
+    if (localMultiplayer) { e.preventDefault(); canvas.focus({ preventScroll: true }); return; }
+    if (drag) return;
     e.preventDefault(); canvas.focus({ preventScroll: true }); canvas.setPointerCapture(e.pointerId);
     const team = getTeam();
     drag = { id: e.pointerId, x: e.clientX, y: e.clientY, offset: team.offset, depth: team.y };
@@ -47,7 +50,7 @@ export function createInput(canvas, joystick, getTeam, onToggle) {
     knob.style.transform = `translate(${x * radius}px, ${y * radius}px)`;
   }
   joystick.addEventListener('pointerdown', e => {
-    if (stickId !== null) return;
+    if (localMultiplayer || stickId !== null) return;
     e.preventDefault(); stickId = e.pointerId; joystick.setPointerCapture(e.pointerId); updateStick(e);
   }, options);
   joystick.addEventListener('pointermove', e => { if (e.pointerId === stickId) updateStick(e); }, options);
@@ -56,7 +59,18 @@ export function createInput(canvas, joystick, getTeam, onToggle) {
   }
   return {
     clear,
+    setLocalMultiplayer(enabled) { localMultiplayer = Boolean(enabled); clear(); },
+    readOpponent() {
+      return localMultiplayer ? {
+        x: Number(keys.has('KeyD')) - Number(keys.has('KeyA')),
+        y: Number(keys.has('KeyS')) - Number(keys.has('KeyW'))
+      } : { x: 0, y: 0 };
+    },
     read() {
+      if (localMultiplayer) return {
+        x: Number(keys.has('ArrowRight')) - Number(keys.has('ArrowLeft')),
+        y: Number(keys.has('ArrowDown')) - Number(keys.has('ArrowUp'))
+      };
       if (target) {
         const team = getTeam();
         return { x: clamp((target.offset - team.offset) * 3, -1, 1), y: clamp((target.y - team.y) * 3, -1, 1) };

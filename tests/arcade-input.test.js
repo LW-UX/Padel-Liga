@@ -70,3 +70,50 @@ test('short joystick movements respond immediately and release without a stale d
     assert.deepEqual(h.input.read(), { x: 0, y: 0 });
   } finally { h.close(); }
 });
+
+test('local duel reads simultaneous opposing diagonals independently and releases each player separately', async () => {
+  const h = await inputHarness();
+  try {
+    h.input.setLocalMultiplayer(true);
+    for (const code of ['ArrowUp', 'ArrowRight', 'KeyS', 'KeyA']) event(h.win, 'keydown', { code });
+    assert.deepEqual(h.input.read(), { x: 1, y: -1 });
+    assert.deepEqual(h.input.readOpponent(), { x: -1, y: 1 });
+    const { createState, start, step, C } = await import('../arcade/physics.mjs');
+    const state = createState(); start(state);
+    for (let i = 0; i < 12; i++) step(state, h.input.read(), h.input.readOpponent());
+    assert.ok(state.teams[1].offset > 0 && state.teams[1].y < 17);
+    assert.ok(state.teams[0].offset < 0 && state.teams[0].y > 3);
+    for (const team of state.teams) {
+      assert.ok(Math.hypot(team.vx, team.vy) <= C.speed + 1e-6);
+      assert.ok(team.power > 0);
+    }
+    event(h.win, 'keyup', { code: 'KeyS' }); event(h.win, 'keyup', { code: 'KeyA' });
+    assert.deepEqual(h.input.readOpponent(), { x: 0, y: 0 });
+    assert.deepEqual(h.input.read(), { x: 1, y: -1 });
+    event(h.win, 'blur');
+    assert.deepEqual(h.input.read(), { x: 0, y: 0 });
+    assert.deepEqual(h.input.readOpponent(), { x: 0, y: 0 });
+  } finally { h.close(); }
+});
+
+test('local duel ignores mouse and touch and mode changes clear held keys without changing solo controls', async () => {
+  const h = await inputHarness();
+  try {
+    event(h.win, 'keydown', { code: 'KeyW' });
+    h.input.setLocalMultiplayer(true);
+    assert.deepEqual(h.input.readOpponent(), { x: 0, y: 0 });
+    event(h.canvas, 'pointerdown', { pointerId: 1, button: 0, clientX: 0, clientY: 0 });
+    event(h.canvas, 'pointermove', { pointerId: 1, clientX: 100, clientY: -100 });
+    event(h.joystick, 'pointerdown', { pointerId: 2, clientX: 50, clientY: -500 });
+    assert.deepEqual(h.input.read(), { x: 0, y: 0 });
+    event(h.win, 'keydown', { code: 'KeyW' });
+    assert.deepEqual(h.input.read(), { x: 0, y: 0 });
+    assert.deepEqual(h.input.readOpponent(), { x: 0, y: -1 });
+    h.input.setLocalMultiplayer(false);
+    assert.deepEqual(h.input.read(), { x: 0, y: 0 });
+    assert.deepEqual(h.input.readOpponent(), { x: 0, y: 0 });
+    event(h.win, 'keydown', { code: 'KeyW' }); event(h.win, 'keydown', { code: 'ArrowRight' });
+    assert.deepEqual(h.input.read(), { x: 1, y: -1 });
+    assert.deepEqual(h.input.readOpponent(), { x: 0, y: 0 });
+  } finally { h.close(); }
+});
