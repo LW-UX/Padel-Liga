@@ -27,8 +27,9 @@ h2.sh-title { line-height: 1.1; margin-bottom: 22px; }
 .team-label strong { color: inherit; font-size: 36px; line-height: 1.2; font-weight: 400; }
 .human-label { color: var(--accent); }
 .computer-label { color: var(--coral); }
-.score-goal { text-align: center; color: var(--dim); font-size: 9px; letter-spacing: 1px; }
-.score-goal small { display: block; max-width: 130px; font-size: 9px; letter-spacing: 0; line-height: 1.2; }
+.score-goal { text-align: center; line-height: 1.2; }
+.score-goal span { display: block; white-space: nowrap; }
+#game-time { font-variant-numeric: tabular-nums; }
 .court-wrap { position: relative; min-height: 0; }
 canvas { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; touch-action: none; }
 .game-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(240px, 88%); background: var(--bg); border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 16px 48px #0006; padding: 23px 16px; text-align: center; }
@@ -36,6 +37,7 @@ canvas { display: block; width: 100%; height: 100%; object-fit: contain; image-r
 .game-overlay p { font-size: 13px; margin: 13px 0; }
 .game-overlay .eyebrow { font-size: 9px; }
 .game-overlay .primary-button { min-height: 42px; padding: 9px 18px; margin-top: 6px; }
+.game-overlay .secondary-button { display: flex; margin: 10px auto 0; }
 .status { text-align: center; align-self: center; font-size: 12px; line-height: 1.35; }
 .height-demo { height: 55px; position: relative; margin: 24px 0 14px; }
 .height-demo span { position: absolute; width: 9px; height: 9px; background: var(--accent); top: 0; left: 23px; box-shadow: 2px 2px #465635; }

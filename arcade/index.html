@@ -7,7 +7,7 @@
   <title>PadelArcade</title>
   <link rel="icon" href="../favicon.ico" sizes="any">
   <link rel="stylesheet" href="../style.css?v=2026-09-11-arcade">
-  <link rel="stylesheet" href="arcade.css?v=2026-09-11-leaderboard">
+  <link rel="stylesheet" href="arcade.css?v=2026-09-11-score-time">
 </head>
 <body>
   <div class="arcade-shell">
@@ -30,7 +30,7 @@
       <section class="arena" aria-label="Padel-Spielfeld">
         <div class="scoreboard" aria-label="Spielstand">
           <div class="team-label human-label">DU <strong class="mc-score-main" id="human-score">0</strong></div>
-          <div class="score-goal"><span>BIS 7</span><small>BEI 6:6 ENTSCHEIDET DER NÄCHSTE PUNKT</small></div>
+          <div class="score-goal sh-meta"><span>Bis 7 ohne Abstand</span><span id="game-time" role="timer" aria-label="Spielzeit">0:00,00</span></div>
           <div class="team-label computer-label"><strong class="mc-score-main" id="computer-score">0</strong> CPU</div>
         </div>
         <div class="court-wrap">
@@ -41,6 +41,7 @@
             <p id="overlay-text">Dein Doppel ist gelb.<br>Triff den Ball automatisch.</p>
             <button id="enter-win" class="primary-button" type="button" hidden>Sieg eintragen</button>
             <button id="start-button" class="primary-button" type="button" disabled>Spiel lädt …</button>
+            <button id="leaderboard-after-game" class="secondary-button" type="button" hidden>Bestenliste</button>
           </div>
         </div>
         <p id="status" class="sh-meta status" role="status" aria-live="polite">Bereit für eine kurze Partie?</p>
@@ -102,6 +103,6 @@
   </div>
   <noscript><p>Bitte JavaScript aktivieren, um PadelArcade zu spielen. <a href="../">Zurück zur Liga</a></p></noscript>
   <script src="../data/supabase-config.js"></script>
-  <script type="module" src="main.mjs?v=2026-09-11-leaderboard"></script>
+  <script type="module" src="main.mjs?v=2026-09-11-score-time"></script>
 </body>
 </html>

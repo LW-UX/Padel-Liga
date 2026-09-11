@@ -26,7 +26,8 @@ test('public names are trimmed, bounded and reject invisible controls', async ()
   const { normalizeName, formatDuration } = await leaderboard;
   assert.equal(normalizeName('  Ludwig  '), 'Ludwig');
   for (const name of ['', '   ', 'a'.repeat(17), 'A\nB', 'A\u200bB']) assert.throws(() => normalizeName(name));
-  assert.equal(formatDuration(65432), '1:05,432'); assert.equal(formatDuration(3600000), '60:00,000');
+  assert.equal(formatDuration(65432), '1:05,43'); assert.equal(formatDuration(3600000), '60:00,00');
+  assert.equal(formatDuration(65436), '1:05,44'); assert.equal(formatDuration(59999), '1:00,00');
 });
 test('saving retries reuse the same round and public API payload excludes league identities', async () => {
   const { createLeaderboardApi } = await leaderboard; const calls = [];

@@ -2,8 +2,9 @@ import { normalizeName } from './name-policy.mjs';
 export { normalizeName } from './name-policy.mjs';
 
 export function formatDuration(ms) {
-  const seconds = Math.floor(ms / 1000);
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')},${String(ms % 1000).padStart(3, '0')}`;
+  const hundredths = Math.round(ms / 10);
+  const seconds = Math.floor(hundredths / 100);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')},${String(hundredths % 100).padStart(2, '0')}`;
 }
 export function winningEntry(state, roundId) {
   if (state.phase !== 'over' || state.winner !== 1 || state.score[1] !== 7 || state.score[0] < 0 || state.score[0] > 6) return null;
@@ -108,6 +109,7 @@ export function mountLeaderboard({ pauseGame, api = createLeaderboardApi(window.
     }
   });
   document.getElementById('leaderboard-open').addEventListener('click', openList);
+  document.getElementById('leaderboard-after-game').addEventListener('click', openList);
   document.getElementById('enter-win').addEventListener('click', () => pending ? showWin() : openList());
   document.getElementById('skip-win').addEventListener('click', () => load());
   retry.addEventListener('click', () => load());

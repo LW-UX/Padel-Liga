@@ -24,6 +24,7 @@ async function mount() {
   const overlayText = document.getElementById('overlay-text');
   const humanScore = document.getElementById('human-score');
   const computerScore = document.getElementById('computer-score');
+  const gameTime = document.getElementById('game-time');
   const status = document.getElementById('status');
   const power = document.getElementById('power');
   const powerLabel = document.getElementById('power-label');
@@ -42,6 +43,7 @@ async function mount() {
   const leaderboard = mountLeaderboard({ pauseGame: stopForVisibility });
   function update() {
     humanScore.textContent = state.score[1]; computerScore.textContent = state.score[0];
+    gameTime.textContent = formatDuration(Math.round(state.time * 1000));
     if (status.textContent !== state.message) status.textContent = state.message;
     power.value = state.teams[1].power;
     powerLabel.textContent = power.value > 0.85 ? 'ZU HART!' : power.value > 0.45 ? 'DRUCK' : 'RUHIG';
@@ -49,6 +51,7 @@ async function mount() {
     if (displayedPhase === state.phase) return;
     displayedPhase = state.phase;
     overlay.hidden = ['rally', 'point'].includes(state.phase);
+    document.getElementById('leaderboard-after-game').hidden = state.phase !== 'over';
     pauseButton.disabled = ['ready', 'over'].includes(state.phase);
     pauseButton.textContent = state.phase === 'paused' ? 'Weiter' : 'Pause';
     if (state.phase === 'over') {
