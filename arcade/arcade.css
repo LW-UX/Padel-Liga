@@ -121,7 +121,7 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
   .controls { display: flex; }
   .mobile-menu-button { align-self: center; }
 }
-.game-menu { margin: auto; width: min(240px, calc(100vw - 28px)); max-height: calc(100dvh - 32px); padding: 24px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 20px; overflow: auto; overscroll-behavior: contain; }
+.game-menu { margin: auto; width: min(320px, calc(100vw - 28px)); max-height: calc(100dvh - 32px); padding: 24px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 20px; overflow: auto; overscroll-behavior: contain; }
 .game-menu::backdrop { background: rgba(3,4,8,.82); backdrop-filter: blur(6px); }
 .game-menu-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .game-menu-header h2 { margin: 0; }
