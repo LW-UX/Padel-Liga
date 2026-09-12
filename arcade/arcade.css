@@ -115,7 +115,9 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
 .game-menu-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .game-menu-header h2 { margin: 0; }
 .game-menu .modal-close-button { position: static; flex-shrink: 0; }
+.action-divider { display: none; }
 .game-menu .action-buttons { display: grid; grid-template-columns: 1fr; max-width: none; gap: 12px; }
+.game-menu .action-divider { display: block; border-top: 1px solid var(--border); margin: 4px 0; }
 .game-menu .action-buttons button, .game-menu #fps, .game-menu .mobile-help summary { width: 100%; min-height: 44px; font-size: .85rem; justify-content: center; }
 .game-menu #fps { padding-left: 18px; text-align: center; text-align-last: center; }
 .game-menu .fps-label::after { top: 11px; right: 14px; }
@@ -206,10 +208,6 @@ table.arcade-ranking th, table.arcade-ranking td { padding-left: 24px; padding-r
 .local-duel .power-display { width: 150px; }
 @media (pointer: coarse), (max-width: 800px) {
   .local-duel .controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
-}
-
-@media (pointer: coarse), (max-width: 800px) {
-  #local-open { display: none !important; }
 }
 
 /* Keep the pointer available whenever a game overlay or dialog is visible. */

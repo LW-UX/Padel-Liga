@@ -1,6 +1,6 @@
 import { createState, createClock, start, pause, reset, step } from './physics.mjs';
-import { createComputer } from './computer.mjs?v=2026-09-12-difficulty-toggle';
-import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs';
+import { createComputer } from './computer.mjs?v=2026-09-12-easy-errors';
+import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs?v=2026-09-12-easy-errors';
 import { createInput } from './input.mjs';
 import { createRenderer } from './renderer.mjs';
 import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-name-validation';
@@ -65,8 +65,10 @@ async function mount() {
   input = createInput(canvas, document.getElementById('joystick'), () => state.teams[1], toggle);
   function arrangeControls() {
     const localModeButton = document.getElementById('local-mode');
-    localModeButton.disabled = mobileControls.matches;
-    localModeButton.title = mobileControls.matches ? 'Nur mit Tastatur verfügbar' : '';
+    for (const button of [localButton, localModeButton]) {
+      button.disabled = mobileControls.matches;
+      button.title = mobileControls.matches ? 'Nur mit Tastatur verfügbar' : '';
+    }
     if (mobileControls.matches) {
       document.getElementById('menu-actions').append(actions);
       document.getElementById('mobile-instructions').append(instructions, rules);
@@ -305,7 +307,7 @@ async function mount() {
     catch { status.textContent = `Raumcode: ${online.code}`; }
   });
   startButton.disabled = false; resetButton.disabled = false; menuButton.disabled = false;
-  onlineButton.disabled = false; localButton.disabled = false; modeButton.disabled = false;
+  onlineButton.disabled = false; localButton.disabled = mobileControls.matches; modeButton.disabled = false;
   update(); render(state);
 }
 mount().catch(error => {

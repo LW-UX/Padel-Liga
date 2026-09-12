@@ -1,12 +1,12 @@
 import { C, clamp, predictLanding } from './physics.mjs';
-import { DIFFICULTIES, requireDifficulty } from './difficulty.mjs';
+import { DIFFICULTIES, requireDifficulty } from './difficulty.mjs?v=2026-09-12-easy-errors';
 
 export function createComputer({ difficulty = 'hard', random = Math.random } = {}) {
   const profile = DIFFICULTIES[requireDifficulty(difficulty)];
   let nextDecision = 0, target = { offset: 0, y: 3.2 };
-  let incomingShot = null, aimError = 0;
+  let incomingShot = null, aimError = 0, mistakeOffset = null;
   return {
-    reset() { nextDecision = 0; target = { offset: 0, y: 3.2 }; incomingShot = null; aimError = 0; },
+    reset() { nextDecision = 0; target = { offset: 0, y: 3.2 }; incomingShot = null; aimError = 0; mistakeOffset = null; },
     read(state) {
       const team = state.teams[0], b = state.ball;
       if (difficulty === 'easy' && state.phase === 'rally') {
@@ -16,9 +16,10 @@ export function createComputer({ difficulty = 'hard', random = Math.random } = {
         if (shot !== incomingShot) {
           incomingShot = shot;
           aimError = 0;
+          mistakeOffset = null;
           if (shot !== null) {
-            const miss = random() < 0.10;
-            aimError = miss ? (random() < 0.5 ? -1 : 1) * (1 + random() * 0.4) : (random() * 2 - 1) * 0.25;
+            const miss = random() < 0.25;
+            aimError = miss ? (random() < 0.5 ? -1 : 1) * (1.25 + random() * 0.4) : (random() * 2 - 1) * 0.25;
           }
         }
       }
@@ -29,10 +30,23 @@ export function createComputer({ difficulty = 'hard', random = Math.random } = {
           // React to a short prediction, not perfect knowledge of future input.
           const y = b.bounces ? clamp(b.y + b.vy * 0.24, 1, 8.5) : clamp((landing?.y ?? 3) - 0.65, 1, 7.5);
           const travel = Math.abs(b.vy) > 0.1 ? clamp((y - b.y) / b.vy, 0, 0.7) : 0;
-          const x = clamp(b.x + b.vx * travel + Math.sin(state.time * 2.1) * 0.22 + aimError, 0.2, 9.8);
+          const misjudged = Math.abs(aimError) > 1;
+          const x = clamp(b.x + b.vx * travel + Math.sin(state.time * 2.1) * 0.22 + (misjudged ? 0 : aimError), 0.2, 9.8);
           const offsets = [2.5, 7.5].map(base => clamp(x - base, -C.maxOffset, C.maxOffset));
           const errors = offsets.map((v, i) => Math.abs([2.5, 7.5][i] + v - x) + Math.abs(v - team.offset) * 0.08);
           target = { offset: offsets[errors[0] <= errors[1] ? 0 : 1], y };
+          if (misjudged) {
+            if (mistakeOffset === null) {
+              // Applying error to the ball before formation clamping often erased
+              // it near a boundary, or let the other paddle rescue the return.
+              // Pick an attainable wrong position and commit to it for this shot.
+              const candidates = [aimError, -aimError].map(error => clamp(target.offset + error, -C.maxOffset, C.maxOffset));
+              const clearance = offset => Math.min(...[2.5, 7.5].map(base => Math.abs(base + offset - x)));
+              mistakeOffset = clearance(candidates[0]) >= C.paddleWidth / 2 + C.radius + 0.3
+                ? candidates[0] : candidates[1];
+            }
+            target.offset = mistakeOffset;
+          }
         } else target = { offset: team.offset * 0.7, y: 3.2 };
       }
       const x = clamp((target.offset - team.offset) * 2.1, -0.82, 0.82);

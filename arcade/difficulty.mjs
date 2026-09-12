@@ -1,5 +1,5 @@
 export const DIFFICULTIES = Object.freeze({
-  easy: Object.freeze({ label: 'Leicht', reaction: 0.30, speed: 0.90 }),
+  easy: Object.freeze({ label: 'Leicht', reaction: 0.40, speed: 0.80 }),
   hard: Object.freeze({ label: 'Schwer', reaction: 0.20, speed: 1 })
 });
 
