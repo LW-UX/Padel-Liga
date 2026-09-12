@@ -46,7 +46,6 @@ async function mount() {
   const rules = document.querySelector('.right-notes');
   const mobileControls = matchMedia('(pointer: coarse), (max-width: 800px)');
   let frameId = 0, previous = null, lastPaint = -Infinity, displayedPhase = '';
-  const modeButton = document.getElementById('mode-button');
   const primaryOverlayContent = document.getElementById('primary-overlay-content');
   const modeDivider = document.getElementById('mode-divider');
   const multiplayerOptions = document.getElementById('multiplayer-options');
@@ -113,9 +112,7 @@ async function mount() {
   arrangeControls();
   mobileControls.addEventListener('change', arrangeControls);
   menuButton.addEventListener('click', () => {
-    const openedDuringGame = ['rally', 'point'].includes(state.phase) || (online && ['playing', 'countdown'].includes(online.stage));
     stopForVisibility();
-    if (openedDuringGame && !online) modeButton.disabled = true;
     music.pause();
     menu.showModal();
   });
@@ -160,7 +157,6 @@ async function mount() {
     gameOverBackButton.hidden = state.phase !== 'over';
     pauseButton.disabled = ['ready', 'over'].includes(state.phase);
     resetButton.disabled = state.phase === 'ready';
-    modeButton.disabled = ['ready', 'rally', 'point'].includes(state.phase);
     pauseButton.textContent = state.phase === 'paused' ? 'Weiter' : 'Pause';
     if (state.phase === 'over') {
       overlayTitle.textContent = local ? (state.winner === 1 ? 'Pfeiltasten gewinnen!' : 'WASD gewinnt!') : state.winner === 1 ? 'Gewonnen!' : 'Revanche?';
@@ -211,12 +207,7 @@ async function mount() {
     canvas.focus({ preventScroll: true }); schedule();
   });
   pauseButton.addEventListener('click', () => { toggle(); canvas.focus({ preventScroll: true }); });
-  resetButton.addEventListener('click', () => {
-    if (online) return;
-    cancelAnimationFrame(frameId); frameId = 0; previous = null;
-    reset(state); computer.reset(); leaderboard.reset(); roundId = crypto.randomUUID(); input.clear(); simulation.reset(); update(); render(state);
-    startButton.focus({ preventScroll: true });
-  });
+  resetButton.addEventListener('click', showModeSelection);
   document.addEventListener('visibilitychange', () => {
     online?.setVisible(!document.hidden);
     if (document.hidden) { music.pause(); stopForVisibility(); }
@@ -246,9 +237,7 @@ async function mount() {
     startButton.disabled = !online.peer || !online.connected || interrupted || !online.visible || !online.peerVisible;
     setText(startButton, online.ready[online.side] ? 'Doch nicht bereit' : stage === 'over' ? 'Bereit zur Revanche' : stage === 'paused' ? 'Bereit zum Weiterspielen' : 'Bereit');
     pauseButton.disabled = !['playing', 'countdown'].includes(stage);
-    modeButton.disabled = false;
-    setText(pauseButton, 'Pause'); resetButton.hidden = true;
-    setText(modeButton, 'Raum verlassen');
+    setText(pauseButton, 'Pause'); resetButton.hidden = false; resetButton.disabled = false;
     const titles = { connecting: 'Verbinden …', waiting: 'Warteraum', countdown: 'Gleich geht’s los', paused: 'Pause', over: state.winner === 1 ? 'Gewonnen!' : 'Revanche?', ended: 'Spiel beendet' };
     setText(overlayTitle, interrupted ? 'Verbindung fehlt' : stage === 'countdown'
       ? String(Math.max(1, Math.ceil((online.role === 'host' ? online.countdownUntil - online.now() : online.countdown) / 1000)))
@@ -288,7 +277,7 @@ async function mount() {
     reset(state); computer.reset(); leaderboard.reset(); input.clear(); simulation.reset(); roundId = crypto.randomUUID();
     onlineSetup = false; overlay.classList.remove('online-overlay', 'setup-overlay'); roomInfo.hidden = true; leaveButton.hidden = true;
     startButton.hidden = false; startButton.disabled = false;
-    resetButton.hidden = false; modeButton.textContent = 'Spielmodus';
+    resetButton.hidden = false;
     document.getElementById('opponent-label').textContent = 'CPU'; displayedPhase = '';
     menu.close(); update(); render(state); startButton.focus({ preventScroll: true });
   }
@@ -350,7 +339,6 @@ async function mount() {
   localButton.addEventListener('click', () => chooseLocalMode(true));
   localBackButton.addEventListener('click', () => chooseLocalMode(false));
   onlineButton.addEventListener('click', showOnlineSetup);
-  modeButton.addEventListener('click', showModeSelection);
   gameOverBackButton.addEventListener('click', showModeSelection);
   document.getElementById('online-back').addEventListener('click', showModeSelection);
   document.getElementById('create-room').addEventListener('click', () => enterRoom('host', generateCode()));
@@ -364,7 +352,7 @@ async function mount() {
     catch { status.textContent = `Raumcode: ${online.code}`; }
   });
   startButton.disabled = false; resetButton.disabled = false; menuButton.disabled = false;
-  onlineButton.disabled = false; localButton.disabled = mobileControls.matches; modeButton.disabled = false;
+  onlineButton.disabled = false; localButton.disabled = mobileControls.matches;
   update(); render(state);
 }
 mount().catch(error => {
