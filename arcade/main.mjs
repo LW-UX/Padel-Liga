@@ -3,7 +3,7 @@ import { createComputer } from './computer.mjs?v=2026-09-12-rules-v2';
 import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs?v=2026-09-12-rules-v2';
 import { createInput } from './input.mjs?v=2026-09-12-rules-v2';
 import { createRenderer } from './renderer.mjs?v=2026-09-12-rules-v2';
-import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-all-time-fractions';
+import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-game-over-actions-v2';
 import { OnlineSession, generateCode, normalizeCode } from './online.mjs?v=2026-09-12-rules-v2';
 
 const back = document.getElementById('back-link');
@@ -54,6 +54,7 @@ async function mount() {
   const leaveButton = document.getElementById('leave-room');
   const localButton = document.getElementById('local-open');
   const localBackButton = document.getElementById('local-back');
+  const gameOverBackButton = document.getElementById('game-over-back');
   const opponentPower = document.getElementById('opponent-power');
   let local = false;
   let onlineSetup = false;
@@ -127,6 +128,7 @@ async function mount() {
     displayedPhase = state.phase;
     overlay.hidden = ['rally', 'point'].includes(state.phase);
     document.getElementById('leaderboard-after-game').hidden = state.phase !== 'over';
+    gameOverBackButton.hidden = state.phase !== 'over';
     pauseButton.disabled = ['ready', 'over'].includes(state.phase);
     resetButton.disabled = state.phase === 'ready';
     modeButton.disabled = ['ready', 'rally', 'point'].includes(state.phase);
@@ -208,6 +210,7 @@ async function mount() {
     setText(document.getElementById('opponent-label'), 'GEGNER');
     document.getElementById('enter-win').hidden = true;
     document.getElementById('leaderboard-after-game').hidden = true;
+    gameOverBackButton.hidden = true;
     leaveButton.hidden = false;
     startButton.hidden = !['waiting', 'paused', 'over'].includes(stage) || interrupted;
     startButton.disabled = !online.peer || !online.connected || interrupted || !online.visible || !online.peerVisible;
@@ -318,6 +321,7 @@ async function mount() {
   localBackButton.addEventListener('click', () => chooseLocalMode(false));
   onlineButton.addEventListener('click', showOnlineSetup);
   modeButton.addEventListener('click', showModeSelection);
+  gameOverBackButton.addEventListener('click', showModeSelection);
   document.getElementById('online-back').addEventListener('click', showModeSelection);
   document.getElementById('create-room').addEventListener('click', () => enterRoom('host', generateCode()));
   document.getElementById('join-room-form').addEventListener('submit', event => {

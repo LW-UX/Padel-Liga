@@ -45,7 +45,9 @@ canvas { display: block; width: 100%; height: 100%; object-fit: contain; image-r
 .game-overlay .secondary-button { display: flex; margin: 10px 0 0; }
 .overlay-content, .overlay-actions, .online-setup { display: grid; gap: 10px; width: 100%; }
 .game-overlay.game-over-actions .overlay-content { gap: 18px; }
-.game-overlay.game-over-actions #leaderboard-after-game { margin-top: 18px; }
+.game-overlay.game-over-actions #enter-win:not([hidden]),
+.game-overlay.game-over-actions #leaderboard-after-game,
+.game-overlay.game-over-actions #game-over-back { margin-top: 12px; }
 .overlay-divider { margin: 16px 0; border-top: 1px solid var(--border); }
 .game-overlay .difficulty-choice { width: 100%; margin: 4px 0 0; }
 .game-overlay .match-scope-toggle { display: flex; width: 100%; }

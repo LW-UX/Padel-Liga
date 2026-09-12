@@ -160,6 +160,7 @@ export function mountLeaderboard({ pauseGame, getDifficulty = () => 'hard', api 
       savedRounds[entry.difficulty] = entry.roundId;
       difficulty = entry.difficulty;
       pending = null;
+      document.getElementById('enter-win').hidden = true;
       await load('Sieg erfolgreich gespeichert.');
     } catch (error) {
       if (/Name|Buchstaben|Zahlen|Leerzeichen|Sonderzeichen/.test(error.message)) {
