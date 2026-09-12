@@ -3,7 +3,7 @@ import { createComputer } from './computer.mjs?v=2026-09-12-rules-v2';
 import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs?v=2026-09-12-rules-v2';
 import { createInput } from './input.mjs?v=2026-09-12-rules-v2';
 import { createRenderer } from './renderer.mjs?v=2026-09-12-rules-v2';
-import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-small-time-fraction';
+import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-all-time-fractions';
 import { OnlineSession, generateCode, normalizeCode } from './online.mjs?v=2026-09-12-rules-v2';
 
 const back = document.getElementById('back-link');
@@ -29,6 +29,7 @@ async function mount() {
   const humanScore = document.getElementById('human-score');
   const computerScore = document.getElementById('computer-score');
   const gameTime = document.getElementById('game-time');
+  const gameTimeFraction = document.getElementById('game-time-fraction');
   const status = document.getElementById('status');
   const power = document.getElementById('power');
   const powerLabel = document.getElementById('power-label');
@@ -109,7 +110,9 @@ async function mount() {
   function update() {
     if (online) Object.assign(state, online.view());
     humanScore.textContent = state.score[1]; computerScore.textContent = state.score[0];
-    gameTime.textContent = formatDuration(Math.round(state.time * 1000));
+    const formattedGameTime = formatDuration(Math.round(state.time * 1000));
+    gameTime.firstChild.nodeValue = formattedGameTime.slice(0, -3);
+    gameTimeFraction.textContent = formattedGameTime.slice(-3);
     const message = local && ['point', 'over'].includes(state.phase)
       ? state.message.replace(/^(Dein Punkt|Punkt Computer)/, state.winner === 1 ? 'Punkt Pfeiltasten' : 'Punkt WASD') : state.message;
     if (!online && status.textContent !== message) status.textContent = message;

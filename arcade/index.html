@@ -7,7 +7,7 @@
   <title>PadelArcade</title>
   <link rel="icon" href="../favicon.ico" sizes="any">
   <link rel="stylesheet" href="../style.css?v=2026-09-12-button-selection">
-  <link rel="stylesheet" href="arcade.css?v=2026-09-12-small-time-fraction">
+  <link rel="stylesheet" href="arcade.css?v=2026-09-12-all-time-fractions">
 </head>
 <body>
   <div class="arcade-shell">
@@ -33,7 +33,7 @@
       <section class="arena" aria-label="Padel-Spielfeld">
         <div class="scoreboard" aria-label="Spielstand">
           <div class="team-label human-label"><span id="human-label">DU</span> <strong class="mc-score-main" id="human-score">0</strong></div>
-          <div class="score-goal sh-meta"><span>Bis 7 ohne Abstand</span><span id="game-time" role="timer" aria-label="Spielzeit">0:00,00</span></div>
+          <div class="score-goal sh-meta"><span>Bis 7 ohne Abstand</span><span id="game-time" role="timer" aria-label="Spielzeit">0:00<span id="game-time-fraction" class="time-fraction">,00</span></span></div>
           <div class="team-label computer-label"><strong class="mc-score-main" id="computer-score">0</strong> <span id="opponent-label">CPU</span></div>
         </div>
         <div class="court-wrap">
@@ -152,6 +152,6 @@
   </dialog>
   <noscript><p>Bitte JavaScript aktivieren, um PadelArcade zu spielen. <a href="../">Zurück zur Liga</a></p></noscript>
   <script src="../data/supabase-config.js"></script>
-  <script type="module" src="main.mjs?v=2026-09-12-small-time-fraction"></script>
+  <script type="module" src="main.mjs?v=2026-09-12-all-time-fractions"></script>
 </body>
 </html>

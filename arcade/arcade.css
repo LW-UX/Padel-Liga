@@ -32,7 +32,7 @@ h2.sh-title { line-height: 1.1; margin-bottom: 12px; }
 .human-label { color: var(--accent); }
 .computer-label { color: var(--coral); }
 .score-goal { text-align: center; line-height: 1.2; }
-.score-goal span { display: block; white-space: nowrap; }
+.score-goal > span { display: block; white-space: nowrap; }
 #game-time { font-variant-numeric: tabular-nums; }
 .court-wrap { position: relative; min-height: 0; }
 canvas { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; touch-action: none; }
@@ -177,7 +177,7 @@ table.arcade-ranking .col-name { width: auto; }
 .arcade-ranking td:first-child, .arcade-ranking td:nth-child(n+3), .ranking-date { font-family: 'DM Mono', monospace; }
 .arcade-ranking td:nth-child(2) { font-family: 'DM Sans', sans-serif; font-weight: 500; }
 .ranking-date { display: inline-block; margin-left: 12px; color: var(--dim); font-size: .85rem; font-weight: 400; font-variant-numeric: tabular-nums; overflow-wrap: normal; white-space: nowrap; }
-.ranking-time-fraction { font-size: .5em; }
+.time-fraction { font-size: .5em; }
 .arcade-ranking td:nth-child(n+3) { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .mobile-table-label { display: none; }
 @media (max-width: 800px) {

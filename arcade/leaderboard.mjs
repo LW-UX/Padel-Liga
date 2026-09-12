@@ -95,7 +95,7 @@ export function mountLeaderboard({ pauseGame, getDifficulty = () => 'hard', api 
       const cell = document.createElement('td');
       if (index === 3) {
         const fraction = document.createElement('span');
-        fraction.className = 'ranking-time-fraction';
+        fraction.className = 'time-fraction';
         fraction.textContent = value.slice(-3);
         cell.append(value.slice(0, -3), fraction);
       } else cell.textContent = value;
