@@ -34,12 +34,17 @@ h2.sh-title { line-height: 1.1; margin-bottom: 22px; }
 #game-time { font-variant-numeric: tabular-nums; }
 .court-wrap { position: relative; min-height: 0; }
 canvas { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; touch-action: none; }
-.game-overlay { max-height: 100%; overflow-y: auto; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(240px, 88%); background: var(--bg); border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 16px 48px #0006; padding: 23px 16px; text-align: center; }
+.game-overlay { max-height: 100%; overflow-y: auto; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(310px, 94%); background: var(--bg); border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 16px 48px #0006; padding: 23px 16px; text-align: center; }
 .game-overlay h2 { color: var(--accent); margin-bottom: 12px; font-size: 26px; }
 .game-overlay p { font-size: 13px; margin: 13px 0; }
 .game-overlay .eyebrow { font-size: 9px; }
-.game-overlay .primary-button { min-height: 42px; padding: 9px 18px; margin-top: 6px; }
-.game-overlay .secondary-button { display: flex; margin: 10px auto 0; }
+.game-overlay .primary-button, .game-overlay .secondary-button { width: 100%; min-height: 42px; padding: 9px 18px; justify-content: center; }
+.game-overlay .secondary-button { display: flex; margin: 10px 0 0; }
+.overlay-content, .overlay-actions, .online-setup { display: grid; gap: 10px; width: 100%; }
+.overlay-divider { margin: 16px 0; border-top: 1px solid var(--border); }
+.game-overlay .difficulty-choice { width: 100%; margin: 4px 0 0; }
+.game-overlay .match-scope-toggle { display: flex; width: 100%; }
+.game-overlay .match-scope-toggle button { flex: 1; }
 .status { text-align: center; align-self: center; font-size: 12px; line-height: 1.35; }
 .height-demo { height: 55px; position: relative; margin: 24px 0 14px; }
 .height-demo span { position: absolute; width: 9px; height: 9px; background: var(--accent); top: 0; left: 23px; box-shadow: 2px 2px #465635; }
@@ -173,18 +178,12 @@ table.arcade-ranking th, table.arcade-ranking td { padding-left: 24px; padding-r
 .arcade-ranking .is-own-result { color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
 #leaderboard-own th { padding-top: 24px; color: var(--dim); border-top: 2px solid var(--border); text-align: left; }
 
-/* Online setup uses the same league dialog and game overlay as the solo mode. */
-.online-menu { width: min(400px, calc(100vw - 28px)); }
-.game-mode-section { display: grid; gap: 12px; }
-.game-mode-section > button, #join-room-form button { width: 100%; min-height: 44px; justify-content: center; }
-.game-mode-online { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
-.game-mode-section-title { margin: 0; }
-.online-menu .online-explanation { margin: 0; }
+/* Online setup shares the in-court overlay with the other mode preparations. */
+.online-setup .online-explanation { margin: 0 0 4px; }
 #join-room-form { display: grid; gap: 10px; margin: 4px 0 0; }
 #join-code { width: 100%; min-width: 0; padding: 12px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font: 600 20px 'DM Sans', sans-serif; letter-spacing: .16em; text-transform: uppercase; }
 #join-room-form label { font-size: 14px; }
 #join-message { color: var(--coral); }
-#solo-mode { margin-top: 0; }
 .game-overlay.online-overlay { width: min(310px, 94%); max-height: 100%; overflow-y: auto; padding: 18px 16px; }
 .online-overlay .eyebrow { display: none; }
 .online-overlay #overlay-text { font-size: 14px; }
@@ -232,7 +231,6 @@ body:not(:has(dialog[open])) .court-wrap:has(> .game-overlay[hidden]) > canvas {
 .difficulty-choice { border: 0; padding: 0; margin: 12px 0; min-width: 0; }
 .difficulty-choice legend { color: var(--dim); font-size: 14px; margin-bottom: 6px; }
 #leaderboard-difficulty { max-width: 320px; margin-bottom: 20px; }
-#difficulty-new-game { font-size: 14px; margin: 8px 0; }
 .computer-label > span { max-width: 92px; text-align: right; line-height: 1.3; }
 @media (max-width: 360px) { .team-label { gap: 6px; letter-spacing: 0; } .computer-label > span { max-width: 74px; } }
 

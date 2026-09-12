@@ -18,7 +18,7 @@ async function mount() {
   const canvas = document.getElementById('court');
   const render = await createRenderer(canvas);
   const state = createState();
-  let difficulty = readDifficulty(), menuDifficulty = difficulty;
+  let difficulty = readDifficulty();
   let computer = createComputer({ difficulty });
   const startButton = document.getElementById('start-button');
   const pauseButton = document.getElementById('pause-button');
@@ -43,8 +43,11 @@ async function mount() {
   const rules = document.querySelector('.right-notes');
   const mobileControls = matchMedia('(pointer: coarse), (max-width: 800px)');
   let frameId = 0, previous = null, lastPaint = -Infinity, displayedPhase = '';
-  const onlineMenu = document.getElementById('online-menu');
   const modeButton = document.getElementById('mode-button');
+  const primaryOverlayContent = document.getElementById('primary-overlay-content');
+  const modeDivider = document.getElementById('mode-divider');
+  const multiplayerOptions = document.getElementById('multiplayer-options');
+  const onlineSetupPanel = document.getElementById('online-setup');
   const roomInfo = document.getElementById('room-info');
   const onlineButton = document.getElementById('online-open');
   const leaveButton = document.getElementById('leave-room');
@@ -52,11 +55,12 @@ async function mount() {
   const localBackButton = document.getElementById('local-back');
   const opponentPower = document.getElementById('opponent-power');
   let local = false;
+  let onlineSetup = false;
   let online = null, networkTimer = null;
   let input, roundId = crypto.randomUUID();
   const simulation = createClock(() => step(state, input.read(), local ? input.readOpponent() : computer.read(state), local ? null : computer.shotError));
   function toggle() {
-    if (menu.open || onlineMenu.open || !document.getElementById('leaderboard').hidden) return;
+    if (menu.open || onlineSetup || !document.getElementById('leaderboard').hidden) return;
     if (online) { input.clear(); if (['playing', 'countdown'].includes(online.stage)) online.requestPause(); else online.requestReady(); return; }
     cancelAnimationFrame(frameId); frameId = 0; previous = null;
     if (state.phase === 'rally' || state.phase === 'point') pause(state);
@@ -65,11 +69,8 @@ async function mount() {
   }
   input = createInput(canvas, document.getElementById('joystick'), () => state.teams[1], toggle);
   function arrangeControls() {
-    const localModeButton = document.getElementById('local-mode');
-    for (const button of [localButton, localModeButton]) {
-      button.disabled = mobileControls.matches;
-      button.title = mobileControls.matches ? 'Nur mit Tastatur verfügbar' : '';
-    }
+    localButton.disabled = mobileControls.matches;
+    localButton.title = mobileControls.matches ? 'Nur mit Tastatur verfügbar' : '';
     if (mobileControls.matches) {
       document.getElementById('menu-actions').append(actions);
       document.getElementById('mobile-instructions').append(instructions, rules);
@@ -110,6 +111,7 @@ async function mount() {
     showPower(power, powerLabel, state.teams[1].power);
     if (local) showPower(opponentPower, document.getElementById('opponent-power-label'), state.teams[0].power);
     document.getElementById('start-difficulty').hidden = !!online || local || state.phase !== 'ready';
+    updateOverlayChoices();
     if (online) { updateOnline(); return; }
     setText(document.getElementById('opponent-label'), local ? 'WASD' : 'CPU');
     if (displayedPhase === state.phase) return;
@@ -195,7 +197,7 @@ async function mount() {
     setText(document.getElementById('opponent-label'), 'GEGNER');
     document.getElementById('enter-win').hidden = true;
     document.getElementById('leaderboard-after-game').hidden = true;
-    onlineButton.hidden = true; localButton.hidden = true; leaveButton.hidden = false;
+    leaveButton.hidden = false;
     startButton.hidden = !['waiting', 'paused', 'over'].includes(stage) || interrupted;
     startButton.disabled = !online.peer || !online.connected || interrupted || !online.visible || !online.peerVisible;
     setText(startButton, online.ready[online.side] ? 'Doch nicht bereit' : stage === 'over' ? 'Bereit zur Revanche' : stage === 'paused' ? 'Bereit zum Weiterspielen' : 'Bereit');
@@ -209,19 +211,38 @@ async function mount() {
     setText(overlayText, stage === 'over' ? `${state.score[1]} : ${state.score[0]} · Spielzeit ${formatDuration(Math.round(state.time * 1000))}` : online.message);
     setText(status, interrupted || stage !== 'playing' ? online.message : state.message);
   }
-  function showModes() {
-    if (online) { exitRoom(); return; }
+  function updateOverlayChoices() {
+    const initialSelection = !online && !onlineSetup && !local && state.phase === 'ready';
+    primaryOverlayContent.hidden = onlineSetup;
+    modeDivider.hidden = !initialSelection;
+    multiplayerOptions.hidden = !initialSelection;
+    onlineSetupPanel.hidden = !onlineSetup;
+    localBackButton.hidden = !(local && state.phase === 'ready');
+  }
+  function showOnlineSetup() {
     stopForVisibility(); menu.close();
+    onlineSetup = true;
     document.getElementById('join-message').textContent = '';
-    menuDifficulty = difficulty; syncDifficulty();
-    onlineMenu.showModal(); document.getElementById('solo-mode').focus();
+    overlay.classList.add('setup-overlay');
+    overlay.hidden = false;
+    overlayTitle.textContent = 'Online';
+    updateOverlayChoices();
+    document.getElementById('create-room').focus({ preventScroll: true });
+  }
+  function showModeSelection() {
+    if (online) { exitRoom(); return; }
+    menu.close(); cancelAnimationFrame(frameId); frameId = 0; previous = null;
+    onlineSetup = false; setLocalMode(false);
+    reset(state); computer.reset(); leaderboard.reset(); input.clear(); simulation.reset(); roundId = crypto.randomUUID();
+    overlay.classList.remove('setup-overlay'); displayedPhase = '';
+    update(); render(state); startButton.focus({ preventScroll: true });
   }
   function exitRoom() {
     const room = online; online = null; room?.leave(); clearInterval(networkTimer); networkTimer = null;
     cancelAnimationFrame(frameId); frameId = 0; previous = null;
     reset(state); computer.reset(); leaderboard.reset(); input.clear(); simulation.reset(); roundId = crypto.randomUUID();
-    overlay.classList.remove('online-overlay'); roomInfo.hidden = true; leaveButton.hidden = true;
-    onlineButton.hidden = false; localButton.hidden = false; startButton.hidden = false; startButton.disabled = false;
+    onlineSetup = false; overlay.classList.remove('online-overlay', 'setup-overlay'); roomInfo.hidden = true; leaveButton.hidden = true;
+    startButton.hidden = false; startButton.disabled = false;
     resetButton.hidden = false; modeButton.textContent = 'Spielmodus';
     document.getElementById('opponent-label').textContent = 'CPU'; displayedPhase = '';
     menu.close(); update(); render(state); startButton.focus({ preventScroll: true });
@@ -237,9 +258,9 @@ async function mount() {
         schedule();
       } });
       stopForVisibility(); leaderboard.reset(); input.clear();
-      setLocalMode(false);
+      onlineSetup = false; setLocalMode(false);
       online = room; previous = null; displayedPhase = '';
-      onlineMenu.close(); menu.close();
+      overlay.classList.remove('setup-overlay'); menu.close();
       online.setVisible(!document.hidden);
       networkTimer = setInterval(() => online?.tick(), 50);
       update(); render(state); schedule(); canvas.focus({ preventScroll: true });
@@ -254,15 +275,13 @@ async function mount() {
     document.getElementById('opponent-power-display').hidden = !enabled;
     document.getElementById('power-caption').textContent = enabled ? 'PFEILE · DRUCK' : 'SCHLAGDRUCK';
     document.getElementById('joystick').hidden = enabled;
-    localButton.hidden = enabled;
-    onlineButton.hidden = enabled;
-    localBackButton.hidden = !enabled;
     canvas.setAttribute('aria-label', enabled
       ? 'PadelArcade zu zweit. Gelb unten mit Pfeiltasten, Korall oben mit WASD. Leertaste oder P pausiert für beide.'
       : 'PadelArcade. Du spielst unten mit den gelben Balken. Bewegen mit Pfeiltasten oder WASD.');
   }
   function chooseLocalMode(enabled) {
-    onlineMenu.close(); menu.close(); stopForVisibility();
+    menu.close(); stopForVisibility(); onlineSetup = false;
+    overlay.classList.remove('setup-overlay');
     setLocalMode(enabled); reset(state); computer.reset(); leaderboard.reset();
     roundId = crypto.randomUUID(); displayedPhase = ''; simulation.reset();
     update(); render(state); startButton.focus({ preventScroll: true });
@@ -273,12 +292,6 @@ async function mount() {
       button.setAttribute('aria-pressed', String(selected));
       button.classList.toggle('active', selected);
     }
-    for (const button of document.querySelectorAll('[data-menu-difficulty]')) {
-      const selected = button.dataset.menuDifficulty === menuDifficulty;
-      button.setAttribute('aria-pressed', String(selected));
-      button.classList.toggle('active', selected);
-    }
-    document.getElementById('solo-mode').textContent = `Gegen Computer · ${DIFFICULTIES[menuDifficulty].label}`;
   }
   function selectDifficulty(value) {
     difficulty = requireDifficulty(value); saveDifficulty(difficulty);
@@ -288,22 +301,15 @@ async function mount() {
   for (const button of document.querySelectorAll('[data-start-difficulty]')) button.addEventListener('click', () => {
     if (!online && !local && state.phase === 'ready') selectDifficulty(button.dataset.startDifficulty);
   });
-  for (const button of document.querySelectorAll('[data-menu-difficulty]')) button.addEventListener('click', () => {
-    menuDifficulty = requireDifficulty(button.dataset.menuDifficulty); syncDifficulty();
-  });
   syncDifficulty();
   localButton.addEventListener('click', () => chooseLocalMode(true));
   localBackButton.addEventListener('click', () => chooseLocalMode(false));
-  document.getElementById('local-mode').addEventListener('click', () => chooseLocalMode(true));
-  onlineButton.addEventListener('click', showModes);
-  modeButton.addEventListener('click', showModes);
-  document.getElementById('online-close').addEventListener('click', () => onlineMenu.close());
+  onlineButton.addEventListener('click', showOnlineSetup);
+  modeButton.addEventListener('click', showModeSelection);
+  document.getElementById('online-back').addEventListener('click', showModeSelection);
   document.getElementById('create-room').addEventListener('click', () => enterRoom('host', generateCode()));
   document.getElementById('join-room-form').addEventListener('submit', event => {
     event.preventDefault(); enterRoom('guest', document.getElementById('join-code').value);
-  });
-  document.getElementById('solo-mode').addEventListener('click', () => {
-    chooseLocalMode(false); selectDifficulty(menuDifficulty); startButton.click();
   });
   leaveButton.addEventListener('click', exitRoom);
   document.getElementById('copy-room-code').addEventListener('click', async () => {
