@@ -7,7 +7,7 @@
   <title>PadelArcade</title>
   <link rel="icon" href="../favicon.ico" sizes="any">
   <link rel="stylesheet" href="../style.css?v=2026-09-11-arcade">
-  <link rel="stylesheet" href="arcade.css?v=2026-09-12-rules-v2">
+  <link rel="stylesheet" href="arcade.css?v=2026-09-12-menu-width-320">
 </head>
 <body>
   <div class="arcade-shell">
@@ -113,7 +113,7 @@
       <div id="leaderboard-results" hidden>
         <table class="rt arcade-ranking"><caption class="sr-only">Globale PadelArcade-Bestenliste</caption>
           <colgroup><col class="col-rank"><col class="col-name"><col class="col-result"><col class="col-time"><col class="col-rally"></colgroup>
-          <thead><tr><th class="l" scope="col">#</th><th class="l" scope="col">Spieler</th><th scope="col">Ergebnis</th><th scope="col">Zeit</th><th scope="col" title="Anzahl der Schläge im längsten Ballwechsel">Längster Spielzug</th></tr></thead>
+          <thead><tr><th class="l" scope="col">#</th><th class="l" scope="col">Spieler</th><th scope="col"><span class="desktop-table-label">Ergebnis</span><span class="mobile-table-label">Erg.</span></th><th scope="col">Zeit</th><th scope="col" aria-label="Längster Ballwechsel" title="Anzahl der Schläge im längsten Ballwechsel"><span class="desktop-table-label">Längster Spielzug</span><span class="mobile-table-label">Ballw.</span></th></tr></thead>
           <tbody id="leaderboard-rows"></tbody>
           <tbody id="leaderboard-own" hidden></tbody>
         </table>
@@ -152,6 +152,6 @@
   </dialog>
   <noscript><p>Bitte JavaScript aktivieren, um PadelArcade zu spielen. <a href="../">Zurück zur Liga</a></p></noscript>
   <script src="../data/supabase-config.js"></script>
-  <script type="module" src="main.mjs?v=2026-09-12-unified-mode-overlay"></script>
+  <script type="module" src="main.mjs?v=2026-09-12-game-over-spacing"></script>
 </body>
 </html>

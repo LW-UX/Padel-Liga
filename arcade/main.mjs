@@ -83,7 +83,12 @@ async function mount() {
   }
   arrangeControls();
   mobileControls.addEventListener('change', arrangeControls);
-  menuButton.addEventListener('click', () => { stopForVisibility(); menu.showModal(); });
+  menuButton.addEventListener('click', () => {
+    const openedDuringGame = ['rally', 'point'].includes(state.phase) || (online && ['playing', 'countdown'].includes(online.stage));
+    stopForVisibility();
+    if (openedDuringGame && !online) modeButton.disabled = true;
+    menu.showModal();
+  });
   document.getElementById('menu-close').addEventListener('click', () => menu.close());
   menu.addEventListener('click', event => {
     if (event.target !== menu) return;
@@ -112,6 +117,7 @@ async function mount() {
     if (local) showPower(opponentPower, document.getElementById('opponent-power-label'), state.teams[0].power);
     document.getElementById('start-difficulty').hidden = !!online || local || state.phase !== 'ready';
     updateOverlayChoices();
+    overlay.classList.toggle('game-over-actions', !online && state.phase === 'over');
     if (online) { updateOnline(); return; }
     setText(document.getElementById('opponent-label'), local ? 'WASD' : 'CPU');
     if (displayedPhase === state.phase) return;
@@ -119,6 +125,8 @@ async function mount() {
     overlay.hidden = ['rally', 'point'].includes(state.phase);
     document.getElementById('leaderboard-after-game').hidden = state.phase !== 'over';
     pauseButton.disabled = ['ready', 'over'].includes(state.phase);
+    resetButton.disabled = state.phase === 'ready';
+    modeButton.disabled = ['ready', 'rally', 'point'].includes(state.phase);
     pauseButton.textContent = state.phase === 'paused' ? 'Weiter' : 'Pause';
     if (state.phase === 'over') {
       overlayTitle.textContent = local ? (state.winner === 1 ? 'Pfeiltasten gewinnen!' : 'WASD gewinnt!') : state.winner === 1 ? 'Gewonnen!' : 'Revanche?';
@@ -202,6 +210,7 @@ async function mount() {
     startButton.disabled = !online.peer || !online.connected || interrupted || !online.visible || !online.peerVisible;
     setText(startButton, online.ready[online.side] ? 'Doch nicht bereit' : stage === 'over' ? 'Bereit zur Revanche' : stage === 'paused' ? 'Bereit zum Weiterspielen' : 'Bereit');
     pauseButton.disabled = !['playing', 'countdown'].includes(stage);
+    modeButton.disabled = false;
     setText(pauseButton, 'Pause'); resetButton.hidden = true;
     setText(modeButton, 'Raum verlassen');
     const titles = { connecting: 'Verbinden …', waiting: 'Warteraum', countdown: 'Gleich geht’s los', paused: 'Pause', over: state.winner === 1 ? 'Gewonnen!' : 'Revanche?', ended: 'Spiel beendet' };
