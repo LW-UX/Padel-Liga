@@ -114,7 +114,7 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
   .controls > .action-buttons { display: none; }
   .mobile-menu-button { display: inline-flex; justify-self: end; min-height: 44px; }
   .controls .joystick { justify-self: center; }
-  .game-menu { box-sizing: border-box; width: min(320px, calc(100vw - 28px)); min-width: min(320px, calc(100vw - 28px)); max-width: min(320px, calc(100vw - 28px)); }
+  .game-menu { box-sizing: border-box; width: min(240px, calc(100vw - 28px)); min-width: min(240px, calc(100vw - 28px)); max-width: min(320px, calc(100vw - 28px)); }
 }
 @media (max-height: 520px) and (orientation: landscape) {
   .controls { display: flex; }
