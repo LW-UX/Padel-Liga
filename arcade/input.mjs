@@ -5,11 +5,11 @@ export function createInput(canvas, joystick, getTeam, onToggle) {
   const keys = new Set();
   let localMultiplayer = false;
   let drag = null, target = null, stick = { x: 0, y: 0 }, stickId = null;
-  const knob = joystick.querySelector('span');
+  const knob = joystick?.querySelector('span');
   const movementKeys = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'KeyW', 'KeyA', 'KeyS', 'KeyD']);
   function clear() {
     keys.clear(); drag = null; target = null; stickId = null; stick = { x: 0, y: 0 };
-    knob.style.transform = '';
+    if (knob) knob.style.transform = '';
   }
   window.addEventListener('keydown', e => {
     if (e.target.closest('button, a, select, input, summary')) return;
@@ -49,13 +49,13 @@ export function createInput(canvas, joystick, getTeam, onToggle) {
     stick = { x: x * response, y: y * response }; target = null;
     knob.style.transform = `translate(${x * radius}px, ${y * radius}px)`;
   }
-  joystick.addEventListener('pointerdown', e => {
+  joystick?.addEventListener('pointerdown', e => {
     if (localMultiplayer || stickId !== null) return;
     e.preventDefault(); stickId = e.pointerId; joystick.setPointerCapture(e.pointerId); updateStick(e);
   }, options);
-  joystick.addEventListener('pointermove', e => { if (e.pointerId === stickId) updateStick(e); }, options);
+  joystick?.addEventListener('pointermove', e => { if (e.pointerId === stickId) updateStick(e); }, options);
   for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-    joystick.addEventListener(event, e => { if (e.pointerId === stickId) { stickId = null; stick = { x: 0, y: 0 }; knob.style.transform = ''; } }, options);
+    joystick?.addEventListener(event, e => { if (e.pointerId === stickId) { stickId = null; stick = { x: 0, y: 0 }; knob.style.transform = ''; } }, options);
   }
   return {
     clear,

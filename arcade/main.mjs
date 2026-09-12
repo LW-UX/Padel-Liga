@@ -95,7 +95,7 @@ async function mount() {
     else if (state.phase !== 'over') start(state);
     input.clear(); simulation.reset(); update(); render(state); schedule();
   }
-  input = createInput(canvas, document.getElementById('joystick'), () => state.teams[1], toggle);
+  input = createInput(canvas, null, () => state.teams[1], toggle);
   function arrangeControls() {
     localButton.disabled = mobileControls.matches;
     localButton.title = mobileControls.matches ? 'Nur mit Tastatur verfügbar' : '';
@@ -308,7 +308,6 @@ async function mount() {
     document.getElementById('local-instruction').hidden = !enabled;
     document.getElementById('opponent-power-display').hidden = !enabled;
     document.getElementById('power-caption').textContent = enabled ? 'PFEILE · DRUCK' : 'SCHLAGDRUCK';
-    document.getElementById('joystick').hidden = enabled;
     canvas.setAttribute('aria-label', enabled
       ? 'PadelArcade zu zweit. Gelb unten mit Pfeiltasten, Korall oben mit WASD. Leertaste oder P pausiert für beide.'
       : 'PadelArcade. Du spielst unten mit den gelben Balken. Bewegen mit Pfeiltasten oder WASD.');

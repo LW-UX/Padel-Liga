@@ -10,6 +10,24 @@ async function scenario(ball) {
   Object.assign(s.ball, { x: 5, y: 4, z: 1, vx: 0, vy: 0, vz: 0, lastHit: 1, bounces: 0, feed: false }, ball);
   return { p, s };
 }
+test('automatic feeds land diagonally opposite from both sides and both starting lanes', async () => {
+  const p = await physics;
+  for (let total = 0; total < 4; total++) {
+    const s = p.createState();
+    s.score = [total, 0];
+    p.feed(s);
+    const startX = s.ball.x, server = s.ball.lastHit;
+    p.simulateBall(s, p.groundTime(s.ball));
+    assert.equal(s.phase, 'rally');
+    assert.equal(s.ball.bounces, 1);
+    assert.equal(s.rallyHits, 0);
+    assert.equal(s.ball.feed, true);
+    assert.ok((s.ball.x - p.C.width / 2) * (startX - p.C.width / 2) < 0);
+    near(s.ball.x, startX < p.C.width / 2 ? 8 : 2);
+    near(s.ball.y, server ? 4 : 16);
+    assert.deepEqual(s.score, [total, 0]);
+  }
+});
 test('direct side and back wall contacts lose the point for the hitter', async () => {
   for (const ball of [{ x: 0.2, vx: -8 }, { y: 0.2, vy: -8 }]) {
     const { p, s } = await scenario(ball);

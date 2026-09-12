@@ -52,9 +52,10 @@ export function feed(state) {
   state.teams.forEach(t => Object.assign(t, { offset: 0, y: t.side ? 17 : 3, vx: 0, vy: 0, power: 0 }));
   const x = total % 4 < 2 ? 2.5 : 7.5;
   Object.assign(state.ball, { x, y: server ? 17 : 3, z: 0.8, lastHit: server, bounces: 0, feed: true, contactSide: null });
-  // Safe automatic opening ball; it is intentionally not an official serve.
+  // Safe diagonal opening ball; it is intentionally not an official serve.
   const t = 1.6;
-  state.ball.vx = 0;
+  const targetX = x < C.width / 2 ? C.width - 2 : 2;
+  state.ball.vx = (targetX - x) / t;
   state.ball.vy = (server ? -13 : 13) / t;
   state.ball.vz = (C.gravity * t * t / 2 - state.ball.z) / t;
   state.rallyHits = 0;

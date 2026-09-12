@@ -6,7 +6,7 @@ function event(target, type, values = {}) {
   Object.assign(e, values);
   target.dispatchEvent(e);
 }
-async function inputHarness(width = 272, height = 496) {
+async function inputHarness(width = 272, height = 496, withJoystick = true) {
   const previousWindow = global.window;
   const win = new EventTarget(); win.closest = () => null; global.window = win;
   const canvas = Object.assign(new EventTarget(), {
@@ -19,12 +19,12 @@ async function inputHarness(width = 272, height = 496) {
   });
   let toggles = 0;
   const { createInput } = await import('../arcade/input.mjs');
-  const input = createInput(canvas, joystick, () => ({ offset: 0, y: 17 }), () => toggles++);
+  const input = createInput(canvas, withJoystick ? joystick : null, () => ({ offset: 0, y: 17 }), () => toggles++);
   return { input, canvas, joystick, win, toggles: () => toggles, close() { input.destroy(); global.window = previousWindow; } };
 }
 test('mouse dragging accounts for fitted court scale and releases cleanly', async () => {
   for (const [width, height, delta] of [[272, 496, 4.48], [544, 992, 8.96], [544, 496, 4.48]]) {
-    const h = await inputHarness(width, height);
+    const h = await inputHarness(width, height, false);
     try {
       event(h.canvas, 'pointerdown', { pointerId: 1, button: 0, clientX: 0, clientY: 0 });
       event(h.canvas, 'pointermove', { pointerId: 1, clientX: delta, clientY: -delta });
