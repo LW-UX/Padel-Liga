@@ -34,6 +34,8 @@ async function mount() {
   const power = document.getElementById('power');
   const powerLabel = document.getElementById('power-label');
   const fps = document.getElementById('fps');
+  const music = document.getElementById('game-music');
+  const musicToggle = document.getElementById('music-toggle');
   const menu = document.getElementById('game-menu');
   const menuButton = document.getElementById('menu-open');
   const actions = document.querySelector('.action-buttons');
@@ -60,6 +62,31 @@ async function mount() {
   let onlineSetup = false;
   let online = null, networkTimer = null;
   let input, roundId = crypto.randomUUID();
+  const musicPreferenceKey = 'padelArcadeMusicEnabled';
+  let musicEnabled = true;
+  try { musicEnabled = localStorage.getItem(musicPreferenceKey) !== 'false'; } catch {}
+  music.volume = 0.22;
+  music.muted = !musicEnabled;
+  function updateMusicToggle() {
+    const label = musicEnabled ? 'Musik stummschalten' : 'Musik einschalten';
+    musicToggle.setAttribute('aria-pressed', String(musicEnabled));
+    musicToggle.setAttribute('aria-label', label);
+    musicToggle.title = label;
+  }
+  function syncMusic() {
+    const playing = online ? ['playing', 'countdown'].includes(online.stage) : ['rally', 'point'].includes(state.phase);
+    const shouldPlay = musicEnabled && playing && !document.hidden && !menu.open && document.getElementById('leaderboard').hidden;
+    if (shouldPlay && music.paused) music.play().catch(() => {});
+    else if (!shouldPlay && !music.paused) music.pause();
+  }
+  updateMusicToggle();
+  musicToggle.addEventListener('click', () => {
+    musicEnabled = !musicEnabled;
+    music.muted = !musicEnabled;
+    try { localStorage.setItem(musicPreferenceKey, String(musicEnabled)); } catch {}
+    updateMusicToggle();
+    syncMusic();
+  });
   const simulation = createClock(() => step(state, input.read(), local ? input.readOpponent() : computer.read(state), local ? null : computer.shotError));
   function toggle() {
     if (menu.open || onlineSetup || !document.getElementById('leaderboard').hidden) return;
@@ -89,6 +116,7 @@ async function mount() {
     const openedDuringGame = ['rally', 'point'].includes(state.phase) || (online && ['playing', 'countdown'].includes(online.stage));
     stopForVisibility();
     if (openedDuringGame && !online) modeButton.disabled = true;
+    music.pause();
     menu.showModal();
   });
   document.getElementById('menu-close').addEventListener('click', () => menu.close());
@@ -110,6 +138,7 @@ async function mount() {
   }
   function update() {
     if (online) Object.assign(state, online.view());
+    syncMusic();
     humanScore.textContent = state.score[1]; computerScore.textContent = state.score[0];
     const formattedGameTime = formatDuration(Math.round(state.time * 1000));
     gameTime.firstChild.nodeValue = formattedGameTime.slice(0, -3);
@@ -190,11 +219,12 @@ async function mount() {
   });
   document.addEventListener('visibilitychange', () => {
     online?.setVisible(!document.hidden);
-    if (document.hidden) stopForVisibility(); else { previous = null; schedule(); }
+    if (document.hidden) { music.pause(); stopForVisibility(); }
+    else { syncMusic(); previous = null; schedule(); }
   });
-  window.addEventListener('blur', () => { online?.setVisible(false); stopForVisibility(); });
-  window.addEventListener('focus', () => { online?.setVisible(!document.hidden); previous = null; schedule(); });
-  window.addEventListener('pagehide', () => { online?.leave(); stopForVisibility(); });
+  window.addEventListener('blur', () => { online?.setVisible(false); music.pause(); stopForVisibility(); });
+  window.addEventListener('focus', () => { online?.setVisible(!document.hidden); syncMusic(); previous = null; schedule(); });
+  window.addEventListener('pagehide', () => { online?.leave(); music.pause(); stopForVisibility(); });
   function setText(element, value) { if (element.textContent !== value) element.textContent = value; }
   function updateOnline() {
     displayedPhase = state.phase;
