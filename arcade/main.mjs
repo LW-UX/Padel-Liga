@@ -2,9 +2,9 @@ import { createState, createClock, start, pause, reset, step } from './physics.m
 import { createComputer } from './computer.mjs?v=2026-09-12-rules-v2';
 import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs?v=2026-09-12-rules-v2';
 import { createInput } from './input.mjs?v=2026-09-12-rules-v2';
-import { createRenderer } from './renderer.mjs?v=2026-09-12-rules-v2';
+import { createRenderer } from './renderer.mjs?v=2026-09-12-landing-fix';
 import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-game-over-actions-v2';
-import { OnlineSession, generateCode, normalizeCode } from './online.mjs?v=2026-09-12-rules-v2';
+import { OnlineSession, generateCode, normalizeCode } from './online.mjs?v=2026-09-12-landing-fix';
 
 const back = document.getElementById('back-link');
 const season = new URLSearchParams(location.search).get('saison');

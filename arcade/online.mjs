@@ -1,4 +1,4 @@
-import { C, clamp, createState, createClock, start, pause, reset, step, moveTeam } from './physics.mjs?v=2026-09-12-rules-v2';
+import { C, clamp, createState, createClock, start, pause, reset, step, moveTeam, predictLanding } from './physics.mjs?v=2026-09-12-rules-v2';
 import { connectRealtime } from './realtime.mjs?v=2026-09-12-rules-v2';
 import { RULESET } from './ruleset.mjs?v=2026-09-12-rules-v2';
 
@@ -209,6 +209,9 @@ export class OnlineSession {
   }
   view() {
     const view = perspective(this.state, this.side);
+    // Keep the landing aid tied to one complete host state, before interpolating
+    // the ball position. This annotation belongs only to the disposable view ball.
+    if (this.role === 'guest') view.ball.landing = predictLanding(view.ball);
     if (this.role === 'guest' && this.stage === 'playing' && !this.suspended && view.phase === 'rally') {
       // Interpolate remote objects across one 50 ms snapshot interval. Own paddles
       // predict immediately and converge to the host's authoritative position.

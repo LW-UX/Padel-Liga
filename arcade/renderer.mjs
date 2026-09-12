@@ -20,7 +20,7 @@ export async function createRenderer(canvas) {
       }
     }
     if (state.phase === 'rally' || state.phase === 'paused') {
-      const landing = predictLanding(state.ball);
+      const landing = state.ball.landing === undefined ? predictLanding(state.ball) : state.ball.landing;
       if (landing) {
         const x = px(landing.x), y = py(landing.y);
         ctx.strokeStyle = landing.fault ? '#ff9c85' : '#b6cdbb';

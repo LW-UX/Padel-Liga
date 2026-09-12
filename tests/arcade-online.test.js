@@ -182,3 +182,93 @@ test('guest backward movement produces negative power on the host and in the rot
   assert.ok(guest.view().teams[1].power < -.5);
   assert.equal(guest.view().ruleset, 'v2');
 });
+
+async function landingRenderer(t) {
+  const { createRenderer } = await import('../arcade/renderer.mjs');
+  const originalImage = Object.getOwnPropertyDescriptor(globalThis, 'Image');
+  globalThis.Image = class { async decode() {} };
+  t.after(() => {
+    if (originalImage) Object.defineProperty(globalThis, 'Image', originalImage);
+    else delete globalThis.Image;
+  });
+  let squares = [];
+  const ctx = {
+    drawImage() {}, fillRect() {}, setLineDash() {}, beginPath() {},
+    moveTo() {}, lineTo() {}, stroke() {}, fillText() {},
+    strokeRect(x, y, width, height) { squares.push({ x, y, width, height, color: this.strokeStyle }); }
+  };
+  const render = await createRenderer({ getContext: () => ctx });
+  return state => { squares = []; render(state); return squares; };
+}
+
+function landingSquare(landing) {
+  return {
+    x: Math.round(24 + landing.x * 22.4) - 4.5,
+    y: Math.round(24 + landing.y * 22.4) - 4.5,
+    width: 9, height: 9, color: landing.fault ? '#ff9c85' : '#b6cdbb'
+  };
+}
+
+test('guest renders one stationary landing square throughout an unchanged flight at 30 and 60 FPS', async t => {
+  const { C, predictLanding, simulateBall } = await import('../arcade/physics.mjs');
+  const draw = await landingRenderer(t), h = await harness(), guest = h.add('guest', 'guest');
+  let now = 0; guest.now = () => now;
+  h.host.stage = 'playing'; h.host.state.phase = 'rally';
+  Object.assign(h.host.state.ball, { x: 5, y: 6, z: 2, vx: 1, vy: 8, vz: 2, lastHit: 0, feed: false });
+  const target = predictLanding(h.host.state.ball);
+  const expected = { x: C.width - target.x, y: C.length - target.y, fault: target.fault };
+  h.host.broadcast(); h.flush();
+  for (let snapshot = 1; snapshot <= 3; snapshot++) {
+    simulateBall(h.host.state, .05);
+    now = snapshot * 50; h.host.broadcast(); h.flush();
+    const authoritative = structuredClone(h.host.state);
+    for (const fps of [30, 60]) for (let elapsed = 0; elapsed < 50; elapsed += 1000 / fps) {
+      now = snapshot * 50 + elapsed;
+      const view = guest.view();
+      assert.ok(Math.abs(view.ball.landing.x - expected.x) < 1e-9);
+      assert.ok(Math.abs(view.ball.landing.y - expected.y) < 1e-9);
+      assert.deepEqual(draw(view), [landingSquare(expected)]);
+      // Ball interpolation stays active; only the landing calculation is corrected.
+      assert.ok(Math.abs(view.ball.y - (C.length - h.host.state.ball.y)) > .001);
+    }
+    assert.deepEqual(h.host.state, authoritative);
+    assert.deepEqual(guest.state, authoritative);
+    assert.equal(h.host.view().ball.landing, undefined);
+  }
+});
+
+test('guest landing follows host contacts and faults; pause and local reset preserve the renderer behavior', async t => {
+  const { C, createState, predictLanding, hitBall, simulateBall, reset, start } = await import('../arcade/physics.mjs');
+  const draw = await landingRenderer(t), h = await harness(), guest = h.add('guest', 'guest');
+  h.host.stage = 'playing'; h.host.state.phase = 'rally';
+  Object.assign(h.host.state.ball, { x: 5, y: 12, z: .01, vx: 0, vy: 5, vz: -2, lastHit: 0, feed: false });
+  const publish = () => {
+    h.host.state.effects = []; h.host.broadcast(); h.flush();
+    const target = predictLanding(h.host.state.ball), view = guest.view();
+    const expected = { x: C.width - target.x, y: C.length - target.y, fault: target.fault };
+    assert.deepEqual(draw(view), [landingSquare(expected)]);
+    return view;
+  };
+  const beforeBounce = publish();
+  simulateBall(h.host.state, .02);
+  assert.equal(h.host.state.ball.bounces, 1);
+  const afterBounce = publish();
+  assert.notDeepEqual(afterBounce.ball.landing, beforeBounce.ball.landing);
+  hitBall(h.host.state, 1, 5);
+  assert.equal(h.host.state.rallyHits, 1);
+  assert.notDeepEqual(publish().ball.landing, afterBounce.ball.landing);
+  Object.assign(h.host.state.ball, { x: .2, y: 6, z: 2, vx: -8, vy: 0, vz: 1, lastHit: 1 });
+  assert.equal(publish().ball.landing.fault, true);
+  h.host.state.phase = 'paused'; h.host.stage = 'paused';
+  const paused = publish();
+  paused.ball.landing = null;
+  assert.deepEqual(draw(paused), []);
+  h.host.state.phase = 'point'; h.host.stage = 'playing';
+  h.host.broadcast(); h.flush();
+  assert.deepEqual(draw(guest.view()), []);
+  // The application copies views into its state and resets that state on room exit.
+  const local = Object.assign(createState(), guest.view());
+  reset(local); start(local);
+  assert.equal(local.ball.landing, undefined);
+  assert.deepEqual(draw(local), [landingSquare(predictLanding(local.ball))]);
+});
