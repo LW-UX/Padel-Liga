@@ -98,6 +98,11 @@
       overscroll-behavior: none;
     }
     * { touch-action: manipulation; }
+    button {
+      caret-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+    }
     .sr-only {
       position: absolute;
       width: 1px;

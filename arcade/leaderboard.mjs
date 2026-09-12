@@ -91,8 +91,15 @@ export function mountLeaderboard({ pauseGame, getDifficulty = () => 'hard', api 
     const row = document.createElement('tr');
     row.classList.toggle('is-own-result', entry.isOwn === true);
     if (entry.isOwn) row.setAttribute('aria-label', 'Dein Ergebnis');
-    for (const value of [entry.rank, entry.name, `7:${entry.computerScore}`, formatDuration(entry.durationMs), entry.bestRally ?? '–']) {
-      const cell = document.createElement('td'); cell.textContent = value; row.append(cell);
+    for (const [index, value] of [entry.rank, entry.name, `7:${entry.computerScore}`, formatDuration(entry.durationMs), entry.bestRally ?? '–'].entries()) {
+      const cell = document.createElement('td');
+      if (index === 3) {
+        const fraction = document.createElement('span');
+        fraction.className = 'ranking-time-fraction';
+        fraction.textContent = value.slice(-3);
+        cell.append(value.slice(0, -3), fraction);
+      } else cell.textContent = value;
+      row.append(cell);
     }
     const date = document.createElement('time');
     date.className = 'ranking-date';

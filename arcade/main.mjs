@@ -3,7 +3,7 @@ import { createComputer } from './computer.mjs?v=2026-09-12-rules-v2';
 import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs?v=2026-09-12-rules-v2';
 import { createInput } from './input.mjs?v=2026-09-12-rules-v2';
 import { createRenderer } from './renderer.mjs?v=2026-09-12-rules-v2';
-import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-rules-v2';
+import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-small-time-fraction';
 import { OnlineSession, generateCode, normalizeCode } from './online.mjs?v=2026-09-12-rules-v2';
 
 const back = document.getElementById('back-link');
