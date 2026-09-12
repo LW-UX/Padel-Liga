@@ -1,19 +1,35 @@
 import { C, clamp, predictLanding } from './physics.mjs';
+import { DIFFICULTIES, requireDifficulty } from './difficulty.mjs';
 
-export function createComputer() {
+export function createComputer({ difficulty = 'hard', random = Math.random } = {}) {
+  const profile = DIFFICULTIES[requireDifficulty(difficulty)];
   let nextDecision = 0, target = { offset: 0, y: 3.2 };
+  let incomingShot = null, aimError = 0;
   return {
-    reset() { nextDecision = 0; target = { offset: 0, y: 3.2 }; },
+    reset() { nextDecision = 0; target = { offset: 0, y: 3.2 }; incomingShot = null; aimError = 0; },
     read(state) {
       const team = state.teams[0], b = state.ball;
+      if (difficulty === 'easy' && state.phase === 'rally') {
+        // Sample once per human return, independently of rendering or decision rate.
+        // Include the score because rallyHits starts over at each point.
+        const shot = b.lastHit === 1 && !b.feed ? `${state.score[0]}:${state.score[1]}:${state.rallyHits}` : null;
+        if (shot !== incomingShot) {
+          incomingShot = shot;
+          aimError = 0;
+          if (shot !== null) {
+            const miss = random() < 0.10;
+            aimError = miss ? (random() < 0.5 ? -1 : 1) * (1 + random() * 0.4) : (random() * 2 - 1) * 0.25;
+          }
+        }
+      }
       if (state.time >= nextDecision) {
-        nextDecision = state.time + 0.20;
+        nextDecision = state.time + profile.reaction;
         if (b.lastHit === 1) {
           const landing = predictLanding(b);
           // React to a short prediction, not perfect knowledge of future input.
           const y = b.bounces ? clamp(b.y + b.vy * 0.24, 1, 8.5) : clamp((landing?.y ?? 3) - 0.65, 1, 7.5);
           const travel = Math.abs(b.vy) > 0.1 ? clamp((y - b.y) / b.vy, 0, 0.7) : 0;
-          const x = clamp(b.x + b.vx * travel + Math.sin(state.time * 2.1) * 0.22, 0.2, 9.8);
+          const x = clamp(b.x + b.vx * travel + Math.sin(state.time * 2.1) * 0.22 + aimError, 0.2, 9.8);
           const offsets = [2.5, 7.5].map(base => clamp(x - base, -C.maxOffset, C.maxOffset));
           const errors = offsets.map((v, i) => Math.abs([2.5, 7.5][i] + v - x) + Math.abs(v - team.offset) * 0.08);
           target = { offset: offsets[errors[0] <= errors[1] ? 0 : 1], y };
@@ -22,7 +38,7 @@ export function createComputer() {
       const x = clamp((target.offset - team.offset) * 2.1, -0.82, 0.82);
       const y = clamp((target.y - team.y) * 1.5, -0.65, 0.65);
       // Normalize before slowing down so diagonal movement is also 5% slower.
-      const scale = 0.95 / Math.max(1, Math.hypot(x, y));
+      const scale = 0.95 * profile.speed / Math.max(1, Math.hypot(x, y));
       return { x: x * scale, y: y * scale };
     }
   };

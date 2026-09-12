@@ -1,8 +1,9 @@
 import { createState, createClock, start, pause, reset, step } from './physics.mjs';
-import { createComputer } from './computer.mjs';
+import { createComputer } from './computer.mjs?v=2026-09-12-difficulty-toggle';
+import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs';
 import { createInput } from './input.mjs';
 import { createRenderer } from './renderer.mjs';
-import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-11-details';
+import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-name-validation';
 import { OnlineSession, generateCode, normalizeCode } from './online.mjs';
 
 const back = document.getElementById('back-link');
@@ -16,7 +17,9 @@ if (season) {
 async function mount() {
   const canvas = document.getElementById('court');
   const render = await createRenderer(canvas);
-  const state = createState(), computer = createComputer();
+  const state = createState();
+  let difficulty = readDifficulty(), menuDifficulty = difficulty;
+  let computer = createComputer({ difficulty });
   const startButton = document.getElementById('start-button');
   const pauseButton = document.getElementById('pause-button');
   const resetButton = document.getElementById('reset-button');
@@ -61,6 +64,9 @@ async function mount() {
   }
   input = createInput(canvas, document.getElementById('joystick'), () => state.teams[1], toggle);
   function arrangeControls() {
+    const localModeButton = document.getElementById('local-mode');
+    localModeButton.disabled = mobileControls.matches;
+    localModeButton.title = mobileControls.matches ? 'Nur mit Tastatur verfügbar' : '';
     if (mobileControls.matches) {
       document.getElementById('menu-actions').append(actions);
       document.getElementById('mobile-instructions').append(instructions, rules);
@@ -83,7 +89,7 @@ async function mount() {
   actions.addEventListener('click', event => {
     if (event.target.closest('#pause-button, #reset-button, #leaderboard-open')) menu.close();
   }, { capture: true });
-  const leaderboard = mountLeaderboard({ pauseGame: stopForVisibility });
+  const leaderboard = mountLeaderboard({ pauseGame: stopForVisibility, getDifficulty: () => difficulty });
   function update() {
     if (online) Object.assign(state, online.view());
     humanScore.textContent = state.score[1]; computerScore.textContent = state.score[0];
@@ -99,7 +105,9 @@ async function mount() {
       document.getElementById('opponent-power-label').textContent = opponentPower.value > .85 ? 'ZU HART!' : opponentPower.value > .45 ? 'DRUCK' : 'RUHIG';
       opponentPower.closest('.power-display').classList.toggle('danger', opponentPower.value > .85);
     }
+    document.getElementById('start-difficulty').hidden = !!online || local || state.phase !== 'ready';
     if (online) { updateOnline(); return; }
+    setText(document.getElementById('opponent-label'), local ? 'WASD' : `CPU · ${DIFFICULTIES[difficulty].label}`);
     if (displayedPhase === state.phase) return;
     displayedPhase = state.phase;
     overlay.hidden = ['rally', 'point'].includes(state.phase);
@@ -111,7 +119,10 @@ async function mount() {
       overlayText.textContent = `${state.score[1]} : ${state.score[0]} · Spielzeit ${formatDuration(Math.round(state.time * 1000))}`;
       startButton.textContent = 'Noch eine Partie';
       startButton.focus({ preventScroll: true });
-      if (!local) leaderboard.finish(state, roundId);
+      if (!local) {
+        overlayText.textContent += ` · ${DIFFICULTIES[difficulty].label}`;
+        leaderboard.finish(state, roundId, difficulty);
+      }
     } else if (state.phase === 'paused') {
       overlayTitle.textContent = 'Pause'; overlayText.textContent = local ? 'Gemeinsame Pause. Weiter mit Leertaste / P oder dem Button.' : 'Kurz durchatmen. Dein Spiel wartet.';
       startButton.textContent = 'Weiterspielen';
@@ -198,7 +209,8 @@ async function mount() {
     if (online) { exitRoom(); return; }
     stopForVisibility(); menu.close();
     document.getElementById('join-message').textContent = '';
-    onlineMenu.showModal(); document.getElementById('create-room').focus();
+    menuDifficulty = difficulty; syncDifficulty();
+    onlineMenu.showModal(); document.getElementById('solo-mode').focus();
   }
   function exitRoom() {
     const room = online; online = null; room?.leave(); clearInterval(networkTimer); networkTimer = null;
@@ -249,6 +261,31 @@ async function mount() {
     roundId = crypto.randomUUID(); displayedPhase = ''; simulation.reset();
     update(); render(state); startButton.focus({ preventScroll: true });
   }
+  function syncDifficulty() {
+    for (const button of document.querySelectorAll('[data-start-difficulty]')) {
+      const selected = button.dataset.startDifficulty === difficulty;
+      button.setAttribute('aria-pressed', String(selected));
+      button.classList.toggle('active', selected);
+    }
+    for (const button of document.querySelectorAll('[data-menu-difficulty]')) {
+      const selected = button.dataset.menuDifficulty === menuDifficulty;
+      button.setAttribute('aria-pressed', String(selected));
+      button.classList.toggle('active', selected);
+    }
+    document.getElementById('solo-mode').textContent = `Gegen Computer · ${DIFFICULTIES[menuDifficulty].label}`;
+  }
+  function selectDifficulty(value) {
+    difficulty = requireDifficulty(value); saveDifficulty(difficulty);
+    computer = createComputer({ difficulty });
+    syncDifficulty(); update(); render(state);
+  }
+  for (const button of document.querySelectorAll('[data-start-difficulty]')) button.addEventListener('click', () => {
+    if (!online && !local && state.phase === 'ready') selectDifficulty(button.dataset.startDifficulty);
+  });
+  for (const button of document.querySelectorAll('[data-menu-difficulty]')) button.addEventListener('click', () => {
+    menuDifficulty = requireDifficulty(button.dataset.menuDifficulty); syncDifficulty();
+  });
+  syncDifficulty();
   localButton.addEventListener('click', () => chooseLocalMode(true));
   document.getElementById('local-mode').addEventListener('click', () => chooseLocalMode(true));
   onlineButton.addEventListener('click', showModes);
@@ -258,7 +295,9 @@ async function mount() {
   document.getElementById('join-room-form').addEventListener('submit', event => {
     event.preventDefault(); enterRoom('guest', document.getElementById('join-code').value);
   });
-  document.getElementById('solo-mode').addEventListener('click', () => { chooseLocalMode(false); startButton.click(); });
+  document.getElementById('solo-mode').addEventListener('click', () => {
+    chooseLocalMode(false); selectDifficulty(menuDifficulty); startButton.click();
+  });
   leaveButton.addEventListener('click', exitRoom);
   document.getElementById('copy-room-code').addEventListener('click', async () => {
     if (!online) return;

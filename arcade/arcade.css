@@ -5,6 +5,7 @@ body { font-size: 14px; line-height: 1.6; }
 button, select, a { -webkit-tap-highlight-color: transparent; }
 button:disabled { opacity: .45; cursor: default; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+#back-link { display: none; }
 .arcade-shell { max-width: 1160px; margin: auto; height: 100vh; height: 100dvh; min-height: 440px; padding: max(16px, env(safe-area-inset-top)) 28px max(16px, env(safe-area-inset-bottom)); display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 16px; }
 .arcade-header { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--border); padding-bottom: 14px; }
 h1.sh-title { font-size: clamp(32px, 4vw, 48px); line-height: 1; }
@@ -56,7 +57,6 @@ meter::-webkit-meter-bar { background: var(--surface); border: 1px solid var(--b
 meter::-webkit-meter-optimum-value { background: var(--accent); }
 meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value { background: var(--coral); }
 .action-buttons { display: flex; gap: 7px; align-items: center; }
-.action-buttons button, .action-buttons select { font-size: 10px; min-height: 36px; }
 .fps-label { position: relative; }
 .fps-label::after { content: '⌄'; position: absolute; right: 7px; top: 7px; pointer-events: none; font-size: 12px; }
 #fps { appearance: none; -webkit-appearance: none; width: 72px; padding-right: 18px; }
@@ -117,6 +117,7 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
 .game-menu .modal-close-button { position: static; flex-shrink: 0; }
 .game-menu .action-buttons { display: grid; grid-template-columns: 1fr; max-width: none; gap: 12px; }
 .game-menu .action-buttons button, .game-menu #fps, .game-menu .mobile-help summary { width: 100%; min-height: 44px; font-size: .85rem; justify-content: center; }
+.game-menu #fps { padding-left: 18px; text-align: center; text-align-last: center; }
 .game-menu .fps-label::after { top: 11px; right: 14px; }
 .game-menu .mobile-help { display: block; }
 .game-menu .mobile-help summary { display: flex; list-style: none; }
@@ -141,44 +142,54 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
 .arcade-win-form { max-width: 440px; display: grid; gap: 14px; margin-top: 24px; padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
 .arcade-win-form label { font-size: .85rem; color: var(--dim); }
 .arcade-win-form input { width: 100%; min-width: 0; padding: 10px 12px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font: inherit; }
+.winner-name-field { position: relative; }
+.arcade-win-form .winner-name-field input { padding-right: 58px; }
+.arcade-win-form input[aria-invalid="true"] { border-color: var(--negativ); }
+.winner-name-count { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); color: var(--dim); font-size: .75rem; font-variant-numeric: tabular-nums; pointer-events: none; }
+.winner-name-error { margin: -8px 0 0; color: var(--negativ); font-size: .78rem; }
+.winner-name-error[hidden] { display: none; }
 .leaderboard-form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 #leaderboard-message { margin: 16px 0; }
+#leaderboard-message.is-success { color: var(--positiv); }
 .arcade-ranking { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 16px; }
-.arcade-ranking th, .arcade-ranking td { padding: 12px 8px; text-align: left; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
-.arcade-ranking th { color: var(--dim); font-size: .75rem; font-weight: 600; }
-.arcade-ranking thead th:first-child { width: 10%; }
-.arcade-ranking thead th:nth-child(2) { width: 34%; }
-.arcade-ranking thead th:nth-child(3) { width: 17%; }
-.arcade-ranking thead th:nth-child(4) { width: 20%; }
-.arcade-ranking thead th:nth-child(5) { width: 19%; }
+table.arcade-ranking th, table.arcade-ranking td { padding-left: 24px; padding-right: 24px; overflow-wrap: anywhere; }
+.arcade-ranking .col-rank { width: 10%; }
+.arcade-ranking .col-name { width: 34%; }
+.arcade-ranking .col-result { width: 17%; }
+.arcade-ranking .col-time { width: 20%; }
+.arcade-ranking .col-rally { width: 19%; }
+.arcade-ranking td:first-child, .arcade-ranking td:nth-child(2) { text-align: left; }
 .ranking-date { display: block; margin-top: 5px; color: var(--dim); font-size: .75rem; font-variant-numeric: tabular-nums; overflow-wrap: normal; }
-.arcade-ranking tr:nth-child(even) { background: var(--surface); }
 .arcade-ranking td:nth-child(n+3) { font-variant-numeric: tabular-nums; white-space: nowrap; }
 @media (max-width: 800px) {
   .leaderboard-heading h2.sh-title { font-size: 1.65rem; }
   .leaderboard-heading .secondary-button { font-size: .7rem; }
-  .arcade-ranking th, .arcade-ranking td { padding: 10px 4px; font-size: .72rem; }
+  table.arcade-ranking th, table.arcade-ranking td { padding-left: 4px; padding-right: 4px; font-size: .72rem; }
   .ranking-date { font-size: .65rem; }
 }
 
 .arcade-ranking .is-own-result { color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
-#leaderboard-own th { padding-top: 24px; color: var(--dim); border-top: 2px solid var(--border); }
+#leaderboard-own th { padding-top: 24px; color: var(--dim); border-top: 2px solid var(--border); text-align: left; }
 
 /* Online setup uses the same league dialog and game overlay as the solo mode. */
 .online-menu { width: min(400px, calc(100vw - 28px)); }
-.online-menu > p { margin-bottom: 20px; }
-.online-menu > button, #join-room-form button { width: 100%; min-height: 44px; justify-content: center; }
-#join-room-form { display: grid; gap: 10px; margin: 24px 0 16px; padding-top: 20px; border-top: 1px solid var(--border); }
+.game-mode-section { display: grid; gap: 12px; }
+.game-mode-section > button, #join-room-form button { width: 100%; min-height: 44px; justify-content: center; }
+.game-mode-online { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
+.game-mode-section-title { margin: 0; }
+.online-menu .online-explanation { margin: 0; }
+#join-room-form { display: grid; gap: 10px; margin: 4px 0 0; }
 #join-code { width: 100%; min-width: 0; padding: 12px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font: 600 20px 'DM Sans', sans-serif; letter-spacing: .16em; text-transform: uppercase; }
 #join-room-form label { font-size: 14px; }
 #join-message { color: var(--coral); }
-#solo-mode { margin-top: 8px; }
+#solo-mode { margin-top: 0; }
 .game-overlay.online-overlay { width: min(310px, 94%); max-height: 100%; overflow-y: auto; padding: 18px 16px; }
 .online-overlay .eyebrow { display: none; }
 .online-overlay #overlay-text { font-size: 14px; }
 .online-overlay #room-info { margin: 12px 0; }
 .online-overlay .room-code-label { font-size: 11px; letter-spacing: .16em; margin: 0; color: var(--dim); }
-.room-code { display: block; border: 0; background: transparent; color: var(--accent); font: 600 30px 'DM Sans', sans-serif; letter-spacing: .14em; padding: 0 0 0 .14em; margin: 0 auto; cursor: pointer; }
+.room-code { display: block; color: var(--accent); font: 600 30px 'DM Sans', sans-serif; letter-spacing: .14em; padding-left: .14em; margin: 0; }
+.game-overlay .room-code-copy { margin-top: 6px; }
 .online-overlay .room-players { font-size: 13px; margin: 8px 0; }
 #leave-room { font-size: 12px; min-height: 36px; }
 .online-overlay #overlay-title { margin-bottom: 8px; }
@@ -190,7 +201,6 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
 }
 
 .local-duel .solo-controls { display: none; }
-.online-menu .online-explanation { margin-top: 24px; }
 #opponent-power-label { color: var(--coral); }
 #opponent-power-display.danger #opponent-power-label { color: var(--coral); }
 .local-duel .power-display { width: 150px; }
@@ -199,7 +209,7 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
 }
 
 @media (pointer: coarse), (max-width: 800px) {
-  #local-open, #local-mode { display: none !important; }
+  #local-open { display: none !important; }
 }
 
 /* Keep the pointer available whenever a game overlay or dialog is visible. */
@@ -219,3 +229,11 @@ body:not(:has(dialog[open])) .court-wrap:has(> .game-overlay[hidden]) > canvas {
     -webkit-touch-callout: default;
   }
 }
+
+/* Difficulty choices use the shared match-scope-toggle from the league. */
+.difficulty-choice { border: 0; padding: 0; margin: 12px 0; min-width: 0; }
+.difficulty-choice legend { color: var(--dim); font-size: 14px; margin-bottom: 6px; }
+#leaderboard-difficulty { max-width: 320px; margin-bottom: 20px; }
+#difficulty-new-game { font-size: 14px; margin: 8px 0; }
+.computer-label > span { max-width: 92px; text-align: right; line-height: 1.3; }
+@media (max-width: 360px) { .team-label { gap: 6px; letter-spacing: 0; } .computer-label > span { max-width: 74px; } }

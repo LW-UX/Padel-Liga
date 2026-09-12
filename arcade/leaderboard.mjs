@@ -1,3 +1,4 @@
+import { DIFFICULTIES, requireDifficulty } from './difficulty.mjs';
 import { normalizeName } from './name-policy.mjs';
 export { normalizeName } from './name-policy.mjs';
 
@@ -17,9 +18,9 @@ export function formatEntryDate(value) {
   const parts = Object.fromEntries(entryDateFormatter.formatToParts(date).map(part => [part.type, part.value]));
   return `${parts.day}/${parts.month}/${parts.year} ${parts.hour}:${parts.minute}`;
 }
-export function winningEntry(state, roundId) {
+export function winningEntry(state, roundId, difficulty = 'hard') {
   if (state.phase !== 'over' || state.winner !== 1 || state.score[1] !== 7 || state.score[0] < 0 || state.score[0] > 6) return null;
-  return Object.freeze({ roundId, humanScore: 7, computerScore: state.score[0], durationMs: Math.round(state.time * 1000), bestRally: state.bestRally });
+  return Object.freeze({ roundId, difficulty: requireDifficulty(difficulty), humanScore: 7, computerScore: state.score[0], durationMs: Math.round(state.time * 1000), bestRally: state.bestRally });
 }
 export function createLeaderboardApi(config, fetcher = fetch) {
   async function rpc(method, body) {
@@ -40,20 +41,45 @@ export function createLeaderboardApi(config, fetcher = fetch) {
     return response.json();
   }
   return {
-    list: (roundId = null) => rpc('get_arcade_leaderboard', { p_round_id: roundId }),
-    save: (entry, name) => rpc('submit_arcade_win', { p_round_id: entry.roundId, p_name: normalizeName(name), p_human_score: entry.humanScore, p_computer_score: entry.computerScore, p_duration_ms: entry.durationMs, p_best_rally: entry.bestRally })
+    list: (roundId = null, difficulty = 'hard') => rpc('get_arcade_leaderboard', { p_round_id: roundId, p_difficulty: requireDifficulty(difficulty) }),
+    save: (entry, name) => rpc('submit_arcade_win', { p_round_id: entry.roundId, p_name: normalizeName(name), p_human_score: entry.humanScore, p_computer_score: entry.computerScore, p_duration_ms: entry.durationMs, p_best_rally: entry.bestRally, p_difficulty: requireDifficulty(entry.difficulty ?? 'hard') })
   };
 }
-export function mountLeaderboard({ pauseGame, api = createLeaderboardApi(window.PADEL_SUPABASE_CONFIG) }) {
+export function mountLeaderboard({ pauseGame, getDifficulty = () => 'hard', api = createLeaderboardApi(window.PADEL_SUPABASE_CONFIG) }) {
   const panel = document.getElementById('leaderboard');
   const game = document.getElementById('game'), controls = document.querySelector('.controls');
   const form = document.getElementById('win-form'), name = document.getElementById('winner-name');
+  const nameError = document.getElementById('winner-name-error'), nameCount = document.getElementById('winner-name-count');
   const list = document.getElementById('leaderboard-results'), body = document.getElementById('leaderboard-rows');
   const message = document.getElementById('leaderboard-message'), result = document.getElementById('win-result');
   const saveButton = document.getElementById('save-win');
   const ownBody = document.getElementById('leaderboard-own');
   const retry = document.getElementById('leaderboard-retry');
-  let pending = null, lastRound = null, saving = false, generation = 0, savedRoundId = null, returnFocus;
+  const difficultyChoice = document.getElementById('leaderboard-difficulty');
+  const savedRounds = { easy: null, hard: null };
+  let difficulty = requireDifficulty(getDifficulty());
+  let pending = null, lastRound = null, saving = false, generation = 0, returnFocus;
+  function setMessage(value, type = '') {
+    message.textContent = value;
+    message.classList.toggle('is-success', type === 'success');
+  }
+  function setNameError(value = '') {
+    nameError.textContent = value;
+    nameError.hidden = !value;
+    name.setAttribute('aria-invalid', String(Boolean(value)));
+  }
+  function validateName(showEmpty = false) {
+    nameCount.textContent = `${[...name.value].length}/16`;
+    if (!name.value && !showEmpty) { setNameError(); return null; }
+    try {
+      const normalized = normalizeName(name.value);
+      setNameError();
+      return normalized;
+    } catch (error) {
+      setNameError(!name.value.trim() && showEmpty ? 'Bitte gib einen Namen ein.' : error.message);
+      return null;
+    }
+  }
   function view() {
     pauseGame(); returnFocus = document.activeElement;
     game.hidden = true; controls.hidden = true; panel.hidden = false;
@@ -76,11 +102,17 @@ export function mountLeaderboard({ pauseGame, api = createLeaderboardApi(window.
   }
   async function load(notice = '') {
     const request = ++generation;
-    form.hidden = true; list.hidden = false; retry.hidden = true;
+    form.hidden = true; list.hidden = false; retry.hidden = true; difficultyChoice.hidden = false;
+    for (const button of difficultyChoice.querySelectorAll('button')) {
+      const selected = button.dataset.rankingDifficulty === difficulty;
+      button.setAttribute('aria-pressed', String(selected));
+      button.classList.toggle('active', selected);
+    }
+    document.querySelector('.arcade-ranking caption').textContent = `Globale PadelArcade-Bestenliste · ${DIFFICULTIES[difficulty].label}`;
     body.replaceChildren(); ownBody.replaceChildren(); ownBody.hidden = true;
-    message.textContent = notice || 'Bestenliste wird geladen …';
+    setMessage(notice || 'Bestenliste wird geladen …', notice ? 'success' : '');
     try {
-      const data = await api.list(savedRoundId);
+      const data = await api.list(savedRounds[difficulty], difficulty);
       if (request !== generation) return;
       for (const entry of data.entries) appendEntry(body, entry);
       if (data.ownEntry) {
@@ -89,56 +121,67 @@ export function mountLeaderboard({ pauseGame, api = createLeaderboardApi(window.
         labelRow.append(label); ownBody.append(labelRow);
         appendEntry(ownBody, data.ownEntry); ownBody.hidden = false;
       }
-      message.textContent = notice || (data.entries.length ? '' : 'Noch keine Siege eingetragen. Setze die erste Bestmarke!');
+      setMessage(notice || (data.entries.length ? '' : 'Noch keine Siege eingetragen. Setze die erste Bestmarke!'), notice ? 'success' : '');
     } catch (error) {
       if (request !== generation) return;
-      message.textContent = notice ? `${notice} ${error.message}` : error.message;
+      setMessage(notice ? `${notice} ${error.message}` : error.message);
       retry.hidden = false;
     }
   }
-  function openList() { view(); load(); document.getElementById('leaderboard-title').focus(); }
+  function openList() { difficulty = requireDifficulty(getDifficulty()); view(); load(); document.getElementById('leaderboard-title').focus(); }
   function showWin() {
+    difficulty = pending.difficulty; difficultyChoice.hidden = true;
     view(); ++generation; form.hidden = false; list.hidden = true; retry.hidden = true;
-    message.textContent = ''; name.value = ''; saveButton.disabled = false;
-    result.textContent = `Dein Sieg: 7:${pending.computerScore} · Spielzeit ${formatDuration(pending.durationMs)} · Längster Ballwechsel: ${pending.bestRally} Schläge`;
+    setMessage(''); name.value = ''; validateName(); saveButton.disabled = false;
+    result.textContent = `Dein Sieg · ${DIFFICULTIES[pending.difficulty].label}: 7:${pending.computerScore} · Spielzeit ${formatDuration(pending.durationMs)} · Längster Ballwechsel: ${pending.bestRally} Schläge`;
     name.focus();
   }
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (!pending || saving) return;
-    let enteredName;
-    try { enteredName = normalizeName(name.value); } catch (error) { message.textContent = error.message; return; }
+    const enteredName = validateName(true);
+    if (!enteredName) return;
     const entry = pending;
     saving = true; saveButton.disabled = true; name.disabled = true;
     document.getElementById('leaderboard-back').disabled = true;
     document.getElementById('skip-win').disabled = true;
-    message.textContent = 'Sieg wird gespeichert …';
+    setMessage('Sieg wird gespeichert …');
     try {
-      const saved = await api.save(entry, enteredName);
-      savedRoundId = entry.roundId;
+      await api.save(entry, enteredName);
+      savedRounds[entry.difficulty] = entry.roundId;
+      difficulty = entry.difficulty;
       pending = null;
-      await load( `Sieg gespeichert – Platz ${saved.rank}.`);
-    } catch (error) { message.textContent = error.message; }
+      await load('Sieg erfolgreich gespeichert.');
+    } catch (error) {
+      if (/Name|Buchstaben|Zahlen|Leerzeichen|Sonderzeichen/.test(error.message)) {
+        name.disabled = false; setMessage(''); setNameError(error.message); name.focus();
+      } else setMessage(error.message);
+    }
     finally {
       saving = false; saveButton.disabled = false; name.disabled = false;
       document.getElementById('leaderboard-back').disabled = false;
       document.getElementById('skip-win').disabled = false;
     }
   });
+  name.addEventListener('input', () => validateName());
   document.getElementById('leaderboard-open').addEventListener('click', openList);
   document.getElementById('leaderboard-after-game').addEventListener('click', openList);
   document.getElementById('enter-win').addEventListener('click', () => pending ? showWin() : openList());
   document.getElementById('skip-win').addEventListener('click', () => load());
   retry.addEventListener('click', () => load());
+  for (const button of difficultyChoice.querySelectorAll('button')) button.addEventListener('click', () => {
+    if (saving) return;
+    difficulty = requireDifficulty(button.dataset.rankingDifficulty); load();
+  });
   document.getElementById('leaderboard-back').addEventListener('click', () => {
     ++generation; panel.hidden = true; game.hidden = false; controls.hidden = false;
     document.querySelector('.arcade-shell').classList.remove('show-leaderboard');
     (returnFocus?.isConnected ? returnFocus : document.getElementById('start-button')).focus();
   });
   return {
-    finish(state, roundId) {
+    finish(state, roundId, difficulty = getDifficulty()) {
       if (lastRound === roundId) return;
-      lastRound = roundId; pending = winningEntry(state, roundId);
+      lastRound = roundId; pending = winningEntry(state, roundId, difficulty);
       document.getElementById('enter-win').hidden = !pending;
       if (pending) showWin();
     },

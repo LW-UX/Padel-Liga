@@ -73,29 +73,29 @@ begin
   perform public.submit_arcade_win(gen_random_uuid(), 'Nazim', 7, 6, 60000);
   v_result := public.submit_arcade_win(v_second, 'QABesser', 7, 1, 90000);
   select 1 + count(*) into v_rank from public.arcade_wins
-    where computer_score < 1 or (computer_score = 1 and duration_ms < 90000);
+    where difficulty = 'hard' and (computer_score < 1 or (computer_score = 1 and duration_ms < 90000));
   if (v_result->>'rank')::bigint <> v_rank then raise exception 'Wrong rank'; end if;
   if (public.submit_arcade_win(v_id, 'QASieg', 7, 2, 60000, 12)->>'rank')::bigint <= v_rank then
     raise exception 'Score must precede time';
   end if;
-  for i in 1..9 loop
+  for i in 1..11 loop
     perform public.submit_arcade_win(gen_random_uuid(), 'QATop' || i, 7, 0, 1000 + i);
   end loop;
   perform public.submit_arcade_win(v_own, 'QAEigen', 7, 6, 86400000);
   v_result := public.get_arcade_leaderboard(v_own);
-  if jsonb_array_length(v_result->'entries') <> 8 or v_result->'ownEntry'->>'name' <> 'QAEigen'
-    or (v_result->'ownEntry'->>'rank')::bigint <= 8 then
-    raise exception 'Own result outside top eight is missing';
+  if jsonb_array_length(v_result->'entries') <> 10 or v_result->'ownEntry'->>'name' <> 'QAEigen'
+    or (v_result->'ownEntry'->>'rank')::bigint <= 10 then
+    raise exception 'Own result outside top ten is missing';
   end if;
-  select round_id into v_top from public.arcade_wins order by computer_score, duration_ms, created_at, round_id limit 1;
+  select round_id into v_top from public.arcade_wins where difficulty = 'hard' order by computer_score, duration_ms, created_at, round_id limit 1;
   v_result := public.get_arcade_leaderboard(v_top);
   if v_result->'ownEntry' <> 'null'::jsonb or not (v_result->'entries'->0->>'isOwn')::boolean then
-    raise exception 'Top eight own result must be marked without duplicate';
+    raise exception 'Top ten own result must be marked without duplicate';
   end if;
   v_result := public.get_arcade_leaderboard(gen_random_uuid());
   if v_result->'ownEntry' <> 'null'::jsonb then raise exception 'Unknown round has an own result'; end if;
-  -- Even a tied rank of 1 belongs below the table when the exact round is outside its eight rows.
-  for i in 1..9 loop
+  -- Even a tied rank of 1 belongs below the table when the exact round is outside its ten rows.
+  for i in 1..10 loop
     perform public.submit_arcade_win(gen_random_uuid(), 'QAGleich' || i, 7, 0, 1);
   end loop;
   perform public.submit_arcade_win(v_tied, 'QAGleichEigen', 7, 0, 1, 999);
@@ -103,7 +103,7 @@ begin
   v_result := public.get_arcade_leaderboard(v_tied);
   if v_result->'ownEntry'->>'name' is distinct from 'QAGleichEigen'
     or (v_result->'ownEntry'->>'rank')::bigint is distinct from 1::bigint then
-    raise exception 'Tied own result outside eight rows is missing';
+    raise exception 'Tied own result outside ten rows is missing';
   end if;
   if (v_result->'ownEntry'->>'bestRally')::integer is distinct from 999
     or (v_result->'ownEntry'->>'createdAt')::timestamptz is distinct from
@@ -113,7 +113,7 @@ begin
   v_result := public.get_arcade_leaderboard();
   if not ((v_result->'entries'->0) ? 'bestRally')
     or not ((v_result->'entries'->0) ? 'createdAt') then
-    raise exception 'Top eight details missing';
+    raise exception 'Top ten details missing';
   end if;
   if (select best_rally from public.arcade_wins where round_id = v_second) is not null then
     raise exception 'Legacy clients must retain unknown rally';

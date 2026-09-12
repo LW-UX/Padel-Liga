@@ -7,7 +7,7 @@
   <title>PadelArcade</title>
   <link rel="icon" href="../favicon.ico" sizes="any">
   <link rel="stylesheet" href="../style.css?v=2026-09-11-arcade">
-  <link rel="stylesheet" href="arcade.css?v=2026-09-11-leaderboard-details">
+  <link rel="stylesheet" href="arcade.css?v=2026-09-12-name-validation">
 </head>
 <body>
   <div class="arcade-shell">
@@ -44,13 +44,15 @@
             <p id="overlay-text">Dein Doppel ist gelb.<br>Triff den Ball automatisch.</p>
             <div id="room-info" hidden>
               <p class="room-code-label">RAUMCODE</p>
-              <button id="copy-room-code" class="room-code" type="button" title="Raumcode kopieren" aria-label="Raumcode kopieren"><span id="room-code"></span></button>
+              <p id="room-code" class="room-code"></p>
+              <button id="copy-room-code" class="secondary-button room-code-copy" type="button">Raumcode kopieren</button>
               <p id="room-players" class="room-players" role="status" aria-live="polite"></p>
             </div>
             <button id="enter-win" class="primary-button" type="button" hidden>Sieg eintragen</button>
+            <fieldset id="start-difficulty" class="difficulty-choice"><legend>Schwierigkeit</legend><div class="match-scope-toggle"><button class="active" type="button" data-start-difficulty="easy" aria-pressed="true">Leicht</button><button type="button" data-start-difficulty="hard" aria-pressed="false">Schwer</button></div></fieldset>
             <button id="start-button" class="primary-button" type="button" disabled>Spiel lädt …</button>
-            <button id="local-open" class="secondary-button" type="button" disabled>1 vs. 1 am Laptop</button>
-            <button id="online-open" class="secondary-button" type="button" disabled>Online 1 vs. 1</button>
+            <button id="local-open" class="primary-button" type="button" disabled>1v1 Laptop</button>
+            <button id="online-open" class="primary-button" type="button" disabled>1v1 Online</button>
             <button id="leave-room" class="secondary-button" type="button" hidden>Raum verlassen</button>
             <button id="leaderboard-after-game" class="secondary-button" type="button" hidden>Bestenliste</button>
           </div>
@@ -74,13 +76,17 @@
         <h2 class="sh-title" id="leaderboard-title" tabindex="-1">Globale Bestenliste</h2>
         <button class="secondary-button" id="leaderboard-back" type="button">Zum Spiel</button>
       </div>
-      <p class="sh-meta">Top 8 gegen den Computer · Ergebnis vor Spielzeit · Pausen zählen nicht mit. Längster Ballwechsel in Schlägen, ohne Einfluss auf den Rang.</p>
-      <form id="win-form" class="arcade-win-form" hidden>
+      <fieldset id="leaderboard-difficulty" class="difficulty-choice"><legend>Schwierigkeitsstufe der Bestenliste</legend><div class="match-scope-toggle"><button class="active" type="button" data-ranking-difficulty="easy" aria-pressed="true">Leicht</button><button type="button" data-ranking-difficulty="hard" aria-pressed="false">Schwer</button></div></fieldset>
+      <form id="win-form" class="arcade-win-form" novalidate hidden>
         <p class="hero-eyebrow">Gewonnen!</p>
         <p id="win-result" class="sh-meta"></p>
         <label for="winner-name">Dein Name in der öffentlichen Bestenliste</label>
-        <input id="winner-name" name="winner" type="text" maxlength="16" pattern="[\p{L}\p{Nd}]+" required autocomplete="nickname" aria-describedby="winner-name-hint" placeholder="Dein Name">
-        <p id="winner-name-hint" class="sh-meta">Maximal 16 Zeichen. Nur Buchstaben und Zahlen, keine Leerzeichen oder Sonderzeichen.</p>
+        <div class="winner-name-field">
+          <input id="winner-name" name="winner" type="text" maxlength="16" pattern="[\p{L}\p{Nd}]+" required autocomplete="nickname" aria-describedby="winner-name-error winner-name-hint winner-name-count" placeholder="Dein Name">
+          <span id="winner-name-count" class="winner-name-count">0/16</span>
+        </div>
+        <p id="winner-name-error" class="winner-name-error" aria-live="polite" hidden></p>
+        <p id="winner-name-hint" class="sh-meta">Nur Buchstaben und Zahlen.</p>
         <div class="leaderboard-form-actions">
           <button id="save-win" class="primary-button" type="submit">Eintragen &amp; Bestenliste</button>
           <button id="skip-win" class="secondary-button" type="button">Nur Bestenliste ansehen</button>
@@ -89,8 +95,9 @@
       <p id="leaderboard-message" class="sh-meta" role="status" aria-live="polite"></p>
       <button id="leaderboard-retry" class="secondary-button" type="button" hidden>Erneut laden</button>
       <div id="leaderboard-results" hidden>
-        <table class="arcade-ranking"><caption class="sr-only">Globale PadelArcade-Bestenliste</caption>
-          <thead><tr><th scope="col">Platz</th><th scope="col">Name</th><th scope="col">Ergebnis</th><th scope="col">Zeit</th><th scope="col" title="Anzahl der Schläge im längsten Ballwechsel">Längster Spielzug</th></tr></thead>
+        <table class="rt arcade-ranking"><caption class="sr-only">Globale PadelArcade-Bestenliste</caption>
+          <colgroup><col class="col-rank"><col class="col-name"><col class="col-result"><col class="col-time"><col class="col-rally"></colgroup>
+          <thead><tr><th class="l" scope="col">#</th><th class="l" scope="col">Spieler</th><th scope="col">Ergebnis</th><th scope="col">Zeit</th><th scope="col" title="Anzahl der Schläge im längsten Ballwechsel">Längster Spielzug</th></tr></thead>
           <tbody id="leaderboard-rows"></tbody>
           <tbody id="leaderboard-own" hidden></tbody>
         </table>
@@ -130,19 +137,26 @@
       <h2 class="sh-title" id="online-title">Spielmodus</h2>
       <button class="modal-close-button" id="online-close" type="button" aria-label="Schließen">×</button>
     </header>
-    <button id="local-mode" class="secondary-button" type="button">1 vs. 1 am Laptop</button>
-    <p class="sh-meta online-explanation">Online: Eine Person erstellt das Spiel. Die andere tritt mit dem Raumcode bei.</p>
-    <button id="create-room" class="primary-button" type="button">Spiel erstellen</button>
-    <form id="join-room-form">
-      <label for="join-code">Raumcode</label>
-      <input id="join-code" name="code" type="text" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="z. B. K7MX4P" aria-describedby="join-message" required>
-      <button id="join-room" class="secondary-button" type="submit">Spiel beitreten</button>
-    </form>
-    <p id="join-message" class="sh-meta" role="status" aria-live="polite"></p>
-    <button id="solo-mode" class="secondary-button" type="button">Gegen Computer</button>
+    <section class="game-mode-section" aria-label="Offline spielen">
+      <fieldset class="difficulty-choice"><legend>Gegen Computer</legend><div class="match-scope-toggle"><button class="active" type="button" data-menu-difficulty="easy" aria-pressed="true">Leicht</button><button type="button" data-menu-difficulty="hard" aria-pressed="false">Schwer</button></div></fieldset>
+      <p class="sh-meta" id="difficulty-new-game">Eine neue Partie beginnt bei 0:0.</p>
+      <button id="solo-mode" class="primary-button" type="button">Gegen Computer · Leicht</button>
+      <button id="local-mode" class="secondary-button" type="button">1v1 Laptop</button>
+    </section>
+    <section class="game-mode-section game-mode-online" aria-labelledby="online-section-title">
+      <p class="hero-eyebrow game-mode-section-title" id="online-section-title">Online</p>
+      <p class="sh-meta online-explanation">Eine Person erstellt das Spiel. Die andere tritt mit dem Raumcode bei.</p>
+      <button id="create-room" class="primary-button" type="button">Spiel erstellen</button>
+      <form id="join-room-form">
+        <label for="join-code">Raumcode</label>
+        <input id="join-code" name="code" type="text" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="z. B. K7MX4P" aria-describedby="join-message" required>
+        <button id="join-room" class="secondary-button" type="submit">Spiel beitreten</button>
+      </form>
+      <p id="join-message" class="sh-meta" role="status" aria-live="polite"></p>
+    </section>
   </dialog>
   <noscript><p>Bitte JavaScript aktivieren, um PadelArcade zu spielen. <a href="../">Zurück zur Liga</a></p></noscript>
   <script src="../data/supabase-config.js"></script>
-  <script type="module" src="main.mjs?v=2026-09-11-leaderboard-details"></script>
+  <script type="module" src="main.mjs?v=2026-09-12-name-validation"></script>
 </body>
 </html>

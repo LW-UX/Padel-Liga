@@ -11,7 +11,7 @@ test('only a completed human win creates an immutable leaderboard entry', async 
   ]) assert.equal(winningEntry(state, 'round'), null);
   const state = { phase: 'over', winner: 1, score: [2, 7], time: 45.6784, bestRally: 12 };
   const entry = winningEntry(state, 'round'); state.score[0] = 0; state.bestRally = 0;
-  assert.deepEqual(entry, { roundId: 'round', humanScore: 7, computerScore: 2, durationMs: 45678, bestRally: 12 });
+  assert.deepEqual(entry, { roundId: 'round', difficulty: 'hard', humanScore: 7, computerScore: 2, durationMs: 45678, bestRally: 12 });
   assert.ok(Object.isFrozen(entry));
 });
 test('playing time stops during pause and after a match, and resets for a new match', async () => {
@@ -37,8 +37,8 @@ test('saving retries reuse the same round and public API payload excludes league
   const entry = { roundId: 'same-round', humanScore: 7, computerScore: 2, durationMs: 34000, bestRally: 18 };
   await api.save(entry, ' Ludi '); await api.save(entry, ' Ludi '); await api.list('same-round');
   assert.equal(calls[0].options.body, calls[1].options.body);
-  assert.deepEqual(JSON.parse(calls[0].options.body), { p_round_id: 'same-round', p_name: 'Ludi', p_human_score: 7, p_computer_score: 2, p_duration_ms: 34000, p_best_rally: 18 });
-  assert.deepEqual(JSON.parse(calls[2].options.body), { p_round_id: 'same-round' });
+  assert.deepEqual(JSON.parse(calls[0].options.body), { p_round_id: 'same-round', p_name: 'Ludi', p_human_score: 7, p_computer_score: 2, p_duration_ms: 34000, p_best_rally: 18, p_difficulty: 'hard' });
+  assert.deepEqual(JSON.parse(calls[2].options.body), { p_round_id: 'same-round', p_difficulty: 'hard' });
   assert.equal(calls[0].options.headers.apikey, 'public-key');
 });
 test('missing database setup and connection failures give actionable errors', async () => {
@@ -77,4 +77,21 @@ test('entry dates use dd/mm/yy hh:mm in Berlin, including winter, summer and dat
   assert.equal(formatEntryDate('2026-01-01T23:07:00Z'), '02/01/26 00:07');
   assert.equal(formatEntryDate('2026-07-01T22:07:00Z'), '02/07/26 00:07');
   for (const value of [null, undefined, '', 'invalid']) assert.equal(formatEntryDate(value), '–');
+});
+
+
+test('easy wins keep their difficulty through retries and list requests', async () => {
+  const { winningEntry, createLeaderboardApi } = await leaderboard;
+  const calls = [];
+  const api = createLeaderboardApi({ url: 'https://example.test', publishableKey: 'public' }, async (_, options) => {
+    calls.push(JSON.parse(options.body)); return { ok: true, json: async () => ({ rank: 1 }) };
+  });
+  const entry = winningEntry({ phase: 'over', winner: 1, score: [3, 7], time: 50, bestRally: 9 }, 'easy-round', 'easy');
+  assert.equal(entry.difficulty, 'easy'); assert.ok(Object.isFrozen(entry));
+  await api.save(entry, 'Ludi'); await api.save(entry, 'Ludi'); await api.list(entry.roundId, 'easy');
+  assert.deepEqual(calls[0], calls[1]);
+  assert.equal(calls[0].p_difficulty, 'easy'); assert.equal(calls[2].p_difficulty, 'easy');
+  assert.throws(() => api.list(null, 'medium'), /Schwierigkeitsstufe/);
+  assert.throws(() => api.save({ ...entry, difficulty: 'medium' }, 'Ludi'), /Schwierigkeitsstufe/);
+  assert.equal(calls.length, 3);
 });
