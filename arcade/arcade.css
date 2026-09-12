@@ -40,8 +40,8 @@ canvas { display: block; width: 100%; height: 100%; object-fit: contain; image-r
 .game-overlay h2 { color: var(--accent); margin-bottom: 0px; font-size: 26px; }
 .game-overlay p { font-size: 13px; margin: 12px 0; }
 .game-overlay #overlay-text { margin: 2px 0; }
-.game-overlay .eyebrow { font-size: 9px; }
-.game-overlay .primary-button, .game-overlay .secondary-button { width: 100%; min-height: 42px; padding: 9px 18px; justify-content: center; }
+.game-overlay .eyebrow { font-size: 9px; margin: 0 0 12px 0; }
+.game-overlay .primary-button, .game-overlay .secondary-button { width: 100%; padding: 9px 18px; justify-content: center; }
 .game-overlay .secondary-button { display: flex; margin: 10px 0 0; }
 .overlay-content, .overlay-actions, .online-setup { display: grid; gap: 10px; width: 100%; }
 .game-overlay.game-over-actions .overlay-content { gap: 18px; }
@@ -113,7 +113,7 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
   .controls { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
   .controls .power-display { width: 100%; max-width: 105px; min-width: 0; }
   .controls > .action-buttons { display: none; }
-  .mobile-menu-button { display: inline-flex; justify-self: end; min-height: 44px; }
+  .mobile-menu-button { display: inline-flex; justify-self: end; }
   .controls .joystick { justify-self: center; }
   .game-menu { box-sizing: border-box; width: min(240px, calc(100vw - 28px)); min-width: min(240px, calc(100vw - 28px)); max-width: min(320px, calc(100vw - 28px)); }
 }
@@ -121,7 +121,7 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
   .controls { display: flex; }
   .mobile-menu-button { align-self: center; }
 }
-.game-menu { margin: auto; width: min(320px, calc(100vw - 28px)); max-height: calc(100dvh - 32px); padding: 24px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 20px; overflow: auto; overscroll-behavior: contain; }
+.game-menu { margin: auto; width: min(240px, calc(100vw - 28px)); max-height: calc(100dvh - 32px); padding: 24px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 20px; overflow: auto; overscroll-behavior: contain; }
 .game-menu::backdrop { background: rgba(3,4,8,.82); backdrop-filter: blur(6px); }
 .game-menu-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .game-menu-header h2 { margin: 0; }
@@ -129,7 +129,7 @@ meter::-webkit-meter-suboptimum-value, meter::-webkit-meter-even-less-good-value
 .action-divider { display: none; }
 .game-menu .action-buttons { display: grid; grid-template-columns: 1fr; max-width: none; gap: 12px; }
 .game-menu .action-divider { display: block; border-top: 1px solid var(--border); margin: 4px 0; }
-.game-menu .action-buttons button, .game-menu #fps, .game-menu .mobile-help summary { width: 100%; min-height: 44px; font-size: .85rem; justify-content: center; }
+.game-menu .action-buttons button, .game-menu #fps, .game-menu .mobile-help summary { width: 100%; font-size: .85rem; justify-content: center; }
 .game-menu #fps { padding-left: 18px; text-align: center; text-align-last: center; }
 .game-menu .fps-label::after { top: 11px; right: 14px; }
 .game-menu .mobile-help { display: block; }
