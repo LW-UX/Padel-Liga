@@ -106,7 +106,7 @@ test('easy stroke mistakes travel from an actual paddle hit to the rear or side 
     const hitTime = state.time;
     while (state.phase === 'rally' && state.time < 5) p.step(state, { x: 0, y: 0 }, cpu.read(state), cpu.shotError);
     assert.ok(state.time - hitTime > .1, 'The erroneous shot has a visible flight');
-    assert.deepEqual(state.score, [0, 1]); assert.match(state.message, /Wand vor Boden/);
+    assert.deepEqual(state.score, [0, 1]); assert.match(state.message, /(?:Wand|Zaun) vor Boden/);
     assert.equal(state.ball.bounces, 0);
     if (error === 'long') near(state.ball.y, p.C.length - p.C.radius);
     else near(state.ball.x, x < 5 ? p.C.radius : p.C.width - p.C.radius);
@@ -132,7 +132,7 @@ async function play(difficulty, seed, active, fps = 60, duration = 180) {
   return state;
 }
 
-test('easy can be beaten by active returns, sustains rallies, and does not reward standing still', async () => {
+test('easy can be beaten by active returns, sustains rallies, and does not reward standing still', async t => {
   let activeWins = 0, idleWins = 0, bestRally = 0, easyPoints = 0, hardPoints = 0;
   for (let seed = 1; seed <= 100; seed++) {
     const idle = await play('easy', seed, false), active = await play('easy', seed, true);
@@ -141,6 +141,7 @@ test('easy can be beaten by active returns, sustains rallies, and does not rewar
     bestRally = Math.max(bestRally, active.bestRally); easyPoints += active.score[1];
     hardPoints += (await play('hard', seed, true)).score[1];
   }
+  t.diagnostic(`100 seeds: easy active wins=${activeWins}, idle wins=${idleWins}, active points easy=${easyPoints}/hard=${hardPoints}, longest rally=${bestRally}`);
   // Occasional lucky wins are possible with genuine random stroke errors;
   // standing still must remain unreliable across a broad, reproducible sample.
   assert.ok(idleWins <= 5, `Standing still won ${idleWins}/100 matches`);

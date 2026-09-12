@@ -1,10 +1,10 @@
-import { createState, createClock, start, pause, reset, step } from './physics.mjs?v=2026-09-12-cpu-stroke-errors';
-import { createComputer } from './computer.mjs?v=2026-09-12-cpu-stroke-errors';
-import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs?v=2026-09-12-easy-errors';
-import { createInput } from './input.mjs';
-import { createRenderer } from './renderer.mjs';
-import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-name-validation';
-import { OnlineSession, generateCode, normalizeCode } from './online.mjs';
+import { createState, createClock, start, pause, reset, step } from './physics.mjs?v=2026-09-12-rules-v2';
+import { createComputer } from './computer.mjs?v=2026-09-12-rules-v2';
+import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs?v=2026-09-12-rules-v2';
+import { createInput } from './input.mjs?v=2026-09-12-rules-v2';
+import { createRenderer } from './renderer.mjs?v=2026-09-12-rules-v2';
+import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-rules-v2';
+import { OnlineSession, generateCode, normalizeCode } from './online.mjs?v=2026-09-12-rules-v2';
 
 const back = document.getElementById('back-link');
 const season = new URLSearchParams(location.search).get('saison');
@@ -49,6 +49,7 @@ async function mount() {
   const onlineButton = document.getElementById('online-open');
   const leaveButton = document.getElementById('leave-room');
   const localButton = document.getElementById('local-open');
+  const localBackButton = document.getElementById('local-back');
   const opponentPower = document.getElementById('opponent-power');
   let local = false;
   let online = null, networkTimer = null;
@@ -92,6 +93,13 @@ async function mount() {
     if (event.target.closest('#pause-button, #reset-button, #leaderboard-open')) menu.close();
   }, { capture: true });
   const leaderboard = mountLeaderboard({ pauseGame: stopForVisibility, getDifficulty: () => difficulty });
+  function showPower(meter, label, value) {
+    meter.value = value;
+    label.textContent = value < -0.15 ? 'KURZ' : value > 0.85 ? 'ZU HART!' : value > 0.45 ? 'DRUCK' : 'RUHIG';
+    meter.setAttribute('aria-valuetext', label.textContent);
+    meter.closest('.power-display').classList.toggle('danger', value > 0.85);
+    meter.closest('.power-display').classList.toggle('short-shot', value < -0.15);
+  }
   function update() {
     if (online) Object.assign(state, online.view());
     humanScore.textContent = state.score[1]; computerScore.textContent = state.score[0];
@@ -99,14 +107,8 @@ async function mount() {
     const message = local && ['point', 'over'].includes(state.phase)
       ? state.message.replace(/^(Dein Punkt|Punkt Computer)/, state.winner === 1 ? 'Punkt Pfeiltasten' : 'Punkt WASD') : state.message;
     if (!online && status.textContent !== message) status.textContent = message;
-    power.value = state.teams[1].power;
-    powerLabel.textContent = power.value > 0.85 ? 'ZU HART!' : power.value > 0.45 ? 'DRUCK' : 'RUHIG';
-    power.closest('.power-display').classList.toggle('danger', power.value > 0.85);
-    if (local) {
-      opponentPower.value = state.teams[0].power;
-      document.getElementById('opponent-power-label').textContent = opponentPower.value > .85 ? 'ZU HART!' : opponentPower.value > .45 ? 'DRUCK' : 'RUHIG';
-      opponentPower.closest('.power-display').classList.toggle('danger', opponentPower.value > .85);
-    }
+    showPower(power, powerLabel, state.teams[1].power);
+    if (local) showPower(opponentPower, document.getElementById('opponent-power-label'), state.teams[0].power);
     document.getElementById('start-difficulty').hidden = !!online || local || state.phase !== 'ready';
     if (online) { updateOnline(); return; }
     setText(document.getElementById('opponent-label'), local ? 'WASD' : 'CPU');
@@ -253,6 +255,8 @@ async function mount() {
     document.getElementById('power-caption').textContent = enabled ? 'PFEILE · DRUCK' : 'SCHLAGDRUCK';
     document.getElementById('joystick').hidden = enabled;
     localButton.hidden = enabled;
+    onlineButton.hidden = enabled;
+    localBackButton.hidden = !enabled;
     canvas.setAttribute('aria-label', enabled
       ? 'PadelArcade zu zweit. Gelb unten mit Pfeiltasten, Korall oben mit WASD. Leertaste oder P pausiert für beide.'
       : 'PadelArcade. Du spielst unten mit den gelben Balken. Bewegen mit Pfeiltasten oder WASD.');
@@ -289,6 +293,7 @@ async function mount() {
   });
   syncDifficulty();
   localButton.addEventListener('click', () => chooseLocalMode(true));
+  localBackButton.addEventListener('click', () => chooseLocalMode(false));
   document.getElementById('local-mode').addEventListener('click', () => chooseLocalMode(true));
   onlineButton.addEventListener('click', showModes);
   modeButton.addEventListener('click', showModes);

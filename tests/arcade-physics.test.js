@@ -14,7 +14,7 @@ test('direct side and back wall contacts lose the point for the hitter', async (
   for (const ball of [{ x: 0.2, vx: -8 }, { y: 0.2, vy: -8 }]) {
     const { p, s } = await scenario(ball);
     p.simulateBall(s, 0.03);
-    assert.deepEqual(s.score, [1, 0]); assert.match(s.message, /Wand vor Boden/);
+    assert.deepEqual(s.score, [1, 0]); assert.match(s.message, /(?:Wand|Zaun) vor Boden/);
   }
 });
 test('after a floor bounce both wall types rebound without resetting the bounce count', async () => {
@@ -84,7 +84,7 @@ test('full forward power physically hits the back wall before landing on both si
     s.teams[side].power = 1; p.hitBall(s, side, 5);
     assert.equal(p.predictLanding(s.ball).fault, true);
     for (let i = 0; i < 300 && s.phase === 'rally'; i++) p.simulateBall(s, p.C.step);
-    assert.match(s.message, /Wand vor Boden/); assert.equal(s.score[1 - side], 1);
+    assert.match(s.message, /(?:Wand|Zaun) vor Boden/); assert.equal(s.score[1 - side], 1);
   }
 });
 test('CPU stroke errors cannot alter human shots or safe automatic feeds', async () => {

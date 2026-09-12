@@ -1,4 +1,4 @@
-import { C, clamp } from './physics.mjs';
+import { C, clamp } from './physics.mjs?v=2026-09-12-rules-v2';
 
 export function createInput(canvas, joystick, getTeam, onToggle) {
   const abort = new AbortController(), options = { signal: abort.signal };

@@ -7,7 +7,7 @@
   <title>PadelArcade</title>
   <link rel="icon" href="../favicon.ico" sizes="any">
   <link rel="stylesheet" href="../style.css?v=2026-09-11-arcade">
-  <link rel="stylesheet" href="arcade.css?v=2026-09-12-mobile-menu-order">
+  <link rel="stylesheet" href="arcade.css?v=2026-09-12-rules-v2">
 </head>
 <body>
   <div class="arcade-shell">
@@ -25,7 +25,7 @@
         <p class="sh-meta touch-instruction solo-controls">Den Joystick in die gewünschte Richtung ziehen oder direkt im Spielfeld ziehen. Du spielst unten in Gelb und triffst automatisch.</p>
         <p id="local-instruction" class="sh-meta" hidden><strong>Gelb unten: Pfeiltasten.</strong><br><strong>Korall oben: WASD.</strong><br>W bewegt nach oben, S nach unten. Leertaste / P pausiert für beide.</p>
         <p class="sh-meta">Beide Balken bewegen sich identisch. Jeder bleibt in seinem Bereich.</p>
-        <p class="sh-meta note"><span aria-hidden="true">↗</span> Zum Netz beschleunigen gibt Druck. Volle Kraft geht gegen die Wand!</p>
+        <p class="sh-meta note"><span aria-hidden="true">↗</span> Zum Netz laufen gibt Druck; rückwärts laufen spielt kürzer. Zu hart trifft die gegnerische Wand, zu weich kann ins Netz gehen.</p>
         <p class="widget-label micro desktop-instruction">LEERTASTE / P = PAUSE</p>
         <p class="widget-label micro touch-instruction">MENÜ ÖFFNEN = PAUSE</p>
       </aside>
@@ -53,6 +53,7 @@
             <button id="start-button" class="primary-button" type="button" disabled>Spiel lädt …</button>
             <button id="local-open" class="primary-button" type="button" disabled>1v1 Laptop</button>
             <button id="online-open" class="primary-button" type="button" disabled>1v1 Online</button>
+            <button id="local-back" class="secondary-button" type="button" hidden>Zurück</button>
             <button id="leave-room" class="secondary-button" type="button" hidden>Raum verlassen</button>
             <button id="leaderboard-after-game" class="secondary-button" type="button" hidden>Bestenliste</button>
           </div>
@@ -62,12 +63,11 @@
 
       <aside class="field-notes right-notes" aria-label="Regeln und Ballhöhe">
         <p class="hero-eyebrow eyebrow">02 / SO LÄUFT’S</p>
-        <h2 class="sh-title">Erst Boden.<br>Dann Wand.</h2>
-        <p class="sh-meta" id="rules-text">Volleys erlaubt. Beim zweiten Bodenkontakt endet der Punkt. Ein zweiter Teamkontakt ist ein Fehler. Ein Schlag ins Netz verliert den Punkt; springt der Ball nach gültigem Aufprall unberührt zurück ins Netz, gewinnt das schlagende Team.</p>
+        <h2 class="sh-title">Glas erlaubt.<br>Zaun beachten.</h2>
+        <p class="sh-meta" id="rules-text">Eigene Glaswand vor dem Aufsprung ist erlaubt, eigener Zaun nicht. Der erste Aufsprung muss im gegnerischen Feld sein, bevor dort Wand oder Zaun berührt werden. Volleys erlaubt. Beim zweiten Bodenkontakt endet der Punkt. Ein zweiter Teamkontakt ist ein Fehler. Ein Schlag ins Netz verliert den Punkt; springt der Ball nach gültigem Aufprall unberührt zurück ins Netz, gewinnt das schlagende Team.</p>
         <div class="height-demo" aria-hidden="true"><span></span><i></i><b></b></div>
         <p class="sh-meta">Der Schatten zeigt die Position am Boden. Hohe Bälle fliegen über die Balken.</p>
-        <p class="sh-meta">Das kleine Quadrat zeigt den nächsten Aufprall. Orange bedeutet Wandgefahr.</p>
-        <p class="widget-label micro">PADEL-ARCADE MIT VEREINFACHTEN REGELN · AUTOMATISCHES ANSPIEL</p>
+        <p class="sh-meta">Das kleine Quadrat zeigt den nächsten Aufprall. Orange warnt vor einem direkten Wand- oder Zaunfehler.</p>
       </aside>
     </main>
 
@@ -107,11 +107,11 @@
     <footer class="controls">
       <div class="power-display">
         <label for="power"><span id="power-caption">SCHLAGDRUCK</span> <span id="power-label">RUHIG</span></label>
-        <meter id="power" min="0" max="1" low="0.6" high="0.85" optimum="0.35" value="0">0 %</meter>
+        <meter id="power" min="-1" max="1" low="-1" high="0.85" optimum="0" value="0">0 %</meter>
       </div>
       <div id="opponent-power-display" class="power-display" hidden>
         <label for="opponent-power">WASD · DRUCK <span id="opponent-power-label">RUHIG</span></label>
-        <meter id="opponent-power" min="0" max="1" low="0.6" high="0.85" optimum="0.35" value="0">0 %</meter>
+        <meter id="opponent-power" min="-1" max="1" low="-1" high="0.85" optimum="0" value="0">0 %</meter>
       </div>
       <div id="joystick" class="joystick" role="group" aria-label="Touch-Steuerung: In die gewünschte Richtung ziehen"><span></span></div>
       <div class="action-buttons">
@@ -159,6 +159,6 @@
   </dialog>
   <noscript><p>Bitte JavaScript aktivieren, um PadelArcade zu spielen. <a href="../">Zurück zur Liga</a></p></noscript>
   <script src="../data/supabase-config.js"></script>
-  <script type="module" src="main.mjs?v=2026-09-12-cpu-stroke-errors"></script>
+  <script type="module" src="main.mjs?v=2026-09-12-rules-v2-local-back"></script>
 </body>
 </html>

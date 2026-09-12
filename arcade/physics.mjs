@@ -1,21 +1,34 @@
+import { RULESET } from './ruleset.mjs?v=2026-09-12-rules-v2';
+
 // Court coordinates: metres, origin at the computer's back-left corner.
 // z is height above the floor. Rendering never changes collision coordinates.
 export const C = Object.freeze({
   width: 10, length: 20, net: 10, netHeight: 0.9, gravity: 12,
   radius: 0.12, paddleWidth: 1.4, paddleDepth: 0.28, reach: 1.65,
   maxOffset: 1.8, speed: 5.2, acceleration: 78, step: 1 / 60,
-  bounce: 0.76, wallBounce: 0.86, targetScore: 7
+  bounce: 0.76, wallBounce: 0.80, fenceBounce: 0.86, glassLength: 4,
+  shortReduction: 0.40, targetScore: 7
 });
 export const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 const EPS = 1e-8;
 export const sideAt = y => y < C.net ? 0 : 1;
+// At the join itself the central mesh takes precedence, on both halves.
+export const boundaryMaterial = (axis, y) => axis === 'y' || y < C.glassLength || y > C.length - C.glassLength ? 'wall' : 'fence';
+function boundaryContact(ball, axis) {
+  const material = boundaryMaterial(axis, ball.y);
+  return {
+    material,
+    fault: ball.bounces === 0 && (material === 'fence' || sideAt(ball.y) !== ball.lastHit),
+    damping: material === 'wall' ? C.wallBounce : C.fenceBounce
+  };
+}
 export const heightAt = (b, t) => b.z + b.vz * t - C.gravity * t * t / 2;
 export function groundTime(b) {
   return (b.vz + Math.sqrt(Math.max(0, b.vz * b.vz + 2 * C.gravity * b.z))) / C.gravity;
 }
 export function createState() {
   return {
-    phase: 'ready', resumePhase: 'rally', score: [0, 0], time: 0,
+    ruleset: RULESET, phase: 'ready', resumePhase: 'rally', score: [0, 0], time: 0,
     teams: [0, 1].map(side => ({ side, offset: 0, y: side ? 17 : 3, vx: 0, vy: 0, power: 0 })),
     ball: { x: 2.5, y: 17, z: 0.8, vx: 0, vy: 0, vz: 0, lastHit: 1, bounces: 0, feed: true, contactSide: null },
     message: 'Bereit für eine kurze Partie?', rallyHits: 0, bestRally: 0,
@@ -71,7 +84,7 @@ export function moveTeam(team, input, dt) {
   team.y = clamp(oldY + vy * dt, team.side ? 10.9 : 0.65, team.side ? 19.35 : 9.1);
   team.vx = (team.offset - oldX) / dt;
   team.vy = (team.y - oldY) / dt;
-  const forward = Math.max(0, team.vy * (team.side ? -1 : 1)) / C.speed;
+  const forward = clamp(team.vy * (team.side ? -1 : 1) / C.speed, -1, 1);
   team.power += (forward - team.power) * (1 - Math.exp(-dt / 0.10));
 }
 export function hitBall(state, side, paddleX, team = state.teams[side], shotError = null) {
@@ -87,12 +100,13 @@ export function hitBall(state, side, paddleX, team = state.teams[side], shotErro
   const distance = Math.abs(targetY - b.y);
   const mistake = side === 0 && !b.feed ? shotError : null;
   const power = mistake === 'long' ? 1 : clamp(team.power, 0, 1);
+  const soft = mistake === 'long' ? 1 : 1 + C.shortReduction * clamp(team.power, -1, 0);
   // At full forward speed the predicted first bounce is beyond the back wall.
   // The resulting flight is simulated until a collision decides the point.
   const wallDistance = side ? b.y - C.radius : C.length - C.radius - b.y;
   const travel = distance + (wallDistance + 2.4 - distance) * power * power;
-  // Position determines the arc. Even a low, hard stroke clears the net;
-  // the power risk is its excessive length, not an unexplained net error.
+  // Neutral and hard strokes retain their original arc. Backward movement
+  // slows horizontal travel only, so a soft stroke can genuinely hit the net.
   const netFraction = clamp(Math.abs(C.net - b.y) / travel, 0.02, 0.98);
   const needed = C.netHeight + 0.22 - b.z * (1 - netFraction);
   const duration = Math.max(1.05, Math.sqrt(Math.max(0, 2 * needed / (C.gravity * netFraction * (1 - netFraction)))));
@@ -104,13 +118,15 @@ export function hitBall(state, side, paddleX, team = state.teams[side], shotErro
     const wallX = b.x <= C.width / 2 ? -0.5 : C.width + 0.5;
     b.vx = (wallX - b.x) / (duration * 0.65);
   }
+  b.vx *= soft;
+  b.vy *= soft;
   b.vz = (C.gravity * duration * duration / 2 - b.z) / duration;
   b.lastHit = side;
   b.bounces = 0;
   b.feed = false;
   state.rallyHits++;
   state.bestRally = Math.max(state.bestRally, state.rallyHits);
-  state.message = power > 0.85 ? 'Viel Druck · Achtung, Wand!' : 'Ballwechsel';
+  state.message = power > 0.85 ? 'Viel Druck · Achtung, Wand!' : soft < 0.94 ? 'Kurz gespielt · Achtung, Netz!' : 'Ballwechsel';
   state.effects.push({ x: b.x, y: b.y, age: 0, kind: 'hit' });
 }
 function axisInterval(position, velocity, half) {
@@ -181,9 +197,11 @@ export function simulateBall(state, dt, origins = state.teams.map(t => ({ ...t }
         state.message = 'Einmal aufgesprungen · Wandspiel erlaubt';
       }
     } else if (event.type === 'wallX' || event.type === 'wallY') {
-      if (b.bounces === 0) awardPoint(state, 1 - b.lastHit, 'Wand vor Boden');
+      const axis = event.type === 'wallX' ? 'x' : 'y';
+      const contact = boundaryContact(b, axis);
+      if (contact.fault) awardPoint(state, 1 - b.lastHit, contact.material === 'fence' ? 'Zaun vor Boden' : 'Wand vor Boden');
       else {
-        b[event.type === 'wallX' ? 'vx' : 'vy'] *= -C.wallBounce;
+        b[`v${axis}`] *= -contact.damping;
         state.effects.push({ x: b.x, y: b.y, age: 0, kind: 'wall' });
       }
     } else if (event.type === 'net') {
@@ -230,11 +248,15 @@ export function predictLanding(ball) {
     const tx = Math.abs(b.vx) < EPS ? Infinity : ((b.vx > 0 ? C.width - C.radius : C.radius) - b.x) / b.vx;
     const ty = Math.abs(b.vy) < EPS ? Infinity : ((b.vy > 0 ? C.length - C.radius : C.radius) - b.y) / b.vy;
     const t = Math.min(tx, ty);
-    if (t > remaining || t < -EPS) return { x: b.x + b.vx * remaining, y: b.y + b.vy * remaining, fault: false };
-    if (b.bounces === 0) return { x: b.x + b.vx * t, y: b.y + b.vy * t, fault: true };
+    // Ground wins simultaneous contacts, just as in the live simulation.
+    if (t >= remaining - EPS || t < -EPS) return { x: b.x + b.vx * remaining, y: b.y + b.vy * remaining, fault: false };
     b.x += b.vx * t; b.y += b.vy * t; remaining -= t;
-    if (Math.abs(tx - t) < EPS) b.vx *= -C.wallBounce;
-    if (Math.abs(ty - t) < EPS) b.vy *= -C.wallBounce;
+    for (const axis of ['x', 'y']) {
+      if (Math.abs((axis === 'x' ? tx : ty) - t) >= EPS) continue;
+      const contact = boundaryContact(b, axis);
+      if (contact.fault) return { x: b.x, y: b.y, fault: true };
+      b[`v${axis}`] *= -contact.damping;
+    }
   }
   return null;
 }

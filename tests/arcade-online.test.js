@@ -69,9 +69,9 @@ test('guest movement is rotated once; host alone computes ball and score', async
   assert.ok(h.host.state.teams[0].offset < 0); assert.ok(h.host.state.teams[0].y > 3);
   const view = guest.view(); assert.ok(view.teams[1].offset > 0); assert.ok(view.teams[1].y < 17);
   const before = structuredClone(h.host.state);
-  h.host.receive({ v: 1, from: 'guest', to: 'host', type: 'snapshot', state: { score: [7, 0] } });
+  h.host.receive({ v: h.ONLINE.protocol, from: 'guest', to: 'host', type: 'snapshot', state: { score: [7, 0] } });
   assert.deepEqual(h.host.state, before);
-  h.host.receive({ v: 1, from: 'third', to: 'host', type: 'input', round: 0, seq: 9999, input: { x: 1, y: 1 } });
+  h.host.receive({ v: h.ONLINE.protocol, from: 'third', to: 'host', type: 'input', round: 0, seq: 9999, input: { x: 1, y: 1 } });
   assert.ok(h.host.remoteInput.x < 0);
 });
 
@@ -105,7 +105,7 @@ test('rematch resets score and clock and ignores actions from a previous round',
   h.host.broadcast(); h.flush(); assert.deepEqual(guest.view().score, [7, 3]);
   h.host.requestReady(); guest.requestReady(); h.flush();
   assert.equal(h.host.round, 1); assert.deepEqual(h.host.state.score, [0, 0]); assert.equal(h.host.state.time, 0);
-  h.host.receive({ v: 1, from: 'guest', to: 'host', type: 'pause', round: 0 });
+  h.host.receive({ v: h.ONLINE.protocol, from: 'guest', to: 'host', type: 'pause', round: 0 });
   assert.equal(h.host.stage, 'countdown');
 });
 
@@ -117,7 +117,7 @@ test('perspective rotation is reversible and malformed or stale snapshots are ig
   assert.deepEqual(perspective(perspective(state, 0), 0), state);
   assert.ok(validSnapshot(state)); assert.ok(!validSnapshot({ ...state, ball: { ...state.ball, vx: NaN } }));
   const h = await harness(), guest = h.add('guest', 'guest'), before = structuredClone(guest.state);
-  guest.receive({ v: 1, from: 'host', to: 'guest', type: 'snapshot', revision: 999, state: { score: [7, 0] } });
+  guest.receive({ v: h.ONLINE.protocol, from: 'host', to: 'guest', type: 'snapshot', revision: 999, state: { score: [7, 0] } });
   assert.deepEqual(guest.state, before);
 });
 
@@ -129,7 +129,7 @@ test('delayed readiness from before a pause cannot restart the resumed room', as
   guest.requestPause(); h.flush();
   assert.ok(h.host.epoch > oldEpoch);
   h.host.requestReady(); h.flush();
-  h.host.receive({ v: 1, from: 'guest', to: 'host', type: 'ready', round: 0, epoch: oldEpoch, value: true });
+  h.host.receive({ v: h.ONLINE.protocol, from: 'guest', to: 'host', type: 'ready', round: 0, epoch: oldEpoch, value: true });
   assert.equal(h.host.stage, 'paused'); assert.deepEqual(h.host.ready, [false, true]);
   guest.requestReady(); h.flush(); assert.equal(h.host.stage, 'countdown');
 });
@@ -161,4 +161,24 @@ test('Realtime transport waits for join, rejects unrelated messages and reconnec
   next.receive({ event: 'phx_reply', ref: '1', topic, payload: { status: 'ok' } });
   assert.deepEqual(statuses, [true, false, true]);
   transport.close(); t.mock.timers.tick(60000); assert.equal(sockets.length, 2);
+});
+
+test('old online protocol cannot claim a seat and classic snapshots are rejected', async () => {
+  const h = await harness();
+  h.host.receive({ v: 1, from: 'old-guest', to: null, type: 'join' });
+  assert.equal(h.host.peer, null);
+  const guest = h.add('guest', 'guest', undefined, 'ABCDEF');
+  guest.receive({ v: 1, from: 'old-host', to: 'guest', type: 'accepted', round: 0 });
+  assert.equal(guest.peer, null);
+  h.advance(11000); assert.equal(guest.stage, 'ended'); assert.match(guest.message, /Kein offenes Spiel/);
+  const { validSnapshot } = await import('../arcade/online.mjs');
+  assert.equal(validSnapshot({ ...h.host.state, ruleset: 'classic' }), false);
+});
+
+test('guest backward movement produces negative power on the host and in the rotated guest view', async () => {
+  const h = await harness(), guest = h.add('guest', 'guest', () => ({ x: 0, y: 1 }));
+  h.host.requestReady(); guest.requestReady(); h.flush(); h.advance(3300);
+  assert.ok(h.host.state.teams[0].power < -.5);
+  assert.ok(guest.view().teams[1].power < -.5);
+  assert.equal(guest.view().ruleset, 'v2');
 });

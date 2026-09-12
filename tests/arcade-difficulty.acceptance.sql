@@ -1,3 +1,4 @@
+-- Historical pre-v2 contract: run before arcade_rulesets, as the local QA runner does.
 -- Run against the project database only through its MCP helper and after approval.
 -- These isolated test entries and all other changes are rolled back.
 begin;

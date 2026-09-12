@@ -10,7 +10,7 @@
   <path fill="#376591" d="M24 24h224v448H24z"/>
   <path fill="#214c7a" d="M24 24h224v68H24zm0 380h224v68H24z"/>
   <path fill="url(#turf)" d="M24 24h224v448H24z"/>
-  <path fill="url(#mesh)" d="M12 114h10v268H12zm238 0h10v268h-10z"/>
+  <path fill="url(#mesh)" d="M12 113.6h10v268.8H12zm238 0h10v268.8h-10z"/>
   <path stroke="#18314e" stroke-width="3" fill="none" d="m12 12 12 12m224 0 12-12M12 484l12-12m224 0 12 12M56 12l3 12m46-12 1 12m61-12-1 12m50-12-3 12M56 484l3-12m46 12 1-12m61 12-1-12m50 12-3-12M12 66l12 5m-12 43 12 5m-12 263 12-5m-12 53 12-5m224-354 12-5m-12 53 12-5m-12 263 12 5m-12 43 12 5"/>
   <path stroke="#d9e6de" stroke-width="2" fill="none" d="M24 24h224v448H24zM24 92h224M24 404h224M136 88v157m0 6v157"/>
   <path stroke="#071324" stroke-width="6" d="M18 250h236"/>

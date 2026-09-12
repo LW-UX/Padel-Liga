@@ -235,3 +235,7 @@ body:not(:has(dialog[open])) .court-wrap:has(> .game-overlay[hidden]) > canvas {
 #difficulty-new-game { font-size: 14px; margin: 8px 0; }
 .computer-label > span { max-width: 92px; text-align: right; line-height: 1.3; }
 @media (max-width: 360px) { .team-label { gap: 6px; letter-spacing: 0; } .computer-label > span { max-width: 74px; } }
+
+.power-display.short-shot label span:last-child { color: #50B7F5; }
+.power-display.short-shot meter::-webkit-meter-optimum-value { background: #50B7F5; }
+.power-display.short-shot meter::-moz-meter-bar { background: #50B7F5; }

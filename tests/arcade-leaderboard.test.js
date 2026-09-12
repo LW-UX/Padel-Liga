@@ -7,11 +7,11 @@ test('only a completed human win creates an immutable leaderboard entry', async 
   for (const state of [
     { phase: 'over', winner: 0, score: [7, 4], time: 30 },
     { phase: 'rally', winner: 1, score: [0, 7], time: 30 },
-    { phase: 'over', winner: 1, score: [7, 7], time: 30 }
+    { ruleset: 'v2', phase: 'over', winner: 1, score: [7, 7], time: 30 }
   ]) assert.equal(winningEntry(state, 'round'), null);
-  const state = { phase: 'over', winner: 1, score: [2, 7], time: 45.6784, bestRally: 12 };
+  const state = { ruleset: 'v2', phase: 'over', winner: 1, score: [2, 7], time: 45.6784, bestRally: 12 };
   const entry = winningEntry(state, 'round'); state.score[0] = 0; state.bestRally = 0;
-  assert.deepEqual(entry, { roundId: 'round', difficulty: 'hard', humanScore: 7, computerScore: 2, durationMs: 45678, bestRally: 12 });
+  assert.deepEqual(entry, { roundId: 'round', ruleset: 'v2', difficulty: 'hard', humanScore: 7, computerScore: 2, durationMs: 45678, bestRally: 12 });
   assert.ok(Object.isFrozen(entry));
 });
 test('playing time stops during pause and after a match, and resets for a new match', async () => {
@@ -34,11 +34,11 @@ test('saving retries reuse the same round and public API payload excludes league
   const api = createLeaderboardApi({ url: 'https://example.test', publishableKey: 'public-key' }, async (url, options) => {
     calls.push({ url, options }); return { ok: true, json: async () => ({ rank: 1 }) };
   });
-  const entry = { roundId: 'same-round', humanScore: 7, computerScore: 2, durationMs: 34000, bestRally: 18 };
+  const entry = { roundId: 'same-round', ruleset: 'v2', humanScore: 7, computerScore: 2, durationMs: 34000, bestRally: 18 };
   await api.save(entry, ' Ludi '); await api.save(entry, ' Ludi '); await api.list('same-round');
   assert.equal(calls[0].options.body, calls[1].options.body);
-  assert.deepEqual(JSON.parse(calls[0].options.body), { p_round_id: 'same-round', p_name: 'Ludi', p_human_score: 7, p_computer_score: 2, p_duration_ms: 34000, p_best_rally: 18, p_difficulty: 'hard' });
-  assert.deepEqual(JSON.parse(calls[2].options.body), { p_round_id: 'same-round', p_difficulty: 'hard' });
+  assert.deepEqual(JSON.parse(calls[0].options.body), { p_round_id: 'same-round', p_name: 'Ludi', p_human_score: 7, p_computer_score: 2, p_duration_ms: 34000, p_best_rally: 18, p_difficulty: 'hard', p_ruleset: 'v2' });
+  assert.deepEqual(JSON.parse(calls[2].options.body), { p_round_id: 'same-round', p_difficulty: 'hard', p_ruleset: 'v2' });
   assert.equal(calls[0].options.headers.apikey, 'public-key');
 });
 test('missing database setup and connection failures give actionable errors', async () => {
@@ -68,7 +68,7 @@ test('the private database blacklist starts with exactly the same rules as the b
 test('a server-side name rejection is shown as a name error rather than a connection failure', async () => {
   const { createLeaderboardApi } = await leaderboard;
   const api = createLeaderboardApi({ url: 'https://example.test', publishableKey: 'public' }, async () => ({ ok: false, status: 400, json: async () => ({ message: 'ARCADE_NAME_BLOCKED' }) }));
-  await assert.rejects(api.save({ roundId: 'round' }, 'Ludi'), /Name ist nicht erlaubt/);
+  await assert.rejects(api.save({ roundId: 'round', ruleset: 'v2' }, 'Ludi'), /Name ist nicht erlaubt/);
 });
 
 test('entry dates use dd/mm/yy hh:mm in Berlin, including winter, summer and date rollover', async () => {
@@ -86,7 +86,7 @@ test('easy wins keep their difficulty through retries and list requests', async 
   const api = createLeaderboardApi({ url: 'https://example.test', publishableKey: 'public' }, async (_, options) => {
     calls.push(JSON.parse(options.body)); return { ok: true, json: async () => ({ rank: 1 }) };
   });
-  const entry = winningEntry({ phase: 'over', winner: 1, score: [3, 7], time: 50, bestRally: 9 }, 'easy-round', 'easy');
+  const entry = winningEntry({ ruleset: 'v2', phase: 'over', winner: 1, score: [3, 7], time: 50, bestRally: 9 }, 'easy-round', 'easy');
   assert.equal(entry.difficulty, 'easy'); assert.ok(Object.isFrozen(entry));
   await api.save(entry, 'Ludi'); await api.save(entry, 'Ludi'); await api.list(entry.roundId, 'easy');
   assert.deepEqual(calls[0], calls[1]);

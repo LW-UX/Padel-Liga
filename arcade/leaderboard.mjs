@@ -1,6 +1,7 @@
-import { DIFFICULTIES, requireDifficulty } from './difficulty.mjs';
-import { normalizeName } from './name-policy.mjs';
-export { normalizeName } from './name-policy.mjs';
+import { RULESET, requireRuleset } from './ruleset.mjs?v=2026-09-12-rules-v2';
+import { DIFFICULTIES, requireDifficulty } from './difficulty.mjs?v=2026-09-12-rules-v2';
+import { normalizeName } from './name-policy.mjs?v=2026-09-12-rules-v2';
+export { normalizeName } from './name-policy.mjs?v=2026-09-12-rules-v2';
 
 export function formatDuration(ms) {
   const hundredths = Math.round(ms / 10);
@@ -20,7 +21,7 @@ export function formatEntryDate(value) {
 }
 export function winningEntry(state, roundId, difficulty = 'hard') {
   if (state.phase !== 'over' || state.winner !== 1 || state.score[1] !== 7 || state.score[0] < 0 || state.score[0] > 6) return null;
-  return Object.freeze({ roundId, difficulty: requireDifficulty(difficulty), humanScore: 7, computerScore: state.score[0], durationMs: Math.round(state.time * 1000), bestRally: state.bestRally });
+  return Object.freeze({ roundId, ruleset: requireRuleset(state.ruleset), difficulty: requireDifficulty(difficulty), humanScore: 7, computerScore: state.score[0], durationMs: Math.round(state.time * 1000), bestRally: state.bestRally });
 }
 export function createLeaderboardApi(config, fetcher = fetch) {
   async function rpc(method, body) {
@@ -34,6 +35,7 @@ export function createLeaderboardApi(config, fetcher = fetch) {
     } catch { throw new Error('Verbindung fehlgeschlagen. Bitte versuche es erneut.'); }
     if (!response.ok) {
       const error = await response.json?.().catch(() => ({})) || {};
+      if (error.message === 'ARCADE_RULESET_CLOSED') throw new Error('Diese Spielversion ist abgeschlossen. Bitte lade die Seite neu und starte eine neue Partie.');
       if (error.message === 'ARCADE_NAME_BLOCKED') throw new Error('Dieser Name ist nicht erlaubt. Bitte wähle einen anderen.');
       if (error.message === 'ARCADE_NAME_INVALID') throw new Error('Bitte verwende 1 bis 16 Buchstaben oder Zahlen, ohne Leerzeichen und Sonderzeichen.');
       throw new Error(response.status === 404 ? 'Die Bestenliste wird gerade eingerichtet. Bitte versuche es später erneut.' : 'Die Bestenliste ist gerade nicht erreichbar. Bitte versuche es erneut.');
@@ -41,8 +43,8 @@ export function createLeaderboardApi(config, fetcher = fetch) {
     return response.json();
   }
   return {
-    list: (roundId = null, difficulty = 'hard') => rpc('get_arcade_leaderboard', { p_round_id: roundId, p_difficulty: requireDifficulty(difficulty) }),
-    save: (entry, name) => rpc('submit_arcade_win', { p_round_id: entry.roundId, p_name: normalizeName(name), p_human_score: entry.humanScore, p_computer_score: entry.computerScore, p_duration_ms: entry.durationMs, p_best_rally: entry.bestRally, p_difficulty: requireDifficulty(entry.difficulty ?? 'hard') })
+    list: (roundId = null, difficulty = 'hard') => rpc('get_arcade_leaderboard', { p_round_id: roundId, p_difficulty: requireDifficulty(difficulty), p_ruleset: RULESET }),
+    save: (entry, name) => rpc('submit_arcade_win', { p_round_id: entry.roundId, p_name: normalizeName(name), p_human_score: entry.humanScore, p_computer_score: entry.computerScore, p_duration_ms: entry.durationMs, p_best_rally: entry.bestRally, p_difficulty: requireDifficulty(entry.difficulty ?? 'hard'), p_ruleset: requireRuleset(entry.ruleset) })
   };
 }
 export function mountLeaderboard({ pauseGame, getDifficulty = () => 'hard', api = createLeaderboardApi(window.PADEL_SUPABASE_CONFIG) }) {

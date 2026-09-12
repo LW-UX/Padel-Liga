@@ -1,5 +1,5 @@
-import { C, clamp, predictLanding } from './physics.mjs';
-import { DIFFICULTIES, requireDifficulty } from './difficulty.mjs?v=2026-09-12-easy-errors';
+import { C, clamp, predictLanding } from './physics.mjs?v=2026-09-12-rules-v2';
+import { DIFFICULTIES, requireDifficulty } from './difficulty.mjs?v=2026-09-12-rules-v2';
 
 export function createComputer({ difficulty = 'hard', random = Math.random } = {}) {
   const profile = DIFFICULTIES[requireDifficulty(difficulty)];

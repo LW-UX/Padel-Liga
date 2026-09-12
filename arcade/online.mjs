@@ -1,9 +1,10 @@
-import { C, clamp, createState, createClock, start, pause, reset, step, moveTeam } from './physics.mjs';
-import { connectRealtime } from './realtime.mjs';
+import { C, clamp, createState, createClock, start, pause, reset, step, moveTeam } from './physics.mjs?v=2026-09-12-rules-v2';
+import { connectRealtime } from './realtime.mjs?v=2026-09-12-rules-v2';
+import { RULESET } from './ruleset.mjs?v=2026-09-12-rules-v2';
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ZERO = Object.freeze({ x: 0, y: 0 });
-export const ONLINE = Object.freeze({ silence: 1500, expiry: 20000, joinTimeout: 10000, countdown: 3000, protocol: 1 });
+export const ONLINE = Object.freeze({ silence: 1500, expiry: 20000, joinTimeout: 10000, countdown: 3000, protocol: 2 });
 export function generateCode() {
   return Array.from(crypto.getRandomValues(new Uint8Array(6)), n => ALPHABET[n % ALPHABET.length]).join('');
 }
@@ -32,7 +33,7 @@ export function perspective(state, side) {
 }
 export function validSnapshot(s) {
   const finite = (o, keys) => o && keys.every(k => Number.isFinite(o[k]) && Math.abs(o[k]) < 1e6);
-  return s && ['ready', 'rally', 'point', 'paused', 'over'].includes(s.phase)
+  return s && s.ruleset === RULESET && ['ready', 'rally', 'point', 'paused', 'over'].includes(s.phase)
     && ['rally', 'point'].includes(s.resumePhase) && [null, 0, 1].includes(s.winner)
     && Array.isArray(s.score) && s.score.length === 2 && s.score.every(n => Number.isInteger(n) && n >= 0 && n <= 7)
     && finite(s, ['time', 'pointTimer', 'rallyHits', 'bestRally']) && s.time >= 0

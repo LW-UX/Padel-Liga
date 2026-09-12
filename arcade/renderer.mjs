@@ -1,9 +1,9 @@
-import { C, predictLanding } from './physics.mjs';
+import { C, predictLanding } from './physics.mjs?v=2026-09-12-rules-v2';
 
 export async function createRenderer(canvas) {
   const ctx = canvas.getContext('2d', { alpha: false });
   if (!ctx) throw new Error('Dein Browser unterstützt diese Spielansicht nicht.');
-  const court = new Image(); court.src = new URL('./court.svg', import.meta.url).href;
+  const court = new Image(); court.src = new URL('./court.svg?v=2026-09-12-rules-v2', import.meta.url).href;
   await court.decode();
   ctx.imageSmoothingEnabled = false;
   const px = x => Math.round(24 + x * 22.4), py = y => Math.round(24 + y * 22.4);
