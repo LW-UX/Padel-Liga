@@ -87,6 +87,24 @@ test('full forward power physically hits the back wall before landing on both si
     assert.match(s.message, /Wand vor Boden/); assert.equal(s.score[1 - side], 1);
   }
 });
+test('CPU stroke errors cannot alter human shots or safe automatic feeds', async () => {
+  const p = await physics;
+  for (const side of [0, 1]) for (const feed of [false, true]) for (const error of ['long', 'wide']) {
+    if (side === 0 && !feed) continue;
+    const { s } = await scenario({ x: 5, y: side ? 17 : 3, z: .8, lastHit: 1 - side, feed });
+    const unchanged = structuredClone(s);
+    p.hitBall(s, side, 5, s.teams[side], error);
+    p.hitBall(unchanged, side, 5);
+    assert.deepEqual(s, unchanged);
+  }
+});
+test('an overhit CPU stroke can still be intercepted before it reaches the wall', async () => {
+  const { p, s } = await scenario({ x: 2.5, y: 3, z: .8 });
+  p.hitBall(s, 0, 2.5, s.teams[0], 'long');
+  for (let i = 0; i < 300 && s.phase === 'rally' && s.rallyHits === 1; i++) p.simulateBall(s, p.C.step);
+  assert.equal(s.phase, 'rally'); assert.equal(s.rallyHits, 2); assert.equal(s.ball.lastHit, 1);
+  assert.deepEqual(s.score, [0, 0]);
+});
 test('formation respects all boundaries, preserves its gap and reaches both seams', async () => {
   const p = await physics;
   for (const side of [0, 1]) for (const x of [-1, 1]) for (const y of [-1, 1]) {

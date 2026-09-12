@@ -76,7 +76,7 @@
         <h2 class="sh-title" id="leaderboard-title" tabindex="-1">Globale Bestenliste</h2>
         <button class="secondary-button" id="leaderboard-back" type="button">Zum Spiel</button>
       </div>
-      <fieldset id="leaderboard-difficulty" class="difficulty-choice"><legend>Schwierigkeitsstufe der Bestenliste</legend><div class="match-scope-toggle"><button class="active" type="button" data-ranking-difficulty="easy" aria-pressed="true">Leicht</button><button type="button" data-ranking-difficulty="hard" aria-pressed="false">Schwer</button></div></fieldset>
+      <div id="leaderboard-difficulty" class="match-scope-toggle" role="group" aria-label="Schwierigkeitsstufe der Bestenliste"><button class="active" type="button" data-ranking-difficulty="easy" aria-pressed="true">Leicht</button><button type="button" data-ranking-difficulty="hard" aria-pressed="false">Schwer</button></div>
       <form id="win-form" class="arcade-win-form" novalidate hidden>
         <p class="hero-eyebrow">Gewonnen!</p>
         <p id="win-result" class="sh-meta"></p>
@@ -159,6 +159,6 @@
   </dialog>
   <noscript><p>Bitte JavaScript aktivieren, um PadelArcade zu spielen. <a href="../">Zurück zur Liga</a></p></noscript>
   <script src="../data/supabase-config.js"></script>
-  <script type="module" src="main.mjs?v=2026-09-12-easy-errors"></script>
+  <script type="module" src="main.mjs?v=2026-09-12-cpu-stroke-errors"></script>
 </body>
 </html>

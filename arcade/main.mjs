@@ -1,5 +1,5 @@
-import { createState, createClock, start, pause, reset, step } from './physics.mjs';
-import { createComputer } from './computer.mjs?v=2026-09-12-easy-errors';
+import { createState, createClock, start, pause, reset, step } from './physics.mjs?v=2026-09-12-cpu-stroke-errors';
+import { createComputer } from './computer.mjs?v=2026-09-12-cpu-stroke-errors';
 import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs?v=2026-09-12-easy-errors';
 import { createInput } from './input.mjs';
 import { createRenderer } from './renderer.mjs';
@@ -53,7 +53,7 @@ async function mount() {
   let local = false;
   let online = null, networkTimer = null;
   let input, roundId = crypto.randomUUID();
-  const simulation = createClock(() => step(state, input.read(), local ? input.readOpponent() : computer.read(state)));
+  const simulation = createClock(() => step(state, input.read(), local ? input.readOpponent() : computer.read(state), local ? null : computer.shotError));
   function toggle() {
     if (menu.open || onlineMenu.open || !document.getElementById('leaderboard').hidden) return;
     if (online) { input.clear(); if (['playing', 'countdown'].includes(online.stage)) online.requestPause(); else online.requestReady(); return; }
@@ -109,7 +109,7 @@ async function mount() {
     }
     document.getElementById('start-difficulty').hidden = !!online || local || state.phase !== 'ready';
     if (online) { updateOnline(); return; }
-    setText(document.getElementById('opponent-label'), local ? 'WASD' : `CPU · ${DIFFICULTIES[difficulty].label}`);
+    setText(document.getElementById('opponent-label'), local ? 'WASD' : 'CPU');
     if (displayedPhase === state.phase) return;
     displayedPhase = state.phase;
     overlay.hidden = ['rally', 'point'].includes(state.phase);

@@ -4,9 +4,10 @@ import { DIFFICULTIES, requireDifficulty } from './difficulty.mjs?v=2026-09-12-e
 export function createComputer({ difficulty = 'hard', random = Math.random } = {}) {
   const profile = DIFFICULTIES[requireDifficulty(difficulty)];
   let nextDecision = 0, target = { offset: 0, y: 3.2 };
-  let incomingShot = null, aimError = 0, mistakeOffset = null;
+  let incomingShot = null, aimError = 0, mistakeOffset = null, shotError = null;
   return {
-    reset() { nextDecision = 0; target = { offset: 0, y: 3.2 }; incomingShot = null; aimError = 0; mistakeOffset = null; },
+    get shotError() { return shotError; },
+    reset() { nextDecision = 0; target = { offset: 0, y: 3.2 }; incomingShot = null; aimError = 0; mistakeOffset = null; shotError = null; },
     read(state) {
       const team = state.teams[0], b = state.ball;
       if (difficulty === 'easy' && state.phase === 'rally') {
@@ -17,8 +18,13 @@ export function createComputer({ difficulty = 'hard', random = Math.random } = {
           incomingShot = shot;
           aimError = 0;
           mistakeOffset = null;
+          shotError = null;
           if (shot !== null) {
-            const miss = random() < 0.25;
+            // Mutually exclusive mistakes: 25% positioning, 6% too long,
+            // 6% too wide. A stroke error still needs a real paddle contact.
+            const outcome = random(), miss = outcome < 0.25;
+            shotError = outcome >= 0.25 && outcome < 0.31 ? 'long'
+              : outcome >= 0.31 && outcome < 0.37 ? 'wide' : null;
             aimError = miss ? (random() < 0.5 ? -1 : 1) * (1.25 + random() * 0.4) : (random() * 2 - 1) * 0.25;
           }
         }

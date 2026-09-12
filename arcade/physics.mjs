@@ -74,7 +74,7 @@ export function moveTeam(team, input, dt) {
   const forward = Math.max(0, team.vy * (team.side ? -1 : 1)) / C.speed;
   team.power += (forward - team.power) * (1 - Math.exp(-dt / 0.10));
 }
-export function hitBall(state, side, paddleX, team = state.teams[side]) {
+export function hitBall(state, side, paddleX, team = state.teams[side], shotError = null) {
   const b = state.ball;
   if (!b.feed && b.lastHit === side) {
     awardPoint(state, 1 - side, 'Doppelkontakt');
@@ -85,9 +85,10 @@ export function hitBall(state, side, paddleX, team = state.teams[side]) {
   const offset = clamp((b.x - paddleX) / (C.paddleWidth / 2 + C.radius), -1, 1);
   const targetY = side ? 2.8 : 17.2;
   const distance = Math.abs(targetY - b.y);
-  const power = clamp(team.power, 0, 1);
+  const mistake = side === 0 && !b.feed ? shotError : null;
+  const power = mistake === 'long' ? 1 : clamp(team.power, 0, 1);
   // At full forward speed the predicted first bounce is beyond the back wall.
-  // This is a physical overshoot, not an artificial random error or instant penalty.
+  // The resulting flight is simulated until a collision decides the point.
   const wallDistance = side ? b.y - C.radius : C.length - C.radius - b.y;
   const travel = distance + (wallDistance + 2.4 - distance) * power * power;
   // Position determines the arc. Even a low, hard stroke clears the net;
@@ -97,6 +98,12 @@ export function hitBall(state, side, paddleX, team = state.teams[side]) {
   const duration = Math.max(1.05, Math.sqrt(Math.max(0, 2 * needed / (C.gravity * netFraction * (1 - netFraction)))));
   b.vy = direction * travel / duration;
   b.vx = Math.abs(b.vy) * offset * 0.32;
+  if (mistake === 'wide') {
+    // Aim beyond the nearer side wall before the planned first bounce.
+    // The normal collision rules decide the point when the ball gets there.
+    const wallX = b.x <= C.width / 2 ? -0.5 : C.width + 0.5;
+    b.vx = (wallX - b.x) / (duration * 0.65);
+  }
   b.vz = (C.gravity * duration * duration / 2 - b.z) / duration;
   b.lastHit = side;
   b.bounces = 0;
@@ -128,7 +135,7 @@ function advance(b, t) {
   b.x += b.vx * t; b.y += b.vy * t;
   b.z = Math.max(0, heightAt(b, t)); b.vz -= C.gravity * t;
 }
-export function simulateBall(state, dt, origins = state.teams.map(t => ({ ...t }))) {
+export function simulateBall(state, dt, origins = state.teams.map(t => ({ ...t })), computerShotError = null) {
   const b = state.ball;
   let remaining = dt, elapsed = 0;
   for (let iteration = 0; remaining > EPS && iteration < 20 && state.phase === 'rally'; iteration++) {
@@ -185,11 +192,11 @@ export function simulateBall(state, dt, origins = state.teams.map(t => ({ ...t }
         awardPoint(state, returned ? b.lastHit : 1 - b.lastHit, returned ? 'Nach Aufsprung zurück ins Netz' : 'Im Netz');
       }
     } else {
-      hitBall(state, event.side, event.x);
+      hitBall(state, event.side, event.x, state.teams[event.side], event.side === 0 ? computerShotError : null);
     }
   }
 }
-export function step(state, human = { x: 0, y: 0 }, computer = { x: 0, y: 0 }) {
+export function step(state, human = { x: 0, y: 0 }, computer = { x: 0, y: 0 }, computerShotError = null) {
   if (state.phase !== 'rally' && state.phase !== 'point') return;
   state.time += C.step;
   state.effects.forEach(e => { e.age += C.step; });
@@ -202,7 +209,7 @@ export function step(state, human = { x: 0, y: 0 }, computer = { x: 0, y: 0 }) {
   const origins = state.teams.map(t => ({ ...t }));
   moveTeam(state.teams[0], computer, C.step);
   moveTeam(state.teams[1], human, C.step);
-  simulateBall(state, C.step, origins);
+  simulateBall(state, C.step, origins, computerShotError);
 }
 // Frame rate changes only presentation; each call consumes 60 Hz simulation ticks.
 export function createClock(tick) {

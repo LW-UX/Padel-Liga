@@ -68,6 +68,51 @@ test('small errors remain bounded and resetting reproduces the initial controlle
   }
 });
 
+test('stroke mistakes persist per return, reset on feeds, and are never sampled on hard', async () => {
+  const { createComputer } = await computer, p = await physics;
+  for (const [outcome, expected] of [[.1, null], [.28, 'long'], [.34, 'wide'], [.6, null]]) {
+    let calls = 0;
+    const cpu = createComputer({ difficulty: 'easy', random: () => calls++ === 0 ? outcome : .5 });
+    const state = p.createState(); state.phase = 'rally';
+    cpu.read(state); assert.equal(calls, 0); assert.equal(cpu.shotError, null);
+    state.ball.feed = false; cpu.read(state);
+    const sampled = calls;
+    for (const phase of ['rally', 'paused', 'point']) {
+      state.phase = phase; state.time += 1; cpu.read(state);
+      assert.equal(cpu.shotError, expected); assert.equal(calls, sampled);
+    }
+    p.feed(state); cpu.read(state); assert.equal(cpu.shotError, null);
+    state.ball.feed = false; state.ball.lastHit = 1; cpu.read(state);
+    assert.ok(calls > sampled);
+    cpu.reset(); assert.equal(cpu.shotError, null);
+  }
+  const hard = createComputer({ difficulty: 'hard', random: () => assert.fail('hard sampled a mistake') });
+  const state = p.createState(); state.phase = 'rally'; state.ball.feed = false;
+  hard.read(state); assert.equal(hard.shotError, null);
+});
+
+test('easy stroke mistakes travel from an actual paddle hit to the rear or side wall before scoring', async () => {
+  const { createComputer } = await computer, p = await physics;
+  for (const [outcome, error] of [[.28, 'long'], [.34, 'wide']]) for (const x of [2.5, 7.5]) {
+    const state = p.createState(); state.phase = 'rally';
+    Object.assign(state.ball, { x, y: 3.4, z: .8, vx: 0, vy: -8, vz: 0, lastHit: 1, feed: false });
+    state.teams[1].offset = x < 5 ? 1.8 : -1.8;
+    let calls = 0;
+    const cpu = createComputer({ difficulty: 'easy', random: () => calls++ === 0 ? outcome : .5 });
+    while (state.rallyHits === 0 && state.time < 1) p.step(state, { x: 0, y: 0 }, cpu.read(state), cpu.shotError);
+    assert.equal(state.ball.lastHit, 0); assert.equal(state.rallyHits, 1);
+    assert.equal(cpu.shotError, error); assert.equal(state.phase, 'rally');
+    assert.deepEqual(state.score, [0, 0], 'Choosing a mistake or hitting never awards a point');
+    const hitTime = state.time;
+    while (state.phase === 'rally' && state.time < 5) p.step(state, { x: 0, y: 0 }, cpu.read(state), cpu.shotError);
+    assert.ok(state.time - hitTime > .1, 'The erroneous shot has a visible flight');
+    assert.deepEqual(state.score, [0, 1]); assert.match(state.message, /Wand vor Boden/);
+    assert.equal(state.ball.bounces, 0);
+    if (error === 'long') near(state.ball.y, p.C.length - p.C.radius);
+    else near(state.ball.x, x < 5 ? p.C.radius : p.C.width - p.C.radius);
+  }
+});
+
 async function play(difficulty, seed, active, fps = 60, duration = 180) {
   const p = await physics, { createComputer } = await computer;
   const state = p.createState(), cpu = createComputer({ difficulty, random: seeded(seed) });
@@ -81,7 +126,7 @@ async function play(difficulty, seed, active, fps = 60, duration = 180) {
         ball: { ...state.ball, x: 10 - state.ball.x, y: 20 - state.ball.y, vx: -state.ball.vx, vy: -state.ball.vy, lastHit: 1 - state.ball.lastHit } };
       const move = human.read(view); input = { x: -move.x, y: -move.y };
     }
-    p.step(state, input, cpu.read(state));
+    p.step(state, input, cpu.read(state), cpu.shotError);
   });
   for (let i = 0; i < fps * duration && state.phase !== 'over'; i++) clock.advance(1 / fps);
   return state;
@@ -89,14 +134,17 @@ async function play(difficulty, seed, active, fps = 60, duration = 180) {
 
 test('easy can be beaten by active returns, sustains rallies, and does not reward standing still', async () => {
   let activeWins = 0, idleWins = 0, bestRally = 0, easyPoints = 0, hardPoints = 0;
-  for (let seed = 1; seed <= 20; seed++) {
+  for (let seed = 1; seed <= 100; seed++) {
     const idle = await play('easy', seed, false), active = await play('easy', seed, true);
     idleWins += idle.phase === 'over' && idle.winner === 1;
     activeWins += active.phase === 'over' && active.winner === 1;
     bestRally = Math.max(bestRally, active.bestRally); easyPoints += active.score[1];
     hardPoints += (await play('hard', seed, true)).score[1];
   }
-  assert.equal(idleWins, 0); assert.ok(activeWins >= 10); assert.ok(bestRally >= 10);
+  // Occasional lucky wins are possible with genuine random stroke errors;
+  // standing still must remain unreliable across a broad, reproducible sample.
+  assert.ok(idleWins <= 5, `Standing still won ${idleWins}/100 matches`);
+  assert.ok(activeWins >= 50); assert.ok(bestRally >= 10);
   assert.ok(easyPoints > hardPoints, 'The same return strategy earns more points against easy');
 });
 
