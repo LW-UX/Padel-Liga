@@ -1,5 +1,5 @@
-import { C, clamp, predictLanding } from './physics.mjs?v=2026-09-13-natural-cpu';
-import { DIFFICULTIES, requireDifficulty } from './difficulty.mjs?v=2026-09-13-natural-cpu';
+import { C, clamp, predictLanding } from './physics.mjs?v=2026-09-13-easy-tracking';
+import { DIFFICULTIES, requireDifficulty } from './difficulty.mjs?v=2026-09-13-easy-tracking';
 
 export function createComputer({ difficulty = 'hard', random = Math.random } = {}) {
   const profile = DIFFICULTIES[requireDifficulty(difficulty)];
@@ -34,7 +34,7 @@ export function createComputer({ difficulty = 'hard', random = Math.random } = {
           aimError = 0;
           if (shot !== null) {
             // Keep pursuing the old target during a real delay after EVERY return.
-            reactAt = state.time + 0.25 + random() * 0.10;
+            reactAt = state.time + 0.45 + random() * 0.15;
             nextDecision = reactAt;
             aimError = (random() * 2 - 1) * 0.15;
           } else {
@@ -50,7 +50,7 @@ export function createComputer({ difficulty = 'hard', random = Math.random } = {
           const landing = predictLanding(b);
           // React to a short prediction, not perfect knowledge of future input.
           const y = b.bounces ? clamp(b.y + b.vy * 0.24, 1, 8.5) : clamp((landing?.y ?? 3) - 0.65, 1, 7.5);
-          const travel = Math.abs(b.vy) > 0.1 ? clamp((y - b.y) / b.vy, 0, 0.7) : 0;
+          const travel = Math.abs(b.vy) > 0.1 ? clamp((y - b.y) / b.vy, 0, difficulty === 'easy' && !b.feed ? 0.15 : 0.7) : 0;
           const x = clamp(b.x + b.vx * travel + Math.sin(state.time * 2.1) * 0.22 + aimError, 0.2, 9.8);
           const offsets = [2.5, 7.5].map(base => clamp(x - base, -C.maxOffset, C.maxOffset));
           const errors = offsets.map((v, i) => Math.abs([2.5, 7.5][i] + v - x) + Math.abs(v - team.offset) * 0.08);
@@ -65,7 +65,7 @@ export function createComputer({ difficulty = 'hard', random = Math.random } = {
         if (Math.abs(x) > 0.1) previousX = x;
       }
       // Normalize before slowing down so diagonal movement is also 5% slower.
-      const scale = 0.95 * profile.speed / Math.max(1, Math.hypot(x, y));
+      const scale = 0.95 * (difficulty === 'easy' && b.feed ? 0.70 : profile.speed) / Math.max(1, Math.hypot(x, y));
       return { x: x * scale, y: y * scale };
     }
   };

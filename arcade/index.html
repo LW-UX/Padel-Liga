@@ -7,7 +7,7 @@
   <title>PadelArcade</title>
   <link rel="icon" href="../favicon.ico" sizes="any">
   <link rel="stylesheet" href="../style.css?v=2026-09-12-button-selection">
-  <link rel="stylesheet" href="arcade.css?v=2026-09-13-sound-controls">
+  <link rel="stylesheet" href="arcade.css?v=2026-09-13-transparent-countdown">
 </head>
 <body>
   <div class="arcade-shell">
@@ -38,6 +38,7 @@
         </div>
         <div class="court-wrap">
           <canvas id="court" width="272" height="496" tabindex="0" aria-label="PadelArcade. Du spielst unten mit den gelben Balken. Bewegen mit Pfeiltasten oder WASD." aria-describedby="rules-text">Zum Spielen wird ein Browser mit Canvas-Unterstützung benötigt.</canvas>
+          <div class="countdown-display" id="countdown-display" role="status" aria-live="assertive" hidden></div>
           <div class="game-overlay" id="game-overlay">
             <p class="hero-eyebrow eyebrow" id="overlay-label">EINE KURZE PADELPAUSE</p>
             <h2 class="sh-title" id="overlay-title">Bereit?</h2>
@@ -167,6 +168,6 @@
   <audio id="effect-victory" src="victory.mp3" preload="auto"></audio>
   <noscript><p>Bitte JavaScript aktivieren, um PadelArcade zu spielen. <a href="../">Zurück zur Liga</a></p></noscript>
   <script src="../data/supabase-config.js"></script>
-  <script type="module" src="main.mjs?v=2026-09-13-natural-cpu-audio-balance"></script>
+  <script type="module" src="main.mjs?v=2026-09-13-easy-tracking-transparent-countdown"></script>
 </body>
 </html>

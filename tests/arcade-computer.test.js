@@ -5,14 +5,14 @@ const computer = import('../arcade/computer.mjs');
 function near(a, b) { assert.ok(Math.abs(a - b) < 1e-9, `${a} != ${b}`); }
 function seeded(seed) { return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; }; }
 
-test('easy movement is thirty percent slower in every direction, including diagonal', async () => {
+test('easy movement is forty-five percent slower in every direction, including diagonal', async () => {
   const { createComputer } = await computer, p = await physics;
   for (const offset of [-1.8, 0, 1.8]) for (const y of [1, 3.2, 8]) {
-    const state = p.createState(); state.ball.lastHit = 0;
+    const state = p.createState(); state.ball.lastHit = 0; state.ball.feed = false;
     Object.assign(state.teams[0], { offset, y });
     const hard = createComputer({ difficulty: 'hard' }).read(state);
     const easy = createComputer({ difficulty: 'easy' }).read(state);
-    near(easy.x, hard.x * .7); near(easy.y, hard.y * .7);
+    near(easy.x, hard.x * .55); near(easy.y, hard.y * .55);
   }
 });
 
@@ -33,10 +33,10 @@ test('every human return waits a full reaction delay even just before a schedule
   for (const draw of [0, .5, 1]) {
     let calls = 0;
     const cpu = createComputer({ difficulty: 'easy', random: () => { calls++; return draw; } });
-    const state = p.createState(); state.phase = 'rally'; state.ball.lastHit = 0;
+    const state = p.createState(); state.phase = 'rally'; state.ball.lastHit = 0; state.ball.feed = false;
     const old = cpu.read(state);
     state.time = .39; Object.assign(state.ball, { lastHit: 1, feed: false, x: 9 });
-    cpu.read(state); const ready = state.time + .25 + draw * .1;
+    cpu.read(state); const ready = state.time + .45 + draw * .15;
     for (const time of [.40, ready - .001]) {
       state.time = time; assert.deepEqual(cpu.read(state), old);
     }
@@ -56,11 +56,11 @@ test('easy stays forward briefly after a return rather than retreating immediate
   const cpu = createComputer({ difficulty: 'easy', random: () => .5 });
   const state = p.createState(); state.phase = 'rally'; state.ball.feed = false;
   Object.assign(state.ball, { x: 2.5, y: 8, vy: 0, bounces: 1 });
-  cpu.read(state); state.time = .31; const forward = cpu.read(state);
+  cpu.read(state); state.time = .61; const forward = cpu.read(state);
   assert.ok(forward.y > 0);
-  state.ball.lastHit = 0; state.time = .32; cpu.read(state);
-  state.time = .60; assert.deepEqual(cpu.read(state), forward);
-  state.time = .63; assert.ok(cpu.read(state).y < forward.y);
+  state.ball.lastHit = 0; state.ball.feed = false; state.time = .62; cpu.read(state);
+  state.time = .90; assert.deepEqual(cpu.read(state), forward);
+  state.time = .93; assert.ok(cpu.read(state).y < forward.y);
 });
 
 test('contact scatter is continuous, mostly small, and increases under pressure', async () => {
@@ -80,7 +80,7 @@ test('contact scatter is continuous, mostly small, and increases under pressure'
   assert.equal(hard.stroke, null); hard.read(p.createState());
 });
 
-async function play(difficulty, seed, active, fps = 60, duration = 360) {
+async function play(difficulty, seed, active, fps = 60, duration = 360, strength = 1) {
   const p = await physics, { createComputer } = await computer;
   const state = p.createState(), cpu = createComputer({ difficulty, random: seeded(seed) });
   const human = createComputer({ difficulty: 'hard' });
@@ -88,10 +88,10 @@ async function play(difficulty, seed, active, fps = 60, duration = 360) {
   const clock = p.createClock(() => {
     let input = { x: 0, y: 0 };
     if (active) {
-      // Mirror the same active return strategy onto the player's half.
+      // This is a reproducible reference controller, not a human win-rate estimate.
       const view = { ...state, teams: [{ ...state.teams[1], offset: -state.teams[1].offset, y: 20 - state.teams[1].y }],
         ball: { ...state.ball, x: 10 - state.ball.x, y: 20 - state.ball.y, vx: -state.ball.vx, vy: -state.ball.vy, lastHit: 1 - state.ball.lastHit } };
-      const move = human.read(view); input = { x: -move.x, y: -move.y };
+      const move = human.read(view); input = { x: -move.x * strength, y: -move.y * strength };
     }
     p.step(state, input, cpu.read(state), cpu.stroke);
   });
@@ -166,4 +166,13 @@ test('pressured contacts sometimes stray out, mostly stay in, and retain the nor
     faults += p.predictLanding(s.ball).fault === true;
   }
   assert.ok(faults > 0 && faults < 200, `${faults}/1000 marginal running contacts stray out`);
+});
+
+test('easy is beatable with a slower return controller within three minutes', async () => {
+  let wins = 0;
+  for (let seed = 1; seed <= 30; seed++) {
+    const state = await play('easy', seed, true, 60, 180, .7);
+    wins += state.phase === 'over' && state.winner === 1;
+  }
+  assert.ok(wins >= 24, `${wins}/30 wins with a reduced-speed controller`);
 });

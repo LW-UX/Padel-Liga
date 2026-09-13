@@ -1,6 +1,6 @@
 import { createState, createClock, start, pause, reset, step } from './physics.mjs?v=2026-09-13-natural-cpu';
-import { createComputer } from './computer.mjs?v=2026-09-13-natural-cpu';
-import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs?v=2026-09-13-natural-cpu';
+import { createComputer } from './computer.mjs?v=2026-09-13-easy-tracking';
+import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs?v=2026-09-13-easy-tracking';
 import { createInput } from './input.mjs?v=2026-09-12-rules-v2';
 import { createRenderer } from './renderer.mjs?v=2026-09-12-landing-fix';
 import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-game-over-actions-v2';
@@ -27,6 +27,7 @@ async function mount() {
   const overlay = document.getElementById('game-overlay');
   const overlayTitle = document.getElementById('overlay-title');
   const overlayText = document.getElementById('overlay-text');
+  const countdownDisplay = document.getElementById('countdown-display');
   const humanScore = document.getElementById('human-score');
   const computerScore = document.getElementById('computer-score');
   const gameTime = document.getElementById('game-time');
@@ -78,8 +79,8 @@ async function mount() {
       victory: document.getElementById('effect-victory')
     },
     // The supplied files differ substantially in source level. The short
-    // bounce sample needs full gain to read as clearly as the player hit.
-    volume: { countdown: 0.30, dodge: 1, hit: 0.28, gameOver: 0.27, victory: 0.11 }
+    // bounce sample needs extra gain to read as clearly as the player hit.
+    volume: { countdown: 0.30, dodge: 0.75, hit: 0.28, gameOver: 0.27, victory: 0.11 }
   });
   let lastEffectSequence = 0, soundPhase = state.phase, lastOnlineStage = null, onlineCountdownVoice = null;
   function updateAudioToggle(toggle, enabled, name) {
@@ -168,20 +169,12 @@ async function mount() {
     sounds.stopAll();
     const voice = sounds.play('countdown');
     localCountdown = { startedAt: performance.now(), durationMs, voice };
-    voice?.addEventListener('playing', () => {
-      if (localCountdown?.voice === voice) localCountdown.startedAt = performance.now();
-    }, { once: true });
-    voice?.addEventListener('ended', () => {
-      if (localCountdown?.voice === voice) finishLocalCountdown();
-    }, { once: true });
     input.clear(); simulation.reset(); previous = null; displayedPhase = '';
     update(); render(state); schedule();
   }
   function localCountdownElapsed(now = performance.now()) {
     if (!localCountdown) return 0;
-    const audioTime = localCountdown.voice && localCountdown.voice.readyState >= 2 && !localCountdown.voice.paused
-      ? localCountdown.voice.currentTime * 1000 : null;
-    return Number.isFinite(audioTime) ? audioTime : now - localCountdown.startedAt;
+    return now - localCountdown.startedAt;
   }
   const simulation = createClock(() => step(state, input.read(), local ? input.readOpponent() : computer.read(state), local ? null : computer.stroke));
   function toggle() {
@@ -248,7 +241,7 @@ async function mount() {
     document.getElementById('start-difficulty').hidden = !!online || local || !!localCountdown || state.phase !== 'ready';
     updateOverlayChoices();
     overlay.classList.toggle('game-over-actions', !online && state.phase === 'over');
-    overlay.classList.toggle('countdown-overlay', !!localCountdown || online?.stage === 'countdown');
+    countdownDisplay.hidden = !localCountdown && online?.stage !== 'countdown';
     if (online) { updateOnline(); return; }
     setText(document.getElementById('opponent-label'), local ? 'WASD' : 'CPU');
     if (localCountdown) {
@@ -256,8 +249,8 @@ async function mount() {
       const countdownPhase = `countdown:${label}`;
       if (displayedPhase === countdownPhase) return;
       displayedPhase = countdownPhase;
-      overlay.hidden = false;
-      overlayTitle.textContent = label;
+      overlay.hidden = true;
+      countdownDisplay.textContent = label;
       status.textContent = label === 'GO' ? 'Los geht’s!' : `Start in ${label} …`;
       document.getElementById('leaderboard-after-game').hidden = true;
       gameOverBackButton.hidden = true;
@@ -265,6 +258,7 @@ async function mount() {
       resetButton.disabled = false;
       return;
     }
+    countdownDisplay.hidden = true;
     if (displayedPhase === state.phase) return;
     displayedPhase = state.phase;
     overlay.hidden = ['rally', 'point'].includes(state.phase);
@@ -292,8 +286,19 @@ async function mount() {
   }
   function frame(now) {
     frameId = 0;
-    if (localCountdown && localCountdownElapsed(now) >= localCountdown.durationMs) finishLocalCountdown();
-    else if (previous !== null) {
+    if (localCountdown) {
+      if (localCountdownElapsed(now) >= localCountdown.durationMs) finishLocalCountdown();
+      else {
+        previous = null;
+        const interval = 1000 / frameRate;
+        if (now - lastPaint >= interval - 0.5) {
+          lastPaint = Number.isFinite(lastPaint) ? lastPaint + Math.max(1, Math.floor((now - lastPaint + 0.5) / interval)) * interval : now;
+          render(state); update();
+        }
+        schedule();
+        return;
+      }
+    } else if (previous !== null) {
       if (online) online.advance((now - previous) / 1000);
       else simulation.advance((now - previous) / 1000);
     }
@@ -340,7 +345,7 @@ async function mount() {
     const stage = online.stage;
     const interrupted = online.suspended;
     overlay.classList.add('online-overlay');
-    overlay.hidden = stage === 'playing' && !interrupted;
+    overlay.hidden = ['playing', 'countdown'].includes(stage) && !interrupted;
     roomInfo.hidden = !['waiting', 'paused'].includes(stage) || interrupted;
     setText(document.getElementById('room-code'), online.code);
     setText(document.getElementById('room-players'), online.peer
@@ -358,9 +363,10 @@ async function mount() {
     setText(pauseButton, 'Pause'); resetButton.hidden = false; resetButton.disabled = false;
     const titles = { connecting: 'Verbinden …', waiting: 'Warteraum', countdown: 'Gleich geht’s los', paused: 'Pause', over: state.winner === 1 ? 'Gewonnen!' : 'Revanche?', ended: 'Spiel beendet' };
     const countdownRemaining = online.role === 'host' ? online.countdownUntil - online.now() : online.countdown;
-    setText(overlayTitle, interrupted ? 'Verbindung fehlt' : stage === 'countdown'
-      ? countdownLabel(ONLINE.countdown - Math.max(0, countdownRemaining), ONLINE.countdown)
-      : titles[stage] || '');
+    const countdown = countdownLabel(ONLINE.countdown - Math.max(0, countdownRemaining), ONLINE.countdown);
+    countdownDisplay.hidden = interrupted || stage !== 'countdown';
+    if (stage === 'countdown' && !interrupted) setText(countdownDisplay, countdown);
+    setText(overlayTitle, interrupted ? 'Verbindung fehlt' : titles[stage] || '');
     setText(overlayText, stage === 'over' ? `${state.score[1]} : ${state.score[0]} · Spielzeit ${formatDuration(Math.round(state.time * 1000))}` : online.message);
     setText(status, interrupted || stage !== 'playing' ? online.message : state.message);
   }
