@@ -5,7 +5,7 @@ import { createInput } from './input.mjs?v=2026-09-12-rules-v2';
 import { createRenderer } from './renderer.mjs?v=2026-09-12-landing-fix';
 import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-game-over-actions-v2';
 import { OnlineSession, ONLINE, generateCode, normalizeCode } from './online.mjs?v=2026-09-13-sound-effects';
-import { COUNTDOWN_DURATION_MS, countdownLabel, createSoundEffects } from './audio.mjs?v=2026-09-13-mobile-audio-v2';
+import { COUNTDOWN_DURATION_MS, EFFECT_SOUND_NAMES, MUSIC_CUE_NAMES, backgroundMusicVolume, countdownLabel, createSoundEffects } from './audio.mjs?v=2026-09-13-mobile-audio-v5';
 
 const back = document.getElementById('back-link');
 const season = new URLSearchParams(location.search).get('saison');
@@ -68,7 +68,7 @@ async function mount() {
   const musicPreferenceKey = 'padelArcadeMusicEnabled';
   let musicEnabled = true;
   try { musicEnabled = localStorage.getItem(musicPreferenceKey) !== 'false'; } catch {}
-  music.volume = 0.22;
+  music.volume = backgroundMusicVolume(mobileControls.matches);
   music.muted = !musicEnabled;
   const sounds = createSoundEffects({
     elements: {
@@ -80,7 +80,8 @@ async function mount() {
     },
     // The supplied files differ substantially in source level. The short
     // bounce sample needs extra gain to read as clearly as the player hit.
-    volume: { countdown: 0.30, dodge: 0.75, hit: 0.28, gameOver: 0.27, victory: 0.11 }
+    volume: { countdown: 0.30, dodge: 0.75, hit: 0.28, gameOver: 0.27, victory: 0.11 },
+    toggleNames: EFFECT_SOUND_NAMES
   });
   sounds.preload();
   const unlockEffects = () => { sounds.unlock(); };
@@ -107,6 +108,8 @@ async function mount() {
   musicToggle.addEventListener('click', () => {
     musicEnabled = !musicEnabled;
     music.muted = !musicEnabled;
+    if (musicEnabled) sounds.unlock();
+    else sounds.stopNames(MUSIC_CUE_NAMES);
     try { localStorage.setItem(musicPreferenceKey, String(musicEnabled)); } catch {}
     updateMusicToggle();
     syncMusic();
@@ -142,7 +145,7 @@ async function mount() {
       sounds.play(effect.kind === 'hit' ? 'hit' : 'dodge');
     }
     lastEffectSequence = state.effectSequence;
-    if (state.phase === 'over' && soundPhase !== 'over') sounds.play(state.winner === 1 ? 'victory' : 'gameOver');
+    if (state.phase === 'over' && soundPhase !== 'over') sounds.play(state.winner === 1 ? 'victory' : 'gameOver', { enabled: musicEnabled });
     soundPhase = state.phase;
     const onlineStage = online?.stage ?? null;
     if (onlineStage === 'countdown' && lastOnlineStage !== 'countdown') {
@@ -204,6 +207,7 @@ async function mount() {
   }
   input = createInput(canvas, null, () => state.teams[1], toggle);
   function arrangeControls() {
+    music.volume = backgroundMusicVolume(mobileControls.matches);
     localButton.disabled = mobileControls.matches;
     localButton.title = mobileControls.matches ? 'Nur mit Tastatur verfügbar' : '';
     if (mobileControls.matches) {

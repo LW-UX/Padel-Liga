@@ -2,6 +2,9 @@
 // peers reveal GO and start play on the same audio boundary.
 export const COUNTDOWN_DURATION_MS = 3552;
 export const COUNTDOWN_LABELS = Object.freeze(['3', '2', '1', 'GO']);
+export const EFFECT_SOUND_NAMES = Object.freeze(['countdown', 'dodge', 'hit']);
+export const MUSIC_CUE_NAMES = Object.freeze(['gameOver', 'victory']);
+export const backgroundMusicVolume = mobile => mobile ? 0.10 : 0.22;
 
 export function countdownLabel(elapsedMs, durationMs = COUNTDOWN_DURATION_MS) {
   const duration = Number.isFinite(durationMs) && durationMs > 0 ? durationMs : COUNTDOWN_DURATION_MS;
@@ -14,14 +17,18 @@ export function createSoundEffects({
   storage = globalThis.localStorage,
   preferenceKey = 'padelArcadeEffectsEnabled',
   volume = 0.28,
+  toggleNames = Object.keys(elements),
   AudioContextClass = globalThis.AudioContext ?? globalThis.webkitAudioContext,
   fetchAudio = globalThis.fetch
 }) {
   let enabled = true;
+  const toggledNames = new Set(toggleNames);
   const active = new Set();
+  const encoded = new Map();
   const buffers = new Map();
   let context = null;
   let loading = null;
+  let decoding = null;
   try { enabled = storage?.getItem(preferenceKey) !== 'false'; } catch {}
 
   function forget(voice) { active.delete(voice); }
@@ -39,25 +46,38 @@ export function createSoundEffects({
   }
   async function preload() {
     if (loading) return loading;
-    const audioContext = getContext();
-    if (!audioContext || typeof fetchAudio !== 'function') return false;
+    if (typeof fetchAudio !== 'function') return false;
     loading = Promise.all(Object.entries(elements).map(async ([name, element]) => {
       const url = audioUrl(element);
       if (!url) return;
       try {
         const response = await fetchAudio(url);
         if (!response.ok) return;
-        const buffer = await audioContext.decodeAudioData(await response.arrayBuffer());
-        buffers.set(name, buffer);
+        encoded.set(name, await response.arrayBuffer());
       } catch {}
-    })).then(() => buffers.size > 0);
+    })).then(() => encoded.size > 0);
     return loading;
   }
+  async function decode() {
+    if (decoding) return decoding;
+    const audioContext = getContext();
+    if (!audioContext) return false;
+    decoding = (async () => {
+      await preload();
+      await Promise.all([...encoded].map(async ([name, data]) => {
+        try { buffers.set(name, await audioContext.decodeAudioData(data.slice(0))); } catch {}
+      }));
+      return buffers.size > 0;
+    })();
+    return decoding;
+  }
   async function unlock() {
+    // Creating the context here keeps it inside the user gesture on mobile;
+    // preload() deliberately fetches only encoded bytes before that gesture.
     const audioContext = getContext();
     const resume = audioContext && !['running', 'closed'].includes(audioContext.state)
       ? audioContext.resume().catch(() => {}) : Promise.resolve();
-    await Promise.all([resume, preload()]);
+    await Promise.all([resume, decode()]);
     return audioContext?.state === 'running' && buffers.size > 0;
   }
   function playBuffer(name, offsetSeconds) {
@@ -65,7 +85,7 @@ export function createSoundEffects({
     if (!context || context.state !== 'running' || !buffer) return null;
     const source = context.createBufferSource();
     const gain = context.createGain();
-    const voice = { backend: 'buffer', source, gain, stopped: false };
+    const voice = { backend: 'buffer', soundName: name, source, gain, stopped: false };
     source.buffer = buffer;
     gain.gain.value = level(name);
     source.connect(gain); gain.connect(context.destination);
@@ -79,6 +99,7 @@ export function createSoundEffects({
     const element = elements[name];
     if (!element) return null;
     const voice = element.cloneNode(true);
+    voice.soundName = name;
     voice.volume = level(name);
     voice.preload = 'auto';
     try { voice.currentTime = Math.max(0, offsetSeconds); } catch {}
@@ -88,8 +109,8 @@ export function createSoundEffects({
     voice.play().catch(() => forget(voice));
     return voice;
   }
-  function play(name, { offsetSeconds = 0 } = {}) {
-    if (!enabled || !elements[name]) return null;
+  function play(name, { offsetSeconds = 0, enabled: playbackEnabled = enabled } = {}) {
+    if (!playbackEnabled || !elements[name]) return null;
     return playBuffer(name, offsetSeconds) ?? playElement(name, offsetSeconds);
   }
   function stop(voice) {
@@ -109,9 +130,13 @@ export function createSoundEffects({
   function stopAll() {
     for (const voice of [...active]) stop(voice);
   }
+  function stopNames(names) {
+    const selected = new Set(names);
+    for (const voice of [...active]) if (selected.has(voice.soundName)) stop(voice);
+  }
   function setEnabled(value) {
     enabled = Boolean(value);
-    if (!enabled) stopAll();
+    if (!enabled) stopNames(toggledNames);
     try { storage?.setItem(preferenceKey, String(enabled)); } catch {}
     return enabled;
   }
@@ -127,6 +152,7 @@ export function createSoundEffects({
     unlock,
     stop,
     stopAll,
+    stopNames,
     toggle() { return setEnabled(!enabled); }
   };
 }

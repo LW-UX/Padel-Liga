@@ -2,7 +2,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 test('countdown presents 3, 2, 1 and GO in four equal sound sections', async () => {
-  const { COUNTDOWN_DURATION_MS, countdownLabel } = await import('../arcade/audio.mjs');
+  const { COUNTDOWN_DURATION_MS, EFFECT_SOUND_NAMES, MUSIC_CUE_NAMES, backgroundMusicVolume, countdownLabel } = await import('../arcade/audio.mjs');
+  assert.deepEqual(EFFECT_SOUND_NAMES, ['countdown', 'dodge', 'hit']);
+  assert.deepEqual(MUSIC_CUE_NAMES, ['gameOver', 'victory']);
+  assert.equal(backgroundMusicVolume(false), 0.22);
+  assert.equal(backgroundMusicVolume(true), 0.10);
   const section = COUNTDOWN_DURATION_MS / 4;
   assert.equal(countdownLabel(0), '3');
   assert.equal(countdownLabel(section - 1), '3');
@@ -27,11 +31,33 @@ test('sound effects apply their individually normalized playback level', async (
   assert.equal(voices.length, 2);
 });
 
+test('music and effects switches stop only the sounds assigned to their channel', async () => {
+  const { createSoundEffects, EFFECT_SOUND_NAMES, MUSIC_CUE_NAMES } = await import('../arcade/audio.mjs');
+  const template = { cloneNode() {
+    return { paused: false, currentTime: 0, addEventListener() {}, play: () => Promise.resolve(), pause() { this.paused = true; } };
+  } };
+  const sounds = createSoundEffects({
+    elements: { countdown: template, dodge: template, hit: template, gameOver: template, victory: template },
+    storage: null, toggleNames: EFFECT_SOUND_NAMES, AudioContextClass: null, fetchAudio: null
+  });
+  const hit = sounds.play('hit');
+  const victory = sounds.play('victory', { enabled: true });
+  sounds.toggle();
+  assert.equal(hit.paused, true);
+  assert.equal(victory.paused, false);
+  assert.equal(sounds.play('dodge'), null);
+  const gameOver = sounds.play('gameOver', { enabled: true });
+  sounds.stopNames(MUSIC_CUE_NAMES);
+  assert.equal(victory.paused, true);
+  assert.equal(gameOver.paused, true);
+});
+
 test('preloaded effects use one unlocked low-latency audio context and can overlap', async () => {
   const { createSoundEffects } = await import('../arcade/audio.mjs');
   const sources = [], gains = [];
+  let contexts = 0;
   class FakeAudioContext {
-    constructor(options) { this.options = options; this.state = 'suspended'; this.destination = {}; }
+    constructor(options) { contexts++; this.options = options; this.state = 'suspended'; this.destination = {}; }
     resume() { this.state = 'running'; return Promise.resolve(); }
     decodeAudioData() { return Promise.resolve({ duration: 0.4 }); }
     createBufferSource() {
@@ -48,7 +74,10 @@ test('preloaded effects use one unlocked low-latency audio context and can overl
     elements: { hit: element }, storage: null, volume: { hit: 0.28 }, AudioContextClass: FakeAudioContext,
     fetchAudio: async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) })
   });
+  assert.equal(await sounds.preload(), true);
+  assert.equal(contexts, 0);
   assert.equal(await sounds.unlock(), true);
+  assert.equal(contexts, 1);
   const first = sounds.play('hit');
   const second = sounds.play('hit', { offsetSeconds: 0.1 });
   assert.equal(first.backend, 'buffer');
