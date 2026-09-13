@@ -5,14 +5,14 @@ const computer = import('../arcade/computer.mjs');
 function near(a, b) { assert.ok(Math.abs(a - b) < 1e-9, `${a} != ${b}`); }
 function seeded(seed) { return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; }; }
 
-test('easy movement is twenty percent slower in every direction, including diagonal', async () => {
+test('easy movement is thirty percent slower in every direction, including diagonal', async () => {
   const { createComputer } = await computer, p = await physics;
   for (const offset of [-1.8, 0, 1.8]) for (const y of [1, 3.2, 8]) {
     const state = p.createState(); state.ball.lastHit = 0;
     Object.assign(state.teams[0], { offset, y });
     const hard = createComputer({ difficulty: 'hard' }).read(state);
     const easy = createComputer({ difficulty: 'easy' }).read(state);
-    near(easy.x, hard.x * .8); near(easy.y, hard.y * .8);
+    near(easy.x, hard.x * .7); near(easy.y, hard.y * .7);
   }
 });
 
@@ -28,92 +28,59 @@ test('easy decisions wait 0.4 seconds while hard still reacts after 0.2 seconds'
   }
 });
 
-test('mistakes are sampled once per return and persist across decisions, but never affect feeds', async () => {
+test('every human return waits a full reaction delay even just before a scheduled decision', async () => {
   const { createComputer } = await computer, p = await physics;
-  let calls = 0;
-  const values = [0.05, 0.8, 0.5, 0.9, 0.5];
-  const cpu = createComputer({ difficulty: 'easy', random: () => values[calls++] });
-  const state = p.createState(); state.phase = 'rally'; cpu.read(state); assert.equal(calls, 0);
-  Object.assign(state.ball, { feed: false, x: 2.5, vx: 0, vy: 0 }); state.rallyHits = 2;
-  let firstInput;
-  for (const time of [.41, .82, 1.23]) {
-    state.time = time;
-    const input = cpu.read(state);
-    assert.ok(input.x > .5, 'A large rightward error remains on later decisions');
-    if (firstInput) assert.deepEqual(input, firstInput, 'The mistaken target stays fixed');
-    firstInput = input;
-  }
-  assert.equal(calls, 3);
-  // Point intermissions and pauses must not consume another mistake.
-  state.score[0]++; state.phase = 'point'; cpu.read(state); assert.equal(calls, 3);
-  state.phase = 'paused'; cpu.read(state); assert.equal(calls, 3);
-  // New point with the same rallyHits is a new return.
-  state.phase = 'rally'; state.time = 1.64; cpu.read(state); assert.equal(calls, 5);
-  cpu.reset(); state.ball.feed = true; state.time = 0;
-  near(cpu.read(state).x, 0); assert.equal(calls, 5);
-  const hard = createComputer({ difficulty: 'hard', random: () => assert.fail('hard sampled a mistake') });
-  state.ball.feed = false; hard.read(state);
-});
-
-test('small errors remain bounded and resetting reproduces the initial controller state', async () => {
-  const { createComputer } = await computer, p = await physics;
-  for (const value of [0, .25, .5, .75, 1]) {
-    let draw = 0;
-    const cpu = createComputer({ difficulty: 'easy', random: () => ++draw % 2 ? .5 : value });
-    const state = p.createState(); state.phase = 'rally'; state.ball.feed = false;
-    const input = cpu.read(state);
-    near(input.x, (value * 2 - 1) * .25 * 2.1 * .95 * .8);
-    state.time = 10; state.ball.x = 9; cpu.read(state);
-    cpu.reset(); near(cpu.read(p.createState()).x, 0);
-  }
-});
-
-test('stroke mistakes persist per return, reset on feeds, and are never sampled on hard', async () => {
-  const { createComputer } = await computer, p = await physics;
-  for (const [outcome, expected] of [[.1, null], [.28, 'long'], [.34, 'wide'], [.6, null]]) {
+  for (const draw of [0, .5, 1]) {
     let calls = 0;
-    const cpu = createComputer({ difficulty: 'easy', random: () => calls++ === 0 ? outcome : .5 });
-    const state = p.createState(); state.phase = 'rally';
-    cpu.read(state); assert.equal(calls, 0); assert.equal(cpu.shotError, null);
-    state.ball.feed = false; cpu.read(state);
-    const sampled = calls;
-    for (const phase of ['rally', 'paused', 'point']) {
-      state.phase = phase; state.time += 1; cpu.read(state);
-      assert.equal(cpu.shotError, expected); assert.equal(calls, sampled);
+    const cpu = createComputer({ difficulty: 'easy', random: () => { calls++; return draw; } });
+    const state = p.createState(); state.phase = 'rally'; state.ball.lastHit = 0;
+    const old = cpu.read(state);
+    state.time = .39; Object.assign(state.ball, { lastHit: 1, feed: false, x: 9 });
+    cpu.read(state); const ready = state.time + .25 + draw * .1;
+    for (const time of [.40, ready - .001]) {
+      state.time = time; assert.deepEqual(cpu.read(state), old);
     }
-    p.feed(state); cpu.read(state); assert.equal(cpu.shotError, null);
-    state.ball.feed = false; state.ball.lastHit = 1; cpu.read(state);
-    assert.ok(calls > sampled);
-    cpu.reset(); assert.equal(cpu.shotError, null);
+    state.time = ready + .00001; assert.ok(cpu.read(state).x > 0);
+    assert.equal(calls, 2, 'Delay and small prediction error are sampled once');
+    state.phase = 'paused'; cpu.read(state); assert.equal(calls, 2);
+    state.phase = 'rally'; state.rallyHits += 2; state.time += .1;
+    const prior = cpu.read(state); state.ball.x = 0.5; state.time += .24;
+    assert.deepEqual(cpu.read(state), prior, 'A later return also gets a full delay');
+    cpu.reset(); state.ball.feed = true; state.time = 0; cpu.read(state);
+    assert.equal(calls, 4, 'Reset and automatic feed consume no randomness');
   }
-  const hard = createComputer({ difficulty: 'hard', random: () => assert.fail('hard sampled a mistake') });
-  const state = p.createState(); state.phase = 'rally'; state.ball.feed = false;
-  hard.read(state); assert.equal(hard.shotError, null);
 });
 
-test('easy stroke mistakes travel from an actual paddle hit to the rear or side wall before scoring', async () => {
+test('easy stays forward briefly after a return rather than retreating immediately', async () => {
   const { createComputer } = await computer, p = await physics;
-  for (const [outcome, error] of [[.28, 'long'], [.34, 'wide']]) for (const x of [2.5, 7.5]) {
-    const state = p.createState(); state.phase = 'rally';
-    Object.assign(state.ball, { x, y: 3.4, z: .8, vx: 0, vy: -8, vz: 0, lastHit: 1, feed: false });
-    state.teams[1].offset = x < 5 ? 1.8 : -1.8;
-    let calls = 0;
-    const cpu = createComputer({ difficulty: 'easy', random: () => calls++ === 0 ? outcome : .5 });
-    while (state.rallyHits === 0 && state.time < 1) p.step(state, { x: 0, y: 0 }, cpu.read(state), cpu.shotError);
-    assert.equal(state.ball.lastHit, 0); assert.equal(state.rallyHits, 1);
-    assert.equal(cpu.shotError, error); assert.equal(state.phase, 'rally');
-    assert.deepEqual(state.score, [0, 0], 'Choosing a mistake or hitting never awards a point');
-    const hitTime = state.time;
-    while (state.phase === 'rally' && state.time < 5) p.step(state, { x: 0, y: 0 }, cpu.read(state), cpu.shotError);
-    assert.ok(state.time - hitTime > .1, 'The erroneous shot has a visible flight');
-    assert.deepEqual(state.score, [0, 1]); assert.match(state.message, /(?:Wand|Zaun) vor Boden/);
-    assert.equal(state.ball.bounces, 0);
-    if (error === 'long') near(state.ball.y, p.C.length - p.C.radius);
-    else near(state.ball.x, x < 5 ? p.C.radius : p.C.width - p.C.radius);
-  }
+  const cpu = createComputer({ difficulty: 'easy', random: () => .5 });
+  const state = p.createState(); state.phase = 'rally'; state.ball.feed = false;
+  Object.assign(state.ball, { x: 2.5, y: 8, vy: 0, bounces: 1 });
+  cpu.read(state); state.time = .31; const forward = cpu.read(state);
+  assert.ok(forward.y > 0);
+  state.ball.lastHit = 0; state.time = .32; cpu.read(state);
+  state.time = .60; assert.deepEqual(cpu.read(state), forward);
+  state.time = .63; assert.ok(cpu.read(state).y < forward.y);
 });
 
-async function play(difficulty, seed, active, fps = 60, duration = 180) {
+test('contact scatter is continuous, mostly small, and increases under pressure', async () => {
+  const { createComputer } = await computer, p = await physics;
+  const sample = (offset, vx) => {
+    const cpu = createComputer({ difficulty: 'easy', random: seeded(37) });
+    return Array.from({ length: 2000 }, () => cpu.stroke({ offset, team: { ...p.createState().teams[0], vx }, time: 10 }));
+  };
+  const calm = sample(0, 0), stressed = sample(.95, 3.4);
+  const magnitude = a => a.reduce((sum, v) => sum + Math.abs(v.offset) + Math.abs(v.length - 1), 0);
+  assert.ok(magnitude(stressed) > magnitude(calm) * 5);
+  assert.ok(stressed.filter(v => Math.abs(v.length - 1) < .05).length > 1400);
+  assert.ok(stressed.some(v => v.length > 1.1)); assert.ok(stressed.some(v => v.length < .9));
+  assert.ok(stressed.some(v => v.offset < -.1)); assert.ok(stressed.some(v => v.offset > .1));
+  assert.ok(calm.every(v => Math.abs(v.offset) <= .015 && Math.abs(v.length - 1) <= .01));
+  const hard = createComputer({ difficulty: 'hard', random: () => assert.fail('hard used randomness') });
+  assert.equal(hard.stroke, null); hard.read(p.createState());
+});
+
+async function play(difficulty, seed, active, fps = 60, duration = 360) {
   const p = await physics, { createComputer } = await computer;
   const state = p.createState(), cpu = createComputer({ difficulty, random: seeded(seed) });
   const human = createComputer({ difficulty: 'hard' });
@@ -126,7 +93,7 @@ async function play(difficulty, seed, active, fps = 60, duration = 180) {
         ball: { ...state.ball, x: 10 - state.ball.x, y: 20 - state.ball.y, vx: -state.ball.vx, vy: -state.ball.vy, lastHit: 1 - state.ball.lastHit } };
       const move = human.read(view); input = { x: -move.x, y: -move.y };
     }
-    p.step(state, input, cpu.read(state), cpu.shotError);
+    p.step(state, input, cpu.read(state), cpu.stroke);
   });
   for (let i = 0; i < fps * duration && state.phase !== 'over'; i++) clock.advance(1 / fps);
   return state;
@@ -167,25 +134,36 @@ test('difficulty preferences default to easy and tolerate blocked or invalid sto
 });
 
 
-test('committed mistakes physically miss returnable balls at the centre and both formation limits', async () => {
+
+test('placing the ball behind a CPU drawn forwards wins through a genuine missed contact', async () => {
   const p = await physics, { createComputer } = await computer;
-  for (const x of [.9, 2.5, 4.1, 5.9, 7.5, 9.1]) for (const direction of [.2, .8]) {
-    for (const mistake of [false, true]) {
-      const state = p.createState(); state.phase = 'rally';
-      Object.assign(state.ball, { x, y: 17, z: .8, lastHit: 0, feed: false });
-      p.hitBall(state, 1, x);
-      // A 15% draw now produces a mistake; the old 10% policy did not.
-      const samples = mistake ? [.15, direction, .5] : [.9, .5]; let draw = 0;
-      const cpu = createComputer({ difficulty: 'easy', random: () => samples[draw++ % samples.length] });
-      while (state.phase === 'rally' && state.ball.lastHit === 1 && state.time < 10) p.step(state, { x: 0, y: 0 }, cpu.read(state));
-      if (mistake) {
-        assert.deepEqual(state.score, [0, 1], `Miss expected at x=${x}, direction=${direction}`);
-        assert.match(state.message, /Zweimal aufgesprungen/);
-        assert.equal(state.rallyHits, 1, 'No invisible stroke or artificial point');
-      } else {
-        assert.equal(state.ball.lastHit, 0, `Normal CPU must return x=${x}`);
-        assert.deepEqual(state.score, [0, 0]);
-      }
-    }
+  for (const side of [-1, 1]) for (const difficulty of ['easy', 'hard']) {
+    const state = p.createState(); state.phase = 'rally';
+    Object.assign(state.teams[0], { offset: side * 1.8, y: 6 });
+    const x = side < 0 ? 2.5 : 7.5;
+    Object.assign(state.ball, { x, y: 11, z: .8, lastHit: 0, feed: false });
+    p.hitBall(state, 1, x + side * .6);
+    const cpu = createComputer({ difficulty, random: () => .5 });
+    while (state.phase === 'rally' && state.ball.lastHit === 1 && state.time < 5) p.step(state, { x: 0, y: 0 }, cpu.read(state), cpu.stroke);
+    if (difficulty === 'easy') {
+      assert.deepEqual(state.score, [0, 1]); assert.match(state.message, /Zweimal aufgesprungen/);
+      assert.equal(state.rallyHits, 1, 'Point comes from missing the ball, not a forced bad shot');
+    } else assert.equal(state.ball.lastHit, 0);
   }
+});
+
+test('pressured contacts sometimes stray out, mostly stay in, and retain the normal angle limit', async () => {
+  const p = await physics, { createComputer } = await computer;
+  const cpu = createComputer({ difficulty: 'easy', random: seeded(37) });
+  let faults = 0;
+  for (let i = 0; i < 1000; i++) {
+    const s = p.createState(); s.phase = 'rally';
+    Object.assign(s.ball, { x: 7.5, y: 3, z: .8, lastHit: 1, feed: false });
+    s.teams[0].vx = 3.4;
+    p.hitBall(s, 0, 7.5 - .5 * (p.C.paddleWidth / 2 + p.C.radius), s.teams[0], cpu.stroke);
+    assert.equal(s.phase, 'rally'); assert.deepEqual(s.score, [0, 0]);
+    assert.ok(Math.abs(s.ball.vx / s.ball.vy) <= .32 + 1e-9);
+    faults += p.predictLanding(s.ball).fault === true;
+  }
+  assert.ok(faults > 0 && faults < 200, `${faults}/1000 marginal running contacts stray out`);
 });

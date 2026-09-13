@@ -32,7 +32,7 @@ export function createState() {
     teams: [0, 1].map(side => ({ side, offset: 0, y: side ? 17 : 3, vx: 0, vy: 0, power: 0 })),
     ball: { x: 2.5, y: 17, z: 0.8, vx: 0, vy: 0, vz: 0, lastHit: 1, bounces: 0, feed: true, contactSide: null },
     message: 'Bereit für eine kurze Partie?', rallyHits: 0, bestRally: 0,
-    pointTimer: 0, effects: [], winner: null
+    pointTimer: 0, effects: [], effectSequence: 0, winner: null
   };
 }
 export function reset(state) { Object.assign(state, createState()); }
@@ -71,6 +71,9 @@ export function awardPoint(state, winner, reason) {
   state.pointTimer = 1.8;
   state.bestRally = Math.max(state.bestRally, state.rallyHits);
 }
+function emitEffect(state, kind) {
+  state.effects.push({ id: ++state.effectSequence, x: state.ball.x, y: state.ball.y, age: 0, kind });
+}
 function approach(value, target, amount) {
   return value < target ? Math.min(value + amount, target) : Math.max(value - amount, target);
 }
@@ -88,20 +91,23 @@ export function moveTeam(team, input, dt) {
   const forward = clamp(team.vy * (team.side ? -1 : 1) / C.speed, -1, 1);
   team.power += (forward - team.power) * (1 - Math.exp(-dt / 0.10));
 }
-export function hitBall(state, side, paddleX, team = state.teams[side], shotError = null) {
+export function hitBall(state, side, paddleX, team = state.teams[side], computerStroke = null) {
   const b = state.ball;
+  emitEffect(state, 'hit');
   if (!b.feed && b.lastHit === side) {
     awardPoint(state, 1 - side, 'Doppelkontakt');
     return;
   }
   b.contactSide = side;
   const direction = side ? -1 : 1;
-  const offset = clamp((b.x - paddleX) / (C.paddleWidth / 2 + C.radius), -1, 1);
+  let offset = clamp((b.x - paddleX) / (C.paddleWidth / 2 + C.radius), -1, 1);
   const targetY = side ? 2.8 : 17.2;
   const distance = Math.abs(targetY - b.y);
-  const mistake = side === 0 && !b.feed ? shotError : null;
-  const power = mistake === 'long' ? 1 : clamp(team.power, 0, 1);
-  const soft = mistake === 'long' ? 1 : 1 + C.shortReduction * clamp(team.power, -1, 0);
+  const variation = side === 0 && !b.feed && typeof computerStroke === 'function'
+    ? computerStroke({ offset, team, time: state.time }) : null;
+  if (variation) offset = clamp(offset + variation.offset, -1, 1);
+  const power = clamp(team.power, 0, 1);
+  const soft = 1 + C.shortReduction * clamp(team.power, -1, 0);
   // At full forward speed the predicted first bounce is beyond the back wall.
   // The resulting flight is simulated until a collision decides the point.
   const wallDistance = side ? b.y - C.radius : C.length - C.radius - b.y;
@@ -113,11 +119,11 @@ export function hitBall(state, side, paddleX, team = state.teams[side], shotErro
   const duration = Math.max(1.05, Math.sqrt(Math.max(0, 2 * needed / (C.gravity * netFraction * (1 - netFraction)))));
   b.vy = direction * travel / duration;
   b.vx = Math.abs(b.vy) * offset * 0.32;
-  if (mistake === 'wide') {
-    // Aim beyond the nearer side wall before the planned first bounce.
-    // The normal collision rules decide the point when the ball gets there.
-    const wallX = b.x <= C.width / 2 ? -0.5 : C.width + 0.5;
-    b.vx = (wallX - b.x) / (duration * 0.65);
+  // Preserve the normal contact-angle range. Pressure adds continuous scatter,
+  // never a wall target; most contacts get only a small change in length.
+  if (variation) {
+    b.vx *= variation.length;
+    b.vy *= variation.length;
   }
   b.vx *= soft;
   b.vy *= soft;
@@ -128,7 +134,6 @@ export function hitBall(state, side, paddleX, team = state.teams[side], shotErro
   state.rallyHits++;
   state.bestRally = Math.max(state.bestRally, state.rallyHits);
   state.message = power > 0.85 ? 'Viel Druck · Achtung, Wand!' : soft < 0.94 ? 'Kurz gespielt · Achtung, Netz!' : 'Ballwechsel';
-  state.effects.push({ x: b.x, y: b.y, age: 0, kind: 'hit' });
 }
 function axisInterval(position, velocity, half) {
   if (Math.abs(velocity) < EPS) return Math.abs(position) <= half ? [-Infinity, Infinity] : null;
@@ -152,7 +157,7 @@ function advance(b, t) {
   b.x += b.vx * t; b.y += b.vy * t;
   b.z = Math.max(0, heightAt(b, t)); b.vz -= C.gravity * t;
 }
-export function simulateBall(state, dt, origins = state.teams.map(t => ({ ...t })), computerShotError = null) {
+export function simulateBall(state, dt, origins = state.teams.map(t => ({ ...t })), computerStroke = null) {
   const b = state.ball;
   let remaining = dt, elapsed = 0;
   for (let iteration = 0; remaining > EPS && iteration < 20 && state.phase === 'rally'; iteration++) {
@@ -190,20 +195,20 @@ export function simulateBall(state, dt, origins = state.teams.map(t => ({ ...t }
     if (!event) { advance(b, remaining); break; }
     advance(b, event.time); remaining -= event.time; elapsed += event.time;
     if (event.type === 'ground') {
+      emitEffect(state, 'bounce');
       if (sideAt(b.y) === b.lastHit && b.bounces === 0) awardPoint(state, 1 - b.lastHit, 'Boden auf eigener Seite');
       else if (b.bounces >= 1) awardPoint(state, b.lastHit, 'Zweimal aufgesprungen');
       else {
         b.bounces++; b.z = 0; b.vz = Math.abs(b.vz) * C.bounce;
-        state.effects.push({ x: b.x, y: b.y, age: 0, kind: 'bounce' });
         state.message = 'Einmal aufgesprungen · Wandspiel erlaubt';
       }
     } else if (event.type === 'wallX' || event.type === 'wallY') {
       const axis = event.type === 'wallX' ? 'x' : 'y';
       const contact = boundaryContact(b, axis);
+      emitEffect(state, 'wall');
       if (contact.fault) awardPoint(state, 1 - b.lastHit, contact.material === 'fence' ? 'Zaun vor Boden' : 'Wand vor Boden');
       else {
         b[`v${axis}`] *= -contact.damping;
-        state.effects.push({ x: b.x, y: b.y, age: 0, kind: 'wall' });
       }
     } else if (event.type === 'net') {
       if (b.z <= C.netHeight + C.radius) {
@@ -211,11 +216,11 @@ export function simulateBall(state, dt, origins = state.teams.map(t => ({ ...t }
         awardPoint(state, returned ? b.lastHit : 1 - b.lastHit, returned ? 'Nach Aufsprung zurück ins Netz' : 'Im Netz');
       }
     } else {
-      hitBall(state, event.side, event.x, state.teams[event.side], event.side === 0 ? computerShotError : null);
+      hitBall(state, event.side, event.x, state.teams[event.side], event.side === 0 ? computerStroke : null);
     }
   }
 }
-export function step(state, human = { x: 0, y: 0 }, computer = { x: 0, y: 0 }, computerShotError = null) {
+export function step(state, human = { x: 0, y: 0 }, computer = { x: 0, y: 0 }, computerStroke = null) {
   if (state.phase !== 'rally' && state.phase !== 'point') return;
   state.time += C.step;
   state.effects.forEach(e => { e.age += C.step; });
@@ -228,7 +233,7 @@ export function step(state, human = { x: 0, y: 0 }, computer = { x: 0, y: 0 }, c
   const origins = state.teams.map(t => ({ ...t }));
   moveTeam(state.teams[0], computer, C.step);
   moveTeam(state.teams[1], human, C.step);
-  simulateBall(state, C.step, origins, computerShotError);
+  simulateBall(state, C.step, origins, computerStroke);
 }
 // Frame rate changes only presentation; each call consumes 60 Hz simulation ticks.
 export function createClock(tick) {

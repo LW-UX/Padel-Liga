@@ -49,7 +49,7 @@ test('host grants exactly one guest seat even when joins race; both must be read
   h.host.requestReady(); h.flush(); h.advance(4000);
   assert.equal(h.host.stage, 'waiting'); assert.equal(h.host.state.time, 0);
   guest.requestReady(); h.flush(); assert.equal(h.host.stage, 'countdown');
-  h.advance(2900); assert.equal(h.host.state.time, 0);
+  h.advance(h.ONLINE.countdown - 100); assert.equal(h.host.state.time, 0);
   h.advance(200); assert.equal(h.host.stage, 'playing'); assert.equal(guest.stage, 'playing');
   assert.ok(h.host.state.time > 0);
 });
@@ -65,7 +65,7 @@ test('wrong and stale codes time out and a host collision cannot create a second
 
 test('guest movement is rotated once; host alone computes ball and score', async () => {
   const h = await harness(), guest = h.add('guest', 'guest', () => ({ x: 1, y: -1 }));
-  h.host.requestReady(); guest.requestReady(); h.flush(); h.advance(3500);
+  h.host.requestReady(); guest.requestReady(); h.flush(); h.advance(h.ONLINE.countdown + 500);
   assert.ok(h.host.state.teams[0].offset < 0); assert.ok(h.host.state.teams[0].y > 3);
   const view = guest.view(); assert.ok(view.teams[1].offset > 0); assert.ok(view.teams[1].y < 17);
   const before = structuredClone(h.host.state);
@@ -77,14 +77,14 @@ test('guest movement is rotated once; host alone computes ball and score', async
 
 test('a lost connection pauses both sides; reconnect requires mutual readiness and expiry closes room', async () => {
   const h = await harness(), guest = h.add('guest', 'guest');
-  h.host.requestReady(); guest.requestReady(); h.flush(); h.advance(3200);
+  h.host.requestReady(); guest.requestReady(); h.flush(); h.advance(h.ONLINE.countdown + 200);
   h.link(guest, false); h.advance(1700);
   assert.equal(h.host.stage, 'paused'); assert.equal(guest.stage, 'paused');
   const time = h.host.state.time; h.advance(1000); assert.equal(h.host.state.time, time);
   h.link(guest, true); h.advance(1000);
   assert.equal(h.host.suspended, false); assert.equal(guest.suspended, false);
   assert.equal(h.host.stage, 'paused'); assert.deepEqual(h.host.ready, [false, false]);
-  h.host.requestReady(); guest.requestReady(); h.flush(); h.advance(3200);
+  h.host.requestReady(); guest.requestReady(); h.flush(); h.advance(h.ONLINE.countdown + 200);
   assert.equal(h.host.stage, 'playing');
   h.link(guest, false); h.advance(22000); assert.equal(h.host.stage, 'ended'); assert.equal(guest.stage, 'ended');
 });
@@ -94,7 +94,7 @@ test('visibility pauses countdown and rally; leaving immediately closes the othe
   h.host.requestReady(); guest.requestReady(); h.flush(); h.advance(1000);
   guest.setVisible(false); h.flush(); assert.equal(h.host.stage, 'paused');
   h.advance(4000); assert.equal(h.host.state.time, 0);
-  guest.setVisible(true); h.flush(); h.host.requestReady(); guest.requestReady(); h.flush(); h.advance(3200);
+  guest.setVisible(true); h.flush(); h.host.requestReady(); guest.requestReady(); h.flush(); h.advance(h.ONLINE.countdown + 200);
   assert.equal(h.host.stage, 'playing'); h.host.setVisible(false); h.flush();
   assert.equal(guest.stage, 'paused'); guest.leave(); h.flush(); assert.equal(h.host.stage, 'ended');
 });
@@ -113,7 +113,7 @@ test('perspective rotation is reversible and malformed or stale snapshots are ig
   const { perspective, validSnapshot } = await import('../arcade/online.mjs');
   const { createState } = await import('../arcade/physics.mjs');
   const state = createState(); state.teams[0].offset = .7; state.ball.vx = 4; state.ball.vy = 7;
-  state.effects.push({ x: 2, y: 5, age: .1, kind: 'hit' });
+  state.effectSequence = 1; state.effects.push({ id: 1, x: 2, y: 5, age: .1, kind: 'hit' });
   assert.deepEqual(perspective(perspective(state, 0), 0), state);
   assert.ok(validSnapshot(state)); assert.ok(!validSnapshot({ ...state, ball: { ...state.ball, vx: NaN } }));
   const h = await harness(), guest = h.add('guest', 'guest'), before = structuredClone(guest.state);
@@ -125,7 +125,7 @@ test('perspective rotation is reversible and malformed or stale snapshots are ig
 test('delayed readiness from before a pause cannot restart the resumed room', async () => {
   const h = await harness(), guest = h.add('guest', 'guest');
   const oldEpoch = h.host.epoch;
-  h.host.requestReady(); guest.requestReady(); h.flush(); h.advance(3200);
+  h.host.requestReady(); guest.requestReady(); h.flush(); h.advance(h.ONLINE.countdown + 200);
   guest.requestPause(); h.flush();
   assert.ok(h.host.epoch > oldEpoch);
   h.host.requestReady(); h.flush();
@@ -177,7 +177,7 @@ test('old online protocol cannot claim a seat and classic snapshots are rejected
 
 test('guest backward movement produces negative power on the host and in the rotated guest view', async () => {
   const h = await harness(), guest = h.add('guest', 'guest', () => ({ x: 0, y: 1 }));
-  h.host.requestReady(); guest.requestReady(); h.flush(); h.advance(3300);
+  h.host.requestReady(); guest.requestReady(); h.flush(); h.advance(h.ONLINE.countdown + 300);
   assert.ok(h.host.state.teams[0].power < -.5);
   assert.ok(guest.view().teams[1].power < -.5);
   assert.equal(guest.view().ruleset, 'v2');

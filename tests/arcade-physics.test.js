@@ -47,6 +47,7 @@ test('second floor contact awards one point and cannot award it twice', async ()
   const { p, s } = await scenario({ z: 0.01, vz: -2, bounces: 1 });
   p.simulateBall(s, 0.03); p.simulateBall(s, 0.03);
   assert.deepEqual(s.score, [0, 1]); assert.match(s.message, /Zweimal/);
+  assert.equal(s.effectSequence, 1); assert.equal(s.effects[0].kind, 'bounce');
 });
 test('a first bounce on the hitter side is an error', async () => {
   const { p, s } = await scenario({ y: 14, z: 0.01, vz: -2 });
@@ -68,6 +69,7 @@ test('swept collision catches a fast ball through a paddle', async () => {
   const { p, s } = await scenario({ x: 2.5, y: 3.8, vy: -100, z: 1 });
   p.simulateBall(s, p.C.step);
   assert.equal(s.ball.lastHit, 0); assert.equal(s.rallyHits, 1); assert.ok(s.ball.vy > 0);
+  assert.equal(s.effectSequence, 1); assert.equal(s.effects[0].kind, 'hit');
 });
 test('a high ball passes above a paddle; a descending ball enters its reach', async () => {
   const high = await scenario({ x: 2.5, y: 3.5, vy: -20, z: 3 });
@@ -107,7 +109,7 @@ test('full forward power physically hits the back wall before landing on both si
 });
 test('CPU stroke errors cannot alter human shots or safe automatic feeds', async () => {
   const p = await physics;
-  for (const side of [0, 1]) for (const feed of [false, true]) for (const error of ['long', 'wide']) {
+  for (const side of [0, 1]) for (const feed of [false, true]) for (const error of [() => { assert.fail('Unaffected shot requested scatter'); }]) {
     if (side === 0 && !feed) continue;
     const { s } = await scenario({ x: 5, y: side ? 17 : 3, z: .8, lastHit: 1 - side, feed });
     const unchanged = structuredClone(s);
@@ -118,7 +120,7 @@ test('CPU stroke errors cannot alter human shots or safe automatic feeds', async
 });
 test('an overhit CPU stroke can still be intercepted before it reaches the wall', async () => {
   const { p, s } = await scenario({ x: 2.5, y: 3, z: .8 });
-  p.hitBall(s, 0, 2.5, s.teams[0], 'long');
+  p.hitBall(s, 0, 2.5, s.teams[0], () => ({ offset: 0, length: 1.2 }));
   for (let i = 0; i < 300 && s.phase === 'rally' && s.rallyHits === 1; i++) p.simulateBall(s, p.C.step);
   assert.equal(s.phase, 'rally'); assert.equal(s.rallyHits, 2); assert.equal(s.ball.lastHit, 1);
   assert.deepEqual(s.score, [0, 0]);
@@ -190,6 +192,8 @@ test('arcade page uses isolated modules and same-tab navigation preserves the se
   const league = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.ok(!/app\.js|supabase-js|chart\.js/.test(html));
   assert.match(html, /Padel<span>Arcade/);
+  assert.match(html, /<button[^>]+id="fps"[^>]*>60 FPS<\/button>/);
+  assert.ok(!/<select[^>]+id="fps"/.test(html));
   assert.match(league, /id="arcade-link" href="arcade\/"/);
   const source = fs.readFileSync(path.join(root, 'js/arcade-link.js'), 'utf8');
   const vm = require('node:vm');

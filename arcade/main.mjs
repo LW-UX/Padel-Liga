@@ -1,10 +1,11 @@
-import { createState, createClock, start, pause, reset, step } from './physics.mjs?v=2026-09-12-rules-v2';
-import { createComputer } from './computer.mjs?v=2026-09-12-rules-v2';
-import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs?v=2026-09-12-rules-v2';
+import { createState, createClock, start, pause, reset, step } from './physics.mjs?v=2026-09-13-natural-cpu';
+import { createComputer } from './computer.mjs?v=2026-09-13-natural-cpu';
+import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs?v=2026-09-13-natural-cpu';
 import { createInput } from './input.mjs?v=2026-09-12-rules-v2';
 import { createRenderer } from './renderer.mjs?v=2026-09-12-landing-fix';
 import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-game-over-actions-v2';
-import { OnlineSession, generateCode, normalizeCode } from './online.mjs?v=2026-09-12-landing-fix';
+import { OnlineSession, ONLINE, generateCode, normalizeCode } from './online.mjs?v=2026-09-13-sound-effects';
+import { COUNTDOWN_DURATION_MS, countdownLabel, createSoundEffects } from './audio.mjs?v=2026-09-13-sound-effects';
 
 const back = document.getElementById('back-link');
 const season = new URLSearchParams(location.search).get('saison');
@@ -36,6 +37,7 @@ async function mount() {
   const fps = document.getElementById('fps');
   const music = document.getElementById('game-music');
   const musicToggle = document.getElementById('music-toggle');
+  const effectsToggle = document.getElementById('effects-toggle');
   const menu = document.getElementById('game-menu');
   const menuButton = document.getElementById('menu-open');
   const actions = document.querySelector('.action-buttons');
@@ -46,6 +48,7 @@ async function mount() {
   const rules = document.querySelector('.right-notes');
   const mobileControls = matchMedia('(pointer: coarse), (max-width: 800px)');
   let frameId = 0, previous = null, lastPaint = -Infinity, displayedPhase = '';
+  let frameRate = 60;
   const primaryOverlayContent = document.getElementById('primary-overlay-content');
   const modeDivider = document.getElementById('mode-divider');
   const multiplayerOptions = document.getElementById('multiplayer-options');
@@ -59,26 +62,43 @@ async function mount() {
   const opponentPower = document.getElementById('opponent-power');
   let local = false;
   let onlineSetup = false;
-  let online = null, networkTimer = null;
+  let online = null, networkTimer = null, localCountdown = null;
   let input, roundId = crypto.randomUUID();
   const musicPreferenceKey = 'padelArcadeMusicEnabled';
   let musicEnabled = true;
   try { musicEnabled = localStorage.getItem(musicPreferenceKey) !== 'false'; } catch {}
   music.volume = 0.22;
   music.muted = !musicEnabled;
+  const sounds = createSoundEffects({
+    elements: {
+      countdown: document.getElementById('effect-countdown'),
+      dodge: document.getElementById('effect-ball-dodge'),
+      hit: document.getElementById('effect-ball-hit'),
+      gameOver: document.getElementById('effect-game-over'),
+      victory: document.getElementById('effect-victory')
+    },
+    // The supplied files differ substantially in source level. The short
+    // bounce sample needs full gain to read as clearly as the player hit.
+    volume: { countdown: 0.30, dodge: 1, hit: 0.28, gameOver: 0.27, victory: 0.11 }
+  });
+  let lastEffectSequence = 0, soundPhase = state.phase, lastOnlineStage = null, onlineCountdownVoice = null;
+  function updateAudioToggle(toggle, enabled, name) {
+    const label = enabled ? `${name} stummschalten` : `${name} einschalten`;
+    toggle.setAttribute('aria-pressed', String(enabled));
+    toggle.setAttribute('aria-label', label);
+    toggle.title = label;
+  }
   function updateMusicToggle() {
-    const label = musicEnabled ? 'Musik stummschalten' : 'Musik einschalten';
-    musicToggle.setAttribute('aria-pressed', String(musicEnabled));
-    musicToggle.setAttribute('aria-label', label);
-    musicToggle.title = label;
+    updateAudioToggle(musicToggle, musicEnabled, 'Musik');
   }
   function syncMusic() {
-    const playing = online ? ['playing', 'countdown'].includes(online.stage) : ['rally', 'point'].includes(state.phase);
+    const playing = online ? online.stage === 'playing' : ['rally', 'point'].includes(state.phase);
     const shouldPlay = musicEnabled && playing && !document.hidden && !menu.open && document.getElementById('leaderboard').hidden;
     if (shouldPlay && music.paused) music.play().catch(() => {});
     else if (!shouldPlay && !music.paused) music.pause();
   }
   updateMusicToggle();
+  updateAudioToggle(effectsToggle, sounds.enabled, 'Effekte');
   musicToggle.addEventListener('click', () => {
     musicEnabled = !musicEnabled;
     music.muted = !musicEnabled;
@@ -86,12 +106,91 @@ async function mount() {
     updateMusicToggle();
     syncMusic();
   });
-  const simulation = createClock(() => step(state, input.read(), local ? input.readOpponent() : computer.read(state), local ? null : computer.shotError));
+  effectsToggle.addEventListener('click', () => updateAudioToggle(effectsToggle, sounds.toggle(), 'Effekte'));
+  function updateFpsToggle() {
+    const nextFrameRate = frameRate === 60 ? 30 : 60;
+    fps.textContent = `${frameRate} FPS`;
+    fps.setAttribute('aria-label', `Bildrate: ${frameRate} FPS. Zu ${nextFrameRate} FPS wechseln`);
+    fps.title = `Zu ${nextFrameRate} FPS wechseln`;
+  }
+  updateFpsToggle();
+  fps.addEventListener('click', () => {
+    frameRate = frameRate === 60 ? 30 : 60;
+    lastPaint = -Infinity;
+    updateFpsToggle();
+    schedule();
+  });
+  function resetSoundTracking() {
+    sounds.stopAll();
+    lastEffectSequence = state.effectSequence;
+    soundPhase = state.phase;
+    lastOnlineStage = online?.stage ?? null;
+    onlineCountdownVoice = null;
+  }
+  function syncSoundEffects() {
+    if (state.effectSequence < lastEffectSequence) lastEffectSequence = 0;
+    for (const effect of state.effects.filter(effect => effect.id > lastEffectSequence).sort((a, b) => a.id - b.id)) {
+      sounds.play(effect.kind === 'hit' ? 'hit' : 'dodge');
+    }
+    lastEffectSequence = state.effectSequence;
+    if (state.phase === 'over' && soundPhase !== 'over') sounds.play(state.winner === 1 ? 'victory' : 'gameOver');
+    soundPhase = state.phase;
+    const onlineStage = online?.stage ?? null;
+    if (onlineStage === 'countdown' && lastOnlineStage !== 'countdown') {
+      sounds.stopAll();
+      const remaining = online.role === 'host' ? online.countdownUntil - online.now() : online.countdown;
+      const elapsedSeconds = (ONLINE.countdown - Math.max(0, remaining)) / 1000;
+      onlineCountdownVoice = sounds.play('countdown', { offsetSeconds: elapsedSeconds });
+    }
+    if (lastOnlineStage === 'countdown' && onlineStage !== 'countdown') {
+      sounds.stop(onlineCountdownVoice);
+      onlineCountdownVoice = null;
+    }
+    lastOnlineStage = onlineStage;
+  }
+  function finishLocalCountdown() {
+    if (!localCountdown) return;
+    const voice = localCountdown.voice;
+    localCountdown = null;
+    sounds.stop(voice);
+    start(state); input.clear(); simulation.reset(); previous = null; displayedPhase = '';
+    update(); render(state); schedule();
+  }
+  function cancelLocalCountdown() {
+    if (!localCountdown) return;
+    sounds.stop(localCountdown.voice);
+    localCountdown = null;
+    displayedPhase = '';
+  }
+  function beginLocalCountdown() {
+    if (localCountdown || state.phase !== 'ready') return;
+    const durationMs = Math.round((sounds.duration('countdown') ?? COUNTDOWN_DURATION_MS / 1000) * 1000);
+    sounds.stopAll();
+    const voice = sounds.play('countdown');
+    localCountdown = { startedAt: performance.now(), durationMs, voice };
+    voice?.addEventListener('playing', () => {
+      if (localCountdown?.voice === voice) localCountdown.startedAt = performance.now();
+    }, { once: true });
+    voice?.addEventListener('ended', () => {
+      if (localCountdown?.voice === voice) finishLocalCountdown();
+    }, { once: true });
+    input.clear(); simulation.reset(); previous = null; displayedPhase = '';
+    update(); render(state); schedule();
+  }
+  function localCountdownElapsed(now = performance.now()) {
+    if (!localCountdown) return 0;
+    const audioTime = localCountdown.voice && localCountdown.voice.readyState >= 2 && !localCountdown.voice.paused
+      ? localCountdown.voice.currentTime * 1000 : null;
+    return Number.isFinite(audioTime) ? audioTime : now - localCountdown.startedAt;
+  }
+  const simulation = createClock(() => step(state, input.read(), local ? input.readOpponent() : computer.read(state), local ? null : computer.stroke));
   function toggle() {
     if (menu.open || onlineSetup || !document.getElementById('leaderboard').hidden) return;
     if (online) { input.clear(); if (['playing', 'countdown'].includes(online.stage)) online.requestPause(); else online.requestReady(); return; }
+    if (localCountdown) return;
     cancelAnimationFrame(frameId); frameId = 0; previous = null;
     if (state.phase === 'rally' || state.phase === 'point') pause(state);
+    else if (state.phase === 'ready') { beginLocalCountdown(); return; }
     else if (state.phase !== 'over') start(state);
     input.clear(); simulation.reset(); update(); render(state); schedule();
   }
@@ -135,6 +234,7 @@ async function mount() {
   }
   function update() {
     if (online) Object.assign(state, online.view());
+    syncSoundEffects();
     syncMusic();
     humanScore.textContent = state.score[1]; computerScore.textContent = state.score[0];
     const formattedGameTime = formatDuration(Math.round(state.time * 1000));
@@ -145,11 +245,26 @@ async function mount() {
     if (!online && status.textContent !== message) status.textContent = message;
     showPower(power, powerLabel, state.teams[1].power);
     if (local) showPower(opponentPower, document.getElementById('opponent-power-label'), state.teams[0].power);
-    document.getElementById('start-difficulty').hidden = !!online || local || state.phase !== 'ready';
+    document.getElementById('start-difficulty').hidden = !!online || local || !!localCountdown || state.phase !== 'ready';
     updateOverlayChoices();
     overlay.classList.toggle('game-over-actions', !online && state.phase === 'over');
+    overlay.classList.toggle('countdown-overlay', !!localCountdown || online?.stage === 'countdown');
     if (online) { updateOnline(); return; }
     setText(document.getElementById('opponent-label'), local ? 'WASD' : 'CPU');
+    if (localCountdown) {
+      const label = countdownLabel(localCountdownElapsed(), localCountdown.durationMs);
+      const countdownPhase = `countdown:${label}`;
+      if (displayedPhase === countdownPhase) return;
+      displayedPhase = countdownPhase;
+      overlay.hidden = false;
+      overlayTitle.textContent = label;
+      status.textContent = label === 'GO' ? 'Los geht’s!' : `Start in ${label} …`;
+      document.getElementById('leaderboard-after-game').hidden = true;
+      gameOverBackButton.hidden = true;
+      pauseButton.disabled = true;
+      resetButton.disabled = false;
+      return;
+    }
     if (displayedPhase === state.phase) return;
     displayedPhase = state.phase;
     overlay.hidden = ['rally', 'point'].includes(state.phase);
@@ -177,13 +292,14 @@ async function mount() {
   }
   function frame(now) {
     frameId = 0;
-    if (previous !== null) {
+    if (localCountdown && localCountdownElapsed(now) >= localCountdown.durationMs) finishLocalCountdown();
+    else if (previous !== null) {
       if (online) online.advance((now - previous) / 1000);
       else simulation.advance((now - previous) / 1000);
     }
     if (online) Object.assign(state, online.view());
     previous = now;
-    const interval = 1000 / Number(fps.value);
+    const interval = 1000 / frameRate;
     if (now - lastPaint >= interval - 0.5 || displayedPhase !== state.phase) {
       lastPaint = Number.isFinite(lastPaint) ? lastPaint + Math.max(1, Math.floor((now - lastPaint + 0.5) / interval)) * interval : now;
       render(state); update();
@@ -191,19 +307,21 @@ async function mount() {
     schedule();
   }
   function schedule() {
-    if (!frameId && !document.hidden && (online ? !online.closed : ['rally', 'point'].includes(state.phase))) frameId = requestAnimationFrame(frame);
+    if (!frameId && !document.hidden && (online ? !online.closed : localCountdown || ['rally', 'point'].includes(state.phase))) frameId = requestAnimationFrame(frame);
     else if (!['rally', 'point'].includes(state.phase)) previous = null;
   }
   function stopForVisibility() {
     if (online) online.requestPause();
+    cancelLocalCountdown();
     pause(state); input.clear(); simulation.reset(); previous = null;
     cancelAnimationFrame(frameId); frameId = 0;
     update(); render(state);
   }
   startButton.addEventListener('click', () => {
     if (online) { input.clear(); online.requestReady(); canvas.focus({ preventScroll: true }); return; }
-    if (state.phase === 'over') { reset(state); computer.reset(); leaderboard.reset(); roundId = crypto.randomUUID(); }
-    start(state); input.clear(); simulation.reset(); previous = null; update(); render(state);
+    if (state.phase === 'over') { reset(state); computer.reset(); leaderboard.reset(); roundId = crypto.randomUUID(); resetSoundTracking(); }
+    if (state.phase === 'ready') beginLocalCountdown();
+    else { start(state); input.clear(); simulation.reset(); previous = null; update(); render(state); }
     canvas.focus({ preventScroll: true }); schedule();
   });
   pauseButton.addEventListener('click', () => { toggle(); canvas.focus({ preventScroll: true }); });
@@ -215,7 +333,7 @@ async function mount() {
   });
   window.addEventListener('blur', () => { online?.setVisible(false); music.pause(); stopForVisibility(); });
   window.addEventListener('focus', () => { online?.setVisible(!document.hidden); syncMusic(); previous = null; schedule(); });
-  window.addEventListener('pagehide', () => { online?.leave(); music.pause(); stopForVisibility(); });
+  window.addEventListener('pagehide', () => { online?.leave(); music.pause(); sounds.stopAll(); stopForVisibility(); });
   function setText(element, value) { if (element.textContent !== value) element.textContent = value; }
   function updateOnline() {
     displayedPhase = state.phase;
@@ -239,19 +357,20 @@ async function mount() {
     pauseButton.disabled = !['playing', 'countdown'].includes(stage);
     setText(pauseButton, 'Pause'); resetButton.hidden = false; resetButton.disabled = false;
     const titles = { connecting: 'Verbinden …', waiting: 'Warteraum', countdown: 'Gleich geht’s los', paused: 'Pause', over: state.winner === 1 ? 'Gewonnen!' : 'Revanche?', ended: 'Spiel beendet' };
+    const countdownRemaining = online.role === 'host' ? online.countdownUntil - online.now() : online.countdown;
     setText(overlayTitle, interrupted ? 'Verbindung fehlt' : stage === 'countdown'
-      ? String(Math.max(1, Math.ceil((online.role === 'host' ? online.countdownUntil - online.now() : online.countdown) / 1000)))
+      ? countdownLabel(ONLINE.countdown - Math.max(0, countdownRemaining), ONLINE.countdown)
       : titles[stage] || '');
     setText(overlayText, stage === 'over' ? `${state.score[1]} : ${state.score[0]} · Spielzeit ${formatDuration(Math.round(state.time * 1000))}` : online.message);
     setText(status, interrupted || stage !== 'playing' ? online.message : state.message);
   }
   function updateOverlayChoices() {
-    const initialSelection = !online && !onlineSetup && !local && state.phase === 'ready';
-    primaryOverlayContent.hidden = onlineSetup;
+    const initialSelection = !online && !onlineSetup && !localCountdown && !local && state.phase === 'ready';
+    primaryOverlayContent.hidden = onlineSetup || !!localCountdown;
     modeDivider.hidden = !initialSelection;
     multiplayerOptions.hidden = !initialSelection;
     onlineSetupPanel.hidden = !onlineSetup;
-    localBackButton.hidden = !(local && state.phase === 'ready');
+    localBackButton.hidden = !!localCountdown || !(local && state.phase === 'ready');
   }
   function showOnlineSetup() {
     stopForVisibility(); menu.close();
@@ -265,11 +384,12 @@ async function mount() {
   }
   function showModeSelection() {
     if (online) { exitRoom(); return; }
+    cancelLocalCountdown();
     menu.close(); cancelAnimationFrame(frameId); frameId = 0; previous = null;
     onlineSetup = false; setLocalMode(false);
     reset(state); computer.reset(); leaderboard.reset(); input.clear(); simulation.reset(); roundId = crypto.randomUUID();
     overlay.classList.remove('setup-overlay'); displayedPhase = '';
-    update(); render(state); startButton.focus({ preventScroll: true });
+    resetSoundTracking(); update(); render(state); startButton.focus({ preventScroll: true });
   }
   function exitRoom() {
     const room = online; online = null; room?.leave(); clearInterval(networkTimer); networkTimer = null;
@@ -279,7 +399,7 @@ async function mount() {
     startButton.hidden = false; startButton.disabled = false;
     resetButton.hidden = false;
     document.getElementById('opponent-label').textContent = 'CPU'; displayedPhase = '';
-    menu.close(); update(); render(state); startButton.focus({ preventScroll: true });
+    menu.close(); resetSoundTracking(); update(); render(state); startButton.focus({ preventScroll: true });
   }
   function enterRoom(role, code) {
     if (online) return;
@@ -297,7 +417,7 @@ async function mount() {
       overlay.classList.remove('setup-overlay'); menu.close();
       online.setVisible(!document.hidden);
       networkTimer = setInterval(() => online?.tick(), 50);
-      update(); render(state); schedule(); canvas.focus({ preventScroll: true });
+      resetSoundTracking(); update(); render(state); schedule(); canvas.focus({ preventScroll: true });
     } catch (error) { document.getElementById('join-message').textContent = error.message; }
   }
   function setLocalMode(enabled) {
@@ -317,7 +437,7 @@ async function mount() {
     overlay.classList.remove('setup-overlay');
     setLocalMode(enabled); reset(state); computer.reset(); leaderboard.reset();
     roundId = crypto.randomUUID(); displayedPhase = ''; simulation.reset();
-    update(); render(state); startButton.focus({ preventScroll: true });
+    resetSoundTracking(); update(); render(state); startButton.focus({ preventScroll: true });
   }
   function syncDifficulty() {
     for (const button of document.querySelectorAll('[data-start-difficulty]')) {

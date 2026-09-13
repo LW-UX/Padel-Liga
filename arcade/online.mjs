@@ -1,10 +1,11 @@
 import { C, clamp, createState, createClock, start, pause, reset, step, moveTeam, predictLanding } from './physics.mjs?v=2026-09-12-rules-v2';
 import { connectRealtime } from './realtime.mjs?v=2026-09-12-rules-v2';
 import { RULESET } from './ruleset.mjs?v=2026-09-12-rules-v2';
+import { COUNTDOWN_DURATION_MS } from './audio.mjs?v=2026-09-13-sound-effects';
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ZERO = Object.freeze({ x: 0, y: 0 });
-export const ONLINE = Object.freeze({ silence: 1500, expiry: 20000, joinTimeout: 10000, countdown: 3000, protocol: 2 });
+export const ONLINE = Object.freeze({ silence: 1500, expiry: 20000, joinTimeout: 10000, countdown: COUNTDOWN_DURATION_MS, protocol: 3 });
 export function generateCode() {
   return Array.from(crypto.getRandomValues(new Uint8Array(6)), n => ALPHABET[n % ALPHABET.length]).join('');
 }
@@ -36,11 +37,11 @@ export function validSnapshot(s) {
   return s && s.ruleset === RULESET && ['ready', 'rally', 'point', 'paused', 'over'].includes(s.phase)
     && ['rally', 'point'].includes(s.resumePhase) && [null, 0, 1].includes(s.winner)
     && Array.isArray(s.score) && s.score.length === 2 && s.score.every(n => Number.isInteger(n) && n >= 0 && n <= 7)
-    && finite(s, ['time', 'pointTimer', 'rallyHits', 'bestRally']) && s.time >= 0
+    && finite(s, ['time', 'pointTimer', 'rallyHits', 'bestRally', 'effectSequence']) && s.time >= 0 && Number.isInteger(s.effectSequence) && s.effectSequence >= 0
     && Array.isArray(s.teams) && s.teams.length === 2 && s.teams.every((t, i) => t.side === i && finite(t, ['offset', 'y', 'vx', 'vy', 'power']))
     && finite(s.ball, ['x', 'y', 'z', 'vx', 'vy', 'vz', 'bounces']) && [0, 1].includes(s.ball.lastHit)
     && typeof s.ball.feed === 'boolean' && typeof s.message === 'string' && s.message.length < 200
-    && Array.isArray(s.effects) && s.effects.length <= 40 && s.effects.every(e => finite(e, ['x', 'y', 'age']) && ['hit', 'wall', 'bounce'].includes(e.kind));
+    && Array.isArray(s.effects) && s.effects.length <= 40 && s.effects.every(e => finite(e, ['id', 'x', 'y', 'age']) && Number.isInteger(e.id) && e.id > 0 && e.id <= s.effectSequence && ['hit', 'wall', 'bounce'].includes(e.kind));
 }
 
 // Host is the sole authority for seats, readiness, physics and score. Room messages
