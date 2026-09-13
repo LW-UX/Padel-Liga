@@ -1,6 +1,13 @@
 export const DIFFICULTIES = Object.freeze({
-  easy: Object.freeze({ label: 'Leicht', reaction: 0.40, speed: 0.55 }),
+  easy: Object.freeze({ label: 'Leicht', reaction: 0.40, speed: 0.60, delay: 0.40, delaySpread: 0.15, lookahead: 0.25 }),
   hard: Object.freeze({ label: 'Schwer', reaction: 0.20, speed: 1 })
+});
+
+// Reserved opponent for a future tournament; not a public leaderboard difficulty.
+export const COMPUTER_PROFILES = Object.freeze({
+  ...DIFFICULTIES,
+  very_easy: Object.freeze({ label: 'Sehr leicht', reaction: 0.40, speed: 0.55,
+    delay: 0.45, delaySpread: 0.15, lookahead: 0.15 })
 });
 
 export function requireDifficulty(value) {

@@ -1,11 +1,11 @@
 import { createState, createClock, start, pause, reset, step } from './physics.mjs?v=2026-09-13-natural-cpu';
-import { createComputer } from './computer.mjs?v=2026-09-13-easy-tracking';
-import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs?v=2026-09-13-easy-tracking';
+import { createComputer } from './computer.mjs?v=2026-09-13-easy-balanced';
+import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs?v=2026-09-13-easy-balanced';
 import { createInput } from './input.mjs?v=2026-09-12-rules-v2';
 import { createRenderer } from './renderer.mjs?v=2026-09-12-landing-fix';
 import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-game-over-actions-v2';
 import { OnlineSession, ONLINE, generateCode, normalizeCode } from './online.mjs?v=2026-09-13-sound-effects';
-import { COUNTDOWN_DURATION_MS, countdownLabel, createSoundEffects } from './audio.mjs?v=2026-09-13-sound-effects';
+import { COUNTDOWN_DURATION_MS, countdownLabel, createSoundEffects } from './audio.mjs?v=2026-09-13-mobile-audio-v2';
 
 const back = document.getElementById('back-link');
 const season = new URLSearchParams(location.search).get('saison');
@@ -63,7 +63,7 @@ async function mount() {
   const opponentPower = document.getElementById('opponent-power');
   let local = false;
   let onlineSetup = false;
-  let online = null, networkTimer = null, localCountdown = null;
+  let online = null, networkTimer = null, onlineAudioPending = false, localCountdown = null, localCountdownPending = false, countdownRequest = 0;
   let input, roundId = crypto.randomUUID();
   const musicPreferenceKey = 'padelArcadeMusicEnabled';
   let musicEnabled = true;
@@ -82,6 +82,10 @@ async function mount() {
     // bounce sample needs extra gain to read as clearly as the player hit.
     volume: { countdown: 0.30, dodge: 0.75, hit: 0.28, gameOver: 0.27, victory: 0.11 }
   });
+  sounds.preload();
+  const unlockEffects = () => { sounds.unlock(); };
+  document.addEventListener('pointerdown', unlockEffects, { capture: true });
+  document.addEventListener('keydown', unlockEffects, { capture: true });
   let lastEffectSequence = 0, soundPhase = state.phase, lastOnlineStage = null, onlineCountdownVoice = null;
   function updateAudioToggle(toggle, enabled, name) {
     const label = enabled ? `${name} stummschalten` : `${name} einschalten`;
@@ -107,7 +111,11 @@ async function mount() {
     updateMusicToggle();
     syncMusic();
   });
-  effectsToggle.addEventListener('click', () => updateAudioToggle(effectsToggle, sounds.toggle(), 'Effekte'));
+  effectsToggle.addEventListener('click', () => {
+    const enabled = sounds.toggle();
+    if (enabled) sounds.unlock();
+    updateAudioToggle(effectsToggle, enabled, 'Effekte');
+  });
   function updateFpsToggle() {
     const nextFrameRate = frameRate === 60 ? 30 : 60;
     fps.textContent = `${frameRate} FPS`;
@@ -158,13 +166,20 @@ async function mount() {
     update(); render(state); schedule();
   }
   function cancelLocalCountdown() {
+    countdownRequest++;
+    localCountdownPending = false;
     if (!localCountdown) return;
     sounds.stop(localCountdown.voice);
     localCountdown = null;
     displayedPhase = '';
   }
-  function beginLocalCountdown() {
-    if (localCountdown || state.phase !== 'ready') return;
+  async function beginLocalCountdown() {
+    if (localCountdown || localCountdownPending || state.phase !== 'ready') return;
+    const request = ++countdownRequest;
+    localCountdownPending = true;
+    await sounds.unlock();
+    if (request !== countdownRequest || state.phase !== 'ready') return;
+    localCountdownPending = false;
     const durationMs = COUNTDOWN_DURATION_MS;
     sounds.stopAll();
     const voice = sounds.play('countdown');
@@ -322,8 +337,18 @@ async function mount() {
     cancelAnimationFrame(frameId); frameId = 0;
     update(); render(state);
   }
-  startButton.addEventListener('click', () => {
-    if (online) { input.clear(); online.requestReady(); canvas.focus({ preventScroll: true }); return; }
+  startButton.addEventListener('click', async () => {
+    if (online) {
+      if (onlineAudioPending) return;
+      const room = online;
+      onlineAudioPending = true;
+      input.clear();
+      await sounds.unlock();
+      onlineAudioPending = false;
+      if (online !== room) return;
+      room.requestReady(); canvas.focus({ preventScroll: true });
+      return;
+    }
     if (state.phase === 'over') { reset(state); computer.reset(); leaderboard.reset(); roundId = crypto.randomUUID(); resetSoundTracking(); }
     if (state.phase === 'ready') beginLocalCountdown();
     else { start(state); input.clear(); simulation.reset(); previous = null; update(); render(state); }

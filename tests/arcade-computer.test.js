@@ -5,14 +5,14 @@ const computer = import('../arcade/computer.mjs');
 function near(a, b) { assert.ok(Math.abs(a - b) < 1e-9, `${a} != ${b}`); }
 function seeded(seed) { return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; }; }
 
-test('easy movement is forty-five percent slower in every direction, including diagonal', async () => {
+test('easy movement is forty percent slower in every direction, including diagonal', async () => {
   const { createComputer } = await computer, p = await physics;
   for (const offset of [-1.8, 0, 1.8]) for (const y of [1, 3.2, 8]) {
     const state = p.createState(); state.ball.lastHit = 0; state.ball.feed = false;
     Object.assign(state.teams[0], { offset, y });
     const hard = createComputer({ difficulty: 'hard' }).read(state);
     const easy = createComputer({ difficulty: 'easy' }).read(state);
-    near(easy.x, hard.x * .55); near(easy.y, hard.y * .55);
+    near(easy.x, hard.x * .60); near(easy.y, hard.y * .60);
   }
 });
 
@@ -36,7 +36,7 @@ test('every human return waits a full reaction delay even just before a schedule
     const state = p.createState(); state.phase = 'rally'; state.ball.lastHit = 0; state.ball.feed = false;
     const old = cpu.read(state);
     state.time = .39; Object.assign(state.ball, { lastHit: 1, feed: false, x: 9 });
-    cpu.read(state); const ready = state.time + .45 + draw * .15;
+    cpu.read(state); const ready = state.time + .40 + draw * .15;
     for (const time of [.40, ready - .001]) {
       state.time = time; assert.deepEqual(cpu.read(state), old);
     }
@@ -175,4 +175,30 @@ test('easy is beatable with a slower return controller within three minutes', as
     wins += state.phase === 'over' && state.winner === 1;
   }
   assert.ok(wins >= 24, `${wins}/30 wins with a reduced-speed controller`);
+});
+
+test('very easy is retained for tournaments without becoming a public ranking difficulty', async () => {
+  const { COMPUTER_PROFILES, DIFFICULTIES, requireDifficulty } = await import('../arcade/difficulty.mjs');
+  assert.deepEqual(COMPUTER_PROFILES.very_easy, { label: 'Sehr leicht', reaction: .4, speed: .55, delay: .45, delaySpread: .15, lookahead: .15 });
+  assert.ok(Object.isFrozen(COMPUTER_PROFILES.very_easy));
+  assert.equal(DIFFICULTIES.very_easy, undefined);
+  assert.throws(() => requireDifficulty('very_easy'));
+  assert.deepEqual(await play('very_easy', 7, true, 30, 15), await play('very_easy', 7, true, 60, 15));
+});
+
+test('slightly stronger easy reaches more middle balls than the reserved very easy opponent', async () => {
+  const p = await physics, { createComputer } = await computer;
+  const hits = {};
+  for (const difficulty of ['very_easy', 'easy']) {
+    hits[difficulty] = 0;
+    for (const x of [4.6, 4.8, 5, 5.2, 5.4]) for (const offset of [-1.8, 0, 1.8]) for (const y of [11, 14, 17]) {
+      const state = p.createState(); state.phase = 'rally'; state.teams[0].offset = offset;
+      Object.assign(state.ball, { x, y, z: .8, lastHit: 0, feed: false });
+      p.hitBall(state, 1, x);
+      const cpu = createComputer({ difficulty, random: () => .5 });
+      while (state.phase === 'rally' && state.ball.lastHit === 1 && state.time < 6) p.step(state, { x: 0, y: 0 }, cpu.read(state), cpu.stroke);
+      hits[difficulty] += state.ball.lastHit === 0;
+    }
+  }
+  assert.ok(hits.easy > hits.very_easy, JSON.stringify(hits));
 });
