@@ -5,7 +5,7 @@ import { createInput } from './input.mjs?v=2026-09-12-rules-v2';
 import { createRenderer } from './renderer.mjs?v=2026-09-13-audio-events';
 import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-game-over-actions-v2';
 import { OnlineSession, ONLINE, generateCode, normalizeCode } from './online.mjs?v=2026-09-13-audio-events';
-import { COUNTDOWN_DURATION_MS, EFFECT_SOUND_NAMES, MUSIC_CUE_NAMES, backgroundMusicVolume, countdownLabel, createSoundEffects, soundVolume } from './audio.mjs?v=2026-09-13-mobile-audio-v6';
+import { COUNTDOWN_DURATION_MS, EFFECT_SOUND_NAMES, MUSIC_SOUND_NAMES, countdownLabel, createSoundEffects, soundVolume } from './audio.mjs?v=2026-09-14-unified-audio';
 
 const back = document.getElementById('back-link');
 const season = new URLSearchParams(location.search).get('saison');
@@ -36,7 +36,6 @@ async function mount() {
   const power = document.getElementById('power');
   const powerLabel = document.getElementById('power-label');
   const fps = document.getElementById('fps');
-  const music = document.getElementById('game-music');
   const musicToggle = document.getElementById('music-toggle');
   const effectsToggle = document.getElementById('effects-toggle');
   const menu = document.getElementById('game-menu');
@@ -68,10 +67,9 @@ async function mount() {
   const musicPreferenceKey = 'padelArcadeMusicEnabled';
   let musicEnabled = true;
   try { musicEnabled = localStorage.getItem(musicPreferenceKey) !== 'false'; } catch {}
-  music.volume = backgroundMusicVolume(mobileControls.matches);
-  music.muted = !musicEnabled;
   const sounds = createSoundEffects({
     elements: {
+      gameMusic: document.getElementById('game-music'),
       countdown: document.getElementById('effect-countdown'),
       dodge: document.getElementById('effect-ball-dodge'),
       hit: document.getElementById('effect-ball-hit'),
@@ -84,10 +82,13 @@ async function mount() {
     toggleNames: EFFECT_SOUND_NAMES
   });
   sounds.preload();
-  const unlockEffects = () => { sounds.unlock(); };
+  const unlockEffects = () => {
+    sounds.unlock(EFFECT_SOUND_NAMES);
+    if (musicEnabled) sounds.unlock(MUSIC_SOUND_NAMES);
+  };
   document.addEventListener('pointerdown', unlockEffects, { capture: true });
   document.addEventListener('keydown', unlockEffects, { capture: true });
-  let lastEffectSequence = 0, soundPhase = state.phase, lastOnlineStage = null, onlineCountdownVoice = null;
+  let lastEffectSequence = 0, soundPhase = state.phase, lastOnlineStage = null, onlineCountdownVoice = null, musicVoice = null;
   function updateAudioToggle(toggle, enabled, name) {
     const label = enabled ? `${name} stummschalten` : `${name} einschalten`;
     toggle.setAttribute('aria-pressed', String(enabled));
@@ -100,23 +101,22 @@ async function mount() {
   function syncMusic() {
     const playing = online ? online.stage === 'playing' : ['rally', 'point'].includes(state.phase);
     const shouldPlay = musicEnabled && playing && !document.hidden && !menu.open && document.getElementById('leaderboard').hidden;
-    if (shouldPlay && music.paused) music.play().catch(() => {});
-    else if (!shouldPlay && !music.paused) music.pause();
+    if (shouldPlay && !musicVoice) musicVoice = sounds.play('gameMusic', { enabled: true, loop: true, elementFallback: false });
+    else if (!shouldPlay && musicVoice) { sounds.stop(musicVoice); musicVoice = null; }
   }
   updateMusicToggle();
   updateAudioToggle(effectsToggle, sounds.enabled, 'Effekte');
   musicToggle.addEventListener('click', () => {
     musicEnabled = !musicEnabled;
-    music.muted = !musicEnabled;
-    if (musicEnabled) sounds.unlock();
-    else sounds.stopNames(MUSIC_CUE_NAMES);
+    if (musicEnabled) sounds.unlock(MUSIC_SOUND_NAMES);
+    else { sounds.stopNames(MUSIC_SOUND_NAMES); musicVoice = null; }
     try { localStorage.setItem(musicPreferenceKey, String(musicEnabled)); } catch {}
     updateMusicToggle();
     syncMusic();
   });
   effectsToggle.addEventListener('click', () => {
     const enabled = sounds.toggle();
-    if (enabled) sounds.unlock();
+    if (enabled) sounds.unlock(EFFECT_SOUND_NAMES);
     updateAudioToggle(effectsToggle, enabled, 'Effekte');
   });
   function updateFpsToggle() {
@@ -134,6 +134,7 @@ async function mount() {
   });
   function resetSoundTracking() {
     sounds.stopAll();
+    musicVoice = null;
     lastEffectSequence = state.effectSequence;
     soundPhase = state.phase;
     lastOnlineStage = online?.stage ?? null;
@@ -150,6 +151,7 @@ async function mount() {
     const onlineStage = online?.stage ?? null;
     if (onlineStage === 'countdown' && lastOnlineStage !== 'countdown') {
       sounds.stopAll();
+      musicVoice = null;
       const remaining = online.role === 'host' ? online.countdownUntil - online.now() : online.countdown;
       const elapsedSeconds = (ONLINE.countdown - Math.max(0, remaining)) / 1000;
       onlineCountdownVoice = sounds.play('countdown', { offsetSeconds: elapsedSeconds });
@@ -180,11 +182,13 @@ async function mount() {
     if (localCountdown || localCountdownPending || state.phase !== 'ready') return;
     const request = ++countdownRequest;
     localCountdownPending = true;
-    await sounds.unlock();
+    await sounds.unlock(EFFECT_SOUND_NAMES);
+    if (musicEnabled) sounds.decode(MUSIC_SOUND_NAMES);
     if (request !== countdownRequest || state.phase !== 'ready') return;
     localCountdownPending = false;
     const durationMs = COUNTDOWN_DURATION_MS;
     sounds.stopAll();
+    musicVoice = null;
     const voice = sounds.play('countdown');
     localCountdown = { startedAt: performance.now(), durationMs, voice };
     input.clear(); simulation.reset(); previous = null; displayedPhase = '';
@@ -207,7 +211,6 @@ async function mount() {
   }
   input = createInput(canvas, null, () => state.teams[1], toggle);
   function arrangeControls() {
-    music.volume = backgroundMusicVolume(mobileControls.matches);
     localButton.disabled = mobileControls.matches;
     localButton.title = mobileControls.matches ? 'Nur mit Tastatur verfügbar' : '';
     if (mobileControls.matches) {
@@ -224,7 +227,6 @@ async function mount() {
   mobileControls.addEventListener('change', arrangeControls);
   menuButton.addEventListener('click', () => {
     stopForVisibility();
-    music.pause();
     menu.showModal();
   });
   document.getElementById('menu-close').addEventListener('click', () => menu.close());
@@ -347,7 +349,8 @@ async function mount() {
       const room = online;
       onlineAudioPending = true;
       input.clear();
-      await sounds.unlock();
+      await sounds.unlock(EFFECT_SOUND_NAMES);
+      if (musicEnabled) sounds.decode(MUSIC_SOUND_NAMES);
       onlineAudioPending = false;
       if (online !== room) return;
       room.requestReady(); canvas.focus({ preventScroll: true });
@@ -362,12 +365,12 @@ async function mount() {
   resetButton.addEventListener('click', showModeSelection);
   document.addEventListener('visibilitychange', () => {
     online?.setVisible(!document.hidden);
-    if (document.hidden) { music.pause(); stopForVisibility(); }
-    else { syncMusic(); previous = null; schedule(); }
+    if (document.hidden) stopForVisibility();
+    else { sounds.resume(); syncMusic(); previous = null; schedule(); }
   });
-  window.addEventListener('blur', () => { online?.setVisible(false); music.pause(); stopForVisibility(); });
-  window.addEventListener('focus', () => { online?.setVisible(!document.hidden); syncMusic(); previous = null; schedule(); });
-  window.addEventListener('pagehide', () => { online?.leave(); music.pause(); sounds.stopAll(); stopForVisibility(); });
+  window.addEventListener('blur', () => { online?.setVisible(false); stopForVisibility(); });
+  window.addEventListener('focus', () => { online?.setVisible(!document.hidden); sounds.resume(); syncMusic(); previous = null; schedule(); });
+  window.addEventListener('pagehide', () => { online?.leave(); sounds.stopAll(); musicVoice = null; stopForVisibility(); });
   function setText(element, value) { if (element.textContent !== value) element.textContent = value; }
   function updateOnline() {
     displayedPhase = state.phase;

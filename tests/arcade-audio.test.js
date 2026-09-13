@@ -2,9 +2,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 test('countdown presents 3, 2, 1 and GO in four equal sound sections', async () => {
-  const { COUNTDOWN_DURATION_MS, EFFECT_SOUND_NAMES, MUSIC_CUE_NAMES, backgroundMusicVolume, countdownLabel, soundVolume } = await import('../arcade/audio.mjs');
+  const { COUNTDOWN_DURATION_MS, EFFECT_SOUND_NAMES, MUSIC_SOUND_NAMES, backgroundMusicVolume, countdownLabel, soundVolume } = await import('../arcade/audio.mjs');
   assert.deepEqual(EFFECT_SOUND_NAMES, ['countdown', 'dodge', 'hit']);
-  assert.deepEqual(MUSIC_CUE_NAMES, ['gameOver', 'victory']);
+  assert.deepEqual(MUSIC_SOUND_NAMES, ['gameMusic', 'gameOver', 'victory']);
   assert.equal(backgroundMusicVolume(false), 0.22);
   assert.equal(backgroundMusicVolume(true), 0.10);
   assert.equal(soundVolume('countdown', true), 0.30);
@@ -37,28 +37,32 @@ test('sound effects apply their individually normalized playback level', async (
 });
 
 test('music and effects switches stop only the sounds assigned to their channel', async () => {
-  const { createSoundEffects, EFFECT_SOUND_NAMES, MUSIC_CUE_NAMES } = await import('../arcade/audio.mjs');
+  const { createSoundEffects, EFFECT_SOUND_NAMES, MUSIC_SOUND_NAMES } = await import('../arcade/audio.mjs');
   const template = { cloneNode() {
     return { paused: false, currentTime: 0, addEventListener() {}, play: () => Promise.resolve(), pause() { this.paused = true; } };
   } };
   const sounds = createSoundEffects({
-    elements: { countdown: template, dodge: template, hit: template, gameOver: template, victory: template },
+    elements: { gameMusic: template, countdown: template, dodge: template, hit: template, gameOver: template, victory: template },
     storage: null, toggleNames: EFFECT_SOUND_NAMES, AudioContextClass: null, fetchAudio: null
   });
   const hit = sounds.play('hit');
+  const gameMusic = sounds.play('gameMusic', { enabled: true, loop: true });
   const victory = sounds.play('victory', { enabled: true });
   sounds.toggle();
   assert.equal(hit.paused, true);
+  assert.equal(gameMusic.paused, false);
+  assert.equal(gameMusic.loop, true);
   assert.equal(victory.paused, false);
   assert.equal(sounds.play('dodge'), null);
   const gameOver = sounds.play('gameOver', { enabled: true });
-  sounds.stopNames(MUSIC_CUE_NAMES);
+  sounds.stopNames(MUSIC_SOUND_NAMES);
+  assert.equal(gameMusic.paused, true);
   assert.equal(victory.paused, true);
   assert.equal(gameOver.paused, true);
 });
 
-test('preloaded effects use one unlocked low-latency audio context and can overlap', async () => {
-  const { createSoundEffects } = await import('../arcade/audio.mjs');
+test('music and effects share one unlocked low-latency audio context and can overlap', async () => {
+  const { createSoundEffects, MUSIC_SOUND_NAMES } = await import('../arcade/audio.mjs');
   const sources = [], gains = [];
   let contexts = 0;
   class FakeAudioContext {
@@ -74,9 +78,10 @@ test('preloaded effects use one unlocked low-latency audio context and can overl
       gains.push(gain); return gain;
     }
   }
-  const element = { currentSrc: '/hit.mp3', cloneNode() { throw new Error('HTML audio fallback must not be used'); } };
+  const element = name => ({ currentSrc: `/${name}.mp3`, cloneNode() { throw new Error('HTML audio fallback must not be used'); } });
   const sounds = createSoundEffects({
-    elements: { hit: element }, storage: null, volume: { hit: 0.28 }, AudioContextClass: FakeAudioContext,
+    elements: { hit: element('hit'), gameMusic: element('game-music') }, storage: null,
+    volume: { hit: 0.28, gameMusic: 0.10 }, AudioContextClass: FakeAudioContext,
     fetchAudio: async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) })
   });
   assert.equal(await sounds.preload(), true);
@@ -85,11 +90,18 @@ test('preloaded effects use one unlocked low-latency audio context and can overl
   assert.equal(contexts, 1);
   const first = sounds.play('hit');
   const second = sounds.play('hit', { offsetSeconds: 0.1 });
+  const music = sounds.play('gameMusic', { enabled: true, loop: true, elementFallback: false });
   assert.equal(first.backend, 'buffer');
   assert.equal(second.backend, 'buffer');
-  assert.equal(sources.length, 2);
-  assert.deepEqual(sources.map(source => source.started), [{ when: 0, offset: 0 }, { when: 0, offset: 0.1 }]);
-  assert.deepEqual(gains.map(gain => gain.gain.value), [0.28, 0.28]);
+  assert.equal(music.backend, 'buffer');
+  assert.equal(music.source.loop, true);
+  assert.equal(sources.length, 3);
+  assert.deepEqual(sources.map(source => source.started), [{ when: 0, offset: 0 }, { when: 0, offset: 0.1 }, { when: 0, offset: 0 }]);
+  assert.deepEqual(gains.map(gain => gain.gain.value), [0.28, 0.28, 0.10]);
+  sounds.stopNames(MUSIC_SOUND_NAMES);
+  assert.equal(music.source.stopped, true);
+  assert.equal(first.source.stopped, undefined);
+  assert.equal(second.source.stopped, undefined);
   sounds.stopAll();
   assert.ok(sources.every(source => source.stopped));
 });
