@@ -165,7 +165,7 @@ async function mount() {
   }
   function beginLocalCountdown() {
     if (localCountdown || state.phase !== 'ready') return;
-    const durationMs = Math.round((sounds.duration('countdown') ?? COUNTDOWN_DURATION_MS / 1000) * 1000);
+    const durationMs = COUNTDOWN_DURATION_MS;
     sounds.stopAll();
     const voice = sounds.play('countdown');
     localCountdown = { startedAt: performance.now(), durationMs, voice };

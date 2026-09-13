@@ -194,6 +194,10 @@ test('arcade page uses isolated modules and same-tab navigation preserves the se
   assert.match(html, /Padel<span>Arcade/);
   assert.match(html, /<button[^>]+id="fps"[^>]*>60 FPS<\/button>/);
   assert.ok(!/<select[^>]+id="fps"/.test(html));
+  assert.match(html, /<canvas id="court"[\s\S]*?<div class="countdown-display" id="countdown-display"[\s\S]*?<div class="game-overlay" id="game-overlay">/);
+  const main = fs.readFileSync(path.join(root, 'arcade/main.mjs'), 'utf8');
+  assert.match(main, /const durationMs = COUNTDOWN_DURATION_MS;/);
+  assert.match(main, /return now - localCountdown\.startedAt;/);
   assert.match(league, /id="arcade-link" href="arcade\/"/);
   const source = fs.readFileSync(path.join(root, 'js/arcade-link.js'), 'utf8');
   const vm = require('node:vm');
