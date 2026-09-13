@@ -1,4 +1,4 @@
-import { C, clamp, createState, createClock, start, pause, reset, step, moveTeam, predictLanding } from './physics.mjs?v=2026-09-12-rules-v2';
+import { C, clamp, createState, createClock, start, pause, reset, step, moveTeam, predictLanding } from './physics.mjs?v=2026-09-13-audio-events';
 import { connectRealtime } from './realtime.mjs?v=2026-09-12-rules-v2';
 import { RULESET } from './ruleset.mjs?v=2026-09-12-rules-v2';
 import { COUNTDOWN_DURATION_MS } from './audio.mjs?v=2026-09-13-sound-effects';

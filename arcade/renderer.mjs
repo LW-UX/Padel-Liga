@@ -1,4 +1,4 @@
-import { C, predictLanding } from './physics.mjs?v=2026-09-12-rules-v2';
+import { C, predictLanding } from './physics.mjs?v=2026-09-13-audio-events';
 
 export async function createRenderer(canvas) {
   const ctx = canvas.getContext('2d', { alpha: false });
@@ -30,6 +30,7 @@ export async function createRenderer(canvas) {
       }
     }
     for (const e of state.effects) {
+      if (e.age >= 0.4) continue;
       const r = Math.round(3 + e.age * 22);
       ctx.globalAlpha = 1 - e.age / 0.4;
       ctx.strokeStyle = e.kind === 'bounce' ? '#e8f36a' : '#e9f5eb';

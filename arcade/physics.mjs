@@ -11,6 +11,7 @@ export const C = Object.freeze({
 });
 export const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 const EPS = 1e-8;
+const EFFECT_HISTORY_LIMIT = 40;
 export const sideAt = y => y < C.net ? 0 : 1;
 // At the join itself the central mesh takes precedence, on both halves.
 export const boundaryMaterial = (axis, y) => axis === 'y' || y < C.glassLength || y > C.length - C.glassLength ? 'wall' : 'fence';
@@ -73,6 +74,7 @@ export function awardPoint(state, winner, reason) {
 }
 function emitEffect(state, kind) {
   state.effects.push({ id: ++state.effectSequence, x: state.ball.x, y: state.ball.y, age: 0, kind });
+  if (state.effects.length > EFFECT_HISTORY_LIMIT) state.effects.splice(0, state.effects.length - EFFECT_HISTORY_LIMIT);
 }
 function approach(value, target, amount) {
   return value < target ? Math.min(value + amount, target) : Math.max(value - amount, target);
@@ -224,7 +226,6 @@ export function step(state, human = { x: 0, y: 0 }, computer = { x: 0, y: 0 }, c
   if (state.phase !== 'rally' && state.phase !== 'point') return;
   state.time += C.step;
   state.effects.forEach(e => { e.age += C.step; });
-  state.effects = state.effects.filter(e => e.age < 0.4);
   if (state.phase === 'point') {
     state.pointTimer -= C.step;
     if (state.pointTimer <= 0) feed(state);

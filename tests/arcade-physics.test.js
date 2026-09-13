@@ -43,6 +43,24 @@ test('after a floor bounce both wall types rebound without resetting the bounce 
     assert.ok(ball.vx ? s.ball.vx > 0 : s.ball.vy > 0);
   }
 });
+test('contact sound events survive slow mobile frames after their visual animation ends', async () => {
+  const p = await physics, s = p.createState();
+  s.phase = 'point'; s.pointTimer = 10;
+  s.effects.push({ id: 1, x: 5, y: 10, age: 0, kind: 'hit' });
+  s.effectSequence = 1;
+  for (let i = 0; i < 90; i++) p.step(s);
+  assert.equal(s.effects.length, 1);
+  assert.equal(s.effects[0].id, 1);
+  assert.ok(s.effects[0].age > 1);
+
+  for (let i = 0; i < 45; i++) {
+    const side = i % 2;
+    s.phase = 'rally'; s.ball.feed = false; s.ball.lastHit = 1 - side;
+    p.hitBall(s, side, 5);
+  }
+  assert.equal(s.effects.length, 40);
+  assert.equal(s.effects.at(-1).id, s.effectSequence);
+});
 test('second floor contact awards one point and cannot award it twice', async () => {
   const { p, s } = await scenario({ z: 0.01, vz: -2, bounces: 1 });
   p.simulateBall(s, 0.03); p.simulateBall(s, 0.03);

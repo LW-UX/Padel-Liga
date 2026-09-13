@@ -5,6 +5,9 @@ export const COUNTDOWN_LABELS = Object.freeze(['3', '2', '1', 'GO']);
 export const EFFECT_SOUND_NAMES = Object.freeze(['countdown', 'dodge', 'hit']);
 export const MUSIC_CUE_NAMES = Object.freeze(['gameOver', 'victory']);
 export const backgroundMusicVolume = mobile => mobile ? 0.10 : 0.22;
+const DESKTOP_SOUND_VOLUMES = Object.freeze({ countdown: 0.30, dodge: 0.75, hit: 0.28, gameOver: 0.27, victory: 0.11 });
+const MOBILE_SOUND_VOLUMES = Object.freeze({ ...DESKTOP_SOUND_VOLUMES, dodge: 1, hit: 0.75 });
+export const soundVolume = (name, mobile = false) => (mobile ? MOBILE_SOUND_VOLUMES : DESKTOP_SOUND_VOLUMES)[name] ?? 0.28;
 
 export function countdownLabel(elapsedMs, durationMs = COUNTDOWN_DURATION_MS) {
   const duration = Number.isFinite(durationMs) && durationMs > 0 ? durationMs : COUNTDOWN_DURATION_MS;
@@ -32,7 +35,10 @@ export function createSoundEffects({
   try { enabled = storage?.getItem(preferenceKey) !== 'false'; } catch {}
 
   function forget(voice) { active.delete(voice); }
-  function level(name) { return typeof volume === 'number' ? volume : volume[name] ?? 0.28; }
+  function level(name) {
+    const value = typeof volume === 'function' ? volume(name) : typeof volume === 'number' ? volume : volume[name] ?? 0.28;
+    return Number.isFinite(value) ? Math.max(0, value) : 0.28;
+  }
   function audioUrl(element) {
     return element?.currentSrc || element?.src || element?.getAttribute?.('src') || '';
   }
@@ -100,7 +106,7 @@ export function createSoundEffects({
     if (!element) return null;
     const voice = element.cloneNode(true);
     voice.soundName = name;
-    voice.volume = level(name);
+    voice.volume = Math.min(1, level(name));
     voice.preload = 'auto';
     try { voice.currentTime = Math.max(0, offsetSeconds); } catch {}
     active.add(voice);

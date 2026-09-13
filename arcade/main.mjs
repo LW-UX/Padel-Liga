@@ -1,11 +1,11 @@
-import { createState, createClock, start, pause, reset, step } from './physics.mjs?v=2026-09-13-natural-cpu';
+import { createState, createClock, start, pause, reset, step } from './physics.mjs?v=2026-09-13-audio-events';
 import { createComputer } from './computer.mjs?v=2026-09-13-easy-balanced';
 import { DIFFICULTIES, requireDifficulty, readDifficulty, saveDifficulty } from './difficulty.mjs?v=2026-09-13-easy-balanced';
 import { createInput } from './input.mjs?v=2026-09-12-rules-v2';
-import { createRenderer } from './renderer.mjs?v=2026-09-12-landing-fix';
+import { createRenderer } from './renderer.mjs?v=2026-09-13-audio-events';
 import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-game-over-actions-v2';
-import { OnlineSession, ONLINE, generateCode, normalizeCode } from './online.mjs?v=2026-09-13-sound-effects';
-import { COUNTDOWN_DURATION_MS, EFFECT_SOUND_NAMES, MUSIC_CUE_NAMES, backgroundMusicVolume, countdownLabel, createSoundEffects } from './audio.mjs?v=2026-09-13-mobile-audio-v5';
+import { OnlineSession, ONLINE, generateCode, normalizeCode } from './online.mjs?v=2026-09-13-audio-events';
+import { COUNTDOWN_DURATION_MS, EFFECT_SOUND_NAMES, MUSIC_CUE_NAMES, backgroundMusicVolume, countdownLabel, createSoundEffects, soundVolume } from './audio.mjs?v=2026-09-13-mobile-audio-v6';
 
 const back = document.getElementById('back-link');
 const season = new URLSearchParams(location.search).get('saison');
@@ -78,9 +78,9 @@ async function mount() {
       gameOver: document.getElementById('effect-game-over'),
       victory: document.getElementById('effect-victory')
     },
-    // The supplied files differ substantially in source level. The short
-    // bounce sample needs extra gain to read as clearly as the player hit.
-    volume: { countdown: 0.30, dodge: 0.75, hit: 0.28, gameOver: 0.27, victory: 0.11 },
+    // Ball samples receive a stronger mobile mix while countdown and music
+    // cues retain their existing level.
+    volume: name => soundVolume(name, mobileControls.matches),
     toggleNames: EFFECT_SOUND_NAMES
   });
   sounds.preload();

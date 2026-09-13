@@ -2,11 +2,16 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 test('countdown presents 3, 2, 1 and GO in four equal sound sections', async () => {
-  const { COUNTDOWN_DURATION_MS, EFFECT_SOUND_NAMES, MUSIC_CUE_NAMES, backgroundMusicVolume, countdownLabel } = await import('../arcade/audio.mjs');
+  const { COUNTDOWN_DURATION_MS, EFFECT_SOUND_NAMES, MUSIC_CUE_NAMES, backgroundMusicVolume, countdownLabel, soundVolume } = await import('../arcade/audio.mjs');
   assert.deepEqual(EFFECT_SOUND_NAMES, ['countdown', 'dodge', 'hit']);
   assert.deepEqual(MUSIC_CUE_NAMES, ['gameOver', 'victory']);
   assert.equal(backgroundMusicVolume(false), 0.22);
   assert.equal(backgroundMusicVolume(true), 0.10);
+  assert.equal(soundVolume('countdown', true), 0.30);
+  assert.equal(soundVolume('dodge', false), 0.75);
+  assert.equal(soundVolume('dodge', true), 1);
+  assert.equal(soundVolume('hit', false), 0.28);
+  assert.equal(soundVolume('hit', true), 0.75);
   const section = COUNTDOWN_DURATION_MS / 4;
   assert.equal(countdownLabel(0), '3');
   assert.equal(countdownLabel(section - 1), '3');
