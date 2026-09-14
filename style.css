@@ -394,8 +394,8 @@
       padding: 0;
     }
     .player-profile-dialog::backdrop {
-      background: rgba(3,4,8,0.82);
-      backdrop-filter: blur(6px);
+      background: rgba(3,4,8,0.7);
+      backdrop-filter: blur(wpx);
     }
     .player-profile-shell {
       box-sizing: border-box;
@@ -991,7 +991,7 @@
       overflow: hidden;
       padding: 0;
     }
-    .auth-dialog::backdrop { background: rgba(3,4,8,0.82); backdrop-filter: blur(6px); }
+    .auth-dialog::backdrop { background: rgba(3,4,8,0.7); backdrop-filter: blur(2px); }
     .auth-dialog-card {
       box-sizing: border-box;
       max-height: inherit;
