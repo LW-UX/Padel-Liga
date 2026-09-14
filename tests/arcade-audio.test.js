@@ -63,10 +63,10 @@ test('music and effects switches stop only the sounds assigned to their channel'
 
 test('music and effects share one unlocked low-latency audio context and can overlap', async () => {
   const { createSoundEffects, MUSIC_SOUND_NAMES } = await import('../arcade/audio.mjs');
-  const sources = [], gains = [];
+  const sources = [], gains = [], activationOrder = [];
   let contexts = 0;
   class FakeAudioContext {
-    constructor(options) { contexts++; this.options = options; this.state = 'suspended'; this.destination = {}; this.sampleRate = 48000; }
+    constructor(options) { contexts++; activationOrder.push('context'); this.options = options; this.state = 'suspended'; this.destination = {}; this.sampleRate = 48000; }
     resume() { this.state = 'running'; return Promise.resolve(); }
     decodeAudioData() { return Promise.resolve({ duration: 0.4 }); }
     createBuffer(channels, frames, sampleRate) { return { channels, frames, sampleRate, duration: frames / sampleRate, silent: true }; }
@@ -79,16 +79,24 @@ test('music and effects share one unlocked low-latency audio context and can ove
       gains.push(gain); return gain;
     }
   }
+  const audioSession = {
+    currentType: 'auto',
+    get type() { return this.currentType; },
+    set type(value) { activationOrder.push(`session:${value}`); this.currentType = value; }
+  };
   const element = name => ({ currentSrc: `/${name}.mp3`, cloneNode() { throw new Error('HTML audio fallback must not be used'); } });
   const sounds = createSoundEffects({
     elements: { hit: element('hit'), gameMusic: element('game-music') }, storage: null,
     volume: { hit: 0.28, gameMusic: 0.10 }, AudioContextClass: FakeAudioContext,
+    audioSession,
     fetchAudio: async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) })
   });
   assert.equal(await sounds.preload(), true);
   assert.equal(contexts, 0);
   assert.equal(sounds.webAudioReady, false);
   const unlocking = sounds.unlock();
+  assert.deepEqual(activationOrder.slice(0, 2), ['session:playback', 'context']);
+  assert.equal(audioSession.type, 'playback');
   assert.equal(contexts, 1);
   assert.equal(sounds.webAudioReady, true);
   assert.equal(sources.length, 1);

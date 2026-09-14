@@ -23,6 +23,7 @@ export function createSoundEffects({
   preferenceKey = 'padelArcadeEffectsEnabled',
   volume = 0.28,
   toggleNames = Object.keys(elements),
+  audioSession = globalThis.navigator?.audioSession,
   AudioContextClass = globalThis.AudioContext ?? globalThis.webkitAudioContext,
   fetchAudio = globalThis.fetch
 }) {
@@ -43,6 +44,16 @@ export function createSoundEffects({
   }
   function audioUrl(element) {
     return element?.currentSrc || element?.src || element?.getAttribute?.('src') || '';
+  }
+  function usePlaybackAudioSession() {
+    if (!audioSession) return false;
+    try {
+      // Safari otherwise assigns Web Audio to its ambient category, which is
+      // silenced by the iPhone Ring/Silent switch. Playback is the explicit
+      // media category and remains audible in silent mode.
+      audioSession.type = 'playback';
+      return audioSession.type === 'playback';
+    } catch { return false; }
   }
   function getContext() {
     if (context || typeof AudioContextClass !== 'function') return context;
@@ -112,8 +123,10 @@ export function createSoundEffects({
     return results.some(Boolean);
   }
   async function unlock(names = Object.keys(elements)) {
-    // Both context creation and the first source start happen before the first
-    // await so Safari sees them as part of the initiating user gesture.
+    // Session selection, context creation and the first source start all
+    // happen before the first await so Safari sees them as part of the
+    // initiating user gesture.
+    usePlaybackAudioSession();
     const audioContext = getContext();
     prime(audioContext);
     const resume = audioContext && !['running', 'closed'].includes(audioContext.state)
@@ -122,6 +135,7 @@ export function createSoundEffects({
     return audioContext?.state === 'running' && names.some(name => buffers.has(name));
   }
   async function resume() {
+    usePlaybackAudioSession();
     if (!context || context.state === 'closed') return false;
     if (context.state !== 'running') {
       try { await context.resume(); } catch {}
@@ -161,6 +175,7 @@ export function createSoundEffects({
   }
   function play(name, { offsetSeconds = 0, enabled: playbackEnabled = enabled, loop = false, elementFallback = true } = {}) {
     if (!playbackEnabled || !elements[name]) return null;
+    usePlaybackAudioSession();
     if (!buffers.has(name) && context) decodeName(name);
     return playBuffer(name, offsetSeconds, loop) ?? (elementFallback ? playElement(name, offsetSeconds, loop) : null);
   }

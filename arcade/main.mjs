@@ -5,7 +5,7 @@ import { createInput } from './input.mjs?v=2026-09-12-rules-v2';
 import { createRenderer } from './renderer.mjs?v=2026-09-13-audio-events';
 import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-game-over-actions-v2';
 import { OnlineSession, ONLINE, generateCode, normalizeCode } from './online.mjs?v=2026-09-13-audio-events';
-import { COUNTDOWN_DURATION_MS, EFFECT_SOUND_NAMES, MUSIC_SOUND_NAMES, countdownLabel, createSoundEffects, soundVolume } from './audio.mjs?v=2026-09-14-unified-audio-v2';
+import { COUNTDOWN_DURATION_MS, EFFECT_SOUND_NAMES, MUSIC_SOUND_NAMES, countdownLabel, createSoundEffects, soundVolume } from './audio.mjs?v=2026-09-14-ios-silent-mode';
 
 const back = document.getElementById('back-link');
 const season = new URLSearchParams(location.search).get('saison');
