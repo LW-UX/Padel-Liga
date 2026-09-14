@@ -1,4 +1,4 @@
-import { C, clamp, createState, createClock, start, pause, reset, step, moveTeam, predictLanding } from './physics.mjs?v=2026-09-13-audio-events';
+import { C, clamp, createState, createClock, start, pause, reset, step, moveTeam, predictLanding } from './physics.mjs?v=2026-09-14-point-sounds';
 import { connectRealtime } from './realtime.mjs?v=2026-09-12-rules-v2';
 import { RULESET } from './ruleset.mjs?v=2026-09-12-rules-v2';
 import { COUNTDOWN_DURATION_MS } from './audio.mjs?v=2026-09-13-sound-effects';
@@ -41,6 +41,7 @@ export function validSnapshot(s) {
     && Array.isArray(s.teams) && s.teams.length === 2 && s.teams.every((t, i) => t.side === i && finite(t, ['offset', 'y', 'vx', 'vy', 'power']))
     && finite(s.ball, ['x', 'y', 'z', 'vx', 'vy', 'vz', 'bounces']) && [0, 1].includes(s.ball.lastHit)
     && typeof s.ball.feed === 'boolean' && typeof s.message === 'string' && s.message.length < 200
+    && (s.pointContactEffectId == null || (Number.isInteger(s.pointContactEffectId) && s.pointContactEffectId > 0 && s.pointContactEffectId <= s.effectSequence))
     && Array.isArray(s.effects) && s.effects.length <= 40 && s.effects.every(e => finite(e, ['id', 'x', 'y', 'age']) && Number.isInteger(e.id) && e.id > 0 && e.id <= s.effectSequence && ['hit', 'wall', 'bounce'].includes(e.kind));
 }
 

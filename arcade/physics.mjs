@@ -33,7 +33,7 @@ export function createState() {
     teams: [0, 1].map(side => ({ side, offset: 0, y: side ? 17 : 3, vx: 0, vy: 0, power: 0 })),
     ball: { x: 2.5, y: 17, z: 0.8, vx: 0, vy: 0, vz: 0, lastHit: 1, bounces: 0, feed: true, contactSide: null },
     message: 'Bereit für eine kurze Partie?', rallyHits: 0, bestRally: 0,
-    pointTimer: 0, effects: [], effectSequence: 0, winner: null
+    pointTimer: 0, effects: [], effectSequence: 0, pointContactEffectId: null, winner: null
   };
 }
 export function reset(state) { Object.assign(state, createState()); }
@@ -60,21 +60,25 @@ export function feed(state) {
   state.ball.vy = (server ? -13 : 13) / t;
   state.ball.vz = (C.gravity * t * t / 2 - state.ball.z) / t;
   state.rallyHits = 0;
+  state.pointContactEffectId = null;
   state.phase = 'rally';
   state.message = 'Anspiel · erst aufspringen lassen';
 }
-export function awardPoint(state, winner, reason) {
+export function awardPoint(state, winner, reason, pointContactEffectId = null) {
   if (state.phase !== 'rally') return;
   state.score[winner]++;
   state.winner = winner;
+  state.pointContactEffectId = pointContactEffectId;
   state.message = `${winner ? 'Dein Punkt' : 'Punkt Computer'} · ${reason}`;
   state.phase = state.score[winner] >= C.targetScore ? 'over' : 'point';
   state.pointTimer = 1.8;
   state.bestRally = Math.max(state.bestRally, state.rallyHits);
 }
 function emitEffect(state, kind) {
-  state.effects.push({ id: ++state.effectSequence, x: state.ball.x, y: state.ball.y, age: 0, kind });
+  const id = ++state.effectSequence;
+  state.effects.push({ id, x: state.ball.x, y: state.ball.y, age: 0, kind });
   if (state.effects.length > EFFECT_HISTORY_LIMIT) state.effects.splice(0, state.effects.length - EFFECT_HISTORY_LIMIT);
+  return id;
 }
 function approach(value, target, amount) {
   return value < target ? Math.min(value + amount, target) : Math.max(value - amount, target);
@@ -197,9 +201,9 @@ export function simulateBall(state, dt, origins = state.teams.map(t => ({ ...t }
     if (!event) { advance(b, remaining); break; }
     advance(b, event.time); remaining -= event.time; elapsed += event.time;
     if (event.type === 'ground') {
-      emitEffect(state, 'bounce');
-      if (sideAt(b.y) === b.lastHit && b.bounces === 0) awardPoint(state, 1 - b.lastHit, 'Boden auf eigener Seite');
-      else if (b.bounces >= 1) awardPoint(state, b.lastHit, 'Zweimal aufgesprungen');
+      const effectId = emitEffect(state, 'bounce');
+      if (sideAt(b.y) === b.lastHit && b.bounces === 0) awardPoint(state, 1 - b.lastHit, 'Boden auf eigener Seite', effectId);
+      else if (b.bounces >= 1) awardPoint(state, b.lastHit, 'Zweimal aufgesprungen', effectId);
       else {
         b.bounces++; b.z = 0; b.vz = Math.abs(b.vz) * C.bounce;
         state.message = 'Einmal aufgesprungen · Wandspiel erlaubt';
@@ -207,8 +211,8 @@ export function simulateBall(state, dt, origins = state.teams.map(t => ({ ...t }
     } else if (event.type === 'wallX' || event.type === 'wallY') {
       const axis = event.type === 'wallX' ? 'x' : 'y';
       const contact = boundaryContact(b, axis);
-      emitEffect(state, 'wall');
-      if (contact.fault) awardPoint(state, 1 - b.lastHit, contact.material === 'fence' ? 'Zaun vor Boden' : 'Wand vor Boden');
+      const effectId = emitEffect(state, 'wall');
+      if (contact.fault) awardPoint(state, 1 - b.lastHit, contact.material === 'fence' ? 'Zaun vor Boden' : 'Wand vor Boden', effectId);
       else {
         b[`v${axis}`] *= -contact.damping;
       }

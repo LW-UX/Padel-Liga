@@ -65,7 +65,7 @@ test('second floor contact awards one point and cannot award it twice', async ()
   const { p, s } = await scenario({ z: 0.01, vz: -2, bounces: 1 });
   p.simulateBall(s, 0.03); p.simulateBall(s, 0.03);
   assert.deepEqual(s.score, [0, 1]); assert.match(s.message, /Zweimal/);
-  assert.equal(s.effectSequence, 1); assert.equal(s.effects[0].kind, 'bounce');
+  assert.equal(s.effectSequence, 1); assert.equal(s.effects[0].kind, 'bounce'); assert.equal(s.pointContactEffectId, 1);
 });
 test('a first bounce on the hitter side is an error', async () => {
   const { p, s } = await scenario({ y: 14, z: 0.01, vz: -2 });

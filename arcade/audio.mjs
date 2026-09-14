@@ -2,14 +2,27 @@
 // peers reveal GO and start play on the same audio boundary.
 export const COUNTDOWN_DURATION_MS = 3552;
 export const COUNTDOWN_LABELS = Object.freeze(['3', '2', '1', 'GO']);
-export const EFFECT_SOUND_NAMES = Object.freeze(['countdown', 'dodge', 'hit']);
+export const EFFECT_SOUND_NAMES = Object.freeze(['countdown', 'dodge', 'hit', 'pointWon', 'pointLost']);
 export const MUSIC_SOUND_NAMES = Object.freeze(['gameMusic', 'gameOver', 'victory']);
 export const backgroundMusicVolume = mobile => mobile ? 0.10 : 0.22;
-const DESKTOP_SOUND_VOLUMES = Object.freeze({ gameMusic: 0.22, countdown: 0.30, dodge: 0.75, hit: 0.28, gameOver: 0.27, victory: 0.11 });
-const MOBILE_SOUND_VOLUMES = Object.freeze({ ...DESKTOP_SOUND_VOLUMES, dodge: 1, hit: 0.75 });
+const DESKTOP_SOUND_VOLUMES = Object.freeze({ gameMusic: 0.22, countdown: 0.30, dodge: 0.75, hit: 0.28, pointWon: 0.32, pointLost: 0.32, gameOver: 0.27, victory: 0.11 });
+const MOBILE_SOUND_VOLUMES = Object.freeze({ ...DESKTOP_SOUND_VOLUMES, dodge: 1, hit: 0.75, pointWon: 0.55, pointLost: 0.55 });
 export const soundVolume = (name, mobile = false) => name === 'gameMusic'
   ? backgroundMusicVolume(mobile)
   : (mobile ? MOBILE_SOUND_VOLUMES : DESKTOP_SOUND_VOLUMES)[name] ?? 0.28;
+
+export function pointSoundName(previousScore, score, winner) {
+  const pointAwarded = Array.isArray(previousScore) && Array.isArray(score)
+    && score.some((value, index) => value > (previousScore[index] ?? value));
+  if (!pointAwarded || ![0, 1].includes(winner)) return null;
+  return winner === 1 ? 'pointWon' : 'pointLost';
+}
+
+export function contactSoundName(effect, suppressedDodgeEffectId = null) {
+  if (effect?.kind === 'hit') return 'hit';
+  if (!['bounce', 'wall'].includes(effect?.kind) || effect.id === suppressedDodgeEffectId) return null;
+  return 'dodge';
+}
 
 export function countdownLabel(elapsedMs, durationMs = COUNTDOWN_DURATION_MS) {
   const duration = Number.isFinite(durationMs) && durationMs > 0 ? durationMs : COUNTDOWN_DURATION_MS;

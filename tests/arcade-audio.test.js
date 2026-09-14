@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 
 test('countdown presents 3, 2, 1 and GO in four equal sound sections', async () => {
   const { COUNTDOWN_DURATION_MS, EFFECT_SOUND_NAMES, MUSIC_SOUND_NAMES, backgroundMusicVolume, countdownLabel, soundVolume } = await import('../arcade/audio.mjs');
-  assert.deepEqual(EFFECT_SOUND_NAMES, ['countdown', 'dodge', 'hit']);
+  assert.deepEqual(EFFECT_SOUND_NAMES, ['countdown', 'dodge', 'hit', 'pointWon', 'pointLost']);
   assert.deepEqual(MUSIC_SOUND_NAMES, ['gameMusic', 'gameOver', 'victory']);
   assert.equal(backgroundMusicVolume(false), 0.22);
   assert.equal(backgroundMusicVolume(true), 0.10);
@@ -12,6 +12,10 @@ test('countdown presents 3, 2, 1 and GO in four equal sound sections', async () 
   assert.equal(soundVolume('dodge', true), 1);
   assert.equal(soundVolume('hit', false), 0.28);
   assert.equal(soundVolume('hit', true), 0.75);
+  assert.equal(soundVolume('pointWon', false), 0.32);
+  assert.equal(soundVolume('pointWon', true), 0.55);
+  assert.equal(soundVolume('pointLost', false), 0.32);
+  assert.equal(soundVolume('pointLost', true), 0.55);
   const section = COUNTDOWN_DURATION_MS / 4;
   assert.equal(countdownLabel(0), '3');
   assert.equal(countdownLabel(section - 1), '3');
@@ -19,6 +23,18 @@ test('countdown presents 3, 2, 1 and GO in four equal sound sections', async () 
   assert.equal(countdownLabel(section * 2), '1');
   assert.equal(countdownLabel(section * 3), 'GO');
   assert.equal(countdownLabel(COUNTDOWN_DURATION_MS), 'GO');
+});
+
+test('a score increase selects the point sound from the local player perspective', async () => {
+  const { contactSoundName, pointSoundName } = await import('../arcade/audio.mjs');
+  assert.equal(pointSoundName([2, 3], [2, 4], 1), 'pointWon');
+  assert.equal(pointSoundName([2, 3], [3, 3], 0), 'pointLost');
+  assert.equal(pointSoundName([2, 3], [2, 3], 1), null);
+  assert.equal(pointSoundName([6, 6], [0, 0], 1), null);
+  assert.equal(contactSoundName({ id: 9, kind: 'bounce' }, 9), null);
+  assert.equal(contactSoundName({ id: 9, kind: 'wall' }, 9), null);
+  assert.equal(contactSoundName({ id: 8, kind: 'bounce' }, 9), 'dodge');
+  assert.equal(contactSoundName({ id: 9, kind: 'hit' }, 9), 'hit');
 });
 
 test('sound effects apply their individually normalized playback level', async () => {
