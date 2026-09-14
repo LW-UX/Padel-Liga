@@ -7,15 +7,16 @@ test('countdown presents 3, 2, 1 and GO in four equal sound sections', async () 
   assert.deepEqual(MUSIC_SOUND_NAMES, ['gameMusic', 'gameOver', 'victory']);
   assert.equal(backgroundMusicVolume(false), 0.22);
   assert.equal(backgroundMusicVolume(true), 0.10);
-  assert.equal(soundVolume('countdown', true), 0.30);
+  assert.equal(soundVolume('countdown', false), 0.30);
+  assert.equal(soundVolume('countdown', true), 0.225);
   assert.equal(soundVolume('dodge', false), 0.75);
-  assert.equal(soundVolume('dodge', true), 1);
+  assert.equal(soundVolume('dodge', true), 0.75);
   assert.equal(soundVolume('hit', false), 0.28);
-  assert.equal(soundVolume('hit', true), 0.75);
+  assert.equal(soundVolume('hit', true), 0.5625);
   assert.equal(soundVolume('pointWon', false), 0.32);
-  assert.equal(soundVolume('pointWon', true), 0.55);
+  assert.equal(soundVolume('pointWon', true), 0.4125);
   assert.equal(soundVolume('pointLost', false), 0.32);
-  assert.equal(soundVolume('pointLost', true), 0.55);
+  assert.equal(soundVolume('pointLost', true), 0.4125);
   const section = COUNTDOWN_DURATION_MS / 4;
   assert.equal(countdownLabel(0), '3');
   assert.equal(countdownLabel(section - 1), '3');
@@ -35,6 +36,19 @@ test('a score increase selects the point sound from the local player perspective
   assert.equal(contactSoundName({ id: 9, kind: 'wall' }, 9), null);
   assert.equal(contactSoundName({ id: 8, kind: 'bounce' }, 9), 'dodge');
   assert.equal(contactSoundName({ id: 9, kind: 'hit' }, 9), 'hit');
+});
+
+test('laptop duels celebrate either team while solo and online retain perspective sounds', async () => {
+  const { matchSoundName, pointSoundName } = await import('../arcade/audio.mjs');
+  for (const winner of [0, 1]) {
+    const score = [6, 6];
+    score[winner]++;
+    assert.equal(pointSoundName([6, 6], score, winner, true), 'pointWon');
+    assert.equal(matchSoundName(winner, true), 'victory');
+    assert.equal(pointSoundName(score, score, winner, true), null);
+    assert.equal(pointSoundName(score, [0, 0], winner, true), null);
+    assert.equal(matchSoundName(winner), winner === 1 ? 'victory' : 'gameOver');
+  }
 });
 
 test('sound effects apply their individually normalized playback level', async () => {

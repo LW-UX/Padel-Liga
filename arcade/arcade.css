@@ -227,6 +227,10 @@ table.arcade-ranking .col-name { width: auto; }
 #opponent-power-label { color: var(--coral); }
 #opponent-power-display.danger #opponent-power-label { color: var(--coral); }
 .local-duel .power-display { width: 150px; }
+@media (pointer: fine) and (min-width: 801px) {
+  .local-duel .controls > #opponent-power-display { order: -1; }
+  .local-duel .controls > .power-display:not(#opponent-power-display) { order: 1; }
+}
 @media (pointer: coarse), (max-width: 800px) {
   .local-duel .controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
 }

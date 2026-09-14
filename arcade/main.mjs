@@ -5,7 +5,7 @@ import { createInput } from './input.mjs?v=2026-09-12-rules-v2';
 import { createRenderer } from './renderer.mjs?v=2026-09-13-audio-events';
 import { mountLeaderboard, formatDuration } from './leaderboard.mjs?v=2026-09-12-game-over-actions-v2';
 import { OnlineSession, ONLINE, generateCode, normalizeCode } from './online.mjs?v=2026-09-14-point-sounds';
-import { COUNTDOWN_DURATION_MS, EFFECT_SOUND_NAMES, MUSIC_SOUND_NAMES, contactSoundName, countdownLabel, createSoundEffects, pointSoundName, soundVolume } from './audio.mjs?v=2026-09-14-point-sounds';
+import { COUNTDOWN_DURATION_MS, EFFECT_SOUND_NAMES, MUSIC_SOUND_NAMES, contactSoundName, countdownLabel, createSoundEffects, matchSoundName, pointSoundName, soundVolume } from './audio.mjs?v=2026-09-14-laptop-sounds';
 
 const back = document.getElementById('back-link');
 const season = new URLSearchParams(location.search).get('saison');
@@ -147,7 +147,7 @@ async function mount() {
   }
   function syncSoundEffects() {
     if (state.effectSequence < lastEffectSequence) lastEffectSequence = 0;
-    const pointSound = pointSoundName(lastSoundScore, state.score, state.winner);
+    const pointSound = pointSoundName(lastSoundScore, state.score, state.winner, local);
     for (const effect of state.effects.filter(effect => effect.id > lastEffectSequence).sort((a, b) => a.id - b.id)) {
       const contactSound = contactSoundName(effect, pointSound ? state.pointContactEffectId : null);
       if (contactSound) sounds.play(contactSound);
@@ -155,7 +155,7 @@ async function mount() {
     lastEffectSequence = state.effectSequence;
     if (pointSound) sounds.play(pointSound);
     lastSoundScore = [...state.score];
-    if (state.phase === 'over' && soundPhase !== 'over') sounds.play(state.winner === 1 ? 'victory' : 'gameOver', { enabled: musicEnabled });
+    if (state.phase === 'over' && soundPhase !== 'over') sounds.play(matchSoundName(state.winner, local), { enabled: musicEnabled });
     soundPhase = state.phase;
     const onlineStage = online?.stage ?? null;
     if (onlineStage === 'countdown' && lastOnlineStage !== 'countdown') {

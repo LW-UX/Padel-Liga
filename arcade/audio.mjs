@@ -6,16 +6,20 @@ export const EFFECT_SOUND_NAMES = Object.freeze(['countdown', 'dodge', 'hit', 'p
 export const MUSIC_SOUND_NAMES = Object.freeze(['gameMusic', 'gameOver', 'victory']);
 export const backgroundMusicVolume = mobile => mobile ? 0.10 : 0.22;
 const DESKTOP_SOUND_VOLUMES = Object.freeze({ gameMusic: 0.22, countdown: 0.30, dodge: 0.75, hit: 0.28, pointWon: 0.32, pointLost: 0.32, gameOver: 0.27, victory: 0.11 });
-const MOBILE_SOUND_VOLUMES = Object.freeze({ ...DESKTOP_SOUND_VOLUMES, dodge: 1, hit: 0.75, pointWon: 0.55, pointLost: 0.55 });
+const MOBILE_SOUND_VOLUMES = Object.freeze({ ...DESKTOP_SOUND_VOLUMES, countdown: 0.225, dodge: 0.75, hit: 0.5625, pointWon: 0.4125, pointLost: 0.4125 });
 export const soundVolume = (name, mobile = false) => name === 'gameMusic'
   ? backgroundMusicVolume(mobile)
   : (mobile ? MOBILE_SOUND_VOLUMES : DESKTOP_SOUND_VOLUMES)[name] ?? 0.28;
 
-export function pointSoundName(previousScore, score, winner) {
+export function pointSoundName(previousScore, score, winner, localDuel = false) {
   const pointAwarded = Array.isArray(previousScore) && Array.isArray(score)
     && score.some((value, index) => value > (previousScore[index] ?? value));
   if (!pointAwarded || ![0, 1].includes(winner)) return null;
-  return winner === 1 ? 'pointWon' : 'pointLost';
+  return localDuel || winner === 1 ? 'pointWon' : 'pointLost';
+}
+
+export function matchSoundName(winner, localDuel = false) {
+  return localDuel || winner === 1 ? 'victory' : 'gameOver';
 }
 
 export function contactSoundName(effect, suppressedDodgeEffectId = null) {
