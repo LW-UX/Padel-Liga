@@ -40,6 +40,23 @@ test('date sorting places matches without a complete date and time last', () => 
     matches.sort(compareMatchesBySchedule).map(match => match.id),
     ['earlier', 'later', 'open-league', 'open-final']
   );
-  assert.match(app, /if \(matchScope === 'open'\) return !hasScheduledDateTime\(match\)/);
+  assert.match(app, /if \(matchScope === 'open'\) return match\.sieger === null/);
   assert.match(app, /return hasScheduledDateTime\(match\) \? 'Terminiert' : 'Ausstehend'/);
+});
+
+test('open scope includes scheduled matches without a result and excludes completed matches', () => {
+  const source = app.match(/function matchesCurrentMatchScope\(match\) \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(source);
+
+  const context = {
+    matchScope: 'open',
+    isViewerMatch: () => false
+  };
+  const matchesCurrentMatchScope = vm.runInNewContext(
+    `(${source.replace('function matchesCurrentMatchScope', 'function')})`,
+    context
+  );
+
+  assert.equal(matchesCurrentMatchScope({ sieger: null, datum: '2026-09-20', uhrzeit: '18.00' }), true);
+  assert.equal(matchesCurrentMatchScope({ sieger: 1, datum: null, uhrzeit: null }), false);
 });

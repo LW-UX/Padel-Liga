@@ -642,6 +642,7 @@
       return `<div class="account-task-actions scheduled-result-actions">
           <button class="secondary-button" type="button" data-result-entry-toggle="${escapeHtml(task.match_id)}">Ergebnis eintragen</button>
           <button class="secondary-button" type="button" data-match-schedule-toggle="${escapeHtml(task.match_id)}">Termin ändern</button>
+          <button class="secondary-button" type="button" data-match-unschedule="${escapeHtml(task.match_id)}">Termin löschen</button>
         </div>
         ${renderResultForm(task, false, true)}
         ${renderScheduleForm(task, true)}`;
@@ -1598,6 +1599,22 @@ Dein Hanako-Leben-Squad`;
     }
   }
 
+  async function handleUnscheduleMatch(matchId, button) {
+    if (!window.confirm('Soll der Termin dieser Partie wirklich gelöscht werden?')) return;
+    if (button) button.disabled = true;
+    setAuthMessage('Termin wird gelöscht …');
+    try {
+      const { error } = await state.client.rpc('unschedule_match', { p_match_id: matchId });
+      if (error) throw error;
+      setAuthMessage('Termin wurde gelöscht.', 'success');
+      await refresh();
+    } catch (error) {
+      setAuthMessage(error.message || 'Der Termin konnte nicht gelöscht werden.', 'error');
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
   async function handleResultSubmit(event) {
     event.preventDefault();
     const form = event.target;
@@ -2026,6 +2043,11 @@ Dein Hanako-Leben-Squad`;
           form.hidden = !form.hidden;
           scheduleToggle.textContent = form.hidden ? 'Termin ändern' : 'Termin schließen';
         }
+        return;
+      }
+      const unscheduleButton = event.target.closest('[data-match-unschedule]');
+      if (unscheduleButton) {
+        await handleUnscheduleMatch(unscheduleButton.dataset.matchUnschedule, unscheduleButton);
         return;
       }
       const scoreStep = event.target.closest('[data-result-score-step]');

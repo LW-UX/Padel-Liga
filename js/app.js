@@ -3696,7 +3696,7 @@ function renderTournamentGroup(matches, fallbackTitle, className) {
 }
 
 function matchesCurrentMatchScope(match) {
-  if (matchScope === 'open') return !hasScheduledDateTime(match);
+  if (matchScope === 'open') return match.sieger === null;
   if (matchScope === 'mine') return isViewerMatch(match);
   return true;
 }
