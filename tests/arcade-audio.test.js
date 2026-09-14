@@ -66,9 +66,10 @@ test('music and effects share one unlocked low-latency audio context and can ove
   const sources = [], gains = [];
   let contexts = 0;
   class FakeAudioContext {
-    constructor(options) { contexts++; this.options = options; this.state = 'suspended'; this.destination = {}; }
+    constructor(options) { contexts++; this.options = options; this.state = 'suspended'; this.destination = {}; this.sampleRate = 48000; }
     resume() { this.state = 'running'; return Promise.resolve(); }
     decodeAudioData() { return Promise.resolve({ duration: 0.4 }); }
+    createBuffer(channels, frames, sampleRate) { return { channels, frames, sampleRate, duration: frames / sampleRate, silent: true }; }
     createBufferSource() {
       const source = { connect() {}, disconnect() {}, start(when, offset) { this.started = { when, offset }; }, stop() { this.stopped = true; } };
       sources.push(source); return source;
@@ -86,8 +87,14 @@ test('music and effects share one unlocked low-latency audio context and can ove
   });
   assert.equal(await sounds.preload(), true);
   assert.equal(contexts, 0);
-  assert.equal(await sounds.unlock(), true);
+  assert.equal(sounds.webAudioReady, false);
+  const unlocking = sounds.unlock();
   assert.equal(contexts, 1);
+  assert.equal(sounds.webAudioReady, true);
+  assert.equal(sources.length, 1);
+  assert.equal(sources[0].buffer.silent, true);
+  assert.deepEqual(sources[0].started, { when: 0, offset: undefined });
+  assert.equal(await unlocking, true);
   const first = sounds.play('hit');
   const second = sounds.play('hit', { offsetSeconds: 0.1 });
   const music = sounds.play('gameMusic', { enabled: true, loop: true, elementFallback: false });
@@ -95,13 +102,13 @@ test('music and effects share one unlocked low-latency audio context and can ove
   assert.equal(second.backend, 'buffer');
   assert.equal(music.backend, 'buffer');
   assert.equal(music.source.loop, true);
-  assert.equal(sources.length, 3);
-  assert.deepEqual(sources.map(source => source.started), [{ when: 0, offset: 0 }, { when: 0, offset: 0.1 }, { when: 0, offset: 0 }]);
+  assert.equal(sources.length, 4);
+  assert.deepEqual(sources.slice(1).map(source => source.started), [{ when: 0, offset: 0 }, { when: 0, offset: 0.1 }, { when: 0, offset: 0 }]);
   assert.deepEqual(gains.map(gain => gain.gain.value), [0.28, 0.28, 0.10]);
   sounds.stopNames(MUSIC_SOUND_NAMES);
   assert.equal(music.source.stopped, true);
   assert.equal(first.source.stopped, undefined);
   assert.equal(second.source.stopped, undefined);
   sounds.stopAll();
-  assert.ok(sources.every(source => source.stopped));
+  assert.ok(sources.slice(1).every(source => source.stopped));
 });

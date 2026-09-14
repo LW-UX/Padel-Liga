@@ -52,6 +52,20 @@ export function createSoundEffects({
     }
     return context;
   }
+  function prime(audioContext) {
+    if (!audioContext) return false;
+    try {
+      // iOS requires a source to be started synchronously inside the tap/key
+      // event. Waiting for resume() or decoding first can leave the context
+      // reported as running while its output remains silent.
+      const source = audioContext.createBufferSource();
+      source.buffer = audioContext.createBuffer(1, 1, audioContext.sampleRate || 44100);
+      source.connect(audioContext.destination);
+      source.onended = () => { try { source.disconnect(); } catch {} };
+      source.start(0);
+      return true;
+    } catch { return false; }
+  }
   async function load(name) {
     if (encoded.has(name)) return true;
     if (loads.has(name)) return loads.get(name);
@@ -98,9 +112,10 @@ export function createSoundEffects({
     return results.some(Boolean);
   }
   async function unlock(names = Object.keys(elements)) {
-    // Creating the context here keeps it inside the user gesture on mobile;
-    // preload() deliberately fetches only encoded bytes before that gesture.
+    // Both context creation and the first source start happen before the first
+    // await so Safari sees them as part of the initiating user gesture.
     const audioContext = getContext();
+    prime(audioContext);
     const resume = audioContext && !['running', 'closed'].includes(audioContext.state)
       ? audioContext.resume().catch(() => {}) : Promise.resolve();
     await Promise.all([resume, decode(names)]);
@@ -179,6 +194,7 @@ export function createSoundEffects({
 
   return {
     get enabled() { return enabled; },
+    get webAudioReady() { return Boolean(context); },
     duration(name) {
       const duration = elements[name]?.duration;
       return Number.isFinite(duration) && duration > 0 ? duration : null;
