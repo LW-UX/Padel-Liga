@@ -1244,7 +1244,6 @@
       letter-spacing: 0.02rem;
       line-height: 1.35;
       overflow-wrap: anywhere;
-      text-align: center;
     }
     .result-entry-summary.is-valid { color: var(--positiv); }
     .result-entry-summary.is-invalid { color: var(--negativ); }
