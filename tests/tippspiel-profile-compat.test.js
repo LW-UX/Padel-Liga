@@ -207,7 +207,7 @@ test('scheduling, unscheduling and future result entry use their dedicated secon
   assert.match(tippspielSource, /data-result-entry-toggle="\$\{escapeHtml\(task\.match_id\)\}"/);
   assert.match(tippspielSource, /data-match-schedule-toggle="\$\{escapeHtml\(task\.match_id\)\}">Termin ändern/);
   assert.match(tippspielSource, /data-match-unschedule="\$\{escapeHtml\(task\.match_id\)\}">Termin löschen/);
-  assert.match(tippspielSource, /groupKey === 'past'[\s\S]*data-match-unschedule/);
+  assert.match(tippspielSource, /groupKey === 'past'[\s\S]*renderResultForm\(task, false, false, true\)/);
   assert.match(tippspielSource, /state\.client\.rpc\('schedule_match'/);
   assert.match(tippspielSource, /state\.client\.rpc\('unschedule_match', \{ p_match_id: matchId \}\)/);
   assert.match(tippspielSource, /p_match_at: buildMatchAtValue\(/);
@@ -376,7 +376,9 @@ test('decision counters unlock only at 1:1 and share the action row with their s
   assert.match(tippspielSource, /function hasSplitFirstTwoSets\(scores\)/);
   assert.match(tippspielSource, /data-result-decision/);
   assert.match(tippspielSource, /control\.disabled = !decisionEnabled/);
-  assert.match(tippspielSource, /<div class="result-entry-actions">\s*<div class="result-entry-summary"[^>]*>Satzergebnis wird automatisch berechnet\.<\/div>\s*<button class="primary-button"/);
+  assert.match(tippspielSource, /<div class="result-entry-actions">\s*<div class="result-entry-summary"[^>]*>Satzergebnis wird automatisch berechnet\.<\/div>\s*<div class="result-entry-buttons">/);
+  assert.match(styleSource, /\.result-entry-summary \{[^}]*overflow-wrap: anywhere;[^}]*text-align: center;/);
+  assert.match(styleSource, /\.result-entry-actions \{[^}]*flex-wrap: wrap;/);
 });
 
 test('training distinguishes three regular sets from two sets plus match tiebreak', () => {

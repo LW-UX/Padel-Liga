@@ -561,7 +561,7 @@
     </div>`;
   }
 
-  function renderResultForm(task, counter = false, collapsed = false) {
+  function renderResultForm(task, counter = false, collapsed = false, allowUnschedule = false) {
     const initialResult = counter ? task.proposed_result : '';
     const matchFormat = task.match_format || 'best-of-three';
     return `<form class="result-entry-form ${counter ? 'is-counterproposal' : ''}" data-result-submit="${escapeHtml(task.match_id)}" data-result-format="${escapeHtml(matchFormat)}" ${counter || collapsed ? 'hidden' : ''}>
@@ -578,7 +578,10 @@
       ${renderScoreCounters(initialResult, matchFormat)}
       <div class="result-entry-actions">
         <div class="result-entry-summary" data-result-summary aria-live="polite">Satzergebnis wird automatisch berechnet.</div>
-        <button class="primary-button" type="submit">${state.profile?.app_role === 'admin' ? 'Ergebnis eintragen' : counter ? 'Alternative senden' : 'Zur Bestätigung senden'}</button>
+        <div class="result-entry-buttons">
+          ${allowUnschedule ? `<button class="secondary-button" type="button" data-match-unschedule="${escapeHtml(task.match_id)}">Termin löschen</button>` : ''}
+          <button class="primary-button" type="submit">${state.profile?.app_role === 'admin' ? 'Ergebnis eintragen' : counter ? 'Alternative senden' : 'Zur Bestätigung senden'}</button>
+        </div>
       </div>
     </form>`;
   }
@@ -648,10 +651,7 @@
         ${renderScheduleForm(task, true)}`;
     }
     if (groupKey === 'past') {
-      return `<div class="account-task-actions scheduled-result-actions">
-          <button class="secondary-button" type="button" data-match-unschedule="${escapeHtml(task.match_id)}">Termin löschen</button>
-        </div>
-        ${renderResultForm(task)}`;
+      return renderResultForm(task, false, false, true);
     }
     return renderResultForm(task);
   }

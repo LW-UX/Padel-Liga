@@ -65,5 +65,6 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(style, /\.account-task-card\.is-actionable \{[\s\S]*border-color: var\(--accent\);/);
   assert.match(style, /\.account-task-card\.is-waiting[\s\S]*opacity: 0\.58/);
   assert.match(style, /\.result-entry-actions \{[\s\S]*align-items: center;[\s\S]*justify-content: space-between;/);
+  assert.match(style, /\.result-entry-summary \{[^}]*overflow-wrap: anywhere;[^}]*text-align: center;/);
   assert.doesNotMatch(style, /\.result-entry-actions \{[^}]*border-top:/);
 });

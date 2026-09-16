@@ -1237,11 +1237,14 @@
     .result-score-counter button:disabled { cursor: not-allowed; }
     .result-score-set[data-result-decision]:has(:disabled) { opacity: 0.38; }
     .result-entry-summary {
-      flex: 1 1 auto;
+      flex: 1 1 180px;
+      min-width: 0;
       color: var(--dim);
       font: 0.7rem 'DM Sans', sans-serif;
       letter-spacing: 0.02rem;
-      text-align: left;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+      text-align: center;
     }
     .result-entry-summary.is-valid { color: var(--positiv); }
     .result-entry-summary.is-invalid { color: var(--negativ); }
@@ -1251,7 +1254,9 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      flex-wrap: wrap;
     }
+    .result-entry-buttons { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex: 0 0 auto; }
     .account-empty,
     .account-waiting { color: var(--dim); font-size: 0.85rem; }
     .account-waiting { display: inline-flex; align-items: center; min-height: 36px; }

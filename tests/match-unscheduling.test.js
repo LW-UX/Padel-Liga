@@ -31,7 +31,8 @@ test('future and overdue match cards confirm and submit schedule deletion', () =
     /function renderResultTaskBody\(task, groupKey\) \{[\s\S]*?(?=\n  function renderResultTaskCard)/
   )?.[0] || '';
   assert.match(taskBody, /groupKey === 'future'[\s\S]*data-match-unschedule/);
-  assert.match(taskBody, /groupKey === 'past'[\s\S]*data-match-unschedule/);
+  assert.match(taskBody, /groupKey === 'past'[\s\S]*renderResultForm\(task, false, false, true\)/);
+  assert.match(tippspiel, /allowUnschedule[\s\S]*data-match-unschedule[\s\S]*class="primary-button" type="submit"/);
   assert.match(tippspiel, /window\.confirm\('Soll der Termin dieser Partie wirklich gelöscht werden\?'\)/);
   assert.match(tippspiel, /state\.client\.rpc\('unschedule_match', \{ p_match_id: matchId \}\)/);
 });
