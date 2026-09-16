@@ -207,6 +207,7 @@ test('scheduling, unscheduling and future result entry use their dedicated secon
   assert.match(tippspielSource, /data-result-entry-toggle="\$\{escapeHtml\(task\.match_id\)\}"/);
   assert.match(tippspielSource, /data-match-schedule-toggle="\$\{escapeHtml\(task\.match_id\)\}">Termin ändern/);
   assert.match(tippspielSource, /data-match-unschedule="\$\{escapeHtml\(task\.match_id\)\}">Termin löschen/);
+  assert.match(tippspielSource, /groupKey === 'past'[\s\S]*data-match-unschedule/);
   assert.match(tippspielSource, /state\.client\.rpc\('schedule_match'/);
   assert.match(tippspielSource, /state\.client\.rpc\('unschedule_match', \{ p_match_id: matchId \}\)/);
   assert.match(tippspielSource, /p_match_at: buildMatchAtValue\(/);

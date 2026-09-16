@@ -26,8 +26,12 @@ test('match unscheduling rejects completed and pending matches and clears the ca
   assert.match(migration, /set match_at = null/);
 });
 
-test('future match cards confirm and submit schedule deletion', () => {
-  assert.match(tippspiel, /data-match-unschedule="\$\{escapeHtml\(task\.match_id\)\}">Termin löschen/);
+test('future and overdue match cards confirm and submit schedule deletion', () => {
+  const taskBody = tippspiel.match(
+    /function renderResultTaskBody\(task, groupKey\) \{[\s\S]*?(?=\n  function renderResultTaskCard)/
+  )?.[0] || '';
+  assert.match(taskBody, /groupKey === 'future'[\s\S]*data-match-unschedule/);
+  assert.match(taskBody, /groupKey === 'past'[\s\S]*data-match-unschedule/);
   assert.match(tippspiel, /window\.confirm\('Soll der Termin dieser Partie wirklich gelöscht werden\?'\)/);
   assert.match(tippspiel, /state\.client\.rpc\('unschedule_match', \{ p_match_id: matchId \}\)/);
 });

@@ -647,6 +647,12 @@
         ${renderResultForm(task, false, true)}
         ${renderScheduleForm(task, true)}`;
     }
+    if (groupKey === 'past') {
+      return `<div class="account-task-actions scheduled-result-actions">
+          <button class="secondary-button" type="button" data-match-unschedule="${escapeHtml(task.match_id)}">Termin löschen</button>
+        </div>
+        ${renderResultForm(task)}`;
+    }
     return renderResultForm(task);
   }
 
