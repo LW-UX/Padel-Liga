@@ -3761,7 +3761,7 @@ function renderMatchDateGroup(date, matches) {
 function renderOpenMatchGroup(matches) {
   if (!matches.length) return '';
   return `<div class="spieltag-group">
-    ${renderSplitMeta('Offen', 'Ohne vollständigen Termin', 'spieltag-label')}
+    ${renderSplitMeta('Offen', 'Ohne Termin', 'spieltag-label')}
     <div class="match-list">${matches.map(renderMatchRow).join('')}</div>
   </div>`;
 }
