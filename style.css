@@ -831,9 +831,6 @@
     }
     .primary-button { background: var(--accent); color: var(--bg); }
     .secondary-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
       min-height: 38px;
       border: 1px solid var(--border);
       border-radius: 999px;
@@ -1261,6 +1258,8 @@
       padding: 0.9rem; 
       background-color: var(--surface); 
     }
+    .training-form .secondary-button { width: max-content; }
+    .training-form .primary-button { width: max-content; margin-left: auto; }
     .training-form[hidden] { display: none; }
     .training-form-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .training-player-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -2832,13 +2831,14 @@
       .account-task-actions .primary-button, 
       .result-entry-buttons .secondary-button, 
       .result-entry-buttons .primary-button,
-      .match-schedule-actions .secondary-button
+      .match-schedule-actions .secondary-button,
+      .training-form .primary-button,
+      .training-form .secondary-button
       { font-size: 0.7rem; }
 
       .result-proposal { align-items: flex-start; flex-direction: column; }
       .result-proposal strong { text-align: left; }
       .result-score-entry { grid-template-columns: 1fr; gap: 12px; }
-      .result-review-actions > button { flex: 1 1 0; min-width: 0; }
       .result-entry-actions .primary-button { width: auto; min-width: 0; }
       .training-round-head { display: flex; flex-wrap: wrap-reverse; justify-content: space-between; }
       .training-round-head .training-picker:first-child { width: 100%; }
