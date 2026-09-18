@@ -303,7 +303,7 @@
       position: relative;
       flex: 0 0 auto;
     }
-    .training-picker { position: relative; display: grid; gap: 4px; min-width: 0; }
+    .training-picker { display: grid; position: relative; gap: 4px; min-width: 0; }
     .viewer-label-short { display: none; }
     .viewer-menu,
     .season-menu {
@@ -312,7 +312,7 @@
       top: calc(100% + 8px);
       z-index: 250;
       display: none;
-      width: 240px;
+      width: 200px;
       max-height: 360px;
       overflow-y: auto;
       padding: 6px;
@@ -336,18 +336,12 @@
       border: 0;
       border-radius: 8px;
       background: transparent;
-      color: var(--muted);
+      color: var(--dim);
       font-family: 'DM Sans', sans-serif;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       text-align: left;
       padding: 0.55rem 0.65rem;
       cursor: pointer;
-    }
-    .viewer-option span:last-child {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
-      color: var(--dim);
-      white-space: nowrap;
     }
     .viewer-option:hover,
     .season-option:hover {
@@ -359,6 +353,7 @@
       background: color-mix(in srgb, var(--accent) 15%, transparent);
       color: var(--accent);
     }
+    #training-format-menu-0, #training-pairing-menu-0 { width: 100%; }
 
     /* Public player profile */
     .player-profile-link {
@@ -834,7 +829,7 @@
       font-weight: 700;
       padding: 0.5rem 0.85rem;
     }
-    .primary-button { background: var(--accent); color: #07080c; }
+    .primary-button { background: var(--accent); color: var(--bg); }
     .secondary-button {
       display: inline-flex;
       align-items: center;
@@ -856,8 +851,7 @@
     .secondary-button:focus-visible { border-color: var(--accent); color: var(--accent); }
     .secondary-button--dropdown {
       position: relative;
-      min-width: 168px;
-      padding-right: 2.1rem;
+      padding-right: 1.8rem;
     }
     .secondary-button--dropdown::after {
       content: '';
@@ -979,7 +973,7 @@
     .prediction-error small { color: var(--dim); }
 
     .auth-dialog {
-      width: min(calc(100vw - 28px), 640px);
+      width: min(calc(100vw - 16px), 640px);
       max-width: none;
       max-height: min(calc(100vh - 64px), 900px);
       margin: auto;
@@ -1099,7 +1093,7 @@
     }
     .account-header > div { min-width: 0; }
     .account-header-actions { display: flex; align-items: center; gap: 8px; }
-    .account-header h2 { margin-bottom: 0.65rem; }
+    .account-header h2 { margin-bottom: 0.1rem; }
     .auth-account-email { color: var(--dim); font-size: 0.88rem; margin: 0; overflow-wrap: anywhere; }
     .account-games-empty {
       border: 1px solid var(--border);
@@ -1159,7 +1153,7 @@
     .account-task-matchup strong:last-child { text-align: right; }
     .account-task-matchup > span { color: var(--dim); font-size: 0.85rem; }
     .account-task-player-name.is-authenticated { color: var(--accent2); }
-    .result-proposal { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 8px; background: var(--surface2); padding: 0.7rem; }
+    .result-proposal { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: 8px; background: var(--surface2); padding: 0.7rem; }
     .result-proposal span { color: var(--dim); font-size: 0.85rem; }
     .result-proposal strong { font-family: 'DM Sans', sans-serif; font-size: 0.85rem; text-align: right; letter-spacing: 0.02rem; }
     .account-task-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
@@ -1171,7 +1165,7 @@
       padding-top: 12px;
     }
     .result-entry-timing { display: grid; grid-template-columns: minmax(150px, 200px) minmax(120px, 160px); gap: 8px; }
-    .match-schedule-form { display: grid; }
+    .match-schedule-form { display: grid; gap: 8px; }
     .match-schedule-actions,
     .scheduled-result-actions { display: flex; justify-content: flex-end; }
     .result-entry-form label,
@@ -1255,11 +1249,18 @@
       gap: 12px;
       flex-wrap: wrap;
     }
-    .result-entry-buttons { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex: 0 0 auto; }
+    .result-entry-buttons { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex: 0 0 auto; width: 100%; }
     .account-empty,
     .account-waiting { color: var(--dim); font-size: 0.85rem; }
     .account-waiting { display: inline-flex; align-items: center; min-height: 36px; }
-    .training-form { display: grid; gap: 10px; border: 1px solid var(--border); border-radius: 12px; padding: 0.9rem; }
+    .training-form { 
+      display: grid; 
+      gap: 10px; 
+      border: 1px solid var(--border); 
+      border-radius: 12px; 
+      padding: 0.9rem; 
+      background-color: var(--surface); 
+    }
     .training-form[hidden] { display: none; }
     .training-form-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .training-player-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -1267,11 +1268,10 @@
     .training-picker-toggle { justify-content: flex-start; width: 100%; min-width: 0; text-align: left; }
     .training-picker-toggle > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .training-picker-menu { right: auto; left: 0; width: max(100%, 260px); }
-    .training-player-fields .training-picker:nth-child(even) .training-picker-menu,
-    .training-round-head .training-picker:nth-child(2) .training-picker-menu { right: 0; left: auto; }
+    .training-player-fields .training-picker:nth-child(even) .training-picker-menu { right: 0; left: auto; }
     .training-rounds { display: grid; gap: 16px; }
-    .training-round-field { display: grid; gap: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
-    .training-round-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; gap: 8px; }
+    .training-round-field { display: grid; gap: 14px; border: 1px solid var(--border); padding: 0.9rem; border-radius: 12px; background-color: var(--surface2); }
+    .training-round-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .4fr) auto; align-items: end; gap: 8px; }
     .training-score-entry { grid-template-columns: repeat(3, auto); gap: 10px; }
     .training-round-remove {
       display: grid;
@@ -1279,8 +1279,8 @@
       height: 40px;
       border: 1px solid var(--border);
       border-radius: 50%;
-      background: transparent;
-      color: var(--dim);
+      background: var(--surface);
+      color: var(--text);
       font: 1.2rem/1 'DM Sans', sans-serif;
       cursor: pointer;
       place-items: center;
@@ -2773,7 +2773,6 @@
         margin-bottom: 0.65rem;
       }
       .context-actions { gap: 5px; width: 100%; }
-      .season-picker .secondary-button--dropdown { width: 132px; min-width: 132px; }
       .context-link { font-size: 0.75rem; }
       .secondary-button--dropdown::after { right: 0.65rem; }
       .season-menu {
@@ -2796,7 +2795,6 @@
         max-width: 34px !important;
         padding: 0;
       }
-      .viewer-picker .secondary-button--dropdown { min-width: 96px; }
       .site-nav {
         width: calc(100% - 1.5rem);
         margin-bottom: 1.25rem;
@@ -2813,32 +2811,39 @@
         max-height: 420px;
       }
       .auth-dialog { max-height: 94vh; }
-      .auth-dialog-card { padding: 1.1rem; }
-      .account-header { align-items: center; gap: 12px; padding-right: 38px; }
-      .account-header-actions { align-items: stretch; flex-direction: column; }
-      .account-header-actions .secondary-button { min-height: 34px; font-size: 0.7rem; padding: 0.4rem 0.65rem; }
+      .auth-dialog-card { padding: 1.1rem 0.5rem; }
+      .account-header { flex-wrap: wrap; gap: 12px; padding-right: 64px; }
       .player-email-actions { align-items: stretch; flex-direction: column; }
       .account-header h2 { font-size: 1.65rem; }
       .account-section { min-width: 0; }
       .account-section-heading { min-width: 0; }
       .account-section-heading .sh-title { font-size: 1.65rem; }
-      .account-section-heading .secondary-button { font-size: 0.68rem; padding-inline: 0.6rem; }
       #result-task-list,
       #result-task-list > .prediction-match-group,
       #result-task-list .account-task-list { min-width: 0; }
       .result-entry-timing { grid-template-columns: 1fr 1fr; }
+      .result-entry-form input, .result-entry-form select, .match-schedule-form input, .training-form input, .training-form select { width: 100%; }
       .result-entry-timing label { min-width: 0; flex-direction: column; align-items: stretch; gap: 4px; }
       .account-section-heading { align-items: center; }
-      .account-task-matchup { grid-template-columns: 1fr; text-align: left; }
-      .account-task-matchup strong:last-child { text-align: left; }
-      .account-task-matchup > span { display: none; }
+      .account-task-matchup strong { display: flex; flex-wrap: wrap; }
+      .account-task-matchup strong:last-child { justify-content: end; }
+
+      .account-task-actions .secondary-button, 
+      .account-task-actions .primary-button, 
+      .result-entry-buttons .secondary-button, 
+      .result-entry-buttons .primary-button,
+      .match-schedule-actions .secondary-button
+      { font-size: 0.7rem; }
+
       .result-proposal { align-items: flex-start; flex-direction: column; }
       .result-proposal strong { text-align: left; }
-      .result-score-entry { grid-template-columns: 1fr; }
-      .training-score-entry { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+      .result-score-entry { grid-template-columns: 1fr; gap: 12px; }
       .result-review-actions > button { flex: 1 1 0; min-width: 0; }
       .result-entry-actions .primary-button { width: auto; min-width: 0; }
-      .training-form-meta { grid-template-columns: 1fr 1fr; }
+      .training-round-head { display: flex; flex-wrap: wrap-reverse; justify-content: space-between; }
+      .training-round-head .training-picker:first-child { width: 100%; }
+      .training-round-head .training-picker { width: 80%; }
+      .training-form-meta label { display: grid; gap: 4px; }
       .training-picker-toggle { min-width: 0; }
       main { padding-left: 0.75rem; padding-right: 0.75rem; }
       .sh-with-control {
@@ -3211,13 +3216,13 @@
       }
       .calculator-step {
         width: 100%;
-        height: 28px;
-        font-size: 0.74rem;
+        height: 34px;
+        font-size: 0.85rem;
       }
       .calculator-score-field input {
         width: 100%;
         min-width: 0;
-        height: 28px;
+        height: 34px;
         font-size: 16px;
       }
       table.calculator-ranking-table {

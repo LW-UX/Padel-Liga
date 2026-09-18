@@ -645,8 +645,6 @@
       return `<div class="account-task-actions scheduled-result-actions">
           <button class="secondary-button" type="button" data-match-unschedule="${escapeHtml(task.match_id)}">Termin löschen</button>
           <button class="secondary-button" type="button" data-match-schedule-toggle="${escapeHtml(task.match_id)}">Termin ändern</button>
-          <button class="secondary-button" type="button" data-result-entry-toggle="${escapeHtml(task.match_id)}">Ergebnis eintragen</button>
-
         </div>
         ${renderResultForm(task, false, true)}
         ${renderScheduleForm(task, true)}`;
