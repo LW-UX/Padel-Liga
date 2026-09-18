@@ -635,17 +635,18 @@
     if (task.task_type === 'review') {
       return `${renderProposedResult(task)}
         <div class="account-task-actions result-review-actions">
-          <button class="primary-button" type="button" data-result-confirm="${task.proposal_id}">Ergebnis bestätigen</button>
           <button class="secondary-button" type="button" data-counterproposal-toggle="${escapeHtml(task.match_id)}">Alternative eingeben</button>
+          <button class="primary-button" type="button" data-result-confirm="${task.proposal_id}">Ergebnis bestätigen</button>
         </div>
         ${renderResultForm(task, true)}`;
     }
     if (groupKey === 'planned') return renderScheduleForm(task);
     if (groupKey === 'future') {
       return `<div class="account-task-actions scheduled-result-actions">
-          <button class="secondary-button" type="button" data-result-entry-toggle="${escapeHtml(task.match_id)}">Ergebnis eintragen</button>
-          <button class="secondary-button" type="button" data-match-schedule-toggle="${escapeHtml(task.match_id)}">Termin ändern</button>
           <button class="secondary-button" type="button" data-match-unschedule="${escapeHtml(task.match_id)}">Termin löschen</button>
+          <button class="secondary-button" type="button" data-match-schedule-toggle="${escapeHtml(task.match_id)}">Termin ändern</button>
+          <button class="secondary-button" type="button" data-result-entry-toggle="${escapeHtml(task.match_id)}">Ergebnis eintragen</button>
+
         </div>
         ${renderResultForm(task, false, true)}
         ${renderScheduleForm(task, true)}`;
@@ -962,7 +963,8 @@
       <div class="account-task-actions${task.created_by_me ? '' : ' result-review-actions'}">
         ${task.created_by_me
           ? '<span class="account-waiting">Auf Bestätigung warten</span>'
-          : `<button class="primary-button" type="button" data-training-confirm="${task.session_id}">Training bestätigen</button><button class="secondary-button" type="button" data-training-edit="${task.session_id}">Alternative eingeben</button>`}
+          : `<button class="secondary-button" type="button" data-training-edit="${task.session_id}">Alternative eingeben</button>
+          <button class="primary-button" type="button" data-training-confirm="${task.session_id}">Training bestätigen</button>`}
       </div>
     </article>`;
   }
