@@ -860,14 +860,26 @@
     </div>`;
   }
 
+  function getTrainingPairingOptions() {
+    const selectedPlayerIds = [...document.querySelectorAll('#training-player-fields [name="playerId"]')]
+      .map(input => input.value);
+    const playerLabels = Array.from({ length: 4 }, (_, index) => {
+      const playerId = selectedPlayerIds[index];
+      return playerId ? getPlayerName(playerId) : `Spieler ${index + 1}`;
+    });
+    const pairingLabel = (first, second, third, fourth) =>
+      `${playerLabels[first]} + ${playerLabels[second]} vs. ${playerLabels[third]} + ${playerLabels[fourth]}`;
+    return [
+      { value: 'ab_cd', label: pairingLabel(0, 1, 2, 3) },
+      { value: 'ac_bd', label: pairingLabel(0, 2, 1, 3) },
+      { value: 'ad_bc', label: pairingLabel(0, 3, 1, 2) }
+    ];
+  }
+
   function renderTrainingRounds(preserved = []) {
     const target = document.getElementById('training-rounds');
     if (!target) return;
-    const pairingOptions = [
-      { value: 'ab_cd', label: 'Spieler 1 + 2 vs. 3 + 4' },
-      { value: 'ac_bd', label: 'Spieler 1 + 3 vs. 2 + 4' },
-      { value: 'ad_bc', label: 'Spieler 1 + 4 vs. 2 + 3' }
-    ];
+    const pairingOptions = getTrainingPairingOptions();
     const formatOptions = [
       { value: 'one_set', label: '1 Satz' },
       { value: 'two_sets', label: '2 Sätze' },
@@ -941,7 +953,7 @@
     const picker = option.closest('[data-training-picker]');
     const inputName = picker?.querySelector('input[type="hidden"]')?.name;
     setTrainingPickerValue(picker, option.dataset.trainingPickerValue);
-    if (inputName === 'resultFormat') {
+    if (inputName === 'resultFormat' || inputName === 'playerId') {
       const preserved = readTrainingRoundValues();
       renderTrainingRounds(preserved);
     }
@@ -1836,6 +1848,14 @@ Dein Hanako-Leben-Squad`;
     target.className = `auth-message training-message${type ? ` ${type}` : ''}`;
   }
 
+  function setTrainingFormPurpose(isAlternative = false) {
+    const form = document.getElementById('training-form');
+    const submit = form?.querySelector('[type="submit"]');
+    const toggle = document.querySelector('[data-training-toggle]');
+    if (submit) submit.textContent = isAlternative ? 'Alternative senden' : 'Training zur Bestätigung senden';
+    if (toggle) toggle.textContent = isAlternative ? 'Alternative schließen' : 'Training hinzufügen';
+  }
+
   function closeTrainingForm() {
     const form = document.getElementById('training-form');
     if (!form) return;
@@ -1845,6 +1865,7 @@ Dein Hanako-Leben-Squad`;
     state.editingTrainingId = null;
     closeTrainingPickerMenus();
     setTrainingMessage('');
+    setTrainingFormPurpose(false);
     renderTrainingForm();
   }
 
@@ -1907,6 +1928,7 @@ Dein Hanako-Leben-Squad`;
     form.hidden = true;
     state.trainingRoundCount = 1;
     state.editingTrainingId = null;
+    setTrainingFormPurpose(false);
     setAuthMessage('Training wurde zur Bestätigung gesendet.', 'success');
     await refresh();
   }
@@ -1916,6 +1938,7 @@ Dein Hanako-Leben-Squad`;
     if (!task) return;
     const form = document.getElementById('training-form');
     setTrainingMessage('');
+    if (!form) return;
     state.editingTrainingId = Number(sessionId);
     state.trainingRoundCount = Math.max(1, task.rounds?.length || 1);
     const roundValues = (task.rounds || []).map(round => {
@@ -1929,6 +1952,8 @@ Dein Hanako-Leben-Squad`;
     form.hidden = false;
     form.querySelector('[name="playedOn"]').value = task.played_on;
     form.querySelector('[name="displayTime"]').value = String(task.display_time).slice(0, 5);
+    setTrainingFormPurpose(true);
+    window.requestAnimationFrame(() => form.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
   async function confirmTraining(sessionId) {
@@ -2079,6 +2104,7 @@ Dein Hanako-Leben-Squad`;
           setTrainingMessage('');
           state.editingTrainingId = null;
           state.trainingRoundCount = 1;
+          setTrainingFormPurpose(false);
           renderTrainingForm();
         } else {
           closeTrainingForm();

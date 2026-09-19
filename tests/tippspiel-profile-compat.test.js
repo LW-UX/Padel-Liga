@@ -201,6 +201,29 @@ test('all training selectors reuse the custom page viewer dropdown', () => {
   assert.match(styleSource, /\.training-picker\.open \.training-picker-menu/);
 });
 
+test('training pairings use selected player names and keep numbered placeholders', () => {
+  const pairingOptions = tippspielSource.match(
+    /function getTrainingPairingOptions\(\) \{[\s\S]*?(?=\n  function renderTrainingRounds)/
+  )?.[0] || '';
+  const buildPairingOptions = vm.runInNewContext(
+    `(() => { ${pairingOptions}\nreturn getTrainingPairingOptions; })()`,
+    {
+      document: {
+        querySelectorAll() {
+          return ['anna', '', 'carla', 'dora'].map(value => ({ value }));
+        }
+      },
+      getPlayerName: playerId => ({ anna: 'Anna A.', carla: 'Carla C.', dora: 'Dora D.' })[playerId]
+    }
+  );
+  assert.deepEqual(JSON.parse(JSON.stringify(buildPairingOptions())), [
+    { value: 'ab_cd', label: 'Anna A. + Spieler 2 vs. Carla C. + Dora D.' },
+    { value: 'ac_bd', label: 'Anna A. + Carla C. vs. Spieler 2 + Dora D.' },
+    { value: 'ad_bc', label: 'Anna A. + Dora D. vs. Spieler 2 + Carla C.' }
+  ]);
+  assert.match(tippspielSource, /inputName === 'resultFormat' \|\| inputName === 'playerId'[\s\S]*renderTrainingRounds\(preserved\)/);
+});
+
 test('scheduling, unscheduling and future result entry use their dedicated secondary actions', () => {
   assert.match(tippspielSource, /data-match-schedule="\$\{escapeHtml\(task\.match_id\)\}"/);
   assert.match(tippspielSource, /task\.match_at \? 'Termin speichern' : 'Terminieren'/);
@@ -481,6 +504,16 @@ test('training messages reset across every form lifecycle transition', () => {
   assert.match(tippspielSource, /function editTraining\(sessionId\)[\s\S]*const form = document\.getElementById\('training-form'\);\n    setTrainingMessage\(''\);/);
   assert.match(tippspielSource, /if \(!form\.hidden\) \{\n          setTrainingMessage\(''\);[\s\S]*renderTrainingForm\(\);/);
   assert.match(tippspielSource, /button\.disabled = false;\n    setTrainingMessage\(''\);\n    form\.reset\(\);[\s\S]*setAuthMessage\('Training wurde zur Bestätigung gesendet\.', 'success'\);/);
+});
+
+test('training alternatives visibly open the populated editor', () => {
+  const editor = tippspielSource.match(
+    /function editTraining\(sessionId\) \{[\s\S]*?(?=\n  async function confirmTraining)/
+  )?.[0] || '';
+  assert.match(editor, /form\.hidden = false/);
+  assert.match(editor, /setTrainingFormPurpose\(true\)/);
+  assert.match(editor, /scrollIntoView\(\{ behavior: 'smooth', block: 'start' \}\)/);
+  assert.match(tippspielSource, /isAlternative \? 'Alternative senden' : 'Training zur Bestätigung senden'/);
 });
 
 test('result submission and confirmation refresh in place without closing the account dialog', () => {
