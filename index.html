@@ -22,7 +22,7 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-12-button-selection">
+  <link rel="stylesheet" href="style.css?v=2026-09-21-mobile-ranking-tooltip">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -150,11 +150,11 @@
           <col class="col-rank">
           <col class="col-name">
           <col class="col-games">
-          <col class="col-wins">
+          <col class="col-wins mobile-compact-hidden">
           <col class="col-points">
           <col class="col-gv extended-col">
           <col class="col-diff">
-          <col class="col-elo">
+          <col class="col-elo mobile-compact-hidden">
           <col class="col-form extended-col">
           <col class="col-winrate extended-col">
           <col class="col-placement-factor extended-col">
@@ -164,11 +164,11 @@
             <th class="l rn sticky-rank">#</th>
             <th class="l sticky-name">Spieler</th>
             <th>Partien</th>
-            <th>Siege</th>
+            <th class="mobile-compact-hidden">Siege</th>
             <th>Punkte</th>
             <th class="extended-col">G:V</th>
             <th>Diff.</th>
-            <th>Elo</th>
+            <th class="mobile-compact-hidden">Elo</th>
             <th class="extended-col">Letzte 3</th>
             <th class="extended-col">Sieg-%</th>
             <th class="extended-col ranking-help-header">
@@ -640,7 +640,7 @@
 
 <script src="js/score-input.js?v=2026-09-03-training-counters"></script>
 <script src="js/tippspiel.js?v=2026-09-19-training-form"></script>
-<script src="js/app.js?v=2026-09-10-all-time-statistics"></script>
+<script src="js/app.js?v=2026-09-21-mobile-ranking"></script>
 <script src="js/arcade-link.js?v=2026-09-11"></script>
 </body>
 </html>

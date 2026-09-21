@@ -201,7 +201,7 @@ test('all training selectors reuse the custom page viewer dropdown', () => {
   assert.match(styleSource, /\.training-picker\.open \.training-picker-menu/);
 });
 
-test('training pairings use selected player names and keep numbered placeholders', () => {
+test('training pairings use selected player names and keep player placeholders', () => {
   const pairingOptions = tippspielSource.match(
     /function getTrainingPairingOptions\(\) \{[\s\S]*?(?=\n  function renderTrainingRounds)/
   )?.[0] || '';
@@ -217,9 +217,21 @@ test('training pairings use selected player names and keep numbered placeholders
     }
   );
   assert.deepEqual(JSON.parse(JSON.stringify(buildPairingOptions())), [
-    { value: 'ab_cd', label: 'Anna A. + Spieler 2 vs. Carla C. + Dora D.' },
-    { value: 'ac_bd', label: 'Anna A. + Carla C. vs. Spieler 2 + Dora D.' },
-    { value: 'ad_bc', label: 'Anna A. + Dora D. vs. Spieler 2 + Carla C.' }
+    {
+      value: 'ab_cd',
+      label: 'Anna A. & Spieler 2 vs. Carla C. & Dora D.',
+      teams: [['Anna A.', 'Spieler 2'], ['Carla C.', 'Dora D.']]
+    },
+    {
+      value: 'ac_bd',
+      label: 'Anna A. & Carla C. vs. Spieler 2 & Dora D.',
+      teams: [['Anna A.', 'Carla C.'], ['Spieler 2', 'Dora D.']]
+    },
+    {
+      value: 'ad_bc',
+      label: 'Anna A. & Dora D. vs. Spieler 2 & Carla C.',
+      teams: [['Anna A.', 'Dora D.'], ['Spieler 2', 'Carla C.']]
+    }
   ]);
   assert.match(tippspielSource, /inputName === 'resultFormat' \|\| inputName === 'playerId'[\s\S]*renderTrainingRounds\(preserved\)/);
 });

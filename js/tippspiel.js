@@ -815,22 +815,39 @@
     });
   }
 
+  function renderTrainingPickerText(option, showMatchup = false) {
+    if (showMatchup && Array.isArray(option?.teams) && option.teams.length === 2) {
+      const renderTeam = (players, side) => `<span class="training-picker-team training-picker-team--${side}">
+        ${players.map((player, index) => `<span class="training-picker-player">
+          <span class="training-picker-player-name">${escapeHtml(player)}</span>${index === 0 ? '<span class="training-picker-separator">&amp;</span>' : ''}
+        </span>`).join('')}
+      </span>`;
+      return `<span class="training-picker-matchup">
+        ${renderTeam(option.teams[0], 'left')}
+        <span class="training-picker-versus">vs.</span>
+        ${renderTeam(option.teams[1], 'right')}
+      </span>`;
+    }
+    return `<span class="training-picker-display-line">${escapeHtml(option?.label || 'Auswählen')}</span>`;
+  }
+
   function renderTrainingPicker({ label, name, value, options, menuId }) {
     const selected = options.find(option => option.value === value) || options[0];
     return `<div class="training-picker" data-training-picker>
       <span class="training-picker-label">${escapeHtml(label)}</span>
       <input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(selected?.value || '')}">
-      <button class="secondary-button secondary-button--dropdown training-picker-toggle" type="button" data-training-picker-toggle aria-haspopup="listbox" aria-expanded="false" aria-controls="${escapeHtml(menuId)}">
-        <span data-training-picker-label>${escapeHtml(selected?.label || 'Auswählen')}</span>
+      <button class="secondary-button secondary-button--dropdown training-picker-toggle" type="button" data-training-picker-toggle aria-label="${escapeHtml(selected?.label || 'Auswählen')}" aria-haspopup="listbox" aria-expanded="false" aria-controls="${escapeHtml(menuId)}">
+        <span class="training-picker-display" data-training-picker-label>${renderTrainingPickerText(selected)}</span>
       </button>
       <div class="viewer-menu training-picker-menu" id="${escapeHtml(menuId)}" role="listbox" aria-label="${escapeHtml(label)} auswählen">
         ${options.map(option => `<button
           class="viewer-option training-picker-option${option.value === selected?.value ? ' active' : ''}"
           type="button"
           role="option"
+          aria-label="${escapeHtml(option.label)}"
           aria-selected="${option.value === selected?.value}"
           data-training-picker-value="${escapeHtml(option.value)}"
-        ><span>${escapeHtml(option.label)}</span>${option.meta ? `<span>${escapeHtml(option.meta)}</span>` : ''}</button>`).join('')}
+        ><span class="training-picker-option-label">${renderTrainingPickerText(option, true)}</span>${option.meta ? `<span>${escapeHtml(option.meta)}</span>` : ''}</button>`).join('')}
       </div>
     </div>`;
   }
@@ -867,12 +884,21 @@
       const playerId = selectedPlayerIds[index];
       return playerId ? getPlayerName(playerId) : `Spieler ${index + 1}`;
     });
-    const pairingLabel = (first, second, third, fourth) =>
-      `${playerLabels[first]} + ${playerLabels[second]} vs. ${playerLabels[third]} + ${playerLabels[fourth]}`;
+    const pairingOption = (value, first, second, third, fourth) => {
+      const teams = [
+        [playerLabels[first], playerLabels[second]],
+        [playerLabels[third], playerLabels[fourth]]
+      ];
+      return {
+        value,
+        label: `${teams[0].join(' & ')} vs. ${teams[1].join(' & ')}`,
+        teams
+      };
+    };
     return [
-      { value: 'ab_cd', label: pairingLabel(0, 1, 2, 3) },
-      { value: 'ac_bd', label: pairingLabel(0, 2, 1, 3) },
-      { value: 'ad_bc', label: pairingLabel(0, 3, 1, 2) }
+      pairingOption('ab_cd', 0, 1, 2, 3),
+      pairingOption('ac_bd', 0, 2, 1, 3),
+      pairingOption('ad_bc', 0, 3, 1, 2)
     ];
   }
 
@@ -932,7 +958,11 @@
     const selectedOption = [...picker.querySelectorAll('[data-training-picker-value]')]
       .find(option => option.dataset.trainingPickerValue === value);
     if (input) input.value = selectedOption ? value : '';
-    if (label) label.textContent = selectedOption?.querySelector('span')?.textContent || 'Auswählen';
+    if (label) {
+      const selectedLabel = selectedOption?.getAttribute('aria-label') || 'Auswählen';
+      label.innerHTML = renderTrainingPickerText({ label: selectedLabel });
+      label.closest('[data-training-picker-toggle]')?.setAttribute('aria-label', selectedLabel);
+    }
     picker.querySelectorAll('[data-training-picker-value]').forEach(option => {
       const isSelected = option === selectedOption;
       option.classList.toggle('active', isSelected);

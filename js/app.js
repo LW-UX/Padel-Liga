@@ -2020,11 +2020,10 @@ function setRankingView(mode) {
 function updateRankingViewToggle() {
   const toggle = document.getElementById('ranking-view-toggle');
   if (!toggle) return;
-  const effectiveRankingViewMode = isMobileViewport() ? 'expanded' : rankingViewMode;
 
   const buttons = toggle.querySelectorAll('button');
-  buttons[0].classList.toggle('active', effectiveRankingViewMode === 'compact');
-  buttons[1].classList.toggle('active', effectiveRankingViewMode === 'expanded');
+  buttons[0].classList.toggle('active', rankingViewMode === 'compact');
+  buttons[1].classList.toggle('active', rankingViewMode === 'expanded');
 }
 
 // ── NAV ───────────────────────────────────────────────────────────
@@ -2515,9 +2514,8 @@ function renderRanking() {
   updateRankingViewToggle();
   const table = document.getElementById('ranking-table');
   table.dataset.rankingSort = rankingSortMode;
-  const effectiveRankingViewMode = isMobileViewport() ? 'expanded' : rankingViewMode;
-  table.classList.toggle('expanded', effectiveRankingViewMode === 'expanded');
-  table.classList.toggle('compact', effectiveRankingViewMode === 'compact');
+  table.classList.toggle('expanded', rankingViewMode === 'expanded');
+  table.classList.toggle('compact', rankingViewMode === 'compact');
 
   const withStats = getRankedPlayers(PADEL_DATA.matches, rankingSortMode);
   const rankMap = getRankingPositionMap('points');
@@ -2539,15 +2537,18 @@ function renderRanking() {
     const spielDiffClass = getStatDiffClass(p.stats.spielDiff);
     const isTopFourQualifier = getCompetitionConfig().qualificationPlaces > 0
       && pointsRank <= getCompetitionConfig().qualificationPlaces;
+    const rankingPlayerLabel = isMobileViewport() && rankingViewMode === 'expanded'
+      ? p.initials || p.name
+      : p.name;
     return `<tr class="r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}">
       <td class="rn l sticky-rank"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${renderPointsRankReference(currentRank, pointsRank)}</span></td>
-      <td class="l sticky-name"><span class="player-cell-inner">${renderPlayerProfileLink(p, 'pname')}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span></span></td>
+      <td class="l sticky-name"><span class="player-cell-inner">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span></span></td>
       <td class="num-val">${p.stats.partien}</td>
-      <td class="num-val">${p.stats.siege}</td>
+      <td class="num-val mobile-compact-hidden">${p.stats.siege}</td>
       <td class="punkte-val">${p.stats.punkte}</td>
       <td class="num-val extended-col">${p.stats.partien > 0 ? p.stats.spieleGV : '—'}</td>
       <td class="num-val"><span class="${p.stats.partien > 0 ? spielDiffClass : 'neu'}">${spielDiffStr}</span></td>
-      <td class="elo-val">${getLatestPlayerElo(p)}</td>
+      <td class="elo-val mobile-compact-hidden">${getLatestPlayerElo(p)}</td>
       <td class="extended-col form-val">${extras.form}</td>
       <td class="num-val extended-col">${extras.winQuote === null ? '—' : `${extras.winQuote}%`}</td>
       <td class="num-val extended-col placement-factor-val">${formatPlacementFactor(extras.placementFactor)}</td>
@@ -2591,17 +2592,18 @@ function getPlayerIdByName(playerName) {
   return (window.PADEL_PLAYERS || []).find(item => item.name === playerName)?.id || null;
 }
 
-function renderPlayerProfileLink(player, className = '') {
+function renderPlayerProfileLink(player, className = '', displayName = '') {
   const playerId = typeof player === 'string' ? getPlayerIdByName(player) : player?.id;
   const playerName = typeof player === 'string' ? player : player?.name;
-  if (!playerId || !playerName) return `<span class="${escapeHtml(className)}">${escapeHtml(playerName || '')}</span>`;
+  const visibleName = displayName || playerName;
+  if (!playerId || !playerName) return `<span class="${escapeHtml(className)}">${escapeHtml(visibleName || '')}</span>`;
 
   return `<button
     type="button"
     class="player-profile-link ${escapeHtml(className)}"
     data-player-profile-id="${escapeHtml(playerId)}"
     aria-label="Profil von ${escapeHtml(playerName)} öffnen"
-  >${escapeHtml(playerName)}</button>`;
+  >${escapeHtml(visibleName)}</button>`;
 }
 
 function renderTeamPlayers(players) {

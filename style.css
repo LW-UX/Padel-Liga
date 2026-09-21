@@ -1258,14 +1258,73 @@
       padding: 0.9rem; 
       background-color: var(--surface); 
     }
-    .training-form .secondary-button { width: max-content; }
+    .training-form > .secondary-button { width: max-content; }
     .training-form .primary-button { width: max-content; margin-left: auto; }
     .training-form[hidden] { display: none; }
     .training-form-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .training-player-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .training-picker-label { color: var(--dim); font-size: 0.85rem; font-weight: 600; }
-    .training-picker-toggle { justify-content: flex-start; width: 100%; min-width: 0; text-align: left; }
-    .training-picker-toggle > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .training-picker-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      width: 100%;
+      min-width: 0;
+      text-align: left;
+    }
+    .training-picker-display {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .training-picker-display-line {
+      display: block;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .training-picker-matchup {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+    }
+    .training-picker-team {
+      display: grid;
+      min-width: 0;
+    }
+    .training-picker-player {
+      display: flex;
+      align-items: baseline;
+      min-width: 0;
+    }
+    .training-picker-team--right .training-picker-player { justify-content: flex-end; }
+    .training-picker-player-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .training-picker-separator {
+      flex: 0 0 auto;
+      margin-left: 0.25em;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    .training-picker-versus {
+      color: var(--muted);
+      font-weight: 400;
+      text-align: center;
+    }
+    .training-picker-option-label {
+      display: block;
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+    }
     .training-picker-menu { right: auto; left: 0; width: max(100%, 260px); }
     .training-player-fields .training-picker:nth-child(even) .training-picker-menu { right: 0; left: auto; }
     .training-rounds { display: grid; gap: 16px; }
@@ -2051,7 +2110,7 @@
     }
     .ranking-help-header {
       position: relative;
-      z-index: 1000;
+      z-index: auto;
     }
     @media (min-width: 769px) {
       .th-help-wrap.help-tooltip-opens-right .help-tooltip,
@@ -2832,8 +2891,8 @@
       .result-entry-buttons .secondary-button, 
       .result-entry-buttons .primary-button,
       .match-schedule-actions .secondary-button,
-      .training-form .primary-button,
-      .training-form .secondary-button
+      .training-form > .primary-button,
+      .training-form > .secondary-button
       { font-size: 0.7rem; }
 
       .result-proposal { align-items: flex-start; flex-direction: column; }
@@ -2863,7 +2922,9 @@
         grid-row: 1;
       }
       #ranking-view-toggle {
-        display: none;
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
       }
       #ranking-sort-toggle,
       #match-sort-toggle {
@@ -2922,11 +2983,30 @@
         table-layout: auto;
       }
       .ranking-table[data-ranking-sort="points"] {
-        --name-col-left: 38px;
-        --mobile-rank-col-width: 38px;
+        --name-col-left: 42px;
+        --mobile-rank-col-width: 42px;
       }
-      .ranking-table.compact { min-width: 562px; }
-      .ranking-table.expanded { min-width: 1012px; }
+      .ranking-table.compact {
+        width: 100%;
+        min-width: 0;
+        table-layout: auto;
+      }
+      .ranking-table.expanded {
+        width: max-content;
+        min-width: 100%;
+      }
+      .ranking-table.compact .mobile-compact-hidden,
+      .ranking-table.compact col.mobile-compact-hidden {
+        display: none;
+      }
+      .ranking-table.expanded .firma-badge {
+        display: none;
+      }
+      .ranking-table.expanded th,
+      .ranking-table.expanded td {
+        width: 1%;
+        white-space: nowrap;
+      }
       table.rt .col-rank { width: var(--mobile-rank-col-width); }
       table.rt .col-name { width: auto; }
       table.rt .col-games,
@@ -2939,6 +3019,18 @@
       table.rt .col-winrate { width: 84px; }
       table.rt .col-gv { width: 76px; }
       table.rt .col-placement-factor { width: 190px; }
+      .ranking-table.compact .col-games,
+      .ranking-table.compact .col-points,
+      .ranking-table.compact .col-diff { width: 58px; }
+      .ranking-table.expanded .col-games,
+      .ranking-table.expanded .col-wins,
+      .ranking-table.expanded .col-points,
+      .ranking-table.expanded .col-gv,
+      .ranking-table.expanded .col-diff,
+      .ranking-table.expanded .col-elo,
+      .ranking-table.expanded .col-form,
+      .ranking-table.expanded .col-winrate,
+      .ranking-table.expanded .col-placement-factor { width: 1%; }
       table.rt th { padding: 8px 4px; letter-spacing: 0.09em; }
       table.rt td { padding: 9px 4px; }
       .ranking-table tbody tr,
@@ -2997,7 +3089,14 @@
       .help-tooltip {
         right: 0;
         left: auto;
-        width: min(240px, calc(100vw - 32px));
+        width: min(190px, calc(100vw - 32px));
+        white-space: normal;
+      }
+      .ranking-help-header .help-tooltip {
+        top: calc(100% + 8px);
+        right: 0;
+        left: auto;
+        transform: none;
       }
       .sh-title-with-help .help-tooltip {
         right: auto;
@@ -3009,11 +3108,6 @@
       .ranking-table[data-ranking-sort="points"] .rn {
         padding-left: 12px !important;
         padding-right: 2px;
-      }
-      .ranking-table[data-ranking-sort="points"] .sticky-name {
-        width: 142px;
-        min-width: 142px;
-        max-width: 142px;
       }
       #fr-body .rn,
       .calculator-ranking-table .rn {
