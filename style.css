@@ -1261,6 +1261,12 @@
     .training-form > .secondary-button { width: max-content; }
     .training-form .primary-button { width: max-content; margin-left: auto; }
     .training-form[hidden] { display: none; }
+    .training-alternative-form {
+      border: 0;
+      border-top: 1px solid var(--border);
+      border-radius: 0;
+      padding: 12px 0 0;
+    }
     .training-form-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .training-player-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .training-picker-label { color: var(--dim); font-size: 0.85rem; font-weight: 600; }
@@ -1764,14 +1770,17 @@
     }
     .mini-rank-row:first-child { padding-top: 0; }
     .mini-rank-row:last-child { border-bottom: 0; padding-bottom: 0; }
-    .mini-rank-pos,
-    .mini-rank-points,
+    .mini-rank-row .rank-position,
+    .mini-rank-row .rank-score,
     .mini-match-meta {
       font-family: 'DM Mono', monospace;
-      color: var(--dim);
       font-size: 0.85rem;
     }
-    .mini-rank-pos {
+    .mini-rank-row .rank-position,
+    .mini-match-meta {
+      color: var(--dim);
+    }
+    .mini-rank-row .rank-position {
       padding-left: 8px;
     }
     .mini-rank-name { font-weight: 500; }
@@ -1789,11 +1798,7 @@
       font-size: 0.85rem;
       font-weight: 700;
     }
-    .mini-rank-points { color: var(--accent2); font-weight: 700; }
-    .mini-rank-row.r1 .mini-rank-pos { color: var(--gold); font-weight: 700; }
-    .mini-rank-row.r2 .mini-rank-pos { color: var(--silver); font-weight: 700; }
-    .mini-rank-row.r3 .mini-rank-pos { color: var(--bronze); font-weight: 700; }
-    .mini-rank-row.r4 .mini-rank-pos { color: var(--dim); font-weight: 500; }
+    .mini-rank-row.r4 .rank-position { color: var(--dim); font-weight: 500; }
     .mini-rank-row.viewer-highlight {
       margin-left: -0.45rem;
       margin-right: -0.45rem;
@@ -1973,26 +1978,29 @@
     table.rt { width: 100%; border-collapse: collapse; margin-bottom: 1rem;}
     .ranking-table { --rank-col-left: 0px; --name-col-left: 74px; }
     .ranking-table.expanded { min-width: 1310px; }
-    .ranking-table.compact .extended-col { display: none; }
-    .ranking-table.compact col.extended-col { display: none; }
+    .ranking-table.compact .col-gv,
+    .ranking-table.compact .col-form,
+    .ranking-table.compact .col-winrate,
+    .ranking-table.compact .col-placement-factor { display: none; }
     .ranking-table .col-rank { width: 74px; }
     .ranking-table .col-name { width: 300px; }
     .ranking-table .col-winrate { width: 132px; }
     .ranking-table .col-placement-factor { width: 220px; }
-    .ranking-table .col-form { width: 110px; }
+    .ranking-table .col-form { width: 114px; }
     table.rt th {
       text-align: right; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.12em;
       text-transform: uppercase; color: var(--dim); padding: 10px 16px;
       border-bottom: 1px solid var(--border);
     }
-    table.rt th.l { text-align: left; }
     table.rt td { padding: 14px 16px; border-bottom: 1px solid var(--border); text-align: right; }
+    table.rt .col-rank,
+    table.rt .col-name,
+    table.rt .col-company { text-align: left; }
     table.ranking-table th,
     table.ranking-table td {
-      padding-left: 24px;
-      padding-right: 24px;
+      padding-left: 20px;
+      padding-right: 20px;
     }
-    table.rt td.l { text-align: left; }
     table.rt tr:last-child td { border-bottom: none; }
     table.rt tbody tr { transition: background 0.1s; }
     table.rt tbody tr:nth-child(even) { background: var(--row-alt); }
@@ -2010,7 +2018,27 @@
       color: var(--accent2);
       font-weight: 700;
     }
-    .ranking-table .sticky-rank {
+    .col-rank.rank-position {
+      font-family: 'DM Mono', monospace;
+      font-size: 1rem;
+      color: var(--text);
+    }
+    table.rt td:is(
+      .col-participants,
+      .col-games,
+      .col-wins,
+      .col-points,
+      .col-gv,
+      .col-diff,
+      .col-elo,
+      .col-winrate,
+      .col-placement-factor,
+      .col-points-per-player
+    ) {
+      font-family: 'DM Mono', monospace;
+      font-size: 1rem;
+    }
+    .ranking-table .col-rank {
       width: 74px;
       min-width: 74px;
       max-width: 74px;
@@ -2018,19 +2046,19 @@
       padding-left: 12px;
       padding-right: 4px;
     }
-    .ranking-table.expanded .sticky-rank,
-    .ranking-table.expanded .sticky-name {
+    .ranking-table.expanded .col-rank,
+    .ranking-table.expanded .col-name {
       position: sticky;
       z-index: 4;
       background: var(--bg);
     }
-    .ranking-table.expanded .sticky-rank { left: var(--rank-col-left); }
-    .ranking-table.expanded .sticky-name {
+    .ranking-table.expanded .col-rank { left: var(--rank-col-left); }
+    .ranking-table.expanded .col-name {
       left: var(--name-col-left);
       box-shadow: 12px 0 18px rgba(0,0,0,0.22);
       white-space: nowrap;
     }
-    .ranking-table .sticky-name {
+    .ranking-table .col-name {
       white-space: nowrap;
       padding-left: 8px;
     }
@@ -2039,25 +2067,25 @@
       align-items: center;
       white-space: nowrap;
     }
-    .ranking-table.expanded thead .sticky-rank,
-    .ranking-table.expanded thead .sticky-name {
+    .ranking-table.expanded thead .col-rank,
+    .ranking-table.expanded thead .col-name {
       z-index: 6;
       background: var(--bg);
     }
-    .ranking-table.expanded tbody tr:nth-child(even) .sticky-rank,
-    .ranking-table.expanded tbody tr:nth-child(even) .sticky-name {
+    .ranking-table.expanded tbody tr:nth-child(even) .col-rank,
+    .ranking-table.expanded tbody tr:nth-child(even) .col-name {
       background: var(--row-alt);
     }
-    .ranking-table.expanded tbody tr:hover .sticky-rank,
-    .ranking-table.expanded tbody tr:hover .sticky-name {
+    .ranking-table.expanded tbody tr:hover .col-rank,
+    .ranking-table.expanded tbody tr:hover .col-name {
       background: var(--surface);
     }
-    .ranking-table.expanded tbody tr.viewer-highlight .sticky-rank,
-    .ranking-table.expanded tbody tr.viewer-highlight .sticky-name {
+    .ranking-table.expanded tbody tr.viewer-highlight .col-rank,
+    .ranking-table.expanded tbody tr.viewer-highlight .col-name {
       background: color-mix(in srgb, var(--accent2) 20%, var(--bg));
     }
-    .ranking-table .sticky-name .pname,
-    .ranking-table .sticky-name .firma-badge {
+    .ranking-table .col-name .pname,
+    .ranking-table .col-name .firma-badge {
       white-space: nowrap;
     }
     .th-help-wrap {
@@ -2108,7 +2136,7 @@
       pointer-events: none;
       transition: opacity 0.12s ease;
     }
-    .ranking-help-header {
+    .ranking-table th.col-placement-factor {
       position: relative;
       z-index: auto;
     }
@@ -2132,13 +2160,13 @@
     .th-help-wrap:focus-within .help-tooltip {
       opacity: 1;
     }
-    .placement-factor-val {
+    .ranking-table td.col-placement-factor {
       white-space: nowrap;
     }
     .pf-muted {
       color: var(--dim);
     }
-    .form-val {
+    .ranking-table td.col-form {
       white-space: nowrap;
       text-align: right;
       padding-top: 12px !important;
@@ -2170,9 +2198,15 @@
     .form-recency-2 { opacity: 0.42; }
 
     .rn { font-family: 'DM Mono', monospace; font-size: 1rem; color: var(--text); width: 36px; text-align: left !important; }
-    .r1 .rn { color: var(--gold); font-weight: 700; }
-    .r2 .rn { color: var(--silver); font-weight: 700; }
-    .r3 .rn { color: var(--bronze); font-weight: 700; }
+    .rank-score {
+      color: var(--accent2);
+      font-family: 'DM Mono', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .r1 .rank-position { color: var(--gold); font-weight: 700; }
+    .r2 .rank-position { color: var(--silver); font-weight: 700; }
+    .r3 .rank-position { color: var(--bronze); font-weight: 700; }
     .rank-cell-inner {
       display: inline-flex;
       align-items: baseline;
@@ -2209,7 +2243,6 @@
     .firma-Headsquare { background: rgba(0.0.0.0); color: rgba(231,7,19,0.7); }
 
     .elo-val    { font-family: 'DM Mono', monospace; font-size: 1rem; font-weight: 400; color: var(--text); }
-    .punkte-val { font-family: 'DM Mono', monospace; font-size: 1rem; font-weight: 700; color: var(--accent2); }
     .num-val    { font-family: 'DM Mono', monospace; font-size: 1rem; color: var(--text); }
     .pos { color: var(--positiv); }
     .neg { color: var(--negativ); }
@@ -2795,6 +2828,7 @@
       padding-top: 8px;
       padding-bottom: 8px;
     }
+    .ranking-row,
     .calculator-ranking-row,
     .calculator-mini-rank-row {
       transform-origin: center;
@@ -2812,6 +2846,7 @@
     table.rt.calculator-ranking-table .col-rank { width: 40px; }
     table.rt.calculator-ranking-table .col-name { width: auto; }
     table.rt.calculator-ranking-table .col-games,
+    table.rt.calculator-ranking-table .col-wins,
     table.rt.calculator-ranking-table .col-points,
     table.rt.calculator-ranking-table .col-diff { width: 74px; }
 
@@ -2989,14 +3024,14 @@
       .ranking-table.compact {
         width: 100%;
         min-width: 0;
-        table-layout: auto;
+        table-layout: fixed;
       }
       .ranking-table.expanded {
         width: max-content;
         min-width: 100%;
       }
-      .ranking-table.compact .mobile-compact-hidden,
-      .ranking-table.compact col.mobile-compact-hidden {
+      .ranking-table.compact .col-wins,
+      .ranking-table.compact .col-elo {
         display: none;
       }
       .ranking-table.expanded .firma-badge {
@@ -3007,7 +3042,7 @@
         width: 1%;
         white-space: nowrap;
       }
-      table.rt .col-rank { width: var(--mobile-rank-col-width); }
+      .ranking-table .col-rank { width: var(--mobile-rank-col-width); }
       table.rt .col-name { width: auto; }
       table.rt .col-games,
       table.rt .col-points,
@@ -3022,6 +3057,31 @@
       .ranking-table.compact .col-games,
       .ranking-table.compact .col-points,
       .ranking-table.compact .col-diff { width: 58px; }
+      .ranking-table.compact th,
+      .ranking-table.compact td {
+        overflow: hidden;
+      }
+      .ranking-table.compact th:not(.col-rank):not(.col-name) {
+        padding-left: 4px;
+        padding-right: 4px;
+      }
+      .ranking-table.compact .col-name {
+        width: auto;
+        min-width: 0;
+      }
+      .ranking-table.compact .player-cell-inner {
+        display: flex;
+        width: 100%;
+        max-width: 100%;
+      }
+      .ranking-table.compact .pname {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ranking-table.compact .firma-badge {
+        flex: 0 0 auto;
+      }
       .ranking-table.expanded .col-games,
       .ranking-table.expanded .col-wins,
       .ranking-table.expanded .col-points,
@@ -3031,13 +3091,17 @@
       .ranking-table.expanded .col-form,
       .ranking-table.expanded .col-winrate,
       .ranking-table.expanded .col-placement-factor { width: 1%; }
-      table.rt th { padding: 8px 4px; letter-spacing: 0.09em; }
-      table.rt td { padding: 9px 4px; }
+      table.rt th { padding: 8px 8px; letter-spacing: 0.09em; }
+      table.ranking-table th {
+        font-size: 0.7rem;
+        letter-spacing: 0.06em;
+      }
+      table.rt td { padding: 8px 8px; }
       .ranking-table tbody tr,
       .ranking-table tbody td {
         height: 42px;
       }
-      .form-val {
+      .ranking-table td.col-form {
         padding-top: 9px !important;
         padding-bottom: 9px !important;
       }
@@ -3047,7 +3111,7 @@
         font-size: 0.64rem;
         margin-left: 2px;
       }
-      .ranking-table .sticky-rank {
+      .ranking-table .col-rank {
         width: var(--mobile-rank-col-width);
         min-width: var(--mobile-rank-col-width);
         max-width: var(--mobile-rank-col-width);
@@ -3055,35 +3119,34 @@
         padding-left: 12px;
         padding-right: 4px;
       }
-      .ranking-table .sticky-rank,
-      .ranking-table .sticky-name {
+      .ranking-table.expanded .col-rank,
+      .ranking-table.expanded .col-name {
         position: sticky;
         z-index: 4;
         background: var(--bg);
       }
-      .ranking-table .sticky-rank { left: var(--rank-col-left); }
-      .ranking-table .sticky-name {
+      .ranking-table.expanded .col-rank { left: var(--rank-col-left); }
+      .ranking-table.expanded .col-name {
         left: var(--name-col-left);
         padding-left: 8px;
-        padding-right: 2px;
         width: max-content;
         min-width: max-content;
       }
-      .ranking-table thead .sticky-rank,
-      .ranking-table thead .sticky-name {
+      .ranking-table.expanded thead .col-rank,
+      .ranking-table.expanded thead .col-name {
         z-index: 6;
         background: var(--bg);
       }
-      .ranking-table tbody tr:nth-child(even) .sticky-rank,
-      .ranking-table tbody tr:nth-child(even) .sticky-name {
+      .ranking-table.expanded tbody tr:nth-child(even) .col-rank,
+      .ranking-table.expanded tbody tr:nth-child(even) .col-name {
         background: var(--row-alt);
       }
-      .ranking-table tbody tr:hover .sticky-rank,
-      .ranking-table tbody tr:hover .sticky-name {
+      .ranking-table.expanded tbody tr:hover .col-rank,
+      .ranking-table.expanded tbody tr:hover .col-name {
         background: var(--surface);
       }
-      .ranking-table tbody tr.viewer-highlight .sticky-rank,
-      .ranking-table tbody tr.viewer-highlight .sticky-name {
+      .ranking-table.expanded tbody tr.viewer-highlight .col-rank,
+      .ranking-table.expanded tbody tr.viewer-highlight .col-name {
         background: color-mix(in srgb, var(--accent2) 20%, var(--bg));
       }
       .help-tooltip {
@@ -3092,7 +3155,7 @@
         width: min(190px, calc(100vw - 32px));
         white-space: normal;
       }
-      .ranking-help-header .help-tooltip {
+      .ranking-table th.col-placement-factor .help-tooltip {
         top: calc(100% + 8px);
         right: 0;
         left: auto;
@@ -3103,14 +3166,11 @@
         left: 50%;
         transform: translateX(-50%);
       }
-      .ranking-table .rn { width: var(--mobile-rank-col-width); padding-left: 18px !important;}
-      .ranking-table[data-ranking-sort="points"] .sticky-rank,
-      .ranking-table[data-ranking-sort="points"] .rn {
-        padding-left: 12px !important;
+      .ranking-table[data-ranking-sort="points"] .col-rank {
         padding-right: 2px;
       }
-      #fr-body .rn,
-      .calculator-ranking-table .rn {
+      .company-ranking-table .col-rank,
+      .calculator-ranking-table .col-rank {
         padding-left: 12px !important;
       }
       .points-rank-ref {
@@ -3127,9 +3187,6 @@
       }
       .firma-full { display: none; }
       .firma-short { display: inline; }
-      .elo-val,
-      .punkte-val,
-      .num-val { font-size: 1rem; }
       .filter-controls {
         align-items: flex-start;
         flex-direction: column;
@@ -3224,7 +3281,7 @@
       .calculator-mini-rank-row.calculator-active-match-player {
         background: color-mix(in srgb, var(--accent) 18%, transparent);
       }
-      .calculator-mini-rank-pos {
+      .calculator-rank-position {
         color: var(--text);
         font-family: 'DM Mono', monospace;
         font-size: 0.75rem;
@@ -3252,10 +3309,6 @@
       .calculator-mini-rank-row.viewer-highlight {
         box-shadow: inset 3px 0 0 var(--accent2);
       }
-      .calculator-mini-rank-row.r1 .calculator-mini-rank-pos,
-      .calculator-mini-rank-row:nth-child(1) .calculator-mini-rank-pos { color: var(--gold); }
-      .calculator-mini-rank-row:nth-child(2) .calculator-mini-rank-pos { color: var(--silver); }
-      .calculator-mini-rank-row:nth-child(3) .calculator-mini-rank-pos { color: var(--bronze); }
       .calculator-match-teams {
         gap: 4px;
       }
@@ -3329,6 +3382,7 @@
       }
       table.rt.calculator-ranking-table .col-rank { width: 42px; }
       table.rt.calculator-ranking-table .col-games,
+      table.rt.calculator-ranking-table .col-wins,
       table.rt.calculator-ranking-table .col-points,
       table.rt.calculator-ranking-table .col-diff { width: 58px; }
       .calculator-ranking-table .pname {

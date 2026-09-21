@@ -21,8 +21,6 @@
     players: [],
     invitationPlayers: [],
     invitationDraft: null,
-    trainingRoundCount: 1,
-    editingTrainingId: null,
     extendedPlayerFeatures: true,
     saving: new Set(),
     ready: false,
@@ -392,11 +390,11 @@
 
     body.innerHTML = state.leaderboard.map((entry, index) => `
       <tr class="r${Math.min(index + 1, 4)} ${state.session?.user?.id === entry.user_id ? 'viewer-highlight' : ''}">
-        <td class="l rn">${index + 1}</td>
+        <td class="l rn rank-position">${index + 1}</td>
         <td class="l"><span class="pname">${escapeHtml(entry.display_name)}</span></td>
         <td class="num-val">${Number(entry.predictions_count) || 0}</td>
         <td class="num-val">${Number(entry.exact_count) || 0}</td>
-        <td class="punkte-val">${Number(entry.points) || 0}</td>
+        <td class="rank-score">${Number(entry.points) || 0}</td>
       </tr>
     `).join('');
     empty.textContent = state.ready && !state.leaderboard.length
@@ -704,6 +702,11 @@
     const groups = getPlayerResultTaskGroups(state.resultTasks, Date.now(), isAdmin);
     const visibleTrainingTasks = state.trainingTasks.filter(isTrainingTaskVisible);
     renderResultTaskGroups(document.getElementById('result-task-list'), groups, visibleTrainingTasks);
+    visibleTrainingTasks.forEach(task => {
+      if (task.created_by_me) return;
+      const form = document.querySelector(`[data-training-alternative="${CSS.escape(String(task.session_id))}"]`);
+      if (form) renderTrainingForm(task.player_ids, getTrainingRoundValues(task), form);
+    });
   }
 
   function getPlayerName(playerId) {
@@ -799,8 +802,8 @@
     });
   }
 
-  function readTrainingRoundValues() {
-    return [...document.querySelectorAll('[data-training-round]')].map(round => {
+  function readTrainingRoundValues(form = document) {
+    return [...form.querySelectorAll('[data-training-round]')].map(round => {
       const resultFormat = round.querySelector('[name="resultFormat"]')?.value || 'one_set';
       const config = getTrainingFormatConfig(resultFormat);
       return {
@@ -877,8 +880,8 @@
     </div>`;
   }
 
-  function getTrainingPairingOptions() {
-    const selectedPlayerIds = [...document.querySelectorAll('#training-player-fields [name="playerId"]')]
+  function getTrainingPairingOptions(form) {
+    const selectedPlayerIds = [...form.querySelectorAll('[data-training-player-fields] [name="playerId"]')]
       .map(input => input.value);
     const playerLabels = Array.from({ length: 4 }, (_, index) => {
       const playerId = selectedPlayerIds[index];
@@ -902,22 +905,26 @@
     ];
   }
 
-  function renderTrainingRounds(preserved = []) {
-    const target = document.getElementById('training-rounds');
+  function renderTrainingRounds(preserved = [], form = document.getElementById('training-form'), roundCount = null) {
+    const target = form?.querySelector('[data-training-rounds]');
     if (!target) return;
-    const pairingOptions = getTrainingPairingOptions();
+    const pairingOptions = getTrainingPairingOptions(form);
+    const resolvedRoundCount = roundCount ?? Math.max(1, preserved.length || 1);
+    const menuPrefix = form.dataset.trainingAlternative
+      ? `training-alternative-${form.dataset.trainingAlternative}`
+      : 'training';
     const formatOptions = [
       { value: 'one_set', label: '1 Satz' },
       { value: 'two_sets', label: '2 Sätze' },
       { value: 'two_sets_match_tiebreak', label: '2 Sätze + Match-Tiebreak' },
       { value: 'three_sets', label: '3 Sätze' }
     ];
-    target.innerHTML = Array.from({ length: state.trainingRoundCount }, (_, index) => {
+    target.innerHTML = Array.from({ length: resolvedRoundCount }, (_, index) => {
       const value = preserved[index] || { pairing: 'ab_cd', resultFormat: 'one_set', sets: [], matchTiebreak: [] };
       return `<div class="training-round-field" data-training-round="${index}">
         <div class="training-round-head">
-          ${renderTrainingPicker({ label: 'Paarung', name: 'pairing', value: value.pairing, options: pairingOptions, menuId: `training-pairing-menu-${index}` })}
-          ${renderTrainingPicker({ label: 'Ergebnisformat', name: 'resultFormat', value: value.resultFormat, options: formatOptions, menuId: `training-format-menu-${index}` })}
+          ${renderTrainingPicker({ label: 'Paarung', name: 'pairing', value: value.pairing, options: pairingOptions, menuId: `${menuPrefix}-pairing-menu-${index}` })}
+          ${renderTrainingPicker({ label: 'Ergebnisformat', name: 'resultFormat', value: value.resultFormat, options: formatOptions, menuId: `${menuPrefix}-format-menu-${index}` })}
           <button class="training-round-remove" type="button" data-training-round-remove="${index}" aria-label="${index === 0 ? 'Trainingseingabe schließen' : `Spielergebnis ${index + 1} entfernen`}">×</button>
         </div>
         ${renderTrainingScoreCounters(value, value.resultFormat)}
@@ -927,9 +934,12 @@
     target.querySelectorAll('[data-training-round]').forEach(updateTrainingRoundSummary);
   }
 
-  function renderTrainingForm(playerIds = null, roundValues = []) {
-    const target = document.getElementById('training-player-fields');
+  function renderTrainingForm(playerIds = null, roundValues = [], form = document.getElementById('training-form')) {
+    const target = form?.querySelector('[data-training-player-fields]');
     if (!target || !state.players.length) return;
+    const menuPrefix = form.dataset.trainingAlternative
+      ? `training-alternative-${form.dataset.trainingAlternative}`
+      : 'training';
     target.innerHTML = Array.from({ length: 4 }, (_, index) => {
       const selectedId = playerIds?.[index] || (index === 0 ? state.profile?.player_id || '' : '');
       return renderTrainingPicker({
@@ -937,10 +947,10 @@
         name: 'playerId',
         value: selectedId,
         options: [{ value: '', label: 'Auswählen' }, ...state.players.map(player => ({ value: player.id, label: player.display_name, meta: player.initials || '' }))],
-        menuId: `training-player-menu-${index}`
+        menuId: `${menuPrefix}-player-menu-${index}`
       });
     }).join('');
-    renderTrainingRounds(roundValues);
+    renderTrainingRounds(roundValues, form, Math.max(1, roundValues.length || 1));
   }
 
   function closeTrainingPickerMenus(exceptPicker = null) {
@@ -981,14 +991,39 @@
 
   function selectTrainingPickerOption(option) {
     const picker = option.closest('[data-training-picker]');
+    const form = picker?.closest('.training-form');
     const inputName = picker?.querySelector('input[type="hidden"]')?.name;
     setTrainingPickerValue(picker, option.dataset.trainingPickerValue);
-    if (inputName === 'resultFormat' || inputName === 'playerId') {
-      const preserved = readTrainingRoundValues();
-      renderTrainingRounds(preserved);
+    if (form && (inputName === 'resultFormat' || inputName === 'playerId')) {
+      const preserved = readTrainingRoundValues(form);
+      renderTrainingRounds(preserved, form, preserved.length);
     }
     closeTrainingPickerMenus();
-    setTrainingMessage('');
+    setTrainingMessage('', '', form);
+  }
+
+  function getTrainingRoundValues(task) {
+    return (task.rounds || []).map(round => {
+      const [a, b, c, d] = task.player_ids;
+      const teamOne = new Set(round.team_one_ids);
+      const pairing = teamOne.has(a) && teamOne.has(c) ? 'ac_bd' : teamOne.has(a) && teamOne.has(d) ? 'ad_bc' : 'ab_cd';
+      const resultFormat = getTrainingRoundFormat(round);
+      return { pairing, resultFormat, ...parseTrainingResultValues(round.result_details, resultFormat) };
+    });
+  }
+
+  function renderTrainingAlternativeForm(task) {
+    return `<form class="training-form training-alternative-form" data-training-alternative="${escapeHtml(task.session_id)}" hidden>
+      <div class="training-form-meta">
+        <label><span>Datum</span><input type="date" name="playedOn" required value="${escapeHtml(task.played_on)}"></label>
+        <label><span>Uhrzeit</span><input type="time" name="displayTime" required value="${escapeHtml(String(task.display_time).slice(0, 5))}"></label>
+      </div>
+      <div class="training-player-fields" data-training-player-fields></div>
+      <div class="training-rounds" data-training-rounds></div>
+      <div class="auth-message training-message" data-training-message role="status" aria-live="polite"></div>
+      <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
+      <button class="primary-button" type="submit">Alternative senden</button>
+    </form>`;
   }
 
   function renderTrainingTaskCard(task, index) {
@@ -1006,6 +1041,7 @@
           : `<button class="secondary-button" type="button" data-training-edit="${task.session_id}">Alternative eingeben</button>
           <button class="primary-button" type="button" data-training-confirm="${task.session_id}">Training bestätigen</button>`}
       </div>
+      ${task.created_by_me ? '' : renderTrainingAlternativeForm(task)}
     </article>`;
   }
 
@@ -1871,49 +1907,45 @@ Dein Hanako-Leben-Squad`;
     }
   }
 
-  function setTrainingMessage(message, type = '') {
-    const target = document.querySelector('[data-training-message]');
+  function setTrainingMessage(message, type = '', form = document.getElementById('training-form')) {
+    const target = form?.querySelector('[data-training-message]');
     if (!target) return;
     target.textContent = message || '';
     target.className = `auth-message training-message${type ? ` ${type}` : ''}`;
   }
 
-  function setTrainingFormPurpose(isAlternative = false) {
-    const form = document.getElementById('training-form');
-    const submit = form?.querySelector('[type="submit"]');
-    const toggle = document.querySelector('[data-training-toggle]');
-    if (submit) submit.textContent = isAlternative ? 'Alternative senden' : 'Training zur Bestätigung senden';
-    if (toggle) toggle.textContent = isAlternative ? 'Alternative schließen' : 'Training hinzufügen';
-  }
-
-  function closeTrainingForm() {
-    const form = document.getElementById('training-form');
+  function closeTrainingForm(form = document.getElementById('training-form')) {
     if (!form) return;
-    form.reset();
     form.hidden = true;
-    state.trainingRoundCount = 1;
-    state.editingTrainingId = null;
     closeTrainingPickerMenus();
-    setTrainingMessage('');
-    setTrainingFormPurpose(false);
+    setTrainingMessage('', '', form);
+    if (form.dataset.trainingAlternative) {
+      const task = state.trainingTasks.find(item => Number(item.session_id) === Number(form.dataset.trainingAlternative));
+      if (task) renderTrainingForm(task.player_ids, getTrainingRoundValues(task), form);
+      const toggle = form.closest('.training-task-card')?.querySelector('[data-training-edit]');
+      if (toggle) toggle.textContent = 'Alternative eingeben';
+      return;
+    }
+    form.reset();
     renderTrainingForm();
   }
 
   function handleTrainingInvalid(event) {
-    const form = event.currentTarget;
+    const form = event.target.closest('.training-form');
+    if (!form) return;
     if (form.querySelector(':invalid') !== event.target) return;
     const label = event.target.closest('label')?.querySelector('span')?.textContent?.trim() || 'Pflichtfeld';
-    setTrainingMessage(`Bitte „${label}“ ausfüllen.`, 'error');
+    setTrainingMessage(`Bitte „${label}“ ausfüllen.`, 'error', form);
   }
 
   async function handleTrainingSubmit(event) {
     event.preventDefault();
-    const form = event.currentTarget;
-    setTrainingMessage('');
+    const form = event.target;
+    setTrainingMessage('', '', form);
     const data = new FormData(form);
     const playerIds = data.getAll('playerId').map(String);
     if (new Set(playerIds).size !== 4 || playerIds.some(id => !id)) {
-      setTrainingMessage('Bitte vier verschiedene Spieler auswählen.', 'error');
+      setTrainingMessage('Bitte vier verschiedene Spieler auswählen.', 'error', form);
       return;
     }
     let rounds;
@@ -1930,35 +1962,33 @@ Dein Hanako-Leben-Squad`;
         };
       });
     } catch (error) {
-      setTrainingMessage(error.message, 'error');
+      setTrainingMessage(error.message, 'error', form);
       return;
     }
     const button = form.querySelector('[type="submit"]');
     button.disabled = true;
-    setTrainingMessage('Training wird gespeichert …');
-    const rpcName = state.editingTrainingId ? 'replace_pending_training_session' : 'create_training_session';
+    setTrainingMessage('Training wird gespeichert …', '', form);
+    const editingTrainingId = form.dataset.trainingAlternative || null;
+    const rpcName = editingTrainingId ? 'replace_pending_training_session' : 'create_training_session';
     const payload = {
       p_played_on: String(data.get('playedOn')),
       p_display_time: String(data.get('displayTime')),
       p_player_ids: playerIds,
       p_rounds: rounds
     };
-    if (state.editingTrainingId) payload.p_session_id = Number(state.editingTrainingId);
+    if (editingTrainingId) payload.p_session_id = Number(editingTrainingId);
     try {
       const { error } = await state.client.rpc(rpcName, payload);
       if (error) throw error;
     } catch (error) {
-      setTrainingMessage(getFriendlyAuthError(error), 'error');
+      setTrainingMessage(getFriendlyAuthError(error), 'error', form);
       button.disabled = false;
       return;
     }
     button.disabled = false;
-    setTrainingMessage('');
+    setTrainingMessage('', '', form);
     form.reset();
     form.hidden = true;
-    state.trainingRoundCount = 1;
-    state.editingTrainingId = null;
-    setTrainingFormPurpose(false);
     setAuthMessage('Training wurde zur Bestätigung gesendet.', 'success');
     await refresh();
   }
@@ -1966,24 +1996,18 @@ Dein Hanako-Leben-Squad`;
   function editTraining(sessionId) {
     const task = state.trainingTasks.find(item => Number(item.session_id) === Number(sessionId));
     if (!task) return;
-    const form = document.getElementById('training-form');
-    setTrainingMessage('');
+    const form = document.querySelector(`[data-training-alternative="${CSS.escape(String(sessionId))}"]`);
     if (!form) return;
-    state.editingTrainingId = Number(sessionId);
-    state.trainingRoundCount = Math.max(1, task.rounds?.length || 1);
-    const roundValues = (task.rounds || []).map(round => {
-      const [a, b, c, d] = task.player_ids;
-      const teamOne = new Set(round.team_one_ids);
-      const pairing = teamOne.has(a) && teamOne.has(c) ? 'ac_bd' : teamOne.has(a) && teamOne.has(d) ? 'ad_bc' : 'ab_cd';
-      const resultFormat = getTrainingRoundFormat(round);
-      return { pairing, resultFormat, ...parseTrainingResultValues(round.result_details, resultFormat) };
-    });
-    renderTrainingForm(task.player_ids, roundValues);
-    form.hidden = false;
-    form.querySelector('[name="playedOn"]').value = task.played_on;
-    form.querySelector('[name="displayTime"]').value = String(task.display_time).slice(0, 5);
-    setTrainingFormPurpose(true);
-    window.requestAnimationFrame(() => form.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    const opening = form.hidden;
+    form.hidden = !opening;
+    const toggle = form.closest('.training-task-card')?.querySelector('[data-training-edit]');
+    if (toggle) toggle.textContent = opening ? 'Alternative schließen' : 'Alternative eingeben';
+    if (opening) {
+      renderTrainingForm(task.player_ids, getTrainingRoundValues(task), form);
+      form.querySelector('[name="playedOn"]').value = task.played_on;
+      form.querySelector('[name="displayTime"]').value = String(task.display_time).slice(0, 5);
+      setTrainingMessage('', '', form);
+    }
   }
 
   async function confirmTraining(sessionId) {
@@ -2131,13 +2155,10 @@ Dein Hanako-Leben-Squad`;
         const form = document.getElementById('training-form');
         form.hidden = !form.hidden;
         if (!form.hidden) {
-          setTrainingMessage('');
-          state.editingTrainingId = null;
-          state.trainingRoundCount = 1;
-          setTrainingFormPurpose(false);
+          setTrainingMessage('', '', form);
           renderTrainingForm();
         } else {
-          closeTrainingForm();
+          closeTrainingForm(form);
         }
         return;
       }
@@ -2152,22 +2173,24 @@ Dein Hanako-Leben-Squad`;
         return;
       }
       if (event.target.closest('[data-training-round-add]')) {
-        const preserved = readTrainingRoundValues();
-        state.trainingRoundCount += 1;
-        renderTrainingRounds(preserved);
+        const form = event.target.closest('.training-form');
+        if (!form) return;
+        const preserved = readTrainingRoundValues(form);
+        renderTrainingRounds(preserved, form, preserved.length + 1);
         return;
       }
       const removeRound = event.target.closest('[data-training-round-remove]');
       if (removeRound) {
         const removeIndex = Number(removeRound.dataset.trainingRoundRemove);
+        const form = removeRound.closest('.training-form');
+        if (!form) return;
         if (removeIndex === 0) {
-          closeTrainingForm();
+          closeTrainingForm(form);
           return;
         }
-        const preserved = readTrainingRoundValues();
+        const preserved = readTrainingRoundValues(form);
         preserved.splice(removeIndex, 1);
-        state.trainingRoundCount = Math.max(1, state.trainingRoundCount - 1);
-        renderTrainingRounds(preserved);
+        renderTrainingRounds(preserved, form, preserved.length);
         return;
       }
       const confirmTrainingButton = event.target.closest('[data-training-confirm]');
@@ -2189,13 +2212,14 @@ Dein Hanako-Leben-Squad`;
     document.getElementById('auth-form')?.addEventListener('submit', handleAuthSubmit);
     document.getElementById('auth-password-form')?.addEventListener('submit', handlePasswordSubmit);
     document.getElementById('player-invite-form')?.addEventListener('submit', handlePlayerInviteSubmit);
-    const trainingForm = document.getElementById('training-form');
-    trainingForm?.addEventListener('submit', handleTrainingSubmit);
-    trainingForm?.addEventListener('invalid', handleTrainingInvalid, true);
     document.addEventListener('submit', event => {
       if (event.target.matches('[data-match-schedule]')) handleScheduleSubmit(event);
       else if (event.target.matches('[data-result-submit]')) handleResultSubmit(event);
+      else if (event.target.matches('.training-form')) handleTrainingSubmit(event);
     });
+    document.addEventListener('invalid', event => {
+      if (event.target.closest('.training-form')) handleTrainingInvalid(event);
+    }, true);
     document.addEventListener('input', event => {
       if (event.target.matches('[data-result-score]')) {
         event.target.value = window.PadelScoreInput.sanitizeScoreValue(event.target.value);

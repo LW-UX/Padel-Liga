@@ -22,7 +22,7 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-21-mobile-ranking-tooltip">
+  <link rel="stylesheet" href="style.css?v=2026-09-21-mobile-header-type-training-alternative">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -146,32 +146,19 @@
     </div>
     <div class="ranking-wrap">
       <table class="rt ranking-table compact" id="ranking-table">
-        <colgroup>
-          <col class="col-rank">
-          <col class="col-name">
-          <col class="col-games">
-          <col class="col-wins mobile-compact-hidden">
-          <col class="col-points">
-          <col class="col-gv extended-col">
-          <col class="col-diff">
-          <col class="col-elo mobile-compact-hidden">
-          <col class="col-form extended-col">
-          <col class="col-winrate extended-col">
-          <col class="col-placement-factor extended-col">
-        </colgroup>
         <thead>
           <tr>
-            <th class="l rn sticky-rank">#</th>
-            <th class="l sticky-name">Spieler</th>
-            <th>Partien</th>
-            <th class="mobile-compact-hidden">Siege</th>
-            <th>Punkte</th>
-            <th class="extended-col">G:V</th>
-            <th>Diff.</th>
-            <th class="mobile-compact-hidden">Elo</th>
-            <th class="extended-col">Letzte 3</th>
-            <th class="extended-col">Sieg-%</th>
-            <th class="extended-col ranking-help-header">
+            <th class="col-rank">#</th>
+            <th class="col-name">Spieler</th>
+            <th class="col-games">Partien</th>
+            <th class="col-wins">Siege</th>
+            <th class="col-points">Punkte</th>
+            <th class="col-gv">G:V</th>
+            <th class="col-diff">Diff.</th>
+            <th class="col-elo">Elo</th>
+            <th class="col-form">Letzte 3</th>
+            <th class="col-winrate">Sieg-%</th>
+            <th class="col-placement-factor">
               <span class="th-help-wrap">Platzierungsfaktor
                 <span class="help-icon" tabindex="0" aria-label="Platzierungsfaktor erklären">?</span>
                 <span class="help-tooltip">Ø Platz Mitspieler / Ø Platz Gegenspieler / Differenz.<br>Positive Werte bedeuten: Die Gegner waren im Schnitt stärker platziert als die Mitspieler.</span>
@@ -188,27 +175,17 @@
       <div class="sh-meta" id="fr-meta"></div>
     </div>
     <div class="ranking-wrap">
-      <table class="rt">
-        <colgroup>
-          <col class="col-rank">
-          <col class="col-name">
-          <col class="col-games">
-          <col class="col-wins">
-          <col class="col-points">
-          <col class="col-diff">
-          <col class="col-gv">
-          <col class="col-elo">
-        </colgroup>
+      <table class="rt company-ranking-table">
         <thead>
           <tr>
-            <th class="l rn">#</th>
-            <th class="l">Firma</th>
-            <th>TN</th>
-            <th>Partien</th>
-            <th>Siege</th>
-            <th>Punkte</th>
-            <th>Diff.</th>
-            <th>Pkt/TN</th>
+            <th class="col-rank">#</th>
+            <th class="col-company">Firma</th>
+            <th class="col-participants">TN</th>
+            <th class="col-games">Partien</th>
+            <th class="col-wins">Siege</th>
+            <th class="col-points">Punkte</th>
+            <th class="col-diff">Diff.</th>
+            <th class="col-points-per-player">Pkt/TN</th>
           </tr>
         </thead>
         <tbody id="fr-body"></tbody>
@@ -222,22 +199,14 @@
       </div>
       <div class="ranking-wrap">
         <table class="rt final-four-table">
-          <colgroup>
-            <col class="col-rank">
-            <col class="col-name">
-            <col class="col-games">
-            <col class="col-wins">
-            <col class="col-gv">
-            <col class="col-diff">
-          </colgroup>
           <thead>
             <tr>
-              <th class="l rn">#</th>
-              <th class="l">Spieler</th>
-              <th>Partien</th>
-              <th>Siege</th>
-              <th>G:V</th>
-              <th>Diff.</th>
+              <th class="col-rank">#</th>
+              <th class="col-name">Spieler</th>
+              <th class="col-games">Partien</th>
+              <th class="col-wins">Siege</th>
+              <th class="col-gv">G:V</th>
+              <th class="col-diff">Diff.</th>
             </tr>
           </thead>
           <tbody id="ff-body"></tbody>
@@ -368,20 +337,13 @@
           <div class="widget-label">Simulierte Tabelle</div>
           <div class="ranking-wrap calculator-ranking-wrap">
             <table class="rt calculator-ranking-table">
-              <colgroup>
-                <col class="col-rank">
-                <col class="col-name">
-                <col class="col-games">
-                <col class="col-points">
-                <col class="col-diff">
-              </colgroup>
               <thead>
                 <tr>
-                  <th class="l rn">#</th>
-                  <th class="l">Spieler</th>
-                  <th>Partien</th>
-                  <th>Punkte</th>
-                  <th>Diff.</th>
+                  <th class="col-rank">#</th>
+                  <th class="col-name">Spieler</th>
+                  <th class="col-games">Partien</th>
+                  <th class="col-points">Punkte</th>
+                  <th class="col-diff">Diff.</th>
                 </tr>
               </thead>
               <tbody id="calculator-ranking-body"></tbody>
@@ -413,11 +375,8 @@
         <div class="calculator-panel calculator-ranking-panel">
           <div class="widget-label">Simulierte Final4-Tabelle</div>
           <div class="ranking-wrap calculator-ranking-wrap">
-            <table class="rt calculator-ranking-table">
-              <colgroup>
-                <col class="col-rank"><col class="col-name"><col class="col-games"><col class="col-points"><col class="col-diff">
-              </colgroup>
-              <thead><tr><th class="l rn">#</th><th class="l">Spieler</th><th>Partien</th><th>Siege</th><th>Diff.</th></tr></thead>
+            <table class="rt calculator-ranking-table final-four-calculator-ranking-table">
+              <thead><tr><th class="col-rank">#</th><th class="col-name">Spieler</th><th class="col-games">Partien</th><th class="col-wins">Siege</th><th class="col-diff">Diff.</th></tr></thead>
               <tbody id="final-four-calculator-ranking-body"></tbody>
             </table>
           </div>
@@ -580,8 +539,8 @@
                 <label><span>Datum</span><input type="date" name="playedOn" required></label>
                 <label><span>Uhrzeit</span><input type="time" name="displayTime" required></label>
               </div>
-              <div class="training-player-fields" id="training-player-fields"></div>
-              <div class="training-rounds" id="training-rounds"></div>
+              <div class="training-player-fields" id="training-player-fields" data-training-player-fields></div>
+              <div class="training-rounds" id="training-rounds" data-training-rounds></div>
               <div class="auth-message training-message" data-training-message role="status" aria-live="polite"></div>
               <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
               <button class="primary-button" type="submit">Training zur Bestätigung senden</button>
@@ -639,8 +598,8 @@
 </dialog>
 
 <script src="js/score-input.js?v=2026-09-03-training-counters"></script>
-<script src="js/tippspiel.js?v=2026-09-19-training-form"></script>
-<script src="js/app.js?v=2026-09-21-mobile-ranking"></script>
+<script src="js/tippspiel.js?v=2026-09-21-ranking-globals-training-alternative"></script>
+<script src="js/app.js?v=2026-09-21-ranking-movement"></script>
 <script src="js/arcade-link.js?v=2026-09-11"></script>
 </body>
 </html>

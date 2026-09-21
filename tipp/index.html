@@ -12,7 +12,7 @@
   <script src="../data/players.js?v=2026-09-01-profile-emojis"></script>
   <script src="../data/seasons.js"></script>
   <script src="../data/supabase-config.js"></script>
-  <link rel="stylesheet" href="../style.css?v=2026-09-12-button-selection">
+  <link rel="stylesheet" href="../style.css?v=2026-09-21-mobile-header-type-training-alternative">
 </head>
 <body class="tip-page">
 <header class="site-header">
@@ -140,8 +140,8 @@
                 <label><span>Datum</span><input type="date" name="playedOn" required></label>
                 <label><span>Uhrzeit</span><input type="time" name="displayTime" required></label>
               </div>
-              <div class="training-player-fields" id="training-player-fields"></div>
-              <div class="training-rounds" id="training-rounds"></div>
+              <div class="training-player-fields" id="training-player-fields" data-training-player-fields></div>
+              <div class="training-rounds" id="training-rounds" data-training-rounds></div>
               <div class="auth-message training-message" data-training-message role="status" aria-live="polite"></div>
               <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
               <button class="primary-button" type="submit">Training zur Bestätigung senden</button>
@@ -196,7 +196,7 @@
 </dialog>
 
 <script src="../js/score-input.js?v=2026-09-03-training-counters"></script>
-  <script src="../js/tippspiel.js?v=2026-09-19-training-form"></script>
+  <script src="../js/tippspiel.js?v=2026-09-21-ranking-globals-training-alternative"></script>
 <script src="../js/tipp-page.js?v=2026-09-01-season-picker"></script>
 </body>
 </html>

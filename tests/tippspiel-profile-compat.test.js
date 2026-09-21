@@ -203,20 +203,20 @@ test('all training selectors reuse the custom page viewer dropdown', () => {
 
 test('training pairings use selected player names and keep player placeholders', () => {
   const pairingOptions = tippspielSource.match(
-    /function getTrainingPairingOptions\(\) \{[\s\S]*?(?=\n  function renderTrainingRounds)/
+    /function getTrainingPairingOptions\(form\) \{[\s\S]*?(?=\n  function renderTrainingRounds)/
   )?.[0] || '';
   const buildPairingOptions = vm.runInNewContext(
     `(() => { ${pairingOptions}\nreturn getTrainingPairingOptions; })()`,
     {
-      document: {
-        querySelectorAll() {
-          return ['anna', '', 'carla', 'dora'].map(value => ({ value }));
-        }
-      },
       getPlayerName: playerId => ({ anna: 'Anna A.', carla: 'Carla C.', dora: 'Dora D.' })[playerId]
     }
   );
-  assert.deepEqual(JSON.parse(JSON.stringify(buildPairingOptions())), [
+  const form = {
+    querySelectorAll() {
+      return ['anna', '', 'carla', 'dora'].map(value => ({ value }));
+    }
+  };
+  assert.deepEqual(JSON.parse(JSON.stringify(buildPairingOptions(form))), [
     {
       value: 'ab_cd',
       label: 'Anna A. & Spieler 2 vs. Carla C. & Dora D.',
@@ -233,7 +233,7 @@ test('training pairings use selected player names and keep player placeholders',
       teams: [['Anna A.', 'Dora D.'], ['Spieler 2', 'Carla C.']]
     }
   ]);
-  assert.match(tippspielSource, /inputName === 'resultFormat' \|\| inputName === 'playerId'[\s\S]*renderTrainingRounds\(preserved\)/);
+  assert.match(tippspielSource, /inputName === 'resultFormat' \|\| inputName === 'playerId'[\s\S]*renderTrainingRounds\(preserved, form, preserved\.length\)/);
 });
 
 test('scheduling, unscheduling and future result entry use their dedicated secondary actions', () => {
@@ -482,7 +482,7 @@ test('training round scoring counts every completed regular set by half', () => 
 
 test('training result rows have one remove action and the first closes the form', () => {
   assert.match(tippspielSource, /data-training-round-remove="\$\{index\}"/);
-  assert.match(tippspielSource, /removeIndex === 0[\s\S]*closeTrainingForm\(\)/);
+  assert.match(tippspielSource, /removeIndex === 0[\s\S]*closeTrainingForm\(form\)/);
   assert.match(tippspielSource, /preserved\.splice\(removeIndex, 1\)/);
 });
 
@@ -492,9 +492,9 @@ test('training validation is shown inside the training form before any RPC call'
     assert.match(source, /data-training-message role="status" aria-live="polite"/);
   });
   const messageSetter = tippspielSource.match(
-    /function setTrainingMessage\(message, type = ''\) \{[\s\S]*?(?=\n  function closeTrainingForm)/
+    /function setTrainingMessage\(message, type = '', form =[\s\S]*?(?=\n  function closeTrainingForm)/
   )?.[0] || '';
-  assert.match(messageSetter, /document\.querySelector\('\[data-training-message\]'\)/);
+  assert.match(messageSetter, /form\?\.querySelector\('\[data-training-message\]'\)/);
   assert.doesNotMatch(messageSetter, /setAuthMessage/);
 
   const submitHandler = tippspielSource.match(
@@ -503,29 +503,39 @@ test('training validation is shown inside the training form before any RPC call'
   const rpcIndex = submitHandler.indexOf('state.client.rpc(rpcName, payload)');
   assert.ok(rpcIndex > 0, 'training submit should contain its RPC call');
   const beforeRpc = submitHandler.slice(0, rpcIndex);
-  assert.match(beforeRpc, /setTrainingMessage\('Bitte vier verschiedene Spieler auswählen\.', 'error'\);\n      return;/);
-  assert.match(beforeRpc, /setTrainingMessage\(error\.message, 'error'\);\n      return;/);
+  assert.match(beforeRpc, /setTrainingMessage\('Bitte vier verschiedene Spieler auswählen\.', 'error', form\);\n      return;/);
+  assert.match(beforeRpc, /setTrainingMessage\(error\.message, 'error', form\);\n      return;/);
 
   assert.match(tippspielSource, /function handleTrainingInvalid\(event\)/);
-  assert.match(tippspielSource, /trainingForm\?\.addEventListener\('invalid', handleTrainingInvalid, true\)/);
-  assert.match(tippspielSource, /setTrainingMessage\(getFriendlyAuthError\(error\), 'error'\)/);
+  assert.match(tippspielSource, /document\.addEventListener\('invalid',[\s\S]*handleTrainingInvalid\(event\)/);
+  assert.match(tippspielSource, /setTrainingMessage\(getFriendlyAuthError\(error\), 'error', form\)/);
 });
 
 test('training messages reset across every form lifecycle transition', () => {
-  assert.match(tippspielSource, /function closeTrainingForm\(\)[\s\S]*setTrainingMessage\(''\);[\s\S]*renderTrainingForm\(\);/);
-  assert.match(tippspielSource, /function editTraining\(sessionId\)[\s\S]*const form = document\.getElementById\('training-form'\);\n    setTrainingMessage\(''\);/);
-  assert.match(tippspielSource, /if \(!form\.hidden\) \{\n          setTrainingMessage\(''\);[\s\S]*renderTrainingForm\(\);/);
-  assert.match(tippspielSource, /button\.disabled = false;\n    setTrainingMessage\(''\);\n    form\.reset\(\);[\s\S]*setAuthMessage\('Training wurde zur Bestätigung gesendet\.', 'success'\);/);
+  assert.match(tippspielSource, /function closeTrainingForm\(form =[\s\S]*setTrainingMessage\('', '', form\);/);
+  assert.match(tippspielSource, /function editTraining\(sessionId\)[\s\S]*setTrainingMessage\('', '', form\);/);
+  assert.match(tippspielSource, /if \(!form\.hidden\) \{\n          setTrainingMessage\('', '', form\);[\s\S]*renderTrainingForm\(\);/);
+  assert.match(tippspielSource, /button\.disabled = false;\n    setTrainingMessage\('', '', form\);\n    form\.reset\(\);[\s\S]*setAuthMessage\('Training wurde zur Bestätigung gesendet\.', 'success'\);/);
 });
 
-test('training alternatives visibly open the populated editor', () => {
+test('training alternatives expand a populated editor inside the current card', () => {
   const editor = tippspielSource.match(
     /function editTraining\(sessionId\) \{[\s\S]*?(?=\n  async function confirmTraining)/
   )?.[0] || '';
-  assert.match(editor, /form\.hidden = false/);
-  assert.match(editor, /setTrainingFormPurpose\(true\)/);
-  assert.match(editor, /scrollIntoView\(\{ behavior: 'smooth', block: 'start' \}\)/);
-  assert.match(tippspielSource, /isAlternative \? 'Alternative senden' : 'Training zur Bestätigung senden'/);
+  assert.match(tippspielSource, /class="training-form training-alternative-form" data-training-alternative=/);
+  assert.match(tippspielSource, /\$\{task\.created_by_me \? '' : renderTrainingAlternativeForm\(task\)\}/);
+  assert.match(editor, /document\.querySelector\(`\[data-training-alternative=/);
+  assert.match(editor, /form\.hidden = !opening/);
+  assert.match(editor, /renderTrainingForm\(task\.player_ids, getTrainingRoundValues\(task\), form\)/);
+  assert.doesNotMatch(editor, /document\.getElementById\('training-form'\)/);
+  assert.doesNotMatch(editor, /scrollIntoView/);
+  assert.match(tippspielSource, /const editingTrainingId = form\.dataset\.trainingAlternative \|\| null;/);
+  assert.match(tippspielSource, /const rpcName = editingTrainingId \? 'replace_pending_training_session' : 'create_training_session';/);
+  ['index.html', 'tipp/index.html'].forEach(relativePath => {
+    const source = fs.readFileSync(path.join(__dirname, '..', relativePath), 'utf8');
+    assert.match(source, /<form class="training-form" id="training-form" hidden>/);
+    assert.doesNotMatch(source, /id="training-form"[^>]*data-training-alternative/);
+  });
 });
 
 test('result submission and confirmation refresh in place without closing the account dialog', () => {

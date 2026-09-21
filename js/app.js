@@ -2234,14 +2234,14 @@ function renderFirmenRanking() {
     const diffStr   = f.partien > 0 ? (f.spielDiff >= 0 ? `+${f.spielDiff}` : `${f.spielDiff}`) : '—';
     const diffClass = getStatDiffClass(f.spielDiff);
     return `<tr class="r${i+1} ${isSelectedViewerFirma(f.firma) ? 'viewer-highlight' : ''}">
-      <td class="rn l">${i+1}</td>
-      <td class="l"><span class="pname">${f.firma}</span><span class="firma-badge firma-${f.firma}">${f.firma}</span></td>
-      <td class="num-val">${f.teilnehmer}</td>
-      <td class="num-val">${f.partien}</td>
-      <td class="num-val">${f.siege}</td>
-      <td class="num-val">${f.punkte}</td>
-      <td class="num-val"><span class="${f.partien > 0 ? diffClass : 'neu'}">${diffStr}</span></td>
-      <td class="punkte-val">${f.pktPerTN.toFixed(2)}</td>
+      <td class="col-rank rank-position">${i+1}</td>
+      <td class="col-company"><span class="pname">${f.firma}</span><span class="firma-badge firma-${f.firma}">${f.firma}</span></td>
+      <td class="col-participants">${f.teilnehmer}</td>
+      <td class="col-games">${f.partien}</td>
+      <td class="col-wins">${f.siege}</td>
+      <td class="col-points">${f.punkte}</td>
+      <td class="col-diff"><span class="${f.partien > 0 ? diffClass : 'neu'}">${diffStr}</span></td>
+      <td class="col-points-per-player rank-score">${f.pktPerTN.toFixed(2)}</td>
     </tr>`;
   }).join('');
 }
@@ -2339,12 +2339,12 @@ function renderFinalFourRanking() {
     const diffLabel = player.diff > 0 ? `+${player.diff}` : String(player.diff);
 
     return `<tr class="r${index + 1}">
-      <td class="rn l">${index + 1}</td>
-      <td class="l">${renderPlayerProfileLink(player, 'pname')}</td>
-      <td class="num-val">${player.partien}</td>
-      <td class="punkte-val">${player.siege}</td>
-      <td class="num-val">${player.spieleGV}</td>
-      <td class="num-val"><span class="${diffClass}">${diffLabel}</span></td>
+      <td class="col-rank rank-position">${index + 1}</td>
+      <td class="col-name">${renderPlayerProfileLink(player, 'pname')}</td>
+      <td class="col-games">${player.partien}</td>
+      <td class="col-wins rank-score">${player.siege}</td>
+      <td class="col-gv">${player.spieleGV}</td>
+      <td class="col-diff"><span class="${diffClass}">${diffLabel}</span></td>
     </tr>`;
   }).join('');
 }
@@ -2513,6 +2513,8 @@ function renderRanking() {
   updateRankingSortToggle();
   updateRankingViewToggle();
   const table = document.getElementById('ranking-table');
+  const body = document.getElementById('rl-body');
+  const previousPositions = getRankingRowPositions(body, '.ranking-row');
   table.dataset.rankingSort = rankingSortMode;
   table.classList.toggle('expanded', rankingViewMode === 'expanded');
   table.classList.toggle('compact', rankingViewMode === 'compact');
@@ -2529,7 +2531,7 @@ function renderRanking() {
     placement: 'Sortierung: bereinigter Rang aus Punkte-Platz minus Platzierungsfaktor'
   };
   document.getElementById('rl-sort-note').textContent = sortNotes[rankingSortMode] || sortNotes.points;
-  document.getElementById('rl-body').innerHTML = withStats.map((p, i) => {
+  body.innerHTML = withStats.map((p, i) => {
     const currentRank = i + 1;
     const pointsRank = rankMap.get(p.name);
     const extras = getPlayerRankingExtras(p, rankMap);
@@ -2540,20 +2542,21 @@ function renderRanking() {
     const rankingPlayerLabel = isMobileViewport() && rankingViewMode === 'expanded'
       ? p.initials || p.name
       : p.name;
-    return `<tr class="r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}">
-      <td class="rn l sticky-rank"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${renderPointsRankReference(currentRank, pointsRank)}</span></td>
-      <td class="l sticky-name"><span class="player-cell-inner">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span></span></td>
-      <td class="num-val">${p.stats.partien}</td>
-      <td class="num-val mobile-compact-hidden">${p.stats.siege}</td>
-      <td class="punkte-val">${p.stats.punkte}</td>
-      <td class="num-val extended-col">${p.stats.partien > 0 ? p.stats.spieleGV : '—'}</td>
-      <td class="num-val"><span class="${p.stats.partien > 0 ? spielDiffClass : 'neu'}">${spielDiffStr}</span></td>
-      <td class="elo-val mobile-compact-hidden">${getLatestPlayerElo(p)}</td>
-      <td class="extended-col form-val">${extras.form}</td>
-      <td class="num-val extended-col">${extras.winQuote === null ? '—' : `${extras.winQuote}%`}</td>
-      <td class="num-val extended-col placement-factor-val">${formatPlacementFactor(extras.placementFactor)}</td>
+    return `<tr class="ranking-row r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(p.id || p.name)}">
+      <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${renderPointsRankReference(currentRank, pointsRank)}</span></td>
+      <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span></span></td>
+      <td class="col-games">${p.stats.partien}</td>
+      <td class="col-wins">${p.stats.siege}</td>
+      <td class="col-points rank-score">${p.stats.punkte}</td>
+      <td class="col-gv">${p.stats.partien > 0 ? p.stats.spieleGV : '—'}</td>
+      <td class="col-diff"><span class="${p.stats.partien > 0 ? spielDiffClass : 'neu'}">${spielDiffStr}</span></td>
+      <td class="col-elo">${getLatestPlayerElo(p)}</td>
+      <td class="col-form">${extras.form}</td>
+      <td class="col-winrate">${extras.winQuote === null ? '—' : `${extras.winQuote}%`}</td>
+      <td class="col-placement-factor">${formatPlacementFactor(extras.placementFactor)}</td>
     </tr>`;
   }).join('');
+  animateRankingRows(body, '.ranking-row', previousPositions);
   renderFirmenRanking();
   renderFinalFourRanking();
 }
@@ -2834,11 +2837,11 @@ function renderHome() {
       const spielDiffClass = getStatDiffClass(p.stats.spielDiff);
 
       return `<div class="mini-rank-row r${i + 1} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}">
-      <span class="mini-rank-pos">${i + 1}</span>
+      <span class="rank-position">${i + 1}</span>
       ${renderPlayerProfileLink(p, 'mini-rank-name')}
       <span class="mini-rank-values">
         <span class="mini-rank-games">${p.stats.partien}</span>
-        <span class="mini-rank-points">${p.stats.punkte}</span>
+        <span class="rank-score">${p.stats.punkte}</span>
         <span class="mini-rank-diff ${p.stats.partien > 0 ? spielDiffClass : 'neu'}">${spielDiffStr}</span>
       </span>
     </div>`;
@@ -3326,7 +3329,7 @@ function renderFinalFourForecast() {
   target.innerHTML = forecast.length
     ? `${forecast.map((item, index) => `
       <div class="mini-rank-row r${index + 1}">
-        <span class="mini-rank-pos">${index + 1}</span>
+        <span class="rank-position">${index + 1}</span>
         <div>
           ${renderPlayerProfileLink(item.player, `mini-rank-name ${isSelectedPlayer(item.player.name) ? 'viewer-player' : ''}`)}
           <div class="stat-meta-line">${formatDecimal(item.projectedPoints)} erwartete Punkte · ${item.currentPoints} aktuell</div>
@@ -3437,7 +3440,7 @@ function renderSetDominance() {
   target.innerHTML = dominantPlayers.length
     ? dominantPlayers.map((item, index) => `
       <div class="mini-rank-row r${index + 1}">
-        <span class="mini-rank-pos">${index + 1}</span>
+        <span class="rank-position">${index + 1}</span>
         <div>
           ${renderPlayerProfileLink(item.player, `mini-rank-name ${isSelectedPlayer(item.player.name) ? 'viewer-player' : ''}`)}
           <div class="stat-meta-line">${formatSignedDecimal(item.averageDiff)} Spiele pro ${isAllTimeStatistics() ? 'Satz' : 'Partie'} · ${formatStatDiff(item.stats.spielDiff)} gesamt</div>
@@ -3462,7 +3465,7 @@ function renderDominantMatches() {
   document.getElementById('dominant-matches').innerHTML = dominantMatches.length
     ? dominantMatches.map((item, index) => `
       <div class="mini-rank-row r${index + 1}">
-        <span class="mini-rank-pos">${index + 1}</span>
+        <span class="rank-position">${index + 1}</span>
         <div>
           <div class="mini-rank-name">${renderStatTeamPlayers(getWinnerTeam(item.match))}</div>
           <div class="stat-meta-line">${formatStatisticsMatchLabel(item.match)} · ${formatWinnerResult(item.match)} · +${item.gameStats.diff}</div>
@@ -3488,7 +3491,7 @@ function renderBiggestUpsets() {
   document.getElementById('biggest-upsets').innerHTML = upsets.length
     ? upsets.map((item, index) => `
       <div class="mini-rank-row r${index + 1}">
-        <span class="mini-rank-pos">${index + 1}</span>
+        <span class="rank-position">${index + 1}</span>
         <div>
           <div class="mini-rank-name">${renderStatTeamPlayers(getWinnerTeam(item.match))}</div>
           <div class="stat-meta-line">${formatStatisticsMatchLabel(item.match)} · nur ${item.winnerProbability}% Siegchance</div>
@@ -4458,9 +4461,9 @@ function renderCalculatorRanking() {
   const body = document.getElementById('calculator-ranking-body');
   if (!body) return;
 
-  const previousRankingPositions = getCalculatorRowPositions(body, '.calculator-ranking-row');
+  const previousRankingPositions = getRankingRowPositions(body, '.calculator-ranking-row');
   const miniRanking = document.getElementById('calculator-mini-ranking');
-  const previousMiniPositions = getCalculatorRowPositions(miniRanking, '.calculator-mini-rank-row');
+  const previousMiniPositions = getRankingRowPositions(miniRanking, '.calculator-mini-rank-row');
   const rankedPlayers = getRankedPlayers(getCalculatorSimulatedMatches());
   const activePlayerIds = getActiveCalculatorPlayerIds();
   const qualificationPlaces = getCompetitionConfig().qualificationPlaces;
@@ -4472,15 +4475,15 @@ function renderCalculatorRanking() {
     const activeMatchClass = activePlayerIds.has(player.id) ? 'calculator-active-match-player' : '';
     const qualificationClass = index < qualificationPlaces ? 'top-four-highlight' : '';
 
-    return `<tr class="calculator-ranking-row r${Math.min(index + 1, 4)} ${qualificationClass} ${activeMatchClass} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-calculator-player="${escapeHtml(player.id)}">
-      <td class="rn l">${index + 1}</td>
-      <td class="l">${renderPlayerProfileLink(player, 'pname')}</td>
-      <td class="num-val">${player.stats.partien}</td>
-      <td class="punkte-val">${player.stats.punkte}</td>
-      <td class="num-val"><span class="${player.stats.partien > 0 ? diffClass : 'neu'}">${diffStr}</span></td>
+    return `<tr class="calculator-ranking-row r${Math.min(index + 1, 4)} ${qualificationClass} ${activeMatchClass} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id)}">
+      <td class="col-rank rank-position">${index + 1}</td>
+      <td class="col-name">${renderPlayerProfileLink(player, 'pname')}</td>
+      <td class="col-games">${player.stats.partien}</td>
+      <td class="col-points rank-score">${player.stats.punkte}</td>
+      <td class="col-diff"><span class="${player.stats.partien > 0 ? diffClass : 'neu'}">${diffStr}</span></td>
     </tr>`;
   }).join('');
-  animateCalculatorRows(body, '.calculator-ranking-row', previousRankingPositions);
+  animateRankingRows(body, '.calculator-ranking-row', previousRankingPositions);
 }
 
 function renderCalculatorMiniRanking(rankedPlayers, previousPositions = null, activePlayerIds = new Set()) {
@@ -4492,28 +4495,28 @@ function renderCalculatorMiniRanking(rankedPlayers, previousPositions = null, ac
     const activeMatchClass = activePlayerIds.has(player.id) ? 'calculator-active-match-player' : '';
     const qualificationClass = index < qualificationPlaces ? 'top-four-highlight' : '';
     return `
-    <div class="calculator-mini-rank-row ${qualificationClass} ${activeMatchClass} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-calculator-player="${escapeHtml(player.id)}">
-      <span class="calculator-mini-rank-pos">${index + 1}</span>
+    <div class="calculator-mini-rank-row r${Math.min(index + 1, 4)} ${qualificationClass} ${activeMatchClass} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id)}">
+      <span class="rank-position calculator-rank-position">${index + 1}</span>
       <span class="calculator-mini-rank-initials">${escapeHtml(player.initials || player.name)}</span>
     </div>`;
   }).join('');
-  animateCalculatorRows(miniRanking, '.calculator-mini-rank-row', previousPositions);
+  animateRankingRows(miniRanking, '.calculator-mini-rank-row', previousPositions);
 }
 
-function getCalculatorRowPositions(container, rowSelector) {
+function getRankingRowPositions(container, rowSelector) {
   if (!container) return null;
 
   return new Map([...container.querySelectorAll(rowSelector)]
-    .map(row => [row.dataset.calculatorPlayer, row.getBoundingClientRect().top])
-    .filter(([playerId, top]) => playerId && Number.isFinite(top)));
+    .map(row => [row.dataset.rankingEntry, row.getBoundingClientRect().top])
+    .filter(([entryId, top]) => entryId && Number.isFinite(top)));
 }
 
-function animateCalculatorRows(container, rowSelector, previousPositions) {
+function animateRankingRows(container, rowSelector, previousPositions) {
   if (!container || !previousPositions?.size) return;
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   container.querySelectorAll(rowSelector).forEach(row => {
-    const previousTop = previousPositions.get(row.dataset.calculatorPlayer);
+    const previousTop = previousPositions.get(row.dataset.rankingEntry);
     if (!Number.isFinite(previousTop)) return;
 
     const currentTop = row.getBoundingClientRect().top;
@@ -4586,22 +4589,22 @@ function renderFinalFourCalculatorRanking() {
   const matches = getFinalFourCalculatorMatches();
   const { stats } = getFinalFourStats(matches);
   const mini = document.getElementById('final-four-calculator-mini-ranking');
-  const previous = getCalculatorRowPositions(body, '.calculator-ranking-row');
-  const previousMini = getCalculatorRowPositions(mini, '.calculator-mini-rank-row');
+  const previous = getRankingRowPositions(body, '.calculator-ranking-row');
+  const previousMini = getRankingRowPositions(mini, '.calculator-mini-rank-row');
   const players = stats.map(stat => ({ ...PADEL_DATA.players.find(player => player.name === stat.name), ...stat }));
-  body.innerHTML = players.map((player, index) => `<tr class="calculator-ranking-row r${index + 1} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-calculator-player="${escapeHtml(player.id || player.name)}">
-    <td class="rn l">${index + 1}</td>
-    <td class="l">${renderPlayerProfileLink(player, 'pname')}</td>
-    <td class="num-val">${player.partien}</td>
-    <td class="punkte-val">${player.siege}</td>
-    <td class="num-val"><span class="${getStatDiffClass(player.diff)}">${formatStatDiff(player.diff)}</span></td>
+  body.innerHTML = players.map((player, index) => `<tr class="calculator-ranking-row r${index + 1} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id || player.name)}">
+    <td class="col-rank rank-position">${index + 1}</td>
+    <td class="col-name">${renderPlayerProfileLink(player, 'pname')}</td>
+    <td class="col-games">${player.partien}</td>
+    <td class="col-wins rank-score">${player.siege}</td>
+    <td class="col-diff"><span class="${getStatDiffClass(player.diff)}">${formatStatDiff(player.diff)}</span></td>
   </tr>`).join('');
-  mini.innerHTML = players.map((player, index) => `<div class="calculator-mini-rank-row ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-calculator-player="${escapeHtml(player.id || player.name)}" title="${escapeHtml(player.name)}">
-    <span class="calculator-mini-rank-pos">${index + 1}</span>
+  mini.innerHTML = players.map((player, index) => `<div class="calculator-mini-rank-row r${Math.min(index + 1, 4)} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id || player.name)}" title="${escapeHtml(player.name)}">
+    <span class="rank-position calculator-rank-position">${index + 1}</span>
     <span class="calculator-mini-rank-initials">${escapeHtml(player.initials || `P${player.seed}`)}</span>
   </div>`).join('');
-  animateCalculatorRows(body, '.calculator-ranking-row', previous);
-  animateCalculatorRows(mini, '.calculator-mini-rank-row', previousMini);
+  animateRankingRows(body, '.calculator-ranking-row', previous);
+  animateRankingRows(mini, '.calculator-mini-rank-row', previousMini);
   const completed = matches.filter(match => match.sieger !== null).length;
   document.getElementById('final-four-calculator-winner').textContent = completed === 3
     ? `Gesamtsieger der Simulation: ${stats[0].name}`

@@ -63,8 +63,8 @@ test('league, ranking and cup achievements use their selected metal colors', () 
   assert.match(style, /--silver:\s+#ADC8D8;/);
   assert.match(style, /--cup-gold:\s+#C59600;/);
   assert.match(style, /--cup-silver:\s+#7F98A8;/);
-  assert.match(style, /\.r1 \.rn \{ color: var\(--gold\)/);
-  assert.match(style, /\.r2 \.rn \{ color: var\(--silver\)/);
+  assert.match(style, /\.r1 \.rank-position \{ color: var\(--gold\)/);
+  assert.match(style, /\.r2 \.rank-position \{ color: var\(--silver\)/);
   assert.match(style, /\.player-profile-achievement-winner\.player-profile-achievement-cup \{ --achievement-color: var\(--cup-gold\); \}/);
   assert.match(style, /\.player-profile-achievement-finalist\.player-profile-achievement-cup \{ --achievement-color: var\(--cup-silver\); \}/);
   assert.match(app, /player-profile-achievement-\$\{kind\} player-profile-achievement-\$\{context\}/);
