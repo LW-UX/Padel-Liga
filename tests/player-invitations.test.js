@@ -8,7 +8,7 @@ const pages = [
   fs.readFileSync(path.join(root, 'index.html'), 'utf8'),
   fs.readFileSync(path.join(root, 'tipp', 'index.html'), 'utf8')
 ];
-const client = fs.readFileSync(path.join(root, 'js', 'tippspiel.js'), 'utf8');
+const client = fs.readFileSync(path.join(root, 'js', 'account.js'), 'utf8');
 const migration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260909200000_player_invitations.sql'),
   'utf8'

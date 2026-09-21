@@ -14,6 +14,7 @@ const preservationMigration = fs.readFileSync(
   'utf8'
 );
 const app = fs.readFileSync(path.join(root, 'js', 'app.js'), 'utf8');
+const account = fs.readFileSync(path.join(root, 'js', 'account.js'), 'utf8');
 const tippspiel = fs.readFileSync(path.join(root, 'js', 'tippspiel.js'), 'utf8');
 const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 
@@ -137,7 +138,7 @@ test('clients use match_at as the only database match time and render Berlin loc
   assert.match(app, /\.select\('id, match_at, result_details, actual_sets, winner'\)/);
   assert.match(tippspiel, /\.select\('id, format, competition_stage, betting_open, actual_sets, result_details, match_at'\)/);
   assert.doesNotMatch(tippspiel, /databaseMatch\.lock_at|databaseMatch\.scheduled_date|databaseMatch\.display_time/);
-  assert.match(tippspiel, /p_match_at: buildMatchAtValue\(/);
+  assert.match(account, /p_match_at: buildMatchAtValue\(/);
 
   const formatterSource = app.match(
     /function getBerlinDateTimeParts\(value\) \{[\s\S]*?\n\}/

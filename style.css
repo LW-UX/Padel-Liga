@@ -188,42 +188,6 @@
       justify-content: flex-end;
       gap: 8px;
     }
-    .auth-button {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 84px;
-      min-height: 36px;
-      border: 1px solid var(--accent);
-      border-radius: 999px;
-      background: var(--accent);
-      color: #07080c;
-      cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.78rem;
-      font-weight: 700;
-      padding: 0.45rem 0.9rem;
-      white-space: nowrap;
-    }
-    .auth-button:hover { filter: brightness(1.08); }
-    .auth-button.is-authenticated {
-      width: 38px;
-      min-width: 38px;
-      padding: 0;
-    }
-    .auth-button.is-authenticated.secondary-button {
-      border-color: var(--border);
-      background: var(--surface);
-      color: var(--text);
-      filter: none;
-    }
-    .auth-button.is-authenticated.secondary-button:hover,
-    .auth-button.is-authenticated.secondary-button:focus-visible {
-      border-color: var(--accent);
-      color: var(--accent);
-      filter: none;
-    }
     .arcade-link {
       display: inline-flex;
       align-items: center;
@@ -240,15 +204,6 @@
     .arcade-link svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
     .arcade-link:hover, .arcade-link:focus-visible { color: var(--accent); border-color: var(--accent); }
     .arcade-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-    .auth-user-icon {
-      width: 20px;
-      height: 20px;
-      fill: none;
-      stroke: currentColor;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      stroke-width: 1.8;
-    }
     .hero-sub { color: var(--dim); font-size: 0.9rem; font-weight: 300; margin-top: 1rem; }
     .site-nav {
       position: sticky;
@@ -283,22 +238,6 @@
     }
     .site-nav.tip-site-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .is-cup-season .site-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .auth-task-badge {
-      position: absolute;
-      top: -6px;
-      right: -6px;
-      display: grid;
-      place-items: center;
-      min-width: 19px;
-      height: 19px;
-      padding: 0 4px;
-      border-radius: 999px;
-      background: var(--accent);
-      color: #07080c;
-      box-shadow: 0 0 0 2px var(--bg);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.66rem;
-    }
     .viewer-picker {
       position: relative;
       flex: 0 0 auto;
@@ -969,395 +908,6 @@
     }
     .prediction-error small { color: var(--dim); }
 
-    .auth-dialog {
-      width: min(calc(100vw - 16px), 640px);
-      max-width: none;
-      max-height: min(calc(100vh - 64px), 900px);
-      margin: auto;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      background: var(--bg);
-      color: var(--text);
-      box-shadow: 0 34px 120px rgba(0,0,0,0.72);
-      overflow: hidden;
-      padding: 0;
-    }
-    .auth-dialog::backdrop { background: rgba(3,4,8,0.7); backdrop-filter: blur(2px); }
-    .auth-dialog-card {
-      box-sizing: border-box;
-      max-height: inherit;
-      overflow: auto;
-      overscroll-behavior: contain;
-      padding: 1.5rem;
-    }
-    .auth-dialog h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.04em; margin: 0.25rem 0 1rem; }
-    .auth-mode-toggle {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--bg);
-      padding: 3px;
-      margin-bottom: 1rem;
-    }
-    .auth-mode-toggle button {
-      border: 0;
-      border-radius: 7px;
-      background: transparent;
-      color: var(--dim);
-      cursor: pointer;
-      font: inherit;
-      font-size: 0.85rem;
-      font-weight: 600;
-      padding: 0.55rem;
-    }
-    .auth-mode-toggle button.active { background: var(--surface2); color: var(--accent); }
-    .auth-form { display: grid; gap: 12px; }
-    .auth-form label[hidden] { display: none !important; }
-    .auth-form label { display: grid; gap: 5px; color: var(--dim); font-size: 0.78rem; font-weight: 600; }
-    .auth-form input,
-    .auth-form select {
-      width: 100%;
-      min-height: 44px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--bg);
-      color: var(--text);
-      font: inherit;
-      font-size: 1rem;
-      outline: none;
-      padding: 0.65rem 0.75rem;
-    }
-    .auth-form select {
-      appearance: none;
-      background-image: linear-gradient(45deg, transparent 50%, var(--dim) 50%), linear-gradient(135deg, var(--dim) 50%, transparent 50%);
-      background-position: calc(100% - 16px) 19px, calc(100% - 11px) 19px;
-      background-repeat: no-repeat;
-      background-size: 5px 5px, 5px 5px;
-      padding-right: 2.25rem;
-    }
-    .auth-form input:focus,
-    .auth-form select:focus { border-color: var(--accent); }
-    .auth-form-link { justify-self: center; margin-top: 0; }
-    .auth-dialog-copy { color: var(--dim); font-size: 0.88rem; line-height: 1.5; margin: -0.35rem 0 1rem; }
-    .player-email-privacy { color: var(--dim); font-size: 0.75rem; line-height: 1.45; }
-    .player-email-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
-    .player-invite-output {
-      display: grid;
-      gap: 12px;
-      border-top: 1px solid var(--border);
-      margin-top: 1rem;
-      padding-top: 1rem;
-    }
-    .player-invite-output[hidden] { display: none; }
-    .player-invite-output label { display: grid; gap: 5px; color: var(--dim); font-size: 0.78rem; font-weight: 600; }
-    .player-invite-output input,
-    .player-invite-preview {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--bg);
-      color: var(--text);
-      font: inherit;
-      font-size: 0.85rem;
-      line-height: 1.5;
-      outline: none;
-      padding: 0.65rem 0.75rem;
-    }
-    .player-invite-output input { min-height: 44px; }
-    .player-invite-preview { min-height: 290px; font-weight: 400; }
-    .player-invite-preview p { margin: 0 0 1rem; }
-    .player-invite-preview p:last-child { margin-bottom: 0; }
-    .player-invite-preview ul { margin: 0 0 1rem; padding-left: 1.2rem; }
-    .player-invite-preview a { color: var(--accent); pointer-events: none; }
-    .player-invite-output input:focus,
-    .player-invite-preview:focus-within { border-color: var(--accent); }
-    .player-invite-expiry { color: var(--dim); font-size: 0.75rem; line-height: 1.45; margin: 0; }
-    .auth-message { min-height: 1.25rem; color: var(--dim); font-size: 0.82rem; margin-top: 0.8rem; }
-    .auth-message.error { color: var(--negativ); }
-    .auth-message.success { color: var(--positiv); }
-    .account-auth-message:empty { display: none; }
-    .training-message { margin: 0; }
-    .training-message:empty { display: none; }
-    .account-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-      padding-right: 64px;
-      margin-bottom: 1.35rem;
-    }
-    .account-header > div { min-width: 0; }
-    .account-header-actions { display: flex; align-items: center; gap: 8px; }
-    .account-header h2 { margin-bottom: 0.1rem; }
-    .auth-account-email { color: var(--dim); font-size: 0.88rem; margin: 0; overflow-wrap: anywhere; }
-    .account-games-empty {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--dim);
-      font-size: 0.82rem;
-      padding: 1rem;
-    }
-    .account-games-empty[hidden] { display: none; }
-    .account-player-area { display: grid; }
-    .account-player-area[hidden] { display: none; }
-    .account-section {
-      display: grid;
-      gap: 18px;
-      border-top: 1px solid var(--border);
-      padding-top: 24px;
-    }
-    .account-section-heading { display: flex; align-items: center; justify-content: space-between; }
-    .account-task-list { display: grid; gap: 18px; }
-    #result-task-list { gap: 40px; }
-    #result-task-list > .prediction-match-group {
-      border-top: 1px solid var(--border);
-      padding-top: 18px;
-    }
-    .result-task-wrap { display: grid; gap: 6px; }
-    .account-task-card {
-      display: grid;
-      gap: 12px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: var(--surface);
-      padding: 1rem;
-    }
-    .account-task-card.has-authenticated-player {
-      border-color: var(--accent2);
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent2) 18%, transparent);
-    }
-    .account-task-card.is-actionable {
-      border-color: var(--accent);
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
-    }
-    .account-task-card.is-waiting { background: color-mix(in srgb, var(--surface) 62%, var(--bg)); }
-    .account-task-card.is-waiting > :not(.account-task-actions) { opacity: 0.58; }
-    .account-task-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--dim); }
-    .account-task-status {
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      color: var(--dim);
-      font: 0.7rem 'DM Sans', sans-serif;
-      padding: 0.2rem 0.45rem;
-      white-space: nowrap;
-    }
-    .account-task-status.is-open { border-color: var(--accent); background: transparent; color: var(--accent); }
-    .account-task-status.is-complete { border-color: color-mix(in srgb, var(--positiv) 45%, var(--border)); color: var(--positiv); }
-    .result-card-timing { color: var(--dim); font: 0.85rem 'DM Sans', sans-serif; letter-spacing: 0.02rem; }
-    .account-task-matchup { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; font-size: 1rem; }
-    .account-task-matchup strong:last-child { text-align: right; }
-    .account-task-matchup > span { color: var(--dim); font-size: 0.85rem; }
-    .account-task-player-name.is-authenticated { color: var(--accent2); }
-    .result-proposal { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: 8px; background: var(--surface2); padding: 0.7rem; }
-    .result-proposal span { color: var(--dim); font-size: 0.85rem; }
-    .result-proposal strong { font-family: 'DM Sans', sans-serif; font-size: 0.85rem; text-align: right; letter-spacing: 0.02rem; }
-    .account-task-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-    .result-review-actions { justify-content: flex-end; flex-wrap: nowrap; }
-    .result-entry-form { display: grid; grid-template-columns: 1fr; gap: 12px; }
-    .result-entry-form[hidden] { display: none; }
-    .result-entry-form.is-counterproposal {
-      border-top: 1px solid var(--border);
-      padding-top: 12px;
-    }
-    .result-entry-timing { display: grid; grid-template-columns: minmax(150px, 200px) minmax(120px, 160px); gap: 8px; }
-    .match-schedule-form { display: grid; gap: 8px; }
-    .match-schedule-actions,
-    .scheduled-result-actions { display: flex; justify-content: flex-end; }
-    .result-entry-form label,
-    .match-schedule-form label,
-    .training-form label {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      color: var(--dim);
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-    .result-entry-form input,
-    .result-entry-form select,
-    .match-schedule-form input,
-    .training-form input,
-    .training-form select {
-      width: 70%;
-      min-height: 40px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--surface);
-      color: var(--text);
-      font: 0.85rem 'DM Sans', sans-serif;
-      padding: 0.55rem 0.65rem;
-    }
-    .result-score-entry {
-      display: grid;
-      grid-template-columns: repeat(3, auto);
-      align-items: start;
-      justify-content: center;
-      gap: 18px;
-    }
-    .result-score-set {
-      display: grid;
-      gap: 8px;
-      min-width: 0;
-    }
-    .result-score-label {
-      color: var(--dim);
-      font-size: 0.72rem;
-      font-weight: 600;
-      text-align: center;
-    }
-    .result-score-tiebreak {
-      display: grid;
-      gap: 6px;
-      margin-top: 4px;
-    }
-    .result-score-tiebreak[hidden] { display: none; }
-    .result-score-pair {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-    }
-    .result-score-colon {
-      color: var(--dim);
-      font-family: 'DM Mono', monospace;
-      font-size: 1.2rem;
-    }
-    .result-score-counter button:disabled { cursor: not-allowed; }
-    .result-score-set[data-result-decision]:has(:disabled) { opacity: 0.38; }
-    .result-entry-summary {
-      flex: 1 1 180px;
-      min-width: 0;
-      color: var(--dim);
-      font: 0.7rem 'DM Sans', sans-serif;
-      letter-spacing: 0.02rem;
-      line-height: 1.35;
-      overflow-wrap: anywhere;
-    }
-    .result-entry-summary.is-valid { color: var(--positiv); }
-    .result-entry-summary.is-invalid { color: var(--negativ); }
-    .result-entry-summary.is-partial { color: var(--accent); }
-    .result-entry-actions {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .result-entry-buttons { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex: 0 0 auto; width: 100%; }
-    .account-empty,
-    .account-waiting { color: var(--dim); font-size: 0.85rem; }
-    .account-waiting { display: inline-flex; align-items: center; min-height: 36px; }
-    .training-form { 
-      display: grid; 
-      gap: 10px; 
-      border: 1px solid var(--border); 
-      border-radius: 12px; 
-      padding: 0.9rem; 
-      background-color: var(--surface); 
-    }
-    .training-form > .secondary-button { width: max-content; }
-    .training-form .primary-button { width: max-content; margin-left: auto; }
-    .training-form[hidden] { display: none; }
-    .training-alternative-form {
-      border: 0;
-      border-top: 1px solid var(--border);
-      border-radius: 0;
-      padding: 12px 0 0;
-    }
-    .training-form-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .training-player-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .training-picker-label { color: var(--dim); font-size: 0.85rem; font-weight: 600; }
-    .training-picker-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      width: 100%;
-      min-width: 0;
-      text-align: left;
-    }
-    .training-picker-display {
-      flex: 1 1 auto;
-      min-width: 0;
-      overflow: hidden;
-    }
-    .training-picker-display-line {
-      display: block;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .training-picker-matchup {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-      min-width: 0;
-    }
-    .training-picker-team {
-      display: grid;
-      min-width: 0;
-    }
-    .training-picker-player {
-      display: flex;
-      align-items: baseline;
-      min-width: 0;
-    }
-    .training-picker-team--right .training-picker-player { justify-content: flex-end; }
-    .training-picker-player-name {
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .training-picker-separator {
-      flex: 0 0 auto;
-      margin-left: 0.25em;
-      color: var(--muted);
-      font-weight: 400;
-    }
-    .training-picker-versus {
-      color: var(--muted);
-      font-weight: 400;
-      text-align: center;
-    }
-    .training-picker-option-label {
-      display: block;
-      flex: 1 1 auto;
-      min-width: 0;
-      overflow: hidden;
-    }
-    .training-picker-menu { right: auto; left: 0; width: max(100%, 260px); }
-    .training-player-fields .training-picker:nth-child(even) .training-picker-menu { right: 0; left: auto; }
-    .training-rounds { display: grid; gap: 16px; }
-    .training-round-field { display: grid; gap: 14px; border: 1px solid var(--border); padding: 0.9rem; border-radius: 12px; background-color: var(--surface2); }
-    .training-round-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .4fr) auto; align-items: end; gap: 8px; }
-    .training-score-entry { grid-template-columns: repeat(3, auto); gap: 10px; }
-    .training-round-remove {
-      display: grid;
-      width: 40px;
-      height: 40px;
-      border: 1px solid var(--border);
-      border-radius: 50%;
-      background: var(--surface);
-      color: var(--text);
-      font: 1.2rem/1 'DM Sans', sans-serif;
-      cursor: pointer;
-      place-items: center;
-    }
-    .training-round-remove:hover,
-    .training-round-remove:focus-visible { border-color: var(--accent); color: var(--accent); }
-    .training-round-summary { min-height: 1rem; }
-    .training-task-rounds { display: grid; gap: 14px; }
-    .training-task-round { display: grid; gap: 14px; }
-    .training-task-round + .training-task-round { border-top: 1px solid var(--border); padding-top: 14px; }
-    .training-result-details { display: inline-flex; align-items: baseline; justify-content: flex-end; flex-wrap: wrap; gap: 0.2rem; }
-    .training-result-divider { color: var(--dim); }
-    .training-result-partial { color: var(--dim); font-style: italic; font-weight: 500; opacity: 0.68; }
     .standalone-ranking-panel { position: static; max-width: 760px; margin: 0 auto; }
     .tip-page .prediction-main { max-width: 820px; margin: 0 auto; }
 
@@ -2429,6 +1979,8 @@
       text-align: center;
       text-transform: uppercase;
     }
+    .cup-round-content { display: contents; }
+    .cup-round-final .cup-trophy { order: -1; }
     .cup-round-matches { display: grid; gap: 12px; }
     .cup-round-final .cup-round-matches { grid-template-columns: 1fr; }
     .cup-round-semifinal .cup-round-matches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -2442,25 +1994,25 @@
       box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
     }
     .cup-match-label {
-      padding: 9px 12px;
+      padding: 8px 12px;
       border-bottom: 1px solid var(--border);
       color: var(--accent);
       font-family: 'DM Mono', monospace;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 700;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.12em;
       text-align: center;
       text-transform: uppercase;
     }
     .cup-match-team {
       display: flex;
-      min-height: 58px;
+      min-height: 44px;
       align-items: center;
       justify-content: center;
       gap: 5px;
-      padding: 11px 10px;
-      color: var(--muted);
-      font-size: 0.92rem;
+      padding: 12px;
+      color: var(--dim);
+      font-size: 1rem;
       text-align: center;
     }
     .cup-match-team .mc-player-name { min-width: 0; }
@@ -2508,24 +2060,71 @@
       border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
       border-radius: 999px;
       background: color-mix(in srgb, var(--surface) 88%, transparent);
-      font-family: 'DM Mono', monospace;
       font-size: 0.7rem;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.08em;
       text-align: center;
     }
 
     @media (max-width: 768px) {
-      .cup-bracket { gap: 20px; padding-top: 0; }
-      .cup-trophy { width: 104px; margin-bottom: -10px; }
+      .cup-bracket {
+        display: flex;
+        width: 100%;
+        align-items: stretch;
+        gap: 0;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        padding: 0 0 20px;
+        scroll-snap-type: x mandatory;
+        scrollbar-color: var(--accent) var(--surface);
+        -webkit-overflow-scrolling: touch;
+      }
+      .cup-round-final .cup-trophy {
+        order: 0;
+        width: 104px;
+        margin: 0 auto -8px;
+      }
       .cup-round,
       .cup-round-final,
       .cup-round-semifinal,
-      .cup-round-quarterfinal { max-width: 520px; }
+      .cup-round-quarterfinal {
+        display: flex;
+        flex: 0 0 80%;
+        flex-direction: column;
+        max-width: none;
+        scroll-snap-align: start;
+      }
+      .cup-round-content {
+        display: flex;
+        min-height: 0;
+        flex: 1 1 auto;
+        flex-direction: column;
+        justify-content: center;
+        gap: 12px;
+      }
+      .cup-round-quarterfinal { order: 1; }
+      .cup-round-semifinal { order: 3; }
+      .cup-round-final { order: 5; }
+      .cup-round-final .cup-round-content { flex: 0.8 1 auto; }
       .cup-round-semifinal .cup-round-matches,
       .cup-round-quarterfinal .cup-round-matches { grid-template-columns: 1fr; }
       .cup-match-team { min-height: 52px; }
-      .cup-redraw { width: 100%; gap: 7px; }
-      .cup-redraw-label { flex: 0 1 auto; padding: 6px 9px; font-size: 0.64rem; }
+      .cup-redraw {
+        flex: 0 0 116px;
+        flex-direction: column;
+        padding: 32px 8px 0;
+      }
+      .cup-redraw-quarterfinal { order: 2; }
+      .cup-redraw-semifinal { order: 4; }
+      .cup-redraw-line {
+        width: 1px;
+        height: auto;
+        flex: 1 1 0;
+        background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 55%, var(--border)));
+      }
+      .cup-redraw-line:last-child { transform: scaleY(-1); }
+      .cup-redraw-label {
+        border-radius: 16px;
+      }
     }
 
     /* ── CALCULATOR ── */
@@ -2875,19 +2474,6 @@
       .hero-title-row { gap: 0.75rem; }
       .hero h1 { flex: 1 1 auto; min-width: 0; }
       .hero-actions { gap: 5px; }
-      .auth-button {
-        min-width: 58px;
-        max-width: 76px !important;
-        min-height: 34px;
-        font-size: 0.7rem;
-        padding: 0.4rem 0.6rem;
-      }
-      .auth-button.is-authenticated {
-        width: 34px;
-        min-width: 34px;
-        max-width: 34px !important;
-        padding: 0;
-      }
       .site-nav {
         width: calc(100% - 1.5rem);
         margin-bottom: 1.25rem;
@@ -2903,42 +2489,6 @@
         width: min(260px, calc(100vw - 1.5rem));
         max-height: 420px;
       }
-      .auth-dialog { max-height: 94vh; }
-      .auth-dialog-card { padding: 1.1rem 0.5rem; }
-      .account-header { flex-wrap: wrap; gap: 12px; padding-right: 64px; }
-      .player-email-actions { align-items: stretch; flex-direction: column; }
-      .account-header h2 { font-size: 1.65rem; }
-      .account-section { min-width: 0; }
-      .account-section-heading { min-width: 0; }
-      .account-section-heading .sh-title { font-size: 1.65rem; }
-      #result-task-list,
-      #result-task-list > .prediction-match-group,
-      #result-task-list .account-task-list { min-width: 0; }
-      .result-entry-timing { grid-template-columns: 1fr 1fr; }
-      .result-entry-form input, .result-entry-form select, .match-schedule-form input, .training-form input, .training-form select { width: 100%; }
-      .result-entry-timing label { min-width: 0; flex-direction: column; align-items: stretch; gap: 4px; }
-      .account-section-heading { align-items: center; }
-      .account-task-matchup strong { display: flex; flex-wrap: wrap; }
-      .account-task-matchup strong:last-child { justify-content: end; }
-
-      .account-task-actions .secondary-button, 
-      .account-task-actions .primary-button, 
-      .result-entry-buttons .secondary-button, 
-      .result-entry-buttons .primary-button,
-      .match-schedule-actions .secondary-button,
-      .training-form > .primary-button,
-      .training-form > .secondary-button
-      { font-size: 0.7rem; }
-
-      .result-proposal { align-items: flex-start; flex-direction: column; }
-      .result-proposal strong { text-align: left; }
-      .result-score-entry { grid-template-columns: 1fr; gap: 12px; }
-      .result-entry-actions .primary-button { width: auto; min-width: 0; }
-      .training-round-head { display: flex; flex-wrap: wrap-reverse; justify-content: space-between; }
-      .training-round-head .training-picker:first-child { width: 100%; }
-      .training-round-head .training-picker { width: 80%; }
-      .training-form-meta label { display: grid; gap: 4px; }
-      .training-picker-toggle { min-width: 0; }
       main { padding-left: 0.75rem; padding-right: 0.75rem; }
       .sh-with-control {
         align-items: flex-start;

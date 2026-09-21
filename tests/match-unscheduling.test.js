@@ -8,7 +8,7 @@ const migration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260914100000_unschedule_matches.sql'),
   'utf8'
 );
-const tippspiel = fs.readFileSync(path.join(root, 'js', 'tippspiel.js'), 'utf8');
+const tippspiel = fs.readFileSync(path.join(root, 'js', 'account.js'), 'utf8');
 
 test('match unscheduling is authenticated and restricted to participants or admins', () => {
   assert.match(migration, /create or replace function public\.unschedule_match\(p_match_id text\)/);

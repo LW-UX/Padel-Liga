@@ -71,19 +71,27 @@ test('Cup 2027 prepares seven knockout matches and sixteen open quarterfinal pla
   assert.ok(season.matches.every(match => match.countsForElo === true));
 });
 
-test('Cup mode renders its own navigation and upward knockout funnel', () => {
+test('Cup mode renders its own navigation and responsive knockout funnel', () => {
   assert.match(html, /id="hero-home-button"/);
   assert.match(html, /id="partien-nav-button"/);
   assert.match(app, /tournamentMode === 'knockout-redraw'/);
   assert.match(app, /heroButton\.innerHTML = cupSeason \? 'PADEL<em>CUP<\/em>'/);
   assert.match(app, /!\['partien', 'infos'\]\.includes\(button\.dataset\.section\)/);
   assert.match(app, /if \(cupSeason\) nav\('partien', matchesNavButton\)/);
-  assert.match(app, /renderCupTrophy\(\)[\s\S]*renderCupRound\(matches, 'final'/);
+  assert.match(app, /renderCupRound\(matches, 'final',[\s\S]*renderCupTrophy\(\)/);
   assert.match(app, /4 Sieger · Teams und Gegner neu auslosen/);
   assert.match(app, /renderCupRound\(matches, 'quarterfinal'/);
   assert.match(style, /\.cup-round-final \{ max-width: 360px; \}/);
   assert.match(style, /\.cup-round-quarterfinal \.cup-round-matches \{ grid-template-columns: repeat\(4/);
-  assert.match(style, /@media \(max-width: 768px\)[\s\S]*\.cup-round-quarterfinal \.cup-round-matches \{ grid-template-columns: 1fr; \}/);
+  assert.match(style, /@media \(max-width: 768px\)[\s\S]*\.cup-bracket \{[\s\S]*overflow-x: auto;[\s\S]*scroll-snap-type: x mandatory;/);
+  assert.match(style, /@media \(max-width: 768px\)[\s\S]*\.cup-bracket \{[\s\S]*align-items: stretch;/);
+  assert.match(style, /\.cup-round-quarterfinal \{ order: 1; \}[\s\S]*\.cup-round-semifinal \{ order: 3; \}/);
+  assert.match(style, /\.cup-round-content \{[\s\S]*flex: 1 1 auto;[\s\S]*justify-content: center;/);
+  assert.match(style, /\.cup-round-final \{ order: 5; \}/);
+  assert.match(style, /\.cup-round-quarterfinal \.cup-round-matches \{ grid-template-columns: 1fr; \}/);
+  assert.match(style, /\.cup-redraw \{[\s\S]*flex: 0 0 150px;/);
+  assert.match(style, /\.cup-redraw-line \{[\s\S]*width: 1px;[\s\S]*background: linear-gradient\(180deg/);
+  assert.match(style, /\.cup-redraw-label \{[\s\S]*writing-mode: horizontal-tb;[\s\S]*transform: none;/);
 });
 
 test('Cup migration extends public competition values without assigning players', () => {

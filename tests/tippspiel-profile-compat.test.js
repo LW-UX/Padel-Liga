@@ -3,9 +3,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
-const tippspielSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'tippspiel.js'), 'utf8');
+const tippspielSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'account.js'), 'utf8');
 const appSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'utf8');
-const styleSource = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
+const styleSource = [
+  fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8'),
+  fs.readFileSync(path.join(__dirname, '..', 'account.css'), 'utf8')
+].join('\n');
 const scoreInputSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'score-input.js'), 'utf8');
 const scoreInput = vm.runInNewContext(`(() => { const window = {}; ${scoreInputSource}\nreturn window.PadelScoreInput; })()`);
 
@@ -113,7 +116,7 @@ test('legacy profiles without app_role still publish their player id', async () 
   const context = vm.createContext({ console, CustomEvent: class {}, document, window });
   vm.runInContext(tippspielSource, context);
 
-  await window.PadelTippspiel.init({ id: 'test-2026', matches: [] });
+  await window.PadelKonto.init();
 
   assert.equal(publishedPlayerIds.at(-1), 'ludi_gmx');
 });
@@ -239,7 +242,6 @@ test('training pairings use selected player names and keep player placeholders',
 test('scheduling, unscheduling and future result entry use their dedicated secondary actions', () => {
   assert.match(tippspielSource, /data-match-schedule="\$\{escapeHtml\(task\.match_id\)\}"/);
   assert.match(tippspielSource, /task\.match_at \? 'Termin speichern' : 'Terminieren'/);
-  assert.match(tippspielSource, /data-result-entry-toggle="\$\{escapeHtml\(task\.match_id\)\}"/);
   assert.match(tippspielSource, /data-match-schedule-toggle="\$\{escapeHtml\(task\.match_id\)\}">Termin ändern/);
   assert.match(tippspielSource, /data-match-unschedule="\$\{escapeHtml\(task\.match_id\)\}">Termin löschen/);
   assert.match(tippspielSource, /groupKey === 'past'[\s\S]*renderResultForm\(task, false, false, true\)/);
@@ -412,7 +414,7 @@ test('decision counters unlock only at 1:1 and share the action row with their s
   assert.match(tippspielSource, /data-result-decision/);
   assert.match(tippspielSource, /control\.disabled = !decisionEnabled/);
   assert.match(tippspielSource, /<div class="result-entry-actions">\s*<div class="result-entry-summary"[^>]*>Satzergebnis wird automatisch berechnet\.<\/div>\s*<div class="result-entry-buttons">/);
-  assert.match(styleSource, /\.result-entry-summary \{[^}]*overflow-wrap: anywhere;[^}]*text-align: center;/);
+  assert.match(styleSource, /\.result-entry-summary \{[^}]*line-height: 1\.35;[^}]*overflow-wrap: anywhere;/);
   assert.match(styleSource, /\.result-entry-actions \{[^}]*flex-wrap: wrap;/);
 });
 

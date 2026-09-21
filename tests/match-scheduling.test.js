@@ -8,6 +8,7 @@ const migration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260909170000_global_elo_match_time.sql'),
   'utf8'
 );
+const account = fs.readFileSync(path.join(root, 'js', 'account.js'), 'utf8');
 const tippspiel = fs.readFileSync(path.join(root, 'js', 'tippspiel.js'), 'utf8');
 
 test('match scheduling is authenticated and restricted to participants or admins', () => {
@@ -24,7 +25,7 @@ test('match scheduling rejects completed and pending matches but permits one-tim
   assert.match(migration, /selected_match\.actual_sets is not null or selected_match\.result_details is not null/);
   assert.match(migration, /proposal\.status = 'pending'/);
   assert.doesNotMatch(migration, /Die Partie ist bereits terminiert\./);
-  assert.match(tippspiel, /data-match-schedule-toggle="\$\{escapeHtml\(task\.match_id\)\}">Termin ändern/);
+  assert.match(account, /data-match-schedule-toggle="\$\{escapeHtml\(task\.match_id\)\}">Termin ändern/);
 });
 
 test('match scheduling stores one canonical Berlin timestamp', () => {
@@ -46,20 +47,20 @@ test('unscheduled league matches retain their existing open betting behavior', (
 
 test('all four groups render even when they are empty', () => {
   ['Zu bestätigen', 'Ergebnis eintragen', 'Terminierte Spiele', 'Geplante Spiele'].forEach(label => {
-    assert.match(tippspiel, new RegExp(`label: '${label}'`));
+    assert.match(account, new RegExp(`label: '${label}'`));
   });
-  assert.match(tippspiel, /group\.items\.length[\s\S]*Derzeit keine Partie\./);
-  assert.match(tippspiel, /<div class="spieltag-label"><span>\$\{escapeHtml\(group\.label\)\}<\/span><\/div>/);
-  assert.doesNotMatch(tippspiel, /visibleGroups/);
+  assert.match(account, /group\.items\.length[\s\S]*Derzeit keine Partie\./);
+  assert.match(account, /<div class="spieltag-label"><span>\$\{escapeHtml\(group\.label\)\}<\/span><\/div>/);
+  assert.doesNotMatch(account, /visibleGroups/);
 });
 
 test('waiting proposals remain visible but do not count as actionable tasks', () => {
-  assert.match(tippspiel, /task\.task_type === 'review' \|\| task\.task_type === 'waiting'/);
-  assert.match(tippspiel, /group\.key === 'review'\)\.tasks\.filter\(task => task\.task_type === 'review'\)/);
-  assert.match(tippspiel, /Auf Bestätigung warten/);
+  assert.match(account, /task\.task_type === 'review' \|\| task\.task_type === 'waiting'/);
+  assert.match(account, /group\.key === 'review'\)\.tasks\.filter\(task => task\.task_type === 'review'\)/);
+  assert.match(account, /Auf Bestätigung warten/);
 });
 
 test('review and result-entry cards do not repeat their prefilled date and time', () => {
-  assert.match(tippspiel, /\$\{groupKey === 'future' \? `<div class="result-card-timing">/);
-  assert.doesNotMatch(tippspiel, /groupKey === 'planned' \? '' : `<div class="result-card-timing">/);
+  assert.match(account, /\$\{groupKey === 'future' \? `<div class="result-card-timing">/);
+  assert.doesNotMatch(account, /groupKey === 'planned' \? '' : `<div class="result-card-timing">/);
 });

@@ -14,7 +14,7 @@ test('result overview neither loads nor renders per-match Elo adjustments', () =
 });
 
 test('account cards use tournament labels across seasons and task groups', () => {
-  const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'tippspiel.js'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'account.js'), 'utf8');
   const context = vm.createContext({
     escapeHtml: value => String(value),
     renderResultTaskStatus: () => '',
@@ -52,7 +52,7 @@ test('account cards use tournament labels across seasons and task groups', () =>
 });
 
 test('account tasks require four distinct players assigned as two complete teams', async () => {
-  const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'tippspiel.js'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'account.js'), 'utf8');
   const lineup = [
     { player_id: 'a', team: 1 }, { player_id: 'b', team: 1 },
     { player_id: 'c', team: 2 }, { player_id: 'd', team: 2 }

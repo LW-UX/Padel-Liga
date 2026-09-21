@@ -121,6 +121,7 @@
       await loadScript(`../${selected.file}`);
       const season = hydrateSeason(window.PADEL_SEASON);
       document.querySelectorAll('[data-season-label]').forEach(node => { node.textContent = season.label; });
+      await window.PadelKonto.init();
       await window.PadelTippspiel.init(season);
     } catch (error) {
       document.querySelector('main').innerHTML = `<div class="empty-state">Die Tippspiel-Daten konnten nicht geladen werden.</div>`;

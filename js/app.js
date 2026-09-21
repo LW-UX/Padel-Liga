@@ -3825,19 +3825,22 @@ function renderCupMatchCard(match) {
   </article>`;
 }
 
-function renderCupRound(matches, stage, title, className) {
+function renderCupRound(matches, stage, title, className, decoration = '') {
   const stageMatches = matches
     .filter(match => getMatchStage(match) === stage)
     .sort(compareMatchesByNumber);
 
   return `<section class="cup-round ${className}" aria-labelledby="cup-${stage}-title">
     <div class="cup-round-title" id="cup-${stage}-title">${title}</div>
-    <div class="cup-round-matches">${stageMatches.map(renderCupMatchCard).join('')}</div>
+    <div class="cup-round-content">
+      ${decoration}
+      <div class="cup-round-matches">${stageMatches.map(renderCupMatchCard).join('')}</div>
+    </div>
   </section>`;
 }
 
-function renderCupRedraw(label) {
-  return `<div class="cup-redraw" aria-label="${escapeHtml(label)}">
+function renderCupRedraw(label, className) {
+  return `<div class="cup-redraw ${className}" aria-label="${escapeHtml(label)}">
     <span class="cup-redraw-line"></span>
     <span class="cup-redraw-label">${escapeHtml(label)}</span>
     <span class="cup-redraw-line"></span>
@@ -3846,11 +3849,10 @@ function renderCupRedraw(label) {
 
 function renderCupBracket(matches) {
   return `<div class="cup-bracket">
-    ${renderCupTrophy()}
-    ${renderCupRound(matches, 'final', 'Finale', 'cup-round-final')}
-    ${renderCupRedraw('4 Sieger · Teams und Gegner neu auslosen')}
+    ${renderCupRound(matches, 'final', 'Finale', 'cup-round-final', renderCupTrophy())}
+    ${renderCupRedraw('4 Sieger · Teams und Gegner neu auslosen', 'cup-redraw-semifinal')}
     ${renderCupRound(matches, 'semifinal', 'Halbfinale', 'cup-round-semifinal')}
-    ${renderCupRedraw('8 Sieger · Teams und Gegner neu auslosen')}
+    ${renderCupRedraw('8 Sieger · Teams und Gegner neu auslosen', 'cup-redraw-quarterfinal')}
     ${renderCupRound(matches, 'quarterfinal', 'Viertelfinale', 'cup-round-quarterfinal')}
   </div>`;
 }
@@ -5707,10 +5709,17 @@ async function initApp() {
     renderCalculator();
     renderStatistik();
     renderInfos();
-    await window.PadelTippspiel?.init(PADEL_DATA);
   } catch (error) {
     document.querySelector('main').innerHTML = `<div class="empty-state">Die Saison-Daten konnten nicht geladen werden.</div>`;
     console.error(error);
+    return;
+  }
+
+  try {
+    await window.PadelKonto?.init();
+    await window.PadelTippspiel?.init(PADEL_DATA);
+  } catch (error) {
+    console.error('Konto oder Tippspiel konnten nicht initialisiert werden:', error);
   }
 }
 

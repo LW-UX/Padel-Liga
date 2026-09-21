@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const root = path.join(__dirname, '..');
 const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
-const tippspiel = fs.readFileSync(path.join(root, 'js/tippspiel.js'), 'utf8');
+const tippspiel = fs.readFileSync(path.join(root, 'js/account.js'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 

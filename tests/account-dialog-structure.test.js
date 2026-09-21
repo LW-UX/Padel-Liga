@@ -4,7 +4,13 @@ const path = require('node:path');
 const test = require('node:test');
 
 const root = path.join(__dirname, '..');
-const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+const style = [
+  fs.readFileSync(path.join(root, 'style.css'), 'utf8'),
+  fs.readFileSync(path.join(root, 'account.css'), 'utf8')
+].join('\n');
+const accountScript = fs.readFileSync(path.join(root, 'js', 'account.js'), 'utf8');
+const tippspielScript = fs.readFileSync(path.join(root, 'js', 'tippspiel.js'), 'utf8');
+const appScript = fs.readFileSync(path.join(root, 'js', 'app.js'), 'utf8');
 const ligaPage = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const tippspielPage = fs.readFileSync(path.join(root, 'tipp', 'index.html'), 'utf8');
 const pages = [ligaPage, tippspielPage];
@@ -27,7 +33,23 @@ test('pages keep their intended context links and account dialogs place logout i
   assert.match(style, /html:has\(dialog\[open\]\),[\s\S]*body:has\(dialog\[open\]\)[\s\S]*overflow: hidden;[\s\S]*overscroll-behavior: none;/);
   assert.match(style, /\.player-profile-shell \{[\s\S]*overflow: auto;[\s\S]*overscroll-behavior: contain;/);
   assert.match(style, /\.auth-dialog-card \{[\s\S]*overflow: auto;[\s\S]*overscroll-behavior: contain;/);
-  assert.match(style, /\.auth-dialog \{[\s\S]*width: min\(calc\(100vw - 28px\), 640px\);/);
+  assert.match(style, /\.auth-dialog \{[\s\S]*width: min\(calc\(100vw - 16px\), 640px\);/);
+});
+
+test('account behavior and styles stay independent from the optional prediction module', () => {
+  pages.forEach(source => {
+    assert.match(source, /account\.css[^>]*>[\s\S]*js\/account\.js[^>]*>[\s\S]*js\/tippspiel\.js/);
+  });
+  assert.match(accountScript, /window\.PadelKonto = \{/);
+  assert.match(accountScript, /function handleAuthSubmit/);
+  assert.match(accountScript, /function renderResultTasks/);
+  assert.match(accountScript, /function handleTrainingSubmit/);
+  assert.match(accountScript, /function getTrainingTaskTimestamp/);
+  assert.doesNotMatch(accountScript, /getMatchTimestamp/);
+  assert.doesNotMatch(tippspielScript, /function handleAuthSubmit|function renderResultTasks|function handleTrainingSubmit/);
+  assert.match(tippspielScript, /window\.PadelKonto\?\.getSession/);
+  assert.match(appScript, /renderInfos\(\);\s*\} catch \(error\)[\s\S]*return;[\s\S]*await window\.PadelKonto\?\.init\(\)/);
+  assert.match(accountScript, /initialize\(\)\.catch\(error =>/);
 });
 
 test('both account dialogs expose one four-group game overview', () => {
@@ -55,16 +77,16 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(pages[1], /class="secondary-button secondary-button--dropdown"[^>]*data-season-toggle/);
   assert.match(style, /\.sh-title \{[^}]*font-size: 2rem;[^}]*font-weight: 400;/);
   assert.match(style, /\.secondary-button \{[\s\S]*font-family: 'DM Sans', sans-serif;[\s\S]*font-size: 0\.78rem;[\s\S]*font-weight: 500;/);
-  assert.match(style, /\.secondary-button--dropdown \{[^}]*position: relative;[^}]*padding-right: 2\.1rem;/);
+  assert.match(style, /\.secondary-button--dropdown \{[^}]*position: relative;[^}]*padding-right: 1\.8rem;/);
   assert.doesNotMatch(style, /\.picker-toggle/);
   assert.doesNotMatch(style, /\.calculator-reset-button/);
   assert.doesNotMatch(style, /\.prediction-group-title/);
   assert.doesNotMatch(style, /\.auth-logout-button|\.compact-button|\.account-task-count|\.account-task-league/);
   assert.doesNotMatch(style, /\.picker-toggle-chevron/);
-  assert.match(style, /#result-task-list > \.prediction-match-group \{[\s\S]*border-top: 1px solid var\(--border\);[\s\S]*padding-top: 18px;/);
+  assert.match(style, /#result-task-list > \.account-task-group \{[\s\S]*border-top: 1px solid var\(--border\);[\s\S]*padding-top: 18px;/);
   assert.match(style, /\.account-task-card\.is-actionable \{[\s\S]*border-color: var\(--accent\);/);
   assert.match(style, /\.account-task-card\.is-waiting[\s\S]*opacity: 0\.58/);
   assert.match(style, /\.result-entry-actions \{[\s\S]*align-items: center;[\s\S]*justify-content: space-between;/);
-  assert.match(style, /\.result-entry-summary \{[^}]*overflow-wrap: anywhere;[^}]*text-align: center;/);
+  assert.match(style, /\.result-entry-summary \{[^}]*line-height: 1\.35;[^}]*overflow-wrap: anywhere;/);
   assert.doesNotMatch(style, /\.result-entry-actions \{[^}]*border-top:/);
 });
