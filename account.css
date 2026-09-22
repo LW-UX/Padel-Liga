@@ -304,18 +304,6 @@
       margin-top: 4px;
     }
     .result-score-tiebreak[hidden] { display: none; }
-    .result-score-pair {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-    }
-    .result-score-colon {
-      color: var(--dim);
-      font-family: 'DM Mono', monospace;
-      font-size: 1.2rem;
-    }
-    .result-score-counter button:disabled { cursor: not-allowed; }
     .result-score-set[data-result-decision]:has(:disabled) { opacity: 0.38; }
     .result-entry-summary {
       flex: 1 1 180px;

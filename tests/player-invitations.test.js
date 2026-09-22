@@ -86,6 +86,10 @@ test('invitation link is generated only by the server-side function', () => {
   assert.doesNotMatch(edgeFunction, /inviteUserByEmail/);
   assert.doesNotMatch(client, /SUPABASE_SERVICE_ROLE_KEY|serviceRoleKey|generateLink/);
   assert.match(client, /Du bist zur Padel-Liga eingeladen/);
+  assert.match(client, /Hallo \$\{playerName\}, für dich wurde ein persönliches Spielerprofil vorbereitet/);
+  assert.match(client, /const safePlayerName = escapeHtml\(playerName\)/);
+  assert.match(client, /buildPlayerInviteCopy\(data\.actionLink, invitedPlayerName\)/);
+  assert.match(client, /buildPlayerInviteHtml\(data\.actionLink, invitedPlayerName\)/);
   assert.match(client, /Zugang einrichten\n\$\{actionLink\}/);
   assert.match(client, /deine anstehenden Partien und offenen Aufgaben sehen/);
   assert.match(client, /Dein Hanako-Leben-Squad/);

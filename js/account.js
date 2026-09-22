@@ -309,9 +309,9 @@
   }
 
   function renderScorePair(label, kind, setIndex, score = [], disabled = false, required = false) {
-    return `<div class="calculator-score-pair result-score-pair">
-      ${[1, 2].map((team, teamIndex) => `<div class="calculator-score-field result-score-counter">
-        <button class="calculator-step" type="button" tabindex="-1" data-result-score-step="-1" aria-label="${label}, Team ${team}: eins abziehen"${disabled ? ' disabled' : ''}>−</button>
+    return `<div class="score-counter-pair">
+      ${[1, 2].map((team, teamIndex) => `<div class="score-counter-field">
+        <button class="score-counter-step" type="button" tabindex="-1" data-result-score-step="-1" aria-label="${label}, Team ${team}: eins abziehen"${disabled ? ' disabled' : ''}>−</button>
         <input
           type="text"
           inputmode="numeric"
@@ -328,8 +328,8 @@
           aria-label="${label}, Team ${team}"
           ${disabled ? 'disabled' : ''}
         >
-        <button class="calculator-step" type="button" tabindex="-1" data-result-score-step="1" aria-label="${label}, Team ${team}: eins addieren"${disabled ? ' disabled' : ''}>+</button>
-      </div>`).join('<span class="result-score-colon">:</span>')}
+        <button class="score-counter-step" type="button" tabindex="-1" data-result-score-step="1" aria-label="${label}, Team ${team}: eins addieren"${disabled ? ' disabled' : ''}>+</button>
+      </div>`).join('<span class="score-counter-separator">:</span>')}
     </div>`;
   }
 
@@ -1198,10 +1198,10 @@
   const PLAYER_INVITE_SUBJECT = 'Du bist zur Padel-Liga eingeladen';
 
 
-  function buildPlayerInviteCopy(actionLink) {
+  function buildPlayerInviteCopy(actionLink, playerName) {
     return `Du bist zur Padel-Liga eingeladen
 
-Für dich wurde ein persönliches Spielerprofil vorbereitet. Lege über den folgenden Link dein eigenes Passwort fest und aktiviere deinen Zugang.
+Hallo ${playerName}, für dich wurde ein persönliches Spielerprofil vorbereitet. Lege über den folgenden Link dein eigenes Passwort fest und aktiviere deinen Zugang.
 
 Zugang einrichten
 ${actionLink}
@@ -1221,10 +1221,11 @@ Viele Grüße
 Dein Hanako-Leben-Squad`;
   }
 
-  function buildPlayerInviteHtml(actionLink) {
+  function buildPlayerInviteHtml(actionLink, playerName) {
     const safeLink = escapeHtml(actionLink);
+    const safePlayerName = escapeHtml(playerName);
     return `<p><strong>Du bist zur Padel-Liga eingeladen</strong></p>
-<p>Für dich wurde ein persönliches Spielerprofil vorbereitet. Lege über den folgenden Link dein eigenes Passwort fest und aktiviere deinen Zugang.</p>
+<p>Hallo ${safePlayerName}, für dich wurde ein persönliches Spielerprofil vorbereitet. Lege über den folgenden Link dein eigenes Passwort fest und aktiviere deinen Zugang.</p>
 <p><a href="${safeLink}"><strong>Zugang einrichten</strong></a></p>
 <p>Mit deinem Spielerzugang kannst du:</p>
 <ul>
@@ -1371,11 +1372,12 @@ Dein Hanako-Leben-Squad`;
             : 'assigned';
       }
       if (data?.status === 'prepared' && data?.actionLink) {
+        const invitedPlayerName = invitedPlayer?.display_name || 'Spieler';
         state.invitationDraft = {
           actionLink: data.actionLink,
           subject: PLAYER_INVITE_SUBJECT,
-          message: buildPlayerInviteCopy(data.actionLink),
-          html: buildPlayerInviteHtml(data.actionLink)
+          message: buildPlayerInviteCopy(data.actionLink, invitedPlayerName),
+          html: buildPlayerInviteHtml(data.actionLink, invitedPlayerName)
         };
         renderPlayerInviteDraft();
       }
@@ -1530,7 +1532,7 @@ Dein Hanako-Leben-Squad`;
 
   function initializeResultScorePair(input) {
     if (!input || String(input.value).trim() === '') return;
-    const pair = input.closest('.result-score-pair');
+    const pair = input.closest('.score-counter-pair');
     const inputs = [...(pair?.querySelectorAll('[data-result-score]') || [])];
     const changedTeamIndex = inputs.indexOf(input);
     const nextValues = window.PadelScoreInput.initializePairValues(inputs.map(field => field.value), changedTeamIndex);
@@ -2045,7 +2047,7 @@ Dein Hanako-Leben-Squad`;
         if (value === null) return;
         input.value = value;
         if (step > 0) initializeResultScorePair(input);
-        window.PadelScoreInput.setActivePair(input.closest('.result-score-pair'));
+        window.PadelScoreInput.setActivePair(input.closest('.score-counter-pair'));
         const trainingRound = input.closest('[data-training-round]');
         if (trainingRound) updateTrainingRoundSummary(trainingRound);
         else updateResultSummary(input.closest('[data-result-submit]'));
@@ -2129,7 +2131,7 @@ Dein Hanako-Leben-Squad`;
       if (event.target.matches('[data-result-score]')) {
         event.target.value = window.PadelScoreInput.sanitizeScoreValue(event.target.value);
         initializeResultScorePair(event.target);
-        window.PadelScoreInput.setActivePair(event.target.closest('.result-score-pair'));
+        window.PadelScoreInput.setActivePair(event.target.closest('.score-counter-pair'));
         const trainingRound = event.target.closest('[data-training-round]');
         if (trainingRound) updateTrainingRoundSummary(trainingRound);
         else updateResultSummary(event.target.closest('[data-result-submit]'));
@@ -2138,7 +2140,7 @@ Dein Hanako-Leben-Squad`;
     document.addEventListener('pointerdown', event => {
       const scoreControl = event.target.closest('[data-result-score], [data-result-score-step]');
       if (!scoreControl) return;
-      window.PadelScoreInput.setActivePair(scoreControl.closest('.result-score-pair'));
+      window.PadelScoreInput.setActivePair(scoreControl.closest('.score-counter-pair'));
       const input = event.target.closest('[data-result-score]');
       if (input && input.value) {
         input.value = '';
@@ -2149,7 +2151,7 @@ Dein Hanako-Leben-Squad`;
     });
     document.addEventListener('focusin', event => {
       const scoreControl = event.target.closest('[data-result-score], [data-result-score-step]');
-      if (scoreControl) window.PadelScoreInput.setActivePair(scoreControl.closest('.result-score-pair'));
+      if (scoreControl) window.PadelScoreInput.setActivePair(scoreControl.closest('.score-counter-pair'));
     });
     document.addEventListener('keydown', event => {
       const trainingPickerSearch = event.target.closest('[data-training-picker-search]');

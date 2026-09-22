@@ -357,17 +357,26 @@ test('official result entry validates regular sets and both tiebreak types', () 
 test('result counters start empty, initialize their pair, and highlight only while active', () => {
   assert.doesNotMatch(tippspielSource, /placeholder="0"/);
   assert.match(tippspielSource, /type="text"\s+inputmode="numeric"\s+pattern="\[0-9\]\*"\s+maxlength="2"\s+autocomplete="off"/);
-  assert.match(tippspielSource, /class="calculator-score-pair result-score-pair"/);
-  assert.match(tippspielSource, /class="calculator-score-field result-score-counter"/);
-  assert.match(tippspielSource, /class="calculator-step" type="button" tabindex="-1" data-result-score-step="-1"/);
-  assert.match(tippspielSource, /class="calculator-step" type="button" tabindex="-1" data-result-score-step="1"/);
-  assert.match(appSource, /class="calculator-step"\s+tabindex="-1"\s+data-calculator-step="-1"/);
-  assert.match(appSource, /class="calculator-step"\s+tabindex="-1"\s+data-calculator-step="1"/);
+  assert.match(tippspielSource, /class="score-counter-pair"/);
+  assert.match(tippspielSource, /class="score-counter-field"/);
+  assert.match(tippspielSource, /class="score-counter-step" type="button" tabindex="-1" data-result-score-step="-1"/);
+  assert.match(tippspielSource, /class="score-counter-step" type="button" tabindex="-1" data-result-score-step="1"/);
+  assert.match(tippspielSource, /class="score-counter-separator">:<\/span>/);
+  assert.match(appSource, /class="score-counter-pair"/);
+  assert.match(appSource, /class="score-counter-field"/);
+  assert.match(appSource, /class="score-counter-step"\s+tabindex="-1"\s+data-calculator-step="-1"/);
+  assert.match(appSource, /class="score-counter-step"\s+tabindex="-1"\s+data-calculator-step="1"/);
+  assert.match(appSource, /class="score-counter-separator">:<\/span>/);
   assert.match(appSource, /event\.key === 'Enter' && event\.target\.matches\('\[data-calculator-score\]'\)[\s\S]*?event\.preventDefault\(\)/);
   assert.match(tippspielSource, /event\.key === 'Enter' && event\.target\.matches\('\[data-result-score\]'\)[\s\S]*?event\.preventDefault\(\)/);
-  assert.match(styleSource, /\.calculator-score-pair\.calculator-score-pair-active \.calculator-score-field/);
-  assert.match(styleSource, /\.calculator-score-field input \{[\s\S]*?min-width: 0;[\s\S]*?min-height: 0;[\s\S]*?padding: 0;/);
-  assert.doesNotMatch(styleSource, /\.result-score-pair\.is-framed/);
+  assert.match(styleSource, /\.score-counter-pair\.score-counter-pair-active \.score-counter-field/);
+  assert.match(styleSource, /\.score-counter-field input \{[\s\S]*?min-width: 0;[\s\S]*?min-height: 0;[\s\S]*?padding: 0;/);
+  assert.match(styleSource, /\.score-counter-step:disabled \{[\s\S]*?cursor: not-allowed;/);
+  assert.match(styleSource, /@media \(max-width: 768px\)[\s\S]*?\.score-counter-pair \{[\s\S]*?display: grid;[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto minmax\(0, 1fr\);/);
+  assert.match(styleSource, /@media \(max-width: 768px\)[\s\S]*?\.score-counter-field \{[\s\S]*?grid-template-columns: 30% 40% 30%;[\s\S]*?width: 100%;/);
+  const counterSources = [tippspielSource, appSource, styleSource].join('\n');
+  assert.doesNotMatch(counterSources, /class="[^"]*(?:calculator-score-pair|calculator-score-field|calculator-step|result-score-pair|result-score-counter|result-score-colon)/);
+  assert.doesNotMatch(styleSource, /\.(?:calculator-score-pair|calculator-score-field|calculator-step|result-score-pair|result-score-counter|result-score-colon)(?![\w-])/);
   assert.doesNotMatch(tippspielSource, /<span>Satz [12]<\/span>/);
   assert.match(tippspielSource, /data-result-set-tiebreak/);
   assert.match(tippspielSource, />Satz-Tiebreak<\/span>/);
@@ -391,6 +400,39 @@ test('result counters start empty, initialize their pair, and highlight only whi
   second.value = '4';
   initializeResultScorePair(first);
   assert.equal(second.value, '4');
+
+  const priorClasses = new Set(['score-counter-pair-active']);
+  const nextClasses = new Set();
+  const classListFor = classes => ({
+    add: className => classes.add(className),
+    remove: className => classes.delete(className)
+  });
+  scoreInput.setActivePair(
+    { classList: classListFor(nextClasses) },
+    { querySelectorAll: selector => {
+      assert.equal(selector, '.score-counter-pair-active');
+      return [{ classList: classListFor(priorClasses) }];
+    } }
+  );
+  assert.equal(priorClasses.has('score-counter-pair-active'), false);
+  assert.equal(nextClasses.has('score-counter-pair-active'), true);
+});
+
+test('tab navigation focuses score inputs and skips plus and minus controls', () => {
+  const counterSources = [tippspielSource, appSource];
+  const stepButtons = counterSources.flatMap(source => (
+    [...source.matchAll(/<button\b[^>]*class="[^"]*\bscore-counter-step\b[^"]*"[^>]*>/g)]
+      .map(match => match[0])
+  ));
+  const scoreInputs = counterSources.flatMap(source => (
+    [...source.matchAll(/<input\b[^>]*data-(?:result|calculator)-score(?:\s|>)[^>]*>/g)]
+      .map(match => match[0])
+  ));
+
+  assert.equal(stepButtons.length, 4);
+  stepButtons.forEach(button => assert.match(button, /\btabindex="-1"/));
+  assert.equal(scoreInputs.length, 2);
+  scoreInputs.forEach(input => assert.doesNotMatch(input, /\btabindex="-1"/));
 });
 
 test('result entry exposes live validation messages beside the submit action', () => {

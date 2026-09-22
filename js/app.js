@@ -2189,7 +2189,7 @@ document.addEventListener('input', event => {
 document.addEventListener('pointerdown', event => {
   const calculatorScoreControl = event.target.closest('[data-calculator-score], [data-calculator-step]');
   if (calculatorScoreControl) {
-    setActiveCalculatorScorePair(calculatorScoreControl.closest('.calculator-score-pair'));
+    setActiveCalculatorScorePair(calculatorScoreControl.closest('.score-counter-pair'));
   } else if (!event.target.closest('[data-result-score], [data-result-score-step]')) {
     setActiveCalculatorScorePair(null);
   }
@@ -2219,7 +2219,7 @@ document.addEventListener('focusin', event => {
   if (helpIcon) positionHelpTooltip(helpIcon);
 
   const calculatorScoreControl = event.target.closest('[data-calculator-score], [data-calculator-step]');
-  if (calculatorScoreControl) setActiveCalculatorScorePair(calculatorScoreControl.closest('.calculator-score-pair'));
+  if (calculatorScoreControl) setActiveCalculatorScorePair(calculatorScoreControl.closest('.score-counter-pair'));
 
   const calculatorScoreInput = event.target.closest('[data-calculator-score]');
   if (calculatorScoreInput) {
@@ -4589,10 +4589,10 @@ function getActiveCalculatorPlayerIds() {
 }
 
 function renderCalculatorScoreInput(match, part, teamIndex, label, value) {
-  return `<div class="calculator-score-field" aria-label="${escapeHtml(formatMatchNumberLabel(match))} ${escapeHtml(label)}">
+  return `<div class="score-counter-field" aria-label="${escapeHtml(formatMatchNumberLabel(match))} ${escapeHtml(label)}">
     <button
       type="button"
-      class="calculator-step"
+      class="score-counter-step"
       tabindex="-1"
       data-calculator-step="-1"
       data-calculator-match-id="${escapeHtml(match.id)}"
@@ -4615,7 +4615,7 @@ function renderCalculatorScoreInput(match, part, teamIndex, label, value) {
     >
     <button
       type="button"
-      class="calculator-step"
+      class="score-counter-step"
       tabindex="-1"
       data-calculator-step="1"
       data-calculator-match-id="${escapeHtml(match.id)}"
@@ -4664,7 +4664,7 @@ function renderCalculatorProbabilityButton(match, teamIndex, probability) {
   const teamLabel = teamIndex === 0 ? 'Team 1' : 'Team 2';
   return `<button
     type="button"
-    class="calculator-probability-button mc-result-prob"
+    class="calculator-probability-button"
     data-calculator-preset-team="${teamIndex}"
     data-calculator-match-id="${escapeHtml(match.id)}"
     aria-label="${teamLabel} mit ${isSingleSetMatch(match) || getMatchStage(match) === 'final-four' ? '6 zu 2' : '6 zu 2, 6 zu 2'} als Sieger einsetzen"
@@ -4682,7 +4682,7 @@ function renderCalculatorLiveInner(match) {
       : getCalculatorSetStanding(match);
     const left = probability ? renderCalculatorProbabilityButton(match, 0, probability.team1) : '';
     const right = probability ? renderCalculatorProbabilityButton(match, 1, probability.team2) : '';
-    return `<div class="mc-result-row">${left}<div class="mc-score-main">${escapeHtml(standing)}</div>${right}</div>`;
+    return `<div class="calculator-probability">${left}<div class="mc-score-main">${escapeHtml(standing)}</div>${right}</div>`;
   }
 
   if (!probability) return '<div class="mc-score-main">—</div>';
@@ -4746,24 +4746,24 @@ function renderCalculatorMatchCard(match) {
       <div class="calculator-match-team calculator-match-team-2">${renderTeamPlayers(match.team2.spieler)}</div>
     </div>
     <div class="calculator-score-line ${singleSet ? 'calculator-single-set' : ''}">
-      <div class="calculator-score-pair">
+      <div class="score-counter-pair">
         ${renderCalculatorScoreInput(match, 'set1', 0, 'Team 1 Satz 1', set1[0])}
-        <span>:</span>
+        <span class="score-counter-separator">:</span>
         ${renderCalculatorScoreInput(match, 'set1', 1, 'Team 2 Satz 1', set1[1])}
       </div>
       ${singleSet ? '' : `<span class="calculator-set-separator">|</span>
-      <div class="calculator-score-pair">
+      <div class="score-counter-pair">
         ${renderCalculatorScoreInput(match, 'set2', 0, 'Team 1 Satz 2', set2[0])}
-        <span>:</span>
+        <span class="score-counter-separator">:</span>
         ${renderCalculatorScoreInput(match, 'set2', 1, 'Team 2 Satz 2', set2[1])}
       </div>`}
     </div>
     ${singleSet ? '' : `<div class="calculator-tiebreak-line" id="calculator-tiebreak-${match.id}" ${result.showTiebreak ? '' : 'hidden'}>
-      <span class="calculator-score-pair">
+      <div class="score-counter-pair">
         ${renderCalculatorScoreInput(match, 'tb', 0, 'Team 1 Match-Tiebreak', tb[0])}
-        <span>:</span>
+        <span class="score-counter-separator">:</span>
         ${renderCalculatorScoreInput(match, 'tb', 1, 'Team 2 Match-Tiebreak', tb[1])}
-      </span>
+      </div>
     </div>`}
   </article>`;
 }

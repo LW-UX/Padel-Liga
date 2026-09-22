@@ -90,10 +90,10 @@
   }
 
   function setActivePair(scorePair, root = document) {
-    root.querySelectorAll('.calculator-score-pair-active').forEach(element => {
-      element.classList.remove('calculator-score-pair-active');
+    root.querySelectorAll('.score-counter-pair-active').forEach(element => {
+      element.classList.remove('score-counter-pair-active');
     });
-    scorePair?.classList.add('calculator-score-pair-active');
+    scorePair?.classList.add('score-counter-pair-active');
   }
 
   window.PadelScoreInput = Object.freeze({
