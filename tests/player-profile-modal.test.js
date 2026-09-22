@@ -252,9 +252,10 @@ test('public player profile is a separate accessible dialog', () => {
   assert.doesNotMatch(app, /\(match\.partnerNames \|\| \[\]\)\.join\(' \/ '\)/);
   assert.match(html, /class="widget player-profile-widget player-profile-relationships"[\s\S]*id="player-profile-relationships"/);
   assert.match(app, /record\.matches >= 3/);
-  assert.match(app, /\['Lieblingspartner', leaders\.favoritePartner/);
-  assert.match(app, /\['Lieblingsgegner', leaders\.favoriteOpponent/);
-  assert.match(app, /\['Angstgegner', leaders\.fearedOpponent/);
+  assert.match(app, /\['Lieblingspartner', leaders\.favoritePartners/);
+  assert.match(app, /\['Lieblingsgegner', leaders\.favoriteOpponents/);
+  assert.match(app, /\['Angstgegner', leaders\.fearedOpponents/);
+  assert.match(app, /relationships\.map\(\(\[label, records, valueClass\]\)[\s\S]*records\.map\(record =>/);
   assert.match(html, /<dialog class="auth-dialog" id="auth-dialog"/);
   assert.doesNotMatch(html, /player-profile-cover|player-profile-cover-image/);
   assert.doesNotMatch(app, /cover\.webp|Coverbild von/);
@@ -428,14 +429,14 @@ test('profile relationship leaders require three matches and use win rate', () =
     { outcome: 'win', partnerNames: ['Partner C'], opponentNames: ['Gegner Y'] }
   ]);
 
-  assert.equal(leaders.favoritePartner.name, 'Partner A');
-  assert.equal(leaders.favoritePartner.matches, 3);
-  assert.equal(leaders.favoritePartner.wins, 2);
-  assert.equal(leaders.favoriteOpponent.name, 'Gegner X');
-  assert.equal(leaders.fearedOpponent.name, 'Gegner W');
-  assert.equal(leaders.fearedOpponent.draws, 1);
-  assert.notEqual(leaders.favoritePartner.name, 'Partner C');
-  assert.notEqual(leaders.favoriteOpponent.name, 'Gegner Y');
+  assert.equal(leaders.favoritePartners[0].name, 'Partner A');
+  assert.equal(leaders.favoritePartners[0].matches, 3);
+  assert.equal(leaders.favoritePartners[0].wins, 2);
+  assert.equal(leaders.favoriteOpponents[0].name, 'Gegner X');
+  assert.equal(leaders.fearedOpponents[0].name, 'Gegner W');
+  assert.equal(leaders.fearedOpponents[0].draws, 1);
+  assert.notEqual(leaders.favoritePartners[0].name, 'Partner C');
+  assert.notEqual(leaders.favoriteOpponents[0].name, 'Gegner Y');
 
   const neutralLeaders = evaluateRelationshipLeaders([
     { outcome: 'win', partnerNames: ['Partner 50'], opponentNames: ['Gegner 50'] },
@@ -444,9 +445,24 @@ test('profile relationship leaders require three matches and use win rate', () =
     { outcome: 'loss', partnerNames: ['Partner 50'], opponentNames: ['Gegner 50'] }
   ]);
 
-  assert.equal(neutralLeaders.favoritePartner, null);
-  assert.equal(neutralLeaders.favoriteOpponent, null);
-  assert.equal(neutralLeaders.fearedOpponent, null);
+  assert.equal(neutralLeaders.favoritePartners.length, 0);
+  assert.equal(neutralLeaders.favoriteOpponents.length, 0);
+  assert.equal(neutralLeaders.fearedOpponents.length, 0);
+});
+
+test('profile relationship leaders include every player tied on the leading win rate', () => {
+  const leaders = evaluateRelationshipLeaders([
+    { outcome: 'win', partnerNames: ['Partner A', 'Partner B'], opponentNames: ['Gegner X', 'Gegner Y'] },
+    { outcome: 'win', partnerNames: ['Partner A', 'Partner B'], opponentNames: ['Gegner X', 'Gegner Y'] },
+    { outcome: 'loss', partnerNames: ['Partner A', 'Partner B'], opponentNames: ['Gegner X', 'Gegner Y'] },
+    { outcome: 'loss', partnerNames: ['Partner C', 'Partner D'], opponentNames: ['Gegner W', 'Gegner V'] },
+    { outcome: 'loss', partnerNames: ['Partner C', 'Partner D'], opponentNames: ['Gegner W', 'Gegner V'] },
+    { outcome: 'win', partnerNames: ['Partner C', 'Partner D'], opponentNames: ['Gegner W', 'Gegner V'] }
+  ]);
+
+  assert.equal(leaders.favoritePartners.map(record => record.name).join(','), 'Partner A,Partner B');
+  assert.equal(leaders.favoriteOpponents.map(record => record.name).join(','), 'Gegner X,Gegner Y');
+  assert.equal(leaders.fearedOpponents.map(record => record.name).join(','), 'Gegner V,Gegner W');
 });
 
 test('completed training sets use separate half-weight wins and losses', () => {
@@ -456,9 +472,9 @@ test('completed training sets use separate half-weight wins and losses', () => {
     { outcome: 'draw', matchWeight: 1, winWeight: 0.5, lossWeight: 0.5, partnerNames: ['Partner Gewicht'], opponentNames: ['Gegner Gewicht'] }
   ]);
 
-  assert.equal(weightedLeaders.favoritePartner.matches, 3);
-  assert.equal(weightedLeaders.favoritePartner.wins, 2.5);
-  assert.equal(weightedLeaders.favoritePartner.losses, 0.5);
+  assert.equal(weightedLeaders.favoritePartners[0].matches, 3);
+  assert.equal(weightedLeaders.favoritePartners[0].wins, 2.5);
+  assert.equal(weightedLeaders.favoritePartners[0].losses, 0.5);
   assert.match(trainingCounterMigration, /training_regular_set_state\(team_one, team_two\) = 'complete'/);
   assert.match(trainingCounterMigration, /then \(private\.profile_training_metrics\(p_result_details\)\)\[1\] \* 0\.5::numeric/);
   assert.match(trainingCounterMigration, /'wins', coalesce\(\(select sum\(win_weight\) from scored_career\), 0\)/);

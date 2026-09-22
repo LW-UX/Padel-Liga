@@ -81,12 +81,16 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(pages[0], /id="viewer-profile-emoji"[^>]*aria-hidden="true">👤<\/span>/);
   assert.match(appScript, /function filterViewerOptions\(query = ''\)/);
   assert.match(appScript, /filterViewerOptions\(\);\s*searchInput\.focus\(\{ preventScroll: true \}\);/);
+  assert.match(appScript, /function keepViewerSearchVisible\(searchInput\)[\s\S]*targetOffset = Math\.min\(200,[\s\S]*window\.setTimeout\(alignInput, 350\)/);
+  assert.match(appScript, /searchInput\.focus\(\{ preventScroll: true \}\);\s*keepViewerSearchVisible\(searchInput\);/);
   assert.match(appScript, /function updateViewerProfileImage\(playerId = '', profileEmoji = '👤'\)/);
   assert.match(appScript, /assets\/players\/\$\{encodeURIComponent\(playerId\)\}\/profile\.webp/);
   assert.match(appScript, /searchInput\.setAttribute\('aria-expanded', 'false'\);\s*searchInput\.blur\(\);\s*searchInput\.disabled = true;/);
   assert.match(appScript, /data-viewer-search-text="\$\{escapeHtml\(option\.name\)\}/);
   assert.match(accountScript, /searchInput\.setAttribute\('aria-expanded', 'false'\);\s*searchInput\.blur\(\);\s*searchInput\.disabled = true;/);
   assert.match(accountScript, /filterTrainingPlayerOptions\(picker\);\s*searchInput\.focus\(\{ preventScroll: true \}\);/);
+  assert.match(accountScript, /function keepTrainingPickerSearchVisible\(searchInput\)[\s\S]*targetOffset = Math\.min\(200,[\s\S]*window\.setTimeout\(alignInput, 350\)/);
+  assert.match(accountScript, /searchInput\.focus\(\{ preventScroll: true \}\);\s*keepTrainingPickerSearchVisible\(searchInput\);/);
   assert.match(pages[1], /class="secondary-button secondary-button--dropdown"[^>]*data-season-toggle/);
   assert.match(style, /\.sh-title \{[^}]*font-size: 2rem;[^}]*font-weight: 400;/);
   assert.match(style, /\.secondary-button \{[\s\S]*font-family: 'DM Sans', sans-serif;[\s\S]*font-size: 0\.78rem;[\s\S]*font-weight: 500;/);
@@ -108,6 +112,11 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(style, /\.result-entry-actions \{[\s\S]*align-items: center;[\s\S]*justify-content: space-between;/);
   assert.match(style, /\.result-entry-summary \{[^}]*line-height: 1\.35;[^}]*overflow-wrap: anywhere;/);
   assert.match(style, /\.result-entry-form :where\(input, select\),[\s\S]*\.training-form :where\(input, select\) \{/);
+  assert.match(style, /\.training-form :where\(input, select\) \{[\s\S]*min-width: 0;[\s\S]*max-width: 100%;/);
+  assert.match(style, /input:is\(\[type="date"\], \[type="time"\]\) \{[\s\S]*appearance: none;[\s\S]*background-position: right 0\.7rem center;[\s\S]*text-align: left;/);
+  assert.match(style, /input\[type="date"\] \{[\s\S]*background-image: url\("data:image\/svg\+xml/);
+  assert.match(style, /input\[type="time"\] \{[\s\S]*background-image: url\("data:image\/svg\+xml/);
+  assert.match(style, /::-webkit-calendar-picker-indicator \{[\s\S]*opacity: 0;/);
   assert.doesNotMatch(style, /\.training-form input,\s*\.training-form select \{/);
   assert.doesNotMatch(style, /\.result-entry-actions \{[^}]*border-top:/);
 });

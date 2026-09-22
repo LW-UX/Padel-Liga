@@ -837,6 +837,32 @@
     if (emptyState) emptyState.hidden = visibleOptions > 0;
   }
 
+  function keepTrainingPickerSearchVisible(searchInput) {
+    if (!searchInput || !window.matchMedia('(max-width: 768px)').matches) return;
+    const alignInput = () => {
+      if (document.activeElement !== searchInput) return;
+      const viewportTop = window.visualViewport?.offsetTop || 0;
+      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      const targetOffset = Math.min(200, Math.max(80, viewportHeight * 0.4));
+      const scrollDelta = searchInput.getBoundingClientRect().top - viewportTop - targetOffset;
+      if (Math.abs(scrollDelta) < 8) return;
+
+      let scrollParent = searchInput.parentElement;
+      while (scrollParent && scrollParent !== document.body) {
+        const { overflowY } = window.getComputedStyle(scrollParent);
+        if (/(auto|scroll|overlay)/.test(overflowY)
+          && scrollParent.scrollHeight > scrollParent.clientHeight) break;
+        scrollParent = scrollParent.parentElement;
+      }
+
+      const scrollTarget = scrollParent && scrollParent !== document.body ? scrollParent : window;
+      scrollTarget.scrollBy({ top: scrollDelta, behavior: 'smooth' });
+    };
+
+    requestAnimationFrame(alignInput);
+    window.setTimeout(alignInput, 350);
+  }
+
   function setTrainingPickerValue(picker, value) {
     if (!picker) return;
     const input = picker.querySelector('input[type="hidden"]');
@@ -871,6 +897,7 @@
         searchInput.value = '';
         filterTrainingPlayerOptions(picker);
         searchInput.focus({ preventScroll: true });
+        keepTrainingPickerSearchVisible(searchInput);
       } else {
         searchInput.blur();
         searchInput.disabled = true;

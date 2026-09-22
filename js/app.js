@@ -952,6 +952,32 @@ function filterViewerOptions(query = '') {
   if (emptyState) emptyState.hidden = visibleOptions > 0;
 }
 
+function keepViewerSearchVisible(searchInput) {
+  if (!searchInput || !isMobileViewport()) return;
+  const alignInput = () => {
+    if (document.activeElement !== searchInput) return;
+    const viewportTop = window.visualViewport?.offsetTop || 0;
+    const viewportHeight = window.visualViewport?.height || window.innerHeight;
+    const targetOffset = Math.min(200, Math.max(80, viewportHeight * 0.4));
+    const scrollDelta = searchInput.getBoundingClientRect().top - viewportTop - targetOffset;
+    if (Math.abs(scrollDelta) < 8) return;
+
+    let scrollParent = searchInput.parentElement;
+    while (scrollParent && scrollParent !== document.body) {
+      const { overflowY } = window.getComputedStyle(scrollParent);
+      if (/(auto|scroll|overlay)/.test(overflowY)
+        && scrollParent.scrollHeight > scrollParent.clientHeight) break;
+      scrollParent = scrollParent.parentElement;
+    }
+
+    const scrollTarget = scrollParent && scrollParent !== document.body ? scrollParent : window;
+    scrollTarget.scrollBy({ top: scrollDelta, behavior: 'smooth' });
+  };
+
+  requestAnimationFrame(alignInput);
+  window.setTimeout(alignInput, 350);
+}
+
 function toggleViewerMenu() {
   const picker = document.getElementById('viewer-picker');
   const isOpen = picker.classList.toggle('open');
@@ -964,6 +990,7 @@ function toggleViewerMenu() {
     searchInput.value = '';
     filterViewerOptions();
     searchInput.focus({ preventScroll: true });
+    keepViewerSearchVisible(searchInput);
   } else {
     closeViewerMenu();
   }
@@ -1715,11 +1742,17 @@ function getPlayerProfileRelationshipLeaders(matches = []) {
     left.name.localeCompare(right.name, 'de');
   const eligiblePartners = eligible(partners).sort(bestFirst);
   const eligibleOpponents = eligible(opponents);
+  const tiedLeaders = (records, qualifies, compare) => {
+    const qualified = records.filter(qualifies).sort(compare);
+    if (!qualified.length) return [];
+    const leadingWinRate = qualified[0].winRate;
+    return qualified.filter(record => record.winRate === leadingWinRate);
+  };
 
   return {
-    favoritePartner: eligiblePartners.filter(record => record.winRate > 0.5)[0] || null,
-    favoriteOpponent: eligibleOpponents.filter(record => record.winRate > 0.5).sort(bestFirst)[0] || null,
-    fearedOpponent: eligibleOpponents.filter(record => record.winRate < 0.5).sort(worstFirst)[0] || null
+    favoritePartners: tiedLeaders(eligiblePartners, record => record.winRate > 0.5, bestFirst),
+    favoriteOpponents: tiedLeaders(eligibleOpponents, record => record.winRate > 0.5, bestFirst),
+    fearedOpponents: tiedLeaders(eligibleOpponents, record => record.winRate < 0.5, worstFirst)
   };
 }
 
@@ -1728,10 +1761,10 @@ function renderPlayerProfileRelationships(matches = []) {
   if (!target) return;
   const leaders = getPlayerProfileRelationshipLeaders(matches);
   const relationships = [
-    ['Lieblingspartner', leaders.favoritePartner, 'pos'],
-    ['Lieblingsgegner', leaders.favoriteOpponent, 'pos'],
-    ['Angstgegner', leaders.fearedOpponent, 'neg']
-  ].filter(([, record]) => record);
+    ['Lieblingspartner', leaders.favoritePartners, 'pos'],
+    ['Lieblingsgegner', leaders.favoriteOpponents, 'pos'],
+    ['Angstgegner', leaders.fearedOpponents, 'neg']
+  ].filter(([, records]) => records.length);
 
   if (!relationships.length) {
     target.innerHTML = '<div class="empty-state">Auswertung ab 3 Partien und einer Quote über beziehungsweise unter 50 %.</div>';
@@ -1749,14 +1782,16 @@ function renderPlayerProfileRelationships(matches = []) {
   };
 
   target.innerHTML = `<div class="stat-shift-groups">
-    ${relationships.map(([label, record, valueClass]) => `<div class="stat-shift-group">
+    ${relationships.map(([label, records, valueClass]) => `<div class="stat-shift-group">
       <div class="stat-shift-label">${label}</div>
-      <div class="stat-shift-item">
-        <div class="stat-shift-head">
-          <span class="stat-shift-name">${escapeHtml(record.name)}</span>
-          <span class="stat-shift-value ${valueClass}">${Math.round(record.winRate * 100)} %</span>
-        </div>
-        <div class="stat-meta-line">${escapeHtml(formatRecord(record))}</div>
+      <div class="stat-shift-list">
+        ${records.map(record => `<div class="stat-shift-item">
+          <div class="stat-shift-head">
+            <span class="stat-shift-name">${escapeHtml(record.name)}</span>
+            <span class="stat-shift-value ${valueClass}">${Math.round(record.winRate * 100)} %</span>
+          </div>
+          <div class="stat-meta-line">${escapeHtml(formatRecord(record))}</div>
+        </div>`).join('')}
       </div>
     </div>`).join('')}
   </div>`;
