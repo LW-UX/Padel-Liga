@@ -71,12 +71,17 @@ test('invitation preparation is restricted to admins and preserves unique player
   assert.match(client, /Konto vorhanden/);
   assert.match(client, /Einladung offen/);
   assert.match(client, /E-Mail hinterlegt/);
+  assert.doesNotMatch(client, /option\.disabled = player\.account_status === 'active'/);
+  assert.match(client, /state\.invitationPlayers\.some\(player => player\.player_id === selectedValue\)/);
 });
 
 test('invitation link is generated only by the server-side function', () => {
   assert.match(edgeFunction, /Deno\.env\.get\("SUPABASE_SERVICE_ROLE_KEY"\)/);
   assert.match(edgeFunction, /userClient\.rpc\([\s\S]*"save_player_email_assignment"/);
   assert.match(edgeFunction, /serviceClient\.auth\.admin\.generateLink/);
+  assert.match(edgeFunction, /preparation\?\.status === "linked"[\s\S]*\? "recovery"/);
+  assert.match(edgeFunction, /accountStatus: preparation\?\.status === "linked" \? "active" : "pending"/);
+  assert.doesNotMatch(edgeFunction, /if \(preparation\?\.status === "linked"\) return jsonResponse/);
   assert.match(edgeFunction, /linkData\?\.properties\?\.action_link/);
   assert.doesNotMatch(edgeFunction, /inviteUserByEmail/);
   assert.doesNotMatch(client, /SUPABASE_SERVICE_ROLE_KEY|serviceRoleKey|generateLink/);

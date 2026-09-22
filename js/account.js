@@ -1214,10 +1214,9 @@ Dein Hanako-Leben-Squad`;
           ? ' · Einladung offen'
           : player.account_status === 'assigned' ? ' · E-Mail hinterlegt' : '';
       const option = new Option(`${player.display_name}${suffix}`, player.player_id);
-      option.disabled = player.account_status === 'active';
       select.add(option);
     });
-    if (state.invitationPlayers.some(player => player.player_id === selectedValue && player.account_status !== 'active')) {
+    if (state.invitationPlayers.some(player => player.player_id === selectedValue)) {
       select.value = selectedValue;
     }
   }
@@ -1290,7 +1289,9 @@ Dein Hanako-Leben-Squad`;
       if (invitedPlayer) {
         invitedPlayer.account_status = data?.status === 'linked'
           ? 'active'
-          : action === 'prepare' ? 'pending' : 'assigned';
+          : action === 'prepare'
+            ? (data?.accountStatus === 'active' ? 'active' : 'pending')
+            : 'assigned';
       }
       if (data?.status === 'prepared' && data?.actionLink) {
         state.invitationDraft = {

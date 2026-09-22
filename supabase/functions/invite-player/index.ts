@@ -39,7 +39,6 @@ Deno.serve(async (request) => {
       { p_player_id: playerId, p_email: email },
     );
     if (preparationError) return jsonResponse({ error: preparationError.message }, 403);
-    if (preparation?.status === "linked") return jsonResponse({ status: "linked" });
 
     const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -48,7 +47,9 @@ Deno.serve(async (request) => {
     const redirectUrl = new URL(siteUrl);
     redirectUrl.searchParams.set("auth", "invite");
 
-    const linkType = preparation?.status === "reinvite" ? "magiclink" : "invite";
+    const linkType = preparation?.status === "linked"
+      ? "recovery"
+      : preparation?.status === "reinvite" ? "magiclink" : "invite";
     const { data: linkData, error: invitationError } = await serviceClient.auth.admin.generateLink({
       type: linkType,
       email,
@@ -59,7 +60,11 @@ Deno.serve(async (request) => {
     const actionLink = linkData?.properties?.action_link;
     if (!actionLink) return jsonResponse({ error: "Der Einladungslink konnte nicht erstellt werden." }, 500);
 
-    return jsonResponse({ status: "prepared", actionLink });
+    return jsonResponse({
+      status: "prepared",
+      actionLink,
+      accountStatus: preparation?.status === "linked" ? "active" : "pending",
+    });
   } catch (error) {
     return jsonResponse({
       error: error instanceof Error ? error.message : "Die Einladung konnte nicht vorbereitet werden.",
