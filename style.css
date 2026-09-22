@@ -2631,6 +2631,9 @@
         width: min(260px, calc(100vw - 1.5rem));
         max-height: 420px;
       }
+      .viewer-split-button .secondary-button {
+      min-width: 90px;
+      }
       main { padding-left: 0.75rem; padding-right: 0.75rem; }
       .sh-with-control {
         align-items: flex-start;
