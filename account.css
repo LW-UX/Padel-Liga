@@ -19,8 +19,8 @@
     }
     .auth-button:hover { filter: brightness(1.08); }
     .auth-button.is-authenticated {
-      width: 38px;
-      min-width: 38px;
+      width: 36px;
+      min-width: 36px;
       padding: 0;
     }
     .auth-button.is-authenticated.secondary-button {
@@ -268,11 +268,9 @@
       font-size: 0.85rem;
       font-weight: 600;
     }
-    .result-entry-form input,
-    .result-entry-form select,
+    .result-entry-form :where(input, select),
     .match-schedule-form input,
-    .training-form input,
-    .training-form select {
+    .training-form :where(input, select) {
       width: 70%;
       min-height: 40px;
       border: 1px solid var(--border);
@@ -476,7 +474,7 @@
       #result-task-list > .account-task-group,
       #result-task-list .account-task-list { min-width: 0; }
       .result-entry-timing { grid-template-columns: 1fr 1fr; }
-      .result-entry-form input, .result-entry-form select, .match-schedule-form input, .training-form input, .training-form select { width: 100%; }
+      .result-entry-form :where(input, select), .match-schedule-form input, .training-form :where(input, select) { width: 100%; }
       .result-entry-timing label { min-width: 0; flex-direction: column; align-items: stretch; gap: 4px; }
       .account-section-heading { align-items: center; }
       .account-task-matchup strong { display: flex; flex-wrap: wrap; }
@@ -501,4 +499,3 @@
       .training-form-meta label { display: grid; gap: 4px; }
       .training-picker-toggle { min-width: 0; }
     }
-

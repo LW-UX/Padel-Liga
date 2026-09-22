@@ -363,16 +363,16 @@
       position: absolute;
       z-index: 20;
       top: 12px;
-      right: 12px;
-      width: 40px;
-      height: 40px;
+      right: 24px;
+      width: 32px;
+      height: 32px;
       border: 1px solid var(--border);
       border-radius: 50%;
       background: rgba(7,8,12,0.86);
       color: var(--text);
       cursor: pointer;
       padding: 0 0 4px;
-      font-size: 1.7rem;
+      font-size: 1.3rem;
       font-weight: 300;
     }
     .modal-close-button:hover { color: var(--accent); border-color: var(--accent); }
@@ -483,7 +483,7 @@
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
     }
-    .player-profile-stat-fraction { font-size: 0.58em; }
+    .player-profile-stat-fraction { font-size: 1rem; }
     .player-profile-stat {
       border-right: 1px solid var(--border);
       padding: 12px 12px 10px;
@@ -553,16 +553,54 @@
     }
     .player-profile-participation:last-child { border-bottom: 0; }
     .player-profile-participation-name { font-size: 1rem; font-weight: 500; }
-    .player-profile-participation-rank {
-      grid-row: 1 / span 2;
-      grid-column: 2;
+    .player-profile-participation-status {
+      margin-left: 6px;
+      color: var(--dim);
+      font-size: 0.85rem;
+      font-style: italic;
+      font-weight: 400;
+    }
+    .player-profile-season-participation { display: block; }
+    .player-profile-participation-phases {
+      display: grid;
+      gap: 12px;
+      margin: 4px 0 0;
+    }
+    .player-profile-participation-phase {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+    }
+    .player-profile-participation-phase-content { min-width: 0; }
+    .player-profile-participation-phase-heading {
+      margin-bottom: 2px;
+      color: var(--dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .player-profile-participation-phase-result {
+      align-self: center;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .player-profile-participation-phase-result.player-profile-participation-placement {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 2rem;
+      font-weight: 400;
       line-height: 1;
     }
-    .player-profile-participation-rank.r1 { color: var(--gold); }
-    .player-profile-participation-rank.r2 { color: var(--silver); }
-    .player-profile-participation-rank.r3 { color: var(--bronze); }
+    .player-profile-participation-phase-result.r1 { color: var(--gold); }
+    .player-profile-participation-phase-result.r2 { color: var(--silver); }
+    .player-profile-participation-phase-result.r3 { color: var(--bronze); }
+    .player-profile-training-participation { --profile-season-color: var(--dim); }
+    .player-profile-training-participation .stat-meta-line { grid-column: 1 / -1; }
     #player-profile-relationships { margin-top: 18px; }
     .player-profile-relationships .stat-shift-value { font-family: 'DM Mono', monospace; }
     .player-profile-match-list { margin-top: 8px; }
@@ -685,7 +723,7 @@
       .player-profile-content { grid-template-columns: 1fr; gap: 12px; }
       .player-profile-content > .player-profile-widget { grid-column: 1; }
       .player-profile-hero-block { margin: -12px -12px 0; }
-      .modal-close-button { top: 16px; right: 16px; width: 44px; height: 44px; }
+      .modal-close-button { top: 16px; right: 16px; width: 32px; height: 32px; }
       .player-profile-identity-row {
         grid-template-columns: 116px minmax(0, 1fr);
         gap: 20px;
@@ -2061,7 +2099,7 @@
       border-radius: 999px;
       background: color-mix(in srgb, var(--surface) 88%, transparent);
       font-size: 0.7rem;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.04em;
       text-align: center;
     }
 

@@ -240,6 +240,18 @@
     return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   }
 
+  const UNCHANGED_PROPOSAL_MESSAGE = 'Das entspricht dem bestehenden Vorschlag. Bitte bestätige das Ergebnis stattdessen.';
+
+  function isUnchangedResultProposal(task, resultDetails, actualSets, winner, playedOn, playedTime) {
+    if (!task || task.task_type !== 'review') return false;
+    const proposedTime = getBerlinMatchAtParts(task.proposed_match_at);
+    return String(task.proposed_result || '').trim() === String(resultDetails || '').trim()
+      && String(task.proposed_sets || '') === String(actualSets || '')
+      && Number(task.proposed_winner) === Number(winner)
+      && proposedTime.date === playedOn
+      && proposedTime.time === String(playedTime || '').slice(0, 5);
+  }
+
   function getTaskNumber(task) {
     return task.match_id.match(/\d+$/)?.[0] || task.match_id;
   }
@@ -1498,6 +1510,15 @@ Dein Hanako-Leben-Squad`;
     const resultIsOfficialImmediately = state.profile?.app_role === 'admin';
     try {
       const { resultDetails, actualSets, winner } = readResultScore(form);
+      const task = state.resultTasks.find(item => String(item.match_id) === String(form.dataset.resultSubmit));
+      if (isUnchangedResultProposal(task, resultDetails, actualSets, winner, playedOn, playedTime)) {
+        const summary = form.querySelector('[data-result-summary]');
+        if (summary) {
+          summary.textContent = UNCHANGED_PROPOSAL_MESSAGE;
+          summary.className = 'result-entry-summary is-invalid';
+        }
+        return;
+      }
       button.disabled = true;
       setAuthMessage('Ergebnis wird gespeichert …');
       const { error } = await state.client.rpc('submit_match_result', {
@@ -1538,6 +1559,20 @@ Dein Hanako-Leben-Squad`;
     if (pairing === 'ac_bd') return [[playerIds[0], playerIds[2]], [playerIds[1], playerIds[3]]];
     if (pairing === 'ad_bc') return [[playerIds[0], playerIds[3]], [playerIds[1], playerIds[2]]];
     return [[playerIds[0], playerIds[1]], [playerIds[2], playerIds[3]]];
+  }
+
+  function getTrainingProposalSignature(proposal) {
+    return JSON.stringify({
+      playedOn: String(proposal?.played_on || proposal?.playedOn || ''),
+      displayTime: String(proposal?.display_time || proposal?.displayTime || '').slice(0, 5),
+      playerIds: [...(proposal?.player_ids || proposal?.playerIds || [])].map(String).sort(),
+      rounds: (proposal?.rounds || []).map(round => ({
+        teamOneIds: [...(round.team_one_ids || round.teamOneIds || [])].map(String).sort(),
+        teamTwoIds: [...(round.team_two_ids || round.teamTwoIds || [])].map(String).sort(),
+        resultFormat: String(round.result_format || round.resultFormat || ''),
+        resultDetails: String(round.result_details || round.resultDetails || '').trim()
+      }))
+    });
   }
 
   function getTrainingSetData(round, setIndex) {
@@ -1746,6 +1781,7 @@ Dein Hanako-Leben-Squad`;
           team_one_ids: teamOne,
           team_two_ids: teamTwo,
           result_format: result.resultFormat,
+          result_details: result.resultDetails,
           sets: result.sets,
           match_tiebreak: result.matchTiebreak
         };
@@ -1755,8 +1791,6 @@ Dein Hanako-Leben-Squad`;
       return;
     }
     const button = form.querySelector('[type="submit"]');
-    button.disabled = true;
-    setTrainingMessage('Training wird gespeichert …', '', form);
     const editingTrainingId = form.dataset.trainingAlternative || null;
     const rpcName = editingTrainingId ? 'replace_pending_training_session' : 'create_training_session';
     const payload = {
@@ -1766,6 +1800,21 @@ Dein Hanako-Leben-Squad`;
       p_rounds: rounds
     };
     if (editingTrainingId) payload.p_session_id = Number(editingTrainingId);
+    const editedTraining = editingTrainingId
+      ? state.trainingTasks.find(item => Number(item.session_id) === Number(editingTrainingId))
+      : null;
+    if (editedTraining && getTrainingProposalSignature(editedTraining) === getTrainingProposalSignature({
+      playedOn: payload.p_played_on,
+      displayTime: payload.p_display_time,
+      playerIds,
+      rounds
+    })) {
+      setTrainingMessage(UNCHANGED_PROPOSAL_MESSAGE, 'error', form);
+      button.disabled = false;
+      return;
+    }
+    button.disabled = true;
+    setTrainingMessage('Training wird gespeichert …', '', form);
     try {
       const { error } = await state.client.rpc(rpcName, payload);
       if (error) throw error;

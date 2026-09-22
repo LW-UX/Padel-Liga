@@ -133,6 +133,57 @@ function evaluateParticipationOrder(participations, seasons) {
   return JSON.parse(JSON.stringify(context.result));
 }
 
+function evaluateTrainingParticipation(matches) {
+  const functionSource = app.match(
+    /function getPlayerProfileTrainingParticipation\(matches = \[\]\) \{[\s\S]*?\n\}/
+  );
+  assert.ok(functionSource, 'profile training participation helper should be present');
+  const classifyRegularSet = (left, right) => {
+    const first = Number(left);
+    const second = Number(right);
+    const isComplete = (Math.max(first, second) === 6 && Math.min(first, second) <= 4)
+      || (Math.max(first, second) === 7 && Math.min(first, second) >= 5 && Math.min(first, second) <= 6);
+    return { state: isComplete ? 'complete' : 'partial' };
+  };
+  const context = {
+    matches,
+    result: null,
+    window: { PadelScoreInput: { classifyRegularSet } }
+  };
+  vm.createContext(context);
+  vm.runInContext(
+    `${functionSource[0]}\nresult = getPlayerProfileTrainingParticipation(matches);`,
+    context
+  );
+  return JSON.parse(JSON.stringify(context.result));
+}
+
+function evaluateFinalRoundOverview(matches, playerId) {
+  const functionSource = app.match(
+    /function getPlayerProfileSeasonMatchTeam\(match, playerId\) \{[\s\S]*?(?=\nasync function enrichPlayerProfileSeasonPhases)/
+  );
+  assert.ok(functionSource, 'profile season phase helpers should be present');
+  const context = {
+    matches,
+    playerId,
+    result: null,
+    getMatchStage: match => match.stage,
+    getProfileRegularGameTotals: resultDetails => {
+      const regularResult = String(resultDetails || '').replace(/\([^)]*\)/g, '');
+      return [...regularResult.matchAll(/(\d+)\s*:\s*(\d+)/g)]
+        .map(score => [Number(score[1]), Number(score[2])])
+        .filter(([left, right]) => left <= 7 && right <= 7)
+        .reduce((totals, [left, right]) => [totals[0] + left, totals[1] + right], [0, 0]);
+    }
+  };
+  vm.createContext(context);
+  vm.runInContext(
+    `${functionSource[0]}\nresult = getPlayerProfileFinalRoundOverview({ matches }, playerId);`,
+    context
+  );
+  return JSON.parse(JSON.stringify(context.result));
+}
+
 function evaluateAchievementHighlights(achievements) {
   const limitSource = app.match(/const PLAYER_PROFILE_ACHIEVEMENT_LIMIT = 4;/);
   const functionSource = app.match(
@@ -259,6 +310,85 @@ test('profile participations show the newest season first', () => {
     ['winter-2026', '2026']
   );
   assert.deepEqual(participations.map(participation => participation.seasonId), ['2026', 'winter-2026']);
+});
+
+test('profile participation overview ends with weighted training statistics', () => {
+  const participationStatsRenderer = app.match(/function renderPlayerProfileParticipationStats[\s\S]*?(?=\nfunction renderPlayerProfileParticipations)/)?.[0] || '';
+  assert.match(participationStatsRenderer, /const matches = escapeHtml\(formatProfileMatchCount\(participation\.matches\)\)/);
+  assert.match(participationStatsRenderer, /const middle = escapeHtml\(formatProfileMatchCount\(middleValue\)\)/);
+  assert.doesNotMatch(participationStatsRenderer, /renderProfileMatchCount/);
+  assert.match(app, /renderPlayerProfileParticipationStats\(participation, 'Punkte', participation\.points\)/);
+  assert.match(app, /const trainingRow = `[\s\S]*?Trainings[\s\S]*?renderPlayerProfileParticipationStats\(training, 'Siege', training\.wins\)/);
+  assert.match(app, /target\.innerHTML = seasonRows \+ trainingRow/);
+  assert.match(style, /\.player-profile-training-participation \{ --profile-season-color: var\(--dim\); \}/);
+  assert.match(style, /\.player-profile-training-participation \.stat-meta-line \{ grid-column: 1 \/ -1; \}/);
+  assert.deepEqual(evaluateTrainingParticipation([
+    {
+      kind: 'training', matchWeight: 1, winWeight: 1, team: 1,
+      resultDetails: '6:4, 4:6 – 10:7'
+    },
+    {
+      kind: 'training', matchWeight: 0.5, winWeight: 0, team: 2,
+      resultDetails: '6:2, 4:3'
+    },
+    { kind: 'league', matchWeight: 1, winWeight: 1, team: 1, resultDetails: '6:0, 6:0' }
+  ]), { matches: 1.5, wins: 1, gameDiff: -4 });
+});
+
+test('profile season overview separates league and qualified final-round results', () => {
+  assert.match(app, /const leagueRank = participation\.rank \? `\$\{participation\.rank\}\.` : '—'/);
+  assert.match(app, /player-profile-participation-phase-content">[\s\S]*?player-profile-participation-phase-heading">Ligaphase<\/div>[\s\S]*?renderPlayerProfileParticipationStats\(participation, 'Punkte', participation\.points\)[\s\S]*?player-profile-participation-phase-result player-profile-participation-placement \$\{leagueRankClass\}">\$\{leagueRank\}/);
+  assert.match(app, /const finalRoundLabel = finalRound\?\.placement \? `\$\{finalRound\.label\}\.` : finalRound\?\.label/);
+  assert.match(app, /player-profile-participation-phase-heading">Finalrunde<\/div>[\s\S]*?renderPlayerProfileParticipationStats\(finalRound, 'Siege', finalRound\.wins\)[\s\S]*?player-profile-participation-phase-result[\s\S]*?\$\{escapeHtml\(finalRoundLabel\)\}/);
+  assert.match(app, /participation\.isActive \? '<em class="player-profile-participation-status">Laufend<\/em>' : ''/);
+  assert.match(style, /\.player-profile-participation-status \{[\s\S]*?color: var\(--dim\);[\s\S]*?font-size: 0\.72rem;[\s\S]*?font-style: italic;/);
+  assert.match(style, /\.player-profile-participation-phase \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto;[\s\S]*?align-items: center;/);
+  assert.match(style, /\.player-profile-participation-phase-result\.player-profile-participation-placement \{[\s\S]*?font-family: 'Bebas Neue', sans-serif;[\s\S]*?font-size: 2rem;[\s\S]*?line-height: 1;/);
+  assert.match(app, /renderPlayerProfileParticipationStats\(participation, 'Punkte', participation\.points\)/);
+  assert.match(app, /renderPlayerProfileParticipationStats\(finalRound, 'Siege', finalRound\.wins\)/);
+  assert.match(app, /getPlayerProfileSeasonPayload\(participation\.seasonId\)/);
+
+  const team = (teamOne, teamTwo) => ({
+    team1: { playerIds: teamOne },
+    team2: { playerIds: teamTwo }
+  });
+  const matches = [
+    { id: 'semi-1', stage: 'semifinal', winner: 1, result: '6:0, 6:0', ...team(['p1', 'p2'], ['p5', 'p6']) },
+    { id: 'semi-2', stage: 'semifinal', winner: 1, result: '6:2, 6:2', ...team(['p3', 'p4'], ['p7', 'p8']) },
+    { id: 'final-1', stage: 'final-four', matchday: 2, winner: 1, result: '6:3', ...team(['p1', 'p2'], ['p3', 'p4']) },
+    { id: 'final-2', stage: 'final-four', matchday: 2, winner: 1, result: '6:4', ...team(['p1', 'p4'], ['p2', 'p3']) },
+    { id: 'final-3', stage: 'final-four', matchday: 2, winner: 2, result: '2:6', ...team(['p1', 'p3'], ['p2', 'p4']) }
+  ];
+
+  assert.deepEqual(evaluateFinalRoundOverview(matches, 'p1'), {
+    matches: 2.5,
+    wins: 2,
+    gameDiff: 13,
+    label: '3',
+    placement: 3,
+    stage: 'final-four'
+  });
+  assert.deepEqual(evaluateFinalRoundOverview([
+    { id: 'semi-open', stage: 'semifinal', winner: null, result: null, ...team(['p7', 'p8'], ['p1', 'p2']) }
+  ], 'p1'), {
+    matches: 0,
+    wins: 0,
+    gameDiff: 0,
+    label: 'HF',
+    placement: null,
+    stage: 'semifinal'
+  });
+  assert.deepEqual(evaluateFinalRoundOverview([
+    { id: 'final-open', stage: 'final-four', winner: null, result: null, ...team(['p1', 'p2'], ['p3', 'p4']) }
+  ], 'p1'), {
+    matches: 0,
+    wins: 0,
+    gameDiff: 0,
+    label: 'F4',
+    placement: null,
+    stage: 'final-four'
+  });
+  assert.equal(evaluateFinalRoundOverview(matches, 'p9'), null);
 });
 
 test('player names open profiles by stable id and team cards no longer apply presets', () => {

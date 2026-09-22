@@ -18,6 +18,7 @@ let playerProfileChart = null;
 let playerProfileData = null;
 let playerProfileExpanded = false;
 let playerProfileRequestId = 0;
+let playerProfileSeasonPayloadCache = new Map();
 let statisticsMode = 'season';
 let allTimeStatisticsData = null;
 let allTimeStatisticsPromise = null;
@@ -848,6 +849,7 @@ async function refreshActiveSeasonView() {
       calculatorAutoTip = false;
       allTimeStatisticsData = null;
       allTimeStatisticsPromise = null;
+      playerProfileSeasonPayloadCache.clear();
       statisticsPlayerFilters.set('season', new Set(PADEL_DATA.players.map(player => player.id)));
       statisticsPlayerFilters.delete('all-time');
       if (statisticsMode === 'all-time') {
@@ -1025,6 +1027,121 @@ function getProfileRegularGameTotals(resultDetails) {
     .reduce((totals, [teamOne, teamTwo]) => [totals[0] + teamOne, totals[1] + teamTwo], [0, 0]);
 }
 
+function getPlayerProfileSeasonPayload(seasonId) {
+  if (PADEL_DATA?.id === seasonId) return Promise.resolve(PADEL_DATA);
+  if (playerProfileSeasonPayloadCache.has(seasonId)) {
+    return playerProfileSeasonPayloadCache.get(seasonId);
+  }
+  const request = loadDatabaseSeasonPayload(seasonId).catch(error => {
+    playerProfileSeasonPayloadCache.delete(seasonId);
+    throw error;
+  });
+  playerProfileSeasonPayloadCache.set(seasonId, request);
+  return request;
+}
+
+function getPlayerProfileSeasonMatchTeam(match, playerId) {
+  const teamOneIds = match.team1?.playerIds || [];
+  const teamTwoIds = match.team2?.playerIds || [];
+  if (teamOneIds.includes(playerId)) return 1;
+  if (teamTwoIds.includes(playerId)) return 2;
+  return null;
+}
+
+function getPlayerProfileSeasonMatchWinner(match) {
+  return match.winner ?? match.sieger ?? null;
+}
+
+function getPlayerProfileSeasonMatchResult(match) {
+  return match.result ?? match.ergebnis ?? null;
+}
+
+function getPlayerProfileFinalFourRanking(matches = []) {
+  const finalFourMatches = matches
+    .filter(match => getMatchStage(match) === 'final-four')
+    .sort((left, right) =>
+      Number(left.matchday ?? left.spieltag ?? 0) - Number(right.matchday ?? right.spieltag ?? 0)
+      || String(left.id).localeCompare(String(right.id)));
+  if (finalFourMatches.length !== 3
+    || finalFourMatches.some(match => getPlayerProfileSeasonMatchWinner(match) === null)) return [];
+
+  const seededPlayerIds = [...new Set(finalFourMatches.flatMap(match => [
+    ...(match.team1?.playerIds || []),
+    ...(match.team2?.playerIds || [])
+  ]))];
+  return seededPlayerIds.map((playerId, seedIndex) => {
+    const stats = finalFourMatches.reduce((total, match) => {
+      const team = getPlayerProfileSeasonMatchTeam(match, playerId);
+      if (!team) return total;
+      const [teamOneGames, teamTwoGames] = getProfileRegularGameTotals(
+        getPlayerProfileSeasonMatchResult(match)
+      );
+      const gamesFor = team === 1 ? teamOneGames : teamTwoGames;
+      const gamesAgainst = team === 1 ? teamTwoGames : teamOneGames;
+      total.wins += getPlayerProfileSeasonMatchWinner(match) === team ? 1 : 0;
+      total.gamesWon += gamesFor;
+      total.gameDiff += gamesFor - gamesAgainst;
+      return total;
+    }, { wins: 0, gamesWon: 0, gameDiff: 0 });
+    return { playerId, seed: seedIndex + 1, ...stats };
+  }).sort((left, right) =>
+    right.wins - left.wins
+    || right.gameDiff - left.gameDiff
+    || right.gamesWon - left.gamesWon
+    || left.seed - right.seed);
+}
+
+function getPlayerProfileFinalRoundOverview(seasonPayload, playerId) {
+  const seasonMatches = seasonPayload?.matches || [];
+  const playerMatches = seasonMatches.filter(match => {
+    const stage = getMatchStage(match);
+    return ['semifinal', 'final-four'].includes(stage)
+      && getPlayerProfileSeasonMatchTeam(match, playerId);
+  });
+  if (!playerMatches.length) return null;
+
+  const hasFinalFour = playerMatches.some(match => getMatchStage(match) === 'final-four');
+  const ranking = hasFinalFour ? getPlayerProfileFinalFourRanking(seasonMatches) : [];
+  const placement = ranking.findIndex(entry => entry.playerId === playerId) + 1;
+  const stats = playerMatches.reduce((total, match) => {
+    const winner = getPlayerProfileSeasonMatchWinner(match);
+    const result = getPlayerProfileSeasonMatchResult(match);
+    if (winner === null || !result) return total;
+    const stage = getMatchStage(match);
+    const matchWeight = stage === 'final-four' ? 0.5 : 1;
+    const team = getPlayerProfileSeasonMatchTeam(match, playerId);
+    const [teamOneGames, teamTwoGames] = getProfileRegularGameTotals(result);
+    const teamOneGameDiff = teamOneGames - teamTwoGames;
+    total.matches += matchWeight;
+    total.wins += winner === team ? matchWeight : 0;
+    total.gameDiff += team === 2 ? -teamOneGameDiff : teamOneGameDiff;
+    return total;
+  }, { matches: 0, wins: 0, gameDiff: 0 });
+
+  return {
+    ...stats,
+    label: placement > 0 ? String(placement) : hasFinalFour ? 'F4' : 'HF',
+    placement: placement || null,
+    stage: hasFinalFour ? 'final-four' : 'semifinal'
+  };
+}
+
+async function enrichPlayerProfileSeasonPhases(profile) {
+  const participations = profile?.participations || [];
+  const playerId = profile?.identity?.id;
+  if (!playerId || !participations.length) return profile;
+
+  const payloads = await Promise.all(participations.map(participation =>
+    getPlayerProfileSeasonPayload(participation.seasonId)));
+  return {
+    ...profile,
+    participations: participations.map((participation, index) => ({
+      ...participation,
+      finalRound: getPlayerProfileFinalRoundOverview(payloads[index], playerId)
+    }))
+  };
+}
+
 function getLocalPlayerProfile(playerId) {
   const player = (PADEL_DATA?.allPlayers || PADEL_DATA?.players || []).find(item => item.id === playerId)
     || (window.PADEL_PLAYERS || []).find(item => item.id === playerId);
@@ -1124,11 +1241,11 @@ async function fetchPlayerProfile(playerId) {
   const client = getSupabaseClient();
   if (client) {
     const { data, error } = await client.rpc('get_player_profile', { p_player_id: playerId });
-    if (!error && data) return data;
+    if (!error && data) return enrichPlayerProfileSeasonPhases(data);
     if (error && !isMissingPlayerProfileRpc(error)) throw error;
   }
 
-  return getLocalPlayerProfile(playerId);
+  return enrichPlayerProfileSeasonPhases(getLocalPlayerProfile(playerId));
 }
 
 function setPlayerProfileState(message, { error = false } = {}) {
@@ -1378,26 +1495,86 @@ function orderPlayerProfileParticipations(participations = [], seasons = getSeas
   });
 }
 
-function renderPlayerProfileParticipations(participations = []) {
+function getPlayerProfileTrainingParticipation(matches = []) {
+  return matches
+    .filter(match => match.kind === 'training')
+    .reduce((stats, match) => {
+      const matchWeight = Number(match.matchWeight);
+      const safeMatchWeight = Number.isFinite(matchWeight) && matchWeight > 0 ? matchWeight : 0;
+      const winWeight = Number(match.winWeight);
+      const regularResult = String(match.resultDetails || '')
+        .split(/\s*[–-]\s*/, 1)[0]
+        .replace(/\([^)]*\)/g, '');
+      const teamOneGameDiff = [...regularResult.matchAll(/(\d+)\s*:\s*(\d+)/g)]
+        .map(score => [Number(score[1]), Number(score[2])])
+        .filter(([teamOne, teamTwo]) =>
+          window.PadelScoreInput.classifyRegularSet(teamOne, teamTwo).state === 'complete')
+        .reduce((difference, [teamOne, teamTwo]) => difference + teamOne - teamTwo, 0);
+
+      stats.matches += safeMatchWeight;
+      stats.wins += Number.isFinite(winWeight)
+        ? winWeight
+        : match.outcome === 'win' ? safeMatchWeight : 0;
+      stats.gameDiff += Number(match.team) === 2 ? -teamOneGameDiff : teamOneGameDiff;
+      return stats;
+    }, { matches: 0, wins: 0, gameDiff: 0 });
+}
+
+function renderPlayerProfileParticipationStats(participation, middleLabel, middleValue) {
+  const matches = escapeHtml(formatProfileMatchCount(participation.matches));
+  const middle = escapeHtml(formatProfileMatchCount(middleValue));
+  return `Partien: ${matches} · ${middleLabel}: ${middle} · Diff.: ${formatProfileSignedValue(participation.gameDiff)}`;
+}
+
+function renderPlayerProfileParticipations(participations = [], matches = []) {
   const target = document.getElementById('player-profile-participations');
   if (!target) return;
-  if (!participations.length) {
-    target.innerHTML = '<div class="empty-state">Noch keine Liga-Teilnahme.</div>';
-    return;
-  }
   const orderedParticipations = orderPlayerProfileParticipations(participations);
-  target.innerHTML = orderedParticipations.map(participation => `
-    <div class="player-profile-participation" style="--profile-season-color:${getPlayerProfileSeasonColor(participation.seasonId)}">
+  const seasonRows = orderedParticipations.map(participation => {
+    const leagueRank = participation.rank ? `${participation.rank}.` : '—';
+    const leagueRankClass = `r${Math.min(Number(participation.rank) || 4, 4)}`;
+    const finalRound = participation.finalRound;
+    const finalRoundLabel = finalRound?.placement ? `${finalRound.label}.` : finalRound?.label;
+    return `
+    <div class="player-profile-participation player-profile-season-participation" style="--profile-season-color:${getPlayerProfileSeasonColor(participation.seasonId)}">
       <div class="player-profile-participation-name">
         <span class="player-profile-participation-marker"><i></i></span>
         ${escapeHtml(participation.seasonLabel)}
+        ${participation.isActive ? '<em class="player-profile-participation-status">Laufend</em>' : ''}
       </div>
-      <div class="player-profile-participation-rank r${Math.min(Number(participation.rank) || 4, 4)}">${participation.rank ? `${participation.rank}.` : '—'}</div>
-      <div class="stat-meta-line">
-        ${participation.isActive ? 'Laufend · ' : ''}${participation.matches ?? 0} P · ${participation.wins ?? 0}:${participation.losses ?? 0} · ${formatProfileSignedValue(participation.gameDiff)}
+      <div class="player-profile-participation-phases">
+        <section class="player-profile-participation-phase">
+          <div class="player-profile-participation-phase-content">
+            <div class="player-profile-participation-phase-heading">Ligaphase</div>
+            <div class="stat-meta-line">
+              ${renderPlayerProfileParticipationStats(participation, 'Punkte', participation.points)}
+            </div>
+          </div>
+          <strong class="player-profile-participation-phase-result player-profile-participation-placement ${leagueRankClass}">${leagueRank}</strong>
+        </section>
+        ${finalRound ? `
+          <section class="player-profile-participation-phase">
+            <div class="player-profile-participation-phase-content">
+              <div class="player-profile-participation-phase-heading">Finalrunde</div>
+              <div class="stat-meta-line">${renderPlayerProfileParticipationStats(finalRound, 'Siege', finalRound.wins)}</div>
+            </div>
+            <strong class="player-profile-participation-phase-result ${finalRound.placement ? `player-profile-participation-placement r${Math.min(finalRound.placement, 4)}` : ''}">${escapeHtml(finalRoundLabel)}</strong>
+          </section>
+        ` : ''}
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
+  const training = getPlayerProfileTrainingParticipation(matches);
+  const trainingRow = `
+    <div class="player-profile-participation player-profile-training-participation">
+      <div class="player-profile-participation-name">
+        <span class="player-profile-participation-marker"><i></i></span>
+        Trainings
+      </div>
+      <div class="stat-meta-line">${renderPlayerProfileParticipationStats(training, 'Siege', training.wins)}</div>
+    </div>`;
+  target.innerHTML = seasonRows + trainingRow;
 }
 
 function getPlayerProfileRelationshipLeaders(matches = []) {
@@ -1692,7 +1869,7 @@ function renderPlayerProfile(profile) {
   );
   renderPlayerProfileAchievements(profile.achievements || []);
   renderPlayerProfileStats(profile.summary || {});
-  renderPlayerProfileParticipations(profile.participations || []);
+  renderPlayerProfileParticipations(profile.participations || [], profile.matches || []);
   renderPlayerProfileRelationships(profile.matches || []);
   renderPlayerProfileHistory();
   document.getElementById('player-profile-state').hidden = true;

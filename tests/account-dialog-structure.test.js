@@ -88,5 +88,7 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(style, /\.account-task-card\.is-waiting[\s\S]*opacity: 0\.58/);
   assert.match(style, /\.result-entry-actions \{[\s\S]*align-items: center;[\s\S]*justify-content: space-between;/);
   assert.match(style, /\.result-entry-summary \{[^}]*line-height: 1\.35;[^}]*overflow-wrap: anywhere;/);
+  assert.match(style, /\.result-entry-form :where\(input, select\),[\s\S]*\.training-form :where\(input, select\) \{/);
+  assert.doesNotMatch(style, /\.training-form input,\s*\.training-form select \{/);
   assert.doesNotMatch(style, /\.result-entry-actions \{[^}]*border-top:/);
 });
