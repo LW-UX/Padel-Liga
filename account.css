@@ -522,8 +522,15 @@
       #result-task-list,
       #result-task-list > .account-task-group,
       #result-task-list .account-task-list { min-width: 0; }
-      .result-entry-timing { grid-template-columns: 1fr 1fr; }
+      .result-entry-timing { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .result-entry-form :where(input, select), .match-schedule-form input, .training-form :where(input, select) { width: 100%; }
+      :where(.result-entry-form, .match-schedule-form) input:is([type="date"], [type="time"]) {
+        -webkit-appearance: none;
+        appearance: none;
+        inline-size: 100%;
+        min-inline-size: 0;
+        max-inline-size: 100%;
+      }
       .result-entry-timing label { min-width: 0; flex-direction: column; align-items: stretch; gap: 4px; }
       .account-section-heading { align-items: center; }
       .account-task-matchup strong { display: flex; flex-wrap: wrap; }
