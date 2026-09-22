@@ -465,7 +465,7 @@
     .training-player-fields .training-picker:nth-child(even) .training-picker-menu { right: 0; left: auto; }
     .training-rounds { display: grid; gap: 16px; }
     .training-round-field { display: grid; gap: 14px; border: 1px solid var(--border); padding: 0.9rem; border-radius: 12px; background-color: var(--surface2); }
-    .training-round-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .4fr) auto; align-items: end; gap: 8px; }
+    .training-round-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .42fr) auto; align-items: end; gap: 8px; }
     .training-score-entry { grid-template-columns: repeat(3, auto); gap: 10px; }
     .training-round-remove {
       display: grid;

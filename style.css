@@ -393,6 +393,8 @@
       text-align: center;
     }
     #training-format-menu-0, #training-pairing-menu-0 { width: 100%; }
+    #training-format-menu-0 .training-picker-display-line { white-space: inherit; }
+
 
     /* Public player profile */
     .player-profile-link {

@@ -870,9 +870,7 @@
         searchInput.disabled = false;
         searchInput.value = '';
         filterTrainingPlayerOptions(picker);
-        requestAnimationFrame(() => {
-          if (picker.classList.contains('open') && !searchInput.disabled) searchInput.focus();
-        });
+        searchInput.focus({ preventScroll: true });
       } else {
         searchInput.blur();
         searchInput.disabled = true;
@@ -1821,6 +1819,8 @@ Dein Hanako-Leben-Squad`;
   function closeTrainingForm(form = document.getElementById('training-form')) {
     if (!form) return;
     form.hidden = true;
+    const formGroup = form.closest('[data-training-form-group]');
+    if (formGroup) formGroup.hidden = true;
     closeTrainingPickerMenus();
     setTrainingMessage('', '', form);
     if (form.dataset.trainingAlternative) {
@@ -1907,6 +1907,8 @@ Dein Hanako-Leben-Squad`;
     setTrainingMessage('', '', form);
     form.reset();
     form.hidden = true;
+    const formGroup = form.closest('[data-training-form-group]');
+    if (formGroup) formGroup.hidden = true;
     setAuthMessage('Training wurde zur Bestätigung gesendet.', 'success');
     await refresh();
   }
@@ -2056,8 +2058,11 @@ Dein Hanako-Leben-Squad`;
       const trainingToggle = event.target.closest('[data-training-toggle]');
       if (trainingToggle) {
         const form = document.getElementById('training-form');
-        form.hidden = !form.hidden;
-        if (!form.hidden) {
+        const opening = form.hidden;
+        form.hidden = !opening;
+        const formGroup = form.closest('[data-training-form-group]');
+        if (formGroup) formGroup.hidden = !opening;
+        if (opening) {
           setTrainingMessage('', '', form);
           renderTrainingForm();
         } else {

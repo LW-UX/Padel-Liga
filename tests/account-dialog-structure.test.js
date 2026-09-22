@@ -68,6 +68,7 @@ test('both account dialogs expose one four-group game overview', () => {
     assert.match(source, /<button class="secondary-button"[^>]*data-training-toggle/);
     assert.match(source, /data-auth-logout>Ausloggen<\/button>/);
     assert.match(source, /data-training-toggle>Training hinzufügen<\/button>/);
+    assert.match(source, /<div data-training-form-group hidden>\s*<div class="spieltag-label"><span>Training<\/span><\/div>\s*<form class="training-form" id="training-form" hidden>/);
     assert.doesNotMatch(source, /picker-toggle-chevron/);
     assert.doesNotMatch(source, /auth-logout-button|compact-button|account-task-count|result-task-count/);
     assert.doesNotMatch(source, /Ligaübergreifend|Saisonunabhängig/);
@@ -79,11 +80,13 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(pages[0], /id="viewer-profile-image"[^>]*alt=""[^>]*hidden/);
   assert.match(pages[0], /id="viewer-profile-emoji"[^>]*aria-hidden="true">👤<\/span>/);
   assert.match(appScript, /function filterViewerOptions\(query = ''\)/);
+  assert.match(appScript, /filterViewerOptions\(\);\s*searchInput\.focus\(\{ preventScroll: true \}\);/);
   assert.match(appScript, /function updateViewerProfileImage\(playerId = '', profileEmoji = '👤'\)/);
   assert.match(appScript, /assets\/players\/\$\{encodeURIComponent\(playerId\)\}\/profile\.webp/);
   assert.match(appScript, /searchInput\.setAttribute\('aria-expanded', 'false'\);\s*searchInput\.blur\(\);\s*searchInput\.disabled = true;/);
   assert.match(appScript, /data-viewer-search-text="\$\{escapeHtml\(option\.name\)\}/);
   assert.match(accountScript, /searchInput\.setAttribute\('aria-expanded', 'false'\);\s*searchInput\.blur\(\);\s*searchInput\.disabled = true;/);
+  assert.match(accountScript, /filterTrainingPlayerOptions\(picker\);\s*searchInput\.focus\(\{ preventScroll: true \}\);/);
   assert.match(pages[1], /class="secondary-button secondary-button--dropdown"[^>]*data-season-toggle/);
   assert.match(style, /\.sh-title \{[^}]*font-size: 2rem;[^}]*font-weight: 400;/);
   assert.match(style, /\.secondary-button \{[\s\S]*font-family: 'DM Sans', sans-serif;[\s\S]*font-size: 0\.78rem;[\s\S]*font-weight: 500;/);
@@ -94,6 +97,7 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.doesNotMatch(style, /\.auth-logout-button|\.compact-button|\.account-task-count|\.account-task-league/);
   assert.doesNotMatch(style, /\.picker-toggle-chevron/);
   assert.match(accountScript, /playerProfileButton\.hidden = !isPlayerAccount\(\)/);
+  assert.match(accountScript, /form\.closest\('\[data-training-form-group\]'\)[\s\S]*formGroup\.hidden = !opening/);
   assert.match(accountScript, /closeAuthDialog\(\);[\s\S]*window\.PadelLigaOpenPlayerProfile\(playerId, document\.querySelector\('\[data-auth-open\]'\)\)/);
   assert.match(accountScript, /searchParams\.set\('spielerprofil', playerId\)/);
   assert.match(appScript, /window\.PadelLigaOpenPlayerProfile = openPlayerProfile/);

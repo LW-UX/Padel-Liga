@@ -545,17 +545,20 @@
               <h3 class="sh-title">Spieleübersicht</h3>
               <button class="secondary-button" type="button" data-training-toggle>Training hinzufügen</button>
             </div>
-            <form class="training-form" id="training-form" hidden>
-              <div class="training-form-meta">
-                <label><span>Datum</span><input type="date" name="playedOn" required></label>
-                <label><span>Uhrzeit</span><input type="time" name="displayTime" required></label>
-              </div>
-              <div class="training-player-fields" id="training-player-fields" data-training-player-fields></div>
-              <div class="training-rounds" id="training-rounds" data-training-rounds></div>
-              <div class="auth-message training-message" data-training-message role="status" aria-live="polite"></div>
-              <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
-              <button class="primary-button" type="submit">Training zur Bestätigung senden</button>
-            </form>
+            <div data-training-form-group hidden>
+              <div class="spieltag-label"><span>Training</span></div>
+              <form class="training-form" id="training-form" hidden>
+                <div class="training-form-meta">
+                  <label><span>Datum</span><input type="date" name="playedOn" required></label>
+                  <label><span>Uhrzeit</span><input type="time" name="displayTime" required></label>
+                </div>
+                <div class="training-player-fields" id="training-player-fields" data-training-player-fields></div>
+                <div class="training-rounds" id="training-rounds" data-training-rounds></div>
+                <div class="auth-message training-message" data-training-message role="status" aria-live="polite"></div>
+                <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
+                <button class="primary-button" type="submit">Training zur Bestätigung senden</button>
+              </form>
+            </div>
             <div class="account-task-list prediction-match-list" id="result-task-list"></div>
           </section>
         </div>

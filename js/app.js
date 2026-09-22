@@ -963,9 +963,7 @@ function toggleViewerMenu() {
     searchInput.disabled = false;
     searchInput.value = '';
     filterViewerOptions();
-    requestAnimationFrame(() => {
-      if (picker.classList.contains('open') && !searchInput.disabled) searchInput.focus();
-    });
+    searchInput.focus({ preventScroll: true });
   } else {
     closeViewerMenu();
   }

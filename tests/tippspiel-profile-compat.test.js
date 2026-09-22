@@ -594,7 +594,8 @@ test('training validation is shown inside the training form before any RPC call'
 test('training messages reset across every form lifecycle transition', () => {
   assert.match(tippspielSource, /function closeTrainingForm\(form =[\s\S]*setTrainingMessage\('', '', form\);/);
   assert.match(tippspielSource, /function editTraining\(sessionId\)[\s\S]*setTrainingMessage\('', '', form\);/);
-  assert.match(tippspielSource, /if \(!form\.hidden\) \{\n          setTrainingMessage\('', '', form\);[\s\S]*renderTrainingForm\(\);/);
+  assert.match(tippspielSource, /if \(opening\) \{\n          setTrainingMessage\('', '', form\);[\s\S]*renderTrainingForm\(\);/);
+  assert.match(tippspielSource, /function closeTrainingForm\(form =[\s\S]*formGroup\.hidden = true/);
   assert.match(tippspielSource, /button\.disabled = false;\n    setTrainingMessage\('', '', form\);\n    form\.reset\(\);[\s\S]*setAuthMessage\('Training wurde zur Bestätigung gesendet\.', 'success'\);/);
 });
 
