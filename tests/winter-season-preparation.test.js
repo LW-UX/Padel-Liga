@@ -5,19 +5,6 @@ const test = require('node:test');
 const vm = require('node:vm');
 
 const repositoryRoot = path.join(__dirname, '..');
-const expectedParticipants = new Map([
-  ['marcel_m', 1170],
-  ['chris_m', 934],
-  ['luca_w', 1051],
-  ['marco_m', 1187],
-  ['ludwig_w', 1134],
-  ['greta_p', 847],
-  ['agnes_k', 580],
-  ['niklas_k', 784],
-  ['andreas_l', 1051],
-  ['jonas_l', 986]
-]);
-
 function loadWindowScript(file) {
   const window = {};
   const source = fs.readFileSync(path.join(repositoryRoot, file), 'utf8');
@@ -74,18 +61,14 @@ test('Winter contains two semifinals and the three rotating Final Four sets', ()
   );
 });
 
-test('Winter 2026 contains the confirmed players with their carried Elo', () => {
+test('Winter 2026 has no participants before the live roster is confirmed', () => {
   const { PADEL_SEASON } = loadWindowScript('data/data-winter-2026.js');
-  const participants = new Map(
-    PADEL_SEASON.participants.map(participant => [participant.playerId, participant.startElo])
-  );
-
-  assert.deepEqual([...participants].sort(), [...expectedParticipants].sort());
+  assert.deepEqual(JSON.parse(JSON.stringify(PADEL_SEASON.participants)), []);
 });
 
-test('the Winter setup mirrors participants and the automation restores Sommer as active', () => {
-  const winterMigration = fs.readFileSync(
-    path.join(repositoryRoot, 'supabase/migrations/20260902100000_winter_2026_season.sql'),
+test('the cleanup removes Winter participants and the automation keeps Sommer active', () => {
+  const cleanupMigration = fs.readFileSync(
+    path.join(repositoryRoot, 'supabase/migrations/20260922110000_clear_winter_2026_players.sql'),
     'utf8'
   );
   const automationMigration = fs.readFileSync(
@@ -93,10 +76,20 @@ test('the Winter setup mirrors participants and the automation restores Sommer a
     'utf8'
   );
 
-  for (const [playerId, startElo] of expectedParticipants) {
-    assert.match(winterMigration, new RegExp(`'winter-2026', 'main', '${playerId}', ${startElo}`));
-  }
-  assert.match(winterMigration, /'winter-2026',[\s\S]*'Winter 2026'/);
+  assert.match(cleanupMigration, /delete from public\.season_players\s+where season_id = 'winter-2026'/);
   assert.match(automationMigration, /tournament_mode = 'direct_final_four'[\s\S]*is_active = true[\s\S]*where id = '2026'/);
   assert.match(automationMigration, /tournament_mode = 'top8_semifinals'[\s\S]*regular_schedule_locked = false[\s\S]*is_active = false[\s\S]*where id = 'winter-2026'/);
+});
+
+test('the test season is hidden from pickers but remains available by direct URL', () => {
+  const { PADEL_SEASONS } = loadWindowScript('data/seasons.js');
+  const testSeason = PADEL_SEASONS.find(season => season.id === 'test-2026');
+  const app = fs.readFileSync(path.join(repositoryRoot, 'js/app.js'), 'utf8');
+  const tipPage = fs.readFileSync(path.join(repositoryRoot, 'js/tipp-page.js'), 'utf8');
+
+  assert.equal(testSeason.hidden, true);
+  assert.match(app, /getAllSeasonOptions\(\)\.filter\(season => !season\.hidden\)/);
+  assert.match(app, /getAllSeasonOptions\(\)\.find\(season => season\.id === requestedSeasonId\)/);
+  assert.match(tipPage, /getAllSeasonOptions\(\)\.filter\(option => !option\.hidden\)/);
+  assert.match(tipPage, /getAllSeasonOptions\(\)\.find\(option => option\.id === requested\)/);
 });

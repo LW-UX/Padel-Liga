@@ -20,18 +20,7 @@ window.PADEL_SEASON = {
     "Weitere Teilnehmer und der Spielplan folgen."
   ],
   matchdays: [],
-  participants: [
-    { playerId: "marcel_m", startElo: 1170 },
-    { playerId: "chris_m", startElo: 934 },
-    { playerId: "luca_w", startElo: 1051 },
-    { playerId: "marco_m", startElo: 1187 },
-    { playerId: "ludwig_w", startElo: 1134 },
-    { playerId: "greta_p", startElo: 847 },
-    { playerId: "agnes_k", startElo: 580 },
-    { playerId: "niklas_k", startElo: 784 },
-    { playerId: "andreas_l", startElo: 1051 },
-    { playerId: "jonas_l", startElo: 986 }
-  ],
+  participants: [],
   matches: [
     {
       id: "winter-2026-semifinal-1",

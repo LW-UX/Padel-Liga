@@ -1,12 +1,16 @@
 (function () {
-  function getSeasonOptions() {
+  function getAllSeasonOptions() {
     return Array.isArray(window.PADEL_SEASONS) ? window.PADEL_SEASONS : [];
+  }
+
+  function getSeasonOptions() {
+    return getAllSeasonOptions().filter(option => !option.hidden);
   }
 
   function getSelectedSeason() {
     const options = getSeasonOptions();
     const requested = new URLSearchParams(window.location.search).get('saison');
-    return options.find(option => option.id === requested)
+    return getAllSeasonOptions().find(option => option.id === requested)
       || options.find(option => option.default)
       || options[0];
   }

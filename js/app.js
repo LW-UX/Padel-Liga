@@ -90,8 +90,12 @@ function orderSeasonOptions(seasons = []) {
   return ordered;
 }
 
-function getSeasonOptions() {
+function getAllSeasonOptions() {
   return orderSeasonOptions(Array.isArray(window.PADEL_SEASONS) ? window.PADEL_SEASONS : []);
+}
+
+function getSeasonOptions() {
+  return getAllSeasonOptions().filter(season => !season.hidden);
 }
 
 function getRequestedSeasonId() {
@@ -101,7 +105,7 @@ function getRequestedSeasonId() {
 function getDefaultSeasonOption() {
   const seasons = getSeasonOptions();
   const requestedSeasonId = getRequestedSeasonId();
-  const requestedSeason = seasons.find(season => season.id === requestedSeasonId);
+  const requestedSeason = getAllSeasonOptions().find(season => season.id === requestedSeasonId);
 
   return requestedSeason || seasons.find(season => season.default) || seasons[seasons.length - 1] || null;
 }
@@ -184,7 +188,7 @@ async function loadDatabaseSeasonOptions() {
   }
   if (!Array.isArray(data) || !data.length) return;
 
-  const staticOptions = new Map(getSeasonOptions().map(season => [season.id, season]));
+  const staticOptions = new Map(getAllSeasonOptions().map(season => [season.id, season]));
   const databaseOptions = data.map(season => ({
     ...staticOptions.get(season.id),
     id: season.id,
