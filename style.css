@@ -255,6 +255,7 @@
     .viewer-split-button:focus-within { border-color: var(--accent); }
     .viewer-split-button .secondary-button {
       min-height: 36px;
+      min-width: 120px;
       border: 0;
       border-radius: 0;
       background: transparent;

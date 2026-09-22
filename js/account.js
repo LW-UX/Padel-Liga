@@ -669,7 +669,7 @@
       <input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(selected?.value || '')}">
       ${searchable ? `<div class="training-picker-search-control">
         ${toggle}
-        <input class="training-picker-search-input" type="search" data-training-picker-search role="combobox" aria-label="${escapeHtml(label)} suchen" aria-controls="${escapeHtml(menuId)}" aria-expanded="false" autocomplete="off" spellcheck="false" placeholder="Spieler suchen …">
+        <input class="training-picker-search-input" type="search" data-training-picker-search role="combobox" aria-label="${escapeHtml(label)} suchen" aria-controls="${escapeHtml(menuId)}" aria-expanded="false" autocomplete="off" spellcheck="false" placeholder="Spieler suchen …" disabled>
       </div>` : toggle}
       <div class="viewer-menu training-picker-menu" id="${escapeHtml(menuId)}" role="listbox" aria-label="${escapeHtml(label)} auswählen">
         ${options.map(option => `<button
@@ -809,6 +809,7 @@
         searchInput.value = '';
         searchInput.setAttribute('aria-expanded', 'false');
         searchInput.blur();
+        searchInput.disabled = true;
         filterTrainingPlayerOptions(picker);
       }
     });
@@ -866,15 +867,22 @@
     if (searchInput) {
       searchInput.setAttribute('aria-expanded', String(shouldOpen));
       if (shouldOpen) {
+        searchInput.disabled = false;
         searchInput.value = '';
         filterTrainingPlayerOptions(picker);
-        requestAnimationFrame(() => searchInput.focus());
+        requestAnimationFrame(() => {
+          if (picker.classList.contains('open') && !searchInput.disabled) searchInput.focus();
+        });
+      } else {
+        searchInput.blur();
+        searchInput.disabled = true;
       }
     }
   }
 
   function selectTrainingPickerOption(option) {
     const picker = option.closest('[data-training-picker]');
+    const restoreToggleFocus = picker?.classList.contains('open');
     const form = picker?.closest('.training-form');
     const inputName = picker?.querySelector('input[type="hidden"]')?.name;
     setTrainingPickerValue(picker, option.dataset.trainingPickerValue);
@@ -882,6 +890,9 @@
     if (form && (inputName === 'resultFormat' || inputName === 'playerId')) {
       const preserved = readTrainingRoundValues(form);
       renderTrainingRounds(preserved, form, preserved.length);
+    }
+    if (restoreToggleFocus) {
+      picker.querySelector('[data-training-picker-toggle]')?.focus({ preventScroll: true });
     }
     setTrainingMessage('', '', form);
   }

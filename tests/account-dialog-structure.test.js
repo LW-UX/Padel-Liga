@@ -75,15 +75,15 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(pages[0], /<button type="button" class="secondary-button" data-calculator-reset>Zurücksetzen<\/button>/);
   assert.match(pages[0], /class="secondary-button secondary-button--dropdown"[^>]*data-season-toggle/);
   assert.match(pages[0], /class="secondary-button secondary-button--dropdown"[^>]*data-viewer-toggle/);
-  assert.match(pages[0], /data-viewer-search role="combobox"[^>]*aria-label="Spieler suchen"/);
+  assert.match(pages[0], /data-viewer-search role="combobox"[^>]*aria-label="Spieler suchen"[^>]*disabled/);
   assert.match(pages[0], /id="viewer-profile-image"[^>]*alt=""[^>]*hidden/);
   assert.match(pages[0], /id="viewer-profile-emoji"[^>]*aria-hidden="true">👤<\/span>/);
   assert.match(appScript, /function filterViewerOptions\(query = ''\)/);
   assert.match(appScript, /function updateViewerProfileImage\(playerId = '', profileEmoji = '👤'\)/);
   assert.match(appScript, /assets\/players\/\$\{encodeURIComponent\(playerId\)\}\/profile\.webp/);
-  assert.match(appScript, /searchInput\.setAttribute\('aria-expanded', 'false'\);\s*searchInput\.blur\(\);/);
+  assert.match(appScript, /searchInput\.setAttribute\('aria-expanded', 'false'\);\s*searchInput\.blur\(\);\s*searchInput\.disabled = true;/);
   assert.match(appScript, /data-viewer-search-text="\$\{escapeHtml\(option\.name\)\}/);
-  assert.match(accountScript, /searchInput\.setAttribute\('aria-expanded', 'false'\);\s*searchInput\.blur\(\);/);
+  assert.match(accountScript, /searchInput\.setAttribute\('aria-expanded', 'false'\);\s*searchInput\.blur\(\);\s*searchInput\.disabled = true;/);
   assert.match(pages[1], /class="secondary-button secondary-button--dropdown"[^>]*data-season-toggle/);
   assert.match(style, /\.sh-title \{[^}]*font-size: 2rem;[^}]*font-weight: 400;/);
   assert.match(style, /\.secondary-button \{[\s\S]*font-family: 'DM Sans', sans-serif;[\s\S]*font-size: 0\.78rem;[\s\S]*font-weight: 500;/);

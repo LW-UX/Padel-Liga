@@ -955,13 +955,19 @@ function filterViewerOptions(query = '') {
 function toggleViewerMenu() {
   const picker = document.getElementById('viewer-picker');
   const isOpen = picker.classList.toggle('open');
-  picker.querySelector('[data-viewer-toggle]').setAttribute('aria-expanded', String(isOpen));
-  picker.querySelector('[data-viewer-search]')?.setAttribute('aria-expanded', String(isOpen));
+  const toggle = picker.querySelector('[data-viewer-toggle]');
+  const searchInput = picker.querySelector('[data-viewer-search]');
+  toggle.setAttribute('aria-expanded', String(isOpen));
+  searchInput?.setAttribute('aria-expanded', String(isOpen));
   if (isOpen) {
-    const searchInput = picker.querySelector('[data-viewer-search]');
+    searchInput.disabled = false;
     searchInput.value = '';
     filterViewerOptions();
-    requestAnimationFrame(() => searchInput.focus());
+    requestAnimationFrame(() => {
+      if (picker.classList.contains('open') && !searchInput.disabled) searchInput.focus();
+    });
+  } else {
+    closeViewerMenu();
   }
   closeSeasonMenu();
 }
@@ -976,6 +982,7 @@ function closeViewerMenu() {
     searchInput.value = '';
     searchInput.setAttribute('aria-expanded', 'false');
     searchInput.blur();
+    searchInput.disabled = true;
   }
   filterViewerOptions();
 }
@@ -1006,6 +1013,8 @@ function selectSeason(id) {
 }
 
 function selectViewer(id) {
+  const picker = document.getElementById('viewer-picker');
+  const restoreToggleFocus = picker?.classList.contains('open');
   selectedViewerId = id;
   storeViewerId(selectedViewerId);
   closeViewerMenu();
@@ -1017,6 +1026,9 @@ function selectViewer(id) {
   renderPartien();
   renderCalculator();
   renderStatistik();
+  if (restoreToggleFocus) {
+    picker.querySelector('[data-viewer-toggle]')?.focus({ preventScroll: true });
+  }
 }
 
 function updateViewerProfileImage(playerId = '', profileEmoji = '👤') {
