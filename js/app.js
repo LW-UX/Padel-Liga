@@ -1650,11 +1650,11 @@ function renderPlayerProfileRelationships(matches = []) {
 
   const formatRecord = record => {
     const parts = [
+      `${formatProfileMatchCount(record.matches)} Partien`,
       `${formatProfileMatchCount(record.wins)} ${record.wins === 1 ? 'Sieg' : 'Siege'}`,
       `${formatProfileMatchCount(record.losses)} ${record.losses === 1 ? 'Niederlage' : 'Niederlagen'}`
     ];
     if (record.draws) parts.push(`${formatProfileMatchCount(record.draws)} Unentschieden`);
-    parts.push(`${formatProfileMatchCount(record.matches)} Partien`);
     return parts.join(' · ');
   };
 

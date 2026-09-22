@@ -416,6 +416,7 @@ test('all player names in statistic facts open the public profile', () => {
 });
 
 test('profile relationship leaders require three matches and use win rate', () => {
+  assert.match(app, /const parts = \[\s*`\$\{formatProfileMatchCount\(record\.matches\)\} Partien`,\s*`\$\{formatProfileMatchCount\(record\.wins\)\}/);
   const leaders = evaluateRelationshipLeaders([
     { outcome: 'win', partnerNames: ['Partner A', 'Partner A'], opponentNames: ['Gegner X'] },
     { outcome: 'win', partnerNames: ['Partner A'], opponentNames: ['Gegner X'] },
