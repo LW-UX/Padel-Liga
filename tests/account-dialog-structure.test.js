@@ -113,10 +113,10 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(style, /\.result-entry-summary \{[^}]*line-height: 1\.35;[^}]*overflow-wrap: anywhere;/);
   assert.match(style, /\.result-entry-form :where\(input, select\),[\s\S]*\.training-form :where\(input, select\) \{/);
   assert.match(style, /\.training-form :where\(input, select\) \{[\s\S]*min-width: 0;[\s\S]*max-width: 100%;/);
-  assert.match(style, /input:is\(\[type="date"\], \[type="time"\]\) \{[\s\S]*appearance: none;[\s\S]*background-position: right 0\.7rem center;[\s\S]*text-align: left;/);
-  assert.match(style, /input\[type="date"\] \{[\s\S]*background-image: url\("data:image\/svg\+xml/);
-  assert.match(style, /input\[type="time"\] \{[\s\S]*background-image: url\("data:image\/svg\+xml/);
-  assert.match(style, /::-webkit-calendar-picker-indicator \{[\s\S]*opacity: 0;/);
+  assert.match(style, /input:is\(\[type="date"\], \[type="time"\]\) \{[^}]*display: block;[^}]*text-align: left;/);
+  assert.doesNotMatch(style, /input\[type="date"\] \{[^}]*background-image:/);
+  assert.doesNotMatch(style, /input\[type="time"\] \{[^}]*background-image:/);
+  assert.doesNotMatch(style, /::-webkit-calendar-picker-indicator \{[^}]*opacity: 0;/);
   assert.doesNotMatch(style, /\.training-form input,\s*\.training-form select \{/);
   assert.doesNotMatch(style, /\.result-entry-actions \{[^}]*border-top:/);
 });
