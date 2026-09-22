@@ -284,6 +284,9 @@
     }
     :where(.result-entry-form, .match-schedule-form, .training-form) input:is([type="date"], [type="time"]) {
       display: block;
+      width: auto;
+      min-inline-size: 0;
+      max-inline-size: 100%;
       text-align: left;
     }
     :where(.result-entry-form, .match-schedule-form, .training-form) input:is([type="date"], [type="time"])::-webkit-date-and-time-value {
@@ -354,7 +357,7 @@
       border-radius: 0;
       padding: 12px 0 0;
     }
-    .training-form-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .training-form-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .training-player-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .training-picker-label { color: var(--dim); font-size: 0.85rem; font-weight: 600; }
     .training-picker-search-control {
@@ -524,12 +527,15 @@
       #result-task-list .account-task-list { min-width: 0; }
       .result-entry-timing { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .result-entry-form :where(input, select), .match-schedule-form input, .training-form :where(input, select) { width: 100%; }
-      :where(.result-entry-form, .match-schedule-form) input:is([type="date"], [type="time"]) {
+      :where(.result-entry-form, .match-schedule-form, .training-form) input:is([type="date"], [type="time"]) {
         -webkit-appearance: none;
         appearance: none;
-        inline-size: 100%;
+        width: auto;
+        inline-size: auto;
         min-inline-size: 0;
         max-inline-size: 100%;
+        align-self: flex-start;
+        justify-self: start;
       }
       .result-entry-timing label { min-width: 0; flex-direction: column; align-items: stretch; gap: 4px; }
       .account-section-heading { align-items: center; }

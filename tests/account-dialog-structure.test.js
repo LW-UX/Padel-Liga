@@ -113,9 +113,10 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(style, /\.result-entry-summary \{[^}]*line-height: 1\.35;[^}]*overflow-wrap: anywhere;/);
   assert.match(style, /\.result-entry-form :where\(input, select\),[\s\S]*\.training-form :where\(input, select\) \{/);
   assert.match(style, /\.training-form :where\(input, select\) \{[\s\S]*min-width: 0;[\s\S]*max-width: 100%;/);
-  assert.match(style, /input:is\(\[type="date"\], \[type="time"\]\) \{[^}]*display: block;[^}]*text-align: left;/);
+  assert.match(style, /input:is\(\[type="date"\], \[type="time"\]\) \{[^}]*display: block;[^}]*width: auto;[^}]*min-inline-size: 0;[^}]*max-inline-size: 100%;[^}]*text-align: left;/);
+  assert.match(style, /\.training-form-meta \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
   assert.match(style, /\.result-entry-timing \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \}/);
-  assert.match(style, /:where\(\.result-entry-form, \.match-schedule-form\) input:is\(\[type="date"\], \[type="time"\]\) \{[^}]*-webkit-appearance: none;[^}]*inline-size: 100%;[^}]*min-inline-size: 0;[^}]*max-inline-size: 100%;/);
+  assert.match(style, /:where\(\.result-entry-form, \.match-schedule-form, \.training-form\) input:is\(\[type="date"\], \[type="time"\]\) \{[^}]*-webkit-appearance: none;[^}]*width: auto;[^}]*inline-size: auto;[^}]*min-inline-size: 0;[^}]*max-inline-size: 100%;[^}]*align-self: flex-start;[^}]*justify-self: start;/);
   assert.doesNotMatch(style, /input\[type="date"\] \{[^}]*background-image:/);
   assert.doesNotMatch(style, /input\[type="time"\] \{[^}]*background-image:/);
   assert.doesNotMatch(style, /::-webkit-calendar-picker-indicator \{[^}]*opacity: 0;/);
