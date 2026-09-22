@@ -318,7 +318,7 @@ test('profile participation overview ends with weighted training statistics', ()
   assert.match(participationStatsRenderer, /const middle = escapeHtml\(formatProfileMatchCount\(middleValue\)\)/);
   assert.doesNotMatch(participationStatsRenderer, /renderProfileMatchCount/);
   assert.match(app, /renderPlayerProfileParticipationStats\(participation, 'Punkte', participation\.points\)/);
-  assert.match(app, /const trainingRow = `[\s\S]*?Trainings[\s\S]*?renderPlayerProfileParticipationStats\(training, 'Siege', training\.wins\)/);
+  assert.match(app, /const trainingRow = training\.matches > 0 \? `[\s\S]*?Trainings[\s\S]*?renderPlayerProfileParticipationStats\(training, 'Siege', training\.wins\)[\s\S]*?` : ''/);
   assert.match(app, /target\.innerHTML = seasonRows \+ trainingRow/);
   assert.match(style, /\.player-profile-training-participation \{ --profile-season-color: var\(--dim\); \}/);
   assert.match(style, /\.player-profile-training-participation \.stat-meta-line \{ grid-column: 1 \/ -1; \}/);

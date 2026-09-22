@@ -1570,14 +1570,14 @@ function renderPlayerProfileParticipations(participations = [], matches = []) {
   `;
   }).join('');
   const training = getPlayerProfileTrainingParticipation(matches);
-  const trainingRow = `
+  const trainingRow = training.matches > 0 ? `
     <div class="player-profile-participation player-profile-training-participation">
       <div class="player-profile-participation-name">
         <span class="player-profile-participation-marker"><i></i></span>
         Trainings
       </div>
       <div class="stat-meta-line">${renderPlayerProfileParticipationStats(training, 'Siege', training.wins)}</div>
-    </div>`;
+    </div>` : '';
   target.innerHTML = seasonRows + trainingRow;
 }
 
