@@ -3049,6 +3049,9 @@
         width: 100%;
         min-width: 0;
       }
+      .result-score-pair {
+        display: grid !important;
+      }
       .calculator-tiebreak-line .calculator-score-pair {
         max-width: none;
       }
