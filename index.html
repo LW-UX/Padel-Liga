@@ -22,8 +22,8 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-22-profile-phase-layout">
-  <link rel="stylesheet" href="account.css?v=2026-09-22-counter-input-fix">
+  <link rel="stylesheet" href="style.css?v=2026-09-22-viewer-search-polish">
+  <link rel="stylesheet" href="account.css?v=2026-09-22-training-picker-search-polish">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -57,10 +57,19 @@
       <h1><button class="hero-home-button" id="hero-home-button" type="button" data-nav-target="start" aria-label="Zur Startseite">PADEL<em>LIGA</em></button></h1>
       <div class="hero-actions">
         <div class="viewer-picker" id="viewer-picker">
-          <button class="secondary-button secondary-button--dropdown" type="button" data-viewer-toggle aria-haspopup="listbox" aria-expanded="false">
-            <span class="viewer-label-full" id="viewer-label-full">Spieler auswählen</span>
-            <span class="viewer-label-short" id="viewer-label-short">Auswählen</span>
-          </button>
+          <div class="viewer-split-button">
+            <button class="viewer-profile-button" id="viewer-profile-button" type="button" aria-label="Spielerprofil öffnen" title="Spielerprofil öffnen" disabled>
+              <img class="viewer-profile-image" id="viewer-profile-image" alt="" hidden>
+              <span class="viewer-profile-emoji" id="viewer-profile-emoji" aria-hidden="true">👤</span>
+            </button>
+            <div class="viewer-combobox">
+              <button class="secondary-button secondary-button--dropdown" type="button" data-viewer-toggle aria-haspopup="listbox" aria-expanded="false" aria-controls="viewer-menu">
+                <span class="viewer-label-full" id="viewer-label-full">Spieler auswählen</span>
+                <span class="viewer-label-short" id="viewer-label-short">Auswählen</span>
+              </button>
+              <input class="viewer-search-input" id="viewer-search-input" type="search" data-viewer-search role="combobox" aria-label="Spieler suchen" aria-controls="viewer-menu" aria-expanded="false" autocomplete="off" spellcheck="false" placeholder="Suchen …">
+            </div>
+          </div>
           <div class="viewer-menu" id="viewer-menu" role="listbox"></div>
         </div>
       </div>
@@ -524,6 +533,7 @@
         </div>
         <div class="account-header-actions">
           <button class="secondary-button" id="player-invite-open" type="button" data-player-invite-open hidden>Spieler-E-Mails</button>
+          <button class="secondary-button" type="button" data-account-player-profile hidden>Spielerprofil</button>
           <button class="secondary-button" type="button" data-auth-logout>Ausloggen</button>
         </div>
       </div>
@@ -599,9 +609,9 @@
 </dialog>
 
 <script src="js/score-input.js?v=2026-09-03-training-counters"></script>
-<script src="js/account.js?v=2026-09-22-repeat-player-invite"></script>
+<script src="js/account.js?v=2026-09-22-training-picker-search-polish"></script>
 <script src="js/tippspiel.js?v=2026-09-21-ranking-globals-training-alternative"></script>
-<script src="js/app.js?v=2026-09-22-profile-relationship-match-order"></script>
+<script src="js/app.js?v=2026-09-22-viewer-emoji-search-polish"></script>
 <script src="js/arcade-link.js?v=2026-09-11"></script>
 </body>
 </html>

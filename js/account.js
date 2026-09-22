@@ -205,6 +205,12 @@
       if (gamesEmpty) gamesEmpty.hidden = isPlayerAccount() && state.extendedPlayerFeatures;
       const inviteButton = document.getElementById('player-invite-open');
       if (inviteButton) inviteButton.hidden = state.profile?.app_role !== 'admin';
+      const playerProfileButton = document.querySelector('[data-account-player-profile]');
+      if (playerProfileButton) {
+        playerProfileButton.hidden = !isPlayerAccount();
+        if (state.profile?.player_id) playerProfileButton.dataset.playerId = state.profile.player_id;
+        else delete playerProfileButton.dataset.playerId;
+      }
     }
   }
 
@@ -305,12 +311,13 @@
   function renderScorePair(label, kind, setIndex, score = [], disabled = false, required = false) {
     return `<div class="calculator-score-pair result-score-pair">
       ${[1, 2].map((team, teamIndex) => `<div class="calculator-score-field result-score-counter">
-        <button class="calculator-step" type="button" data-result-score-step="-1" aria-label="${label}, Team ${team}: eins abziehen"${disabled ? ' disabled' : ''}>−</button>
+        <button class="calculator-step" type="button" tabindex="-1" data-result-score-step="-1" aria-label="${label}, Team ${team}: eins abziehen"${disabled ? ' disabled' : ''}>−</button>
         <input
           type="text"
           inputmode="numeric"
           pattern="[0-9]*"
           maxlength="2"
+          autocomplete="off"
           ${required ? 'required' : ''}
           name="${kind}_${setIndex}_${teamIndex}"
           data-result-score
@@ -321,7 +328,7 @@
           aria-label="${label}, Team ${team}"
           ${disabled ? 'disabled' : ''}
         >
-        <button class="calculator-step" type="button" data-result-score-step="1" aria-label="${label}, Team ${team}: eins addieren"${disabled ? ' disabled' : ''}>+</button>
+        <button class="calculator-step" type="button" tabindex="-1" data-result-score-step="1" aria-label="${label}, Team ${team}: eins addieren"${disabled ? ' disabled' : ''}>+</button>
       </div>`).join('<span class="result-score-colon">:</span>')}
     </div>`;
   }
@@ -652,14 +659,18 @@
     return `<span class="training-picker-display-line">${escapeHtml(option?.label || 'Auswählen')}</span>`;
   }
 
-  function renderTrainingPicker({ label, name, value, options, menuId }) {
+  function renderTrainingPicker({ label, name, value, options, menuId, searchable = false }) {
     const selected = options.find(option => option.value === value) || options[0];
+    const toggle = `<button class="secondary-button secondary-button--dropdown training-picker-toggle" type="button" data-training-picker-toggle aria-label="${escapeHtml(selected?.label || 'Auswählen')}" aria-haspopup="listbox" aria-expanded="false" aria-controls="${escapeHtml(menuId)}">
+        <span class="training-picker-display" data-training-picker-label>${renderTrainingPickerText(selected)}</span>
+      </button>`;
     return `<div class="training-picker" data-training-picker>
       <span class="training-picker-label">${escapeHtml(label)}</span>
       <input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(selected?.value || '')}">
-      <button class="secondary-button secondary-button--dropdown training-picker-toggle" type="button" data-training-picker-toggle aria-label="${escapeHtml(selected?.label || 'Auswählen')}" aria-haspopup="listbox" aria-expanded="false" aria-controls="${escapeHtml(menuId)}">
-        <span class="training-picker-display" data-training-picker-label>${renderTrainingPickerText(selected)}</span>
-      </button>
+      ${searchable ? `<div class="training-picker-search-control">
+        ${toggle}
+        <input class="training-picker-search-input" type="search" data-training-picker-search role="combobox" aria-label="${escapeHtml(label)} suchen" aria-controls="${escapeHtml(menuId)}" aria-expanded="false" autocomplete="off" spellcheck="false" placeholder="Spieler suchen …">
+      </div>` : toggle}
       <div class="viewer-menu training-picker-menu" id="${escapeHtml(menuId)}" role="listbox" aria-label="${escapeHtml(label)} auswählen">
         ${options.map(option => `<button
           class="viewer-option training-picker-option${option.value === selected?.value ? ' active' : ''}"
@@ -668,7 +679,9 @@
           aria-label="${escapeHtml(option.label)}"
           aria-selected="${option.value === selected?.value}"
           data-training-picker-value="${escapeHtml(option.value)}"
+          data-training-picker-search-text="${escapeHtml(option.label)} ${escapeHtml(option.meta || '')}"
         ><span class="training-picker-option-label">${renderTrainingPickerText(option, true)}</span>${option.meta ? `<span>${escapeHtml(option.meta)}</span>` : ''}</button>`).join('')}
+        ${searchable ? '<div class="picker-search-empty" data-training-picker-search-empty hidden>Kein Spieler gefunden.</div>' : ''}
       </div>
     </div>`;
   }
@@ -752,9 +765,23 @@
     target.querySelectorAll('[data-training-round]').forEach(updateTrainingRoundSummary);
   }
 
+  function isLudiTrainingPlayer(player) {
+    const displayName = String(player?.display_name || '')
+      .trim()
+      .toLocaleLowerCase('de-DE');
+    return /^ludi(?:\s|$)/u.test(displayName);
+  }
+
+  function getSelectableTrainingPlayers(players = state.players, profile = state.profile) {
+    const authenticatedPlayer = players.find(player => String(player.id) === String(profile?.player_id));
+    const canSeeLudiPlayers = profile?.app_role === 'admin' || isLudiTrainingPlayer(authenticatedPlayer);
+    return canSeeLudiPlayers ? players : players.filter(player => !isLudiTrainingPlayer(player));
+  }
+
   function renderTrainingForm(playerIds = null, roundValues = [], form = document.getElementById('training-form')) {
     const target = form?.querySelector('[data-training-player-fields]');
     if (!target || !state.players.length) return;
+    const selectablePlayers = getSelectableTrainingPlayers();
     const menuPrefix = form.dataset.trainingAlternative
       ? `training-alternative-${form.dataset.trainingAlternative}`
       : 'training';
@@ -764,8 +791,9 @@
         label: `Spieler ${index + 1}`,
         name: 'playerId',
         value: selectedId,
-        options: [{ value: '', label: 'Auswählen' }, ...state.players.map(player => ({ value: player.id, label: player.display_name, meta: player.initials || '' }))],
-        menuId: `${menuPrefix}-player-menu-${index}`
+        options: [{ value: '', label: 'Auswählen' }, ...selectablePlayers.map(player => ({ value: player.id, label: player.display_name, meta: player.initials || '' }))],
+        menuId: `${menuPrefix}-player-menu-${index}`,
+        searchable: true
       });
     }).join('');
     renderTrainingRounds(roundValues, form, Math.max(1, roundValues.length || 1));
@@ -776,7 +804,36 @@
       if (picker === exceptPicker) return;
       picker.classList.remove('open');
       picker.querySelector('[data-training-picker-toggle]')?.setAttribute('aria-expanded', 'false');
+      const searchInput = picker.querySelector('[data-training-picker-search]');
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.setAttribute('aria-expanded', 'false');
+        searchInput.blur();
+        filterTrainingPlayerOptions(picker);
+      }
     });
+  }
+
+  function normalizeTrainingPlayerSearch(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLocaleLowerCase('de-DE');
+  }
+
+  function filterTrainingPlayerOptions(picker, query = '') {
+    if (!picker) return;
+    const normalizedQuery = normalizeTrainingPlayerSearch(query);
+    let visibleOptions = 0;
+    picker.querySelectorAll('[data-training-picker-value]').forEach(option => {
+      const matches = !normalizedQuery
+        || normalizeTrainingPlayerSearch(option.dataset.trainingPickerSearchText).includes(normalizedQuery);
+      option.hidden = !matches;
+      if (matches) visibleOptions += 1;
+    });
+    const emptyState = picker.querySelector('[data-training-picker-search-empty]');
+    if (emptyState) emptyState.hidden = visibleOptions > 0;
   }
 
   function setTrainingPickerValue(picker, value) {
@@ -805,6 +862,15 @@
     closeTrainingPickerMenus(picker);
     picker.classList.toggle('open', shouldOpen);
     toggle.setAttribute('aria-expanded', String(shouldOpen));
+    const searchInput = picker.querySelector('[data-training-picker-search]');
+    if (searchInput) {
+      searchInput.setAttribute('aria-expanded', String(shouldOpen));
+      if (shouldOpen) {
+        searchInput.value = '';
+        filterTrainingPlayerOptions(picker);
+        requestAnimationFrame(() => searchInput.focus());
+      }
+    }
   }
 
   function selectTrainingPickerOption(option) {
@@ -812,11 +878,11 @@
     const form = picker?.closest('.training-form');
     const inputName = picker?.querySelector('input[type="hidden"]')?.name;
     setTrainingPickerValue(picker, option.dataset.trainingPickerValue);
+    closeTrainingPickerMenus();
     if (form && (inputName === 'resultFormat' || inputName === 'playerId')) {
       const preserved = readTrainingRoundValues(form);
       renderTrainingRounds(preserved, form, preserved.length);
     }
-    closeTrainingPickerMenus();
     setTrainingMessage('', '', form);
   }
 
@@ -1898,6 +1964,20 @@ Dein Hanako-Leben-Squad`;
         );
         return;
       }
+      const playerProfileButton = event.target.closest('[data-account-player-profile]');
+      if (playerProfileButton) {
+        const playerId = playerProfileButton.dataset.playerId || state.profile?.player_id;
+        if (!playerId) return;
+        closeAuthDialog();
+        if (typeof window.PadelLigaOpenPlayerProfile === 'function') {
+          await window.PadelLigaOpenPlayerProfile(playerId, document.querySelector('[data-auth-open]'));
+        } else {
+          const ligaUrl = new URL('../', window.location.href);
+          ligaUrl.searchParams.set('spielerprofil', playerId);
+          window.location.assign(ligaUrl);
+        }
+        return;
+      }
       if (event.target.closest('[data-auth-logout]')) {
         await state.client.auth.signOut();
         closeAuthDialog();
@@ -2027,6 +2107,14 @@ Dein Hanako-Leben-Squad`;
       if (event.target.closest('.training-form')) handleTrainingInvalid(event);
     }, true);
     document.addEventListener('input', event => {
+      const trainingPickerSearch = event.target.closest('[data-training-picker-search]');
+      if (trainingPickerSearch) {
+        filterTrainingPlayerOptions(
+          trainingPickerSearch.closest('[data-training-picker]'),
+          trainingPickerSearch.value
+        );
+        return;
+      }
       if (event.target.matches('[data-result-score]')) {
         event.target.value = window.PadelScoreInput.sanitizeScoreValue(event.target.value);
         initializeResultScorePair(event.target);
@@ -2053,6 +2141,32 @@ Dein Hanako-Leben-Squad`;
       if (scoreControl) window.PadelScoreInput.setActivePair(scoreControl.closest('.result-score-pair'));
     });
     document.addEventListener('keydown', event => {
+      const trainingPickerSearch = event.target.closest('[data-training-picker-search]');
+      if (trainingPickerSearch) {
+        const picker = trainingPickerSearch.closest('[data-training-picker]');
+        const visibleOptions = [...picker.querySelectorAll('[data-training-picker-value]')]
+          .filter(option => !option.hidden);
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          closeTrainingPickerMenus();
+          picker.querySelector('[data-training-picker-toggle]')?.focus();
+          return;
+        }
+        if (event.key === 'ArrowDown' && visibleOptions.length) {
+          event.preventDefault();
+          visibleOptions[0].focus();
+          return;
+        }
+        if (event.key === 'Enter' && trainingPickerSearch.value && visibleOptions.length) {
+          event.preventDefault();
+          selectTrainingPickerOption(visibleOptions[0]);
+          return;
+        }
+      }
+      if (event.key === 'Enter' && event.target.matches('[data-result-score]')) {
+        event.preventDefault();
+        return;
+      }
       if (event.key === 'Escape') closeTrainingPickerMenus();
     });
     document.getElementById('auth-dialog')?.addEventListener('click', event => {

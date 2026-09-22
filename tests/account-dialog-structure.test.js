@@ -25,7 +25,7 @@ test('pages keep their intended context links and account dialogs place logout i
     assert.doesNotMatch(source, /class="account-tabs"/);
     assert.doesNotMatch(source, /account-settings-panel/);
     assert.doesNotMatch(source, /name="displayName"/);
-    assert.match(source, /class="account-header"[\s\S]*data-auth-logout/);
+    assert.match(source, /class="account-header"[\s\S]*data-account-player-profile[\s\S]*data-auth-logout/);
     assert.match(source, /<dialog class="auth-dialog"[^>]*>\s*<button class="modal-close-button auth-dialog-close"/);
   });
   assert.match(style, /\.modal-close-button \{[\s\S]*position: absolute;[\s\S]*top: \d+px;[\s\S]*right: \d+px;/);
@@ -64,6 +64,7 @@ test('both account dialogs expose one four-group game overview', () => {
     assert.doesNotMatch(source, /<h3 class="sh-title">Trainingsspiele<\/h3>/);
     assert.doesNotMatch(source, /id="training-task-list"/);
     assert.match(source, /<button class="secondary-button"[^>]*data-auth-logout/);
+    assert.match(source, /<button class="secondary-button"[^>]*data-account-player-profile hidden>Spielerprofil<\/button>/);
     assert.match(source, /<button class="secondary-button"[^>]*data-training-toggle/);
     assert.match(source, /data-auth-logout>Ausloggen<\/button>/);
     assert.match(source, /data-training-toggle>Training hinzufügen<\/button>/);
@@ -74,6 +75,15 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(pages[0], /<button type="button" class="secondary-button" data-calculator-reset>Zurücksetzen<\/button>/);
   assert.match(pages[0], /class="secondary-button secondary-button--dropdown"[^>]*data-season-toggle/);
   assert.match(pages[0], /class="secondary-button secondary-button--dropdown"[^>]*data-viewer-toggle/);
+  assert.match(pages[0], /data-viewer-search role="combobox"[^>]*aria-label="Spieler suchen"/);
+  assert.match(pages[0], /id="viewer-profile-image"[^>]*alt=""[^>]*hidden/);
+  assert.match(pages[0], /id="viewer-profile-emoji"[^>]*aria-hidden="true">👤<\/span>/);
+  assert.match(appScript, /function filterViewerOptions\(query = ''\)/);
+  assert.match(appScript, /function updateViewerProfileImage\(playerId = '', profileEmoji = '👤'\)/);
+  assert.match(appScript, /assets\/players\/\$\{encodeURIComponent\(playerId\)\}\/profile\.webp/);
+  assert.match(appScript, /searchInput\.setAttribute\('aria-expanded', 'false'\);\s*searchInput\.blur\(\);/);
+  assert.match(appScript, /data-viewer-search-text="\$\{escapeHtml\(option\.name\)\}/);
+  assert.match(accountScript, /searchInput\.setAttribute\('aria-expanded', 'false'\);\s*searchInput\.blur\(\);/);
   assert.match(pages[1], /class="secondary-button secondary-button--dropdown"[^>]*data-season-toggle/);
   assert.match(style, /\.sh-title \{[^}]*font-size: 2rem;[^}]*font-weight: 400;/);
   assert.match(style, /\.secondary-button \{[\s\S]*font-family: 'DM Sans', sans-serif;[\s\S]*font-size: 0\.78rem;[\s\S]*font-weight: 500;/);
@@ -83,6 +93,11 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.doesNotMatch(style, /\.prediction-group-title/);
   assert.doesNotMatch(style, /\.auth-logout-button|\.compact-button|\.account-task-count|\.account-task-league/);
   assert.doesNotMatch(style, /\.picker-toggle-chevron/);
+  assert.match(accountScript, /playerProfileButton\.hidden = !isPlayerAccount\(\)/);
+  assert.match(accountScript, /closeAuthDialog\(\);[\s\S]*window\.PadelLigaOpenPlayerProfile\(playerId, document\.querySelector\('\[data-auth-open\]'\)\)/);
+  assert.match(accountScript, /searchParams\.set\('spielerprofil', playerId\)/);
+  assert.match(appScript, /window\.PadelLigaOpenPlayerProfile = openPlayerProfile/);
+  assert.match(appScript, /searchParams\.get\('spielerprofil'\)[\s\S]*openPlayerProfile\(requestedPlayerProfile\)/);
   assert.match(style, /#result-task-list > \.account-task-group \{[\s\S]*border-top: 1px solid var\(--border\);[\s\S]*padding-top: 18px;/);
   assert.match(style, /\.account-task-card\.is-actionable \{[\s\S]*border-color: var\(--accent\);/);
   assert.match(style, /\.account-task-card\.is-waiting[\s\S]*opacity: 0\.58/);

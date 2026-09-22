@@ -201,7 +201,38 @@ test('all training selectors reuse the custom page viewer dropdown', () => {
   assert.match(tippspielSource, /viewer-option training-picker-option/);
   assert.match(tippspielSource, /data-training-picker-toggle/);
   assert.match(tippspielSource, /data-training-picker-value/);
+  assert.match(tippspielSource, /data-training-picker-search role="combobox"/);
+  assert.match(tippspielSource, /searchable: true/);
+  assert.match(tippspielSource, /function filterTrainingPlayerOptions\(picker, query = ''\)/);
   assert.match(styleSource, /\.training-picker\.open \.training-picker-menu/);
+  assert.match(styleSource, /\.training-picker\.open \.training-picker-search-input/);
+});
+
+test('Ludi training profiles are visible only to Ludi players and admins', () => {
+  const visibilityHelpers = tippspielSource.match(
+    /function isLudiTrainingPlayer\(player\) \{[\s\S]*?(?=\n  function renderTrainingForm)/
+  )?.[0] || '';
+  const getSelectablePlayers = vm.runInNewContext(
+    `(() => { ${visibilityHelpers}\nreturn getSelectableTrainingPlayers; })()`
+  );
+  const players = [
+    { id: 'regular', display_name: 'Anna A.' },
+    { id: 'ludi-gmx', display_name: 'Ludi GMX' },
+    { id: 'ludwig', display_name: 'Ludwig W.' }
+  ];
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(getSelectablePlayers(players, { app_role: 'player', player_id: 'regular' }))).map(player => player.id),
+    ['regular', 'ludwig']
+  );
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(getSelectablePlayers(players, { app_role: 'player', player_id: 'ludi-gmx' }))).map(player => player.id),
+    ['regular', 'ludi-gmx', 'ludwig']
+  );
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(getSelectablePlayers(players, { app_role: 'admin', player_id: 'regular' }))).map(player => player.id),
+    ['regular', 'ludi-gmx', 'ludwig']
+  );
 });
 
 test('training pairings use selected player names and keep player placeholders', () => {
@@ -325,10 +356,15 @@ test('official result entry validates regular sets and both tiebreak types', () 
 
 test('result counters start empty, initialize their pair, and highlight only while active', () => {
   assert.doesNotMatch(tippspielSource, /placeholder="0"/);
-  assert.match(tippspielSource, /type="text"\s+inputmode="numeric"\s+pattern="\[0-9\]\*"\s+maxlength="2"/);
+  assert.match(tippspielSource, /type="text"\s+inputmode="numeric"\s+pattern="\[0-9\]\*"\s+maxlength="2"\s+autocomplete="off"/);
   assert.match(tippspielSource, /class="calculator-score-pair result-score-pair"/);
   assert.match(tippspielSource, /class="calculator-score-field result-score-counter"/);
-  assert.match(tippspielSource, /class="calculator-step"/);
+  assert.match(tippspielSource, /class="calculator-step" type="button" tabindex="-1" data-result-score-step="-1"/);
+  assert.match(tippspielSource, /class="calculator-step" type="button" tabindex="-1" data-result-score-step="1"/);
+  assert.match(appSource, /class="calculator-step"\s+tabindex="-1"\s+data-calculator-step="-1"/);
+  assert.match(appSource, /class="calculator-step"\s+tabindex="-1"\s+data-calculator-step="1"/);
+  assert.match(appSource, /event\.key === 'Enter' && event\.target\.matches\('\[data-calculator-score\]'\)[\s\S]*?event\.preventDefault\(\)/);
+  assert.match(tippspielSource, /event\.key === 'Enter' && event\.target\.matches\('\[data-result-score\]'\)[\s\S]*?event\.preventDefault\(\)/);
   assert.match(styleSource, /\.calculator-score-pair\.calculator-score-pair-active \.calculator-score-field/);
   assert.match(styleSource, /\.calculator-score-field input \{[\s\S]*?min-width: 0;[\s\S]*?min-height: 0;[\s\S]*?padding: 0;/);
   assert.doesNotMatch(styleSource, /\.result-score-pair\.is-framed/);

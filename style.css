@@ -242,6 +242,99 @@
       position: relative;
       flex: 0 0 auto;
     }
+    .viewer-split-button {
+      display: inline-flex;
+      align-items: stretch;
+      min-height: 38px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      transition: border-color 0.15s;
+    }
+    .viewer-split-button:focus-within { border-color: var(--accent); }
+    .viewer-split-button .secondary-button {
+      min-height: 36px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      transition: color 0.15s, background 0.15s;
+    }
+    .viewer-combobox {
+      position: relative;
+      display: flex;
+      min-width: 0;
+    }
+    .viewer-combobox::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: 0.85rem;
+      width: 6px;
+      height: 6px;
+      border-right: 1.5px solid currentColor;
+      border-bottom: 1.5px solid currentColor;
+      pointer-events: none;
+      transform: translateY(-65%) rotate(45deg);
+      transform-origin: center;
+      transition: transform 160ms ease;
+    }
+    .viewer-combobox .secondary-button--dropdown::after { display: none; }
+    .viewer-search-input {
+      appearance: none;
+      -webkit-appearance: none;
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      display: none;
+      width: 100%;
+      min-width: 0;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      font: 500 0.85rem 'DM Sans', sans-serif;
+      outline: none;
+      padding: 0.5rem 1.8rem 0.5rem 0.85rem;
+    }
+    .viewer-search-input::placeholder { color: var(--dim); opacity: 1; }
+    .viewer-search-input::-webkit-search-cancel-button { display: none; }
+    .viewer-picker.open .viewer-combobox .secondary-button { visibility: hidden; }
+    .viewer-picker.open .viewer-search-input { display: block; }
+    .viewer-profile-button {
+      display: grid;
+      flex: 0 0 38px;
+      width: 38px;
+      min-height: 36px;
+      place-items: center;
+      border: 0;
+      border-right: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s;
+    }
+    .viewer-profile-emoji { font-size: 1.1rem; line-height: 1; }
+    .viewer-profile-image {
+      width: 28px;
+      height: 28px;
+      display: block;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .viewer-profile-image[hidden],
+    .viewer-profile-emoji[hidden] { display: none; }
+    .viewer-profile-button:hover,
+    .viewer-profile-button:focus-visible {
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+      color: var(--accent);
+      outline: none;
+    }
+    .viewer-profile-button:disabled {
+      color: var(--dim);
+      cursor: default;
+      opacity: 0.45;
+    }
+    .viewer-profile-button:disabled:hover { background: transparent; }
     .training-picker { display: grid; position: relative; gap: 4px; min-width: 0; }
     .viewer-label-short { display: none; }
     .viewer-menu,
@@ -291,6 +384,12 @@
     .season-option.active {
       background: color-mix(in srgb, var(--accent) 15%, transparent);
       color: var(--accent);
+    }
+    .picker-search-empty {
+      color: var(--muted);
+      font-size: 0.8rem;
+      padding: 0.7rem 0.65rem;
+      text-align: center;
     }
     #training-format-menu-0, #training-pairing-menu-0 { width: 100%; }
 
@@ -841,11 +940,14 @@
       transition: transform 160ms ease;
     }
     .season-picker.open .secondary-button--dropdown,
-    .viewer-picker.open .secondary-button--dropdown,
     .training-picker.open .secondary-button--dropdown {
       border-color: var(--accent);
       color: var(--accent);
     }
+    .viewer-picker.open .viewer-split-button { border-color: var(--accent); }
+    .viewer-picker.open .secondary-button--dropdown { color: var(--accent); }
+    .viewer-picker.open .viewer-combobox { color: var(--accent); }
+    .viewer-picker.open .viewer-combobox::after { transform: translateY(-35%) rotate(225deg); }
     .season-picker.open .secondary-button--dropdown::after,
     .viewer-picker.open .secondary-button--dropdown::after,
     .training-picker.open .secondary-button--dropdown::after {
@@ -2505,6 +2607,7 @@
       .context-actions { gap: 5px; width: 100%; }
       .context-link { font-size: 0.75rem; }
       .secondary-button--dropdown::after { right: 0.65rem; }
+      .viewer-combobox::after { right: 0.65rem; }
       .season-menu {
         width: min(240px, calc(100vw - 1.5rem));
         max-height: 420px;

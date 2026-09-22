@@ -901,7 +901,8 @@ function getViewerOptions() {
     ...PADEL_DATA.players.map(player => ({
       id: player.id,
       name: player.name,
-      short: player.initials
+      short: player.initials,
+      profileEmoji: player.profileEmoji
     }))
   ];
 }
@@ -928,10 +929,40 @@ function isViewerMatch(match) {
     [...match.team1.spieler, ...match.team2.spieler].includes(getSelectedViewer().name);
 }
 
+function normalizePlayerSearch(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLocaleLowerCase('de-DE');
+}
+
+function filterViewerOptions(query = '') {
+  const menu = document.getElementById('viewer-menu');
+  if (!menu) return;
+  const normalizedQuery = normalizePlayerSearch(query);
+  let visibleOptions = 0;
+  menu.querySelectorAll('[data-viewer-id]').forEach(option => {
+    const matches = !normalizedQuery
+      || normalizePlayerSearch(option.dataset.viewerSearchText).includes(normalizedQuery);
+    option.hidden = !matches;
+    if (matches) visibleOptions += 1;
+  });
+  const emptyState = menu.querySelector('[data-viewer-search-empty]');
+  if (emptyState) emptyState.hidden = visibleOptions > 0;
+}
+
 function toggleViewerMenu() {
   const picker = document.getElementById('viewer-picker');
   const isOpen = picker.classList.toggle('open');
   picker.querySelector('[data-viewer-toggle]').setAttribute('aria-expanded', String(isOpen));
+  picker.querySelector('[data-viewer-search]')?.setAttribute('aria-expanded', String(isOpen));
+  if (isOpen) {
+    const searchInput = picker.querySelector('[data-viewer-search]');
+    searchInput.value = '';
+    filterViewerOptions();
+    requestAnimationFrame(() => searchInput.focus());
+  }
   closeSeasonMenu();
 }
 
@@ -940,6 +971,13 @@ function closeViewerMenu() {
   if (!picker) return;
   picker.classList.remove('open');
   picker.querySelector('[data-viewer-toggle]')?.setAttribute('aria-expanded', 'false');
+  const searchInput = picker.querySelector('[data-viewer-search]');
+  if (searchInput) {
+    searchInput.value = '';
+    searchInput.setAttribute('aria-expanded', 'false');
+    searchInput.blur();
+  }
+  filterViewerOptions();
 }
 
 function toggleSeasonMenu() {
@@ -970,6 +1008,7 @@ function selectSeason(id) {
 function selectViewer(id) {
   selectedViewerId = id;
   storeViewerId(selectedViewerId);
+  closeViewerMenu();
   if (!isParticipantView() && matchScope === 'mine') matchScope = 'all';
   updateViewerPicker();
   updateChartViewerFocus();
@@ -978,13 +1017,53 @@ function selectViewer(id) {
   renderPartien();
   renderCalculator();
   renderStatistik();
-  closeViewerMenu();
+}
+
+function updateViewerProfileImage(playerId = '', profileEmoji = '👤') {
+  const image = document.getElementById('viewer-profile-image');
+  const emoji = document.getElementById('viewer-profile-emoji');
+  if (!image || !emoji) return;
+
+  image.onload = null;
+  image.onerror = null;
+  image.hidden = true;
+  image.removeAttribute('src');
+  emoji.textContent = ['👨', '👩'].includes(profileEmoji) ? profileEmoji : '👤';
+  emoji.removeAttribute('hidden');
+  image.dataset.playerId = playerId;
+  if (!playerId) return;
+
+  image.onload = () => {
+    if (image.dataset.playerId !== playerId) return;
+    image.hidden = false;
+    emoji.setAttribute('hidden', '');
+  };
+  image.onerror = () => {
+    if (image.dataset.playerId !== playerId) return;
+    image.hidden = true;
+    emoji.removeAttribute('hidden');
+  };
+  image.src = `assets/players/${encodeURIComponent(playerId)}/profile.webp`;
 }
 
 function updateViewerPicker() {
   const selected = getSelectedViewer();
+  const profileButton = document.getElementById('viewer-profile-button');
+  const hasSelectedPlayer = isParticipantView();
   document.getElementById('viewer-label-full').textContent = selected.name;
   document.getElementById('viewer-label-short').textContent = selected.mobileLabel || selected.short;
+  profileButton.disabled = !hasSelectedPlayer;
+  profileButton.toggleAttribute('data-player-profile-id', hasSelectedPlayer);
+  if (hasSelectedPlayer) profileButton.dataset.playerProfileId = selected.id;
+  const profileLabel = hasSelectedPlayer
+    ? `Profil von ${selected.name} öffnen`
+    : 'Spielerprofil öffnen';
+  profileButton.setAttribute('aria-label', profileLabel);
+  profileButton.title = profileLabel;
+  updateViewerProfileImage(
+    hasSelectedPlayer ? selected.id : '',
+    hasSelectedPlayer ? selected.profileEmoji : '👤'
+  );
   document.getElementById('viewer-menu').innerHTML = getViewerOptions().map(option => `
     <button
       type="button"
@@ -992,11 +1071,12 @@ function updateViewerPicker() {
       role="option"
       aria-selected="${option.id === selectedViewerId}"
       data-viewer-id="${option.id}"
+      data-viewer-search-text="${escapeHtml(option.name)} ${escapeHtml(option.short)}"
     >
       <span>${option.name}</span>
       <span>${option.short}</span>
     </button>
-  `).join('');
+  `).join('') + '<div class="picker-search-empty" data-viewer-search-empty hidden>Kein Spieler gefunden.</div>';
 }
 
 function setAuthenticatedPlayer(playerId = null) {
@@ -1905,6 +1985,8 @@ async function openPlayerProfile(playerId, trigger = null) {
   }
 }
 
+window.PadelLigaOpenPlayerProfile = openPlayerProfile;
+
 function closePlayerProfile() {
   const dialog = document.getElementById('player-profile-dialog');
   if (!dialog?.open) return;
@@ -2080,6 +2162,12 @@ document.addEventListener('click', event => {
 });
 
 document.addEventListener('input', event => {
+  const viewerSearchInput = event.target.closest('[data-viewer-search]');
+  if (viewerSearchInput) {
+    filterViewerOptions(viewerSearchInput.value);
+    return;
+  }
+
   const calculatorScoreInput = event.target.closest('[data-calculator-score]');
   if (!calculatorScoreInput) return;
 
@@ -2137,6 +2225,32 @@ document.addEventListener('focusout', event => {
 });
 
 document.addEventListener('keydown', event => {
+  const viewerSearchInput = event.target.closest('[data-viewer-search]');
+  if (viewerSearchInput) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeViewerMenu();
+      document.querySelector('[data-viewer-toggle]')?.focus();
+      return;
+    }
+    const visibleOptions = [...document.querySelectorAll('#viewer-menu [data-viewer-id]')]
+      .filter(option => !option.hidden);
+    if (event.key === 'ArrowDown' && visibleOptions.length) {
+      event.preventDefault();
+      visibleOptions[0].focus();
+      return;
+    }
+    if (event.key === 'Enter' && viewerSearchInput.value && visibleOptions.length) {
+      event.preventDefault();
+      selectViewer(visibleOptions[0].dataset.viewerId);
+      return;
+    }
+  }
+
+  if (event.key === 'Enter' && event.target.matches('[data-calculator-score]')) {
+    event.preventDefault();
+    return;
+  }
   if (event.key === 'Escape') {
     closeViewerMenu();
     closeSeasonMenu();
@@ -4467,6 +4581,7 @@ function renderCalculatorScoreInput(match, part, teamIndex, label, value) {
     <button
       type="button"
       class="calculator-step"
+      tabindex="-1"
       data-calculator-step="-1"
       data-calculator-match-id="${escapeHtml(match.id)}"
       data-calculator-part="${part}"
@@ -4478,6 +4593,7 @@ function renderCalculatorScoreInput(match, part, teamIndex, label, value) {
       inputmode="numeric"
       pattern="[0-9]*"
       maxlength="2"
+      autocomplete="off"
       value="${escapeHtml(value)}"
       data-calculator-score
       data-calculator-match-id="${escapeHtml(match.id)}"
@@ -4488,6 +4604,7 @@ function renderCalculatorScoreInput(match, part, teamIndex, label, value) {
     <button
       type="button"
       class="calculator-step"
+      tabindex="-1"
       data-calculator-step="1"
       data-calculator-match-id="${escapeHtml(match.id)}"
       data-calculator-part="${part}"
@@ -5899,6 +6016,13 @@ async function initApp() {
   try {
     await window.PadelKonto?.init();
     await window.PadelTippspiel?.init(PADEL_DATA);
+    const url = new URL(window.location.href);
+    const requestedPlayerProfile = url.searchParams.get('spielerprofil');
+    if (requestedPlayerProfile) {
+      url.searchParams.delete('spielerprofil');
+      window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+      await openPlayerProfile(requestedPlayerProfile);
+    }
   } catch (error) {
     console.error('Konto oder Tippspiel konnten nicht initialisiert werden:', error);
   }
