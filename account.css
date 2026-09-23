@@ -291,6 +291,38 @@
     :where(.result-entry-form, .match-schedule-form, .training-form) input:is([type="date"], [type="time"])::-webkit-date-and-time-value {
       text-align: left;
     }
+    .datetime-input-shell { display: contents; }
+    .has-controlled-datetime-hints .datetime-input-shell {
+      position: relative;
+      display: inline-grid;
+      grid-template-areas: 'field';
+      width: fit-content;
+      max-width: 100%;
+    }
+    .has-controlled-datetime-hints .datetime-input-shell input {
+      grid-area: field;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+    }
+    .has-controlled-datetime-hints .datetime-input-shell::after {
+      content: attr(data-datetime-hint);
+      z-index: 1;
+      grid-area: field;
+      align-self: center;
+      justify-self: start;
+      color: var(--dim);
+      font: 0.85rem 'DM Sans', sans-serif;
+      opacity: 0;
+      padding: 0.55rem 0.65rem;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .has-controlled-datetime-hints .datetime-input-shell.is-empty:not(:focus-within)::after { opacity: 1; }
+    .has-controlled-datetime-hints .datetime-input-shell.is-empty:not(:focus-within) input {
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
     .result-score-entry {
       display: grid;
       grid-template-columns: repeat(3, auto);

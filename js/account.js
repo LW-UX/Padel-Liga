@@ -19,6 +19,14 @@
   };
   let initPromise = null;
 
+  const browserUserAgent = String(window.navigator?.userAgent || '');
+  const browserPlatform = String(window.navigator?.platform || '');
+  const isIosWebKit = /iP(?:hone|ad|od)/.test(browserUserAgent)
+    || (browserPlatform === 'MacIntel' && Number(window.navigator?.maxTouchPoints) > 1);
+  const isDesktopSafari = /Safari\//.test(browserUserAgent)
+    && !/(?:Chrome|Chromium|CriOS|Edg|EdgiOS|OPR|OPiOS|FxiOS|Android)\//.test(browserUserAgent);
+  document.documentElement?.classList?.toggle('has-controlled-datetime-hints', isIosWebKit || isDesktopSafari);
+
   function escapeHtml(value) {
     return String(value ?? '')
       .replaceAll('&', '&amp;')
@@ -26,6 +34,16 @@
       .replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;')
       .replaceAll("'", '&#039;');
+  }
+
+  function syncDateTimeHint(input) {
+    if (!input?.matches?.('input:is([type="date"], [type="time"])')) return;
+    input.closest('[data-datetime-field]')?.classList.toggle('is-empty', !input.value);
+  }
+
+  function syncDateTimeHints(root = document) {
+    root?.querySelectorAll?.('[data-datetime-field] input:is([type="date"], [type="time"])')
+      .forEach(syncDateTimeHint);
   }
 
   function getMatchAtTimestamp(value, fallback = Number.POSITIVE_INFINITY) {
@@ -391,11 +409,11 @@
       <div class="result-entry-timing">
         <label>
           <span>Datum</span>
-          <input type="date" name="playedOn" required max="${getTodayInputValue()}" value="${escapeHtml(getResultFormDate(task))}">
+          <span class="datetime-input-shell" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required max="${getTodayInputValue()}" value="${escapeHtml(getResultFormDate(task))}"></span>
         </label>
         <label>
           <span>Uhrzeit</span>
-          <input type="time" name="playedTime" required value="${escapeHtml(getResultFormTime(task))}">
+          <span class="datetime-input-shell" data-datetime-field data-datetime-hint="--:--"><input type="time" name="playedTime" required value="${escapeHtml(getResultFormTime(task))}"></span>
         </label>
       </div>
       ${renderScoreCounters(initialResult, matchFormat)}
@@ -415,11 +433,11 @@
       <div class="result-entry-timing">
         <label>
           <span>Datum</span>
-          <input type="date" name="scheduledDate" required value="${escapeHtml(matchTime.date || '')}">
+          <span class="datetime-input-shell" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="scheduledDate" required value="${escapeHtml(matchTime.date || '')}"></span>
         </label>
         <label>
           <span>Uhrzeit</span>
-          <input type="time" name="scheduledTime" required value="${escapeHtml(matchTime.time || '')}">
+          <span class="datetime-input-shell" data-datetime-field data-datetime-hint="--:--"><input type="time" name="scheduledTime" required value="${escapeHtml(matchTime.time || '')}"></span>
         </label>
       </div>
       <div class="match-schedule-actions">
@@ -532,6 +550,7 @@
       const form = document.querySelector(`[data-training-alternative="${CSS.escape(String(task.session_id))}"]`);
       if (form) renderTrainingForm(task.player_ids, getTrainingRoundValues(task), form);
     });
+    syncDateTimeHints(document.getElementById('result-task-list'));
   }
 
   function getPlayerName(playerId) {
@@ -935,8 +954,8 @@
   function renderTrainingAlternativeForm(task) {
     return `<form class="training-form training-alternative-form" data-training-alternative="${escapeHtml(task.session_id)}" hidden>
       <div class="training-form-meta">
-        <label><span>Datum</span><input type="date" name="playedOn" required value="${escapeHtml(task.played_on)}"></label>
-        <label><span>Uhrzeit</span><input type="time" name="displayTime" required value="${escapeHtml(String(task.display_time).slice(0, 5))}"></label>
+        <label><span>Datum</span><span class="datetime-input-shell" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required value="${escapeHtml(task.played_on)}"></span></label>
+        <label><span>Uhrzeit</span><span class="datetime-input-shell" data-datetime-field data-datetime-hint="--:--"><input type="time" name="displayTime" required value="${escapeHtml(String(task.display_time).slice(0, 5))}"></span></label>
       </div>
       <div class="training-player-fields" data-training-player-fields></div>
       <div class="training-rounds" data-training-rounds></div>
@@ -1858,6 +1877,7 @@ Dein Hanako-Leben-Squad`;
       return;
     }
     form.reset();
+    syncDateTimeHints(form);
     renderTrainingForm();
   }
 
@@ -1933,6 +1953,7 @@ Dein Hanako-Leben-Squad`;
     button.disabled = false;
     setTrainingMessage('', '', form);
     form.reset();
+    syncDateTimeHints(form);
     form.hidden = true;
     const formGroup = form.closest('[data-training-form-group]');
     if (formGroup) formGroup.hidden = true;
@@ -1953,6 +1974,7 @@ Dein Hanako-Leben-Squad`;
       renderTrainingForm(task.player_ids, getTrainingRoundValues(task), form);
       form.querySelector('[name="playedOn"]').value = task.played_on;
       form.querySelector('[name="displayTime"]').value = String(task.display_time).slice(0, 5);
+      syncDateTimeHints(form);
       setTrainingMessage('', '', form);
     }
   }
@@ -2152,6 +2174,7 @@ Dein Hanako-Leben-Squad`;
       if (event.target.closest('.training-form')) handleTrainingInvalid(event);
     }, true);
     document.addEventListener('input', event => {
+      syncDateTimeHint(event.target);
       const trainingPickerSearch = event.target.closest('[data-training-picker-search]');
       if (trainingPickerSearch) {
         filterTrainingPlayerOptions(
@@ -2169,6 +2192,7 @@ Dein Hanako-Leben-Squad`;
         else updateResultSummary(event.target.closest('[data-result-submit]'));
       }
     });
+    document.addEventListener('change', event => syncDateTimeHint(event.target));
     document.addEventListener('pointerdown', event => {
       const scoreControl = event.target.closest('[data-result-score], [data-result-score-step]');
       if (!scoreControl) return;
@@ -2220,6 +2244,7 @@ Dein Hanako-Leben-Squad`;
     document.getElementById('player-invite-dialog')?.addEventListener('click', event => {
       if (event.target === event.currentTarget) closePlayerInviteDialog();
     });
+    syncDateTimeHints();
   }
 
   async function initialize() {
