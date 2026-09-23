@@ -292,6 +292,7 @@
       text-align: left;
     }
     .datetime-input-shell { display: contents; }
+    .datetime-input-shell.is-empty input { color: var(--dim); }
     .has-controlled-datetime-hints .datetime-input-shell {
       position: relative;
       display: inline-grid;

@@ -124,7 +124,7 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.doesNotMatch(style, /\.result-entry-actions \{[^}]*border-top:/);
 });
 
-test('Safari and iOS receive controlled empty date and time hints', () => {
+test('date and time hints are dimmed while Safari and iOS receive controlled text', () => {
   pages.forEach(source => {
     assert.match(source, /class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="TT\.MM\.JJJJ"><input type="date"/);
     assert.match(source, /class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="--:--"><input type="time"/);
@@ -137,6 +137,7 @@ test('Safari and iOS receive controlled empty date and time hints', () => {
   assert.match(accountScript, /document\.addEventListener\('change', event => syncDateTimeHint\(event\.target\)\)/);
   assert.match(accountScript, /form\.reset\(\);\s*syncDateTimeHints\(form\);/);
   assert.match(style, /\.datetime-input-shell \{ display: contents; \}/);
+  assert.match(style, /\.datetime-input-shell\.is-empty input \{ color: var\(--dim\); \}/);
   assert.match(style, /\.has-controlled-datetime-hints \.datetime-input-shell::after \{[^}]*color: var\(--dim\);[^}]*opacity: 0;/);
   assert.match(style, /\.datetime-input-shell\.is-empty:not\(:focus-within\)::after \{ opacity: 1; \}/);
   assert.match(style, /\.datetime-input-shell\.is-empty:not\(:focus-within\) input \{[^}]*color: transparent;[^}]*-webkit-text-fill-color: transparent;/);
