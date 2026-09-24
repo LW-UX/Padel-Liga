@@ -16,6 +16,14 @@ test('match overview defaults to matchdays and exposes date sorting in the ranki
   assert.match(app, /matchSortMode === 'date'[\s\S]*renderPartienByDate\(visibleMatches\)/);
 });
 
+test('switching match sorting reuses the ranking movement animation for stable match cards', () => {
+  assert.match(app, /renderPartien\(\{ animateSort: true \}\)/);
+  assert.match(app, /data-match-entry="\$\{escapeHtml\(m\.id\)\}"/);
+  assert.match(app, /getRankingRowPositions\(spielplan, '\.mc', 'matchEntry'\)/);
+  assert.match(app, /animateRankingRows\(spielplan, '\.mc', previousPositions, 'matchEntry'\)/);
+  assert.match(app, /function animateRankingRows\([^]*prefers-reduced-motion: reduce[^]*520ms cubic-bezier/);
+});
+
 test('date sorting places matches without a complete date and time last', () => {
   const source = app.match(/function compareMatchesBySchedule\(a, b\) \{[\s\S]*?\n\}/)?.[0];
   assert.ok(source);

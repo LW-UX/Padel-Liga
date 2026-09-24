@@ -2324,8 +2324,11 @@ function updateMatchScopeToggle() {
 }
 
 function setMatchSort(mode) {
-  matchSortMode = mode === 'date' ? 'date' : 'matchday';
-  renderPartien();
+  const nextMode = mode === 'date' ? 'date' : 'matchday';
+  if (nextMode === matchSortMode) return;
+
+  matchSortMode = nextMode;
+  renderPartien({ animateSort: true });
 }
 
 function updateMatchSortToggle() {
@@ -3969,7 +3972,7 @@ function renderMatchRow(m) {
     const probabilityHtml = probability
       ? `<div class="mc-prob">${probability.team1}% : ${probability.team2}%</div>`
       : '';
-    return `<div class="mc pending ${isViewerMatch(m) ? 'viewer-match' : ''}">
+    return `<div class="mc pending ${isViewerMatch(m) ? 'viewer-match' : ''}" data-match-entry="${escapeHtml(m.id)}">
       <div class="mc-meta"><span class="mc-nr">${formatMatchMeta(m, { relative: true })}</span></div>
       <div class="mc-team mc-team-1">
         <div class="mc-players">${renderTeamPlayers(m.team1.spieler)}</div>
@@ -3997,7 +4000,7 @@ function renderMatchRow(m) {
   const leftProbability = probability ? `<span class="mc-result-prob">${probability.team1}%</span>` : '';
   const rightProbability = probability ? `<span class="mc-result-prob">${probability.team2}%</span>` : '';
 
-  return `<div class="mc played ${isViewerMatch(m) ? `viewer-match ${viewerResultClass}` : ''}">        <div class="mc-meta"><span class="mc-nr">${formatMatchMeta(m, { relative: true })}</span></div>
+  return `<div class="mc played ${isViewerMatch(m) ? `viewer-match ${viewerResultClass}` : ''}" data-match-entry="${escapeHtml(m.id)}">        <div class="mc-meta"><span class="mc-nr">${formatMatchMeta(m, { relative: true })}</span></div>
     <div class="mc-team mc-team-1 ${t1w?'win':''}">
       <div class="mc-players">${renderTeamPlayers(m.team1.spieler)}</div>
     </div>
@@ -4197,7 +4200,7 @@ function renderCupBracket(matches) {
   </div>`;
 }
 
-function renderPartien() {
+function renderPartien({ animateSort = false } = {}) {
   updateMatchScopeToggle();
   updateMatchSortToggle();
 
@@ -4212,6 +4215,10 @@ function renderPartien() {
   const played = regularMatches.filter(m => m.sieger !== null).length;
   document.getElementById('sp-meta').textContent = `${played}/${regularMatches.length}`;
   const visibleMatches = PADEL_DATA.matches.filter(matchesCurrentMatchScope);
+  const spielplan = document.getElementById('spielplan');
+  const previousPositions = animateSort
+    ? getRankingRowPositions(spielplan, '.mc', 'matchEntry')
+    : null;
   const spielplanHtml = matchSortMode === 'date'
     ? renderPartienByDate(visibleMatches)
     : renderPartienByMatchday(visibleMatches);
@@ -4219,7 +4226,8 @@ function renderPartien() {
   const emptyMatchesText = PADEL_DATA.matches.length === 0
     ? 'Der Spielplan folgt.'
     : 'Keine Partien für diese Auswahl.';
-  document.getElementById('spielplan').innerHTML = spielplanHtml || `<div class="empty-state">${emptyMatchesText}</div>`;
+  spielplan.innerHTML = spielplanHtml || `<div class="empty-state">${emptyMatchesText}</div>`;
+  if (animateSort) animateRankingRows(spielplan, '.mc', previousPositions, 'matchEntry');
 }
 
 // ── CALCULATOR ────────────────────────────────────────────────────
@@ -4848,20 +4856,20 @@ function renderCalculatorMiniRanking(rankedPlayers, previousPositions = null, ac
   animateRankingRows(miniRanking, '.calculator-mini-rank-row', previousPositions);
 }
 
-function getRankingRowPositions(container, rowSelector) {
+function getRankingRowPositions(container, rowSelector, entryDatasetKey = 'rankingEntry') {
   if (!container) return null;
 
   return new Map([...container.querySelectorAll(rowSelector)]
-    .map(row => [row.dataset.rankingEntry, row.getBoundingClientRect().top])
+    .map(row => [row.dataset[entryDatasetKey], row.getBoundingClientRect().top])
     .filter(([entryId, top]) => entryId && Number.isFinite(top)));
 }
 
-function animateRankingRows(container, rowSelector, previousPositions) {
+function animateRankingRows(container, rowSelector, previousPositions, entryDatasetKey = 'rankingEntry') {
   if (!container || !previousPositions?.size) return;
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   container.querySelectorAll(rowSelector).forEach(row => {
-    const previousTop = previousPositions.get(row.dataset.rankingEntry);
+    const previousTop = previousPositions.get(row.dataset[entryDatasetKey]);
     if (!Number.isFinite(previousTop)) return;
 
     const currentTop = row.getBoundingClientRect().top;
