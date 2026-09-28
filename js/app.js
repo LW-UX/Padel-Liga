@@ -703,6 +703,7 @@ async function loadSeasonData(season) {
     ? {
         ...databaseSeason,
         articles: staticSeason?.articles || [],
+        homeAnnouncement: staticSeason?.homeAnnouncement || null,
         shortInfo: databaseSeason.shortInfo?.length ? databaseSeason.shortInfo : staticSeason?.shortInfo || [],
         organizations: databaseSeason.organizations?.length ? databaseSeason.organizations : staticSeason?.organizations || []
       }
@@ -3165,6 +3166,12 @@ function renderHome() {
   document.getElementById('home-short-info').innerHTML = (PADEL_DATA.shortInfo || [])
     .map(item => `<li>${item}</li>`)
     .join('');
+
+  const homeAnnouncement = document.getElementById('home-announcement');
+  homeAnnouncement.hidden = !PADEL_DATA.homeAnnouncement;
+  homeAnnouncement.innerHTML = PADEL_DATA.homeAnnouncement
+    ? renderArticleCard(PADEL_DATA.homeAnnouncement)
+    : '';
 
   document.getElementById('home-articles').innerHTML = `
     <div class="home-article-preview" id="home-article-preview">

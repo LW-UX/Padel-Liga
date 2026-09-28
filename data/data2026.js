@@ -61,6 +61,8 @@ window.PADEL_SEASON = {
     },
     {
       "spieltag": 8,
+      "startDate": "2026-10-08",
+      "endDate": "2026-10-08",
       "title": "Final Four"
     }
   ],
@@ -1314,8 +1316,8 @@ window.PADEL_SEASON = {
       "spieltag": 8,
       "format": "single-set",
       "countsForRanking": false,
-      "datum": null,
-      "uhrzeit": null,
+      "datum": "2026-10-08",
+      "uhrzeit": "18.00",
       "team1": {
         "spieler": [
           "Erster",
@@ -1338,8 +1340,8 @@ window.PADEL_SEASON = {
       "spieltag": 8,
       "format": "single-set",
       "countsForRanking": false,
-      "datum": null,
-      "uhrzeit": null,
+      "datum": "2026-10-08",
+      "uhrzeit": "18.30",
       "team1": {
         "spieler": [
           "Erster",
@@ -1362,8 +1364,8 @@ window.PADEL_SEASON = {
       "spieltag": 8,
       "format": "single-set",
       "countsForRanking": false,
-      "datum": null,
-      "uhrzeit": null,
+      "datum": "2026-10-08",
+      "uhrzeit": "19.00",
       "team1": {
         "spieler": [
           "Erster",
@@ -1381,6 +1383,20 @@ window.PADEL_SEASON = {
       "sieger": null
     }
   ],
+  "homeAnnouncement": {
+    "meta": "FINAL FOUR  ·  8. OKTOBER 2026  ·  AB 18 UHR",
+    "title": "Save the Date",
+    "body": [
+      {
+        "type": "p",
+        "text": "Jetzt steht der Termin: Am 8. Oktober um 18 Uhr steigt das Final Four der Padel-Liga Sommer 2026. Die besten vier Spieler der Saison kämpfen in drei wechselnden Teamkonstellationen um den Titel – ein Satz pro Partie, jeder mit jedem."
+      },
+      {
+        "type": "p",
+        "text": "Wer wird der erste Champion der Padel-Liga?"
+      }
+    ]
+  },
   "articles": [
     {
       "spieltag": 1,

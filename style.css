@@ -1397,13 +1397,34 @@
       font-size: 2rem;
       margin-bottom: 0.6rem;
     }
+    .home-announcement {
+      background: color-mix(in srgb, var(--accent2) 8%, var(--surface));
+      border-color: color-mix(in srgb, var(--accent2) 42%, var(--border));
+    }
+    .home-announcement .article-card {
+      background: transparent;
+      border: 0;
+      padding: 0;
+    }
+    .home-announcement .article-card h3 {
+      font-size: 2rem;
+      margin-bottom: 0.6rem;
+    }
+    .home-announcement .article-meta {
+      color: var(--accent2);
+    }
+    .home-announcement .article-body p:last-child {
+      color: var(--text);
+      font-weight: 600;
+      margin-bottom: 0;
+    }
     .article-card h3 { font-size: 1.7rem; margin-bottom: 0.75rem; }
     .article-card p,
     .info-card p { color: var(--dim); line-height: 1.5; margin-bottom: 0.8rem; }
     .article-meta {
       display: flex;
       justify-content: space-between;
-      gap: 18px;
+      gap: 12px;
       font-family: 'DM Mono', monospace;
       font-size: 0.85rem;
       color: var(--dim);

@@ -1,6 +1,6 @@
 # Projektentscheidungen Padel-Liga
 
-Stand: 23. September 2026
+Stand: 28. September 2026
 
 Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell beschlossene Zielbild. Bei neuen oder geänderten Entscheidungen wird sie zusammen mit der jeweiligen Umsetzung aktualisiert.
 
@@ -16,6 +16,8 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 
 ## Aktueller Umsetzungsstand
 
+- Auf der Startseite steht ganz oben als eigenständiges Widget und noch vor dem App-Hinweis ein nur dort sichtbarer „Save the Date“-Ankündigungsblock für das Final Four von Sommer 2026 am 8. Oktober 2026 ab 18 Uhr. Er ist nicht in das Artikel-Widget eingebettet, kein Saisonartikel und erscheint deshalb nicht im Artikelarchiv.
+- Die Migration `20260928130000_schedule_summer_2026_final_four.sql` wurde am 28. September 2026 auf die Supabase-Produktionsdatenbank angewendet. Die drei Final-Four-Partien von Sommer 2026 sind für den 8. Oktober 2026 um 18:00 Uhr, 18:30 Uhr und 19:00 Uhr terminiert.
 - Beim geöffneten Formular „Training hinzufügen“ steht oberhalb der Eingabekarte die Bereichsüberschrift „Training“ im gleichen Stil wie die Gruppenüberschrift „Zu bestätigen“; beim Schließen des Formulars wird sie gemeinsam mit der Karte ausgeblendet.
 - Die zentrale Spielerauswahl ist als Split-Button gestaltet: Der linke Teil zeigt, sofern vorhanden, das runde Profilbild des ausgewählten Spielers und öffnet unmittelbar dessen öffentliches Profil; ohne hinterlegtes Bild erscheint der im Spielerprofil konfigurierte Personen-Emoji als Fallback. Der rechte Teil behält die Dropdown-Auswahl bei und wird beim Öffnen ohne überlappende Beschriftung zum Suchfeld. Die Suche wird mit demselben Tipp unmittelbar fokussiert, damit sich insbesondere auf Mobilgeräten direkt die Tastatur öffnet; dies gilt ebenso für die Spielerauswahl im Trainingsformular. Nach dem Einblenden der mobilen Tastatur scrollt die Seite beziehungsweise der Konto-Dialog automatisch nach und positioniert das aktive Suchfeld abhängig von der verbleibenden Höhe bis zu etwa 200 Pixel unterhalb der sichtbaren Oberkante. Die Liste bleibt parallel scrollbar und wird während der Eingabe nach Name oder Kürzel gefiltert. Nach der Auswahl schließen sich die Suchfelder der zentralen Spieler- und Trainingsauswahl, werden bis zum nächsten Öffnen deaktiviert und übergeben den Fokus an den jeweiligen Dropdown-Button. Solange kein Spieler ausgewählt ist, bleibt die Profilaktion deaktiviert.
 - Die Edge Function `invite-player` wurde am 22. September 2026 als Version 4 produktiv aktiviert. Bereits zugeordnete Spieler und Spieler mit bestehendem Konto können erneut ausgewählt und eingeladen werden; für bestehende Konten erzeugt die Funktion einen neuen Passwort-Einrichtungslink statt den Vorgang ohne Link zu beenden.
@@ -85,6 +87,7 @@ Diese Datei ist das fortlaufende Projektgedächtnis. Sie beschreibt das aktuell 
 - Der Cup-Turnierbaum zeigt oben den Pokal und das Finale, darunter die Halbfinals und unten die Viertelfinals. Zwischen den Runden werden Sammelpunkte für die jeweilige Neuauslosung statt fester Siegerpfade dargestellt.
 - Der Hinweis „Jetzt auch als App!“ auf der Startseite kann über ein X im Kasten für den aktuellen Browser-Tab geschlossen werden. Er bleibt bei Reloads innerhalb dieses Tabs ausgeblendet und erscheint nach dem Schließen des Tabs beim nächsten Besuch wieder.
 - Gibt es für den aktuellen Zeitraum noch keinen veröffentlichten Artikel, zeigt die Startseite weiterhin den zeitlich jüngsten bereits veröffentlichten Artikel. Unveröffentlichte Artikelplatzhalter werden dabei nicht angezeigt.
+- Zeitlich begrenzte Kurzankündigungen können als eigenständiges Startseiten-Widget ganz oben vor App-Hinweis und aktuellem Artikel erscheinen, ohne Teil des Saisonartikel-Archivs zu werden. Die Final-Four-Ankündigung für Sommer 2026 nutzt dieses Muster.
 - Saisonauswahl und Login- beziehungsweise Konto-Button stehen gemeinsam in der oberen rechten Aktionszeile, auf Desktop auf Höhe der Eyebrow. Mobil steht diese Aktionszeile ganz oben über die volle verfügbare Breite; darunter folgen die drei Firmennamen ohne Zeilenumbruch und anschließend der Titel mit der Spielerauswahl. Vor dem Saison-Dropdown erscheint keine zusätzliche Beschriftung „Saison“.
 - Saison- und Spielerauswahl verwenden die zentrale Gestaltung für sekundäre Buttons. Ein gemeinsamer Dropdown-Modifier ergänzt ausschließlich Chevron, den geöffneten Zustand und den dafür notwendigen Innenabstand; nur die responsive Breite richtet sich nach dem jeweiligen Inhalt und Platzbedarf.
 - Das Tippspiel liegt auf einer eigenen Seite unter `/Padel-Liga/tipp/`.
