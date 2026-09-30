@@ -2380,8 +2380,15 @@
       gap: 1rem;
       color: var(--dim);
       font-family: 'DM Mono', monospace;
-      font-size: 0.85rem;
+      font-size: 0.7rem;
       text-transform: uppercase;
+    }
+    .live-overview-live {
+      display: inline-flex;
+      align-items: center;
+      color: var(--negativ);
+      font-family: 'DM Sans', sans-serif;
+      text-transform: none;
     }
     .live-overview-matchup {
       display: grid;
@@ -2425,19 +2432,12 @@
       letter-spacing: 0.05em;
       line-height: 1;
     }
-    .live-overview-result.is-live small { color: var(--negativ); }
     .live-overview-score-dot {
       display: inline-block;
       margin-right: 0.3rem;
       animation: live-pulse 1.15s ease-in-out infinite;
       font-size: 0.65em;
       vertical-align: 0.08em;
-    }
-    .live-overview-result small {
-      margin-top: 3px;
-      color: var(--dim);
-      font-size: 0.85rem;
-      white-space: nowrap;
     }
     .live-overview-ranking-wrap {
       margin-bottom: 0.6rem;
@@ -2535,13 +2535,9 @@
       top: 0.5rem;
       right: 0.5rem;
       display: grid;
-      width: 23px;
-      height: 23px;
-      place-items: center;
-      border-radius: 50%;
-      background: var(--accent);
-      color: var(--bg);
-      font-size: 0.7rem;
+      color: var(--accent);
+      font-size: 2rem;
+      line-height: 100%;
     }
     .live-ticker-scoreboard {
       display: grid;
@@ -3203,9 +3199,6 @@
         margin-bottom: 1.25rem;
         padding: 0.35rem;
       }
-      .live-overview-match-meta {
-        justify-content: center;
-      }
       .hero {
         width: calc(100% - 1.5rem);
         padding: 1.35rem 0 0.85rem;
@@ -3548,11 +3541,6 @@
       .live-overview-team-2 { justify-content: stretch; }
       .live-overview-team-separator { display: none; }
       .live-overview-result { min-width: 78px; }
-      .live-overview-result small {
-        max-width: 92px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
       .live-ticker-matchup {
         grid-template-columns: minmax(0, 1fr) 92px minmax(0, 1fr);
         gap: 0.5rem;
@@ -3585,10 +3573,7 @@
       .live-ticker-player-name { font-size: 0.85rem; }
       .live-ticker-player-elo { font-size: 0.7rem; }
       .live-ticker-serve {
-        top: 0.25rem;
-        right: 0.25rem;
-        width: 20px;
-        height: 20px;
+        font-size: 1.5rem;
       }
       .live-ticker-score { font-size: 3rem; }
       .live-ticker-points { font-size: 1.5rem; }

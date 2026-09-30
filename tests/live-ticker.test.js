@@ -210,12 +210,12 @@ test('the ticker starts with an overview tab for all three matches and the final
   assert.match(overview, /<th class="col-diff">Diff\.<\/th>/);
   assert.doesNotMatch(overview, /class="col-gv"/);
   assert.doesNotMatch(overview, /class="live-ticker-status/);
-  assert.match(overview, /class="live-overview-result\$\{matchState\.isLive \? ' is-live' : ''\}"/);
+  assert.match(overview, /class="live-overview-live"/);
   assert.match(overview, /class="live-overview-score-dot"/);
-  assert.match(ticker, /score: `\$\{session\.teamOneGames\}:\$\{session\.teamTwoGames\}`,[\s\S]*detail: 'Live'/);
-  assert.doesNotMatch(ticker, /detail: `Live · \$\{pointLabel\(session\)\}`/);
+  assert.match(ticker, /score: `\$\{session\.teamOneGames\}:\$\{session\.teamTwoGames\}`/);
+  assert.doesNotMatch(overview, /matchState\.detail/);
   assert.match(ticker, /target\.textContent = \[payload\?\.seasonLabel, formatDate\(payload\?\.matchAt\)\]\.filter\(Boolean\)\.join\(' · '\)/);
-  assert.match(ticker, /score: '–:–', detail: 'Geplant'/);
+  assert.match(ticker, /score: '–:–'/);
   assert.match(ticker, /Stand nach abgeschlossenen Partien/);
   assert.match(ticker, /liveView', 'overview'/);
   assert.match(app, /url\.searchParams\.get\('liveView'\) === 'overview'/);

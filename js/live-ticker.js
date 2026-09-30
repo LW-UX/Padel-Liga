@@ -98,7 +98,7 @@
   function renderPlayer(player, currentServerId) {
     const serving = player.playerId === currentServerId;
     return `<button class="live-ticker-player player-profile-link" type="button" data-player-profile-id="${escapeHtml(player.playerId)}">
-      ${serving ? '<span class="live-ticker-serve" title="Aufschlag" aria-label="hat Aufschlag">●</span>' : ''}
+      ${serving ? '<span class="live-ticker-serve" title="Aufschlag" aria-label="hat Aufschlag">◉</span>' : ''}
       <span class="live-ticker-player-photo" aria-hidden="true">
         <img class="live-ticker-player-image" src="assets/players/${encodeURIComponent(player.playerId)}/profile.webp" alt="" data-live-player-image>
         <span class="live-ticker-player-emoji" hidden>${escapeHtml(profileEmoji(player.playerId))}</span>
@@ -201,12 +201,11 @@
       return {
         isLive: true,
         isFinished: false,
-        score: `${session.teamOneGames}:${session.teamTwoGames}`,
-        detail: 'Live'
+        score: `${session.teamOneGames}:${session.teamTwoGames}`
       };
     }
-    if (payload.result) return { isLive: false, isFinished: true, score: payload.result, detail: 'Endstand' };
-    return { isLive: false, isFinished: false, score: '–:–', detail: 'Geplant' };
+    if (payload.result) return { isLive: false, isFinished: true, score: payload.result };
+    return { isLive: false, isFinished: false, score: '–:–' };
   }
 
   function getOverviewStats(payloads) {
@@ -269,10 +268,11 @@
             return `<button class="live-overview-match${matchState.isFinished ? ' is-finished' : ''}" type="button" data-live-match-id="${escapeHtml(payload.matchId)}">
               <span class="live-overview-match-meta">
                 <span>${escapeHtml(payload.displayLabel || `Partie ${index + 1}`)}</span>
+                ${matchState.isLive ? '<span class="live-overview-live"><span class="live-overview-score-dot" aria-hidden="true">●</span>Live</span>' : ''}
               </span>
               <span class="live-overview-matchup">
                 <span class="live-overview-team live-overview-team-1${teamOneWinner ? ' is-winner' : ''}">${renderOverviewTeam(payload, 1)}</span>
-                <span class="live-overview-result${matchState.isLive ? ' is-live' : ''}"><strong>${escapeHtml(matchState.score)}</strong><small>${matchState.isLive ? '<span class="live-overview-score-dot" aria-hidden="true">●</span>' : ''}${escapeHtml(matchState.detail)}</small></span>
+                <span class="live-overview-result"><strong>${escapeHtml(matchState.score)}</strong></span>
                 <span class="live-overview-team live-overview-team-2${teamTwoWinner ? ' is-winner' : ''}">${renderOverviewTeam(payload, 2)}</span>
               </span>
             </button>`;
