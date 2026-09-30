@@ -299,7 +299,7 @@
             }).join('')}</tbody>
           </table>
         </div>
-        <div class="sh-meta live-overview-note">Stand nach abgeschlossenen Partien · Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung</div>
+        <div class="sh-meta live-overview-note">Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung<br>Stand nach abgeschlossenen Partien</div>
       </section>
     </div>`;
     if (connection) connection.textContent = livePayload

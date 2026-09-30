@@ -1203,7 +1203,7 @@
       align-items: center;
       gap: 0.45rem;
     }
-    .sh-meta { font-size: 0.85rem; color: var(--dim); }
+    .sh-meta { font-size: 0.7rem; color: var(--dim); }
     .section-subheading { margin-top: 2.5rem; }
     #rangliste > #final-four-ranking-section:first-child .section-subheading,
     #league-calculator[hidden] + #final-four-calculator .section-subheading { margin-top: 0; }
@@ -2303,7 +2303,7 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       align-items: center;
-      min-height: 90px;
+      min-height: 97px;
       background: color-mix(in srgb, var(--bg) 92%, transparent);
       backdrop-filter: blur(14px);
       margin: 4rem auto 0;
@@ -2317,11 +2317,11 @@
       min-width: 0;
       text-align: center;
     }
-    .live-ticker-dialog-heading .sh-meta { margin-top: 0.15rem; }
+    .live-ticker-dialog-heading .sh-meta { font-size: 0.85rem; margin-top: 0.15rem; }
     .live-ticker-dialog-content {
       width: min(calc(100% - 2rem), 1100px);
       margin: 0 auto;
-      padding: 1.5rem 0 5rem;
+      padding: 0 0 5rem;
     }
     #live-match-switcher {
       position: sticky;
@@ -2332,7 +2332,7 @@
       gap: 8px;
       width: 100%;
       margin: 0 auto 1.5rem;
-      padding: 10px 0.5rem 0.5rem;
+      padding: 10px 0 0.5rem;
       background-color: var(--bg);
     }
     #live-ticker-content {
@@ -2359,9 +2359,8 @@
     }
     .live-overview-match {
       display: grid;
-      gap: 0.8rem;
-      width: 100%;
-      padding: 0.9rem 1.5rem;
+      gap: 8px;
+      padding: 0.5rem 1.2rem;
       border: 1px solid var(--border);
       border-radius: 12px;
       background: transparent;
@@ -2374,21 +2373,17 @@
     .live-overview-match:hover,
     .live-overview-match:focus-visible { border-color: var(--accent); }
     .live-overview-match-meta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
       color: var(--dim);
       font-family: 'DM Mono', monospace;
       font-size: 0.7rem;
-      text-transform: uppercase;
+      position: relative;
+      text-align: center;
     }
     .live-overview-live {
-      display: inline-flex;
-      align-items: center;
       color: var(--negativ);
       font-family: 'DM Sans', sans-serif;
-      text-transform: none;
+      position: absolute;
+      right: 0;
     }
     .live-overview-matchup {
       display: grid;
@@ -2402,7 +2397,7 @@
       align-items: center;
       gap: 0.25rem 0.45rem;
       min-width: 0;
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: 500;
       line-height: 1.16;
     }
@@ -2471,7 +2466,7 @@
     }
     .live-ticker-matchup {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(150px, 190px) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) minmax(150px, 220px) minmax(0, 1fr);
       align-items: center;
       gap: 1.5rem;
       padding: 0 1.6rem 1.75rem;
@@ -2493,6 +2488,7 @@
       border-radius: 9px;
       background: var(--surface2);
       text-align: center;
+      border: 1px solid var(--border);
     }
     .live-ticker-player:hover { border-color: var(--accent); opacity: 1; }
     .live-ticker-player-photo {
@@ -3533,7 +3529,7 @@
         gap: 1.8rem;
       }
       .live-overview-matchup { gap: 0.6rem; }
-      .live-overview-match { padding: 1rem 0.95rem; }
+      .live-overview-match { padding: 0.5rem 0.85rem; }
       .live-overview-team {
         display: grid;
         gap: 0.1rem;
@@ -3542,7 +3538,7 @@
       .live-overview-team-separator { display: none; }
       .live-overview-result { min-width: 78px; }
       .live-ticker-matchup {
-        grid-template-columns: minmax(0, 1fr) 92px minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) 100px minmax(0, 1fr);
         gap: 0.5rem;
         padding: 0 0.6rem 1.35rem;
       }
@@ -3763,7 +3759,6 @@
         display: inline-block;
         max-width: 100%;
         padding-right: 6px;
-        font-size: 0.95rem;
       }
       .prediction-layout { grid-template-columns: 1fr; gap: 12px; }
       .prediction-ranking-panel { position: static; }

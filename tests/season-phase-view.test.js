@@ -124,6 +124,7 @@ test('Final4 detail view unlocks as soon as the same four participants fill all 
 
 test('ranking, matches, and calculator share the phase layout controls', () => {
   assert.match(html, /id="final-four-ranking-section"/);
+  assert.match(html, /id="final-four-ranking-detail-link"[^>]*data-live-view="overview"[^>]*hidden>Zur Übersicht<\/button>/);
   assert.match(html, /id="league-calculator"/);
   assert.match(html, /id="calculator-nav-button"/);
   assert.match(html, /id="home-calculator-link"/);
@@ -134,6 +135,7 @@ test('ranking, matches, and calculator share the phase layout controls', () => {
   assert.match(app, /renderPartienByMatchday[\s\S]*joinSeasonPhaseSections/);
   assert.match(app, /renderPartienByDate[\s\S]*joinSeasonPhaseSections/);
   assert.match(app, /data-live-open-match="\$\{escapeHtml\(detailEntryMatchId\)\}" data-live-view="overview"/);
+  assert.match(app, /detailLink\.dataset\.liveOpenMatch = detailEntryMatchId/);
   assert.match(style, /#league-calculator\[hidden\] \+ #final-four-calculator \.section-subheading/);
 });
 

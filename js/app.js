@@ -2759,10 +2759,17 @@ function getFinalFourStats(matches = getFinalFourMatches()) {
 function renderFinalFourRanking() {
   const body = document.getElementById('ff-body');
   const meta = document.getElementById('ff-meta');
+  const detailLink = document.getElementById('final-four-ranking-detail-link');
   if (!body || !meta) return;
 
   const { matches, stats } = getFinalFourStats();
+  const detailEntryMatchId = getFinalFourDetailEntryMatchId(matches);
   meta.textContent = `${stats.length} Spieler`;
+  if (detailLink) {
+    detailLink.hidden = !detailEntryMatchId;
+    if (detailEntryMatchId) detailLink.dataset.liveOpenMatch = detailEntryMatchId;
+    else delete detailLink.dataset.liveOpenMatch;
+  }
 
   body.innerHTML = stats.map((player, index) => {
     const diffClass = getStatDiffClass(player.diff);
