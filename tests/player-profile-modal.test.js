@@ -228,7 +228,7 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /'Spieldifferenz', getPlayerProfileSignedValueClass\(summary\.gameDiff\)/);
   assert.match(app, /'Ø Spieldifferenz', getPlayerProfileSignedValueClass\(gameDiffPerMatch\)/);
   assert.match(style, /\.player-profile-stat-value\.negative \{ color: var\(--negativ\); \}/);
-  assert.match(style, /\.player-profile-stat-fraction \{ font-size: 0\.58em; \}/);
+  assert.match(style, /\.player-profile-stat-fraction \{ font-size: 1rem; \}/);
   assert.match(style, /\.player-profile-stats \{[\s\S]*?grid-template-columns: repeat\(7, minmax\(0, 1fr\)\);/);
   assert.match(style, /\.player-profile-stat:first-child \{ grid-column: 1 \/ -1; border-right: 0; \}/);
   assert.doesNotMatch(style, /\.player-profile-stat:last-child \{ grid-column: 1 \/ -1;/);

@@ -31,8 +31,10 @@ vm.runInNewContext([
   extractFunction(app, 'hasAssignedMatchPlayers'),
   extractFunction(app, 'getSeasonDisplayPhase'),
   extractFunction(app, 'getSeasonStageOrder'),
+  extractFunction(app, 'getFinalFourDetailEntryMatchId'),
   'this.getSeasonDisplayPhase = getSeasonDisplayPhase;',
-  'this.getSeasonStageOrder = getSeasonStageOrder;'
+  'this.getSeasonStageOrder = getSeasonStageOrder;',
+  'this.getFinalFourDetailEntryMatchId = getFinalFourDetailEntryMatchId;'
 ].join('\n'), phaseSandbox);
 
 function team(assigned = true) {
@@ -100,6 +102,26 @@ test('stage order follows the active phase and keeps older phases below', () => 
   assert.deepEqual(Array.from(phaseSandbox.getSeasonStageOrder('completed')), ['finalFour', 'semifinal', 'league']);
 });
 
+test('Final4 detail view unlocks as soon as the same four participants fill all pairings', () => {
+  const final = (id, teamOne, teamTwo) => ({
+    id,
+    team1: { playerIds: teamOne },
+    team2: { playerIds: teamTwo }
+  });
+  const ready = [
+    final('final-1', ['one', 'two'], ['three', 'four']),
+    final('final-2', ['one', 'four'], ['two', 'three']),
+    final('final-3', ['one', 'three'], ['two', 'four'])
+  ];
+
+  assert.equal(phaseSandbox.getFinalFourDetailEntryMatchId(ready), 'final-1');
+  assert.equal(phaseSandbox.getFinalFourDetailEntryMatchId(ready.slice(0, 2)), null);
+  assert.equal(phaseSandbox.getFinalFourDetailEntryMatchId([
+    ...ready.slice(0, 2),
+    final('final-3', ['one', 'three'], ['two', 'five'])
+  ]), null);
+});
+
 test('ranking, matches, and calculator share the phase layout controls', () => {
   assert.match(html, /id="final-four-ranking-section"/);
   assert.match(html, /id="league-calculator"/);
@@ -111,6 +133,7 @@ test('ranking, matches, and calculator share the phase layout controls', () => {
   assert.match(app, /homeCalculatorLink\.hidden = calculatorUnavailable/);
   assert.match(app, /renderPartienByMatchday[\s\S]*joinSeasonPhaseSections/);
   assert.match(app, /renderPartienByDate[\s\S]*joinSeasonPhaseSections/);
+  assert.match(app, /data-live-open-match="\$\{escapeHtml\(detailEntryMatchId\)\}" data-live-view="overview"/);
   assert.match(style, /#league-calculator\[hidden\] \+ #final-four-calculator \.section-subheading/);
 });
 

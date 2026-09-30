@@ -19,6 +19,7 @@ let playerProfileData = null;
 let playerProfileExpanded = false;
 let playerProfileRequestId = 0;
 let playerProfileSeasonPayloadCache = new Map();
+let liveTickerReturnState = null;
 let statisticsMode = 'season';
 let allTimeStatisticsData = null;
 let allTimeStatisticsPromise = null;
@@ -1035,6 +1036,7 @@ function selectSeason(id) {
   }
   const url = new URL(window.location.href);
   url.searchParams.set('saison', id);
+  url.searchParams.delete('live');
   window.location.assign(url);
 }
 
@@ -1128,6 +1130,10 @@ window.addEventListener('padel:authenticated-player', event => {
 });
 window.addEventListener('padel:official-result-changed', () => {
   void refreshActiveSeasonView();
+});
+window.addEventListener('padel:live-status-changed', () => {
+  if (PADEL_DATA) renderPartien();
+  if (playerProfileData) renderPlayerProfileHistory();
 });
 
 function isMissingPlayerProfileRpc(error) {
@@ -1966,7 +1972,9 @@ function renderPlayerProfileHistory() {
             <div class="player-profile-match-team-line"><span>mit</span> ${partner}</div>
             <div class="player-profile-match-team-line"><span>vs.</span> ${opponents}</div>
           </div>
-          <div class="player-profile-match-score"${isComplete ? '' : ' title="Vollständige Sätze werden einzeln gewertet"'}>${renderProfileResultDetails(match)}</div>
+          ${isComplete && window.PadelLiveTicker?.hasHistory(match.id)
+            ? `<button type="button" class="player-profile-match-score" data-live-open-match="${escapeHtml(match.id)}" data-live-season-id="${escapeHtml(match.seasonId || '')}" aria-label="Spielverlauf öffnen">${renderProfileResultDetails(match)}</button>`
+            : `<div class="player-profile-match-score"${isComplete ? '' : ' title="Vollständige Sätze werden einzeln gewertet"'}>${renderProfileResultDetails(match)}</div>`}
           <div class="player-profile-match-season">${showSeason ? escapeHtml(getPlayerProfileMatchLabel(match)) : ''}</div>
         </article>`;
       }).join('');
@@ -1974,7 +1982,7 @@ function renderPlayerProfileHistory() {
     }).join('');
   }
   showAll.hidden = playerProfileExpanded || matches.length <= PLAYER_PROFILE_MATCH_PREVIEW_LIMIT;
-  showAll.textContent = `Alle ${matches.length} Partien anzeigen`;
+  showAll.textContent = 'Alle Partien anzeigen';
 }
 
 function renderPlayerProfile(profile) {
@@ -2045,6 +2053,12 @@ function closePlayerProfile() {
 }
 
 document.addEventListener('click', event => {
+  const liveBackControl = event.target.closest('[data-live-back]');
+  if (liveBackControl) {
+    closeLiveTicker();
+    return;
+  }
+
   const playerProfileOpenControl = event.target.closest('[data-player-profile-id]');
   if (playerProfileOpenControl) {
     openPlayerProfile(playerProfileOpenControl.dataset.playerProfileId, playerProfileOpenControl);
@@ -2377,19 +2391,75 @@ function nav(id, el) {
   document.getElementById(id).classList.add('active');
   const activeButton = el || document.querySelector(`nav button[data-section="${id}"]`);
   if (activeButton) activeButton.classList.add('active');
-  scrollToTopInstantly();
+  scrollToTopInstantly(id === 'liveticker');
   if (id === 'verlauf') initChart();
   if (id === 'tippspiel') window.PadelTippspiel?.refresh();
 }
 
-function scrollToTopInstantly() {
+async function openLiveTicker(matchId, options = {}) {
+  if (!matchId) return;
+  const targetSeasonId = String(options.seasonId || '');
+  if (targetSeasonId && targetSeasonId !== String(selectedSeason?.id || '')) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('saison', targetSeasonId);
+    url.searchParams.set('live', matchId);
+    if (options.view === 'overview') url.searchParams.set('liveView', 'overview');
+    else url.searchParams.delete('liveView');
+    window.location.assign(url);
+    return;
+  }
+  const dialog = document.getElementById('live-ticker-dialog');
+  if (!dialog) return;
+  if (!dialog.open) {
+    liveTickerReturnState = {
+      trigger: document.activeElement,
+      scrollY: window.scrollY
+    };
+    document.getElementById('live-match-switcher').innerHTML = '';
+    document.getElementById('live-ticker-content').innerHTML = '<div class="empty-state">Der Liveticker wird geladen …</div>';
+    dialog.showModal();
+  }
+  const seasonLabel = document.getElementById('live-ticker-season-label');
+  if (seasonLabel) seasonLabel.textContent = selectedSeason?.label || PADEL_DATA?.label || '';
+  await window.PadelLiveTicker?.load(matchId, {
+    updateUrl: options.updateUrl !== false,
+    view: options.view === 'overview' ? 'overview' : 'match'
+  });
+}
+
+function closeLiveTicker(options = {}) {
+  const url = new URL(window.location.href);
+  if (!options.fromHistory && url.searchParams.has('live')) {
+    window.history.back();
+    return;
+  }
+  window.PadelLiveTicker?.close();
+  const dialog = document.getElementById('live-ticker-dialog');
+  if (dialog?.open) dialog.close();
+  const returnState = liveTickerReturnState;
+  liveTickerReturnState = null;
+  if (returnState) {
+    const root = document.documentElement;
+    root.classList.add('instant-scroll');
+    window.scrollTo(0, returnState.scrollY);
+    requestAnimationFrame(() => {
+      root.classList.remove('instant-scroll');
+      if (returnState.trigger?.isConnected) returnState.trigger.focus({ preventScroll: true });
+    });
+  }
+}
+
+window.PadelLigaOpenLiveTicker = openLiveTicker;
+window.PadelLigaCloseLiveTicker = closeLiveTicker;
+
+function scrollToTopInstantly(force = false) {
   const root = document.documentElement;
   const navigation = document.querySelector('.site-nav');
   const header = document.querySelector('.site-header');
   const targetTop = header ? header.offsetHeight : 0;
   const navigationTop = navigation ? navigation.getBoundingClientRect().top : 0;
 
-  if (!navigation || navigationTop > 1) return;
+  if (!navigation || (!force && navigationTop > 1)) return;
 
   root.classList.add('instant-scroll');
   window.scrollTo(0, targetTop);
@@ -2594,6 +2664,22 @@ function getFinalFourMatches() {
   return PADEL_DATA.matches
     .filter(match => getMatchStage(match) === 'final-four')
     .sort(compareMatchesByNumber);
+}
+
+function getFinalFourDetailEntryMatchId(matches = getFinalFourMatches()) {
+  if (matches.length !== 3 || !matches.every(hasAssignedMatchPlayers)) return null;
+
+  const participantIds = new Set();
+  for (const match of matches) {
+    const matchParticipantIds = new Set([
+      ...match.team1.playerIds,
+      ...match.team2.playerIds
+    ]);
+    if (matchParticipantIds.size !== 4) return null;
+    matchParticipantIds.forEach(playerId => participantIds.add(playerId));
+  }
+
+  return participantIds.size === 4 ? matches[0].id : null;
 }
 
 function getFinalFourPlayerNames(matches) {
@@ -3162,16 +3248,53 @@ function renderArticleBlock(block) {
   return `<p>${block.text}</p>`;
 }
 
+let homeAnnouncementExpiryTimer = null;
+
+function getVisibleHomeAnnouncement(announcement, now = new Date()) {
+  if (!announcement) return null;
+  if (!announcement.expiresAt) return announcement;
+
+  const expiresAt = Date.parse(announcement.expiresAt);
+  if (!Number.isFinite(expiresAt)) return announcement;
+
+  return now.getTime() < expiresAt ? announcement : null;
+}
+
+function renderHomeAnnouncement(now = new Date()) {
+  const container = document.getElementById('home-announcement');
+  const announcement = getVisibleHomeAnnouncement(PADEL_DATA.homeAnnouncement, now);
+
+  container.hidden = !announcement;
+  container.innerHTML = announcement ? renderArticleCard(announcement) : '';
+
+  if (homeAnnouncementExpiryTimer !== null) {
+    window.clearTimeout(homeAnnouncementExpiryTimer);
+    homeAnnouncementExpiryTimer = null;
+  }
+
+  const expiresAt = Date.parse(PADEL_DATA.homeAnnouncement?.expiresAt || '');
+  const remainingMs = expiresAt - now.getTime();
+  if (!Number.isFinite(expiresAt) || remainingMs <= 0) return;
+
+  const maxBrowserTimeoutMs = 2_147_483_647;
+  homeAnnouncementExpiryTimer = window.setTimeout(
+    () => renderHomeAnnouncement(),
+    Math.min(remainingMs, maxBrowserTimeoutMs)
+  );
+}
+
 function renderHome() {
+  ['home-short-info', 'home-ranking', 'home-next-matches', 'home-recent-matches'].forEach(id => {
+    const target = document.getElementById(id);
+    target?.classList.remove('loading-skeleton', 'skeleton-ranking', 'skeleton-match-list', 'skeleton-short-info');
+    target?.removeAttribute('aria-hidden');
+  });
+
   document.getElementById('home-short-info').innerHTML = (PADEL_DATA.shortInfo || [])
     .map(item => `<li>${item}</li>`)
     .join('');
 
-  const homeAnnouncement = document.getElementById('home-announcement');
-  homeAnnouncement.hidden = !PADEL_DATA.homeAnnouncement;
-  homeAnnouncement.innerHTML = PADEL_DATA.homeAnnouncement
-    ? renderArticleCard(PADEL_DATA.homeAnnouncement)
-    : '';
+  renderHomeAnnouncement();
 
   document.getElementById('home-articles').innerHTML = `
     <div class="home-article-preview" id="home-article-preview">
@@ -3974,6 +4097,8 @@ function renderInfos() {
 
 // ── MATCHES ───────────────────────────────────────────────────────
 function renderMatchRow(m) {
+  const activeLive = window.PadelLiveTicker?.activeMatch;
+  const isLive = activeLive?.matchId === m.id;
   if (m.sieger === null) {
     const probability = getMatchWinProbability(m);
     const probabilityHtml = probability
@@ -3984,10 +4109,13 @@ function renderMatchRow(m) {
       <div class="mc-team mc-team-1">
         <div class="mc-players">${renderTeamPlayers(m.team1.spieler)}</div>
       </div>
-      <div class="mc-score">
+      ${isLive ? `<button type="button" class="mc-score" data-live-open-match="${escapeHtml(m.id)}" aria-label="Liveticker öffnen, Satzstand 0 zu 0, Spielstand ${Number(activeLive.teamOneGames) || 0} zu ${Number(activeLive.teamTwoGames) || 0}">
+        <div class="mc-score-main">0:0</div>
+        <div class="mc-score-detail mc-score-live">${Number(activeLive.teamOneGames) || 0}:${Number(activeLive.teamTwoGames) || 0} <span class="mc-score-live-dot" aria-hidden="true">●</span>LIVE</div>
+      </button>` : `<div class="mc-score">
         ${probabilityHtml}
         <div class="mc-pending-label">${getPendingMatchLabel(m)}</div>
-      </div>
+      </div>`}
       <div class="mc-team mc-team-2">
         <div class="mc-players">${renderTeamPlayers(m.team2.spieler)}</div>
       </div>
@@ -3995,15 +4123,24 @@ function renderMatchRow(m) {
   }
 
   const t1w = m.sieger === 1, t2w = m.sieger === 2;
-  const [s1, s2] = String(m.saetze || '').split(':');
-  const scoreMain = isSingleSetMatch(m) ? (m.ergebnis || '—') : `${s1}:${s2}`;
-  const scoreDetail = isSingleSetMatch(m) ? '' : `<div class="mc-score-detail">${m.ergebnis}</div>`;
+  const hasLiveHistory = Boolean(window.PadelLiveTicker?.hasHistory(m.id));
+  const liveHistoryIcon = hasLiveHistory ? `<span class="mc-score-details-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" focusable="false">
+      <path d="M4 6h9M4 11h6M4 16h5"></path>
+      <circle cx="15.5" cy="14.5" r="3.5"></circle>
+      <path d="m18 17 3 3"></path>
+    </svg>
+  </span>` : '';
+  const scoreMain = String(m.saetze || '—');
+  const scoreDetail = m.ergebnis
+    ? `<div class="mc-score-detail">${hasLiveHistory ? `<span class="mc-score-result-with-details">${m.ergebnis}${liveHistoryIcon}</span>` : m.ergebnis}</div>`
+    : '';
   const viewerInT1 = isParticipantView() && m.team1.spieler.includes(getSelectedViewer().name);
   const viewerInT2 = isParticipantView() && m.team2.spieler.includes(getSelectedViewer().name);
   const viewerWon  = (viewerInT1 && m.sieger === 1) || (viewerInT2 && m.sieger === 2);
   const viewerLost = (viewerInT1 && m.sieger === 2) || (viewerInT2 && m.sieger === 1);
   const viewerResultClass = viewerWon ? 'viewer-win' : viewerLost ? 'viewer-loss' : '';
-  const probability = countsForRanking(m) ? getHistoricalMatchWinProbability(m) : null;
+  const probability = getHistoricalMatchWinProbability(m);
   const leftProbability = probability ? `<span class="mc-result-prob">${probability.team1}%</span>` : '';
   const rightProbability = probability ? `<span class="mc-result-prob">${probability.team2}%</span>` : '';
 
@@ -4011,14 +4148,14 @@ function renderMatchRow(m) {
     <div class="mc-team mc-team-1 ${t1w?'win':''}">
       <div class="mc-players">${renderTeamPlayers(m.team1.spieler)}</div>
     </div>
-    <div class="mc-score">
+    ${hasLiveHistory ? `<button type="button" class="mc-score" data-live-open-match="${escapeHtml(m.id)}" aria-label="Spielverlauf öffnen">` : '<div class="mc-score">'}
       <div class="mc-result-row">
         ${leftProbability}
         <div class="mc-score-main">${scoreMain}</div>
         ${rightProbability}
       </div>
       ${scoreDetail}
-    </div>
+    ${hasLiveHistory ? '</button>' : '</div>'}
     <div class="mc-team mc-team-2 ${t2w?'win':''}">
       <div class="mc-players">${renderTeamPlayers(m.team2.spieler)}</div>
     </div>
@@ -4039,12 +4176,19 @@ function renderTournamentGroup(matches, fallbackTitle, className) {
 
   const title = getMatchdayInfo(matches[0].spieltag)?.title || fallbackTitle;
   const played = matches.filter(match => match.sieger !== null).length;
+  const detailEntryMatchId = className === 'final-four-group'
+    ? getFinalFourDetailEntryMatchId()
+    : null;
+  const detailLink = detailEntryMatchId
+    ? `<button type="button" class="text-link inline-link final-four-detail-link" data-live-open-match="${escapeHtml(detailEntryMatchId)}" data-live-view="overview">Zur Übersicht</button>`
+    : '';
   return `<div class="spieltag-group ${className}">
     <div class="sh final-four-heading">
       <div class="sh-heading">
         <div class="sh-title">${title.toUpperCase()}</div>
         <div class="sh-meta">${played}/${matches.length}</div>
       </div>
+      ${detailLink}
     </div>
     <div class="match-list">${matches.map(renderMatchRow).join('')}</div>
   </div>`;
@@ -6055,6 +6199,13 @@ function toggleAll(on) {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────
+function finishInitialLoading() {
+  const main = document.querySelector('main');
+  const status = document.getElementById('page-load-status');
+  main?.setAttribute('aria-busy', 'false');
+  if (status) status.textContent = 'Inhalte geladen.';
+}
+
 async function initApp() {
   try {
     await loadActiveSeason();
@@ -6069,14 +6220,32 @@ async function initApp() {
     renderInfos();
   } catch (error) {
     document.querySelector('main').innerHTML = `<div class="empty-state">Die Saison-Daten konnten nicht geladen werden.</div>`;
+    document.querySelector('main')?.setAttribute('aria-busy', 'false');
     console.error(error);
     return;
   }
 
+  finishInitialLoading();
+
   try {
+    await window.PadelLiveTicker?.init();
     await window.PadelKonto?.init();
     await window.PadelTippspiel?.init(PADEL_DATA);
     const url = new URL(window.location.href);
+    const requestedLiveMatch = url.searchParams.get('live');
+    if (requestedLiveMatch) {
+      nav('partien', document.getElementById('partien-nav-button'));
+      const liveUrl = new URL(url);
+      const baseUrl = new URL(url);
+      baseUrl.searchParams.delete('live');
+      baseUrl.searchParams.delete('liveView');
+      window.history.replaceState({ liveBase: true }, '', `${baseUrl.pathname}${baseUrl.search}${baseUrl.hash}`);
+      window.history.pushState({ liveMatchId: requestedLiveMatch }, '', `${liveUrl.pathname}${liveUrl.search}${liveUrl.hash}`);
+      await openLiveTicker(requestedLiveMatch, {
+        updateUrl: false,
+        view: url.searchParams.get('liveView') === 'overview' ? 'overview' : 'match'
+      });
+    }
     const requestedPlayerProfile = url.searchParams.get('spielerprofil');
     if (requestedPlayerProfile) {
       url.searchParams.delete('spielerprofil');
@@ -6100,6 +6269,12 @@ playerProfileDialog?.addEventListener('cancel', event => {
 });
 playerProfileDialog?.addEventListener('click', event => {
   if (event.target === playerProfileDialog) closePlayerProfile();
+});
+
+const liveTickerDialog = document.getElementById('live-ticker-dialog');
+liveTickerDialog?.addEventListener('cancel', event => {
+  event.preventDefault();
+  closeLiveTicker();
 });
 
 applyAppHintVisibility();

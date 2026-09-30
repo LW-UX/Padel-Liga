@@ -30,6 +30,27 @@ test('home announcement stays separate from the article archive and appears befo
   assert.match(seasonSource, /"title": "Save the Date"/);
 });
 
+test('home announcement expires exactly at the configured Berlin start time', () => {
+  const helperSource = appSource.match(
+    /function getVisibleHomeAnnouncement\(announcement, now = new Date\(\)\) \{[\s\S]*?\n\}/
+  )?.[0] || '';
+  const getVisibleHomeAnnouncement = Function(
+    `"use strict"; ${helperSource}; return getVisibleHomeAnnouncement;`
+  )();
+  const announcement = { expiresAt: '2026-10-08T18:00:00+02:00' };
+
+  assert.equal(
+    getVisibleHomeAnnouncement(announcement, new Date('2026-10-08T15:59:59Z')),
+    announcement
+  );
+  assert.equal(
+    getVisibleHomeAnnouncement(announcement, new Date('2026-10-08T16:00:00Z')),
+    null
+  );
+  assert.match(appSource, /window\.setTimeout\([\s\S]*?renderHomeAnnouncement/);
+  assert.match(seasonSource, /"expiresAt": "2026-10-08T18:00:00\+02:00"/);
+});
+
 test('summer Final Four fallback contains the three approved start times', () => {
   assert.match(seasonSource, /"id": "partie28"[\s\S]*?"datum": "2026-10-08"[\s\S]*?"uhrzeit": "18\.00"/);
   assert.match(seasonSource, /"id": "partie29"[\s\S]*?"datum": "2026-10-08"[\s\S]*?"uhrzeit": "18\.30"/);

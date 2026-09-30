@@ -18,12 +18,12 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="data/players.js?v=2026-09-01-profile-emojis"></script>
-  <script src="data/seasons.js?v=2026-09-28-final-four-standalone"></script>
+  <script src="data/seasons.js?v=2026-09-30-final-four-announcement-expiry"></script>
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-28-final-four-standalone">
-  <link rel="stylesheet" href="account.css?v=2026-09-22-unified-score-counters">
+  <link rel="stylesheet" href="style.css?v=2026-09-30-live-sticky-navigation">
+  <link rel="stylesheet" href="account.css?v=2026-09-30-live-server-indicator">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -41,9 +41,10 @@
     <div class="hero-topbar">
       <div class="hero-eyebrow" id="hero-orgs">Headsquare × Hanako × Envidual</div>
       <div class="context-actions">
+        <button class="secondary-button" id="live-ticker-link" type="button" data-live-open-active hidden><span aria-hidden="true">●</span> LIVE</button>
         <div class="season-picker" id="season-picker">
           <button class="secondary-button secondary-button--dropdown" type="button" data-season-toggle aria-haspopup="listbox" aria-expanded="false">
-            <span id="season-picker-label"></span>
+            <span id="season-picker-label"><span class="loading-skeleton skeleton-pill" aria-hidden="true"></span></span>
           </button>
           <div class="season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
         </div>
@@ -85,20 +86,36 @@
   <button data-section="infos">Infos</button>
 </nav>
 
-<main>
+<main aria-busy="true">
+  <span class="sr-only" id="page-load-status" role="status" aria-live="polite">Inhalte werden geladen.</span>
 
   <!-- START -->
   <section id="start" class="section active">
     <div class="home-grid">
       <div class="home-main">
-        <article class="widget home-announcement" id="home-announcement" hidden></article>
+        <article class="widget home-announcement" id="home-announcement">
+          <div class="loading-skeleton skeleton-article" aria-hidden="true">
+            <span class="skeleton-line skeleton-line-kicker"></span>
+            <span class="skeleton-line skeleton-line-title"></span>
+            <span class="skeleton-line"></span>
+            <span class="skeleton-line skeleton-line-short"></span>
+          </div>
+        </article>
         <article class="widget home-app-hint">
           <button class="home-app-hint-close" type="button" data-dismiss-app-hint aria-label="App-Hinweis schließen">×</button>
           <div class="widget-label">Jetzt auch als App!</div>
           <p class="home-app-hint-text">Diese Webseite auf dem Handy öffnen, im Browser-Menü auf Teilen drücken und zum Home-Bildschirm hinzufügen. Name vergeben, speichern und schon ist die App auf dem Handy für uneingeschränkten Zugriff.</p>
         </article>
         <article class="widget widget-articles">
-          <div id="home-articles"></div>
+          <div id="home-articles">
+            <div class="loading-skeleton skeleton-article skeleton-article-large" aria-hidden="true">
+              <span class="skeleton-line skeleton-line-kicker"></span>
+              <span class="skeleton-line skeleton-line-title"></span>
+              <span class="skeleton-line"></span>
+              <span class="skeleton-line"></span>
+              <span class="skeleton-line skeleton-line-medium"></span>
+            </div>
+          </div>
           <button class="text-link" data-nav-target="infos">Alle alten Artikel</button>
         </article>
       </div>
@@ -106,7 +123,12 @@
       <div class="home-side">
         <article class="widget">
           <div class="widget-label">Top 4</div>
-          <div id="home-ranking"></div>
+          <div id="home-ranking" class="loading-skeleton skeleton-ranking" aria-hidden="true">
+            <div class="skeleton-ranking-row"><span></span><span></span><span></span></div>
+            <div class="skeleton-ranking-row"><span></span><span></span><span></span></div>
+            <div class="skeleton-ranking-row"><span></span><span></span><span></span></div>
+            <div class="skeleton-ranking-row"><span></span><span></span><span></span></div>
+          </div>
           <div class="home-widget-links">
             <button class="text-link inline-link" data-nav-target="rangliste">Zur Rangliste</button>
             <div class="home-widget-note" id="home-calculator-link">
@@ -118,20 +140,30 @@
 
         <article class="widget">
           <div class="widget-label">Nächste Partien</div>
-          <div id="home-next-matches"></div>
+          <div id="home-next-matches" class="loading-skeleton skeleton-match-list" aria-hidden="true">
+            <div class="skeleton-match-card"><span></span><span></span><span></span><span></span></div>
+            <div class="skeleton-match-card"><span></span><span></span><span></span><span></span></div>
+          </div>
           <button class="text-link" data-nav-target="partien">Zum Spielplan</button>
         </article>
 
         <article class="widget">
           <div class="widget-label">Letzte Partien</div>
-          <div id="home-recent-matches"></div>
+          <div id="home-recent-matches" class="loading-skeleton skeleton-match-list" aria-hidden="true">
+            <div class="skeleton-match-card"><span></span><span></span><span></span><span></span></div>
+            <div class="skeleton-match-card"><span></span><span></span><span></span><span></span></div>
+          </div>
           <button class="text-link" data-nav-target="partien">Zum Spielplan</button>
         </article>
 
         <article class="widget widget-short">
           <div class="widget-label">Kurzinfos</div>
           <h2>So funktioniert die Liga</h2>
-          <ul id="home-short-info" class="clean-list"></ul>
+          <ul id="home-short-info" class="clean-list loading-skeleton skeleton-short-info" aria-hidden="true">
+            <li><span></span></li>
+            <li><span></span></li>
+            <li><span></span></li>
+          </ul>
           <button class="text-link" data-nav-target="infos">Alle Infos</button>
         </article>
       </div>
@@ -420,6 +452,37 @@
 
 </main>
 
+<dialog class="live-ticker-dialog" id="live-ticker-dialog" aria-labelledby="live-ticker-title">
+  <div class="live-ticker-dialog-shell">
+    <header class="live-ticker-dialog-header">
+      <button class="secondary-button live-ticker-dialog-back" type="button" data-live-back aria-label="Final Four schließen">Zurück</button>
+      <div class="live-ticker-dialog-heading">
+        <div class="sh-title" id="live-ticker-title">FINAL FOUR</div>
+        <div class="sh-meta" id="live-ticker-season-label"></div>
+      </div>
+    </header>
+    <section class="live-ticker-dialog-content" id="liveticker">
+      <div class="live-ticker-nav" id="live-match-switcher" aria-label="Final-Four-Partie auswählen"></div>
+      <div id="live-ticker-content">
+        <div class="empty-state">Der Liveticker wird geladen …</div>
+      </div>
+    </section>
+  </div>
+</dialog>
+
+<dialog class="auth-dialog" id="live-cancel-dialog" aria-labelledby="live-cancel-title" aria-describedby="live-cancel-description">
+  <button class="modal-close-button auth-dialog-close" type="button" data-live-cancel-close aria-label="Dialog schließen">×</button>
+  <div class="auth-dialog-card">
+    <div class="widget-label">Liveticker</div>
+    <h2 id="live-cancel-title">Liveticker verwerfen?</h2>
+    <p class="auth-dialog-copy" id="live-cancel-description">Der öffentliche Spielverlauf wird entfernt. Die Partie bleibt für die normale Ergebniseingabe offen.</p>
+    <div class="player-email-actions">
+      <button class="secondary-button" type="button" data-live-cancel-close>Abbrechen</button>
+      <button class="primary-button" type="button" data-live-cancel-confirm>Liveticker verwerfen</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog class="player-profile-dialog" id="player-profile-dialog" aria-labelledby="player-profile-name">
   <svg class="achievement-symbols" aria-hidden="true">
     <symbol id="achievement-laurel-left" viewBox="0 0 627.96 1166.47">
@@ -540,6 +603,10 @@
       </div>
       <div id="account-games-panel">
         <div class="account-games-empty" id="account-games-empty" hidden>Als Tipper hast du keine eigenen Liga- oder Trainingsspiele.</div>
+        <section class="account-section" id="live-account-section" hidden>
+          <div class="account-section-heading"><h3 class="sh-title">Liveticker</h3></div>
+          <div class="account-task-list" id="live-account-list"></div>
+        </section>
         <div class="account-player-area" id="account-player-area" hidden>
           <section class="account-section" id="open-results-section">
             <div class="account-section-heading">
@@ -613,9 +680,10 @@
 </dialog>
 
 <script src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
-<script src="js/account.js?v=2026-09-22-unified-score-counters"></script>
+<script src="js/live-ticker.js?v=2026-09-30-account-server-indicator"></script>
+<script src="js/account.js?v=2026-09-28-live-assignment-cards"></script>
 <script src="js/tippspiel.js?v=2026-09-21-ranking-globals-training-alternative"></script>
-<script src="js/app.js?v=2026-09-28-final-four-standalone"></script>
+<script src="js/app.js?v=2026-09-30-final-four-overview-link"></script>
 <script src="js/arcade-link.js?v=2026-09-11"></script>
 </body>
 </html>

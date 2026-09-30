@@ -241,6 +241,21 @@
     .account-task-matchup { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; font-size: 1rem; }
     .account-task-matchup strong:last-child { text-align: right; }
     .account-task-matchup > span { color: var(--dim); font-size: 0.85rem; }
+    .account-live-player { display: inline-flex; align-items: center; min-width: 0; gap: 0.3em; }
+    .account-live-server {
+      flex: 0 0 auto;
+      color: var(--accent);
+      font-size: 1rem;
+      line-height: 1;
+    }
+    .account-task-live-score {
+      display: grid;
+      min-width: 72px;
+      gap: 2px;
+      text-align: center;
+    }
+    .account-task-live-score .mc-score-main { font-size: 2rem; }
+    .account-task-live-score .mc-score-detail { margin-top: 0; }
     .account-task-player-name.is-authenticated { color: var(--accent2); }
     .result-proposal { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: 8px; background: var(--surface2); padding: 0.7rem; }
     .result-proposal span { color: var(--dim); font-size: 0.85rem; }
@@ -268,7 +283,7 @@
       font-weight: 600;
     }
     .result-entry-form :where(input, select),
-    .match-schedule-form input,
+    .match-schedule-form :where(input),
     .training-form :where(input, select) {
       width: 70%;
       min-width: 0;
@@ -369,6 +384,67 @@
       flex-wrap: wrap;
     }
     .result-entry-buttons { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex: 0 0 auto; width: 100%; }
+    .live-point-team-buttons {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .live-point-team-button {
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      min-width: 0;
+      min-height: 88px;
+      gap: 5px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      padding: 0.85rem;
+      text-align: center;
+      transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
+    }
+    .live-point-team-button > span {
+      color: var(--dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .live-point-team-button > strong {
+      font-size: 1.05rem;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+    .live-point-team-button:hover,
+    .live-point-team-button:focus-visible {
+      border-color: var(--accent);
+      color: var(--accent);
+      outline: none;
+    }
+    .live-point-team-button.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #07080c;
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    .live-point-team-button.active > span { color: currentColor; opacity: 0.7; }
+    .live-ticker-text-actions {
+      display: flex;
+      align-items: baseline;
+      gap: 0.55rem 1.2rem;
+      flex-wrap: wrap;
+    }
+    .live-ticker-text-actions .text-link { margin-top: 0; padding: 0; }
+    .live-server-correction-forms {
+      display: grid;
+      gap: 12px;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+    .live-server-correction-forms[hidden] { display: none; }
     .account-empty,
     .account-waiting { color: var(--dim); font-size: 0.85rem; }
     .account-waiting { display: inline-flex; align-items: center; min-height: 36px; }
@@ -548,7 +624,7 @@
       #result-task-list > .account-task-group,
       #result-task-list .account-task-list { min-width: 0; }
       .result-entry-timing { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .result-entry-form :where(input, select), .match-schedule-form input, .training-form :where(input, select) { width: 100%; }
+      .result-entry-form :where(input, select), .match-schedule-form :where(input), .training-form :where(input, select) { width: 100%; }
       :where(.result-entry-form, .match-schedule-form, .training-form) input:is([type="date"], [type="time"]) {
         -webkit-appearance: none;
         appearance: none;

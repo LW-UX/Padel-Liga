@@ -17,7 +17,7 @@ window.PADEL_SEASONS = [
     id: "2026",
     label: "Sommer 2026",
     visualTheme: "summer",
-    file: "data/data2026.js?v=2026-09-28-final-four-standalone",
+    file: "data/data2026.js?v=2026-09-30-final-four-announcement-expiry",
     default: true
   },
   {

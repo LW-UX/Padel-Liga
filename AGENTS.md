@@ -1,10 +1,17 @@
 # Projektgedächtnis
 
-Vor fachlichen oder technischen Änderungen ist `docs/PROJECT_DECISIONS.md` zu lesen.
+Vor fachlichen oder technischen Änderungen sind nur die für die Aufgabe einschlägigen Entscheidungsdateien zu lesen:
 
-Wenn im Zuge einer Aufgabe eine neue Produkt-, Daten- oder Prozessentscheidung getroffen oder eine bestehende Entscheidung geändert wird, muss `docs/PROJECT_DECISIONS.md` im selben Arbeitsschritt aktualisiert werden. Neuere Entscheidungen ersetzen ältere; überholte Aussagen sind als solche zu kennzeichnen oder aus dem aktuellen Zielbild zu entfernen.
+- Saison, Saison-ID, Datenquelle, Navigation oder Seitenphase: `docs/project-decisions/seasons-and-pages.md`
+- Partie, Training, Termin, Ergebnis, Bestätigung, Turnier, Liveticker oder Rechner: `docs/project-decisions/matches-and-tournaments.md`
+- Anmeldung, Konto, Rolle, Einladung, Berechtigung oder Konto-Dialog: `docs/project-decisions/accounts-and-workflows.md`
+- Elo, Rangliste, Statistik, Profil oder Auszeichnung: `docs/project-decisions/rankings-statistics-and-profiles.md`
+- Tippseite, Tipp, Tippschluss oder Tippwertung: `docs/project-decisions/tipping.md`
+- Arcade: `docs/project-decisions/arcade.md`
 
-Technische Implementierungsdetails ohne dauerhafte fachliche Bedeutung gehören nicht in die Entscheidungsdatei.
+Bei fachübergreifenden Aufgaben sind alle betroffenen Dateien zu lesen. Konto-Spielkarten und Ergebniseingaben betreffen insbesondere Konten und Partien; Elo-Korrekturen betreffen Ranglisten und Partien; termin- oder ergebnisabhängige Tipps betreffen Tippspiel und Partien. Bei Supabase-, Migrations-, Veröffentlichungs- oder Live-Statusfragen ist zusätzlich `docs/PROJECT_STATUS.md` zu lesen. Wenn die Zuordnung unklar ist, dient `docs/PROJECT_DECISIONS.md` als Wegweiser; anschließend ist gezielt in `docs/project-decisions/` zu suchen. Das vollständige Projektgedächtnis wird nur bei repositoryweiten Grundsatzänderungen gelesen.
+
+Wenn eine neue Produkt-, Daten- oder Prozessentscheidung getroffen oder geändert wird, muss die kanonische Bereichsdatei im selben Arbeitsschritt aktualisiert werden. Eine Aussage gehört nur dann dorthin, wenn sie nach einer normalen Datenänderung weiterhin gelten soll. Veränderliche Bestandszahlen, konkrete Datensätze und andere Momentaufnahmen gehören in Datenbank, Code oder Tests; nur betriebsrelevanter Gegenwartsstand gehört in `docs/PROJECT_STATUS.md`. Überholte Statusmeldungen werden gelöscht und nicht dokumentarisch archiviert. Frühere Zustände werden bei Bedarf aus Git, Migrationen und Tests rekonstruiert. Technische Implementierungsdetails ohne dauerhafte fachliche Bedeutung werden nicht als Projektentscheidung dokumentiert.
 
 ## Zusammenarbeit mit dem Nutzer
 

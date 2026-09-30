@@ -197,7 +197,8 @@
     const isSettingPassword = isLoggedIn && ['invite', 'recovery'].includes(state.passwordFlow);
     const displayName = getProfileDisplayName();
     const taskCount = getActionableResultTasks().length
-      + state.trainingTasks.filter(task => !task.created_by_me && isTrainingTaskVisible(task)).length;
+      + state.trainingTasks.filter(task => !task.created_by_me && isTrainingTaskVisible(task)).length
+      + Number(window.PadelLiveTicker?.pendingTaskCount || 0);
     button.innerHTML = isLoggedIn
       ? `<svg class="auth-user-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/>
@@ -469,6 +470,15 @@
         <strong>${escapeHtml(task.official_sets)} · ${escapeHtml(task.official_result)}</strong>
       </div>`;
     }
+    if (window.PadelLiveTicker?.isMatchLive(task.match_id)) {
+      return `<div class="result-proposal">
+          <span>Diese Partie wird gerade im Liveticker geführt.</span>
+          <strong>LIVE</strong>
+        </div>
+        <div class="account-task-actions">
+          <button class="secondary-button" type="button" data-live-open-match="${escapeHtml(task.match_id)}">Liveticker öffnen</button>
+        </div>`;
+    }
     if (task.task_type === 'waiting') {
       return `${renderProposedResult(task, true)}
         <div class="account-task-actions"><span class="account-waiting">Auf Bestätigung warten</span></div>`;
@@ -509,6 +519,7 @@
         ${groupKey === 'future' ? `<div class="result-card-timing">${escapeHtml(formatMatchAt(task.proposed_match_at || task.match_at))}</div>` : ''}
         ${renderTaskMatchup(task)}
         ${renderResultTaskBody(task, groupKey)}
+        ${typeof window !== 'undefined' ? window.PadelLiveTicker?.renderGameAssignment(task.match_id) || '' : ''}
       </article>
     </div>`;
   }
@@ -1988,6 +1999,10 @@ Dein Hanako-Leben-Squad`;
   }
 
   function bindEvents() {
+    window.addEventListener('padel:live-account-updated', () => {
+      renderAuthState();
+      renderResultTasks();
+    });
     document.addEventListener('click', async event => {
       if (!event.target.closest('[data-training-picker]')) closeTrainingPickerMenus();
       const open = event.target.closest('[data-auth-open]');
@@ -2244,6 +2259,7 @@ Dein Hanako-Leben-Squad`;
     document.getElementById('player-invite-dialog')?.addEventListener('click', event => {
       if (event.target === event.currentTarget) closePlayerInviteDialog();
     });
+    window.addEventListener('padel:live-status-changed', renderResultTasks);
     syncDateTimeHints();
   }
 
