@@ -1203,7 +1203,7 @@
       align-items: center;
       gap: 0.45rem;
     }
-    .sh-meta { font-size: 0.7rem; color: var(--dim); }
+    .sh-meta { font-size: 0.7rem; color: var(--muted); }
     .section-subheading { margin-top: 2.5rem; }
     #rangliste > #final-four-ranking-section:first-child .section-subheading,
     #league-calculator[hidden] + #final-four-calculator .section-subheading { margin-top: 0; }
@@ -2317,7 +2317,7 @@
       min-width: 0;
       text-align: center;
     }
-    .live-ticker-dialog-heading .sh-meta { font-size: 0.85rem; margin-top: 0.15rem; }
+    .live-ticker-dialog-heading .sh-meta { font-size: 0.85rem; margin-top: 0.15rem; color: var(--dim); }
     .live-ticker-dialog-content {
       width: min(calc(100% - 2rem), 1100px);
       margin: 0 auto;
