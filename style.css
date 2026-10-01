@@ -2261,9 +2261,8 @@
       font-size: 0.85rem; 
       color: var(--dim); 
       position: absolute;
-      text-align: center;
       width: 100%;
-      top: 32px;
+      top: 30px;
     }
     .mc-score-live { color: var(--negativ); white-space: nowrap; }
     .mc-score-live-dot {
@@ -3541,7 +3540,7 @@
       }
       .mc-meta { grid-area: meta; justify-content: center; gap: 12px; }
       .mc-team-1 { grid-area: team1; min-width: 0; }
-      .mc-score { grid-area: score; min-width: 78px; }
+      .mc-score { grid-area: score; min-width: 118px; }
       .mc-team-2 { grid-area: team2; min-width: 0; }
       .mc-players { display: flex; flex-direction: column; gap: 2px; font-size: 1.1rem; line-height: 1.16; }
       .mc-players .mc-player-sep { display: none; }
