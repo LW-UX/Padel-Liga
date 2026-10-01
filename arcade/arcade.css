@@ -181,6 +181,7 @@ table.arcade-ranking .col-name { width: auto; }
 .arcade-ranking td:first-child, .arcade-ranking td:nth-child(n+3), .ranking-date { font-family: 'DM Mono', monospace; }
 .arcade-ranking td:nth-child(2) { font-family: 'DM Sans', sans-serif; font-weight: 500; }
 .ranking-date { display: inline-block; margin-left: 12px; color: var(--dim); font-size: .85rem; font-weight: 400; font-variant-numeric: tabular-nums; overflow-wrap: normal; white-space: nowrap; }
+.arcade-ranking .l { text-align: left !important; }
 .time-fraction { font-size: .5em; }
 .arcade-ranking td:nth-child(n+3) { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .mobile-table-label { display: none; }
