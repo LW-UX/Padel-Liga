@@ -2211,8 +2211,14 @@
       padding: .9rem 1.5rem;
       display: grid;
       grid-template-columns: 300px 1fr 130px 1fr;
-      align-items: center; gap: 24px;
+      align-items: center; 
+      gap: 24px;
+      min-height: 84px;
     }
+    /*.mc:hover .mc-score-detail, .mc:hover .mc-result-prob {
+      opacity: 0;
+    }*/
+
     .mc.pending { background: transparent; }
     .mc-meta { display: flex; align-items: center; gap: 14px; white-space: nowrap; }
     .mc-date { font-family: 'DM Mono', monospace; font-size: 0.85rem; color: var(--dim); }
@@ -2222,7 +2228,7 @@
     .mc-team:not(.win) .mc-players { color: var(--muted); }
     .mc-players { font-size: 1.1rem; }
     .mc-player-sep { margin: 0 0.3em; color: var(--muted); font-weight: 400; }
-    .mc-score { text-align: center; }
+    .mc-score { text-align: center; position: relative; }
     button.mc-score {
       appearance: none;
       border: 0;
@@ -2234,9 +2240,16 @@
     }
     button.mc-score:hover .mc-score-main,
     button.mc-score:focus-visible .mc-score-main { color: var(--accent); }
-    .mc-result-row { display: flex; align-items: baseline; justify-content: center; gap: 12px; }
+    .mc-result-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
     .mc-score-main { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.05em; color: var(--text); line-height: 1; }
-    .mc-score-detail { font-size: 0.85rem; color: var(--dim); margin-top: 3px; }
+    .mc-score-detail { 
+      font-size: 0.85rem; 
+      color: var(--dim); 
+      position: absolute;
+      text-align: center;
+      width: 100%;
+      top: 32px;
+    }
     .mc-score-live { color: var(--negativ); white-space: nowrap; }
     .mc-score-live-dot {
       display: inline-block;
@@ -3518,7 +3531,6 @@
       .mc-players { display: flex; flex-direction: column; gap: 2px; font-size: 1.1rem; line-height: 1.16; }
       .mc-players .mc-player-sep { display: none; }
       .mc-score-main { font-size: 2rem; }
-      .mc-score-detail { font-size: 0.85rem; }
       .mc-prob,
       .mc-result-prob { font-size: 0.85rem; white-space: nowrap; }
       .mc-result-row { gap: 7px; }
