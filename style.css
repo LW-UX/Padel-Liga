@@ -2243,7 +2243,9 @@
     .mc-team:not(.win) .mc-players { color: var(--muted); }
     .mc-players { font-size: 1.1rem; }
     .mc-player-sep { margin: 0 0.3em; color: var(--muted); font-weight: 400; }
-    .mc-score { text-align: center; position: relative; }
+    .mc-score { 
+      text-align: center; 
+      position: relative; }
     button.mc-score {
       appearance: none;
       border: 0;
@@ -2255,13 +2257,18 @@
     }
     button.mc-score:hover .mc-score-main,
     button.mc-score:focus-visible .mc-score-main { color: var(--accent); }
+    .played .mc-score {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .mc-result-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
     .mc-score-main { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.05em; color: var(--text); line-height: 1; }
     .mc-score-detail { 
       font-size: 0.85rem; 
       color: var(--dim); 
       position: absolute;
-      width: 100%;
+      width: max-content;
       top: 30px;
     }
     .mc-score-live { color: var(--negativ); white-space: nowrap; }
@@ -3540,7 +3547,10 @@
       }
       .mc-meta { grid-area: meta; justify-content: center; gap: 12px; }
       .mc-team-1 { grid-area: team1; min-width: 0; }
-      .mc-score { grid-area: score; min-width: 118px; }
+      .mc-score { 
+        grid-area: score; 
+        min-width: 118px;
+      }
       .mc-team-2 { grid-area: team2; min-width: 0; }
       .mc-players { display: flex; flex-direction: column; gap: 2px; font-size: 1.1rem; line-height: 1.16; }
       .mc-players .mc-player-sep { display: none; }
