@@ -6266,7 +6266,18 @@ async function initApp() {
 
 const mobileViewportQuery = window.matchMedia('(max-width: 768px)');
 mobileViewportQuery.addEventListener?.('change', () => {
+  if (!mobileViewportQuery.matches) {
+    document.getElementById('spielplan')?.classList.remove('played-details-visible');
+  }
   if (PADEL_DATA) renderRanking();
+});
+
+const spielplan = document.getElementById('spielplan');
+spielplan?.addEventListener('click', event => {
+  if (!mobileViewportQuery.matches) return;
+  if (!event.target.closest('.mc.played')) return;
+  if (event.target.closest('button, a, input, select, textarea')) return;
+  spielplan.classList.toggle('played-details-visible');
 });
 
 const playerProfileDialog = document.getElementById('player-profile-dialog');

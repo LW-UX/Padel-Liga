@@ -2215,9 +2215,24 @@
       gap: 24px;
       min-height: 84px;
     }
-    /*.mc:hover .mc-score-detail, .mc:hover .mc-result-prob {
+    #spielplan .mc.played .mc-score-detail,
+    #spielplan .mc.played .mc-result-prob {
       opacity: 0;
-    }*/
+      pointer-events: none;
+      transition: opacity 160ms ease;
+    }
+    #spielplan.played-details-visible .mc.played .mc-score-detail,
+    #spielplan.played-details-visible .mc.played .mc-result-prob {
+      opacity: 1;
+    }
+    @media (min-width: 769px) {
+      #spielplan:has(.mc.played:hover) .mc.played .mc-score-detail,
+      #spielplan:has(.mc.played:hover) .mc.played .mc-result-prob,
+      #spielplan:has(.mc.played:focus-within) .mc.played .mc-score-detail,
+      #spielplan:has(.mc.played:focus-within) .mc.played .mc-result-prob {
+        opacity: 1;
+      }
+    }
 
     .mc.pending { background: transparent; }
     .mc-meta { display: flex; align-items: center; gap: 14px; white-space: nowrap; }
