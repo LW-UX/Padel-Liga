@@ -255,7 +255,12 @@
       text-align: center;
     }
     .account-task-live-score .mc-score-main { font-size: 2rem; }
-    .account-task-live-score .mc-score-detail { margin-top: 0; }
+    .account-task-live-score .mc-score-detail { 
+      margin-top: 0; 
+      position: inherit;
+      width: inherit;
+      top: inherit;
+    }
     .account-task-player-name.is-authenticated { color: var(--accent2); }
     .result-proposal { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: 8px; background: var(--surface2); padding: 0.7rem; }
     .result-proposal span { color: var(--dim); font-size: 0.85rem; }
