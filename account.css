@@ -238,9 +238,25 @@
     .account-task-status.is-open { border-color: var(--accent); background: transparent; color: var(--accent); }
     .account-task-status.is-complete { border-color: color-mix(in srgb, var(--positiv) 45%, var(--border)); color: var(--positiv); }
     .result-card-timing { color: var(--dim); font: 0.85rem 'DM Sans', sans-serif; letter-spacing: 0.02rem; }
-    .account-task-matchup { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; font-size: 1rem; }
+    .account-task-matchup { 
+      display: grid; 
+      grid-template-columns: 1fr auto 1fr; 
+      align-items: center; 
+      gap: 12px; 
+      font-size: 1rem; 
+    }
     .account-task-matchup strong:last-child { text-align: right; }
     .account-task-matchup > span { color: var(--dim); font-size: 0.85rem; }
+    #live-account-list .account-task-matchup {
+      margin: 12px 0;
+    }
+    #live-account-list .result-entry-buttons {
+      flex-flow: column-reverse;
+    }
+    #live-account-list .result-entry-buttons .primary-button {
+      padding: 1rem;
+      font-size: 1rem;
+    }
     .account-live-player { display: inline-flex; align-items: center; min-width: 0; gap: 0.3em; }
     .account-live-server {
       flex: 0 0 auto;
@@ -414,12 +430,12 @@
     .live-point-team-button > span {
       color: var(--dim);
       font-family: 'DM Mono', monospace;
-      font-size: 0.65rem;
+      font-size: 0.7rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
     .live-point-team-button > strong {
-      font-size: 1.05rem;
+      font-size: 1rem;
       line-height: 1.25;
       overflow-wrap: anywhere;
     }
@@ -439,8 +455,8 @@
     .live-ticker-text-actions {
       display: flex;
       align-items: baseline;
-      gap: 0.55rem 1.2rem;
-      flex-wrap: wrap;
+      justify-content: space-around;
+      margin: 12px 0;
     }
     .live-ticker-text-actions .text-link { margin-top: 0; padding: 0; }
     .live-server-correction-forms {
@@ -649,6 +665,7 @@
       .account-task-actions .primary-button, 
       .result-entry-buttons .secondary-button, 
       .result-entry-buttons .primary-button,
+      .live-ticker-text-actions .text-link,
       .match-schedule-actions .secondary-button,
       .training-form > .primary-button,
       .training-form > .secondary-button
