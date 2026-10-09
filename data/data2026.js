@@ -1384,7 +1384,7 @@ window.PADEL_SEASON = {
     }
   ],
   "homeAnnouncement": {
-    "expiresAt": "2026-10-08T18:00:00+02:00",
+    "expiresAt": "2026-10-15T18:00:00+02:00",
     "meta": "FINAL FOUR  ·  15. OKTOBER 2026  ·  AB 18 UHR",
     "title": "Save the Date",
     "body": [
