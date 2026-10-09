@@ -117,7 +117,7 @@ export function mountLeaderboard({ pauseGame, getDifficulty = () => 'hard', api 
       button.setAttribute('aria-pressed', String(selected));
       button.classList.toggle('active', selected);
     }
-    document.querySelector('.arcade-ranking caption').textContent = `Globale PadelArcade-Bestenliste · ${DIFFICULTIES[difficulty].label}`;
+    document.querySelector('.arcade-ranking caption').textContent = `Globale PadelPong-Bestenliste · ${DIFFICULTIES[difficulty].label}`;
     body.replaceChildren(); ownBody.replaceChildren(); ownBody.hidden = true;
     setMessage(notice || 'Bestenliste wird geladen …', notice ? 'success' : '');
     try {

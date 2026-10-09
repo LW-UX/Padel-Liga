@@ -9,7 +9,7 @@ Dieses Dokument ist der Wegweiser zum fachlichen Projektgedächtnis. Die verbind
 - [Konten und Arbeitsabläufe](project-decisions/accounts-and-workflows.md): Rollen, Registrierung, Einladungen, Berechtigungen und Konto-Dialog.
 - [Ranglisten, Statistik und Profile](project-decisions/rankings-statistics-and-profiles.md): Elo, Ranglisten, All-Time-Statistik, Profile und Auszeichnungen.
 - [Tippspiel](project-decisions/tipping.md): Tippbarkeit, Fristen, Wertung und Tippseite.
-- [PadelArcade](project-decisions/arcade.md): Gameplay, Regeln, Spielmodi, Audio und Bestenliste.
+- [PadelPong](project-decisions/arcade.md): Gameplay, Regeln, Spielmodi, Audio und Bestenliste.
 
 Der [aktuelle Projektstatus](PROJECT_STATUS.md) enthält ausschließlich betriebsrelevanten Gegenwartsstand. Frühere Zustände werden nicht zusätzlich dokumentiert; dafür dienen Git, Migrationen und Tests.
 

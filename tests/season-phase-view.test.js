@@ -26,6 +26,7 @@ function extractFunction(source, name) {
 const phaseSandbox = {};
 vm.runInNewContext([
   extractFunction(app, 'countsForRanking'),
+  extractFunction(app, 'isCancelledMatch'),
   extractFunction(app, 'getMatchStage'),
   extractFunction(app, 'isCompletedSeasonMatch'),
   extractFunction(app, 'hasAssignedMatchPlayers'),
@@ -51,6 +52,16 @@ function match(stage, { complete = false, assigned = true } = {}) {
     team2: team(assigned)
   };
 }
+
+test('league completion treats matches without rating as settled', () => {
+  const cancelledLeague = match('league');
+  cancelledLeague.cancelledAt = '2026-10-08T09:00:00Z';
+  const finals = [1, 2, 3].map(() => match('final-four'));
+  assert.equal(
+    phaseSandbox.getSeasonDisplayPhase(season('direct-final-four', [cancelledLeague, ...finals])),
+    'final-four'
+  );
+});
 
 function season(tournamentMode, matches, overrides = {}) {
   return {

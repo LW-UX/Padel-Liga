@@ -168,7 +168,45 @@
     .auth-message { min-height: 1.25rem; color: var(--dim); font-size: 0.82rem; margin-top: 0.8rem; }
     .auth-message.error { color: var(--negativ); }
     .auth-message.success { color: var(--positiv); }
-    .account-auth-message:empty { display: none; }
+    .account-auth-message {
+      position: absolute;
+      z-index: 30;
+      left: 50%;
+      bottom: max(16px, env(safe-area-inset-bottom));
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      min-height: 44px;
+      margin: 0;
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      background: var(--surface);
+      box-shadow: 0 14px 40px rgba(0,0,0,0.48);
+      color: var(--text);
+      padding: 0.85rem;
+      transform: translateX(-50%);
+    }
+    .account-auth-message[hidden] { display: none; }
+    .account-auth-message.success { border-color: var(--positiv); color: var(--text); }
+    .account-auth-message.error { border-color: var(--negativ); color: var(--text); }
+    .account-auth-message > span { width: 100%; overflow-wrap: anywhere; }
+    .account-auth-message-dismiss {
+      display: grid;
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: transparent;
+      color: var(--dim);
+      cursor: pointer;
+      font: 1rem/1 'DM Sans', sans-serif;
+      padding: 0 0 2px;
+      place-items: center;
+    }
+    .account-auth-message-dismiss:hover,
+    .account-auth-message-dismiss:focus-visible { border-color: var(--accent); color: var(--accent); }
     .training-message { margin: 0; }
     .training-message:empty { display: none; }
     .account-header {
@@ -405,6 +443,56 @@
       flex-wrap: wrap;
     }
     .result-entry-buttons { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex: 0 0 auto; width: 100%; }
+    .match-cancel-button { margin-right: auto; }
+    .live-mode-fieldset {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+      margin: 0;
+      border: 0;
+      padding: 0;
+    }
+    .live-mode-fieldset legend {
+      margin-bottom: 8px;
+      color: var(--dim);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .live-mode-fieldset small { color: var(--dim); line-height: 1.45; }
+    .live-mode-toggle {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface2);
+      padding: 4px;
+    }
+    .live-mode-toggle button {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--dim);
+      cursor: pointer;
+      font: inherit;
+      padding: 0.7rem;
+      text-align: center;
+    }
+    .live-mode-toggle button strong { color: var(--text); font-size: 0.85rem; }
+    .live-mode-toggle button span { font-size: 0.7rem; }
+    .live-mode-toggle button.active { background: var(--surface); box-shadow: 0 0 0 1px var(--accent); color: var(--accent); }
+    .live-mode-toggle button.active strong { color: var(--accent); }
+    .live-writer-mode {
+      color: var(--dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-align: center;
+      text-transform: uppercase;
+    }
     .live-point-team-buttons {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -452,6 +540,21 @@
       box-shadow: 0 0 0 1px var(--accent);
     }
     .live-point-team-button.active > span { color: currentColor; opacity: 0.7; }
+    .live-point-team-button:disabled { cursor: wait; opacity: 0.55; }
+    .live-finish-summary {
+      display: grid;
+      gap: 4px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface2);
+      padding: 0.9rem;
+      text-align: center;
+    }
+    .live-finish-summary span,
+    .live-finish-summary small { color: var(--dim); }
+    .live-finish-summary strong { color: var(--accent); font-size: 1.05rem; }
+    .live-tiebreak-form { gap: 14px; }
+    .live-tiebreak-score { width: min(100%, 320px); margin: 0 auto; }
     .live-ticker-text-actions {
       display: flex;
       align-items: baseline;
@@ -635,6 +738,7 @@
       }
       .auth-dialog { max-height: 94vh; }
       .auth-dialog-card { padding: 1.1rem 0.5rem; }
+      .account-auth-message { bottom: max(8px, env(safe-area-inset-bottom)); max-width: calc(100% - 32px); }
       .account-header { flex-wrap: wrap; gap: 12px; padding-right: 64px; }
       .player-email-actions { align-items: stretch; flex-direction: column; }
       .account-header h2 { font-size: 1.65rem; }

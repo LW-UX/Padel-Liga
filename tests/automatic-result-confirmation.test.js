@@ -8,7 +8,14 @@ const migration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260928160000_auto_confirm_results_after_48_hours.sql'),
   'utf8'
 );
-const decisions = fs.readFileSync(path.join(root, 'docs', 'PROJECT_DECISIONS.md'), 'utf8');
+const matchDecisions = fs.readFileSync(
+  path.join(root, 'docs', 'project-decisions', 'matches-and-tournaments.md'),
+  'utf8'
+);
+const accountDecisions = fs.readFileSync(
+  path.join(root, 'docs', 'project-decisions', 'accounts-and-workflows.md'),
+  'utf8'
+);
 
 test('pending league and cup results become official after 48 hours', () => {
   assert.match(migration, /create or replace function private\.auto_confirm_expired_results\(\)/);
@@ -31,7 +38,7 @@ test('the database runs automatic confirmation regularly without a browser visit
 });
 
 test('the project decisions define the reset-on-counterproposal rule without a prominent notice', () => {
-  assert.match(decisions, /48 Stunden nach dem Erstellen des jeweils letzten Vorschlags automatisch bestätigt/);
-  assert.match(decisions, /Jeder Gegenvorschlag beginnt eine neue 48-Stunden-Frist/);
-  assert.match(decisions, /keinen zusätzlichen hervorgehobenen Frist- oder Countdown-Hinweis/);
+  assert.match(matchDecisions, /48 Stunden nach dem letzten Vorschlag automatisch bestätigt/);
+  assert.match(matchDecisions, /Ein Gegenvorschlag startet die Frist neu/);
+  assert.match(accountDecisions, /keinen zusätzlichen Countdown in der Oberfläche/);
 });

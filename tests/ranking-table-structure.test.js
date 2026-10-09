@@ -88,6 +88,7 @@ test('ranking sort changes reuse the calculator row movement animation', () => {
   assert.match(renderer, /class="ranking-row [^\"]*" data-ranking-entry="\$\{escapeHtml\(p\.id \|\| p\.name\)\}"/);
   assert.match(renderer, /animateRankingRows\(body, '\.ranking-row', previousPositions\)/);
   assert.match(app, /function animateRankingRows\([^]*prefers-reduced-motion: reduce[^]*translateY\(\$\{deltaY\}px\)[^]*520ms cubic-bezier/);
-  assert.match(style, /\.ranking-row,[^]*\.calculator-ranking-row,[^]*will-change: transform;/);
+  assert.match(style, /\.ranking-row \{ transform-origin: center; \}/);
+  assert.doesNotMatch(style, /\.ranking-row \{[^}]*will-change: transform/);
   assert.doesNotMatch(app, /getCalculatorRowPositions|animateCalculatorRows|data-calculator-player/);
 });

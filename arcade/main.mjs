@@ -476,8 +476,8 @@ async function mount() {
     document.getElementById('opponent-power-display').hidden = !enabled;
     document.getElementById('power-caption').textContent = enabled ? 'PFEILE · DRUCK' : 'SCHLAGDRUCK';
     canvas.setAttribute('aria-label', enabled
-      ? 'PadelArcade zu zweit. Gelb unten mit Pfeiltasten, Korall oben mit WASD. Leertaste oder P pausiert für beide.'
-      : 'PadelArcade. Du spielst unten mit den gelben Balken. Bewegen mit Pfeiltasten oder WASD.');
+      ? 'PadelPong zu zweit. Gelb unten mit Pfeiltasten, Korall oben mit WASD. Leertaste oder P pausiert für beide.'
+      : 'PadelPong. Du spielst unten mit den gelben Balken. Bewegen mit Pfeiltasten oder WASD.');
   }
   function chooseLocalMode(enabled) {
     menu.close(); stopForVisibility(); onlineSetup = false;
@@ -525,5 +525,5 @@ mount().catch(error => {
   document.getElementById('overlay-title').textContent = 'Laden fehlgeschlagen';
   document.getElementById('overlay-text').textContent = 'Bitte lade die Seite erneut. Über „Zurück zur Liga“ kommst du jederzeit zurück.';
   document.getElementById('start-button').hidden = true;
-  console.error('PadelArcade:', error);
+  console.error('PadelPong:', error);
 });

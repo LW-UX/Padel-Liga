@@ -62,7 +62,7 @@ begin
     or p_computer_score is null or p_computer_score not between 0 and 6
     or p_duration_ms is null or p_duration_ms not between 1 and 86400000
     or p_best_rally < 0 then
-    raise exception 'Ungültiger Arcade-Sieg.' using errcode = '22023';
+    raise exception 'Ungültiger PadelPong-Sieg.' using errcode = '22023';
   end if;
   insert into public.arcade_wins (round_id, display_name, human_score, computer_score, duration_ms, best_rally, difficulty)
     values (p_round_id, v_name, p_human_score, p_computer_score, p_duration_ms, p_best_rally, p_difficulty)

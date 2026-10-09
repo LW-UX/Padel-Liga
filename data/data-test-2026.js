@@ -23,7 +23,8 @@ window.PADEL_SEASON = {
   ],
   matchdays: [
     { spieltag: 1, startDate: "2026-07-15", endDate: "2026-07-16" },
-    { spieltag: 2, startDate: "2026-12-01", endDate: "2026-12-03" }
+    { spieltag: 2, startDate: "2026-12-01", endDate: "2026-12-03" },
+    { spieltag: 3, startDate: "2026-10-05", endDate: "2026-10-09" }
   ],
   participants: [
     { playerId: "ludi_gmx", startElo: 800 },
@@ -91,6 +92,21 @@ window.PADEL_SEASON = {
       winner: null,
       team1: { playerIds: ["ludi_gmail", "ludi_ionos"] },
       team2: { playerIds: ["ludi_gmx", "ludwig_w"] }
+    },
+    {
+      id: "test-2026-partie-5",
+      type: "season",
+      seasonId: "test-2026",
+      countsForRanking: true,
+      countsForElo: true,
+      matchday: 3,
+      date: null,
+      time: null,
+      result: null,
+      sets: null,
+      winner: null,
+      team1: { playerIds: ["ludi_gmx", "ludi_ionos"] },
+      team2: { playerIds: ["ludi_gmail", "ludwig_w"] }
     }
   ],
   articles: []

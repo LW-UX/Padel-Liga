@@ -1,4 +1,5 @@
 (function () {
+  const ACCOUNT_SUCCESS_MESSAGE_DURATION = 5000;
   const requestedAuthFlow = String(window.location?.search || '')
     .match(/(?:^|[?&])auth=(invite|recovery)(?:&|$)/)?.[1] || null;
   const state = {
@@ -18,6 +19,9 @@
     bound: false
   };
   let initPromise = null;
+  let unscheduleTrigger = null;
+  let unrateTrigger = null;
+  let accountMessageTimer = null;
 
   const browserUserAgent = String(window.navigator?.userAgent || '');
   const browserPlatform = String(window.navigator?.platform || '');
@@ -403,7 +407,7 @@
     </div>`;
   }
 
-  function renderResultForm(task, counter = false, collapsed = false, allowUnschedule = false) {
+  function renderResultForm(task, counter = false, collapsed = false, allowUnschedule = false, allowCancel = false) {
     const initialResult = counter ? task.proposed_result : '';
     const matchFormat = task.match_format || 'best-of-three';
     return `<form class="result-entry-form ${counter ? 'is-counterproposal' : ''}" data-result-submit="${escapeHtml(task.match_id)}" data-result-format="${escapeHtml(matchFormat)}" ${counter || collapsed ? 'hidden' : ''}>
@@ -421,6 +425,7 @@
       <div class="result-entry-actions">
         <div class="result-entry-summary" data-result-summary aria-live="polite">Satzergebnis wird automatisch berechnet.</div>
         <div class="result-entry-buttons">
+          ${allowCancel ? renderCancelMatchButton(task) : ''}
           ${allowUnschedule ? `<button class="secondary-button" type="button" data-match-unschedule="${escapeHtml(task.match_id)}">Termin löschen</button>` : ''}
           <button class="primary-button" type="submit">${state.profile?.app_role === 'admin' ? 'Ergebnis eintragen' : counter ? 'Alternative senden' : 'Zur Bestätigung senden'}</button>
         </div>
@@ -428,7 +433,7 @@
     </form>`;
   }
 
-  function renderScheduleForm(task, collapsed = false) {
+  function renderScheduleForm(task, collapsed = false, allowCancel = false) {
     const matchTime = getBerlinMatchAtParts(task.match_at);
     return `<form class="match-schedule-form" data-match-schedule="${escapeHtml(task.match_id)}" ${collapsed ? 'hidden' : ''}>
       <div class="result-entry-timing">
@@ -442,6 +447,7 @@
         </label>
       </div>
       <div class="match-schedule-actions">
+        ${allowCancel ? renderCancelMatchButton(task) : ''}
         <button class="secondary-button" type="submit">${task.match_at ? 'Termin speichern' : 'Terminieren'}</button>
       </div>
     </form>`;
@@ -454,6 +460,11 @@
     return isResultTaskOpen(task)
       ? '<span class="account-task-status is-open">Offen</span>'
       : `<span class="account-task-status">${task.match_at ? 'Terminiert' : 'Geplant'}</span>`;
+  }
+
+  function renderCancelMatchButton(task) {
+    if (state.profile?.app_role !== 'admin' || task.competition_stage !== 'league') return '';
+    return `<button class="secondary-button match-cancel-button" type="button" data-match-cancel="${escapeHtml(task.match_id)}">Nicht werten</button>`;
   }
 
   function renderProposedResult(task, ownProposal = false) {
@@ -491,9 +502,12 @@
         </div>
         ${renderResultForm(task, true)}`;
     }
-    if (groupKey === 'planned') return renderScheduleForm(task);
+    if (groupKey === 'planned') {
+      return renderScheduleForm(task, false, true);
+    }
     if (groupKey === 'future') {
       return `<div class="account-task-actions scheduled-result-actions">
+          ${renderCancelMatchButton(task)}
           <button class="secondary-button" type="button" data-match-unschedule="${escapeHtml(task.match_id)}">Termin löschen</button>
           <button class="secondary-button" type="button" data-match-schedule-toggle="${escapeHtml(task.match_id)}">Termin ändern</button>
         </div>
@@ -501,9 +515,9 @@
         ${renderScheduleForm(task, true)}`;
     }
     if (groupKey === 'past') {
-      return renderResultForm(task, false, false, true);
+      return renderResultForm(task, false, false, true, true);
     }
-    return renderResultForm(task);
+    return renderResultForm(task, false, false, false, true);
   }
 
   function renderResultTaskCard(task, groupKey) {
@@ -1104,17 +1118,47 @@
 
 
 
+  function clearAccountMessageTimer() {
+    if (accountMessageTimer === null) return;
+    window.clearTimeout?.(accountMessageTimer);
+    accountMessageTimer = null;
+  }
+
+  function dismissAccountMessage() {
+    clearAccountMessageTimer();
+    const target = document.getElementById('account-auth-message');
+    if (!target) return;
+    const text = target.querySelector('[data-account-auth-message-text]');
+    if (text) text.textContent = '';
+    target.className = 'auth-message account-auth-message';
+    target.hidden = true;
+  }
+
   function setAuthMessage(message, type = '') {
+    clearAccountMessageTimer();
     const accountMessageIsVisible = Boolean(state.session?.user)
       && !['invite', 'recovery'].includes(state.passwordFlow);
-    const targetId = accountMessageIsVisible ? 'account-auth-message' : 'auth-message';
+    const authTarget = document.getElementById('auth-message');
+    const accountTarget = document.getElementById('account-auth-message');
+    const accountText = accountTarget?.querySelector('[data-account-auth-message-text]');
 
-    ['auth-message', 'account-auth-message'].forEach(id => {
-      const target = document.getElementById(id);
-      if (!target) return;
-      target.textContent = id === targetId ? message || '' : '';
-      target.className = `auth-message${id === 'account-auth-message' ? ' account-auth-message' : ''}${id === targetId && type ? ` ${type}` : ''}`;
-    });
+    if (authTarget) {
+      authTarget.textContent = accountMessageIsVisible ? '' : message || '';
+      authTarget.className = `auth-message${!accountMessageIsVisible && type ? ` ${type}` : ''}`;
+    }
+
+    if (!accountMessageIsVisible || !message) {
+      dismissAccountMessage();
+      return;
+    }
+
+    if (accountText) accountText.textContent = message;
+    accountTarget.className = `auth-message account-auth-message${type ? ` ${type}` : ''}`;
+    accountTarget.hidden = false;
+
+    if (type === 'success') {
+      accountMessageTimer = window.setTimeout(dismissAccountMessage, ACCOUNT_SUCCESS_MESSAGE_DURATION);
+    }
   }
 
   function setAuthMode(mode) {
@@ -1619,8 +1663,33 @@ Dein Hanako-Leben-Squad`;
     }
   }
 
+  function openUnscheduleDialog(button) {
+    const dialog = document.getElementById('unschedule-match-dialog');
+    if (!dialog) return;
+    dialog.dataset.matchId = button.dataset.matchUnschedule;
+    unscheduleTrigger = button;
+    if (!dialog.open) dialog.showModal();
+    dialog.querySelector('.secondary-button[data-unschedule-close]')?.focus();
+  }
+
+  function closeUnscheduleDialog() {
+    document.getElementById('unschedule-match-dialog')?.close();
+  }
+
+  function openUnrateDialog(button) {
+    const dialog = document.getElementById('unrate-match-dialog');
+    if (!dialog) return;
+    dialog.dataset.matchId = button.dataset.matchCancel;
+    unrateTrigger = button;
+    if (!dialog.open) dialog.showModal();
+    dialog.querySelector('.secondary-button[data-unrate-close]')?.focus();
+  }
+
+  function closeUnrateDialog() {
+    document.getElementById('unrate-match-dialog')?.close();
+  }
+
   async function handleUnscheduleMatch(matchId, button) {
-    if (!window.confirm('Soll der Termin dieser Partie wirklich gelöscht werden?')) return;
     if (button) button.disabled = true;
     setAuthMessage('Termin wird gelöscht …');
     try {
@@ -1630,6 +1699,22 @@ Dein Hanako-Leben-Squad`;
       await refresh();
     } catch (error) {
       setAuthMessage(error.message || 'Der Termin konnte nicht gelöscht werden.', 'error');
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  async function handleCancelMatch(matchId, button) {
+    if (button) button.disabled = true;
+    setAuthMessage('Partie wird aus der Wertung genommen …');
+    try {
+      const { error } = await state.client.rpc('cancel_match', { p_match_id: matchId });
+      if (error) throw error;
+      setAuthMessage('Partie wurde als „ohne Wertung“ markiert.', 'success');
+      await refresh();
+      publishOfficialResultChange(matchId);
+    } catch (error) {
+      setAuthMessage(error.message || 'Die Partie konnte nicht aus der Wertung genommen werden.', 'error');
     } finally {
       if (button) button.disabled = false;
     }
@@ -2014,6 +2099,10 @@ Dein Hanako-Leben-Squad`;
         closeAuthDialog();
         return;
       }
+      if (event.target.closest('[data-account-auth-message-dismiss]')) {
+        dismissAccountMessage();
+        return;
+      }
       const mode = event.target.closest('[data-auth-mode]');
       if (mode) {
         setAuthMode(mode.dataset.authMode);
@@ -2101,7 +2190,36 @@ Dein Hanako-Leben-Squad`;
       }
       const unscheduleButton = event.target.closest('[data-match-unschedule]');
       if (unscheduleButton) {
-        await handleUnscheduleMatch(unscheduleButton.dataset.matchUnschedule, unscheduleButton);
+        openUnscheduleDialog(unscheduleButton);
+        return;
+      }
+      if (event.target.closest('[data-unschedule-close]')) {
+        closeUnscheduleDialog();
+        return;
+      }
+      if (event.target.closest('[data-unschedule-confirm]')) {
+        const dialog = document.getElementById('unschedule-match-dialog');
+        const matchId = dialog?.dataset.matchId;
+        const trigger = unscheduleTrigger;
+        closeUnscheduleDialog();
+        if (matchId) await handleUnscheduleMatch(matchId, trigger);
+        return;
+      }
+      const cancelMatchButton = event.target.closest('[data-match-cancel]');
+      if (cancelMatchButton) {
+        openUnrateDialog(cancelMatchButton);
+        return;
+      }
+      if (event.target.closest('[data-unrate-close]')) {
+        closeUnrateDialog();
+        return;
+      }
+      if (event.target.closest('[data-unrate-confirm]')) {
+        const dialog = document.getElementById('unrate-match-dialog');
+        const matchId = dialog?.dataset.matchId;
+        const trigger = unrateTrigger;
+        closeUnrateDialog();
+        if (matchId) await handleCancelMatch(matchId, trigger);
         return;
       }
       const scoreStep = event.target.closest('[data-result-score-step]');
@@ -2258,6 +2376,20 @@ Dein Hanako-Leben-Squad`;
     });
     document.getElementById('player-invite-dialog')?.addEventListener('click', event => {
       if (event.target === event.currentTarget) closePlayerInviteDialog();
+    });
+    document.getElementById('unschedule-match-dialog')?.addEventListener('click', event => {
+      if (event.target === event.currentTarget) closeUnscheduleDialog();
+    });
+    document.getElementById('unschedule-match-dialog')?.addEventListener('close', event => {
+      delete event.currentTarget.dataset.matchId;
+      unscheduleTrigger = null;
+    });
+    document.getElementById('unrate-match-dialog')?.addEventListener('click', event => {
+      if (event.target === event.currentTarget) closeUnrateDialog();
+    });
+    document.getElementById('unrate-match-dialog')?.addEventListener('close', event => {
+      delete event.currentTarget.dataset.matchId;
+      unrateTrigger = null;
     });
     window.addEventListener('padel:live-status-changed', renderResultTasks);
     syncDateTimeHints();

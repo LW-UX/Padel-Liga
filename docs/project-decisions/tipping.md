@@ -21,4 +21,5 @@ Diese Datei ist die kanonische Quelle für Tippabgabe, Fristen, Wertung und die 
 - Vier Punkte werden für das exakte vorhergesagte Ergebnis vergeben, zwei für den richtigen Sieger bei anderem Ergebnis und null für den falschen Sieger.
 - Best-of-three-Partien werden über das Satzergebnis getippt. Bei einem einzelnen Final-Four-Satz wird der genaue Satzendstand getippt.
 - Nachträglich korrigierte offizielle Ergebnisse werden mit ihrem aktuellen bestätigten Stand ausgewertet.
+- Tipps auf eine später aus der Wertung genommene Partie bleiben sichtbar, werden als „Nicht gewertet“ gekennzeichnet und zählen weder als gewerteter Tipp noch für Treffer oder Punkte.
 - Ob eine Saison ein Tippspiel anbietet, ist Saisonkonfiguration und kein aus dem Datenbestand abgeleiteter Automatismus.

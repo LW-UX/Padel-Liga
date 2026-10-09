@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#07080C">
-  <title>PadelArcade</title>
+  <title>PadelPong</title>
   <link rel="icon" href="../favicon.ico" sizes="any">
   <link rel="stylesheet" href="../style.css?v=2026-09-12-button-selection">
   <link rel="stylesheet" href="arcade.css?v=2026-09-14-laptop-controls">
@@ -13,7 +13,7 @@
   <div class="arcade-shell">
     <header class="arcade-header">
       <a id="back-link" class="context-link back-link" href="../"><span>Zurück zur Liga</span></a>
-      <h1 class="sh-title">Padel<span>Arcade</span></h1>
+      <h1 class="sh-title">Padel<span>Pong</span></h1>
     </header>
 
     <main class="game-layout" id="game">
@@ -37,7 +37,7 @@
           <div class="team-label computer-label"><strong class="mc-score-main" id="computer-score">0</strong> <span id="opponent-label">CPU</span></div>
         </div>
         <div class="court-wrap">
-          <canvas id="court" width="272" height="496" tabindex="0" aria-label="PadelArcade. Du spielst unten mit den gelben Balken. Bewegen mit Pfeiltasten oder WASD." aria-describedby="rules-text">Zum Spielen wird ein Browser mit Canvas-Unterstützung benötigt.</canvas>
+          <canvas id="court" width="272" height="496" tabindex="0" aria-label="PadelPong. Du spielst unten mit den gelben Balken. Bewegen mit Pfeiltasten oder WASD." aria-describedby="rules-text">Zum Spielen wird ein Browser mit Canvas-Unterstützung benötigt.</canvas>
           <div class="countdown-display" id="countdown-display" role="status" aria-live="assertive" hidden></div>
           <div class="game-overlay" id="game-overlay">
             <p class="hero-eyebrow eyebrow" id="overlay-label">EINE KURZE PADELPAUSE</p>
@@ -113,7 +113,7 @@
       <p id="leaderboard-message" class="sh-meta" role="status" aria-live="polite"></p>
       <button id="leaderboard-retry" class="secondary-button" type="button" hidden>Erneut laden</button>
       <div id="leaderboard-results" hidden>
-        <table class="rt arcade-ranking"><caption class="sr-only">Globale PadelArcade-Bestenliste</caption>
+        <table class="rt arcade-ranking"><caption class="sr-only">Globale PadelPong-Bestenliste</caption>
           <colgroup><col class="col-rank"><col class="col-name"><col class="col-result"><col class="col-time"><col class="col-rally"></colgroup>
           <thead><tr><th class="l" scope="col">#</th><th class="l" scope="col">Spieler</th><th scope="col"><span class="desktop-table-label">Ergebnis</span><span class="mobile-table-label">Erg.</span></th><th scope="col">Zeit</th><th scope="col" aria-label="Längster Ballwechsel" title="Anzahl der Schläge im längsten Ballwechsel"><span class="desktop-table-label">Längster Spielzug</span><span class="mobile-table-label">Ballw.</span></th></tr></thead>
           <tbody id="leaderboard-rows"></tbody>
@@ -168,7 +168,7 @@
   <audio id="effect-point-lost" src="point-lost.mp3" preload="auto"></audio>
   <audio id="effect-game-over" src="game-over.mp3" preload="auto"></audio>
   <audio id="effect-victory" src="victory.mp3" preload="auto"></audio>
-  <noscript><p>Bitte JavaScript aktivieren, um PadelArcade zu spielen. <a href="../">Zurück zur Liga</a></p></noscript>
+  <noscript><p>Bitte JavaScript aktivieren, um PadelPong zu spielen. <a href="../">Zurück zur Liga</a></p></noscript>
   <script src="../data/supabase-config.js"></script>
   <script type="module" src="main.mjs?v=2026-09-14-laptop-sounds"></script>
 </body>

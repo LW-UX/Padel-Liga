@@ -7,7 +7,7 @@ Vor fachlichen oder technischen Änderungen sind nur die für die Aufgabe einsch
 - Anmeldung, Konto, Rolle, Einladung, Berechtigung oder Konto-Dialog: `docs/project-decisions/accounts-and-workflows.md`
 - Elo, Rangliste, Statistik, Profil oder Auszeichnung: `docs/project-decisions/rankings-statistics-and-profiles.md`
 - Tippseite, Tipp, Tippschluss oder Tippwertung: `docs/project-decisions/tipping.md`
-- Arcade: `docs/project-decisions/arcade.md`
+- PadelPong: `docs/project-decisions/arcade.md`
 
 Bei fachübergreifenden Aufgaben sind alle betroffenen Dateien zu lesen. Konto-Spielkarten und Ergebniseingaben betreffen insbesondere Konten und Partien; Elo-Korrekturen betreffen Ranglisten und Partien; termin- oder ergebnisabhängige Tipps betreffen Tippspiel und Partien. Bei Supabase-, Migrations-, Veröffentlichungs- oder Live-Statusfragen ist zusätzlich `docs/PROJECT_STATUS.md` zu lesen. Wenn die Zuordnung unklar ist, dient `docs/PROJECT_DECISIONS.md` als Wegweiser; anschließend ist gezielt in `docs/project-decisions/` zu suchen. Das vollständige Projektgedächtnis wird nur bei repositoryweiten Grundsatzänderungen gelesen.
 

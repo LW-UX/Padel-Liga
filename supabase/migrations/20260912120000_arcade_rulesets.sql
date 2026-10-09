@@ -69,7 +69,7 @@ begin
     or p_computer_score is null or p_computer_score not between 0 and 6
     or p_duration_ms is null or p_duration_ms not between 1 and 86400000
     or p_best_rally < 0 then
-    raise exception 'Ungültiger Arcade-Sieg.' using errcode = '22023';
+    raise exception 'Ungültiger PadelPong-Sieg.' using errcode = '22023';
   end if;
   if p_ruleset = 'classic' then
     -- A retry may confirm a frozen result, but can never insert into the archive.

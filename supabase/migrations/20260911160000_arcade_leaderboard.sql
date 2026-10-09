@@ -50,7 +50,7 @@ returns text language sql immutable strict set search_path = '' as $$
 $$;
 revoke all on function public.arcade_name_key(text) from public, anon, authenticated;
 
--- Arcade results are separate from league players, matches and Elo.
+-- PadelPong results are separate from league players, matches and Elo.
 create table public.arcade_wins (
   round_id uuid primary key,
   display_name text not null check (char_length(display_name) between 1 and 16 and display_name = btrim(display_name) and display_name ~ '^[[:alpha:][:digit:]]+$'),
@@ -104,7 +104,7 @@ begin
   if p_round_id is null or p_human_score is distinct from 7
     or p_computer_score is null or p_computer_score not between 0 and 6
     or p_duration_ms is null or p_duration_ms not between 1 and 86400000 then
-    raise exception 'Ungültiger Arcade-Sieg.' using errcode = '22023';
+    raise exception 'Ungültiger PadelPong-Sieg.' using errcode = '22023';
   end if;
   insert into public.arcade_wins (round_id, display_name, human_score, computer_score, duration_ms)
     values (p_round_id, v_name, p_human_score, p_computer_score, p_duration_ms)

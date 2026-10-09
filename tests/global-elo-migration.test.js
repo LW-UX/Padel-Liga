@@ -135,8 +135,8 @@ test('player profiles contain one global start plus real matches but no season b
 });
 
 test('clients use match_at as the only database match time and render Berlin local time', () => {
-  assert.match(app, /\.select\('id, match_at, result_details, actual_sets, winner'\)/);
-  assert.match(tippspiel, /\.select\('id, format, competition_stage, betting_open, actual_sets, result_details, match_at'\)/);
+  assert.match(app, /\.select\('id, match_at, result_details, actual_sets, winner, cancelled_at'\)/);
+  assert.match(tippspiel, /\.select\('id, format, competition_stage, betting_open, actual_sets, result_details, match_at, cancelled_at'\)/);
   assert.doesNotMatch(tippspiel, /databaseMatch\.lock_at|databaseMatch\.scheduled_date|databaseMatch\.display_time/);
   assert.match(account, /p_match_at: buildMatchAtValue\(/);
 

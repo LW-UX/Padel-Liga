@@ -1,10 +1,10 @@
-# PadelArcade
+# PadelPong
 
-Diese Datei ist die kanonische Quelle für das saisonunabhängige Arcade-Spiel, seine Modi, Regeln, Audio- und Bestenlistenlogik.
+Diese Datei ist die kanonische Quelle für das saisonunabhängige Spiel PadelPong, seine Modi, Regeln, Audio- und Bestenlistenlogik.
 
 ## Produkt und Darstellung
 
-- PadelArcade ist ein öffentliches, saisonunabhängiges Retro-Minispiel unter `/arcade/` und wird innerhalb desselben Tabs aus der Liga geöffnet.
+- PadelPong ist ein öffentliches, saisonunabhängiges Retro-Minispiel unter `/arcade/` und wird innerhalb desselben Tabs aus der Liga geöffnet.
 - Der Pixel-Look gilt dem Spielfeld; die umgebende Oberfläche übernimmt Typografie, dunkle Flächen, Akzente und Bedienelemente der Liga.
 - Das Spielfeld zeigt eine 2D-Draufsicht mit berechneter Ballhöhe, Bodenschatten, nächstem Aufprall und Warnung vor ungültigem direktem Begrenzungskontakt.
 - Ein Team besteht aus zwei fest gekoppelten Balken ohne aktiven Spielerwechsel. Tastatur sowie direktes Ziehen mit Maus oder Finger werden unterstützt.

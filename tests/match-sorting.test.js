@@ -29,9 +29,10 @@ test('date sorting places matches without a complete date and time last', () => 
   assert.ok(source);
 
   const context = {
-    hasScheduledDateTime: match => Boolean(match.datum && match.uhrzeit),
+    hasMatchSortDate: match => Boolean(match.sortDate || match.datum && match.uhrzeit),
     compareMatchesByNumber: (a, b) => a.nr - b.nr,
-    compareMatchesByDateTime: (a, b) => `${a.datum}T${a.uhrzeit}`.localeCompare(`${b.datum}T${b.uhrzeit}`)
+    compareMatchesByDateTime: (a, b) => `${a.sortDate || a.datum}T${a.uhrzeit || '99.99'}`
+      .localeCompare(`${b.sortDate || b.datum}T${b.uhrzeit || '99.99'}`)
   };
   const compareMatchesBySchedule = vm.runInNewContext(
     `(${source.replace('function compareMatchesBySchedule', 'function')})`,
@@ -40,14 +41,17 @@ test('date sorting places matches without a complete date and time last', () => 
   const matches = [
     { id: 'open-final', nr: 1, spieltag: 8, datum: null, uhrzeit: null },
     { id: 'later', nr: 2, datum: '2026-06-02', uhrzeit: '09.00' },
+    { id: 'cancelled', nr: 5, sortDate: '2026-06-01', datum: null, uhrzeit: null },
     { id: 'open-league', nr: 10, spieltag: 3, datum: '2026-05-01', uhrzeit: null },
     { id: 'earlier', nr: 1, datum: '2026-06-01', uhrzeit: '18.00' }
   ];
 
   assert.deepEqual(
     matches.sort(compareMatchesBySchedule).map(match => match.id),
-    ['earlier', 'later', 'open-league', 'open-final']
+    ['earlier', 'cancelled', 'later', 'open-league', 'open-final']
   );
+  assert.match(app, /function getMatchSortDate\(match\)[\s\S]*getMatchdayInfo\(match\.spieltag\)\?\.startDate/);
+  assert.match(app, /scheduledMatches = sortedMatches\.filter\(hasMatchSortDate\)/);
   assert.match(app, /if \(matchScope === 'open'\) return match\.sieger === null/);
   assert.match(app, /return hasScheduledDateTime\(match\) \? 'Terminiert' : 'Ausstehend'/);
 });
@@ -58,7 +62,8 @@ test('open scope includes scheduled matches without a result and excludes comple
 
   const context = {
     matchScope: 'open',
-    isViewerMatch: () => false
+    isViewerMatch: () => false,
+    isCancelledMatch: match => Boolean(match.cancelledAt)
   };
   const matchesCurrentMatchScope = vm.runInNewContext(
     `(${source.replace('function matchesCurrentMatchScope', 'function')})`,
@@ -66,5 +71,6 @@ test('open scope includes scheduled matches without a result and excludes comple
   );
 
   assert.equal(matchesCurrentMatchScope({ sieger: null, datum: '2026-09-20', uhrzeit: '18.00' }), true);
+  assert.equal(matchesCurrentMatchScope({ sieger: null, cancelledAt: '2026-10-08T12:00:00Z' }), false);
   assert.equal(matchesCurrentMatchScope({ sieger: 1, datum: null, uhrzeit: null }), false);
 });

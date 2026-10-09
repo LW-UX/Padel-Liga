@@ -209,7 +209,7 @@ test('arcade page uses isolated modules and same-tab navigation preserves the se
   const html = fs.readFileSync(path.join(root, 'arcade/index.html'), 'utf8');
   const league = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.ok(!/app\.js|supabase-js|chart\.js/.test(html));
-  assert.match(html, /Padel<span>Arcade/);
+  assert.match(html, /Padel<span>Pong/);
   assert.match(html, /<button[^>]+id="fps"[^>]*>60 FPS<\/button>/);
   assert.ok(!/<select[^>]+id="fps"/.test(html));
   assert.match(html, /<canvas id="court"[\s\S]*?<div class="countdown-display" id="countdown-display"[\s\S]*?<div class="game-overlay" id="game-overlay">/);

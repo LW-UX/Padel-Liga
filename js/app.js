@@ -154,7 +154,7 @@ async function mergeDatabaseResults(rawSeason) {
   const matchIds = rawSeason.matches.map(match => match.id);
   const { data: databaseMatches, error: matchError } = await client
     .from('matches')
-    .select('id, match_at, result_details, actual_sets, winner')
+    .select('id, match_at, result_details, actual_sets, winner, cancelled_at')
     .in('id', matchIds);
   if (matchError) throw matchError;
 
@@ -173,7 +173,8 @@ async function mergeDatabaseResults(rawSeason) {
         time: matchTime.time,
         result: stored.result_details,
         sets: stored.actual_sets,
-        winner: stored.winner
+        winner: stored.winner,
+        cancelledAt: stored.cancelled_at
       };
     })
   };
@@ -261,6 +262,7 @@ function normalizeLegacySeason(rawSeason) {
       result: match.ergebnis,
       sets: match.saetze,
       winner: match.sieger,
+      cancelledAt: match.cancelledAt || null,
       displayLabel: match.displayLabel,
       team1: normalizeTeam(match.team1),
       team2: normalizeTeam(match.team2)
@@ -270,6 +272,10 @@ function normalizeLegacySeason(rawSeason) {
 
 function countsForRanking(match) {
   return match?.countsForRanking !== false;
+}
+
+function isCancelledMatch(match) {
+  return Boolean(match?.cancelledAt);
 }
 
 function getMatchStage(match) {
@@ -293,8 +299,8 @@ function getCompetitionConfig() {
 }
 
 function isCompletedSeasonMatch(match) {
-  return match?.sieger !== null && match?.sieger !== undefined
-    && match?.saetze !== null && match?.saetze !== undefined;
+  return isCancelledMatch(match) || (match?.sieger !== null && match?.sieger !== undefined
+    && match?.saetze !== null && match?.saetze !== undefined);
 }
 
 function hasAssignedMatchPlayers(match) {
@@ -1278,22 +1284,27 @@ function getLocalPlayerProfile(playerId) {
   const profileSeasonEnabled = selectedSeason?.id !== 'test-2026';
   const matches = profileSeasonEnabled
     ? (PADEL_DATA?.allMatches || PADEL_DATA?.matches || [])
-      .filter(match => match.sieger !== null && getProfilePlayerTeam(match, player.id, player.name))
+      .filter(match => (match.sieger !== null || isCancelledMatch(match))
+        && getProfilePlayerTeam(match, player.id, player.name))
       .map(match => {
         const team = getProfilePlayerTeam(match, player.id, player.name);
         const ownTeam = team === 1 ? match.team1.spieler : match.team2.spieler;
         const opponents = team === 1 ? match.team2.spieler : match.team1.spieler;
         const kind = getMatchStage(match) === 'final-four' ? 'final-four' : 'league';
+        const isCancelled = isCancelledMatch(match);
         return {
           id: match.id,
           kind,
-          matchWeight: kind === 'final-four' ? 0.5 : 1,
-          date: toDateKey(match.datum),
+          matchWeight: isCancelled ? 0 : kind === 'final-four' ? 0.5 : 1,
+          date: isCancelled ? null : toDateKey(match.datum),
+          sortDate: isCancelled ? getMatchdayInfo(match.spieltag)?.startDate || null : toDateKey(match.datum),
           seasonId: selectedSeason.id,
           seasonLabel: PADEL_DATA.label || selectedSeason.label,
-          resultDetails: match.ergebnis,
+          resultDetails: isCancelled ? null : match.ergebnis,
           team,
-          outcome: match.sieger === team ? 'win' : 'loss',
+          outcome: isCancelled ? 'unfinished' : match.sieger === team ? 'win' : 'loss',
+          isComplete: !isCancelled,
+          isCancelled,
           partnerNames: ownTeam.filter(name => name !== player.name),
           opponentNames: opponents
         };
@@ -1360,7 +1371,7 @@ function getLocalPlayerProfile(playerId) {
     eloSeries,
     participations: participation,
     achievements: [],
-    matches: matches.sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))),
+    matches: matches.sort((a, b) => String(b.sortDate || b.date || '').localeCompare(String(a.sortDate || a.date || ''))),
     source: 'local-fallback'
   };
 }
@@ -1949,6 +1960,8 @@ function renderPlayerProfileHistory() {
     target.innerHTML = visibleGroups.map(group => {
       const rows = group.matches.map((match, index) => {
         const isComplete = match.isComplete !== false;
+        const isCancelled = match.isCancelled === true
+          || (match.kind !== 'training' && !isComplete && Number(match.matchWeight) === 0);
         const hasWeightedResult = match.kind === 'training'
           ? Number(match.matchWeight) > 0
           : isComplete;
@@ -1972,7 +1985,9 @@ function renderPlayerProfileHistory() {
             <div class="player-profile-match-team-line"><span>mit</span> ${partner}</div>
             <div class="player-profile-match-team-line"><span>vs.</span> ${opponents}</div>
           </div>
-          ${isComplete && window.PadelLiveTicker?.hasHistory(match.id)
+          ${isCancelled
+            ? '<div class="player-profile-match-score player-profile-unrated-result">ohne Wertung</div>'
+            : isComplete && window.PadelLiveTicker?.hasHistory(match.id)
             ? `<button type="button" class="player-profile-match-score" data-live-open-match="${escapeHtml(match.id)}" data-live-season-id="${escapeHtml(match.seasonId || '')}" aria-label="Spielverlauf öffnen">${renderProfileResultDetails(match)}</button>`
             : `<div class="player-profile-match-score"${isComplete ? '' : ' title="Vollständige Sätze werden einzeln gewertet"'}>${renderProfileResultDetails(match)}</div>`}
           <div class="player-profile-match-season">${showSeason ? escapeHtml(getPlayerProfileMatchLabel(match)) : ''}</div>
@@ -2053,6 +2068,19 @@ function closePlayerProfile() {
 }
 
 document.addEventListener('click', event => {
+  const helpTooltipAnchor = event.target.closest('[data-help-tooltip-anchor]');
+  if (helpTooltipAnchor) {
+    const wrapper = helpTooltipAnchor.closest('.th-help-wrap');
+    const willOpen = !wrapper?.classList.contains('is-open');
+    closePinnedHelpTooltips(wrapper);
+    positionHelpTooltip(helpTooltipAnchor);
+    wrapper?.classList.toggle('is-open', willOpen);
+    helpTooltipAnchor.setAttribute('aria-expanded', String(willOpen));
+    if (!willOpen) helpTooltipAnchor.blur();
+    return;
+  }
+  closePinnedHelpTooltips();
+
   const liveBackControl = event.target.closest('[data-live-back]');
   if (liveBackControl) {
     closeLiveTicker();
@@ -2250,7 +2278,7 @@ document.addEventListener('pointerdown', event => {
 });
 
 document.addEventListener('mouseover', event => {
-  const helpIcon = event.target.closest('.help-icon');
+  const helpIcon = event.target.closest('.help-icon, [data-help-tooltip-anchor]');
   if (helpIcon) positionHelpTooltip(helpIcon);
 
   const formChip = event.target.closest('[data-form-match-id]');
@@ -2263,7 +2291,7 @@ document.addEventListener('mouseout', event => {
 });
 
 document.addEventListener('focusin', event => {
-  const helpIcon = event.target.closest('.help-icon');
+  const helpIcon = event.target.closest('.help-icon, [data-help-tooltip-anchor]');
   if (helpIcon) positionHelpTooltip(helpIcon);
 
   const calculatorScoreControl = event.target.closest('[data-calculator-score], [data-calculator-step]');
@@ -2314,6 +2342,7 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape') {
     closeViewerMenu();
     closeSeasonMenu();
+    closePinnedHelpTooltips();
     hideFormTooltip();
   }
 });
@@ -2936,6 +2965,29 @@ function getPlayerRankingExtras(player, rankMap) {
   };
 }
 
+function getPlayerUnratedMatchCount(player, matches = PADEL_DATA.matches) {
+  return matches.filter(match =>
+    isCancelledMatch(match)
+    && getMatchStage(match) === 'league'
+    && (match.team1.spieler.includes(player.name) || match.team2.spieler.includes(player.name))
+  ).length;
+}
+
+function renderRankingMatchCount(player) {
+  const unratedCount = getPlayerUnratedMatchCount(player);
+  if (!unratedCount) return String(player.stats.partien);
+
+  const tooltipText = `${unratedCount} ${unratedCount === 1 ? 'Partie' : 'Partien'} ohne Wertung`;
+  const tooltipId = `ranking-unrated-${String(player.id || player.name).replace(/[^a-z0-9_-]+/gi, '-')}`;
+  return `<span class="ranking-games-value">
+    <span>${player.stats.partien}</span>
+    <span class="th-help-wrap ranking-unrated-wrap">
+      <button class="ranking-unrated-count" type="button" aria-label="${escapeHtml(tooltipText)}" aria-describedby="${escapeHtml(tooltipId)}" aria-expanded="false" data-help-tooltip-anchor>+${unratedCount}</button>
+      <span class="help-tooltip" id="${escapeHtml(tooltipId)}" role="tooltip">${escapeHtml(tooltipText)}</span>
+    </span>
+  </span>`;
+}
+
 function getPlacementAdjustedRank(player, rankMap) {
   const currentRank = rankMap.get(player.name);
   const factor = getPlayerPlacementFactor(player, rankMap);
@@ -2982,7 +3034,7 @@ function renderRanking() {
     return `<tr class="ranking-row r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(p.id || p.name)}">
       <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${renderPointsRankReference(currentRank, pointsRank)}</span></td>
       <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span></span></td>
-      <td class="col-games">${p.stats.partien}</td>
+      <td class="col-games">${renderRankingMatchCount(p)}</td>
       <td class="col-wins">${p.stats.siege}</td>
       <td class="col-points rank-score">${p.stats.punkte}</td>
       <td class="col-gv">${p.stats.partien > 0 ? p.stats.spieleGV : '—'}</td>
@@ -3071,8 +3123,8 @@ function getMatchTimeMinutes(match) {
 }
 
 function compareMatchesByDateTime(a, b) {
-  const dateA = toDateKey(a.datum) || '9999-12-31';
-  const dateB = toDateKey(b.datum) || '9999-12-31';
+  const dateA = toDateKey(getMatchSortDate(a)) || '9999-12-31';
+  const dateB = toDateKey(getMatchSortDate(b)) || '9999-12-31';
 
   return dateA.localeCompare(dateB)
     || getMatchTimeMinutes(a) - getMatchTimeMinutes(b)
@@ -3091,9 +3143,20 @@ function hasScheduledDateTime(match) {
   return Boolean(match?.datum && match?.uhrzeit);
 }
 
+function getMatchSortDate(match) {
+  if (!isCancelledMatch(match)) return match?.datum || null;
+  return getMatchdayInfo(match.spieltag)?.startDate || null;
+}
+
+function hasMatchSortDate(match) {
+  return isCancelledMatch(match)
+    ? Boolean(getMatchSortDate(match))
+    : hasScheduledDateTime(match);
+}
+
 function compareMatchesBySchedule(a, b) {
-  const aIsScheduled = hasScheduledDateTime(a);
-  const bIsScheduled = hasScheduledDateTime(b);
+  const aIsScheduled = hasMatchSortDate(a);
+  const bIsScheduled = hasMatchSortDate(b);
   if (aIsScheduled !== bIsScheduled) return aIsScheduled ? -1 : 1;
   if (!aIsScheduled) {
     const aMatchday = Number.isFinite(Number(a.spieltag)) ? Number(a.spieltag) : Number.MAX_SAFE_INTEGER;
@@ -3156,6 +3219,19 @@ function getPendingMatchLabel(match) {
 }
 
 function renderHomeMatchCard(match, options = {}) {
+  if (isCancelledMatch(match)) {
+    return `<div class="mini-match-row is-unrated ${isViewerMatch(match) ? 'viewer-match' : ''}">
+      <div class="mini-match-meta">${formatMatchMeta(match, { relative: options.relative !== false })}</div>
+      <div class="mini-match-grid">
+        <div class="mini-match-team mini-match-team-1">${renderTeamPlayers(match.team1.spieler)}</div>
+        <div class="mini-match-status mini-match-status-unrated">
+          <div class="mini-match-prob">o.W.</div>
+          <div class="mini-match-label">ohne Wertung</div>
+        </div>
+        <div class="mini-match-team mini-match-team-2">${renderTeamPlayers(match.team2.spieler)}</div>
+      </div>
+    </div>`;
+  }
   const isPlayed = match.sieger !== null;
   const probability = isPlayed ? getHistoricalMatchWinProbability(match) : getMatchWinProbability(match);
   const centerMain = isPlayed
@@ -3330,10 +3406,10 @@ function renderHome() {
 
   const todayKey = toDateKey(new Date());
   const nextMatches = PADEL_DATA.matches
-    .filter(m => m.sieger === null && m.uhrzeit && toDateKey(m.datum) >= todayKey)
+    .filter(m => !isCancelledMatch(m) && m.sieger === null && m.uhrzeit && toDateKey(m.datum) >= todayKey)
     .sort(compareMatchesByDateTime)
     .slice(0, 3);
-  const allMatchesPlayed = PADEL_DATA.matches.every(match => match.sieger !== null);
+  const allMatchesPlayed = PADEL_DATA.matches.every(isCompletedSeasonMatch);
   const emptyNextMatchesText = PADEL_DATA.matches.length === 0
     ? 'Der Spielplan folgt.'
     : allMatchesPlayed
@@ -4106,6 +4182,21 @@ function renderInfos() {
 function renderMatchRow(m) {
   const activeLive = window.PadelLiveTicker?.activeMatch;
   const isLive = activeLive?.matchId === m.id;
+  if (isCancelledMatch(m)) {
+    return `<div class="mc played unrated ${isViewerMatch(m) ? 'viewer-match' : ''}" data-match-entry="${escapeHtml(m.id)}">
+      <div class="mc-meta"><span class="mc-nr">${formatMatchMeta(m, { relative: true })}</span></div>
+      <div class="mc-team mc-team-1">
+        <div class="mc-players">${renderTeamPlayers(m.team1.spieler)}</div>
+      </div>
+      <div class="mc-score">
+        <div class="mc-score-main">o.W.</div>
+        <div class="mc-score-detail">ohne Wertung</div>
+      </div>
+      <div class="mc-team mc-team-2">
+        <div class="mc-players">${renderTeamPlayers(m.team2.spieler)}</div>
+      </div>
+    </div>`;
+  }
   if (m.sieger === null) {
     const probability = getMatchWinProbability(m);
     const probabilityHtml = probability
@@ -4202,7 +4293,7 @@ function renderTournamentGroup(matches, fallbackTitle, className) {
 }
 
 function matchesCurrentMatchScope(match) {
-  if (matchScope === 'open') return match.sieger === null;
+  if (matchScope === 'open') return match.sieger === null && !isCancelledMatch(match);
   if (matchScope === 'mine') return isViewerMatch(match);
   return true;
 }
@@ -4281,12 +4372,12 @@ function renderPartienByDate(matches) {
     .filter(match => getMatchStage(match) === 'final-four')
     .sort(compareMatchesBySchedule);
   const sortedMatches = [...regularMatches].sort(compareMatchesBySchedule);
-  const scheduledMatches = sortedMatches.filter(hasScheduledDateTime);
-  const openMatches = sortedMatches.filter(match => !hasScheduledDateTime(match));
-  const dateGroups = [...new Set(scheduledMatches.map(match => toDateKey(match.datum)))];
+  const scheduledMatches = sortedMatches.filter(hasMatchSortDate);
+  const openMatches = sortedMatches.filter(match => !hasMatchSortDate(match));
+  const dateGroups = [...new Set(scheduledMatches.map(match => toDateKey(getMatchSortDate(match))))];
   const scheduledHtml = dateGroups.map(date => renderMatchDateGroup(
     date,
-    scheduledMatches.filter(match => toDateKey(match.datum) === date)
+    scheduledMatches.filter(match => toDateKey(getMatchSortDate(match)) === date)
   )).join('');
   const openHtml = renderOpenMatchGroup(openMatches);
   const semifinalHtml = renderTournamentGroup(semifinalMatches, 'Halbfinale', 'semifinal-group');
@@ -4369,8 +4460,8 @@ function renderPartien({ animateSort = false } = {}) {
     return;
   }
 
-  const regularMatches = PADEL_DATA.matches.filter(countsForRanking);
-  const played = regularMatches.filter(m => m.sieger !== null).length;
+  const regularMatches = PADEL_DATA.matches.filter(match => getMatchStage(match) === 'league');
+  const played = regularMatches.filter(isCompletedSeasonMatch).length;
   document.getElementById('sp-meta').textContent = `${played}/${regularMatches.length}`;
   const visibleMatches = PADEL_DATA.matches.filter(matchesCurrentMatchScope);
   const spielplan = document.getElementById('spielplan');
@@ -5632,6 +5723,35 @@ function positionHelpTooltip(anchor) {
   wrapper.style.setProperty('--help-tooltip-anchor-y', `${anchorOffsetY}px`);
   wrapper.classList.toggle('help-tooltip-opens-right', opensRight);
   wrapper.classList.toggle('help-tooltip-opens-left', !opensRight);
+
+  if (wrapper.classList.contains('ranking-unrated-wrap')) {
+    const tooltip = wrapper.querySelector('.help-tooltip');
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    const viewportPadding = 16;
+    const tooltipWidth = Math.min(isMobile ? 190 : 260, window.innerWidth - viewportPadding * 2);
+    const tooltipHeight = tooltip?.getBoundingClientRect().height || 48;
+    const unclampedLeft = isMobile
+      ? anchorViewportX - tooltipWidth / 2
+      : opensRight ? anchorRect.right + 10 : anchorRect.left - tooltipWidth - 10;
+    const tooltipLeft = Math.max(
+      viewportPadding,
+      Math.min(unclampedLeft, window.innerWidth - tooltipWidth - viewportPadding)
+    );
+    const tooltipTop = Math.max(
+      viewportPadding,
+      Math.min(anchorRect.bottom + 8, window.innerHeight - tooltipHeight - viewportPadding)
+    );
+    wrapper.style.setProperty('--ranking-tooltip-left', `${tooltipLeft}px`);
+    wrapper.style.setProperty('--ranking-tooltip-top', `${tooltipTop}px`);
+  }
+}
+
+function closePinnedHelpTooltips(exceptWrapper = null) {
+  document.querySelectorAll('.th-help-wrap.is-open').forEach(wrapper => {
+    if (wrapper === exceptWrapper) return;
+    wrapper.classList.remove('is-open');
+    wrapper.querySelector('[data-help-tooltip-anchor]')?.setAttribute('aria-expanded', 'false');
+  });
 }
 
 function getChartTooltipHorizontalTransform(chartInstance, tooltip) {

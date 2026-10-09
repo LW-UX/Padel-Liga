@@ -10,6 +10,7 @@ Diese Datei ist die kanonische Quelle für Terminierung, Ergebnisse, Bestätigun
 - Nach Bestätigung wird der vorgeschlagene Zeitpunkt zum einzigen offiziellen Matchzeitpunkt.
 - Die öffentliche Partienübersicht gruppiert standardmäßig nach Spieltagen und alternativ chronologisch. Interne Bestätigungszustände bleiben privat.
 - Die große Ergebniszahl der öffentlichen Partienübersicht bezeichnet immer den Satzstand; die einzelnen Spielergebnisse stehen darunter. Eine laufende Final-Four-Partie zeigt deshalb bis zum Satzabschluss `0:0` und darunter den aktuellen Spielstand mit Live-Kennzeichnung. Nach Abschluss bleibt die aus den Elo-Werten vor der Partie berechnete Gewinnwahrscheinlichkeit sichtbar.
+- Admins dürfen eine offene Ligapartie ohne Ergebnis oder offenen Ergebnisvorschlag nach Sicherheitsabfrage endgültig aus der Wertung nehmen. Ihr Matchzeitpunkt wird entfernt; Teams und Spieltagszuordnung bleiben erhalten. Sie zeigt `o.W.` und in der Partienübersicht das Detail `ohne Wertung` wie das Satzergebnis einer gespielten Partie erst bei Hover, Fokus beziehungsweise der mobilen Detailansicht. Sie gilt für Liga- und Saisonfortschritt als erledigt und zählt weder für Rangliste noch Elo. Spieler und Tipper sehen diese Aktion nicht.
 
 ## Ergebnisregeln und Bestätigung
 
@@ -28,17 +29,18 @@ Diese Datei ist die kanonische Quelle für Terminierung, Ergebnisse, Bestätigun
 - Im direkten Top-4-Modus werden nach Abschluss der Liga die vier Qualifizierten automatisch in die drei Final-Four-Paarungen eingesetzt.
 - Im Top-8-Modus spielen zunächst die Qualifikationsgruppen gegeneinander; die vier Halbfinalsieger werden nach ihrer ursprünglichen Ligaplatzierung in das Final Four eingesetzt.
 - Automatische Turnierfortschreibung ist idempotent und überschreibt keine Folgerunde mit bereits vorhandenen Ergebnissen, Vorschlägen oder Tipps.
-- Ein Wettbewerb wird erst abgeschlossen, wenn der gesperrte Spielplan vollständig, alle erforderlichen Partien besetzt und beendet sowie die jeweilige Endrunde vollständig ist. Dann werden Saisonendwerte eingefroren und weitere Ergebniseingaben deaktiviert.
+- Ein Wettbewerb wird erst abgeschlossen, wenn der gesperrte Spielplan vollständig, alle erforderlichen Partien besetzt und gespielt oder ohne Wertung abgeschlossen sowie die jeweilige Endrunde vollständig ist. Dann werden Saisonendwerte eingefroren und weitere Ergebniseingaben deaktiviert.
 
 ## Final-Four-Liveticker
 
-- Terminierte Ein-Satz-Partien des Final Four können Punkt für Punkt erfasst werden. Der Ereignisverlauf ist die fachliche Quelle; der aktuelle Stand ist ein daraus erzeugter Snapshot.
+- Terminierte Ein-Satz-Partien des Final Four können wahlweise detailliert Punkt für Punkt oder vereinfacht Spiel für Spiel erfasst werden. Der beim Start gewählte Modus gilt für die gesamte Livesitzung. Der Ereignisverlauf ist die fachliche Quelle; der aktuelle Stand ist ein daraus erzeugter Snapshot.
 - Während einer laufenden Sitzung ersetzt der Liveticker die normale Ergebniseingabe. Der Abschluss erzeugt ohne weitere Bestätigung das offizielle Ergebnis.
 - Eine laufende Partie wird saisonübergreifend als „LIVE“ verlinkt. Archivierte Verläufe sind über dauerhafte Partie-URLs aus Spielplan und Spielerprofil erreichbar; ohne Verlauf gibt es keinen Archivlink.
 - Liveticker-Übersicht, einzelne Partien und die daraus berechnete Final-Four-Tabelle erscheinen als bildschirmfüllende Detailansicht oberhalb des Liga-Kontexts. Globaler Header und Hauptnavigation bleiben dabei verdeckt; die lokalen Reiter für Übersicht und Partien bleiben sichtbar. Schließen beziehungsweise Browser-Zurück stellt den passenden vorherigen Kontext und dessen Scrollposition wieder her.
 - Sobald alle drei Paarungen mit denselben vier Final-Four-Teilnehmern besetzt sind, ist die Detailansicht bereits vor dem ersten Spiel über den Final-Four-Block im Spielplan erreichbar. Der globale LIVE-Einstieg bleibt laufenden Partien vorbehalten.
 - Beteiligte Spieler und Admins können ein bestätigtes Konto als Schreiber vorschlagen. Fremde Zuweisungen benötigen Zustimmung; eine Selbstzuweisung gilt unmittelbar. Je Partie existiert höchstens eine offene oder angenommene Zuweisung, die mit dem Start gesperrt wird.
 - Punktaktionen sind idempotent und versionsgeschützt. Der letzte Punkt kann während der Partie zurückgenommen werden; Aufschlagkorrekturen und zurückgenommene Ereignisse bleiben intern nachvollziehbar.
+- Im vereinfachten Modus gelten dieselben Schutzmechanismen je Spiel. Aufschlagfolge und Breaks werden weiterhin geführt; bei 6:6 wird der vollständige Tiebreak-Endstand eingegeben und serverseitig validiert. Der letzte Spielgewinn einschließlich eines abschließenden Tiebreaks kann zurückgenommen werden.
 - Die Aufschlagreihenfolge wird aus den gewählten ersten Aufschlägern automatisch geführt. Es gilt Golden Point bei Einstand sowie die reguläre Aufschlagfolge im Satz-Tiebreak. Da der Aufschlag dort innerhalb des Tiebreaks wechselt, weist der öffentliche Verlauf dem gesamten Tiebreak keinen einzelnen Aufschläger zu.
 - Realtime-Aktualisierung und manuelles Aktualisieren bestehen parallel. Ist eine verlässliche Rekonstruktion nicht möglich, wird die Livesitzung verworfen und das Ergebnis über den normalen Ablauf erfasst.
 - Nachträgliche Änderungen sind nur als begründete Adminrevision möglich. Frühere Stände bleiben intern erhalten; öffentlich erscheint ausschließlich der korrigierte Stand mit Kennzeichnung.

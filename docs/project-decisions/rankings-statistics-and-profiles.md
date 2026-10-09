@@ -17,6 +17,7 @@ Diese Datei ist die kanonische Quelle für Elo, Ranglisten, Statistik, öffentli
 - Saisonstatistik ist die Standardansicht. Ein nicht persistenter Umschalter öffnet eine All-Time-Ansicht.
 - All-Time umfasst abgeschlossene offizielle Liga-, Final-Four- und Cup-Partien sowie Spieler mit mindestens einer solchen Partie. Training, Test-Saisons und offene Partien sind ausgeschlossen.
 - Saisonabhängige Auswertungen wie Spieltagsplatzierungen, Qualifikationsprognose und Losglück erscheinen nicht in All-Time.
+- Partien ohne Wertung verändern Rangfolge, Statistiken, All-Time und Beziehungen nicht. In der Ranglistenspalte „Partien“ weist eine kleine graue `+N`-Angabe mit Tooltip auf die zusätzlich abgeschlossenen Partien ohne Wertung hin; die große Zahl bleibt die Zahl gewerteter Partien.
 - Satzdominanz wird als durchschnittliche Spieldifferenz je regulärem Satz berechnet; Tiebreak-Punkte zählen nicht als Games.
 - Elo-Verläufe besitzen genau einen globalen Initialpunkt und danach echte Elo-Ereignisse. Saisonverläufe begrenzen die Darstellung zusätzlich durch eingefrorenen Saisonstart und gegebenenfalls Saisonende.
 - Diagramme unterscheiden gespielte, spielfreie und noch offene Spieltage verständlich und verwenden konsistente, viewportgebundene Tooltips.
@@ -29,6 +30,7 @@ Diese Datei ist die kanonische Quelle für Elo, Ranglisten, Statistik, öffentli
 - Teilnahmen werden chronologisch dargestellt und nach Ligaphase sowie qualifizierter Finalrunde gegliedert. Laufende Saisons werden gekennzeichnet.
 - Trainings- und Final-Four-Gewichte folgen den Regeln aus `matches-and-tournaments.md`; Match-Tiebreak-Punkte zählen nicht als Games.
 - Vergangene Partien werden chronologisch gruppiert und bei Bedarf vollständig eingeblendet. Liga- und Trainingsergebnisse bleiben visuell unterscheidbar.
+- Eine Ligapartie ohne Wertung bleibt bei allen vier Beteiligten als unvollständige Partie sichtbar. Ihr Ergebnisbereich zeigt `ohne Wertung` kursiv und grau; ihr Wertungsgewicht ist null. Sie wird ohne sichtbares Datum anhand des ersten Tages ihres Spieltags chronologisch eingeordnet.
 - Lieblingspartner, Lieblingsgegner und Angstgegner basieren auf bestätigten Liga- und Trainingspartien. Eine Beziehung benötigt mindestens drei gemeinsame Partien; genau 50 Prozent Siegquote qualifiziert für keine Kategorie.
 - Profilbilder liegen im Repository unter `assets/players/<spieler-id>/profile.webp`. Ohne Bild wird der im Spielerstamm hinterlegte Emoji verwendet. Binärbilder werden nicht in Supabase gespeichert.
 

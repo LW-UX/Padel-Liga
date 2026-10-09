@@ -901,6 +901,11 @@
       font-style: italic;
       font-weight: 500;
     }
+    .player-profile-unrated-result {
+      color: var(--dim);
+      font-style: italic;
+      font-weight: 500;
+    }
     .player-profile-match-season { text-align: right; }
     .player-profile-show-all {
       width: 100%;
@@ -1036,6 +1041,21 @@
       padding: 0.5rem 0.85rem;
     }
     .primary-button { background: var(--accent); color: var(--bg); }
+    .danger-button {
+      min-height: 38px;
+      border: 1px solid var(--negativ);
+      border-radius: 999px;
+      background: var(--negativ);
+      color: #17040a;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 0.5rem 0.85rem;
+    }
+    .danger-button:hover,
+    .danger-button:focus-visible { filter: brightness(1.08); }
+    .danger-button:disabled { cursor: wait; opacity: 0.55; }
     .secondary-button {
       min-height: 38px;
       border: 1px solid var(--border);
@@ -1715,6 +1735,15 @@
       letter-spacing: 0.04em;
       line-height: 1;
     }
+    .mini-match-status-unrated .mini-match-prob {
+      color: var(--dim);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      line-height: 1;
+    }
+    .mini-match-status-unrated .mini-match-label { font-style: italic; }
     .mini-match-label {
       font-family: 'DM Sans', sans-serif;
       font-size: 0.85rem;
@@ -1966,7 +1995,7 @@
       color: var(--dim);
       box-shadow: 0 14px 36px rgba(0,0,0,0.35);
       font-family: 'DM Sans', sans-serif;
-      font-size: 0.78rem;
+      font-size: 0.7rem;
       font-weight: 400;
       line-height: 1.35;
       letter-spacing: 0;
@@ -1976,6 +2005,33 @@
       pointer-events: none;
       transition: opacity 0.12s ease;
     }
+    .ranking-games-value {
+      display: inline-flex;
+      align-items: baseline;
+      justify-content: flex-end;
+      gap: 2px;
+    }
+    .ranking-unrated-wrap { gap: 0; }
+    .ranking-unrated-count {
+      appearance: none;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--dim);
+      cursor: help;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.62rem;
+      font-weight: 500;
+      line-height: 1;
+      outline: none;
+      transform: translateY(-0.25em);
+    }
+    .ranking-unrated-count:focus-visible {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .ranking-unrated-wrap .help-tooltip { white-space: normal; }
     .ranking-table th.col-placement-factor {
       position: relative;
       z-index: auto;
@@ -1995,9 +2051,18 @@
         left: auto;
       }
     }
+    .ranking-unrated-wrap.help-tooltip-opens-right .help-tooltip,
+    .ranking-unrated-wrap.help-tooltip-opens-left .help-tooltip {
+      position: fixed;
+      top: var(--ranking-tooltip-top);
+      right: auto;
+      left: var(--ranking-tooltip-left);
+      transform: none;
+    }
     table.ranking-table th:hover .help-tooltip,
     .th-help-wrap:hover .help-tooltip,
-    .th-help-wrap:focus-within .help-tooltip {
+    .th-help-wrap:focus-within .help-tooltip,
+    .th-help-wrap.is-open .help-tooltip {
       opacity: 1;
     }
     .ranking-table td.col-placement-factor {
@@ -2271,7 +2336,7 @@
       width: max-content;
       top: 30px;
     }
-    .mc-score-live { color: var(--negativ); white-space: nowrap; }
+    .mc-score-live { color: var(--negativ); white-space: nowrap; width: 100%; }
     .mc-score-live-dot {
       display: inline-block;
       margin-right: 0.3rem;
@@ -2492,6 +2557,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-wrap: wrap;
       gap: 0.75rem;
       padding: 0.9rem 1.1rem 0;
       color: var(--dim);
@@ -2603,6 +2669,11 @@
     }
     .live-ticker-status.is-live { color: var(--negativ); }
     .live-ticker-status.is-finished { color: var(--positiv); }
+    .live-ticker-mode {
+      color: var(--dim);
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
     .live-ticker-score-note {
       color: var(--muted);
       font-size: 0.85rem;
@@ -3184,8 +3255,8 @@
       padding-top: 8px;
       padding-bottom: 8px;
     }
+    .ranking-row { transform-origin: center; }
     .mc,
-    .ranking-row,
     .calculator-ranking-row,
     .calculator-mini-rank-row {
       transform-origin: center;
@@ -3395,6 +3466,7 @@
       .ranking-table.compact td {
         overflow: hidden;
       }
+      .ranking-table.compact td.col-games { overflow: visible; }
       .ranking-table.compact th:not(.col-rank):not(.col-name) {
         padding-left: 4px;
         padding-right: 4px;

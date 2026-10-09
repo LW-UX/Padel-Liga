@@ -27,6 +27,8 @@ Diese Datei ist die kanonische Quelle für Rollen, Registrierung, Einladungen, B
 - Eigene wartende Vorschläge sind als nicht aktiv erkennbar. Fremde Vorschläge können bestätigt oder durch eine echte Alternative ersetzt werden.
 - Automatische Bestätigung erzeugt keinen zusätzlichen Countdown in der Oberfläche; bis zum Abschluss bleiben die bestehenden offenen Zustände sichtbar.
 - Terminierung, Ergebnis, Training und Liveticker-Zuweisung werden innerhalb der jeweiligen Spielkarte bearbeitet. Nach einer erfolgreichen Aktion bleibt der Dialog geöffnet und lädt seine Aufgaben neu.
+- Allgemeine Kontomeldungen schweben am unteren Rand des Konto-Dialogs und bleiben beim Scrollen sichtbar. Erfolgsmeldungen verschwinden nach fünf Sekunden automatisch; jede Meldung kann bewusst geschlossen werden, während Fehler und laufende Hinweise ohne Interaktion sichtbar bleiben.
+- Nur Admins sehen bei offenen Ligapartien ganz links in der Aktionszeile die endgültige Aktion „Nicht werten“. Danach verschwindet die Partie aus den Kontoaufgaben; Rollen- und Zustandsprüfung erfolgen zusätzlich serverseitig.
 - Trainings werden über die Spieleübersicht angelegt. Formularfehler erscheinen am verursachenden Formular und überschreiben keine allgemeinen Kontomeldungen.
 - Interne Testprofile werden in Trainingsauswahlen nur für Admins und dafür vorgesehene Testkonten angeboten.
 - Konto- und Profilmodal sperren den Hintergrundscroll und verwenden konsistente Schließen-, Button-, Dropdown- und Score-Komponenten.

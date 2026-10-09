@@ -14,8 +14,10 @@
     accountData: { matches: [], requests: [] },
     candidates: new Map(),
     assignmentEditors: new Set(),
+    startModes: new Map(),
     selectedWinners: new Map(),
-    pendingPointActions: new Map(),
+    pendingScoreActions: new Map(),
+    processingMatches: new Set(),
     accountMessage: '',
     loadRequestId: 0
   };
@@ -39,7 +41,7 @@
   }
 
   function isMissingRpc(error) {
-    return error?.code === 'PGRST202' || /live_(?:ticker|status|scorer|match|point)/i.test(String(error?.message || ''));
+    return error?.code === 'PGRST202' || /live_(?:ticker|status|scorer|match|point|game|tiebreak)/i.test(String(error?.message || ''));
   }
 
   function triggersGlobalLiveButton(activeMatch) {
@@ -78,6 +80,14 @@
     if (session.isTiebreak) return `${session.teamOneTiebreak}:${session.teamTwoTiebreak}`;
     const values = ['0', '15', '30', '40'];
     return `${values[session.teamOnePoints] || '0'}:${values[session.teamTwoPoints] || '0'}`;
+  }
+
+  function scoringMode(session) {
+    return session?.scoringMode === 'games' ? 'games' : 'points';
+  }
+
+  function scoringModeLabel(session) {
+    return scoringMode(session) === 'games' ? 'Einfacher Liveticker' : 'Detaillierter Liveticker';
   }
 
   function createActionId() {
@@ -134,7 +144,7 @@
 
   function renderHistory(payload) {
     if (payload.corrected) {
-      return '<div class="live-ticker-empty">Der ursprüngliche Punktverlauf wurde nachträglich korrigiert. Maßgeblich ist das offizielle Ergebnis.</div>';
+      return '<div class="live-ticker-empty">Der ursprüngliche Liveticker-Verlauf wurde nachträglich korrigiert. Maßgeblich ist das offizielle Ergebnis.</div>';
     }
     const session = payload.session;
     const players = payload.players || [];
@@ -149,18 +159,20 @@
       const serverName = server ? escapeHtml(server.displayName) : '';
       const left = serverTeam === 1 ? `${breakLabel}${serverName} <span aria-hidden="true">◉</span>` : '';
       const right = serverTeam === 2 ? `<span aria-hidden="true">◉</span> ${serverName}${breakLabel}` : '';
-      const points = game.events
-        .map(event => event.pointLabel)
-        .filter(label => label && label !== 'Spiel')
-        .map(escapeHtml)
-        .join(' · ');
+      const points = scoringMode(session) === 'games'
+        ? (last.tiebreakScore ? `Tiebreak ${escapeHtml(last.tiebreakScore)}` : '')
+        : game.events
+          .map(event => event.pointLabel)
+          .filter(label => label && label !== 'Spiel')
+          .map(escapeHtml)
+          .join(' · ');
       return `<article class="live-ticker-game" data-live-game-row>
         <div class="live-ticker-game-line">
           <div class="live-ticker-game-server live-ticker-game-server-1">${left}</div>
           <div class="live-ticker-game-score">${last.teamOneGames}:${last.teamTwoGames}</div>
           <div class="live-ticker-game-server live-ticker-game-server-2">${right}</div>
         </div>
-        <div class="live-ticker-game-points" data-live-game-points>${points}</div>
+        ${points ? `<div class="live-ticker-game-points" data-live-game-points>${points}</div>` : ''}
       </article>`;
     }).join('')}</div>`;
   }
@@ -328,6 +340,7 @@
     }
     const session = payload.session;
     const isLive = ['live', 'needs_server', 'ready_to_finish'].includes(session?.status);
+    const isGamesMode = scoringMode(session) === 'games';
     const currentServerId = isLive ? session.currentServerPlayerId : null;
     const statusLabel = session?.status === 'finished' ? 'Beendet'
       : session?.status === 'ready_to_finish' ? 'Ergebnis bereit'
@@ -338,7 +351,9 @@
     const players = payload.players || [];
     const currentServer = players.find(player => player.playerId === currentServerId);
     const scoreNote = isLive
-      ? (currentServer ? `${currentServer.displayName} schlägt auf` : 'Aufschläger wird festgelegt')
+      ? (isGamesMode && session?.isTiebreak && session?.status === 'live'
+          ? 'Tiebreak läuft'
+          : currentServer ? `${currentServer.displayName} schlägt auf` : 'Aufschläger wird festgelegt')
       : session?.status === 'finished' ? 'Offizielles Ergebnis' : 'Noch nicht begonnen';
     target.innerHTML = `
       <article class="live-ticker-match" data-live-scoreboard>
@@ -350,12 +365,13 @@
           <div class="live-ticker-scoreboard">
             <span class="live-ticker-score-label">Spielstand</span>
             <strong class="live-ticker-score">${escapeHtml(score)}</strong>
-            ${isLive ? `<strong class="live-ticker-points" data-live-current-points>${escapeHtml(pointLabel(session))}</strong>` : ''}
+            ${isLive && !isGamesMode ? `<strong class="live-ticker-points" data-live-current-points>${escapeHtml(pointLabel(session))}</strong>` : ''}
             <span class="live-ticker-score-note">${escapeHtml(scoreNote)}</span>
           </div>
           ${renderTeam(players, 2, currentServerId)}
         </div>
         ${isLive ? `<div class="live-ticker-actions" data-live-public-actions>
+          <span class="live-ticker-mode">${escapeHtml(scoringModeLabel(session))}</span>
           <button class="secondary-button" type="button" data-live-refresh>Ergebnis aktualisieren</button>
         </div>` : ''}
       </article>
@@ -552,6 +568,52 @@
     });
   }
 
+  function renderStartModePicker(task) {
+    const selected = state.startModes.get(task.matchId) === 'games' ? 'games' : 'points';
+    return `<fieldset class="live-mode-fieldset">
+      <legend>Erfassungsart</legend>
+      <input type="hidden" name="scoringMode" value="${selected}">
+      <div class="live-mode-toggle" aria-label="Erfassungsart auswählen">
+        <button class="${selected === 'points' ? 'active' : ''}" type="button" data-live-start-mode="points" aria-pressed="${selected === 'points'}">
+          <strong>Detailliert</strong><span>Jeder Punkt</span>
+        </button>
+        <button class="${selected === 'games' ? 'active' : ''}" type="button" data-live-start-mode="games" aria-pressed="${selected === 'games'}">
+          <strong>Einfach</strong><span>Jedes Spiel</span>
+        </button>
+      </div>
+      <small>${selected === 'games'
+        ? 'Du trägst nur gewonnene Spiele und am Ende gegebenenfalls den Tiebreak ein.'
+        : 'Du trägst jeden Punkt ein; Spielstand und Aufschlagfolge werden automatisch berechnet.'}</small>
+    </fieldset>`;
+  }
+
+  function renderLiveTiebreakForm(task) {
+    const session = task.session;
+    const processing = state.processingMatches.has(task.matchId);
+    const pending = state.pendingScoreActions.get(task.matchId);
+    const pendingValues = pending?.kind === 'tiebreak'
+      ? { 1: pending.teamOnePoints, 2: pending.teamTwoPoints }
+      : { 1: '', 2: '' };
+    return `<form class="result-entry-form live-tiebreak-form" data-live-tiebreak-form="${escapeHtml(task.matchId)}" data-live-version="${session.version}">
+      <div class="result-proposal"><span>Tiebreak läuft</span><strong>Endstand eintragen</strong></div>
+      <div class="score-counter-pair live-tiebreak-score">
+        ${[1, 2].map(team => `<div class="score-counter-field">
+          <button class="score-counter-step" type="button" data-live-tiebreak-step="-1" data-live-tiebreak-team="${team}" aria-label="Team ${team}: eins abziehen"${processing ? ' disabled' : ''}>−</button>
+          <input type="number" name="team${team}Points" value="${pendingValues[team]}" min="0" max="99" inputmode="numeric" placeholder="0" aria-label="Tiebreak-Punkte Team ${team}"${processing ? ' disabled' : ''}>
+          <button class="score-counter-step" type="button" data-live-tiebreak-step="1" data-live-tiebreak-team="${team}" aria-label="Team ${team}: eins addieren"${processing ? ' disabled' : ''}>+</button>
+        </div>`).join('<span class="score-counter-separator">:</span>')}
+      </div>
+      <div class="result-entry-buttons">
+        <button class="secondary-button" type="button" data-live-undo="${escapeHtml(task.matchId)}" data-live-version="${session.version}"${processing ? ' disabled' : ''}>Letztes Spiel zurücknehmen</button>
+        <button class="primary-button" type="submit"${processing ? ' disabled' : ''}>${processing ? 'Wird gespeichert …' : 'Tiebreak übernehmen'}</button>
+      </div>
+      <div class="live-ticker-text-actions">
+        <button class="text-link" type="button" data-live-cancel="${escapeHtml(task.matchId)}" data-live-version="${session.version}"${processing ? ' disabled' : ''}>Liveticker verwerfen</button>
+        <button class="text-link" type="button" data-live-open-match="${escapeHtml(task.matchId)}">Spielverlauf öffnen</button>
+      </div>
+    </form>`;
+  }
+
   function renderGameAssignment(matchId) {
     const task = getAccountTask(matchId);
     if (!task || task.result || task.session) return '';
@@ -579,6 +641,7 @@
         return '<div class="account-waiting">Der Schreiber muss die Zuweisung zuerst annehmen.</div>';
       }
       return `<form class="auth-form" data-live-start-form="${escapeHtml(task.matchId)}">
+        ${renderStartModePicker(task)}
         ${renderServerPicker(task, task.players || [])}
         <button class="primary-button" type="submit">Liveticker starten</button>
       </form>`;
@@ -598,9 +661,15 @@
       </form>`;
     }
     if (session.status === 'ready_to_finish') {
+      const isGamesMode = scoringMode(session) === 'games';
       return `<div class="result-entry-form">
+        <div class="live-finish-summary">
+          <span>${escapeHtml(scoringModeLabel(session))}</span>
+          <strong>Endstand ${Number(session.teamOneGames) || 0}:${Number(session.teamTwoGames) || 0}${session.isTiebreak ? ` · Tiebreak ${Number(session.teamOneTiebreak) || 0}:${Number(session.teamTwoTiebreak) || 0}` : ''}</strong>
+          <small>Mit dem Abschluss wird dieses Ergebnis sofort offiziell.</small>
+        </div>
         <div class="account-task-actions">
-          <button class="secondary-button" type="button" data-live-undo="${escapeHtml(task.matchId)}" data-live-version="${session.version}">Letzten Punkt zurücknehmen</button>
+          <button class="secondary-button" type="button" data-live-undo="${escapeHtml(task.matchId)}" data-live-version="${session.version}">${isGamesMode ? 'Letztes Spiel' : 'Letzten Punkt'} zurücknehmen</button>
           <button class="primary-button" type="button" data-live-finish="${escapeHtml(task.matchId)}" data-live-version="${session.version}">Partie abschließen</button>
         </div>
         <div class="live-ticker-text-actions">
@@ -609,7 +678,12 @@
         </div>
       </div>`;
     }
+    if (scoringMode(session) === 'games' && session.isTiebreak) {
+      return renderLiveTiebreakForm(task);
+    }
     const selected = state.selectedWinners.get(task.matchId);
+    const isGamesMode = scoringMode(session) === 'games';
+    const processing = state.processingMatches.has(task.matchId);
     const correctionForms = [1, 2].filter(team => team === 1 ? session.teamOneFirstServerId : session.teamTwoFirstServerId)
       .map(team => `<form class="auth-form" data-live-server-form="${escapeHtml(task.matchId)}" data-live-team="${team}" data-live-version="${session.version}">
         ${renderServerPicker(
@@ -620,17 +694,18 @@
         <button class="secondary-button" type="submit">Korrigieren</button>
       </form>`).join('');
     return `<div class="result-entry-form">
-      <div class="live-point-team-buttons" aria-label="Punktgewinner auswählen">
-        <button type="button" class="live-point-team-button${selected === 1 ? ' active' : ''}" data-live-select-winner="1" data-live-match="${escapeHtml(task.matchId)}" aria-pressed="${selected === 1}">
-          <span>Punkt für</span><strong>${escapeHtml(task.teamOneLabel)}</strong>
+      <div class="live-writer-mode">${escapeHtml(scoringModeLabel(session))}</div>
+      <div class="live-point-team-buttons" aria-label="${isGamesMode ? 'Spielgewinner' : 'Punktgewinner'} auswählen">
+        <button type="button" class="live-point-team-button${selected === 1 ? ' active' : ''}" data-live-select-winner="1" data-live-match="${escapeHtml(task.matchId)}" aria-pressed="${selected === 1}"${processing ? ' disabled' : ''}>
+          <span>${isGamesMode ? 'Spiel' : 'Punkt'} für</span><strong>${escapeHtml(task.teamOneLabel)}</strong>
         </button>
-        <button type="button" class="live-point-team-button${selected === 2 ? ' active' : ''}" data-live-select-winner="2" data-live-match="${escapeHtml(task.matchId)}" aria-pressed="${selected === 2}">
-          <span>Punkt für</span><strong>${escapeHtml(task.teamTwoLabel)}</strong>
+        <button type="button" class="live-point-team-button${selected === 2 ? ' active' : ''}" data-live-select-winner="2" data-live-match="${escapeHtml(task.matchId)}" aria-pressed="${selected === 2}"${processing ? ' disabled' : ''}>
+          <span>${isGamesMode ? 'Spiel' : 'Punkt'} für</span><strong>${escapeHtml(task.teamTwoLabel)}</strong>
         </button>
       </div>
       <div class="result-entry-buttons">
-        <button class="secondary-button" type="button" data-live-undo="${escapeHtml(task.matchId)}" data-live-version="${session.version}">Letzten Punkt zurücknehmen</button>
-        <button class="primary-button" type="button" data-live-submit-point="${escapeHtml(task.matchId)}" data-live-version="${session.version}" ${selected ? '' : 'disabled'}>Punkt eintragen</button>
+        <button class="secondary-button" type="button" data-live-undo="${escapeHtml(task.matchId)}" data-live-version="${session.version}"${processing ? ' disabled' : ''}>${isGamesMode ? 'Letztes Spiel' : 'Letzten Punkt'} zurücknehmen</button>
+        <button class="primary-button" type="button" data-live-submit-score="${escapeHtml(task.matchId)}" data-live-version="${session.version}" ${selected && !processing ? '' : 'disabled'}>${processing ? 'Wird gespeichert …' : `${isGamesMode ? 'Spiel' : 'Punkt'} eintragen`}</button>
       </div>
       <div class="live-ticker-text-actions">
         <button class="text-link" type="button" data-live-cancel="${escapeHtml(task.matchId)}" data-live-version="${session.version}">Liveticker verwerfen</button>
@@ -686,9 +761,11 @@
       <div class="result-card-timing">${escapeHtml(formatDateTime(task.matchAt))}</div>
       <div class="account-task-matchup">
         <strong>${renderAccountTeamLabel(task, 1)}</strong>
-        ${task.session ? `<div class="account-task-live-score" aria-label="Aktueller Stand ${Number(task.session.teamOneGames) || 0} zu ${Number(task.session.teamTwoGames) || 0}, Punkte ${escapeHtml(pointLabel(task.session))}">
+        ${task.session ? `<div class="account-task-live-score" aria-label="Aktueller Stand ${Number(task.session.teamOneGames) || 0} zu ${Number(task.session.teamTwoGames) || 0}${scoringMode(task.session) === 'points' ? `, Punkte ${escapeHtml(pointLabel(task.session))}` : ''}">
           <span class="mc-score-main">${Number(task.session.teamOneGames) || 0}:${Number(task.session.teamTwoGames) || 0}</span>
-          <span class="mc-score-detail">${escapeHtml(pointLabel(task.session))}</span>
+          <span class="mc-score-detail">${scoringMode(task.session) === 'points'
+            ? escapeHtml(pointLabel(task.session))
+            : '–'}</span>
         </div>` : '<span>vs.</span>'}
         <strong>${renderAccountTeamLabel(task, 2)}</strong>
       </div>
@@ -838,13 +915,49 @@
         correctionToggle.setAttribute('aria-expanded', String(willOpen));
         return;
       }
+      const startMode = event.target.closest('[data-live-start-mode]');
+      if (startMode) {
+        const form = startMode.closest('[data-live-start-form]');
+        const matchId = form?.dataset.liveStartForm;
+        const mode = startMode.dataset.liveStartMode === 'games' ? 'games' : 'points';
+        if (!form || !matchId) return;
+        state.startModes.set(matchId, mode);
+        form.querySelector('input[name="scoringMode"]').value = mode;
+        form.querySelectorAll('[data-live-start-mode]').forEach(button => {
+          const active = button.dataset.liveStartMode === mode;
+          button.classList.toggle('active', active);
+          button.setAttribute('aria-pressed', String(active));
+        });
+        const note = form.querySelector('.live-mode-fieldset small');
+        if (note) note.textContent = mode === 'games'
+          ? 'Du trägst nur gewonnene Spiele und am Ende gegebenenfalls den Tiebreak ein.'
+          : 'Du trägst jeden Punkt ein; Spielstand und Aufschlagfolge werden automatisch berechnet.';
+        return;
+      }
+      const tiebreakStep = event.target.closest('[data-live-tiebreak-step]');
+      if (tiebreakStep) {
+        const form = tiebreakStep.closest('[data-live-tiebreak-form]');
+        const team = Number(tiebreakStep.dataset.liveTiebreakTeam);
+        const input = form?.querySelector(`[name="team${team}Points"]`);
+        if (!input) return;
+        const nextValue = window.PadelScoreInput?.stepScoreValue(input.value, Number(tiebreakStep.dataset.liveTiebreakStep));
+        if (nextValue !== null && nextValue !== undefined) input.value = nextValue;
+        const otherTeam = team === 1 ? 2 : 1;
+        const otherInput = form.querySelector(`[name="team${otherTeam}Points"]`);
+        if (input.value && otherInput && !otherInput.value) otherInput.value = '0';
+        return;
+      }
       const winner = event.target.closest('[data-live-select-winner]');
       if (winner) {
         const matchId = winner.dataset.liveMatch;
         const team = Number(winner.dataset.liveSelectWinner);
-        const pending = state.pendingPointActions.get(matchId);
+        const task = getAccountTask(matchId);
+        const kind = scoringMode(task?.session) === 'games' ? 'game' : 'point';
+        const pending = state.pendingScoreActions.get(matchId);
         if (pending && pending.team !== team) {
-          state.accountMessage = 'Der vorherige Punkt ist noch nicht eindeutig bestätigt. Bitte dieselbe Eingabe erneut senden.';
+          state.accountMessage = kind === 'game'
+            ? 'Das vorherige Spiel ist noch nicht eindeutig bestätigt. Bitte dieselbe Eingabe erneut senden.'
+            : 'Der vorherige Punkt ist noch nicht eindeutig bestätigt. Bitte dieselbe Eingabe erneut senden.';
           renderAccount();
           return;
         }
@@ -852,30 +965,41 @@
         renderAccount();
         return;
       }
-      const submitPoint = event.target.closest('[data-live-submit-point]');
-      if (submitPoint) {
-        const matchId = submitPoint.dataset.liveSubmitPoint;
+      const submitScore = event.target.closest('[data-live-submit-score]');
+      if (submitScore) {
+        const matchId = submitScore.dataset.liveSubmitScore;
+        const task = getAccountTask(matchId);
+        const kind = scoringMode(task?.session) === 'games' ? 'game' : 'point';
         const winningTeam = state.selectedWinners.get(matchId);
         if (!winningTeam) return;
-        submitPoint.disabled = true;
-        const pending = state.pendingPointActions.get(matchId);
+        const pending = state.pendingScoreActions.get(matchId);
         const actionId = pending?.id || createActionId();
-        state.pendingPointActions.set(matchId, { id: actionId, team: winningTeam });
-        const result = await runRpc('record_live_point', {
+        state.pendingScoreActions.set(matchId, { id: actionId, kind, team: winningTeam });
+        state.processingMatches.add(matchId);
+        renderAccount();
+        const result = await runRpc(kind === 'game' ? 'record_live_game' : 'record_live_point', {
           p_match_id: matchId, p_winning_team: winningTeam,
-          p_expected_version: Number(submitPoint.dataset.liveVersion), p_client_action_id: actionId
+          p_expected_version: Number(submitScore.dataset.liveVersion), p_client_action_id: actionId
         });
+        state.processingMatches.delete(matchId);
         if (result) {
           state.selectedWinners.delete(matchId);
-          state.pendingPointActions.delete(matchId);
+          state.pendingScoreActions.delete(matchId);
         }
+        renderAccount();
         return;
       }
       const undo = event.target.closest('[data-live-undo]');
       if (undo) {
-        await runRpc('undo_live_point', {
+        const task = getAccountTask(undo.dataset.liveUndo);
+        const isGamesMode = scoringMode(task?.session) === 'games';
+        const result = await runRpc(isGamesMode ? 'undo_live_game' : 'undo_live_point', {
           p_match_id: undo.dataset.liveUndo, p_expected_version: Number(undo.dataset.liveVersion)
-        }, 'Der letzte Punkt wurde zurückgenommen.');
+        }, isGamesMode ? 'Das letzte Spiel wurde zurückgenommen.' : 'Der letzte Punkt wurde zurückgenommen.');
+        if (result) {
+          state.pendingScoreActions.delete(undo.dataset.liveUndo);
+          state.selectedWinners.delete(undo.dataset.liveUndo);
+        }
         return;
       }
       const finish = event.target.closest('[data-live-finish]');
@@ -902,6 +1026,41 @@
       delete event.currentTarget.dataset.version;
     });
     document.addEventListener('submit', async event => {
+      const tiebreak = event.target.closest('[data-live-tiebreak-form]');
+      if (tiebreak) {
+        event.preventDefault();
+        const matchId = tiebreak.dataset.liveTiebreakForm;
+        const formData = new FormData(tiebreak);
+        const teamOnePoints = Number(formData.get('team1Points'));
+        const teamTwoPoints = Number(formData.get('team2Points'));
+        const score = window.PadelScoreInput?.classifyTiebreak(
+          formData.get('team1Points'), formData.get('team2Points'), 7
+        );
+        if (score?.state !== 'complete') {
+          window.PadelKonto?.setMessage(score?.message || 'Bitte einen vollständigen Tiebreak-Endstand mit zwei Punkten Abstand eingeben.', 'error');
+          return;
+        }
+        const pending = state.pendingScoreActions.get(matchId);
+        if (pending && (pending.teamOnePoints !== teamOnePoints || pending.teamTwoPoints !== teamTwoPoints)) {
+          window.PadelKonto?.setMessage('Der vorherige Tiebreak-Endstand ist noch nicht eindeutig bestätigt. Bitte dieselben Werte erneut senden.', 'error');
+          return;
+        }
+        const actionId = pending?.id || createActionId();
+        state.pendingScoreActions.set(matchId, { id: actionId, kind: 'tiebreak', teamOnePoints, teamTwoPoints });
+        state.processingMatches.add(matchId);
+        renderAccount();
+        const result = await runRpc('record_live_tiebreak_result', {
+          p_match_id: matchId,
+          p_team_one_points: teamOnePoints,
+          p_team_two_points: teamTwoPoints,
+          p_expected_version: Number(tiebreak.dataset.liveVersion),
+          p_client_action_id: actionId
+        });
+        state.processingMatches.delete(matchId);
+        if (result) state.pendingScoreActions.delete(matchId);
+        renderAccount();
+        return;
+      }
       const nominate = event.target.closest('[data-live-nominate-form]');
       if (nominate) {
         event.preventDefault();
@@ -933,14 +1092,16 @@
       if (start) {
         event.preventDefault();
         const matchId = start.dataset.liveStartForm;
-        const playerId = new FormData(start).get('serverPlayerId');
+        const formData = new FormData(start);
+        const playerId = formData.get('serverPlayerId');
+        const mode = formData.get('scoringMode') === 'games' ? 'games' : 'points';
         if (!playerId) {
           window.PadelKonto?.setMessage('Bitte wähle zuerst den ersten Aufschläger aus.', 'error');
           return;
         }
         window.PadelKonto?.setMessage('');
-        await runRpc('start_live_match', {
-          p_match_id: matchId, p_first_server_player_id: playerId
+        await runRpc('start_live_match_with_mode', {
+          p_match_id: matchId, p_first_server_player_id: playerId, p_scoring_mode: mode
         }, 'Der Liveticker ist gestartet.');
         return;
       }

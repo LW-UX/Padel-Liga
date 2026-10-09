@@ -22,8 +22,8 @@
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-09-30-live-sticky-navigation">
-  <link rel="stylesheet" href="account.css?v=2026-09-30-live-server-indicator">
+  <link rel="stylesheet" href="style.css?v=2026-10-08-unrated-matches">
+  <link rel="stylesheet" href="account.css?v=2026-10-05-live-scoring-modes">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -48,7 +48,7 @@
           </button>
           <div class="season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
         </div>
-        <a class="arcade-link" id="arcade-link" href="arcade/" aria-label="PadelArcade öffnen" title="PadelArcade">
+        <a class="arcade-link" id="arcade-link" href="arcade/" aria-label="PadelPong öffnen" title="PadelPong">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10l3 3 1 8-3 1-4-4h-4l-4 4-3-1 1-8z"/><path d="M7 9v5m-2.5-2.5h5M16 10h.01M18 13h.01"/></svg>
         </a>
         <button class="auth-button" id="auth-button" type="button" data-auth-open>Login</button>
@@ -486,6 +486,32 @@
   </div>
 </dialog>
 
+<dialog class="auth-dialog" id="unschedule-match-dialog" aria-labelledby="unschedule-match-title" aria-describedby="unschedule-match-description">
+  <button class="modal-close-button auth-dialog-close" type="button" data-unschedule-close aria-label="Dialog schließen">×</button>
+  <div class="auth-dialog-card">
+    <div class="widget-label">Partie</div>
+    <h2 id="unschedule-match-title">Termin löschen</h2>
+    <p class="auth-dialog-copy" id="unschedule-match-description">Soll der Termin dieser Partie wirklich gelöscht werden? Diese Aktion kann nicht rückgängig gemacht werden.</p>
+    <div class="player-email-actions">
+      <button class="secondary-button" type="button" data-unschedule-close>Abbrechen</button>
+      <button class="danger-button" type="button" data-unschedule-confirm>Termin löschen</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="auth-dialog" id="unrate-match-dialog" aria-labelledby="unrate-match-title" aria-describedby="unrate-match-description">
+  <button class="modal-close-button auth-dialog-close" type="button" data-unrate-close aria-label="Dialog schließen">×</button>
+  <div class="auth-dialog-card">
+    <div class="widget-label">Partie</div>
+    <h2 id="unrate-match-title">Partie nicht werten?</h2>
+    <p class="auth-dialog-copy" id="unrate-match-description">Diese Partie wird dauerhaft als „ohne Wertung“ markiert. Sie zählt nicht für Tabelle, Elo oder Tipps. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+    <div class="player-email-actions">
+      <button class="secondary-button" type="button" data-unrate-close>Abbrechen</button>
+      <button class="danger-button" type="button" data-unrate-confirm>Nicht werten</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog class="player-profile-dialog" id="player-profile-dialog" aria-labelledby="player-profile-name">
   <svg class="achievement-symbols" aria-hidden="true">
     <symbol id="achievement-laurel-left" viewBox="0 0 627.96 1166.47">
@@ -596,7 +622,6 @@
           <div class="widget-label">Dein Konto</div>
           <h2 id="account-display-name"></h2>
           <p class="auth-account-email" id="account-email"></p>
-          <div class="auth-message account-auth-message" id="account-auth-message" role="status" aria-live="polite"></div>
         </div>
         <div class="account-header-actions">
           <button class="secondary-button" id="player-invite-open" type="button" data-player-invite-open hidden>E-Mails</button>
@@ -617,7 +642,12 @@
               <button class="secondary-button" type="button" data-training-toggle>Training hinzufügen</button>
             </div>
             <div data-training-form-group hidden>
-              <div class="spieltag-label"><span>Training</span></div>
+              <div class="spieltag-label">
+                <span class="th-help-wrap">Training
+                  <span class="help-icon" tabindex="0" aria-label="Training eintragen erklären">?</span>
+                  <span class="help-tooltip">Wähle zuerst Datum, Uhrzeit und vier verschiedene Spieler aus. Lege danach Paarung und Ergebnisformat fest und trage das Ergebnis satzweise ein. Bei wechselnden Paarungen kannst du „Weiteres Spielergebnis“ hinzufügen. Sende das Training anschließend zur Bestätigung an die anderen Beteiligten.</span>
+                </span>
+              </div>
               <form class="training-form" id="training-form" hidden>
                 <div class="training-form-meta">
                   <label><span>Datum</span><span class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required></span></label>
@@ -636,6 +666,10 @@
       </div>
     </div>
     <div class="auth-message" id="auth-message" role="status" aria-live="polite"></div>
+  </div>
+  <div class="auth-message account-auth-message" id="account-auth-message" role="status" aria-live="polite" aria-atomic="true" hidden>
+    <span data-account-auth-message-text></span>
+    <button class="account-auth-message-dismiss" type="button" data-account-auth-message-dismiss aria-label="Meldung ausblenden">×</button>
   </div>
 </dialog>
 
@@ -683,10 +717,10 @@
 </dialog>
 
 <script src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
-<script src="js/live-ticker.js?v=2026-09-30-account-server-indicator"></script>
-<script src="js/account.js?v=2026-09-28-live-assignment-cards"></script>
-<script src="js/tippspiel.js?v=2026-09-21-ranking-globals-training-alternative"></script>
-<script src="js/app.js?v=2026-09-30-final-four-ranking-overview-link"></script>
+<script src="js/live-ticker.js?v=2026-10-05-scoring-modes"></script>
+<script src="js/account.js?v=2026-10-08-unrated-matches"></script>
+<script src="js/tippspiel.js?v=2026-10-08-unrated-matches"></script>
+<script src="js/app.js?v=2026-10-08-unrated-sort-date"></script>
 <script src="js/arcade-link.js?v=2026-09-11"></script>
 </body>
 </html>

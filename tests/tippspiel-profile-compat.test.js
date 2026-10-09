@@ -5,6 +5,7 @@ const test = require('node:test');
 const vm = require('node:vm');
 const tippspielSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'account.js'), 'utf8');
 const appSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'utf8');
+const indexSource = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const styleSource = [
   fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8'),
   fs.readFileSync(path.join(__dirname, '..', 'account.css'), 'utf8')
@@ -270,14 +271,29 @@ test('training pairings use selected player names and keep player placeholders',
   assert.match(tippspielSource, /inputName === 'resultFormat' \|\| inputName === 'playerId'[\s\S]*renderTrainingRounds\(preserved, form, preserved\.length\)/);
 });
 
-test('scheduling, unscheduling and future result entry use their dedicated secondary actions', () => {
+test('scheduling, unscheduling, unrated matches and future result entry use their dedicated actions', () => {
   assert.match(tippspielSource, /data-match-schedule="\$\{escapeHtml\(task\.match_id\)\}"/);
   assert.match(tippspielSource, /task\.match_at \? 'Termin speichern' : 'Terminieren'/);
   assert.match(tippspielSource, /data-match-schedule-toggle="\$\{escapeHtml\(task\.match_id\)\}">Termin ändern/);
   assert.match(tippspielSource, /data-match-unschedule="\$\{escapeHtml\(task\.match_id\)\}">Termin löschen/);
-  assert.match(tippspielSource, /groupKey === 'past'[\s\S]*renderResultForm\(task, false, false, true\)/);
+  assert.match(tippspielSource, /groupKey === 'past'[\s\S]*renderResultForm\(task, false, false, true, true\)/);
   assert.match(tippspielSource, /state\.client\.rpc\('schedule_match'/);
   assert.match(tippspielSource, /state\.client\.rpc\('unschedule_match', \{ p_match_id: matchId \}\)/);
+  assert.doesNotMatch(tippspielSource, /window\.confirm\('Soll der Termin dieser Partie wirklich gelöscht werden\?'\)/);
+  assert.match(tippspielSource, /openUnscheduleDialog\(unscheduleButton\)/);
+  assert.match(indexSource, /<dialog class="auth-dialog" id="unschedule-match-dialog"[^>]*aria-labelledby="unschedule-match-title"[^>]*aria-describedby="unschedule-match-description">/);
+  assert.match(indexSource, /<h2 id="unschedule-match-title">Termin löschen<\/h2>/);
+  assert.match(indexSource, /Soll der Termin dieser Partie wirklich gelöscht werden\? Diese Aktion kann nicht rückgängig gemacht werden\./);
+  assert.match(indexSource, /data-unschedule-close>Abbrechen<\/button>[\s\S]*class="danger-button"[^>]*data-unschedule-confirm>Termin löschen<\/button>/);
+  assert.match(tippspielSource, /querySelector\('\.secondary-button\[data-unschedule-close\]'\)\?\.focus\(\)/);
+  assert.doesNotMatch(tippspielSource, /window\.confirm\('Diese Partie wird dauerhaft als „ohne Wertung“ markiert/);
+  assert.match(tippspielSource, /openUnrateDialog\(cancelMatchButton\)/);
+  assert.match(indexSource, /<dialog class="auth-dialog" id="unrate-match-dialog"[^>]*aria-labelledby="unrate-match-title"[^>]*aria-describedby="unrate-match-description">/);
+  assert.match(indexSource, /<h2 id="unrate-match-title">Partie nicht werten\?<\/h2>/);
+  assert.match(indexSource, /Diese Partie wird dauerhaft als „ohne Wertung“ markiert\. Sie zählt nicht für Tabelle, Elo oder Tipps\. Diese Aktion kann nicht rückgängig gemacht werden\./);
+  assert.match(indexSource, /data-unrate-close>Abbrechen<\/button>[\s\S]*class="danger-button"[^>]*data-unrate-confirm>Nicht werten<\/button>/);
+  assert.match(tippspielSource, /querySelector\('\.secondary-button\[data-unrate-close\]'\)\?\.focus\(\)/);
+  assert.match(styleSource, /\.danger-button \{[\s\S]*background: var\(--negativ\)/);
   assert.match(tippspielSource, /p_match_at: buildMatchAtValue\(/);
   assert.doesNotMatch(tippspielSource, /p_scheduled_date:|p_scheduled_time:/);
 });
@@ -287,6 +303,14 @@ test('account names are derived from email and cannot be submitted by the user',
   assert.match(tippspielSource, /return `\$\{capitalize\(parts\[0\]\)\} \$\{parts\.at\(-1\)\.charAt\(0\)/);
   assert.doesNotMatch(tippspielSource, /update_my_profile/);
   assert.doesNotMatch(tippspielSource, /data: \{ display_name:/);
+});
+
+test('account feedback stays visible as a dismissible bottom banner', () => {
+  assert.match(indexSource, /id="account-auth-message"[^>]*aria-live="polite"[^>]*hidden>[\s\S]*data-account-auth-message-dismiss/);
+  assert.match(styleSource, /\.account-auth-message \{[\s\S]*position: absolute;[\s\S]*bottom: max\(16px, env\(safe-area-inset-bottom\)\)/);
+  assert.match(tippspielSource, /ACCOUNT_SUCCESS_MESSAGE_DURATION = 5000/);
+  assert.match(tippspielSource, /type === 'success'[\s\S]*window\.setTimeout\(dismissAccountMessage, ACCOUNT_SUCCESS_MESSAGE_DURATION\)/);
+  assert.match(tippspielSource, /data-account-auth-message-dismiss[\s\S]*dismissAccountMessage\(\)/);
 });
 
 test('detailed score counters derive the set result and winner', () => {

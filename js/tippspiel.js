@@ -39,6 +39,10 @@
     return state.databaseMatches.get(match.id)?.actual_sets || match.saetze || null;
   }
 
+  function isCancelledMatch(match) {
+    return Boolean(state.databaseMatches.get(match.id)?.cancelled_at || match.cancelledAt);
+  }
+
   function getMatchFormat(match) {
     return state.databaseMatches.get(match.id)?.format || match.format || 'best-of-three';
   }
@@ -57,7 +61,7 @@
 
   function isPredictionOpen(match) {
     const databaseMatch = state.databaseMatches.get(match.id);
-    if (!databaseMatch || databaseMatch.betting_open !== true || getActualSets(match)) return false;
+    if (!databaseMatch || databaseMatch.betting_open !== true || getActualSets(match) || isCancelledMatch(match)) return false;
     if (!databaseMatch.match_at) return match.sieger === null;
     return match.sieger === null && new Date(databaseMatch.match_at).getTime() > Date.now();
   }
@@ -160,13 +164,16 @@
       const actualPredictionValue = getActualPredictionValue(match);
       const resultDetails = state.databaseMatches.get(match.id)?.result_details || match.ergebnis;
       const points = getPredictionPoints(selected, actualPredictionValue, matchFormat);
-      const statusLabel = isOpen ? 'Offen' : actualSets ? 'Gespielt' : 'Gesperrt';
+      const isCancelled = isCancelledMatch(match);
+      const statusLabel = isCancelled ? 'Ohne Wertung' : isOpen ? 'Offen' : actualSets ? 'Gespielt' : 'Gesperrt';
       const saveState = isOpen
         ? isSaving
           ? 'Wird gespeichert …'
           : selected
             ? `Gespeichert: ${selected}`
             : 'Noch kein Tipp'
+        : isCancelled
+          ? selected ? `Dein Tipp: ${selected} · Nicht gewertet` : 'Nicht gewertet'
         : actualSets
           ? selected
             ? `Dein Tipp: ${selected} · Ergebnis: ${actualPredictionValue} · ${points} ${points === 1 ? 'Punkt' : 'Punkte'}`
@@ -243,7 +250,7 @@
     const [{ data: matches, error: matchesError }, { data: leaderboard, error: leaderboardError }] = await Promise.all([
       state.client
         .from('matches')
-        .select('id, format, competition_stage, betting_open, actual_sets, result_details, match_at')
+        .select('id, format, competition_stage, betting_open, actual_sets, result_details, match_at, cancelled_at')
         .eq('season_id', seasonId),
       state.client.rpc('get_prediction_leaderboard', { p_season_id: seasonId })
     ]);

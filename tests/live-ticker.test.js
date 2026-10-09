@@ -13,7 +13,12 @@ const correctionMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260929100000_consistent_live_ticker_corrections.sql'),
   'utf8'
 );
+const scoringModesMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261005120000_live_ticker_scoring_modes.sql'),
+  'utf8'
+);
 const acceptance = fs.readFileSync(path.join(root, 'tests', 'live-ticker.acceptance.sql'), 'utf8');
+const gamesAcceptance = fs.readFileSync(path.join(root, 'tests', 'live-ticker-games.acceptance.sql'), 'utf8');
 const ticker = fs.readFileSync(path.join(root, 'js', 'live-ticker.js'), 'utf8');
 const app = fs.readFileSync(path.join(root, 'js', 'app.js'), 'utf8');
 const account = fs.readFileSync(path.join(root, 'js', 'account.js'), 'utf8');
@@ -72,12 +77,12 @@ test('self assignment is accepted immediately and server selection stays in the 
   assert.match(serverPicker, /searchable: false/);
 });
 
-test('writer scoring emphasizes two point buttons, the centered score and compact text actions', () => {
+test('writer scoring emphasizes two team buttons, the centered score and compact text actions', () => {
   const writerControls = ticker.match(/function renderWriterControls\(task\) \{[\s\S]*?(?=\n  function renderAccount)/)?.[0] || '';
   assert.match(writerControls, /class="live-point-team-buttons"/);
   assert.equal((writerControls.match(/class="live-point-team-button\$\{/g) || []).length, 2);
-  assert.match(writerControls, />Punkt für</);
-  assert.match(writerControls, />Punkt eintragen</);
+  assert.match(writerControls, /isGamesMode \? 'Spiel' : 'Punkt'/);
+  assert.match(writerControls, /data-live-submit-score/);
   assert.doesNotMatch(writerControls, /<div class="result-proposal"><span>Aktueller Stand/);
   assert.match(ticker, /class="account-task-live-score"/);
   assert.match(ticker, /class="live-ticker-text-actions"[\s\S]*class="text-link"[\s\S]*>Liveticker verwerfen<[\s\S]*>Aufschläger korrigieren<[\s\S]*>Spielverlauf öffnen</);
@@ -144,7 +149,7 @@ test('the public view links only live or archived result centers and keeps profi
   assert.match(ticker, /const breakLabel = last\.break \? '<strong>BREAK/);
   assert.match(ticker, /data-live-game-points/);
   assert.match(ticker, /label !== 'Spiel'/);
-  assert.match(ticker, /\$\{isLive \? `<strong class="live-ticker-points" data-live-current-points>\$\{escapeHtml\(pointLabel\(session\)\)\}<\/strong>` : ''\}/);
+  assert.match(ticker, /isLive && !isGamesMode \? `<strong class="live-ticker-points" data-live-current-points>\$\{escapeHtml\(pointLabel\(session\)\)\}<\/strong>` : ''/);
   assert.match(ticker, /class="live-ticker-match"/);
   assert.match(ticker, /class="live-ticker-game-line"/);
   assert.match(ticker, /class="live-ticker-player-photo"/);
@@ -254,7 +259,7 @@ test('corrected archives publish only the corrected official result', () => {
   assert.match(correctionMigration, /jsonb_set\(payload, '\{session,events\}', '\[\]'::jsonb, false\)/);
   assert.match(correctionMigration, /grant execute on function public\.get_public_live_ticker\(text\) to anon, authenticated/);
   assert.match(ticker, /session\?\.status === 'finished'[\s\S]*payload\.result/);
-  assert.match(ticker, /Der ursprüngliche Punktverlauf wurde nachträglich korrigiert/);
+  assert.match(ticker, /Der ursprüngliche Liveticker-Verlauf wurde nachträglich korrigiert/);
 });
 
 test('outdated ticker loads cannot overwrite a newer match or reopen a closed view', () => {
@@ -273,4 +278,51 @@ test('acceptance coverage exercises idempotency, Golden Point, undo, tiebreak ro
   assert.match(acceptance, /Tiebreak service rotation is incorrect/);
   assert.match(acceptance, /The public corrected archive is inconsistent/);
   assert.match(acceptance, /rollback;\s*$/);
+});
+
+test('each live session stores one immutable scoring mode while legacy starts stay detailed', () => {
+  assert.match(scoringModesMigration, /add column if not exists scoring_mode text not null default 'points'/);
+  assert.match(scoringModesMigration, /check \(scoring_mode in \('points', 'games'\)\)/);
+  assert.match(scoringModesMigration, /create or replace function public\.start_live_match_with_mode/);
+  assert.match(scoringModesMigration, /select public\.start_live_match_with_mode\(p_match_id, p_first_server_player_id, 'points'\)/);
+  assert.match(ticker, /Detailliert[\s\S]*Jeder Punkt/);
+  assert.match(ticker, /Einfach[\s\S]*Jedes Spiel/);
+  assert.match(ticker, /start_live_match_with_mode/);
+});
+
+test('game scoring is versioned, idempotent, undoable and server validated', () => {
+  assert.match(scoringModesMigration, /create or replace function public\.record_live_game/);
+  assert.match(scoringModesMigration, /session\.scoring_mode <> 'games'/);
+  assert.match(scoringModesMigration, /where event\.client_action_id = p_client_action_id/);
+  assert.match(scoringModesMigration, /event_type, client_action_id[\s\S]*'game'/);
+  assert.match(scoringModesMigration, /break_game := private\.live_player_team/);
+  assert.match(scoringModesMigration, /create or replace function public\.undo_live_game/);
+  assert.match(scoringModesMigration, /set voided_at = now\(\), voided_by = \(select auth\.uid\(\)\)/);
+  assert.match(ticker, /record_live_game/);
+  assert.match(ticker, /processingMatches\.add\(matchId\)/);
+  assert.match(ticker, /Wird gespeichert …/);
+});
+
+test('simple scoring accepts only complete tiebreak results and publishes mode-aware history', () => {
+  assert.match(scoringModesMigration, /create or replace function public\.record_live_tiebreak_result/);
+  assert.match(scoringModesMigration, /greatest\(p_team_one_points, p_team_two_points\) = 7/);
+  assert.match(scoringModesMigration, /greatest\(p_team_one_points, p_team_two_points\) > 7[\s\S]*abs\(p_team_one_points - p_team_two_points\) = 2/);
+  assert.match(scoringModesMigration, /'scoringMode', session\.scoring_mode/);
+  assert.match(scoringModesMigration, /'eventType', event\.event_type/);
+  assert.match(scoringModesMigration, /'tiebreakScore'/);
+  assert.match(ticker, /Tiebreak läuft/);
+  assert.match(ticker, /Tiebreak \$\{escapeHtml\(last\.tiebreakScore\)\}/);
+  assert.match(ticker, /scoringModeLabel\(session\)/);
+  assert.match(ticker, /Endstand \$\{Number\(session\.teamOneGames\)/);
+});
+
+test('game ticker acceptance covers break detection, 6:6, tiebreak validation, undo and finish', () => {
+  assert.match(gamesAcceptance, /^-- Run through tools\/supabase-mcp\.mjs only after explicit approval\./);
+  assert.match(gamesAcceptance, /Idempotent game retry or break detection is incorrect/);
+  assert.match(gamesAcceptance, /did not enter the tiebreak at 6:6/);
+  assert.match(gamesAcceptance, /An invalid tiebreak result was accepted/);
+  assert.match(gamesAcceptance, /Undo did not restore the pre-tiebreak game state/);
+  assert.match(gamesAcceptance, /result_details = '7:6 \(7:4\)'/);
+  assert.match(gamesAcceptance, /array\['6:0', '6:4', '7:5'\]/);
+  assert.match(gamesAcceptance, /rollback;\s*$/);
 });
