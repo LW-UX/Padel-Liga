@@ -1385,8 +1385,8 @@ window.PADEL_SEASON = {
   ],
   "homeAnnouncement": {
     "expiresAt": "2026-10-15T18:00:00+02:00",
-    "meta": "FINAL FOUR  ·  15. OKTOBER 2026  ·  AB 18 UHR",
-    "title": "Save the Date",
+    "meta": "Save the Date  ·  15. OKTOBER 2026  ·  AB 18 UHR",
+    "title": "FINAL FOUR: Donnerstag, der 15.",
     "body": [
       {
         "type": "p",
