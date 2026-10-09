@@ -1386,11 +1386,11 @@ window.PADEL_SEASON = {
   "homeAnnouncement": {
     "expiresAt": "2026-10-15T18:00:00+02:00",
     "meta": "Save the Date  ·  15. OKTOBER 2026  ·  AB 18 UHR",
-    "title": "FINAL FOUR: Donnerstag, der 15.",
+    "title": "Final Four: Donnerstag, der 15.",
     "body": [
       {
         "type": "p",
-        "text": "Jetzt steht der Termin: Am 15. Oktober um 18 Uhr steigt das Final Four der Padel-Liga Sommer 2026. Die besten vier Spieler der Saison kämpfen in drei wechselnden Teamkonstellationen um den Titel – ein Satz pro Partie, jeder mit jedem."
+        "text": "Jetzt steht der Termin: Am 15. Oktober um 18 Uhr steigt das Final Four der Padel-Liga Sommer 2026. Die besten vier Spieler der Saison kämpfen in drei wechselnden Teamkonstellationen um den Titel – ein Satz pro Partie, jeder mit jedem und gegen jeden."
       },
       {
         "type": "p",
