@@ -204,7 +204,7 @@ test('30 and 60 frame clocks produce identical movement and physics', async () =
   }
   assert.deepEqual(run(30), run(60));
 });
-test('arcade page uses isolated modules and same-tab navigation preserves the season', () => {
+test('arcade page uses isolated modules and new-tab navigation preserves the season', () => {
   const root = path.resolve(__dirname, '..');
   const html = fs.readFileSync(path.join(root, 'arcade/index.html'), 'utf8');
   const league = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
@@ -216,7 +216,7 @@ test('arcade page uses isolated modules and same-tab navigation preserves the se
   const main = fs.readFileSync(path.join(root, 'arcade/main.mjs'), 'utf8');
   assert.match(main, /const durationMs = COUNTDOWN_DURATION_MS;/);
   assert.match(main, /return now - localCountdown\.startedAt;/);
-  assert.match(league, /id="arcade-link" href="arcade\/"/);
+  assert.match(league, /id="arcade-link" href="arcade\/" target="_blank" rel="noopener"/);
   const source = fs.readFileSync(path.join(root, 'js/arcade-link.js'), 'utf8');
   const vm = require('node:vm');
   const link = { getAttribute: () => 'arcade/', href: '' };
