@@ -21,6 +21,7 @@ Diese Datei ist die kanonische Quelle für Saisonidentitäten, Datenquellen, Sai
 - Cup-Saisons verwenden eine reduzierte Seitennavigation mit Turnierbaum und Informationen statt Liga-Rangliste, Rechner und Statistik.
 - Die mobile Liga-Rangliste startet kompakt und bietet eine erweiterte, horizontal scrollbare Ansicht. Desktop behält die vollständige Rangliste.
 - Saisonauswahl und Kontoaktion bilden eine gemeinsame responsive Aktionszeile. Gemeinsame Dropdown- und Sekundärbutton-Komponenten werden wiederverwendet.
+- PadelPong ist eine eigenständige Website unter `https://lw-ux.github.io/PadelPong/`. Der Liga-Button öffnet ausschließlich diese feste Adresse in einem neuen Tab und überträgt keinen Saisonkontext.
 - Veröffentlichte Artikel bleiben sichtbar, bis ein neuer veröffentlichter Artikel ihren Platz einnimmt; unveröffentlichte Platzhalter werden nicht angezeigt.
 
 ## Cup

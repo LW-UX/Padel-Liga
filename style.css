@@ -299,7 +299,7 @@
       justify-content: flex-end;
       gap: 8px;
     }
-    .arcade-link {
+    .pong-link {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -311,9 +311,9 @@
       color: var(--text);
       text-decoration: none;
     }
-    .arcade-link svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-    .arcade-link:hover, .arcade-link:focus-visible { color: var(--accent); border-color: var(--accent); }
-    .arcade-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .pong-link svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .pong-link:hover, .pong-link:focus-visible { color: var(--accent); border-color: var(--accent); }
+    .pong-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
     .hero-sub { color: var(--dim); font-size: 0.85rem; font-weight: 300; margin-top: 1rem; }
     .site-nav {
       position: sticky;
