@@ -92,8 +92,8 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(accountScript, /function keepTrainingPickerSearchVisible\(searchInput\)[\s\S]*targetOffset = Math\.min\(200,[\s\S]*window\.setTimeout\(alignInput, 350\)/);
   assert.match(accountScript, /searchInput\.focus\(\{ preventScroll: true \}\);\s*keepTrainingPickerSearchVisible\(searchInput\);/);
   assert.match(pages[1], /class="secondary-button secondary-button--dropdown"[^>]*data-season-toggle/);
-  assert.match(style, /\.sh-title \{[^}]*font-size: 2rem;[^}]*font-weight: 400;/);
-  assert.match(style, /\.secondary-button \{[\s\S]*font-family: 'DM Sans', sans-serif;[\s\S]*font-size: 0\.78rem;[\s\S]*font-weight: 500;/);
+  assert.match(style, /\.sh-title \{[^}]*font-size: var\(--text-heading\);[^}]*font-weight: 400;/);
+  assert.match(style, /\.secondary-button \{[\s\S]*font-family: var\(--font-body\);[\s\S]*font-size: 0\.78rem;[\s\S]*font-weight: 500;/);
   assert.match(style, /\.secondary-button--dropdown \{[^}]*position: relative;[^}]*padding-right: 1\.8rem;/);
   assert.doesNotMatch(style, /\.picker-toggle/);
   assert.doesNotMatch(style, /\.calculator-reset-button/);

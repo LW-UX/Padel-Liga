@@ -73,7 +73,7 @@ test('ranking layout behavior is expressed through named column selectors', () =
   assert.match(style, /\.rank-score \{[^}]*color: var\(--accent2\);/);
   assert.match(style, /\.ranking-table\.compact \{[^}]*table-layout: fixed;/);
   assert.match(style, /\.ranking-table\.compact th:not\(\.col-rank\):not\(\.col-name\) \{[^}]*padding-left: 4px;/);
-  assert.match(style, /table\.ranking-table th \{\s*font-size: 0\.7rem;\s*letter-spacing: 0\.06em;/);
+  assert.match(style, /table\.ranking-table th \{\s*font-size: var\(--text-xs\);\s*letter-spacing: 0\.06em;/);
   assert.match(style, /\.ranking-table\.expanded \.col-rank,[^]*\.ranking-table\.expanded \.col-name \{[^}]*position: sticky;/);
   assert.doesNotMatch(style, /\.ranking-table \.col-rank \{[^}]*padding-left: 18px/);
   assert.doesNotMatch(`${app}\n${style}`, /mini-rank-pos|calculator-mini-rank-pos/);

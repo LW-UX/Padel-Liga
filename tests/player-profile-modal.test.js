@@ -228,7 +228,7 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /'Spieldifferenz', getPlayerProfileSignedValueClass\(summary\.gameDiff\)/);
   assert.match(app, /'Ø Spieldifferenz', getPlayerProfileSignedValueClass\(gameDiffPerMatch\)/);
   assert.match(style, /\.player-profile-stat-value\.negative \{ color: var\(--negativ\); \}/);
-  assert.match(style, /\.player-profile-stat-fraction \{ font-size: 1rem; \}/);
+  assert.match(style, /\.player-profile-stat-fraction \{ font-size: var\(--text-base\); \}/);
   assert.match(style, /\.player-profile-stats \{[\s\S]*?grid-template-columns: repeat\(7, minmax\(0, 1fr\)\);/);
   assert.match(style, /\.player-profile-stat:first-child \{ grid-column: 1 \/ -1; border-right: 0; \}/);
   assert.doesNotMatch(style, /\.player-profile-stat:last-child \{ grid-column: 1 \/ -1;/);
@@ -344,7 +344,7 @@ test('profile season overview separates league and qualified final-round results
   assert.match(app, /participation\.isActive \? '<em class="player-profile-participation-status">Laufend<\/em>' : ''/);
   assert.match(style, /\.player-profile-participation-status \{[\s\S]*?color: var\(--dim\);[\s\S]*?font-size: 0\.72rem;[\s\S]*?font-style: italic;/);
   assert.match(style, /\.player-profile-participation-phase \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto;[\s\S]*?align-items: center;/);
-  assert.match(style, /\.player-profile-participation-phase-result\.player-profile-participation-placement \{[\s\S]*?font-family: 'Bebas Neue', sans-serif;[\s\S]*?font-size: 2rem;[\s\S]*?line-height: 1;/);
+  assert.match(style, /\.player-profile-participation-phase-result\.player-profile-participation-placement \{[\s\S]*?font-family: var\(--font-heading\);[\s\S]*?font-size: var\(--text-heading\);[\s\S]*?line-height: 1;/);
   assert.match(app, /renderPlayerProfileParticipationStats\(participation, 'Punkte', participation\.points\)/);
   assert.match(app, /renderPlayerProfileParticipationStats\(finalRound, 'Siege', finalRound\.wins\)/);
   assert.match(app, /getPlayerProfileSeasonPayload\(participation\.seasonId\)/);
@@ -545,7 +545,7 @@ test('profile results use consistent separators and de-emphasize set tiebreaks',
     oneSetResult,
     '<span class="player-profile-result"><span class="player-profile-score-set">6:2</span></span>'
   );
-  assert.match(style, /\.player-profile-set-tiebreak \{ font-size: 0\.7rem; \}/);
+  assert.match(style, /\.player-profile-set-tiebreak \{ font-size: var\(--text-xs\); \}/);
 });
 
 test('only training result circles use outcome-colored outlines', () => {

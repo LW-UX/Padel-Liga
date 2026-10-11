@@ -11,8 +11,8 @@
       background: var(--accent);
       color: #07080c;
       cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.85rem;
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
       font-weight: 700;
       padding: 0.45rem 0.9rem;
       white-space: nowrap;
@@ -57,7 +57,7 @@
       background: var(--accent);
       color: #07080c;
       box-shadow: 0 0 0 2px var(--bg);
-      font-family: 'DM Mono', monospace;
+      font-family: var(--font-mono);
       font-size: 0.66rem;
     }
     .auth-dialog {
@@ -81,7 +81,7 @@
       overscroll-behavior: contain;
       padding: 1.5rem;
     }
-    .auth-dialog h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.04em; margin: 0.25rem 0 1rem; }
+    .auth-dialog h2 { font-family: var(--font-heading); font-size: var(--text-heading); letter-spacing: 0.04em; margin: 0.25rem 0 1rem; }
     .auth-mode-toggle {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -99,7 +99,7 @@
       color: var(--dim);
       cursor: pointer;
       font: inherit;
-      font-size: 0.85rem;
+      font-size: var(--text-sm);
       font-weight: 600;
       padding: 0.55rem;
     }
@@ -116,7 +116,7 @@
       background: var(--bg);
       color: var(--text);
       font: inherit;
-      font-size: 1rem;
+      font-size: var(--text-base);
       outline: none;
       padding: 0.65rem 0.75rem;
     }
@@ -151,7 +151,7 @@
       background: var(--bg);
       color: var(--text);
       font: inherit;
-      font-size: 0.85rem;
+      font-size: var(--text-sm);
       line-height: 1.5;
       outline: none;
       padding: 0.65rem 0.75rem;
@@ -201,7 +201,7 @@
       background: transparent;
       color: var(--dim);
       cursor: pointer;
-      font: 1rem/1 'DM Sans', sans-serif;
+      font: var(--text-base)/1 var(--font-body);
       padding: 0 0 2px;
       place-items: center;
     }
@@ -269,22 +269,22 @@
       border: 1px solid var(--border);
       border-radius: 999px;
       color: var(--dim);
-      font: 0.7rem 'DM Sans', sans-serif;
+      font: var(--text-xs) var(--font-body);
       padding: 0.2rem 0.45rem;
       white-space: nowrap;
     }
     .account-task-status.is-open { border-color: var(--accent); background: transparent; color: var(--accent); }
     .account-task-status.is-complete { border-color: color-mix(in srgb, var(--positiv) 45%, var(--border)); color: var(--positiv); }
-    .result-card-timing { color: var(--dim); font: 0.85rem 'DM Sans', sans-serif; letter-spacing: 0.02rem; }
+    .result-card-timing { color: var(--dim); font: var(--text-sm) var(--font-body); letter-spacing: 0.02rem; }
     .account-task-matchup { 
       display: grid; 
       grid-template-columns: 1fr auto 1fr; 
       align-items: center; 
       gap: 12px; 
-      font-size: 1rem; 
+      font-size: var(--text-base);
     }
     .account-task-matchup strong:last-child { text-align: right; }
-    .account-task-matchup > span { color: var(--dim); font-size: 0.85rem; }
+    .account-task-matchup > span { color: var(--dim); font-size: var(--text-sm); }
     #live-account-list .account-task-matchup {
       margin: 12px 0;
     }
@@ -293,13 +293,13 @@
     }
     #live-account-list .result-entry-buttons .primary-button {
       padding: 1rem;
-      font-size: 1rem;
+      font-size: var(--text-base);
     }
     .account-live-player { display: inline-flex; align-items: center; min-width: 0; gap: 0.3em; }
     .account-live-server {
       flex: 0 0 auto;
       color: var(--accent);
-      font-size: 1rem;
+      font-size: var(--text-base);
       line-height: 1;
     }
     .account-task-live-score {
@@ -308,7 +308,7 @@
       gap: 2px;
       text-align: center;
     }
-    .account-task-live-score .mc-score-main { font-size: 2rem; }
+    .account-task-live-score .mc-score-main { font-size: var(--text-heading); }
     .account-task-live-score .mc-score-detail { 
       margin-top: 0; 
       position: inherit;
@@ -317,8 +317,8 @@
     }
     .account-task-player-name.is-authenticated { color: var(--accent2); }
     .result-proposal { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: 8px; background: var(--surface2); padding: 0.7rem; }
-    .result-proposal span { color: var(--dim); font-size: 0.85rem; }
-    .result-proposal strong { font-family: 'DM Sans', sans-serif; font-size: 0.85rem; text-align: right; letter-spacing: 0.02rem; }
+    .result-proposal span { color: var(--dim); font-size: var(--text-sm); }
+    .result-proposal strong { font-family: var(--font-body); font-size: var(--text-sm); text-align: right; letter-spacing: 0.02rem; }
     .account-task-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
     .result-review-actions { justify-content: flex-end; flex-wrap: nowrap; }
     .result-entry-form { display: grid; grid-template-columns: 1fr; gap: 12px; }
@@ -338,7 +338,7 @@
       align-items: center;
       gap: 8px;
       color: var(--dim);
-      font-size: 0.85rem;
+      font-size: var(--text-sm);
       font-weight: 600;
     }
     .result-entry-form :where(input, select),
@@ -352,7 +352,7 @@
       border-radius: 8px;
       background: var(--surface);
       color: var(--text);
-      font: 0.85rem 'DM Sans', sans-serif;
+      font: var(--text-sm) var(--font-body);
       padding: 0.55rem 0.65rem;
     }
     :where(.result-entry-form, .match-schedule-form, .training-form) input:is([type="date"], [type="time"]) {
@@ -387,7 +387,7 @@
       align-self: center;
       justify-self: start;
       color: var(--dim);
-      font: 0.85rem 'DM Sans', sans-serif;
+      font: var(--text-sm) var(--font-body);
       opacity: 0;
       padding: 0.55rem 0.65rem;
       pointer-events: none;
@@ -427,7 +427,7 @@
       flex: 1 1 180px;
       min-width: 0;
       color: var(--dim);
-      font: 0.7rem 'DM Sans', sans-serif;
+      font: var(--text-xs) var(--font-body);
       letter-spacing: 0.02rem;
       line-height: 1.35;
       overflow-wrap: anywhere;
@@ -455,7 +455,7 @@
     .live-mode-fieldset legend {
       margin-bottom: 8px;
       color: var(--dim);
-      font-size: 0.85rem;
+      font-size: var(--text-sm);
       font-weight: 600;
     }
     .live-mode-fieldset small { color: var(--dim); line-height: 1.45; }
@@ -481,14 +481,14 @@
       padding: 0.7rem;
       text-align: center;
     }
-    .live-mode-toggle button strong { color: var(--text); font-size: 0.85rem; }
-    .live-mode-toggle button span { font-size: 0.7rem; }
+    .live-mode-toggle button strong { color: var(--text); font-size: var(--text-sm); }
+    .live-mode-toggle button span { font-size: var(--text-xs); }
     .live-mode-toggle button.active { background: var(--surface); box-shadow: 0 0 0 1px var(--accent); color: var(--accent); }
     .live-mode-toggle button.active strong { color: var(--accent); }
     .live-writer-mode {
       color: var(--dim);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
       letter-spacing: 0.08em;
       text-align: center;
       text-transform: uppercase;
@@ -510,20 +510,20 @@
       background: var(--surface2);
       color: var(--text);
       cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body);
       padding: 0.85rem;
       text-align: center;
       transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
     }
     .live-point-team-button > span {
       color: var(--dim);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
     .live-point-team-button > strong {
-      font-size: 1rem;
+      font-size: var(--text-base);
       line-height: 1.25;
       overflow-wrap: anywhere;
     }
@@ -570,7 +570,7 @@
     }
     .live-server-correction-forms[hidden] { display: none; }
     .account-empty,
-    .account-waiting { color: var(--dim); font-size: 0.85rem; }
+    .account-waiting { color: var(--dim); font-size: var(--text-sm); }
     .account-waiting { display: inline-flex; align-items: center; min-height: 36px; }
     .training-form { 
       display: grid; 
@@ -591,7 +591,7 @@
     }
     .training-form-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .training-player-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .training-picker-label { color: var(--dim); font-size: 0.85rem; font-weight: 600; }
+    .training-picker-label { color: var(--dim); font-size: var(--text-sm); font-weight: 600; }
     .training-picker-search-control {
       position: relative;
       display: flex;
@@ -639,7 +639,7 @@
       border-radius: 999px;
       background: var(--surface);
       color: var(--text);
-      font: 500 0.85rem 'DM Sans', sans-serif;
+      font: 500 var(--text-sm) var(--font-body);
       outline: none;
       padding: 0.5rem 1.8rem 0.5rem 0.85rem;
     }
@@ -719,7 +719,7 @@
       border-radius: 50%;
       background: var(--surface);
       color: var(--text);
-      font: 1.2rem/1 'DM Sans', sans-serif;
+      font: 1.2rem/1 var(--font-body);
       cursor: pointer;
       place-items: center;
     }
@@ -773,7 +773,7 @@
       .match-schedule-actions .secondary-button,
       .training-form > .primary-button,
       .training-form > .secondary-button
-      { font-size: 0.7rem; }
+      { font-size: var(--text-xs); }
 
       .result-proposal { align-items: flex-start; flex-direction: column; }
       .result-proposal strong { text-align: left; }
