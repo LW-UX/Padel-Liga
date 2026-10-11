@@ -4,9 +4,19 @@ export const COUNTDOWN_DURATION_MS = 3552;
 export const COUNTDOWN_LABELS = Object.freeze(['3', '2', '1', 'GO']);
 export const EFFECT_SOUND_NAMES = Object.freeze(['countdown', 'dodge', 'hit', 'pointWon', 'pointLost']);
 export const MUSIC_SOUND_NAMES = Object.freeze(['gameMusic', 'gameOver', 'victory']);
-export const backgroundMusicVolume = mobile => mobile ? 0.10 : 0.22;
+export const backgroundMusicVolume = mobile => mobile ? 0.07 : 0.22;
 const DESKTOP_SOUND_VOLUMES = Object.freeze({ gameMusic: 0.22, countdown: 0.30, dodge: 0.75, hit: 0.28, pointWon: 0.32, pointLost: 0.32, gameOver: 0.27, victory: 0.11 });
-const MOBILE_SOUND_VOLUMES = Object.freeze({ ...DESKTOP_SOUND_VOLUMES, countdown: 0.225, dodge: 0.75, hit: 0.5625, pointWon: 0.4125, pointLost: 0.4125 });
+const MOBILE_SOUND_VOLUMES = Object.freeze({
+  ...DESKTOP_SOUND_VOLUMES,
+  gameMusic: 0.07,
+  countdown: 0.16,
+  dodge: 0.38,
+  hit: 0.28,
+  pointWon: 0.22,
+  pointLost: 0.22,
+  gameOver: 0.18,
+  victory: 0.075
+});
 export const soundVolume = (name, mobile = false) => name === 'gameMusic'
   ? backgroundMusicVolume(mobile)
   : (mobile ? MOBILE_SOUND_VOLUMES : DESKTOP_SOUND_VOLUMES)[name] ?? 0.28;

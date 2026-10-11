@@ -78,8 +78,8 @@ async function mount() {
       gameOver: document.getElementById('effect-game-over'),
       victory: document.getElementById('effect-victory')
     },
-    // Ball samples receive a stronger mobile mix while countdown and music
-    // cues retain their existing level.
+    // Small phone speakers receive their own restrained mix while desktop
+    // keeps the original levels.
     volume: name => soundVolume(name, mobileControls.matches),
     toggleNames: EFFECT_SOUND_NAMES
   });
