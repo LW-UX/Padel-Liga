@@ -27,7 +27,7 @@ test('Sommer 2026 remains the repository default while Winter is selectable', ()
       qualificationPlaces: 8,
       homeRankingLimit: 4,
       regularScheduleLocked: false,
-      predictionsEnabled: true
+      predictionsEnabled: false
     }
   );
   assert.equal(PADEL_SEASON.matches.length, 5);

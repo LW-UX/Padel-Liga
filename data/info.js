@@ -111,8 +111,10 @@ window.PADEL_INFO = {
     {
       "title": "Ergebnismeldung",
       "paragraphs": [
-        "Nachdem die Partie absolviert ist und die Gewinner feststehen, muss das Ergebnis gemeldet werden, damit es eingetragen werden kann.",
-        "Ergebnisse bitte im Teams-Kanal Sport | Headsquare & Hanako & Envidual, per Mail an Hanako Leben Squad oder direkt an Ludwig melden."
+        "Nachdem die Partie absolviert ist, tragen die Spieler das Ergebnis selbst auf der Webseite ein. Dafür oben rechts über „Login“ anmelden, im Konto die Partie öffnen und unter „Ergebnis eintragen“ die Sätze sowie Datum und Uhrzeit der Partie angeben.",
+        "Ein Spieler meldet das Ergebnis für sein Team. Das gegnerische Team bestätigt es oder schickt eine korrigierte Alternative. Erfolgt innerhalb von 48 Stunden keine Reaktion, wird das Ergebnis automatisch bestätigt und zählt für Tabelle und Elo.",
+        "Wer noch keinen Kontozugang hat, meldet sich bitte bei Ludwig.",
+        "Alternativ kann das Ergebnis weiterhin im Teams-Kanal Sport | Headsquare & Hanako & Envidual, per Mail an Hanako Leben Squad oder direkt an Ludwig gemeldet werden, und zwar mit folgenden Angaben:"
       ],
       "items": [
         "Partienummer",

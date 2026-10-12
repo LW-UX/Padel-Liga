@@ -9,15 +9,19 @@ window.PADEL_SEASON = {
     qualificationPlaces: 8,
     homeRankingLimit: 4,
     regularScheduleLocked: false,
-    predictionsEnabled: true
+    predictionsEnabled: false
   },
   organizations: ["Headsquare", "Hanako", "Envidual"],
   leagues: [
     { id: "main", label: "Padel-Liga Winter 2026", default: true }
   ],
   shortInfo: [
-    "Die neue Saison wird vorbereitet.",
-    "Weitere Teilnehmer und der Spielplan folgen."
+    "Jeder Teilnehmer hat 6 Partien.",
+    "Partner und Gegner werden jede Partie neu gelost.",
+    "Es gibt kein fixes Datum, sondern Zeitfenster. Die Spieler stimmen sich selbst ab.",
+    "Eine Partie hat 2 Gewinnsätze, bei 1:1 entscheidet der Match-Tie-Break bis 10 Punkte.",
+    "Die Top 8 nach jeweils 6 Partien qualifizieren sich für das Halbfinale.",
+    "Die vier Spieler der beiden siegreichen Halbfinalteams spielen im Final Four um den Titel."
   ],
   matchdays: [],
   participants: [],

@@ -39,6 +39,12 @@ Diese Datei ist die kanonische Quelle für Saisonidentitäten, Datenquellen, Sai
 - Test-Saisons und reine Testpartien sind von öffentlichen Profilen, Karrierewerten, Auszeichnungen, offiziellen Ranglisten und globalem Elo ausgeschlossen.
 - Testdaten werden nur gezielt zurückgesetzt. Persistente Testszenarien bleiben erhalten, wenn ihre Wiederverwendung fachlich gewollt ist.
 
+## Winter 2026
+
+- In der Ligaphase von „Winter 2026“ hat jeder Teilnehmer 6 Partien. Partner und Gegner werden für jede Partie neu gelost; statt fester Termine gibt es Zeitfenster, in denen sich die Spieler selbst abstimmen.
+- „Winter 2026“ verwendet den Top-8-Modus mit Halbfinale (siehe [Partien, Training und Turniere](matches-and-tournaments.md)).
+- „Winter 2026“ bietet kein Tippspiel an.
+
 ## Offene Entscheidungen
 
-- Der reguläre Spielplan von „Winter 2026“ ist noch nicht abschließend festgelegt.
+- Saisonstart, Teilnehmer, konkreter Spielplan und Zeitplan von „Winter 2026“ sind noch nicht abschließend festgelegt.
