@@ -1232,7 +1232,7 @@
       align-items: center;
       gap: 0.45rem;
     }
-    .sh-meta { font-size: var(--text-xs); color: var(--muted); }
+    .sh-meta { font-size: var(--text-sm); color: var(--muted); }
     .section-subheading { margin-top: 2.5rem; }
     #rangliste > #final-four-ranking-section:first-child .section-subheading,
     #league-calculator[hidden] + #final-four-calculator .section-subheading { margin-top: 0; }
