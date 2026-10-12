@@ -26,6 +26,16 @@ Redaktionelle Richtlinien für Saisonartikel. Wo Artikel gespeichert werden und 
 
 Richtwert für die Länge: 600–900 Wörter.
 
+## Recherche-Checks je Partie
+
+Vor dem Schreiben wird jede vorgestellte oder bereits gespielte Partie mit dem Datenbankstand zum Zeitpunkt des Schreibens auf die folgenden Merkmale geprüft. Trifft ein Merkmal zu, wird es in der Einordnung aufgegriffen. Trifft es nicht zu, wird es nicht erwähnt.
+
+- **Firmenduell:** Beide Spieler von Team 1 gehören derselben Firma an, beide Spieler von Team 2 ebenfalls, und die beiden Firmen sind verschieden. Eine solche Partie wird als Firmenduell betitelt, in der Regel im Untertitel der Zwischenüberschrift, zum Beispiel `Partie N - Firmenduell` oder `Partie N - Firmenduell: …`. Die bisherige Bilanz der beiden Firmen gegeneinander wird dabei aufgegriffen.
+- **Beziehungen aus den Spielerprofilen:** Für jeden der vier Spieler wird geprüft, ob sein Partner sein Lieblingspartner oder Angstpartner ist und ob einer der Gegner sein Lieblingsgegner oder Angstgegner ist.
+  - Lieblingspartner, Lieblingsgegner und Angstgegner werden genau so bestimmt wie im öffentlichen Spielerprofil (siehe [Ranglisten, Statistik und Profile](rankings-statistics-and-profiles.md)): bestätigte Liga- und Trainingspartien, mindestens drei gemeinsame Partien, die höchste beziehungsweise niedrigste Siegquote über beziehungsweise unter 50 Prozent, bei Gleichstand alle gleichauf Führenden.
+  - Auch der Angstpartner wird genau wie im öffentlichen Spielerprofil bestimmt: der Partner mit der niedrigsten Siegquote unter 50 Prozent bei mindestens drei gemeinsamen Partien.
+  - Die zugrunde liegende Bilanz wird im Fließtext genannt, etwa „drei von vier gemeinsamen Partien gewonnen“. Angstpartner und Angstgegner werden wie alle Schwächephasen mit Sympathie erzählt.
+
 ## Datenformat
 
 - Blocktypen: `p` (Absatz), `h` (Zwischenüberschrift), `match` (Spielblock), `quote` (Zitat mit `author`).

@@ -31,7 +31,7 @@ Diese Datei ist die kanonische Quelle für Elo, Ranglisten, Statistik, öffentli
 - Trainings- und Final-Four-Gewichte folgen den Regeln aus `matches-and-tournaments.md`; Match-Tiebreak-Punkte zählen nicht als Games.
 - Vergangene Partien werden chronologisch gruppiert und bei Bedarf vollständig eingeblendet. Liga- und Trainingsergebnisse bleiben visuell unterscheidbar.
 - Eine Ligapartie ohne Wertung bleibt bei allen vier Beteiligten als unvollständige Partie sichtbar. Ihr Ergebnisbereich zeigt `ohne Wertung` kursiv und grau; ihr Wertungsgewicht ist null. Sie wird ohne sichtbares Datum anhand des ersten Tages ihres Spieltags chronologisch eingeordnet.
-- Lieblingspartner, Lieblingsgegner und Angstgegner basieren auf bestätigten Liga- und Trainingspartien. Eine Beziehung benötigt mindestens drei gemeinsame Partien; genau 50 Prozent Siegquote qualifiziert für keine Kategorie.
+- Lieblingspartner, Lieblingsgegner, Angstpartner und Angstgegner basieren auf bestätigten Liga- und Trainingspartien. Eine Beziehung benötigt mindestens drei gemeinsame Partien; genau 50 Prozent Siegquote qualifiziert für keine Kategorie. Als Angstpartner gilt der Partner mit der niedrigsten Siegquote unter 50 Prozent.
 - Profilbilder liegen im Repository unter `assets/players/<spieler-id>/profile.webp`. Ohne Bild wird der im Spielerstamm hinterlegte Emoji verwendet. Binärbilder werden nicht in Supabase gespeichert.
 
 ## Auszeichnungen und Farben

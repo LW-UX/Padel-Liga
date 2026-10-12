@@ -251,7 +251,8 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(style, /@media \(max-width: 999px\) \{[\s\S]*?\.player-profile-match \{[\s\S]*?grid-template-columns: 30px minmax\(0, 1fr\) auto;/);
   assert.doesNotMatch(app, /\(match\.partnerNames \|\| \[\]\)\.join\(' \/ '\)/);
   assert.match(html, /class="widget player-profile-widget player-profile-relationships"[\s\S]*id="player-profile-relationships"/);
-  assert.match(app, /record\.matches >= 3/);
+  assert.match(app, /const eligible = \(records, minimumMatches = 3\)/);
+  assert.match(app, /record\.matches >= minimumMatches/);
   assert.match(app, /\['Lieblingspartner', leaders\.favoritePartners/);
   assert.match(app, /\['Lieblingsgegner', leaders\.favoriteOpponents/);
   assert.match(app, /\['Angstgegner', leaders\.fearedOpponents/);
@@ -418,6 +419,7 @@ test('all player names in statistic facts open the public profile', () => {
 
 test('profile relationship leaders require three matches and use win rate', () => {
   assert.match(app, /const parts = \[\s*`\$\{formatProfileMatchCount\(record\.matches\)\} Partien`,\s*`\$\{formatProfileMatchCount\(record\.wins\)\}/);
+  assert.match(app, /\['Angstpartner', leaders\.fearedPartners, 'neg'\]/);
   const leaders = evaluateRelationshipLeaders([
     { outcome: 'win', partnerNames: ['Partner A', 'Partner A'], opponentNames: ['Gegner X'] },
     { outcome: 'win', partnerNames: ['Partner A'], opponentNames: ['Gegner X'] },
@@ -448,6 +450,30 @@ test('profile relationship leaders require three matches and use win rate', () =
   assert.equal(neutralLeaders.favoritePartners.length, 0);
   assert.equal(neutralLeaders.favoriteOpponents.length, 0);
   assert.equal(neutralLeaders.fearedOpponents.length, 0);
+});
+
+test('feared partners require three matches and a win rate below 50 percent', () => {
+  const belowThreshold = evaluateRelationshipLeaders(Array.from({ length: 2 }, () => ({
+    outcome: 'loss',
+    partnerNames: ['Partner A'],
+    opponentNames: []
+  })));
+  assert.equal(belowThreshold.fearedPartners.length, 0);
+
+  const fearedPartner = evaluateRelationshipLeaders(Array.from({ length: 3 }, (_, index) => ({
+    outcome: index < 1 ? 'win' : 'loss',
+    partnerNames: ['Partner A'],
+    opponentNames: []
+  })));
+  assert.equal(fearedPartner.fearedPartners[0].name, 'Partner A');
+  assert.equal(fearedPartner.fearedPartners[0].matches, 3);
+
+  const neutralPartner = evaluateRelationshipLeaders(Array.from({ length: 4 }, (_, index) => ({
+    outcome: index < 2 ? 'win' : 'loss',
+    partnerNames: ['Partner 50'],
+    opponentNames: []
+  })));
+  assert.equal(neutralPartner.fearedPartners.length, 0);
 });
 
 test('profile relationship leaders include every player tied on the leading win rate', () => {

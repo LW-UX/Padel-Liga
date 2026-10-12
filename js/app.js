@@ -1745,8 +1745,8 @@ function getPlayerProfileRelationshipLeaders(matches = []) {
       .forEach(name => recordResult(opponents, name, match));
   });
 
-  const eligible = records => [...records.values()]
-    .filter(record => record.matches >= 3)
+  const eligible = (records, minimumMatches = 3) => [...records.values()]
+    .filter(record => record.matches >= minimumMatches)
     .map(record => ({ ...record, winRate: record.wins / record.matches }));
   const bestFirst = (left, right) =>
     right.winRate - left.winRate ||
@@ -1769,6 +1769,7 @@ function getPlayerProfileRelationshipLeaders(matches = []) {
 
   return {
     favoritePartners: tiedLeaders(eligiblePartners, record => record.winRate > 0.5, bestFirst),
+    fearedPartners: tiedLeaders(eligiblePartners, record => record.winRate < 0.5, worstFirst),
     favoriteOpponents: tiedLeaders(eligibleOpponents, record => record.winRate > 0.5, bestFirst),
     fearedOpponents: tiedLeaders(eligibleOpponents, record => record.winRate < 0.5, worstFirst)
   };
@@ -1780,6 +1781,7 @@ function renderPlayerProfileRelationships(matches = []) {
   const leaders = getPlayerProfileRelationshipLeaders(matches);
   const relationships = [
     ['Lieblingspartner', leaders.favoritePartners, 'pos'],
+    ['Angstpartner', leaders.fearedPartners, 'neg'],
     ['Lieblingsgegner', leaders.favoriteOpponents, 'pos'],
     ['Angstgegner', leaders.fearedOpponents, 'neg']
   ].filter(([, records]) => records.length);
