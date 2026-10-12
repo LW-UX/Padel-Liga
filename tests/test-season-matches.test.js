@@ -14,15 +14,19 @@ const openMatchMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261008140000_add_open_test_matchday_three.sql'),
   'utf8'
 );
+const openMatchSixMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261012230000_add_open_test_match_six.sql'),
+  'utf8'
+);
 
 const context = { window: {} };
 vm.runInNewContext(source, context);
 const season = context.window.PADEL_SEASON;
 
-test('test season contains five clean matches including an open matchday three', () => {
+test('test season contains six clean matches including the open matchday-three matches', () => {
   assert.deepEqual(
     JSON.parse(JSON.stringify(season.matches.map(match => match.id))),
-    Array.from({ length: 5 }, (_, index) => `test-2026-partie-${index + 1}`)
+    Array.from({ length: 6 }, (_, index) => `test-2026-partie-${index + 1}`)
   );
   assert.ok(season.matches.every(match => (
     match.result === null && match.sets === null && match.winner === null
@@ -38,6 +42,8 @@ test('test season contains five clean matches including an open matchday three',
   assert.match(openMatchMigration, /values \('test-2026', 3, null, null, null\)/);
   assert.match(openMatchMigration, /'test-2026-partie-5'[\s\S]*'league'[\s\S]*'best-of-three'[\s\S]*null/);
   assert.match(openMatchMigration, /public\.profiles[\s\S]*profile\.player_id = any\(expected_players\)/);
+  assert.match(openMatchSixMigration, /target_season_id[\s\S]*'test-2026-partie-6'[\s\S]*'league'[\s\S]*'best-of-three'/);
+  assert.match(openMatchSixMigration, /match\.cancelled_at is null[\s\S]*match\.betting_open/);
 });
 
 test('all test matches use only the four test players with GMX and Gmail opposing', () => {

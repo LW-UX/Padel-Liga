@@ -107,6 +107,21 @@ window.PADEL_SEASON = {
       winner: null,
       team1: { playerIds: ["ludi_gmx", "ludi_ionos"] },
       team2: { playerIds: ["ludi_gmail", "ludwig_w"] }
+    },
+    {
+      id: "test-2026-partie-6",
+      type: "season",
+      seasonId: "test-2026",
+      countsForRanking: true,
+      countsForElo: true,
+      matchday: 3,
+      date: null,
+      time: null,
+      result: null,
+      sets: null,
+      winner: null,
+      team1: { playerIds: ["ludi_gmx", "ludi_ionos"] },
+      team2: { playerIds: ["ludi_gmail", "ludwig_w"] }
     }
   ],
   articles: []
