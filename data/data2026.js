@@ -1383,21 +1383,6 @@ window.PADEL_SEASON = {
       "sieger": null
     }
   ],
-  "homeAnnouncement": {
-    "expiresAt": "2026-10-15T18:00:00+02:00",
-    "meta": "Save the Date  ·  15.10.2026  ·  AB 18 UHR",
-    "title": "Final Four: Donnerstag, der 15.",
-    "body": [
-      {
-        "type": "p",
-        "text": "Jetzt steht der Termin: Am 15. Oktober um 18 Uhr steigt das Final Four der Padel-Liga Sommer 2026. Die besten vier Spieler der Saison kämpfen in drei wechselnden Teamkonstellationen um den Titel – ein Satz pro Partie, jeder mit jedem und gegen jeden."
-      },
-      {
-        "type": "p",
-        "text": "Wer wird der erste Champion der Padel-Liga?"
-      }
-    ]
-  },
   "articles": [
     {
       "spieltag": 1,
@@ -2268,9 +2253,104 @@ window.PADEL_SEASON = {
     },
     {
       "spieltag": 8,
-      "startDate": null,
-      "endDate": null,
-      "title": "Final Four"
+      "startDate": "2026-10-12",
+      "endDate": "2026-10-15",
+      "title": "Die Kandidaten im Porträt",
+      "meta": "FINAL FOUR  ·  15. OKTOBER 2026",
+      "body": [
+        {
+          "type": "p",
+          "text": "Das Final Four der Padel-Liga 2026 steht an. Drei Partien, wechselnde Partner, jeder spielt einmal mit jedem. Doch wer nimmt eigentlich teil? Hier sind die Kandidaten im Porträt."
+        },
+        {
+          "type": "h",
+          "text": "Marco M. - Der Unauffällige"
+        },
+        {
+          "type": "p",
+          "text": "<em>Platz 1 · 5 Siege aus 5 Partien · 15 Punkte · Elo 1199</em>"
+        },
+        {
+          "type": "p",
+          "text": "Ungeschlagen, beste Differenz, höchster Elo-Score der Liga, und trotzdem redet kaum jemand über ihn. Sein Weg ins Final Four war, vorsichtig formuliert, nicht der steinigste. Aber Marco ist zudem ausgebildeter Tennisspieler und mit viel Demut ausgestattet. Große Töne braucht er nicht, er spielt leise und solide seine Partie herunter, ohne Ausreißer nach oben oder unten."
+        },
+        {
+          "type": "p",
+          "text": "Wer nicht überheblich wird, stolpert auch nicht über die eigene Überheblichkeit. Bleibt eine einzige Schwachstelle und die hat mit Padel nichts zu tun. Marcos Achillesferse ist sein Immunsystem. Kein Gegner hat ihn in dieser Saison bezwungen. Wird es am Ende der eigene Körper sein, der ihm zum Stolperstein wird?"
+        },
+        {
+          "type": "h",
+          "text": "Luca W. - Der Gedankenspieler"
+        },
+        {
+          "type": "p",
+          "text": "<em>Platz 2 · 5 Siege aus 6 Partien · 15 Punkte · Elo 1051</em>"
+        },
+        {
+          "type": "p",
+          "text": "Ohne ihn gäbe es diese Liga womöglich nicht. Gemeinsam mit Vale initiierte er einst das erste Padel-Match der HSQ-Gruppe und legte damit den Grundstein für die Padel-Liga. Spielerisch startete er mit Defiziten, entwickelte sich aber stetig weiter, und was noch fehlt, gleicht er mit Mindset aus. Mit dem neuen Profischläger ist nun auch das letzte Puzzlestück gefunden."
+        },
+        {
+          "type": "p",
+          "text": "Seine gefährlichste Waffe liegt allerdings nicht in der Hand, sie sitzt im Mund. Luca ist sich für keinen Trashtalk zu schade. Er nistet sich regelmäßig in den Köpfen seiner Gegner ein und gewinnt Spiele, bevor der erste Ball überhaupt geschlagen ist. Schafft er es auch diesmal in die Köpfe der anderen, oder verzettelt er sich in seinen eigenen Spielchen?"
+        },
+        {
+          "type": "h",
+          "text": "Jonas L. - Der Aufstrebende"
+        },
+        {
+          "type": "p",
+          "text": "<em>Platz 3 · 5 Siege aus 6 Partien · 14 Punkte · Elo 1011</em>"
+        },
+        {
+          "type": "p",
+          "text": "Vor dem ersten Spieltag hatten ihn die wenigsten auf dem Zettel, und das war keine Respektlosigkeit, sondern Logik. Jonas ging ohne jede Vorkenntnis in diese Saison. Seine Spiele waren hart umkämpft, und er hat sich seinen Platz Partie für Partie erarbeitet. Von null ins Final Four zu kommen ist schon eine Leistung für sich."
+        },
+        {
+          "type": "p",
+          "text": "Jonas hat dabei den Vorteil dessen, der nichts zu verlieren hat. Niemand erwartet den Titel von ihm. Die Frage ist, wie weit diese Unbekümmertheit trägt. Reicht sie bis zum Sieg, weil ihm keiner den Druck macht, den sich die anderen selbst machen? Oder ist das Niveau eines Final Fours dann doch eine Nummer zu groß und weist den aufgehenden Stern in seine Schranken?"
+        },
+        {
+          "type": "h",
+          "text": "Marcel M. - Der Favorit"
+        },
+        {
+          "type": "p",
+          "text": "<em>Platz 4 · 5 Siege aus 6 Partien · 14 Punkte · Elo 1170</em>"
+        },
+        {
+          "type": "p",
+          "text": "Das Teilnehmerfeld ist sich einig: Marcel geht als Favorit in den Abend. Die Gründe sind schnell aufgezählt. Marcel trainiert wöchentlich in Augsburg. Und zwar im Eins-gegen-eins, was auf dem Padelplatz ungefähr so gnädig ist wie ein Bergsprint mit Gewichtsweste. Er spielt einen Profischläger und bringt die Einstellung mit, die er selbst gern unter dem Begriff Spirit zusammenfasst. Rechnet man das alles zusammen, müsste er unter normalen Umständen das Ding nach Hause holen."
+        },
+        {
+          "type": "p",
+          "text": "Das Problem ist, dass Marcel das weiß und es auch zeigt. Ein Final Four findet aber selten unter normalen Umständen statt, und Favoriten sind schon über weniger gestolpert als über den eigenen Übermut. Bringt der ihn zu Fall?"
+        },
+        {
+          "type": "p",
+          "text": "Vorher steht allerdings eine noch grundsätzlichere Frage im Raum: Ist er überhaupt dabei? Oder macht ihm Ludwig W. einen Strich durch die Rechnung?"
+        },
+        {
+          "type": "h",
+          "text": "Ludwig W. - Der Runner-up"
+        },
+        {
+          "type": "p",
+          "text": "<em>Platz 5 · 4 Siege aus 5 Partien · 11 Punkte · Elo 1134</em>"
+        },
+        {
+          "type": "p",
+          "text": "Er hat die Liga organisiert, den Spielplan gebaut und die Tabelle gepflegt. Jetzt steht er auf Platz 5. Das ist der undankbarste Rang, allerdings hat er eine ganze Partie weniger gespielt. Diese steht noch aus. In der Partie 10 trifft Ludwig an der Seite von Marco M. auf Agnes K. und Lukas P. Die Siegwahrscheinlichkeit liegt bei 87 zu 13, doch ein Sieg allein reicht nicht. Es muss mindestens ein 6:2, 6:1 her. Dann zieht Ludwig vorbei und Marcel, der Favorit, schaut beim Final Four von draußen zu. Partie 10 war zu Redaktionsschluss noch nicht gespielt, die Frage ist also offen."
+        },
+        {
+          "type": "p",
+          "text": "Pikant ist die Personalie an seiner Seite. Ludwig braucht einen gesunden Marco, um sich sportlich zu qualifizieren. Fällt Marco dagegen nicht nur für das Nachholspiel, sondern auch für den Finalabend aus, rückt Ludwig trotzdem nach und Marcel behält seinen Platz."
+        },
+        {
+          "type": "p",
+          "text": "27 Partien waren angesetzt. Ausgerechnet am Ende entscheidet sich, wer beim Final Four auf dem Platz steht. Vier der fünf Kandidaten kommen von Envidual, Headsquare schickt genau einen Mann ins Rennen. Und der steht auf Platz 1."
+        }
+      ]
     },
     {
       "spieltag": "abschluss",

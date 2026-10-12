@@ -3307,8 +3307,34 @@ function renderArticleCard(article) {
   </article>`;
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Verlinkt Spielernamen in der Form „Vorname I.“ mit dem Spielerprofil (nur Zwischenüberschriften und Spielblöcke).
+function linkArticlePlayerNames(html) {
+  const players = (PADEL_DATA?.allPlayers || PADEL_DATA?.players || window.PADEL_PLAYERS || [])
+    .filter(player => player?.id && player?.name);
+  if (!html || !players.length) return html || '';
+
+  const playersByKey = new Map(players.map(player => [player.name.replace(/\.$/, ''), player]));
+  const pattern = new RegExp(
+    `(^|[^\\p{L}])(${[...playersByKey.keys()].sort((a, b) => b.length - a.length).map(escapeRegExp).join('|')})\\.?(?![\\p{L}])`,
+    'gu'
+  );
+
+  return String(html).split(/(<[^>]*>)/).map(part => {
+    if (part.startsWith('<')) return part;
+    return part.replace(pattern, (match, prefix, key) => {
+      const player = playersByKey.get(key);
+      const visibleName = match.slice(prefix.length);
+      return `${prefix}${renderPlayerProfileLink(player, 'article-player-link', visibleName)}`;
+    });
+  }).join('');
+}
+
 function renderArticleBlock(block) {
-  if (block.type === 'h') return `<h4>${block.text}</h4>`;
+  if (block.type === 'h') return `<h4>${linkArticlePlayerNames(block.text)}</h4>`;
   if (block.type === 'match') {
     let matchup = block.text;
     let result = block.result;
@@ -3318,7 +3344,7 @@ function renderArticleBlock(block) {
       resultLabel = 'Ergebnis';
     }
     return `<div class="article-match">
-      <span>${matchup}</span>
+      <span>${linkArticlePlayerNames(matchup)}</span>
       ${result ? `<span class="article-match-result">${resultLabel}: ${result}</span>` : ''}
     </div>`;
   }
