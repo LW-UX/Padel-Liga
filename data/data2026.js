@@ -2344,7 +2344,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Pikant ist die Personalie an seiner Seite. Ludwig braucht einen gesunden Marco, um sich sportlich zu qualifizieren. Fällt Marco dagegen nicht nur für das Nachholspiel, sondern auch für den Finalabend aus, rückt Ludwig trotzdem nach und Marcel behält seinen Platz."
+          "text": "Pikant ist die Personalie an seiner Seite. Ludwig braucht einen gesunden Marco, um sich sportlich zu qualifizieren. Fällt Marco dagegen nicht nur für die offene Partie, sondern auch für den Finalabend aus, rückt Ludwig trotzdem nach und Marcel behält seinen Platz."
         },
         {
           "type": "p",
