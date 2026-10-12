@@ -5,7 +5,7 @@ const test = require('node:test');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const source = fs.readFileSync(path.join(root, 'data', 'data-test-2026.js'), 'utf8');
+const source = fs.readFileSync(path.join(root, 'data', 'data-2026-test.js'), 'utf8');
 const migration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260922130000_reset_test_season_roster.sql'),
   'utf8'
@@ -24,6 +24,7 @@ vm.runInNewContext(source, context);
 const season = context.window.PADEL_SEASON;
 
 test('test season contains six clean matches including the open matchday-three matches', () => {
+  assert.equal(season.id, '2026-test');
   assert.deepEqual(
     JSON.parse(JSON.stringify(season.matches.map(match => match.id))),
     Array.from({ length: 6 }, (_, index) => `test-2026-partie-${index + 1}`)

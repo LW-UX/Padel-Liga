@@ -23,7 +23,7 @@ padel-liga/
 │   ├── data-2026-sommer.js       Teilnehmer, Ligaspiele und Inhalte der Saison „Sommer 2026“
 │   ├── data-2026-winter.js       Teilnehmer und Turnierplatzhalter für „Winter 2026“
 │   ├── data-2027-cup.js          Turnierplatzhalter für den „Cup 2027“
-│   ├── data-test-2026.js         Temporäre Test-Saison für Ergebnisabläufe
+│   ├── data-2026-test.js         Temporäre Test-Saison für Ergebnisabläufe
 │   ├── training-matches.js       Saisonunabhängige Trainingsspiele
 │   ├── supabase-config.js         Öffentliche Supabase-Verbindungsdaten
 │   └── info.js                   Globale Regeln und allgemeine Infos
@@ -173,7 +173,7 @@ Die Datenbank trennt Spieler, Saisons, Ligen, Saison-Teilnahmen, Spiele, Turnier
 
 ## Spielergebnisse und Rollen
 
-Die Datenbank ist die aktive Quelle für strukturierte Saison- und Ergebnisdaten; die statischen Saisondateien dienen als kontrollierter Fallback. Die temporäre Saison `test-2026` erprobt die Ergebnisabläufe:
+Die Datenbank ist die aktive Quelle für strukturierte Saison- und Ergebnisdaten; die statischen Saisondateien dienen als kontrollierter Fallback. Die temporäre Saison `2026-test` erprobt die Ergebnisabläufe:
 
 - Neue Konten erhalten zunächst die Rolle `tipper`.
 - Vorab hinterlegte und bestätigte E-Mail-Adressen werden automatisch einem Spielerprofil zugeordnet.

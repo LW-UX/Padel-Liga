@@ -83,7 +83,7 @@ test('the cleanup removes Winter participants and the automation keeps Sommer ac
 
 test('the test season is hidden from pickers but remains available by direct URL', () => {
   const { PADEL_SEASONS } = loadWindowScript('data/seasons.js');
-  const testSeason = PADEL_SEASONS.find(season => season.id === 'test-2026');
+  const testSeason = PADEL_SEASONS.find(season => season.id === '2026-test');
   const app = fs.readFileSync(path.join(repositoryRoot, 'js/app.js'), 'utf8');
   const tipPage = fs.readFileSync(path.join(repositoryRoot, 'js/tipp-page.js'), 'utf8');
 

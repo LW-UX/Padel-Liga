@@ -357,6 +357,43 @@ function winProbability(match) {
   return `${team1} : ${100 - team1} %`;
 }
 
+// Früher Vogel und Langschläfer wie in der All-Time-Statistik: durchschnittliche
+// Anstoßzeit aller abgeschlossenen offiziellen Partien mit Uhrzeit.
+const berlinMinutes = value => {
+  const parts = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+    .formatToParts(new Date(value));
+  return Number(parts.find(part => part.type === 'hour').value) * 60 + Number(parts.find(part => part.type === 'minute').value);
+};
+const formatMinutes = minutes => `${String(Math.floor(Math.round(minutes) / 60)).padStart(2, '0')}:${String(Math.round(minutes) % 60).padStart(2, '0')}`;
+
+function timeExtremes(until = null) {
+  const times = new Map();
+  officialCompleted
+    .filter(match => match.matchAt && (!until || String(match.matchAt) < until))
+    .forEach(match => [...match.team1, ...match.team2].forEach(id => {
+      times.set(id, [...(times.get(id) || []), berlinMinutes(match.matchAt)]);
+    }));
+  const averages = [...times.entries()]
+    .map(([id, values]) => ({ id, count: values.length, average: values.reduce((sum, value) => sum + value, 0) / values.length }))
+    .sort((a, b) => a.average - b.average || b.count - a.count || name(a.id).localeCompare(name(b.id), 'de'));
+  return averages.length ? { early: averages[0], late: averages[averages.length - 1] } : null;
+}
+
+const extremesNow = timeExtremes();
+const extremesBefore = since ? timeExtremes(since) : null;
+
+function timeTitles(id) {
+  if (!extremesNow) return [];
+  return [['early', 'Früher Vogel'], ['late', 'Langschläfer']]
+    .filter(([key]) => extremesNow[key].id === id)
+    .map(([key, label]) => {
+      const holder = extremesNow[key];
+      const previous = extremesBefore?.[key];
+      const change = previous && previous.id !== id ? `, neu seit ${formatDate(since)} (vorher ${name(previous.id)})` : '';
+      return `All-Time-${label}: Ø ${formatMinutes(holder.average)} Uhr aus ${holder.count} Partien${change}`;
+    });
+}
+
 function achievements(id) {
   return (profiles[id]?.achievements || [])
     .map(entry => `${entry.title}${entry.subtitle ? ` (${entry.subtitle})` : ''}${entry.seasonId ? ` · ${seasonLabels.get(entry.seasonId) || entry.seasonId}` : ''}`);
@@ -373,6 +410,16 @@ if (hasTable) {
   lines.push('', `## Tabelle (Top ${places} qualifiziert)`);
   table.forEach(entry => {
     lines.push(`${entry.rank}. ${name(entry.id)} (${company(entry.id)}) · ${entry.points} P · ${entry.wins}/${entry.played} Siege · Diff ${signed(entry.gameDiff)} · offen bis ST ${matchday}: ${entry.open} · Elo ${currentElo(entry.id) || '—'}`);
+  });
+}
+
+if (extremesNow) {
+  lines.push('', '## All-Time-Anstoßzeiten');
+  [['early', 'Früher Vogel'], ['late', 'Langschläfer']].forEach(([key, label]) => {
+    const holder = extremesNow[key];
+    const previous = extremesBefore?.[key];
+    const change = previous && previous.id !== holder.id ? ` · neu seit ${formatDate(since)}, vorher ${name(previous.id)}` : '';
+    lines.push(`${label}: ${name(holder.id)} (Ø ${formatMinutes(holder.average)} Uhr aus ${holder.count} Partien)${change}`);
   });
 }
 
@@ -423,6 +470,7 @@ for (const match of matchdayMatches) {
       last && !lastIsThisMatch && dominance(orientedResult(last), 'Letztes Spiel'),
       streak(id) && `${streak(id)}${lastIsThisMatch ? ' (inklusive dieser Partie)' : ''}`,
       ...tableOutlook(id, match),
+      ...timeTitles(id),
       ...achievements(id).map(entry => `Auszeichnung: ${entry}`),
       !lastIsThisMatch && lastMatchText(id) && `Letztes Spiel: ${lastMatchText(id)}`
     ].filter(Boolean);

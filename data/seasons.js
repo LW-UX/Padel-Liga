@@ -21,10 +21,10 @@ window.PADEL_SEASONS = [
     default: false
   },
   {
-    id: "test-2026",
+    id: "2026-test",
     label: "Test-Saison",
     visualTheme: "neutral",
-    file: "data/data-test-2026.js?v=2026-10-08-unrated-sort-date",
+    file: "data/data-2026-test.js?v=2026-10-12-season-id-order",
     hidden: true,
     default: false
   }

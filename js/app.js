@@ -38,7 +38,8 @@ const LEGACY_SEASON_IDS = Object.freeze({
   '2026': '2026-sommer',
   'sommer-2026': '2026-sommer',
   'winter-2026': '2026-winter',
-  'cup-2027': '2027-cup'
+  'cup-2027': '2027-cup',
+  'test-2026': '2026-test'
 });
 let playerProfileLastTrigger = null;
 
@@ -1312,7 +1313,7 @@ function getLocalPlayerProfile(playerId) {
     || (window.PADEL_PLAYERS || []).find(item => item.id === playerId);
   if (!player) return null;
 
-  const profileSeasonEnabled = selectedSeason?.id !== 'test-2026';
+  const profileSeasonEnabled = selectedSeason?.id !== '2026-test';
   const matches = profileSeasonEnabled
     ? (PADEL_DATA?.allMatches || PADEL_DATA?.matches || [])
       .filter(match => (match.sieger !== null || isCancelledMatch(match))

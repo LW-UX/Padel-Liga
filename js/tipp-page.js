@@ -3,7 +3,8 @@
     '2026': '2026-sommer',
     'sommer-2026': '2026-sommer',
     'winter-2026': '2026-winter',
-    'cup-2027': '2027-cup'
+    'cup-2027': '2027-cup',
+    'test-2026': '2026-test'
   });
 
   function normalizeSeasonId(id) {

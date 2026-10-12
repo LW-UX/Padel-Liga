@@ -7,7 +7,8 @@
   const LEGACY_DATABASE_SEASON_IDS = Object.freeze({
     '2026-sommer': '2026',
     '2026-winter': 'winter-2026',
-    '2027-cup': 'cup-2027'
+    '2027-cup': 'cup-2027',
+    '2026-test': 'test-2026'
   });
   const state = {
     client: null,

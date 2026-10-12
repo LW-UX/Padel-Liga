@@ -1,5 +1,5 @@
 window.PADEL_SEASON = {
-  id: "test-2026",
+  id: "2026-test",
   label: "Test-Saison",
   title: "Padel-Liga · Test-Saison",
   competition: {
@@ -36,7 +36,7 @@ window.PADEL_SEASON = {
     {
       id: "test-2026-partie-1",
       type: "season",
-      seasonId: "test-2026",
+      seasonId: "2026-test",
       countsForRanking: true,
       countsForElo: true,
       matchday: 1,
@@ -51,7 +51,7 @@ window.PADEL_SEASON = {
     {
       id: "test-2026-partie-2",
       type: "season",
-      seasonId: "test-2026",
+      seasonId: "2026-test",
       countsForRanking: true,
       countsForElo: true,
       matchday: 1,
@@ -66,7 +66,7 @@ window.PADEL_SEASON = {
     {
       id: "test-2026-partie-3",
       type: "season",
-      seasonId: "test-2026",
+      seasonId: "2026-test",
       countsForRanking: true,
       countsForElo: true,
       matchday: 2,
@@ -81,7 +81,7 @@ window.PADEL_SEASON = {
     {
       id: "test-2026-partie-4",
       type: "season",
-      seasonId: "test-2026",
+      seasonId: "2026-test",
       countsForRanking: true,
       countsForElo: true,
       matchday: 2,
@@ -96,7 +96,7 @@ window.PADEL_SEASON = {
     {
       id: "test-2026-partie-5",
       type: "season",
-      seasonId: "test-2026",
+      seasonId: "2026-test",
       countsForRanking: true,
       countsForElo: true,
       matchday: 3,
@@ -111,7 +111,7 @@ window.PADEL_SEASON = {
     {
       id: "test-2026-partie-6",
       type: "season",
-      seasonId: "test-2026",
+      seasonId: "2026-test",
       countsForRanking: true,
       countsForElo: true,
       matchday: 3,

@@ -22,12 +22,14 @@ test('season IDs and filenames use the sortable year-type schema', () => {
   const { PADEL_SEASONS } = loadWindowScript('data/seasons.js');
   const { PADEL_SEASON } = loadWindowScript('data/data-2026-sommer.js');
   const summer = PADEL_SEASONS.find(season => season.id === '2026-sommer');
+  const testSeason = PADEL_SEASONS.find(season => season.id === '2026-test');
 
   assert.equal(summer.label, 'Sommer 2026');
   assert.match(summer.file, /^data\/data-2026-sommer\.js/);
   assert.equal(summer.default, true);
   assert.equal(PADEL_SEASON.id, '2026-sommer');
   assert.equal(PADEL_SEASON.matchIdPrefix, 'season-2026');
+  assert.match(testSeason.file, /^data\/data-2026-test\.js/);
   assert.deepEqual(
     JSON.parse(JSON.stringify(PADEL_SEASONS.filter(season => !season.hidden).map(season => season.id))),
     ['2026-sommer', '2026-winter', '2027-cup']
@@ -39,15 +41,17 @@ test('old season links are normalized to the year-type schema', () => {
     assert.match(source, /'2026': '2026-sommer'/);
     assert.match(source, /'winter-2026': '2026-winter'/);
     assert.match(source, /'cup-2027': '2027-cup'/);
+    assert.match(source, /'test-2026': '2026-test'/);
     assert.match(source, /url\.searchParams\.set\('saison', normalized\)/);
   }
 });
 
-test('database migration renames every public season and cascades all references', () => {
+test('database migration renames every season and cascades all references', () => {
   assert.match(migration, /when '2026' then '2026-sommer'/);
   assert.match(migration, /when 'winter-2026' then '2026-winter'/);
+  assert.match(migration, /when 'test-2026' then '2026-test'/);
   assert.match(migration, /when 'cup-2027' then '2027-cup'/);
   assert.equal((migration.match(/on update cascade/g) || []).length, 6);
-  assert.match(migration, /where id in \('2026', 'winter-2026', 'cup-2027'\)/);
-  assert.match(migration, /where id in \('2026-sommer', '2026-winter', '2027-cup'\)/);
+  assert.match(migration, /where id in \('2026', 'winter-2026', 'test-2026', 'cup-2027'\)/);
+  assert.match(migration, /where id in \('2026-sommer', '2026-winter', '2026-test', '2027-cup'\)/);
 });

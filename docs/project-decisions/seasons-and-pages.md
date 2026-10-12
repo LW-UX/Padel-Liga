@@ -33,6 +33,7 @@ Diese Datei ist die kanonische Quelle für Saisonidentitäten, Datenquellen, Sai
 ## Nicht öffentliche Test-Saison
 
 - Eine technisch nutzbare Test-Saison bleibt in den öffentlichen Saisonauswahlen von Liga und Tippseite verborgen und ist für kontrollierte Tests direkt erreichbar.
+- Die Test-Saison des Jahres 2026 verwendet entsprechend dem allgemeinen ID-Schema die technische ID `2026-test`.
 - Laufende Partien einer verborgenen Test-Saison lösen den globalen LIVE-Einstieg nicht aus. Innerhalb der Test-Saison bleiben Liveticker und laufende Spielstände direkt nutzbar.
 - Sie enthält dedizierte Testprofile und Szenarien für Konten, Einladungen, Ergebnisse, Gegenvorschläge, Tipps, Training und Liveticker. Der konkrete Datenbestand ist kein Teil des Projektgedächtnisses.
 - Test-Saisons und reine Testpartien sind von öffentlichen Profilen, Karrierewerten, Auszeichnungen, offiziellen Ranglisten und globalem Elo ausgeschlossen.
