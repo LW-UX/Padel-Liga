@@ -14,10 +14,10 @@ function loadWindowScript(file) {
 
 test('Sommer 2026 remains the repository default while Winter is selectable', () => {
   const { PADEL_SEASONS } = loadWindowScript('data/seasons.js');
-  const { PADEL_SEASON } = loadWindowScript('data/data-winter-2026.js');
+  const { PADEL_SEASON } = loadWindowScript('data/data-2026-winter.js');
 
-  assert.equal(PADEL_SEASONS.find(season => season.default)?.id, '2026');
-  assert.equal(PADEL_SEASON.id, 'winter-2026');
+  assert.equal(PADEL_SEASONS.find(season => season.default)?.id, '2026-sommer');
+  assert.equal(PADEL_SEASON.id, '2026-winter');
   assert.equal(PADEL_SEASON.label, 'Winter 2026');
   assert.equal(PADEL_SEASON.startDate, '2026-10-01');
   assert.deepEqual(
@@ -35,7 +35,7 @@ test('Sommer 2026 remains the repository default while Winter is selectable', ()
 });
 
 test('Winter contains two semifinals and the three rotating Final Four sets', () => {
-  const { PADEL_SEASON } = loadWindowScript('data/data-winter-2026.js');
+  const { PADEL_SEASON } = loadWindowScript('data/data-2026-winter.js');
   const semifinals = PADEL_SEASON.matches.filter(match => match.stage === 'semifinal');
   const finalFour = PADEL_SEASON.matches.filter(match => match.stage === 'final-four');
 
@@ -62,7 +62,7 @@ test('Winter contains two semifinals and the three rotating Final Four sets', ()
 });
 
 test('Winter 2026 has no participants before the live roster is confirmed', () => {
-  const { PADEL_SEASON } = loadWindowScript('data/data-winter-2026.js');
+  const { PADEL_SEASON } = loadWindowScript('data/data-2026-winter.js');
   assert.deepEqual(JSON.parse(JSON.stringify(PADEL_SEASON.participants)), []);
 });
 

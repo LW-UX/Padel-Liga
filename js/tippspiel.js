@@ -4,6 +4,11 @@
     '6:0', '6:1', '6:2', '6:3', '6:4', '7:5', '7:6',
     '0:6', '1:6', '2:6', '3:6', '4:6', '5:7', '6:7'
   ];
+  const LEGACY_DATABASE_SEASON_IDS = Object.freeze({
+    '2026-sommer': '2026',
+    '2026-winter': 'winter-2026',
+    '2027-cup': 'cup-2027'
+  });
   const state = {
     client: null,
     season: null,
@@ -246,18 +251,26 @@
   }
 
   async function loadPublicData() {
-    const seasonId = state.season?.id;
-    const [{ data: matches, error: matchesError }, { data: leaderboard, error: leaderboardError }] = await Promise.all([
+    const seasonId = state.season?.databaseId || state.season?.id;
+    const legacySeasonId = LEGACY_DATABASE_SEASON_IDS[seasonId];
+    const seasonIds = legacySeasonId ? [seasonId, legacySeasonId] : [seasonId];
+    const [{ data: matches, error: matchesError }, primaryLeaderboard] = await Promise.all([
       state.client
         .from('matches')
-        .select('id, format, competition_stage, betting_open, actual_sets, result_details, match_at, cancelled_at')
-        .eq('season_id', seasonId),
+        .select('id, season_id, format, competition_stage, betting_open, actual_sets, result_details, match_at, cancelled_at')
+        .in('season_id', seasonIds),
       state.client.rpc('get_prediction_leaderboard', { p_season_id: seasonId })
     ]);
     if (matchesError) throw matchesError;
-    if (leaderboardError) throw leaderboardError;
+    if (primaryLeaderboard.error) throw primaryLeaderboard.error;
+    let leaderboard = primaryLeaderboard.data || [];
+    if (!leaderboard.length && legacySeasonId) {
+      const fallbackLeaderboard = await state.client.rpc('get_prediction_leaderboard', { p_season_id: legacySeasonId });
+      if (fallbackLeaderboard.error) throw fallbackLeaderboard.error;
+      leaderboard = fallbackLeaderboard.data || [];
+    }
     state.databaseMatches = new Map((matches || []).map(match => [match.id, match]));
-    state.leaderboard = leaderboard || [];
+    state.leaderboard = leaderboard;
   }
 
   async function savePrediction(matchId, prediction) {

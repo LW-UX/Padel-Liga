@@ -21,15 +21,17 @@ function loadSeasonOptions() {
 function evaluateProfileTheme(seasonId, achievement, seasons) {
   const colors = app.match(/const PROFILE_SEASON_COLORS = Object\.freeze\(\{[\s\S]*?\}\);/);
   const fallback = app.match(/const DEFAULT_PROFILE_SEASON_COLOR = PROFILE_SEASON_COLORS\.neutral;/);
+  const legacyIds = app.match(/const LEGACY_SEASON_IDS = Object\.freeze\(\{[\s\S]*?\}\);/);
+  const normalizeId = app.match(/function normalizeSeasonId\(id\) \{[\s\S]*?\n\}/);
   const theme = app.match(/function getSeasonVisualTheme\(seasonId, seasons = getSeasonOptions\(\)\) \{[\s\S]*?\n\}/);
   const seasonColor = app.match(/function getPlayerProfileSeasonColor\(seasonId, seasons = getSeasonOptions\(\)\) \{[\s\S]*?\n\}/);
   const achievementContext = app.match(/function getPlayerProfileAchievementContext\(achievement, seasons = getSeasonOptions\(\)\) \{[\s\S]*?\n\}/);
-  assert.ok(colors && fallback && theme && seasonColor && achievementContext);
+  assert.ok(colors && fallback && legacyIds && normalizeId && theme && seasonColor && achievementContext);
 
   const context = { seasonId, achievement, seasons, result: null };
   vm.createContext(context);
   vm.runInContext(
-    `${colors[0]}\n${fallback[0]}\n${theme[0]}\n${seasonColor[0]}\n${achievementContext[0]}\n` +
+    `${colors[0]}\n${fallback[0]}\n${legacyIds[0]}\n${normalizeId[0]}\n${theme[0]}\n${seasonColor[0]}\n${achievementContext[0]}\n` +
     `result = { color: getPlayerProfileSeasonColor(seasonId, seasons), context: getPlayerProfileAchievementContext(achievement, seasons) };`,
     context
   );
@@ -39,15 +41,15 @@ function evaluateProfileTheme(seasonId, achievement, seasons) {
 test('profile season colors are stable by visual theme instead of list position', () => {
   const seasons = loadSeasonOptions().reverse();
 
-  assert.deepEqual(evaluateProfileTheme('2026', { seasonId: '2026' }, seasons), {
+  assert.deepEqual(evaluateProfileTheme('2026-sommer', { seasonId: '2026-sommer' }, seasons), {
     color: '#FF8A5B',
     context: 'league'
   });
-  assert.deepEqual(evaluateProfileTheme('winter-2026', { seasonId: 'winter-2026' }, seasons), {
+  assert.deepEqual(evaluateProfileTheme('2026-winter', { seasonId: '2026-winter' }, seasons), {
     color: '#B794F6',
     context: 'league'
   });
-  assert.deepEqual(evaluateProfileTheme('cup-2027', { seasonId: 'cup-2027' }, seasons), {
+  assert.deepEqual(evaluateProfileTheme('2027-cup', { seasonId: '2027-cup' }, seasons), {
     color: '#50B7F5',
     context: 'cup'
   });
@@ -78,5 +80,5 @@ test('public season interfaces expose validated visual themes', () => {
   assert.match(migration, /when 'cup-2027' then 'cup'/);
   assert.match(migration, /visual_theme text[\s\S]*season\.visual_theme/);
   assert.match(migration, /'visualTheme', season\.visual_theme/);
-  assert.match(app, /visualTheme: season\.visual_theme \|\| staticOptions\.get\(season\.id\)\?\.visualTheme \|\| 'neutral'/);
+  assert.match(app, /visualTheme: season\.visual_theme \|\| staticOption\?\.visualTheme \|\| 'neutral'/);
 });

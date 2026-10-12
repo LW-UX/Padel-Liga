@@ -27,7 +27,7 @@ test('account cards use tournament labels across seasons and task groups', () =>
     assert.ok(fn, `${name} exists`);
     vm.runInContext(fn[0], context);
   }
-  for (const filename of ['data2026.js', 'data-winter-2026.js', 'data-cup-2027.js']) {
+  for (const filename of ['data-2026-sommer.js', 'data-2026-winter.js', 'data-2027-cup.js']) {
     const seasonContext = vm.createContext({ window: {} });
     vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'data', filename), 'utf8'), seasonContext);
     for (const match of seasonContext.window.PADEL_SEASON.matches) {
@@ -44,7 +44,7 @@ test('account cards use tournament labels across seasons and task groups', () =>
           `<span class="widget-label">${task.league_label} · ${label}</span>`
         ), `${filename}: ${match.id} in ${group} uses ${label}`);
       }
-      if (filename !== 'data2026.js') {
+      if (filename !== 'data-2026-sommer.js') {
         assert.equal(context.getTaskMatchLabel({ ...task, display_label: null }), label);
       }
     }

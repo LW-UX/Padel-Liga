@@ -1,5 +1,6 @@
 window.PADEL_SEASON = {
-  "id": "2026",
+  "id": "2026-sommer",
+  "matchIdPrefix": "season-2026",
   "label": "Sommer 2026",
   "title": "Padel-Liga Sommer 2026",
   "resultsEntryEnabled": true,

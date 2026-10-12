@@ -120,14 +120,16 @@ function evaluateProfileSummaryFormats(wins, matches, gameDiff) {
 }
 
 function evaluateParticipationOrder(participations, seasons) {
+  const legacyIds = app.match(/const LEGACY_SEASON_IDS = Object\.freeze\(\{[\s\S]*?\}\);/);
+  const normalizeId = app.match(/function normalizeSeasonId\(id\) \{[\s\S]*?\n\}/);
   const functionSource = app.match(
     /function orderPlayerProfileParticipations\(participations = \[\], seasons = getSeasonOptions\(\)\) \{[\s\S]*?\n\}/
   );
-  assert.ok(functionSource, 'profile participation ordering helper should be present');
+  assert.ok(legacyIds && normalizeId && functionSource, 'profile participation ordering helper should be present');
   const context = { participations, seasons, result: null };
   vm.createContext(context);
   vm.runInContext(
-    `${functionSource[0]}\nresult = orderPlayerProfileParticipations(participations, seasons);`,
+    `${legacyIds[0]}\n${normalizeId[0]}\n${functionSource[0]}\nresult = orderPlayerProfileParticipations(participations, seasons);`,
     context
   );
   return JSON.parse(JSON.stringify(context.result));
@@ -299,19 +301,19 @@ test('profile summary derives win rate and game difference per weighted match', 
 
 test('profile participations show the newest season first', () => {
   const participations = [
-    { seasonId: '2026', seasonLabel: 'Sommer 2026', isActive: true },
-    { seasonId: 'winter-2026', seasonLabel: 'Winter 2026', isActive: false }
+    { seasonId: '2026-sommer', seasonLabel: 'Sommer 2026', isActive: true },
+    { seasonId: '2026-winter', seasonLabel: 'Winter 2026', isActive: false }
   ];
   const seasons = [
-    { id: '2026', startDate: '2026-05-11' },
-    { id: 'winter-2026', startDate: '2026-10-01' }
+    { id: '2026-sommer', startDate: '2026-05-11' },
+    { id: '2026-winter', startDate: '2026-10-01' }
   ];
 
   assert.deepEqual(
     evaluateParticipationOrder(participations, seasons).map(participation => participation.seasonId),
-    ['winter-2026', '2026']
+    ['2026-winter', '2026-sommer']
   );
-  assert.deepEqual(participations.map(participation => participation.seasonId), ['2026', 'winter-2026']);
+  assert.deepEqual(participations.map(participation => participation.seasonId), ['2026-sommer', '2026-winter']);
 });
 
 test('profile participation overview ends with weighted training statistics', () => {
@@ -638,10 +640,10 @@ test('profile data excludes the test season and includes confirmed training roun
   assert.match(profileMigration, /when .* = .* then 'draw'/s);
 });
 
-test('2026 import matches the current static source dimensions', () => {
+test('Sommer 2026 import matches the current static source dimensions', () => {
   const context = { window: {} };
   vm.createContext(context);
-  vm.runInContext(fs.readFileSync(path.join(root, 'data/data2026.js'), 'utf8'), context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'data/data-2026-sommer.js'), 'utf8'), context);
   const season = context.window.PADEL_SEASON;
 
   assert.equal(season.players.length, 18);
@@ -661,9 +663,9 @@ test('2026 import matches the current static source dimensions', () => {
 test('Sommer 2026 label and confirmed profile achievements stay explicit', () => {
   const context = { window: {} };
   vm.createContext(context);
-  vm.runInContext(fs.readFileSync(path.join(root, 'data/data2026.js'), 'utf8'), context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'data/data-2026-sommer.js'), 'utf8'), context);
 
-  assert.equal(context.window.PADEL_SEASON.id, '2026');
+  assert.equal(context.window.PADEL_SEASON.id, '2026-sommer');
   assert.equal(context.window.PADEL_SEASON.label, 'Sommer 2026');
   assert.equal(context.window.PADEL_SEASON.title, 'Padel-Liga Sommer 2026');
   assert.match(importMigration, /'Sommer 2026'/);

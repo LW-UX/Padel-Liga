@@ -34,6 +34,12 @@ const PROFILE_SEASON_COLORS = Object.freeze({
   neutral: '#7E828B'
 });
 const DEFAULT_PROFILE_SEASON_COLOR = PROFILE_SEASON_COLORS.neutral;
+const LEGACY_SEASON_IDS = Object.freeze({
+  '2026': '2026-sommer',
+  'sommer-2026': '2026-sommer',
+  'winter-2026': '2026-winter',
+  'cup-2027': '2027-cup'
+});
 let playerProfileLastTrigger = null;
 
 function getViewerStorageKey() {
@@ -80,15 +86,11 @@ function applyAppHintVisibility() {
 }
 
 function orderSeasonOptions(seasons = []) {
-  const ordered = [...seasons];
-  const cupIndex = ordered.findIndex(season => season.id === 'cup-2027');
-  const winterIndexBeforeMove = ordered.findIndex(season => season.id === 'winter-2026');
-  if (cupIndex < 0 || winterIndexBeforeMove < 0 || cupIndex === winterIndexBeforeMove + 1) return ordered;
+  return [...seasons].sort((left, right) => String(left.id).localeCompare(String(right.id), 'de', { numeric: true }));
+}
 
-  const [cup] = ordered.splice(cupIndex, 1);
-  const winterIndex = ordered.findIndex(season => season.id === 'winter-2026');
-  ordered.splice(winterIndex + 1, 0, cup);
-  return ordered;
+function normalizeSeasonId(id) {
+  return LEGACY_SEASON_IDS[id] || id;
 }
 
 function getAllSeasonOptions() {
@@ -100,7 +102,17 @@ function getSeasonOptions() {
 }
 
 function getRequestedSeasonId() {
-  return new URLSearchParams(window.location.search).get('saison');
+  const requested = new URLSearchParams(window.location.search).get('saison');
+  return normalizeSeasonId(requested);
+}
+
+function normalizeLegacySeasonUrl() {
+  const url = new URL(window.location.href);
+  const requested = url.searchParams.get('saison');
+  const normalized = normalizeSeasonId(requested);
+  if (!requested || requested === normalized) return;
+  url.searchParams.set('saison', normalized);
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
 function getDefaultSeasonOption() {
@@ -191,14 +203,19 @@ async function loadDatabaseSeasonOptions() {
   if (!Array.isArray(data) || !data.length) return;
 
   const staticOptions = new Map(getAllSeasonOptions().map(season => [season.id, season]));
-  const databaseOptions = data.map(season => ({
-    ...staticOptions.get(season.id),
-    id: season.id,
-    label: season.label,
-    startDate: season.starts_on,
-    visualTheme: season.visual_theme || staticOptions.get(season.id)?.visualTheme || 'neutral',
-    default: Boolean(season.is_active)
-  }));
+  const databaseOptions = data.map(season => {
+    const id = normalizeSeasonId(season.id);
+    const staticOption = staticOptions.get(id);
+    return {
+      ...staticOption,
+      id,
+      databaseId: season.id,
+      label: staticOption?.label || season.label,
+      startDate: season.starts_on,
+      visualTheme: season.visual_theme || staticOption?.visualTheme || 'neutral',
+      default: Boolean(season.is_active)
+    };
+  });
   const databaseIds = new Set(databaseOptions.map(season => season.id));
   const staticFallbacks = [...staticOptions.values()]
     .filter(season => !databaseIds.has(season.id))
@@ -206,15 +223,29 @@ async function loadDatabaseSeasonOptions() {
   window.PADEL_SEASONS = orderSeasonOptions([...databaseOptions, ...staticFallbacks]);
 }
 
-async function loadDatabaseSeasonPayload(seasonId) {
+async function loadDatabaseSeasonPayload(seasonReference) {
   const client = getSupabaseClient();
   if (!client) return null;
-  const { data, error } = await client.rpc('get_public_season', { p_season_id: seasonId });
+  const publicId = normalizeSeasonId(typeof seasonReference === 'object' ? seasonReference.id : seasonReference);
+  const option = typeof seasonReference === 'object'
+    ? seasonReference
+    : getAllSeasonOptions().find(season => season.id === publicId);
+  const databaseId = option?.databaseId || (typeof seasonReference === 'string' ? seasonReference : publicId);
+  const { data, error } = await client.rpc('get_public_season', { p_season_id: databaseId });
   if (error) {
     if (error.code === 'PGRST202' || /get_public_season/i.test(String(error.message || ''))) return null;
     throw error;
   }
-  return data || null;
+  if (!data) return null;
+  return {
+    ...data,
+    id: publicId,
+    databaseId,
+    matches: (data.matches || []).map(match => ({
+      ...match,
+      seasonId: normalizeSeasonId(match.seasonId)
+    }))
+  };
 }
 
 async function loadDatabaseAllTimeStatisticsPayload() {
@@ -249,7 +280,7 @@ function normalizeLegacySeason(rawSeason) {
       startElo: Number(player.history?.[0]?.elo)
     })),
     matches: rawSeason.matches.map(match => ({
-      id: `season-${rawSeason.id}-partie-${String(match.id).match(/\d+$/)?.[0] || match.id}`,
+      id: `${rawSeason.matchIdPrefix || `season-${rawSeason.id}`}-partie-${String(match.id).match(/\d+$/)?.[0] || match.id}`,
       type: 'season',
       stage: match.stage || (match.countsForRanking === false ? 'final-four' : 'league'),
       seasonId: rawSeason.id,
@@ -701,7 +732,7 @@ async function loadSeasonData(season) {
   window.PADEL_SEASON = null;
   if (season.file) await loadScript(season.file);
   const staticSeason = window.PADEL_SEASON ? normalizeLegacySeason(window.PADEL_SEASON) : null;
-  const databaseSeason = await loadDatabaseSeasonPayload(season.id);
+  const databaseSeason = await loadDatabaseSeasonPayload(season);
   const databaseSeasonIsComplete = Boolean(
     databaseSeason
     && (!staticSeason || databaseSeason.matches?.length >= staticSeason.matches?.length)
@@ -1474,7 +1505,8 @@ function getPlayerProfileAchievementHighlights(achievements = []) {
 }
 
 function getSeasonVisualTheme(seasonId, seasons = getSeasonOptions()) {
-  return seasons.find(season => season.id === seasonId)?.visualTheme || 'neutral';
+  const normalizedId = normalizeSeasonId(seasonId);
+  return seasons.find(season => normalizeSeasonId(season.id) === normalizedId)?.visualTheme || 'neutral';
 }
 
 function getPlayerProfileSeasonColor(seasonId, seasons = getSeasonOptions()) {
@@ -1627,8 +1659,8 @@ function renderPlayerProfileEloChart(eloSeries = []) {
 function orderPlayerProfileParticipations(participations = [], seasons = getSeasonOptions()) {
   const startDates = new Map(seasons.map(season => [season.id, season.startDate || '']));
   return [...participations].sort((left, right) => {
-    const leftStartDate = String(left.startDate || left.startsOn || startDates.get(left.seasonId) || '');
-    const rightStartDate = String(right.startDate || right.startsOn || startDates.get(right.seasonId) || '');
+    const leftStartDate = String(left.startDate || left.startsOn || startDates.get(normalizeSeasonId(left.seasonId)) || '');
+    const rightStartDate = String(right.startDate || right.startsOn || startDates.get(normalizeSeasonId(right.seasonId)) || '');
     const dateOrder = rightStartDate.localeCompare(leftStartDate);
     return dateOrder || String(right.seasonId || '').localeCompare(String(left.seasonId || ''));
   });
@@ -2429,7 +2461,7 @@ function nav(id, el) {
 
 async function openLiveTicker(matchId, options = {}) {
   if (!matchId) return;
-  const targetSeasonId = String(options.seasonId || '');
+  const targetSeasonId = String(normalizeSeasonId(options.seasonId) || '');
   if (targetSeasonId && targetSeasonId !== String(selectedSeason?.id || '')) {
     const url = new URL(window.location.href);
     url.searchParams.set('saison', targetSeasonId);
@@ -6363,6 +6395,7 @@ function finishInitialLoading() {
 
 async function initApp() {
   try {
+    normalizeLegacySeasonUrl();
     await loadActiveSeason();
     applySeasonMetadata();
     resetSeasonState();

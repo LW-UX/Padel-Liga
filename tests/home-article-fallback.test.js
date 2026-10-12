@@ -5,7 +5,7 @@ const test = require('node:test');
 
 const appSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'utf8');
 const htmlSource = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-const seasonSource = fs.readFileSync(path.join(__dirname, '..', 'data', 'data2026.js'), 'utf8');
+const seasonSource = fs.readFileSync(path.join(__dirname, '..', 'data', 'data-2026-sommer.js'), 'utf8');
 const scheduleMigrationSource = fs.readFileSync(
   path.join(__dirname, '..', 'supabase', 'migrations', '20260928130000_schedule_summer_2026_final_four.sql'),
   'utf8'

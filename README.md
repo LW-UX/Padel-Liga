@@ -20,9 +20,10 @@ padel-liga/
 ├── data/
 │   ├── players.js                Globale Spieler-Stammdaten
 │   ├── seasons.js                Verfügbare Saisons und Standard-Saison
-│   ├── data2026.js               Teilnehmer, Ligaspiele und Inhalte der Saison „Sommer 2026“
-│   ├── data-winter-2026.js        Teilnehmer und Turnierplatzhalter für „Winter 2026“
-│   ├── data-test-2026.js          Temporäre Test-Saison für Ergebnisabläufe
+│   ├── data-2026-sommer.js       Teilnehmer, Ligaspiele und Inhalte der Saison „Sommer 2026“
+│   ├── data-2026-winter.js       Teilnehmer und Turnierplatzhalter für „Winter 2026“
+│   ├── data-2027-cup.js          Turnierplatzhalter für den „Cup 2027“
+│   ├── data-test-2026.js         Temporäre Test-Saison für Ergebnisabläufe
 │   ├── training-matches.js       Saisonunabhängige Trainingsspiele
 │   ├── supabase-config.js         Öffentliche Supabase-Verbindungsdaten
 │   └── info.js                   Globale Regeln und allgemeine Infos
@@ -94,7 +95,7 @@ Spieler werden ausschließlich über IDs referenziert. Match-IDs sind global ein
 {
   id: "season-2026-partie-31",
   type: "season",
-  seasonId: "2026",
+  seasonId: "2026-sommer",
   stage: "league",
   countsForRanking: true,
   countsForElo: true,
@@ -147,7 +148,7 @@ Die beiden Flags müssen bei Trainingsspielen immer `false` sein. Die Anwendung 
 
 ## Weitere Saison anlegen
 
-1. Eine neue Saisondatei nach dem Muster von `data/data2026.js` erstellen.
+1. Eine neue Saisondatei nach dem Muster von `data/data-2026-sommer.js` erstellen.
 2. Nur die Teilnehmer dieser Saison samt eingefrorenem `startElo` eintragen.
 3. Alle Spiele mit neuen, global eindeutigen Match-IDs und Spieler-IDs anlegen.
 4. Die Saison in `data/seasons.js` registrieren und bei Bedarf als Standard markieren.
@@ -155,7 +156,7 @@ Die beiden Flags müssen bei Trainingsspielen immer `false` sein. Die Anwendung 
 Alte Saisondateien bleiben erhalten. Dadurch können frühere Saisonstände weiterhin über die URL geladen und später in saisonübergreifenden Ansichten zusammengeführt werden:
 
 ```text
-index.html?saison=2026
+index.html?saison=2026-sommer
 ```
 
 ## Tippspiel und Benutzerkonten

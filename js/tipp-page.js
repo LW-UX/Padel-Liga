@@ -1,4 +1,15 @@
 (function () {
+  const LEGACY_SEASON_IDS = Object.freeze({
+    '2026': '2026-sommer',
+    'sommer-2026': '2026-sommer',
+    'winter-2026': '2026-winter',
+    'cup-2027': '2027-cup'
+  });
+
+  function normalizeSeasonId(id) {
+    return LEGACY_SEASON_IDS[id] || id;
+  }
+
   function getAllSeasonOptions() {
     return Array.isArray(window.PADEL_SEASONS) ? window.PADEL_SEASONS : [];
   }
@@ -9,10 +20,20 @@
 
   function getSelectedSeason() {
     const options = getSeasonOptions();
-    const requested = new URLSearchParams(window.location.search).get('saison');
+    const requestedValue = new URLSearchParams(window.location.search).get('saison');
+    const requested = normalizeSeasonId(requestedValue);
     return getAllSeasonOptions().find(option => option.id === requested)
       || options.find(option => option.default)
       || options[0];
+  }
+
+  function normalizeLegacySeasonUrl() {
+    const url = new URL(window.location.href);
+    const requested = url.searchParams.get('saison');
+    const normalized = normalizeSeasonId(requested);
+    if (!requested || requested === normalized) return;
+    url.searchParams.set('saison', normalized);
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
   }
 
   function loadScript(src) {
@@ -117,6 +138,7 @@
 
   async function init() {
     try {
+      normalizeLegacySeasonUrl();
       const selected = getSelectedSeason();
       if (!selected) throw new Error('Keine Saison vorhanden.');
       renderSeasonPicker(selected);

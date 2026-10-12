@@ -36,7 +36,7 @@ select jsonb_build_object(
     ) as stage_counts
   ), '{}'::jsonb),
   'cupCompletedMatches', (
-    select count(*) from returned_matches where item ->> 'seasonId' = 'cup-2027'
+    select count(*) from returned_matches where item ->> 'seasonId' = '2027-cup'
   ),
   'eligibleSourceStages', coalesce((
     select jsonb_object_agg(stage, match_count order by stage)

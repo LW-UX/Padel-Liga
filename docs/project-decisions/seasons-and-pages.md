@@ -4,7 +4,7 @@ Diese Datei ist die kanonische Quelle für Saisonidentitäten, Datenquellen, Sai
 
 ## Saison- und Datenmodell
 
-- Saisons besitzen stabile technische IDs. „Sommer 2026“ verwendet `2026`, „Winter 2026“ `winter-2026` und der eigenständige Cup `cup-2027`.
+- Saisons besitzen sprechende, stabile technische IDs im Schema `Jahr-Typ`, damit sie sich automatisch chronologisch gruppieren. „Sommer 2026“ verwendet `2026-sommer`, „Winter 2026“ `2026-winter` und der eigenständige Cup `2027-cup`. Frühere Saison-Links werden beim Aufruf auf die aktuellen IDs normalisiert.
 - Die Datenbank ist die fachliche Quelle für strukturierte Spieler-, Teilnahme-, Saison-, Match-, Ergebnis- und Elo-Daten. Repositorybasierte Saisoninhalte bleiben auf redaktionelle Texte und kontrollierte Konfiguration begrenzt.
 - Der noch vorhandene statische Ergebnis- und Elo-Bestand von „Sommer 2026“ ist ein zu entfernender Legacy-Fallback und nicht die maßgebliche Datenquelle. Bis zu seiner späteren Bereinigung bleibt dieser Unterschied im Projektstatus sichtbar.
 - Editoriale Saisonartikel und zeitlich begrenzte Startseitenankündigungen bleiben im Git-Repository. Kurzankündigungen sind keine Saisonartikel und erscheinen nicht im Artikelarchiv. Sie können einen festen Ablaufzeitpunkt besitzen und werden ab diesem automatisch ausgeblendet, auch wenn die Startseite bereits geöffnet ist.

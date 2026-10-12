@@ -27,18 +27,18 @@ const achievementMigration = fs.readFileSync(
 
 test('Cup 2027 is selectable without replacing Sommer 2026 as default', () => {
   const { PADEL_SEASONS } = loadWindowScript('data/seasons.js');
-  const cupOption = PADEL_SEASONS.find(season => season.id === 'cup-2027');
+  const cupOption = PADEL_SEASONS.find(season => season.id === '2027-cup');
 
-  assert.equal(PADEL_SEASONS.find(season => season.default)?.id, '2026');
+  assert.equal(PADEL_SEASONS.find(season => season.default)?.id, '2026-sommer');
   assert.equal(
-    PADEL_SEASONS.findIndex(season => season.id === 'cup-2027'),
-    PADEL_SEASONS.findIndex(season => season.id === 'winter-2026') + 1
+    PADEL_SEASONS.findIndex(season => season.id === '2027-cup'),
+    PADEL_SEASONS.findIndex(season => season.id === '2026-winter') + 1
   );
   assert.deepEqual(JSON.parse(JSON.stringify(cupOption)), {
-    id: 'cup-2027',
+    id: '2027-cup',
     label: 'Cup 2027',
     visualTheme: 'cup',
-    file: 'data/data-cup-2027.js',
+    file: 'data/data-2027-cup.js',
     default: false
   });
   assert.match(app, /const staticFallbacks = \[\.\.\.staticOptions\.values\(\)\]/);
@@ -46,7 +46,7 @@ test('Cup 2027 is selectable without replacing Sommer 2026 as default', () => {
 });
 
 test('Cup 2027 prepares seven knockout matches and sixteen open quarterfinal places', () => {
-  const { PADEL_SEASON: season } = loadWindowScript('data/data-cup-2027.js');
+  const { PADEL_SEASON: season } = loadWindowScript('data/data-2027-cup.js');
   const quarterfinals = season.matches.filter(match => match.stage === 'quarterfinal');
   const semifinals = season.matches.filter(match => match.stage === 'semifinal');
   const finals = season.matches.filter(match => match.stage === 'final');
