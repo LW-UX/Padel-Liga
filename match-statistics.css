@@ -12,7 +12,7 @@
 .live-ticker-statistics-side-panels { display: grid; gap: 1.4rem; min-width: 0; }
 .live-ticker-statistics-autotip-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 1rem; align-items: center; margin-top: 0; }
 .live-ticker-statistics-autotip-panel > .widget-label { margin: 0; }
-.live-ticker-statistics-autotip-score { font-size: var(--text-heading); line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.live-ticker-statistics-autotip-score { font-size: var(--text-heading); line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .live-ticker-statistics-autotip-result { color: var(--dim); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
 .live-ticker-statistics-ranking-wrap { margin: 0; overflow-x: hidden; }
 table.rt.live-ticker-statistics-ranking { width: 100%; min-width: 0; margin: 0 !important; table-layout: fixed; }
