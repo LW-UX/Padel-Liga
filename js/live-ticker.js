@@ -1069,7 +1069,9 @@
       renderAccount();
       return;
     }
+    const userId = state.auth.session.user.id;
     const { data, error } = await client.rpc('get_my_live_ticker_tasks');
+    if (state.auth?.session?.user?.id !== userId) return;
     if (error) {
       if (!isMissingRpc(error)) console.error(error);
       state.accountData = { matches: [], requests: [] };
@@ -1449,8 +1451,12 @@
       }
     });
     window.addEventListener('padel:auth-state-changed', event => {
+      const previousUserId = state.auth?.session?.user?.id;
       state.auth = event.detail || null;
-      void refreshAccount();
+      if (previousUserId !== state.auth?.session?.user?.id) {
+        state.accountData = { matches: [], requests: [] };
+        renderAccount();
+      }
     });
     window.addEventListener('popstate', () => {
       if (window.PadelMatchStatistics?.active || new URL(window.location.href).searchParams.has('partie')) return;

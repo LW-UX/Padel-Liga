@@ -15,14 +15,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data/players.js?v=2026-10-14-training-profiles"></script>
-  <script src="data/seasons.js?v=2026-10-14-ranking-notes"></script>
-  <script src="data/training-matches.js"></script>
-  <script src="data/info.js"></script>
-  <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-10-14-poll-yellow-border">
+  <link rel="stylesheet" href="style.css?v=2026-10-14-played-order">
   <link rel="stylesheet" href="account.css?v=2026-10-14-training-guests">
   <script>
     (function () {
@@ -33,7 +26,20 @@
       if (standalone) document.documentElement.classList.add('is-standalone');
     })();
   </script>
-<link rel="stylesheet" href="match-statistics.css?v=2026-10-14-desktop-ranking-fix">
+<link rel="stylesheet" href="match-statistics.css?v=2026-10-14-elo-band-tooltip">
+  <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="data/players.js?v=2026-10-14-training-profiles"></script>
+  <script defer src="data/seasons.js?v=2026-10-14-ranking-notes"></script>
+  <script defer src="data/training-matches.js"></script>
+  <script defer src="data/info.js"></script>
+  <script defer src="data/supabase-config.js"></script>
+  <script defer src="js/elo-forecast.js?v=2026-10-14-shared-auto-tip"></script>
+  <script defer src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
+  <script defer src="js/live-ticker.js?v=2026-10-14-loading"></script>
+  <script defer src="js/account.js?v=2026-10-14-loading"></script>
+  <script defer src="js/match-statistics.js?v=2026-10-14-played-order"></script>
+  <script defer src="js/app.js?v=2026-10-14-loading"></script>
 </head>
 <body>
 
@@ -460,6 +466,7 @@
       <div class="live-ticker-dialog-heading">
         <div class="sh-title" id="live-ticker-title">FINAL FOUR</div>
         <div class="sh-meta" id="live-ticker-season-label"></div>
+        <div class="live-ticker-dialog-played-order" id="match-statistics-played-order" hidden></div>
       </div>
     </header>
     <section class="live-ticker-dialog-content" id="liveticker">
@@ -713,12 +720,5 @@
     </section>
   </div>
 </dialog>
-
-<script src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
-<script src="js/live-ticker.js?v=2026-10-14-poll-separated-bars"></script>
-<script src="js/account.js?v=2026-10-14-training-guests"></script>
-<script src="js/tippspiel.js?v=2026-10-12-season-id-order"></script>
-<script src="js/match-statistics.js?v=2026-10-14-desktop-ranking-fix"></script>
-<script src="js/app.js?v=2026-10-14-preview-probability"></script>
 </body>
 </html>

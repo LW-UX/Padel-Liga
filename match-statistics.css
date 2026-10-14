@@ -6,9 +6,14 @@
 .live-ticker-statistics-section ul { padding-left: 1.2rem; }
 .live-ticker-statistics-players { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
 .live-ticker-statistics-note { color: var(--dim); font-size: var(--text-xs); line-height: 1.6; margin: 1rem .25rem; }
-.live-ticker-statistics-ranking-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr); gap: 1.4rem; align-items: start; margin-top: 1.5rem; }
+.live-ticker-statistics-ranking-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(440px, 1fr); gap: 1.4rem; align-items: start; margin-top: 1.5rem; }
 .live-ticker-statistics-ranking-panel,
 .live-ticker-statistics-impact-panel { min-width: 0; margin-top: 0; }
+.live-ticker-statistics-side-panels { display: grid; gap: 1.4rem; min-width: 0; }
+.live-ticker-statistics-autotip-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 1rem; align-items: center; margin-top: 0; }
+.live-ticker-statistics-autotip-panel > .widget-label { margin: 0; }
+.live-ticker-statistics-autotip-score { font-size: var(--text-heading); line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.live-ticker-statistics-autotip-result { color: var(--dim); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
 .live-ticker-statistics-ranking-wrap { margin: 0; overflow-x: hidden; }
 table.rt.live-ticker-statistics-ranking { width: 100%; min-width: 0; margin: 0 !important; table-layout: fixed; }
 .live-ticker-statistics-team-1 { --statistics-team-color: var(--team-one); }
@@ -29,8 +34,8 @@ table.rt.live-ticker-statistics-ranking tbody tr.live-ticker-statistics-ranking-
   background: color-mix(in srgb, var(--statistics-team-color) 16%, var(--surface));
 }
 .live-ticker-statistics-ranking tbody tr.live-ticker-statistics-ranking-other td {
-  padding-top: .3rem !important;
-  padding-bottom: .3rem !important;
+  padding-top: .2rem !important;
+  padding-bottom: .2rem !important;
   color: var(--dim);
   font-size: var(--text-xs);
 }
@@ -39,7 +44,7 @@ table.rt.live-ticker-statistics-ranking tbody tr.live-ticker-statistics-ranking-
 }
 
 .live-ticker-statistics-ranking th,
-.live-ticker-statistics-ranking td { padding: 8px 16px !important; }
+.live-ticker-statistics-ranking td { padding: 6px 8px !important; }
 .live-ticker-statistics-ranking .col-rank { width: 62px; }
 table.rt.live-ticker-statistics-ranking .col-rank {
   text-align: center;
@@ -62,7 +67,7 @@ table.rt.live-ticker-statistics-ranking .col-rank {
 .live-ticker-statistics-ranking .col-games,
 .live-ticker-statistics-ranking .col-wins,
 .live-ticker-statistics-ranking .col-points,
-.live-ticker-statistics-ranking .col-diff { width: 90px; }
+.live-ticker-statistics-ranking .col-diff { width: 72px; }
 .live-ticker-statistics-ranking :is(th, td):is(.col-games, .col-wins, .col-points, .col-diff) {
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -114,6 +119,8 @@ table.rt.live-ticker-statistics-ranking .col-rank {
 #live-ticker-dialog[data-mode="statistics"] .player-profile-link:is(:hover, :focus-visible, :active) { color: var(--accent) !important; }
 .live-ticker-statistics-empty-impact { color: var(--dim); }
 .live-ticker-statistics-section:has(> .live-ticker-statistics-graph) > .widget-label { margin-bottom: 0; }
+.live-ticker-statistics-heading { display: flex; align-items: center; gap: 5px; width: fit-content; }
+.live-ticker-statistics-heading-help { justify-content: flex-start; }
 .live-ticker-statistics-graph-picker { display: none; }
 .live-ticker-statistics-graph { position: relative; display: flex; overflow-x: auto; height: 590px; overscroll-behavior-x: contain; }
 .live-ticker-statistics-svg { flex: 1 0 1000px; min-width: 100%; max-width: none; overflow: hidden; }
@@ -136,10 +143,12 @@ table.rt.live-ticker-statistics-ranking .col-rank {
 .live-ticker-statistics-grid { fill: none; stroke: var(--border); }
 .live-ticker-statistics-line { fill: none; stroke: var(--statistics-team-color, var(--accent)); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .live-ticker-statistics-dot { fill: var(--statistics-team-color, var(--accent)); }
-.live-ticker-statistics-projection-band-strip { stroke: none; }
-.live-ticker-statistics-projection-band-strip.win { fill: var(--positiv); }
-.live-ticker-statistics-projection-band-strip.loss { fill: var(--negativ); }
-.live-ticker-statistics-projection-range { stroke: none; fill-opacity: .3; }
+.live-ticker-statistics-projection-band { stroke: none; fill-opacity: .5; }
+.live-ticker-statistics-projection-band.win { fill: var(--positiv); }
+.live-ticker-statistics-projection-band.loss { fill: var(--negativ); }
+.live-ticker-statistics-forecast-line { fill: none; stroke: var(--statistics-team-color, var(--accent)); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 5 5; }
+.live-ticker-statistics-forecast-dot { fill: var(--statistics-team-color, var(--accent)); }
+.live-ticker-statistics-projection-range { stroke: none; fill-opacity: .2; }
 .live-ticker-statistics-projection-range.win { fill: var(--positiv); }
 .live-ticker-statistics-projection-range.loss { fill: var(--negativ); }
 .live-ticker-statistics-skeleton { display: grid; gap: 1.5rem; }
@@ -158,6 +167,7 @@ table.rt.live-ticker-statistics-ranking .col-rank {
 [data-match-statistics]:focus-visible, .live-ticker-statistics-graph:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0; background: transparent; }
 @media (max-width: 768px) {
+  .live-ticker-statistics-heading-help .help-tooltip { right: auto; left: 0; }
   .live-ticker-statistics-players { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
   .live-ticker-statistics-section { padding: 1rem .7rem; }
   .live-ticker-statistics-ranking-layout { grid-template-columns: 1fr; gap: 1.5rem; }

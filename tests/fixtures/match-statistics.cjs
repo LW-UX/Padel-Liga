@@ -2,6 +2,7 @@ module.exports = function fixture(mode = 'preview') {
   return {
     availability: mode, generatedAt: '2026-10-12T12:00:00Z', matchId: 'season-2026-partie-1',
     seasonId: '2026-sommer', seasonLabel: 'Sommer 2026', qualificationPlaces: 8, label: 'Partie 1', stage: 'league',
+    leaguePlayedOrdinal: mode === 'analysis' ? 18 : null,
     matchAt: '2026-10-20T16:00:00Z', result: mode === 'analysis' ? '6:3, 6:4' : null,
     sets: mode === 'analysis' ? '2:0' : null, winner: mode === 'analysis' ? 1 : null, countsForElo: true, probability: 0.61,
     players: [['greta_p','Greta P.',1050,'👩'],['agnes_k','Agnes K.',1100,'👩'],['christoph_l','Christoph L.',1000,'👨'],['marco_m','Marco M.',950,'👨']].map(([id,name,elo,profileEmoji],i) => ({

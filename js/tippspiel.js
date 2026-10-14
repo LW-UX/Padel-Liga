@@ -313,6 +313,15 @@
     state.client = window.PadelKonto?.getClient?.() || state.client;
     state.session = window.PadelKonto?.getSession?.() || null;
     if (!state.client || !state.season) return;
+    if (state.season.competition?.predictionsEnabled === false) {
+      state.databaseMatches.clear();
+      state.predictions.clear();
+      state.leaderboard = [];
+      state.ready = true;
+      state.error = null;
+      render();
+      return;
+    }
     try {
       await Promise.all([loadPublicData(), loadPredictions()]);
       state.ready = true;

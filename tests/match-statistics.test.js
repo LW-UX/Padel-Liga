@@ -1,8 +1,10 @@
 const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');
-const {availability,entry,render,graphGeometry,analysisResultY,skeleton,headerMeta}=require('../js/match-statistics.js');
+const {availability,entry,render,graphGeometry,analysisResultY,skeleton,headerMeta,playedOrderLabel}=require('../js/match-statistics.js');
+const {getAutoTipForecast,projectElo}=require('../js/elo-forecast.js');
 const fixture=require('./fixtures/match-statistics.cjs');
 const source=fs.readFileSync(path.resolve(__dirname,'../js/match-statistics.js'),'utf8');
 const appSource=fs.readFileSync(path.resolve(__dirname,'../js/app.js'),'utf8');
+const indexSource=fs.readFileSync(path.resolve(__dirname,'../index.html'),'utf8');
 const styleSource=fs.readFileSync(path.resolve(__dirname,'../style.css'),'utf8');
 const statisticsStyleSource=fs.readFileSync(path.resolve(__dirname,'../match-statistics.css'),'utf8');
 const now=new Date('2026-10-12T10:00Z');
@@ -41,7 +43,9 @@ test('content order, exclusions, escaped data and empty sections',()=>{
  assert.doesNotMatch(html,/Vorgeschichte der Partie/);
  assert.ok(html.indexOf('live-ticker-statistics-context')<html.indexOf('Rangliste'));assert.ok(html.indexOf('Rangliste')<html.indexOf('Was sich verändern kann'));assert.ok(html.indexOf('Was sich verändern kann')<html.indexOf('Elo-Entwicklung'));
  assert.ok(html.indexOf('Elo-Entwicklung')<html.indexOf('Werte und Prognosen können sich'));assert.doesNotMatch(html,/Stand:/);
- assert.doesNotMatch(html,/tooltip|<title>|Dominanz|Auszeichnungen|Lieblingspartner/);
+ assert.doesNotMatch(html,/<title>|Dominanz|Auszeichnungen|Lieblingspartner/);
+ assert.match(html,/<h2 class="widget-label"><span class="live-ticker-statistics-heading">Elo-Entwicklung<span class="th-help-wrap live-ticker-statistics-heading-help">/);
+ assert.match(html,/data-help-tooltip-anchor>\?<\/span>[\s\S]*Die Fächer zeigen die Bereiche der möglichen Elo-Werte nach der Partie: grün bei einem Sieg und rot bei einer Niederlage\. Die gestrichelte Linie zeigt den Elo-Wert des Auto-Tipps\./);
  d.rematches=[];d.company=null;d.impacts=[];d.countsForElo=false;d.players.forEach(player=>{player.relationships=[];});const empty=render(d);
  assert.doesNotMatch(empty,/live-ticker-statistics-context|Vorgeschichte|Elo-Entwicklung/);assert.match(empty,/Keine bedeutenden Auswirkungen/);
  assert.match(render({...d,availability:'basic'}),/ausführliche Vorschau folgt/);
@@ -215,6 +219,8 @@ test('match header and full ranking follow ticker and ranking conventions',()=>{
  const html=render(d);
  const analysisHtml=render({...d,availability:'analysis'});
  assert.equal(headerMeta(d),'Sommer 2026 · 20.10.2026');
+ assert.equal(playedOrderLabel({...d,availability:'analysis',leaguePlayedOrdinal:18}),'Als 18. Partie gespielt');
+ assert.equal(playedOrderLabel(d),'');
  assert.doesNotMatch(html,/Partievorschau|Partieanalyse/);
  assert.match(html,/<div class="live-ticker-match-meta"><span class="live-ticker-status">Offen<\/span><\/div>/);
  assert.match(analysisHtml,/<div class="live-ticker-match-meta"><span class="live-ticker-status is-finished">Beendet<\/span><\/div>/);
@@ -241,7 +247,7 @@ test('match header and full ranking follow ticker and ranking conventions',()=>{
  assert.match(html,/live-ticker-statistics-ranking-layout/);
  assert.match(html,/live-ticker-statistics-section live-ticker-statistics-ranking-panel/);
  assert.match(html,/live-ticker-statistics-section live-ticker-statistics-impact-panel/);
- assert.equal((html.match(/<h2 class="widget-label">/g)||[]).length,3);
+ assert.equal((html.match(/<h2 class="widget-label">/g)||[]).length,4);
  assert.doesNotMatch(html,/<h2 class="spieltag-label">/);
  assert.doesNotMatch(html,/Siege in Folge|Niederlagen in Folge/);
  assert.match(statisticsStyleSource,/\.live-ticker-statistics-ranking tbody tr\.live-ticker-statistics-ranking-other td \{[\s\S]*?font-size: var\(--text-xs\);/);
@@ -252,6 +258,11 @@ test('match header and full ranking follow ticker and ranking conventions',()=>{
  assert.match(statisticsStyleSource,/@media \(max-width: 768px\) \{[\s\S]*?\.live-ticker-statistics-ranking \.col-wins \{ display: none; \}/);
  assert.match(statisticsStyleSource,/table\.rt\.live-ticker-statistics-ranking \{ width: 100%; min-width: 0;[\s\S]*?table-layout: fixed;/);
  assert.match(statisticsStyleSource,/\.live-ticker-statistics-ranking \.player-profile-link \{[\s\S]*?text-overflow: ellipsis;/);
+});
+test('completed league order is rendered below title and season metadata in text-xs',()=>{
+ assert.match(indexSource,/<div class="sh-title" id="live-ticker-title">FINAL FOUR<\/div>\s*<div class="sh-meta" id="live-ticker-season-label"><\/div>\s*<div class="live-ticker-dialog-played-order" id="match-statistics-played-order" hidden><\/div>/);
+ assert.match(styleSource,/\.live-ticker-dialog-played-order \{[\s\S]*?font-size: var\(--text-xs\);/);
+ assert.match(source,/function restore\(\) \{[\s\S]*?setPlayedOrder\(\);/);
 });
 test('completed rankings align historical movement in a dedicated column',()=>{
  const preview=render(fixture());
@@ -307,27 +318,53 @@ test('graph remains finite and clipped for identical, tight and extreme Elo valu
  assert.ok([200,30,510].every((endpoint,index)=>Math.abs(endpoint-[170,54,480][index])>=24));
  assert.match(skeleton(),/role="status"/);assert.match(skeleton(),/aria-hidden="true"/);assert.doesNotMatch(skeleton(),/tabindex|<button/);
 });
-test('preview Elo projections use fading confidence bands without center lines',()=>{
+test('preview Elo projections use uniform confidence bands with the Elo favorite forecast',()=>{
  const html=render(fixture());
  assert.equal((html.match(/live-ticker-statistics-projection-band win/g)||[]).length,4);
  assert.equal((html.match(/live-ticker-statistics-projection-band loss/g)||[]).length,4);
- assert.equal((html.match(/live-ticker-statistics-projection-band-strip win/g)||[]).length,64);
- assert.equal((html.match(/live-ticker-statistics-projection-band-strip loss/g)||[]).length,64);
- assert.doesNotMatch(html,/class="live-ticker-statistics-projection (?:win|loss)"/);
+ assert.doesNotMatch(html,/live-ticker-statistics-projection-band-strip|fill-opacity=/);
  assert.ok(html.indexOf('live-ticker-statistics-projection-band loss')<html.indexOf('live-ticker-statistics-projection-band win'));
- assert.equal((html.match(/fill-opacity="0\.300"/g)||[]).length,16);
- assert.equal((html.match(/fill-opacity="0\.750"/g)||[]).length,16);
  assert.doesNotMatch(html,/<linearGradient|<stop/);
  assert.doesNotMatch(html,/live-ticker-statistics-projection-dot/);
- const bandPaths=[...html.matchAll(/<path d="([^"]+)" fill-opacity="[^"]+" class="live-ticker-statistics-projection-band-strip (?:win|loss)"\/>/g)].map(match=>match[1]);
- assert.equal(bandPaths.length,128);assert.ok(bandPaths.every(path=>path.includes(' C')));
- for(let index=0;index<bandPaths.length;index+=16){
-  const firstStart=Number(bandPaths[index].match(/^M[^,]+,([^ ]+)/)?.[1]);
-  const lastEnd=Number(bandPaths[index+15].match(/ [^, ]+,([^ ]+) Z$/)?.[1]);
-  assert.ok(Math.abs(Math.abs(firstStart-lastEnd)-2)<1e-9);
- }
+ assert.equal((html.match(/live-ticker-statistics-forecast-line win/g)||[]).length,2);
+ assert.equal((html.match(/live-ticker-statistics-forecast-line loss/g)||[]).length,2);
+ assert.equal((html.match(/live-ticker-statistics-forecast-dot/g)||[]).length,4);
+ const even=render({...fixture(),probability:.5});
+ assert.equal((even.match(/live-ticker-statistics-forecast-line win/g)||[]).length,2);
+ assert.equal((even.match(/live-ticker-statistics-forecast-line loss/g)||[]).length,2);
+ const bandPaths=[...html.matchAll(/<path d="([^"]+)" class="live-ticker-statistics-projection-band (?:win|loss)"\/>/g)].map(match=>match[1]);
+ assert.equal(bandPaths.length,8);assert.ok(bandPaths.every(path=>path.includes(' C')&&path.endsWith(' Z')));
+ assert.match(statisticsStyleSource,/\.live-ticker-statistics-projection-band \{ stroke: none; fill-opacity: \.5; \}/);
+ const forecastPaths=[...html.matchAll(/<path d="([^"]+)" class="live-ticker-statistics-forecast-line (?:win|loss)"\/>/g)].map(match=>match[1]);
+ assert.equal(forecastPaths.length,4);assert.ok(forecastPaths.every(path=>path.includes(' C')));
  const analysisPaths=[...render(fixture('analysis')).matchAll(/<path d="([^"]+)" class="live-ticker-statistics-line"\/>/g)].map(match=>match[1]);
  assert.equal(analysisPaths.length,4);assert.ok(analysisPaths.every(path=>path.includes(' C')));
+});
+test('preview forecast uses the calculator auto-tip score for the exact Elo projection',()=>{
+ const cases=[[80,['6','0'],['6','0']], [70,['6','1'],['6','1']], [63,['6','2'],['6','2']], [58,['6','3'],['6','3']], [54,['6','4'],['6','4']], [53,['6','4'],['4','6']]];
+ for(const [probability,set1,set2] of cases){
+  const forecast=getAutoTipForecast(probability,[1050,1100],[1000,950]);
+  assert.deepEqual(forecast.entry.set1,set1);
+  assert.deepEqual(forecast.entry.set2,set2);
+  const html=render({...fixture(),probability:probability/100});
+  const panel=html.match(/<section class="live-ticker-statistics-section live-ticker-statistics-autotip-panel">[\s\S]*?<\/section>/)?.[0]||'';
+  const result=[...forecast.score.regularSets,...(forecast.score.matchTiebreak?[forecast.score.matchTiebreak]:[])].map(set=>set.join(':')).join(', ');
+  assert.ok(panel.includes(result));
+  assert.ok(panel.includes(probability===53?'2:1':'2:0'));
+  assert.ok(html.indexOf('Auto-Tipp-Prognose')<html.indexOf('Was sich verändern kann'));
+ }
+ const close=getAutoTipForecast(53,[1050,1100],[1000,950]);
+ assert.deepEqual(close.entry.tb,['10','8']);
+ assert.equal(projectElo(1050,[1000,950],true,close.pointFactor),1092);
+ const tied=getAutoTipForecast(50,[1050,1100],[1000,1200]);
+ assert.equal(tied.winner,2);assert.deepEqual(tied.entry.set1,['4','6']);
+ const tiedData=fixture();tiedData.probability=.5;tiedData.players[3].elo.before=1200;
+ assert.match(render(tiedData),/Satzergebnis 1:2[\s\S]*4:6, 6:4, 8:10/);
+ assert.match(render({...fixture(),probability:.2}),/Satzergebnis 0:2[\s\S]*0:6, 0:6/);
+ for(const data of [fixture('analysis'),fixture('basic'),{...fixture(),probability:null},{...fixture(),countsForElo:false}]){
+  assert.doesNotMatch(render(data),/Auto-Tipp-Prognose/);
+ }
+ assert.match(appSource,/window\.PadelEloForecast\.getAutoTipForecast/);
 });
 test('played Elo graphs keep solid 30 percent ranges behind the actual line',()=>{
  const html=render(fixture('analysis'));

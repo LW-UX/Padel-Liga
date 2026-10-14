@@ -22,6 +22,7 @@ Diese Datei ist die kanonische Quelle für Saisonidentitäten, Datenquellen, Sai
 - Die mobile Liga-Rangliste startet kompakt und bietet eine erweiterte, horizontal scrollbare Ansicht. Desktop behält die vollständige Rangliste.
 - Die mobile Final-Four-Tabelle bleibt ohne Ansichtsumschalter kompakt und ohne horizontalen Bildlauf. Neben Platz und Spieler zeigt sie ausschließlich Siege, Spielverhältnis (`G:V`) und Spieldifferenz.
 - Saisonauswahl und Kontoaktion bilden eine gemeinsame responsive Aktionszeile. Gemeinsame Dropdown- und Sekundärbutton-Komponenten werden wiederverwendet.
+- Direkt verlinkte öffentliche Detailansichten wie Partievorschau, Liveticker und Spielerprofil öffnen nach dem Aufbau der Seite vor der Konto-Initialisierung. Login und private Kontodaten dürfen das sichtbare Öffnen des angeforderten Ziels nicht verzögern.
 - PadelPong ist eine eigenständige Website unter `https://lw-ux.github.io/PadelPong/`. Der Liga-Button öffnet ausschließlich diese feste Adresse in einem neuen Tab und überträgt keinen Saisonkontext.
 - Veröffentlichte Artikel bleiben sichtbar, bis ein neuer veröffentlichter Artikel ihren Platz einnimmt; unveröffentlichte Platzhalter werden nicht angezeigt.
 

@@ -5,6 +5,7 @@ Diese Datei ist die kanonische Quelle für Tippabgabe, Fristen, Wertung und die 
 ## Seite und Konten
 
 - Das Tippspiel liegt auf einer eigenständigen Seite unter `/tipp/` und verwendet dieselben Konten wie Liga und Cup.
+- Die Liga-Seite lädt das Tippspiel-Modul und dessen Daten nicht. Tippdaten werden ausschließlich auf der eigenständigen Tippseite geladen.
 - Die Seite besitzt die Bereiche „Tippen“ und „Tippübersicht“. Die öffentliche Übersicht zeigt Konten mit mindestens einem abgegebenen Tipp.
 - Die Liga kann den sichtbaren Einstieg zum Tippspiel saison- oder betriebsabhängig ausblenden, ohne bestehende Direktaufrufe der Tippseite zu entfernen.
 

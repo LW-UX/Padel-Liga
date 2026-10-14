@@ -542,6 +542,7 @@
     }
     .player-profile-dialog {
       width: min(calc(100vw - 28px), 1200px);
+      height: min(calc(100vh - 64px), 900px);
       max-width: none;
       max-height: min(calc(100vh - 64px), 900px);
       margin: auto;
@@ -559,6 +560,7 @@
     }
     .player-profile-shell {
       box-sizing: border-box;
+      height: 100%;
       min-height: 360px;
       max-height: inherit;
       overflow: auto;
@@ -603,8 +605,9 @@
     }
     .modal-close-button:hover { color: var(--accent); border-color: var(--accent); }
     .player-profile-state {
+      box-sizing: border-box;
       display: grid;
-      min-height: 360px;
+      min-height: 100%;
       place-items: center;
       color: var(--dim);
       font-family: var(--font-mono);
@@ -961,6 +964,7 @@
     @media (max-width: 768px) {
       .player-profile-dialog {
         width: calc(100vw - 24px);
+        height: calc(100vh - 24px);
         max-height: calc(100vh - 24px);
         border-radius: 20px;
       }
@@ -1762,8 +1766,8 @@
       cursor: pointer;
       font: inherit;
     }
-    .mini-match-status-action:hover .mini-match-prob,
-    .mini-match-status-action:focus-visible .mini-match-prob { color: var(--accent); }
+    .mini-match-status-action:hover :is(.mini-match-prob, .mini-match-label),
+    .mini-match-status-action:focus-visible :is(.mini-match-prob, .mini-match-label) { color: var(--accent); }
     .mini-match-status-action:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .mini-match-prob {
       font-size: 0.9rem;
@@ -2480,7 +2484,7 @@
       min-height: 97px;
       background: color-mix(in srgb, var(--bg) 92%, transparent);
       backdrop-filter: blur(14px);
-      margin: 4rem auto 0;
+      margin: 2rem auto 0;
       width: min(calc(100% - 2rem), 1100px);
       padding: 1.5rem 0 0.85rem;
     }
@@ -2490,6 +2494,11 @@
       grid-column: 2;
       min-width: 0;
       text-align: center;
+    }
+    .live-ticker-dialog-played-order {
+      margin-top: 0.1rem;
+      color: var(--dim);
+      font-size: var(--text-xs);
     }
     .live-ticker-dialog-heading .sh-meta { font-size: var(--text-sm); margin-top: 0.15rem; color: var(--dim); }
     .live-ticker-dialog-content {
@@ -3565,7 +3574,7 @@
       .live-ticker-dialog-header {
         grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         min-height: 94px;
-        margin-top: 3rem;
+        margin-top: 1.5rem;
         padding: 1.5rem 0 0.65rem;
         width: calc(100% - 1.5rem);
       }

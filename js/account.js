@@ -14,11 +14,17 @@
     invitationPlayers: [],
     invitationDraft: null,
     extendedPlayerFeatures: true,
+    playerToolsVersion: 0,
+    playerToolsReady: false,
+    playerToolsLoading: false,
+    playerToolsError: null,
     ready: false,
     error: null,
     bound: false
   };
   let initPromise = null;
+  let playerToolsPromise = null;
+  let playerToolsTimer = null;
   let unscheduleTrigger = null;
   let unrateTrigger = null;
   let accountMessageTimer = null;
@@ -226,6 +232,8 @@
       document.getElementById('account-email').textContent = state.session.user.email || '';
       const playerArea = document.getElementById('account-player-area');
       if (playerArea) playerArea.hidden = !isPlayerAccount() || !state.extendedPlayerFeatures;
+      const trainingButton = document.querySelector('[data-training-toggle]');
+      if (trainingButton) trainingButton.disabled = state.playerToolsLoading || !state.playerToolsReady;
       const gamesEmpty = document.getElementById('account-games-empty');
       if (gamesEmpty) gamesEmpty.hidden = isPlayerAccount() && state.extendedPlayerFeatures;
       const inviteButton = document.getElementById('player-invite-open');
@@ -568,6 +576,15 @@
   }
 
   function renderResultTasks() {
+    const target = document.getElementById('result-task-list');
+    if (target && isPlayerAccount() && (state.playerToolsLoading || state.playerToolsError)) {
+      target.setAttribute('aria-busy', String(state.playerToolsLoading));
+      target.innerHTML = state.playerToolsLoading
+        ? '<div class="account-empty" role="status">Spiele werden geladen …</div>'
+        : '<div class="account-empty" role="status">Spiele konnten nicht geladen werden. <button class="text-link" type="button" data-account-tasks-retry>Erneut versuchen</button></div>';
+      return;
+    }
+    target?.setAttribute('aria-busy', 'false');
     const isAdmin = state.profile?.app_role === 'admin';
     const groups = getPlayerResultTaskGroups(state.resultTasks, Date.now(), isAdmin);
     const visibleTrainingTasks = state.trainingTasks.filter(isTrainingTaskVisible);
@@ -1109,12 +1126,14 @@
       publishAuthenticatedPlayer();
       return;
     }
+    const userId = state.session.user.id;
 
     const profileResponse = await state.client
       .from('profiles')
       .select('id, display_name, player_id, app_role, players(display_name)')
-      .eq('id', state.session.user.id)
+      .eq('id', userId)
       .single();
+    if (state.session?.user?.id !== userId) return;
 
     if (!profileResponse.error) {
       state.extendedPlayerFeatures = true;
@@ -1129,8 +1148,9 @@
     const legacyResponse = await state.client
       .from('profiles')
       .select('id, display_name, player_id, players(display_name)')
-      .eq('id', state.session.user.id)
+      .eq('id', userId)
       .single();
+    if (state.session?.user?.id !== userId) return;
     if (legacyResponse.error) throw legacyResponse.error;
 
     state.extendedPlayerFeatures = false;
@@ -1151,6 +1171,7 @@
   }
 
   async function loadPlayerTools() {
+    const version = state.playerToolsVersion;
     state.resultTasks = [];
     state.trainingTasks = [];
     state.players = [];
@@ -1161,26 +1182,81 @@
       state.client.rpc('get_my_result_tasks', { p_season_id: null }),
       state.client.rpc('get_my_training_tasks')
     ]);
+    if (state.playerToolsVersion !== version) return;
     const error = playersResponse.error || resultResponse.error || trainingTaskResponse.error;
     if (error) throw error;
-    state.players = playersResponse.data || [];
     const resultTasks = resultResponse.data || [];
+    let completeResultTasks = [];
     if (resultTasks.length) {
       const { data: taskMatches, error: taskMatchesError } = await state.client
         .from('matches')
         .select('id, display_label, match_players(player_id, team)')
         .in('id', resultTasks.map(task => task.match_id));
       if (taskMatchesError) throw taskMatchesError;
+      if (state.playerToolsVersion !== version) return;
       const matchesById = new Map((taskMatches || []).map(match => [match.id, match]));
-      state.resultTasks = resultTasks
+      completeResultTasks = resultTasks
         .filter(task => hasCompleteMatchLineup(matchesById.get(task.match_id)))
         .map(task => ({
           ...task,
           display_label: matchesById.get(task.match_id).display_label
         }));
     }
+    state.players = playersResponse.data || [];
+    state.resultTasks = completeResultTasks;
     state.trainingTasks = trainingTaskResponse.data || [];
     renderTrainingForm();
+  }
+
+  function resetPlayerTools() {
+    state.playerToolsVersion += 1;
+    state.playerToolsReady = false;
+    state.playerToolsLoading = false;
+    state.playerToolsError = null;
+    state.resultTasks = [];
+    state.trainingTasks = [];
+    state.players = [];
+    playerToolsPromise = null;
+    window.clearTimeout(playerToolsTimer);
+    playerToolsTimer = null;
+  }
+
+  function refreshPlayerTools({ force = false } = {}) {
+    if (!isPlayerAccount() || !state.extendedPlayerFeatures) return Promise.resolve();
+    window.clearTimeout(playerToolsTimer);
+    playerToolsTimer = null;
+    if (playerToolsPromise) return playerToolsPromise;
+    if (state.playerToolsReady && !force) return Promise.resolve();
+    const version = state.playerToolsVersion;
+    state.playerToolsLoading = true;
+    state.playerToolsError = null;
+    render();
+    const request = Promise.all([loadPlayerTools(), window.PadelLiveTicker?.refreshAccount()])
+      .then(() => {
+        if (state.playerToolsVersion === version) state.playerToolsReady = true;
+      })
+      .catch(error => {
+        if (state.playerToolsVersion !== version) return;
+        state.playerToolsError = error.message || 'Spiele konnten nicht geladen werden.';
+        console.error('Spiele konnten nicht geladen werden:', error);
+      })
+      .finally(() => {
+        if (playerToolsPromise !== request) return;
+        playerToolsPromise = null;
+        state.playerToolsLoading = false;
+        render();
+      });
+    playerToolsPromise = request;
+    return request;
+  }
+
+  function schedulePlayerTools() {
+    if (!isPlayerAccount() || state.playerToolsReady || playerToolsPromise || playerToolsTimer !== null) return;
+    // Keep the header badge current without competing with the initial page load.
+    playerToolsTimer = window.setTimeout(() => {
+      playerToolsTimer = null;
+      void refreshPlayerTools();
+    }, 1500);
   }
 
 
@@ -1195,11 +1271,15 @@
     }));
   }
 
-  async function refresh() {
+  async function refresh({ includeTasks = Boolean(document.getElementById('auth-dialog')?.open) } = {}) {
     if (!state.client) return;
+    const userId = state.session?.user?.id;
     try {
       await loadProfile();
-      await loadPlayerTools();
+      if (state.session?.user?.id !== userId) return;
+      publishAuthState();
+      if (includeTasks) await refreshPlayerTools({ force: true });
+      else schedulePlayerTools();
       state.ready = true;
       state.error = null;
     } catch (error) {
@@ -1207,7 +1287,6 @@
       console.error('Konto konnte nicht geladen werden:', error);
     }
     render();
-    publishAuthState();
   }
 
 
@@ -1274,6 +1353,9 @@
     renderAuthState();
     setAuthMessage(state.authMode === 'signup' ? 'Die Registrierung ist nur mit einer freigegebenen Firmen-E-Mail möglich.' : '');
     if (!dialog.open) dialog.showModal();
+    void init().then(() => {
+      if (dialog.open) return refreshPlayerTools({ force: true });
+    });
   }
 
   function closeAuthDialog() {
@@ -2187,6 +2269,7 @@ Dein Hanako-Leben-Squad`;
     if (error) return setAuthMessage(error.message, 'error');
     setAuthMessage('Training bestätigt.', 'success');
     await refresh();
+    window.dispatchEvent(new CustomEvent('padel:profile-data-changed'));
   }
 
   function bindEvents() {
@@ -2199,6 +2282,10 @@ Dein Hanako-Leben-Squad`;
       const open = event.target.closest('[data-auth-open]');
       if (open) {
         openAuthDialog();
+        return;
+      }
+      if (event.target.closest('[data-account-tasks-retry]')) {
+        void refreshPlayerTools({ force: true });
         return;
       }
       if (event.target.closest('[data-auth-close]')) {
@@ -2556,14 +2643,17 @@ Dein Hanako-Leben-Squad`;
     }
     state.session = session;
     state.client.auth.onAuthStateChange((event, nextSession) => {
+      if (event === 'INITIAL_SESSION') return;
       if (event === 'PASSWORD_RECOVERY') state.passwordFlow = 'recovery';
       state.session = nextSession;
+      if (event === 'TOKEN_REFRESHED') return;
+      resetPlayerTools();
       window.setTimeout(async () => {
         await refresh();
         if (nextSession && ['invite', 'recovery'].includes(state.passwordFlow)) openAuthDialog();
       }, 0);
     });
-    await refresh();
+    await refresh({ includeTasks: false });
     if (state.session && ['invite', 'recovery'].includes(state.passwordFlow)) openAuthDialog();
     else if (!state.session && ['invite', 'recovery'].includes(state.passwordFlow)) {
       openAuthDialog();

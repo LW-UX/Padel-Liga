@@ -37,9 +37,10 @@ test('pages keep their intended context links and account dialogs place logout i
 });
 
 test('account behavior and styles stay independent from the optional prediction module', () => {
-  pages.forEach(source => {
-    assert.match(source, /account\.css[^>]*>[\s\S]*js\/account\.js[^>]*>[\s\S]*js\/tippspiel\.js/);
-  });
+  assert.match(ligaPage, /account\.css[^>]*>[\s\S]*js\/account\.js/);
+  assert.doesNotMatch(ligaPage, /js\/tippspiel\.js/);
+  assert.doesNotMatch(appScript, /PadelTippspiel/);
+  assert.match(tippspielPage, /account\.css[^>]*>[\s\S]*js\/account\.js[^>]*>[\s\S]*js\/tippspiel\.js/);
   assert.match(accountScript, /window\.PadelKonto = \{/);
   assert.match(accountScript, /function handleAuthSubmit/);
   assert.match(accountScript, /function renderResultTasks/);
@@ -48,8 +49,20 @@ test('account behavior and styles stay independent from the optional prediction 
   assert.doesNotMatch(accountScript, /getMatchTimestamp/);
   assert.doesNotMatch(tippspielScript, /function handleAuthSubmit|function renderResultTasks|function handleTrainingSubmit/);
   assert.match(tippspielScript, /window\.PadelKonto\?\.getSession/);
-  assert.match(appScript, /renderInfos\(\);\s*\} catch \(error\)[\s\S]*return;[\s\S]*await window\.PadelKonto\?\.init\(\)/);
+  assert.match(appScript, /renderActiveSection\(\);\s*\} catch \(error\)[\s\S]*return;[\s\S]*await window\.PadelKonto\?\.init\(\)/);
   assert.match(accountScript, /initialize\(\)\.catch\(error =>/);
+});
+
+test('directly linked public dialogs open before account initialization', () => {
+  const initApp = appScript.match(/async function initApp\(\) \{[\s\S]*?(?=\n\}\n\nconst mobileViewportQuery)/)?.[0] || '';
+  const statisticsOpen = initApp.indexOf('PadelMatchStatistics?.open');
+  const liveOpen = initApp.indexOf('openLiveTicker(requestedLiveMatch');
+  const profileOpen = initApp.indexOf('openPlayerProfile(requestedPlayerProfile)');
+  const accountInit = initApp.indexOf('PadelKonto?.init');
+
+  assert.ok(statisticsOpen >= 0 && statisticsOpen < accountInit);
+  assert.ok(liveOpen >= 0 && liveOpen < accountInit);
+  assert.ok(profileOpen >= 0 && profileOpen < accountInit);
 });
 
 test('both account dialogs expose one four-group game overview', () => {

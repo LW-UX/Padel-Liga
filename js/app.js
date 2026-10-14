@@ -19,6 +19,11 @@ let playerProfileData = null;
 let playerProfileExpanded = false;
 let playerProfileRequestId = 0;
 let playerProfileSeasonPayloadCache = new Map();
+const PLAYER_PROFILE_CACHE_TTL = 30000;
+const playerProfileCache = new Map();
+let chartLibraryPromise = null;
+let appReady = false;
+const renderedSections = new Set();
 let liveTickerReturnState = null;
 let statisticsMode = 'season';
 let allTimeStatisticsData = null;
@@ -132,6 +137,21 @@ function loadScript(src) {
     script.onerror = () => reject(new Error(`Konnte ${src} nicht laden.`));
     document.head.appendChild(script);
   });
+}
+
+function ensureChartLibrary() {
+  if (window.Chart) return Promise.resolve();
+  if (!chartLibraryPromise) {
+    chartLibraryPromise = loadScript('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js')
+      .then(() => {
+        if (!window.Chart) throw new Error('Die Diagrammbibliothek ist nicht verfügbar.');
+      })
+      .catch(error => {
+        chartLibraryPromise = null;
+        throw error;
+      });
+  }
+  return chartLibraryPromise;
 }
 
 function getSupabaseClient() {
@@ -486,16 +506,7 @@ function getEloExpectedScoreAgainstTeam(playerElo, opponentElos) {
 }
 
 function getEloPointFactor(score) {
-  const regularGames = score.regularSets.reduce(
-    (totals, set) => [totals[0] + set[0], totals[1] + set[1]],
-    [0, 0]
-  );
-  const regularDifference = Math.abs(regularGames[0] - regularGames[1]);
-  const tiebreakDifference = score.matchTiebreak
-    ? (Math.abs(score.matchTiebreak[0] - score.matchTiebreak[1]) / 10) * 3
-    : 0;
-
-  return Math.pow(Math.log10(regularDifference + tiebreakDifference + 1), 3) + 2;
+  return window.PadelEloForecast.getEloPointFactor(score);
 }
 
 function calculateSeasonEloHistory(season) {
@@ -745,9 +756,11 @@ async function loadAllTimeStatisticsData() {
 
 async function loadSeasonData(season) {
   window.PADEL_SEASON = null;
-  if (season.file) await loadScript(season.file);
+  const [, databaseSeason] = await Promise.all([
+    season.file ? loadScript(season.file) : Promise.resolve(),
+    loadDatabaseSeasonPayload(season)
+  ]);
   const staticSeason = window.PADEL_SEASON ? normalizeLegacySeason(window.PADEL_SEASON) : null;
-  const databaseSeason = await loadDatabaseSeasonPayload(season);
   const databaseSeasonIsComplete = Boolean(
     databaseSeason
     && (!staticSeason || databaseSeason.matches?.length >= staticSeason.matches?.length)
@@ -927,14 +940,8 @@ async function refreshActiveSeasonView() {
 
       applySeasonMetadata();
       updateViewerPicker();
-      renderHome();
-      renderRanking();
-      renderPartien();
-      renderCalculator();
-      renderStatistik();
-      renderInfos();
-      window.PadelTippspiel?.setSeasonData?.(PADEL_DATA);
-      if (document.getElementById('verlauf')?.classList.contains('active')) initChart();
+      invalidateSections();
+      renderActiveSection();
     }
   })().catch(error => {
     console.error('Die Saisonansicht konnte nach dem Ergebnis nicht aktualisiert werden:', error);
@@ -1103,11 +1110,8 @@ function selectViewer(id) {
   if (!isParticipantView() && matchScope === 'mine') matchScope = 'all';
   updateViewerPicker();
   updateChartViewerFocus();
-  renderHome();
-  renderRanking();
-  renderPartien();
-  renderCalculator();
-  renderStatistik();
+  invalidateSections(['start', 'rangliste', 'partien', 'rechner', 'verlauf']);
+  renderActiveSection();
   if (restoreToggleFocus) {
     picker.querySelector('[data-viewer-toggle]')?.focus({ preventScroll: true });
   }
@@ -1175,7 +1179,7 @@ function updateViewerPicker() {
 
 function setAuthenticatedPlayer(playerId = null) {
   const isSeasonParticipant = Boolean(playerId && PADEL_DATA?.players.some(player => player.id === playerId));
-  if (isSeasonParticipant) selectViewer(playerId);
+  if (isSeasonParticipant && playerId !== selectedViewerId) selectViewer(playerId);
 }
 
 window.PadelLigaSetAuthenticatedPlayer = setAuthenticatedPlayer;
@@ -1183,12 +1187,20 @@ window.addEventListener('padel:authenticated-player', event => {
   setAuthenticatedPlayer(event.detail?.playerId || null);
 });
 window.addEventListener('padel:official-result-changed', () => {
+  invalidatePlayerProfileCache();
   void refreshActiveSeasonView();
 });
+window.addEventListener('padel:profile-data-changed', invalidatePlayerProfileCache);
 window.addEventListener('padel:live-status-changed', () => {
-  if (PADEL_DATA) renderPartien();
+  invalidateSections(['start', 'partien']);
+  renderActiveSection();
   if (playerProfileData) renderPlayerProfileHistory();
 });
+
+function invalidatePlayerProfileCache() {
+  playerProfileCache.clear();
+  playerProfileSeasonPayloadCache.clear();
+}
 
 function isMissingPlayerProfileRpc(error) {
   return error?.code === 'PGRST202'
@@ -1210,15 +1222,17 @@ function getProfileRegularGameTotals(resultDetails) {
 }
 
 function getPlayerProfileSeasonPayload(seasonId) {
-  if (PADEL_DATA?.id === seasonId) return Promise.resolve(PADEL_DATA);
-  if (playerProfileSeasonPayloadCache.has(seasonId)) {
-    return playerProfileSeasonPayloadCache.get(seasonId);
-  }
+  const publicId = normalizeSeasonId(seasonId);
+  if (PADEL_DATA?.id === publicId) return Promise.resolve(PADEL_DATA);
+  const cached = playerProfileSeasonPayloadCache.get(publicId);
+  if (cached && cached.expiresAt > Date.now()) return cached.promise;
+  const entry = { expiresAt: Date.now() + PLAYER_PROFILE_CACHE_TTL };
   const request = loadDatabaseSeasonPayload(seasonId).catch(error => {
-    playerProfileSeasonPayloadCache.delete(seasonId);
+    if (playerProfileSeasonPayloadCache.get(publicId) === entry) playerProfileSeasonPayloadCache.delete(publicId);
     throw error;
   });
-  playerProfileSeasonPayloadCache.set(seasonId, request);
+  entry.promise = request;
+  playerProfileSeasonPayloadCache.set(publicId, entry);
   return request;
 }
 
@@ -1424,7 +1438,19 @@ function getLocalPlayerProfile(playerId) {
   };
 }
 
-async function fetchPlayerProfile(playerId) {
+function fetchPlayerProfile(playerId) {
+  const cached = playerProfileCache.get(playerId);
+  if (cached && cached.expiresAt > Date.now()) return cached.promise;
+  const entry = { expiresAt: Date.now() + PLAYER_PROFILE_CACHE_TTL };
+  entry.promise = loadPlayerProfile(playerId).catch(error => {
+    if (playerProfileCache.get(playerId) === entry) playerProfileCache.delete(playerId);
+    throw error;
+  });
+  playerProfileCache.set(playerId, entry);
+  return entry.promise;
+}
+
+async function loadPlayerProfile(playerId) {
   const client = getSupabaseClient();
   if (client) {
     const { data, error } = await client.rpc('get_player_profile', { p_player_id: playerId });
@@ -2080,7 +2106,22 @@ function renderPlayerProfile(profile) {
   renderPlayerProfileHistory();
   document.getElementById('player-profile-state').hidden = true;
   document.getElementById('player-profile-content').hidden = false;
-  requestAnimationFrame(() => renderPlayerProfileEloChart(profile.eloSeries || []));
+  playerProfileChart?.destroy();
+  playerProfileChart = null;
+  const canvas = document.getElementById('player-profile-elo-chart');
+  canvas?.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+  document.getElementById('player-profile-chart-legend').innerHTML = '';
+  document.getElementById('player-profile-elo-range').textContent = 'Diagramm wird geladen …';
+  requestAnimationFrame(() => {
+    void ensureChartLibrary().then(() => {
+      if (playerProfileData === profile && document.getElementById('player-profile-dialog')?.open) {
+        renderPlayerProfileEloChart(profile.eloSeries || []);
+      }
+    }).catch(error => {
+      if (playerProfileData === profile) document.getElementById('player-profile-elo-range').textContent = 'Diagramm konnte nicht geladen werden.';
+      console.error(error);
+    });
+  });
 }
 
 async function openPlayerProfile(playerId, trigger = null, options = {}) {
@@ -2481,6 +2522,32 @@ function updateRankingViewToggle() {
 }
 
 // ── NAV ───────────────────────────────────────────────────────────
+function invalidateSections(ids = ['start', 'rangliste', 'partien', 'rechner', 'verlauf', 'infos']) {
+  ids.forEach(id => renderedSections.delete(id));
+}
+
+function ensureSectionRendered(id) {
+  if (!appReady || !PADEL_DATA || renderedSections.has(id)) return;
+  const renderers = {
+    start: renderHome,
+    rangliste: renderRanking,
+    partien: renderPartien,
+    rechner: renderCalculator,
+    verlauf: renderStatistik,
+    infos: renderInfos
+  };
+  const render = renderers[id];
+  if (!render) return;
+  render();
+  renderedSections.add(id);
+}
+
+function renderActiveSection() {
+  const id = document.querySelector('main > .section.active')?.id;
+  ensureSectionRendered(id);
+  if (appReady && id === 'verlauf') initChart();
+}
+
 function nav(id, el) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
@@ -2488,8 +2555,7 @@ function nav(id, el) {
   const activeButton = el || document.querySelector(`nav button[data-section="${id}"]`);
   if (activeButton) activeButton.classList.add('active');
   scrollToTopInstantly(id === 'liveticker');
-  if (id === 'verlauf') initChart();
-  if (id === 'tippspiel') window.PadelTippspiel?.refresh();
+  renderActiveSection();
 }
 
 async function openLiveTicker(matchId, options = {}) {
@@ -4611,55 +4677,20 @@ function getOpenMatches() {
     .sort(compareMatchesByNumber);
 }
 
-function getBetterSingleEloTeam(match) {
-  const playersByName = new Map(PADEL_DATA.players.map(p => [p.name, p]));
-  const maxTeamElo = names => Math.max(...names.map(name => {
-    const player = playersByName.get(name);
-    const elo = player ? getLatestPlayerEloValue(player) : null;
-    return Number.isFinite(elo) ? elo : -Infinity;
-  }));
-  return maxTeamElo(match.team2.spieler) > maxTeamElo(match.team1.spieler) ? 2 : 1;
-}
-
 function getAutoTipEntryForMatch(match) {
   const probability = getMatchWinProbability(match);
   if (!probability) return null;
-
-  let winner;
-  let favorite;
-  if (probability.team1 > probability.team2) {
-    winner = 1; favorite = probability.team1;
-  } else if (probability.team2 > probability.team1) {
-    winner = 2; favorite = probability.team2;
-  } else {
-    winner = getBetterSingleEloTeam(match); favorite = 50;
-  }
-
-  // Scoreline aus Sicht des Gewinners: [Gewinner, Verlierer]
-  let winSet1, winSet2, winTb;
-  if (favorite >= 80) {
-    winSet1 = [6, 0]; winSet2 = [6, 0]; winTb = null;          // maximal dominant
-  } else if (favorite >= 70) {
-    winSet1 = [6, 1]; winSet2 = [6, 1]; winTb = null;          // sehr einseitig
-  } else if (favorite >= 63) {
-    winSet1 = [6, 2]; winSet2 = [6, 2]; winTb = null;          // sehr deutlich
-  } else if (favorite >= 58) {
-    winSet1 = [6, 3]; winSet2 = [6, 3]; winTb = null;          // solide Favoritenrolle
-  } else if (favorite >= 54) {
-    winSet1 = [6, 4]; winSet2 = [6, 4]; winTb = null;          // knapp in zwei Sätzen
-  } else {
-    winSet1 = [6, 4]; winSet2 = [4, 6]; winTb = [10, 8];       // knapp im Match-Tiebreak
-  }
-
-  const toTeams = pair => winner === 1
-    ? [String(pair[0]), String(pair[1])]
-    : [String(pair[1]), String(pair[0])];
-
-  return {
-    set1: toTeams(winSet1),
-    set2: toTeams(winSet2),
-    tb: winTb ? toTeams(winTb) : ['', '']
-  };
+  const playersByName = new Map(PADEL_DATA.players.map(p => [p.name, p]));
+  const teamElos = names => names.map(name => {
+    const player = playersByName.get(name);
+    const elo = player ? getLatestPlayerEloValue(player) : null;
+    return Number.isFinite(elo) ? elo : -Infinity;
+  });
+  return window.PadelEloForecast.getAutoTipForecast(
+    probability.team1,
+    teamElos(match.team1.spieler),
+    teamElos(match.team2.spieler)
+  )?.entry || null;
 }
 
 function applyCalculatorAutoTip() {
@@ -6249,6 +6280,20 @@ function getStatisticsEloChartBounds(datasets = []) {
 }
 
 function initChart() {
+  if (!window.Chart) {
+    void ensureChartLibrary().then(() => {
+      if (document.getElementById('verlauf')?.classList.contains('active')) {
+        if (statisticsLoadError.startsWith('Die Diagramme')) statisticsLoadError = '';
+        renderStatisticsModeState();
+        initChart();
+      }
+    }).catch(error => {
+      statisticsLoadError = 'Die Diagramme konnten nicht geladen werden. Öffne die Statistik erneut, um es noch einmal zu versuchen.';
+      renderStatisticsModeState();
+      console.error(error);
+    });
+    return;
+  }
   if (chart) {
     if (!isAllTimeStatistics()) initPlacementChart();
     return;
@@ -6443,6 +6488,7 @@ function renderFilter() {
 }
 
 function toggleP(id, i, btn) {
+  if (!chart) return;
   const ds = chart.data.datasets[i];
   const activePlayers = getStatisticsPlayerFilter();
   const player = getStatisticsPlayers()[i];
@@ -6454,6 +6500,7 @@ function toggleP(id, i, btn) {
 }
 
 function toggleAll(on) {
+  if (!chart) return;
   const activePlayers = getStatisticsPlayerFilter();
   getStatisticsPlayers().forEach((p, i) => {
     chart.data.datasets[i].hidden = !on;
@@ -6478,12 +6525,9 @@ async function initApp() {
     applySeasonMetadata();
     resetSeasonState();
     updateViewerPicker();
-    renderHome();
-    renderRanking();
-    renderPartien();
-    renderCalculator();
-    renderStatistik();
-    renderInfos();
+    appReady = true;
+    invalidateSections();
+    renderActiveSection();
   } catch (error) {
     document.querySelector('main').innerHTML = `<div class="empty-state">Die Saison-Daten konnten nicht geladen werden.</div>`;
     document.querySelector('main')?.setAttribute('aria-busy', 'false');
@@ -6493,15 +6537,17 @@ async function initApp() {
 
   finishInitialLoading();
 
+  const url = new URL(window.location.href);
+  const requestedStatistics = url.searchParams.get('partie');
+  const requestedLiveMatch = requestedStatistics ? null : url.searchParams.get('live');
+  const requestedPlayerProfile = url.searchParams.get('spielerprofil');
+  let liveTickerInitialized = false;
+
   try {
-    await window.PadelLiveTicker?.init();
-    await window.PadelKonto?.init();
-    await window.PadelTippspiel?.init(PADEL_DATA);
-    const url = new URL(window.location.href);
-    const requestedStatistics = url.searchParams.get('partie');
     if (requestedStatistics) await window.PadelMatchStatistics?.open(requestedStatistics, { updateUrl: false, direct: true });
-    const requestedLiveMatch = requestedStatistics ? null : url.searchParams.get('live');
     if (requestedLiveMatch) {
+      await window.PadelLiveTicker?.init();
+      liveTickerInitialized = true;
       nav('partien', document.getElementById('partien-nav-button'));
       const liveUrl = new URL(url);
       const baseUrl = new URL(url);
@@ -6514,14 +6560,20 @@ async function initApp() {
         view: url.searchParams.get('liveView') === 'overview' ? 'overview' : 'match'
       });
     }
-    const requestedPlayerProfile = url.searchParams.get('spielerprofil');
     if (requestedPlayerProfile && !requestedStatistics) {
       url.searchParams.delete('spielerprofil');
       window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
       await openPlayerProfile(requestedPlayerProfile);
     }
   } catch (error) {
-    console.error('Konto oder Tippspiel konnten nicht initialisiert werden:', error);
+    console.error('Die verlinkte Detailansicht konnte nicht initialisiert werden:', error);
+  }
+
+  try {
+    if (!liveTickerInitialized) await window.PadelLiveTicker?.init();
+    await window.PadelKonto?.init();
+  } catch (error) {
+    console.error('Das Konto konnte nicht initialisiert werden:', error);
   }
 }
 
@@ -6530,7 +6582,8 @@ mobileViewportQuery.addEventListener?.('change', () => {
   if (!mobileViewportQuery.matches) {
     document.getElementById('spielplan')?.classList.remove('played-details-visible');
   }
-  if (PADEL_DATA) renderRanking();
+  invalidateSections(['rangliste']);
+  renderActiveSection();
 });
 
 const spielplan = document.getElementById('spielplan');

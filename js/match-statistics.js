@@ -1,6 +1,7 @@
 /* Partiestatistik: one fresh RPC per opening, no live subscription or result cache. */
 (function () {
   'use strict';
+  const eloForecast = typeof module !== 'undefined' ? require('./elo-forecast.js') : window.PadelEloForecast;
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const number = value => value == null || !Number.isFinite(Number(value)) ? '—' : Number(value).toLocaleString('de-DE', { maximumFractionDigits: 1 });
   const signed = value => value == null ? '—' : `${value > 0 ? '+' : ''}${number(value)}`;
@@ -9,6 +10,9 @@
     timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric'
   }).format(new Date(value)) : '';
   const headerMeta = data => [data?.seasonLabel, headerDate(data?.matchAt)].filter(Boolean).join(' · ');
+  const playedOrderLabel = data => Number.isInteger(Number(data?.leaguePlayedOrdinal)) && Number(data.leaguePlayedOrdinal) > 0
+    ? `Als ${Number(data.leaguePlayedOrdinal)}. Partie gespielt`
+    : '';
   const day = now => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(now);
   const icon = '<span class="mc-score-details-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4 6h9M4 11h6M4 16h5"></path><circle cx="15.5" cy="14.5" r="3.5"></circle><path d="m18 17 3 3"></path></svg></span>';
   function availability(match, season, now = new Date()) {
@@ -43,8 +47,12 @@
     favoriteOpponent: ['Lieblingsgegner', 'Lieblingsgegnerin'],
     fearedOpponent: ['Angstgegner', 'Angstgegnerin']
   };
-  function section(title, body) {
-    return body ? `<section class="live-ticker-statistics-section"><h2 class="widget-label">${esc(title)}</h2>${body}</section>` : '';
+  function section(title, body, helpText = '') {
+    const help = !helpText ? '' : `<span class="th-help-wrap live-ticker-statistics-heading-help">
+      <span class="help-icon" tabindex="0" role="button" aria-label="${esc(title)} erklären" aria-describedby="match-statistics-elo-help" aria-expanded="false" data-help-tooltip-anchor>?</span>
+      <span class="help-tooltip" id="match-statistics-elo-help" role="tooltip">${esc(helpText)}</span>
+    </span>`;
+    return body ? `<section class="live-ticker-statistics-section"><h2 class="widget-label"><span class="live-ticker-statistics-heading">${esc(title)}${help}</span></h2>${body}</section>` : '';
   }
   function playerEmoji(player) {
     if (['👨', '👩'].includes(player?.profileEmoji)) return player.profileEmoji;
@@ -212,8 +220,32 @@
       : '<p class="live-ticker-statistics-empty-impact">Keine bedeutenden Auswirkungen.</p>';
     return `<div class="live-ticker-statistics-ranking-layout">
       <section class="live-ticker-statistics-section live-ticker-statistics-ranking-panel"><h2 class="widget-label">Rangliste</h2>${renderPlayerRanking(data, selectedPlayerId)}</section>
-      <section class="live-ticker-statistics-section live-ticker-statistics-impact-panel"><h2 class="widget-label">${impactTitle}</h2>${impactBody}</section>
+      <div class="live-ticker-statistics-side-panels">
+        ${renderAutoTipForecast(data)}
+        <section class="live-ticker-statistics-section live-ticker-statistics-impact-panel"><h2 class="widget-label">${impactTitle}</h2>${impactBody}</section>
+      </div>
     </div>`;
+  }
+  function autoTipForecast(data) {
+    if (data.probability == null) return null;
+    return eloForecast?.getAutoTipForecast(
+      Number(data.probability) * 100,
+      data.players.filter(player => Number(player.team) === 1).map(player => player.elo?.before),
+      data.players.filter(player => Number(player.team) === 2).map(player => player.elo?.before)
+    );
+  }
+  function renderAutoTipForecast(data) {
+    if (data.availability !== 'preview' || !data.countsForElo) return '';
+    const forecast = autoTipForecast(data);
+    if (!forecast) return '';
+    const sets = forecast.score.matchTiebreak ? (forecast.winner === 1 ? '2:1' : '1:2') : (forecast.winner === 1 ? '2:0' : '0:2');
+    const result = [...forecast.score.regularSets, ...(forecast.score.matchTiebreak ? [forecast.score.matchTiebreak] : [])]
+      .map(set => set.join(':')).join(', ');
+    return `<section class="live-ticker-statistics-section live-ticker-statistics-autotip-panel">
+      <h2 class="widget-label">Auto-Tipp-Prognose</h2>
+      <strong class="live-ticker-statistics-autotip-score" aria-label="Satzergebnis ${sets}">${sets}</strong>
+      <span class="live-ticker-statistics-autotip-result">${esc(result)}</span>
+    </section>`;
   }
   function graphGeometry(players, analysis) {
     const values = players.flatMap(p => [
@@ -243,25 +275,26 @@
     return `M${x1},${startA} C${c1},${startA} ${c2},${yA} ${x2},${yA} L${x2},${yB} C${c2},${yB} ${c1},${startB} ${x1},${startB} Z`;
   }
   function projectionBand(x1, startY, x2, valueA, valueB, geometry, cls) {
+    const startHeight = 2;
     const low = Math.min(Number(valueA), Number(valueB));
     const high = Math.max(Number(valueA), Number(valueB));
-    const steps = 16;
-    const startHeight = 2;
-    const strips = Array.from({ length: steps }, (_, index) => {
-      const start = index / steps;
-      const end = (index + 1) / steps;
-      const stripLow = low + (high - low) * start;
-      const stripHigh = low + (high - low) * end;
-      const stripStartLow = startY + startHeight / 2 - startHeight * start;
-      const stripStartHigh = startY + startHeight / 2 - startHeight * end;
-      const edgeDistance = (Math.abs(index - (steps - 1) / 2) - .5) / (steps / 2 - 1);
-      const opacity = (.75 - edgeDistance * .45).toFixed(3);
-      return `<path d="${smoothBandPath(x1, stripStartLow, stripStartHigh, x2, geometry.y(stripLow), geometry.y(stripHigh))}" fill-opacity="${opacity}" class="live-ticker-statistics-projection-band-strip ${cls}"/>`;
-    }).join('');
-    return `<g class="live-ticker-statistics-projection-band ${cls}">${strips}</g>`;
+    return `<path d="${smoothBandPath(x1, startY - startHeight / 2, startY + startHeight / 2, x2, geometry.y(high), geometry.y(low))}" class="live-ticker-statistics-projection-band ${cls}"/>`;
   }
   function projectionRange(x1, startY, x2, valueA, valueB, geometry, cls) {
     return `<path d="${smoothBandPath(x1, startY, startY, x2, geometry.y(valueA), geometry.y(valueB))}" class="live-ticker-statistics-projection-range ${cls}"/>`;
+  }
+  function forecastProjection(data, player) {
+    const teamOne = data.players.filter(item => Number(item.team) === 1);
+    const teamTwo = data.players.filter(item => Number(item.team) === 2);
+    const teamOneElos = teamOne.map(item => Number(item.elo?.before));
+    const teamTwoElos = teamTwo.map(item => Number(item.elo?.before));
+    const forecast = autoTipForecast(data);
+    if (!forecast) return null;
+    const ownTeam = Number(player.team);
+    const opponentElos = (ownTeam === 1 ? teamTwoElos : teamOneElos);
+    const won = ownTeam === forecast.winner;
+    const value = eloForecast.projectElo(player.elo?.before, opponentElos, won, forecast.pointFactor);
+    return value == null ? null : { outcome: won ? 'win' : 'loss', value };
   }
   function peakStarIcon(rightX, textY, label, state) {
     const size = 14;
@@ -299,10 +332,13 @@
       const analysisRanges = !analysis || !available ? ''
         : [['lossMin', 'lossMax', 'loss'], ['winMin', 'winMax', 'win']].map(([a, b, cls]) => e[a] == null || e[b] == null ? ''
           : projectionRange(x + 30, g.y(e.before), x + 195, e[a], e[b], g, cls)).join('');
+      const forecast = analysis || !available ? null : forecastProjection(data, p);
+      const forecastLine = !forecast ? ''
+        : `<path d="${smoothLinePath(x + 30, g.y(e.before), x + 195, g.y(forecast.value))}" class="live-ticker-statistics-forecast-line ${forecast.outcome}"/><circle cx="${x + 195}" cy="${g.y(forecast.value)}" r="4" class="live-ticker-statistics-forecast-dot ${forecast.outcome}"/>`;
       const shape = !available ? '' : analysis
         ? `${analysisRanges}<path d="${smoothLinePath(x + 30, g.y(e.before), x + 195, g.y(e.after))}" class="live-ticker-statistics-line"/><circle cx="${x + 195}" cy="${g.y(e.after)}" r="5" class="live-ticker-statistics-dot"/>`
         : [['lossMin', 'lossMax', 'loss'], ['winMin', 'winMax', 'win']].map(([a, b, cls]) => e[a] == null || e[b] == null ? ''
-          : projectionBand(x + 30, g.y(e.before), x + 195, e[a], e[b], g, cls)).join('');
+          : projectionBand(x + 30, g.y(e.before), x + 195, e[a], e[b], g, cls)).join('') + forecastLine;
       const startValue = available ? `<text x="${x + 22}" y="${g.y(e.before) + 24}" text-anchor="end" class="live-ticker-statistics-value live-ticker-statistics-start-value">${number(e.before)}</text>` : '';
       const resultY = analysis && available ? analysisResultY(g, e.before, e.after) : null;
       const resultLabel = analysis && available ? number(e.after) : '';
@@ -343,7 +379,10 @@
       <svg viewBox="0 0 1000 590" width="1000" height="590" aria-hidden="true" class="live-ticker-statistics-svg">
         <defs><symbol id="statistics-peak-star-icon" viewBox="0 0 24 24"><path d="M12 2.5 14.94 8.46 21.52 9.42 16.76 14.06 17.88 20.61 12 17.52 6.12 20.61 7.24 14.06 2.48 9.42 9.06 8.46 12 2.5Z"/></symbol></defs>
         ${g.ticks.map(t => `<path d="M60 ${g.y(t)} H995" class="live-ticker-statistics-grid"/>`).join('')}${selectedLaneLast}
-      </svg><div class="live-ticker-statistics-axis" aria-hidden="true">${g.ticks.map(t => `<span style="top:${g.y(t)}px">${number(Math.round(t))}</span>`).join('')}</div></div>`);
+      </svg><div class="live-ticker-statistics-axis" aria-hidden="true">${g.ticks.map(t => `<span style="top:${g.y(t)}px">${number(Math.round(t))}</span>`).join('')}</div></div>`,
+      analysis
+        ? 'Die Flächen zeigen, welche Elo-Werte bei dieser Partie möglich waren: grün bei einem Sieg und rot bei einer Niederlage. Die durchgezogene Linie zeigt die tatsächliche Elo-Entwicklung. Am Endwert steht die Veränderung durch diese Partie.'
+        : 'Die Fächer zeigen die Bereiche der möglichen Elo-Werte nach der Partie: grün bei einem Sieg und rot bei einer Niederlage. Die gestrichelte Linie zeigt den Elo-Wert des Auto-Tipps.');
   }
   function impactText(impact, data) {
     const condition = impact.onWin ? 'bei einem Sieg' : 'bei einer Niederlage';
@@ -395,13 +434,20 @@
       <div class="loading-skeleton live-ticker-statistics-skeleton-history"></div><div class="live-ticker-statistics-players">${card.repeat(4)}</div>
       <div class="loading-skeleton live-ticker-statistics-skeleton-graph"></div><div class="loading-skeleton live-ticker-statistics-skeleton-history"></div></div>`;
   }
-  const api = { availability, entry, icon, render, skeleton, graphGeometry, analysisResultY, headerMeta };
+  const api = { availability, entry, icon, render, skeleton, graphGeometry, analysisResultY, headerMeta, playedOrderLabel };
   if (typeof module !== 'undefined') module.exports = api;
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
   let request = 0, active = null, returnState = null, profileOnTop = false, currentRoute = null, routeNumber = 0;
   const routeContexts = new Map();
   const dialog = () => document.getElementById('live-ticker-dialog');
   const content = () => document.getElementById('live-ticker-content');
+  function setPlayedOrder(data = null) {
+    const target = document.getElementById('match-statistics-played-order');
+    if (!target) return;
+    const label = playedOrderLabel(data);
+    target.textContent = label;
+    target.hidden = !label;
+  }
   function restore() {
     ++request; active = null; currentRoute = null;
     if (dialog()?.dataset.mode !== 'statistics') return;
@@ -412,6 +458,7 @@
     document.getElementById('live-match-switcher').hidden = false;
     document.querySelector('[data-live-back]').setAttribute('aria-label', 'Final Four schließen');
     document.getElementById('live-ticker-title').textContent = 'FINAL FOUR';
+    setPlayedOrder();
     if (returnState) {
       window.scrollTo({ top: returnState.scroll, behavior: 'instant' });
       if (returnState.profileOpen) {
@@ -456,6 +503,7 @@
     document.querySelector('[data-live-back]').setAttribute('aria-label', 'Partiestatistik schließen');
     document.getElementById('live-ticker-title').textContent = 'PARTIESTATISTIK';
     document.getElementById('live-ticker-season-label').textContent = '';
+    setPlayedOrder();
     document.getElementById('live-match-switcher').hidden = true;
     content().innerHTML = skeleton(); content().setAttribute('aria-busy', 'true');
     if (!dialog().open) dialog().showModal();
@@ -491,6 +539,7 @@
         window.history.pushState({ ...window.history.state, matchStatistics: matchId, statisticsRoute: currentRoute, statisticsProfile: null, statisticsTop: 'match' }, '', route);
       }
       document.getElementById('live-ticker-title').textContent = data.label;
+      setPlayedOrder(data);
       document.getElementById('live-ticker-season-label').textContent = headerMeta(data);
       content().innerHTML = render(data, window.PadelLigaGetSelectedViewerId?.()); content().setAttribute('aria-busy', 'false');
     } catch (error) {

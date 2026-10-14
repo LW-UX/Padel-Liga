@@ -12,6 +12,7 @@ const testShowcaseMigration = fs.readFileSync(path.join(root, 'supabase/migratio
 const rankChangesMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261014130000_match_statistics_rank_changes.sql'), 'utf8');
 const analysisEloRangesMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261014140000_match_statistics_analysis_elo_ranges.sql'), 'utf8');
 const favoriteThresholdMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261014150000_match_statistics_favorite_threshold.sql'), 'utf8');
+const playedOrderMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261014235000_match_statistics_played_order.sql'), 'utf8');
 const migrations = fs.readdirSync(path.join(root, 'supabase/migrations')).sort().filter(f => f < '20261013100000');
 test('result impact migration uses inclusive 45 and 55 percent boundaries',()=>{
   assert.match(favoriteThresholdMigration,/value\s*<=\s*0\.45\b/);
@@ -61,6 +62,7 @@ test('match detail SQL: historical isolation, eligibility, calculations and publ
   await db.exec(rankChangesMigration);
   await db.exec(analysisEloRangesMigration);
   await db.exec(favoriteThresholdMigration);
+  await db.exec(playedOrderMigration);
   await db.exec(`insert into players values ('a','Anna','One',800),('b','Ben','One',800),('c','Chris','Two',800),('d','Dana','Two',800),('e','Emil','Three',800),('f','Frida','Three',800);
     insert into seasons(id,label) values('season','Saison');
     insert into season_players select 'season',id,'main',1100 from players;
@@ -68,7 +70,7 @@ test('match detail SQL: historical isolation, eligibility, calculations and publ
   const detail = async id => (await db.query('select public.get_public_match_detail($1) d',[id])).rows[0].d;
   await addMatch(db,'preview');
   let d=await detail('preview');
-  assert.equal(d.availability,'preview'); assert.equal(d.qualificationPlaces,4); assert.equal(d.players[0].elo.before,1100,'season start, never global initial 800'); assert.equal(d.players[0].statistics.tableSize,6);
+  assert.equal(d.availability,'preview'); assert.equal(d.leaguePlayedOrdinal,undefined); assert.equal(d.qualificationPlaces,4); assert.equal(d.players[0].elo.before,1100,'season start, never global initial 800'); assert.equal(d.players[0].statistics.tableSize,6);
   assert.equal(d.ranking.length,6); assert.deepEqual(d.ranking.map(player=>player.playerId),['a','b','c','d','e','f']);
   assert.equal(d.probability,0.5); assert.equal(d.players[0].elo.winMin,1150);
   assert.ok(d.players[0].elo.lossMin<d.players[0].elo.lossMax);
@@ -80,18 +82,29 @@ test('match detail SQL: historical isolation, eligibility, calculations and publ
   await db.exec("update matches set cancelled_at=now() where id='overdue'"); assert.equal(await detail('overdue'),null);
   await addMatch(db,'played',{at:'2026-01-05T12:00Z',winner:1});
   await db.exec("insert into match_elo_changes select 'played',id,1100,case when id in ('a','b') then 1150 else 1050 end from players");
-  const original=await detail('played'); assert.equal(original.availability,'analysis'); assert.equal(original.players[0].statistics.points,3); assert.equal(original.players[0].elo.after,1150);
+  const original=await detail('played'); assert.equal(original.availability,'analysis'); assert.equal(original.leaguePlayedOrdinal,1); assert.equal(original.players[0].statistics.points,3); assert.equal(original.players[0].elo.after,1150);
   assert.equal(original.players[0].elo.winMin,1150); assert.equal(original.players[0].elo.winMax,1185);
   assert.equal(original.players[0].elo.lossMin,1015); assert.equal(original.players[0].elo.lossMax,1050);
   assert.ok(original.ranking.every(player=>Number.isInteger(player.statistics.previousRank)));
   assert.ok(original.ranking.some(player=>player.statistics.previousRank!==player.statistics.rank));
   assert.ok(!original.impacts.some(i=>i.kind==='leaderGained'),'equally ranked teammates are not sole leaders');
+  await db.exec(`insert into matches(id,season_id,league_id,match_at,winner,actual_sets,result_details,competition_stage,counts_for_ranking,cancelled_at) values
+    ('ordinal-open','season','main','2026-01-04T08:00Z',null,null,null,'league',true,null),
+    ('ordinal-unranked','season','main','2026-01-04T09:00Z',1,'2:0','6:2, 6:2','league',false,null),
+    ('ordinal-cancelled','season','main','2026-01-04T10:00Z',1,'2:0','6:2, 6:2','league',true,now()),
+    ('ordinal-playoff','season','main','2026-01-04T11:00Z',1,'2:0','6:2, 6:2','semifinal',true,null),
+    ('ordinal-other-league','season','other','2026-01-04T12:00Z',1,'2:0','6:2, 6:2','league',true,null),
+    ('ordinal-other-season','other','main','2026-01-04T13:00Z',1,'2:0','6:2, 6:2','league',true,null);`);
+  assert.equal((await detail('played')).leaguePlayedOrdinal,1,'only completed ranked matches in the same season and league count');
+  await db.exec("delete from matches where id like 'ordinal-%'");
   await addMatch(db,'later',{at:'2026-02-01T12:00Z',winner:2});
   await db.exec("insert into match_elo_changes select 'later',id,1100,1300 from players");
+  const laterDetail=await detail('later'); assert.equal(laterDetail.leaguePlayedOrdinal,2);
   const later=await detail('played'); delete later.generatedAt; delete original.generatedAt; assert.deepEqual(later,original,'later games must not leak into old analysis');
   // Three official wins create a relationship and a streak; reversed side order still forms a rematch.
   for(let i=1;i<=3;i++) await addMatch(db,`earlier-${i}`,{at:`2026-01-0${i}T12:00Z`,winner:1});
   d=await detail('played');
+  assert.equal(d.leaguePlayedOrdinal,4);
   assert.equal(d.players[0].streak.length,4); assert.ok(d.players[0].relationships.some(r=>r.kind==='successPartner'&&r.playerId==='b'));
   assert.equal(d.rematches.length,3); assert.equal(d.company.wins1,4);
   await db.exec("update matches set winner=2,actual_sets='0:2',result_details='2:6, 2:6' where id='earlier-3'");
