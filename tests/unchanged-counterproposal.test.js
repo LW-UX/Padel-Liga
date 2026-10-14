@@ -55,7 +55,11 @@ test('unchanged training alternatives are compared canonically before replacemen
 
 test('training comparison ignores harmless player ordering but detects changed results', () => {
   const signatureSource = extractFunction('getTrainingProposalSignature', 'getTrainingSetData');
-  const signature = vm.runInNewContext(`(() => { ${signatureSource}\nreturn getTrainingProposalSignature; })()`, { JSON, String });
+  const signature = vm.runInNewContext(`(() => {
+    const normalizeTrainingGuestNames = value => value || {};
+    ${signatureSource}
+    return getTrainingProposalSignature;
+  })()`, { JSON, String });
   const stored = {
     played_on: '2026-09-22',
     display_time: '10:30:00',

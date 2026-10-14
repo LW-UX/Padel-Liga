@@ -1402,6 +1402,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-1",
           "text": "Greta P & Agnes K vs. Christoph L & Marco M"
         },
         {
@@ -1423,6 +1424,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-2",
           "text": "Leonie R & Cristian B (Hanako) vs. Jonas L & Luca W (Envidual)"
         },
         {
@@ -1444,6 +1446,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-3",
           "text": "Martin B & Chris M vs. Marcel M & Irene W"
         },
         {
@@ -1465,6 +1468,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-4",
           "text": "Ludwig W & Raphael H vs. Florian Z & Niklas K"
         },
         {
@@ -1502,6 +1506,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-5",
           "text": "Lukas P & Martin B vs. Luca W & Andreas L"
         },
         {
@@ -1527,6 +1532,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-6",
           "text": "Ludwig W & Cristian B vs. Niklas K & Greta P | Ergebnis: 7:5, 6:1"
         },
         {
@@ -1552,6 +1558,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-7",
           "text": "Christoph L & Raphael H vs. Marco M & Marcel M"
         },
         {
@@ -1568,6 +1575,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-8",
           "text": "Chris M & Jonas L vs. Irene W & Leonie R"
         },
         {
@@ -1618,6 +1626,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-9",
           "text": "Cristian B & Chris M vs. Raphael H & Leonie R"
         },
         {
@@ -1648,6 +1657,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-10",
           "text": "Agnes K & Lukas P vs. Ludwig W & Marco M"
         },
         {
@@ -1673,6 +1683,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-11",
           "text": "Christoph L & Florian Z vs. Luca W & Irene W"
         },
         {
@@ -1711,6 +1722,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-12",
           "text": "Greta P & Andreas L vs. Marcel M & Jonas L | Ergebnis: 1:6, 6:3, Match-Tie-Break 6:10"
         },
         {
@@ -1777,6 +1789,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-13",
           "text": "Chris M. & Raphael H. vs. Ludwig W. & Irene W.",
           "result": "54 : 46 %",
           "resultLabel": "Gewinnwahrscheinlichkeit"
@@ -1804,6 +1817,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-14",
           "text": "Cristian B. & Lukas P. vs. Christoph L. & Martin B.",
           "result": "63 : 37 %",
           "resultLabel": "Gewinnwahrscheinlichkeit"
@@ -1831,6 +1845,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-15",
           "text": "Marco M. & Andreas L. vs. Leonie R. & Niklas K.",
           "result": "86 : 14 %",
           "resultLabel": "Gewinnwahrscheinlichkeit"
@@ -1858,6 +1873,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-16",
           "text": "Marcel M. & Florian Z. vs. Agnes K. & Jonas L.",
           "result": "61 : 39 %",
           "resultLabel": "Gewinnwahrscheinlichkeit"
@@ -1926,6 +1942,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-17",
           "text": "Martin B. & Luca W. vs. Florian Z. & Ludwig W.",
           "result": "40 : 60 %",
           "resultLabel": "Gewinnwahrscheinlichkeit"
@@ -1958,6 +1975,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-18",
           "text": "Chris M. & Agnes K. vs. Jonas L. & Greta P.",
           "result": "46 : 54 %",
           "resultLabel": "Gewinnwahrscheinlichkeit"
@@ -1981,6 +1999,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-19",
           "text": "Raphael H. & Andreas L. vs. Lukas P. & Niklas K.",
           "result": "75 : 25 %",
           "resultLabel": "Gewinnwahrscheinlichkeit"
@@ -2008,6 +2027,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-20",
           "text": "Christoph L. & Irene W. vs. Marco M. & Cristian B.",
           "result": "29 : 71 %",
           "resultLabel": "Gewinnwahrscheinlichkeit"
@@ -2078,6 +2098,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-21",
           "text": "Florian Z. & Leonie R. vs. Andreas L. & Ludwig W.",
           "result": "0:6, 0:6",
           "resultLabel": "Ergebnis"
@@ -2092,6 +2113,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-22",
           "text": "Irene W. & Cristian B. vs. Greta P. & Christoph L.",
           "result": "61 : 39 %",
           "resultLabel": "Gewinnwahrscheinlichkeit"
@@ -2115,6 +2137,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-23",
           "text": "Jonas L. & Marco M. vs. Agnes K. & Martin B.",
           "result": "84 : 16 %",
           "resultLabel": "Gewinnwahrscheinlichkeit"
@@ -2138,6 +2161,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-24",
           "text": "Marcel M. & Niklas K. vs. Lukas P. & Luca W.",
           "result": "4:6, 4:6",
           "resultLabel": "Ergebnis"
@@ -2189,6 +2213,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-25",
           "text": "Niklas K. & Chris M. vs. Agnes K. & Andreas L.",
           "result": "6:3, 6:3",
           "resultLabel": "Ergebnis"
@@ -2203,6 +2228,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-26",
           "text": "Florian Z. & Raphael H. vs. Marcel M. & Luca W.",
           "result": "38 : 62 %",
           "resultLabel": "Gewinnwahrscheinlichkeit"
@@ -2230,6 +2256,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "match",
+          "matchId": "season-2026-partie-27",
           "text": "Leonie R. & Lukas P. vs. Greta P. & Martin B.",
           "result": "60 : 40 %",
           "resultLabel": "Gewinnwahrscheinlichkeit"

@@ -22,6 +22,8 @@
   let unscheduleTrigger = null;
   let unrateTrigger = null;
   let accountMessageTimer = null;
+  const TRAINING_GUEST_OPTION = '__guest__';
+  const TRAINING_GUEST_KEY_PATTERN = /^guest:([1-4])$/;
 
   const browserUserAgent = String(window.navigator?.userAgent || '');
   const browserPlatform = String(window.navigator?.platform || '');
@@ -573,21 +575,47 @@
     visibleTrainingTasks.forEach(task => {
       if (task.created_by_me) return;
       const form = document.querySelector(`[data-training-alternative="${CSS.escape(String(task.session_id))}"]`);
-      if (form) renderTrainingForm(task.player_ids, getTrainingRoundValues(task), form);
+      if (form) renderTrainingForm(task.player_ids, getTrainingRoundValues(task), form, task.guest_names);
     });
     syncDateTimeHints(document.getElementById('result-task-list'));
   }
 
-  function getPlayerName(playerId) {
+  function isTrainingGuestKey(value) {
+    return TRAINING_GUEST_KEY_PATTERN.test(String(value || ''));
+  }
+
+  function normalizeTrainingGuestNames(guestNames = {}) {
+    if (!guestNames || typeof guestNames !== 'object' || Array.isArray(guestNames)) return {};
+    return Object.fromEntries(Object.entries(guestNames)
+      .filter(([key, name]) => isTrainingGuestKey(key) && String(name || '').trim())
+      .map(([key, name]) => [key, String(name).trim()]));
+  }
+
+  function getTrainingGuestDisplayName(playerId, guestNames = {}, participantIds = []) {
+    const normalizedGuestNames = normalizeTrainingGuestNames(guestNames);
+    const guestName = normalizedGuestNames[playerId];
+    if (!guestName) return null;
+    const matchingGuests = (participantIds.length ? participantIds : Object.keys(normalizedGuestNames))
+      .filter(id => normalizedGuestNames[id]?.toLocaleLowerCase('de-DE') === guestName.toLocaleLowerCase('de-DE'));
+    const duplicateIndex = matchingGuests.indexOf(playerId);
+    return matchingGuests.length > 1
+      ? `${guestName} · Gast ${duplicateIndex + 1}`
+      : `${guestName} · Gast`;
+  }
+
+  function getPlayerName(playerId, guestNames = {}, participantIds = []) {
+    const guestDisplayName = getTrainingGuestDisplayName(playerId, guestNames, participantIds);
+    if (guestDisplayName) return guestDisplayName;
     return state.players.find(player => player.id === playerId)?.display_name
       || (window.PADEL_PLAYERS || []).find(player => player.id === playerId)?.name
       || playerId;
   }
 
-  function renderTrainingTaskTeam(playerIds = []) {
+  function renderTrainingTaskTeam(playerIds = [], guestNames = {}, participantIds = []) {
     return playerIds.map(playerId => {
       const isAuthenticated = playerId === state.profile?.player_id;
-      return `<span class="account-task-player-name${isAuthenticated ? ' is-authenticated' : ''}">${escapeHtml(getPlayerName(playerId))}</span>`;
+      const isGuest = isTrainingGuestKey(playerId);
+      return `<span class="account-task-player-name${isAuthenticated ? ' is-authenticated' : ''}${isGuest ? ' is-guest' : ''}">${escapeHtml(getPlayerName(playerId, guestNames, participantIds))}</span>`;
     }).join('<span class="mc-player-sep">&amp;</span>');
   }
 
@@ -652,9 +680,9 @@
     const roundLabel = roundCount > 1 ? ` · Spiel ${roundIndex + 1}` : '';
     return `<div class="training-task-round">
       <div class="account-task-matchup">
-        <strong>${renderTrainingTaskTeam(round.team_one_ids)}</strong>
+        <strong>${renderTrainingTaskTeam(round.team_one_ids, task.guest_names, task.player_ids)}</strong>
         <span>vs.</span>
-        <strong>${renderTrainingTaskTeam(round.team_two_ids)}</strong>
+        <strong>${renderTrainingTaskTeam(round.team_two_ids, task.guest_names, task.player_ids)}</strong>
       </div>
       <div class="result-proposal">
         <span>${proposalLabel}${roundLabel}<br>${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</span>
@@ -703,12 +731,12 @@
     return `<span class="training-picker-display-line">${escapeHtml(option?.label || 'Auswählen')}</span>`;
   }
 
-  function renderTrainingPicker({ label, name, value, options, menuId, searchable = false }) {
+  function renderTrainingPicker({ label, name, value, options, menuId, searchable = false, playerField = false }) {
     const selected = options.find(option => option.value === value) || options[0];
     const toggle = `<button class="secondary-button secondary-button--dropdown training-picker-toggle" type="button" data-training-picker-toggle aria-label="${escapeHtml(selected?.label || 'Auswählen')}" aria-haspopup="listbox" aria-expanded="false" aria-controls="${escapeHtml(menuId)}">
         <span class="training-picker-display" data-training-picker-label>${renderTrainingPickerText(selected)}</span>
       </button>`;
-    return `<div class="training-picker" data-training-picker>
+    return `<div class="training-picker" data-training-picker${playerField ? ' data-training-player-field' : ''}>
       <span class="training-picker-label">${escapeHtml(label)}</span>
       <input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(selected?.value || '')}">
       ${searchable ? `<div class="training-picker-search-control">
@@ -724,6 +752,7 @@
           aria-selected="${option.value === selected?.value}"
           data-training-picker-value="${escapeHtml(option.value)}"
           data-training-picker-search-text="${escapeHtml(option.label)} ${escapeHtml(option.meta || '')}"
+          ${option.isGuestAction ? 'data-training-guest-option' : ''}
         ><span class="training-picker-option-label">${renderTrainingPickerText(option, true)}</span>${option.meta ? `<span>${escapeHtml(option.meta)}</span>` : ''}</button>`).join('')}
         ${searchable ? '<div class="picker-search-empty" data-training-picker-search-empty hidden>Kein Spieler gefunden.</div>' : ''}
       </div>
@@ -756,11 +785,11 @@
   }
 
   function getTrainingPairingOptions(form) {
-    const selectedPlayerIds = [...form.querySelectorAll('[data-training-player-fields] [name="playerId"]')]
-      .map(input => input.value);
+    const selectedPlayerIds = getTrainingParticipantIds(form);
+    const guestNames = getTrainingGuestNames(form);
     const playerLabels = Array.from({ length: 4 }, (_, index) => {
       const playerId = selectedPlayerIds[index];
-      return playerId ? getPlayerName(playerId) : `Spieler ${index + 1}`;
+      return playerId ? getPlayerName(playerId, guestNames, selectedPlayerIds) : `Spieler ${index + 1}`;
     });
     const pairingOption = (value, first, second, third, fourth) => {
       const teams = [
@@ -822,24 +851,72 @@
     return canSeeLudiPlayers ? players : players.filter(player => !isLudiTrainingPlayer(player));
   }
 
-  function renderTrainingForm(playerIds = null, roundValues = [], form = document.getElementById('training-form')) {
+  function getTrainingParticipantIds(form = document) {
+    return [...form.querySelectorAll('[data-training-player-fields] [name="playerId"]')]
+      .map(input => String(input.value || ''));
+  }
+
+  function getTrainingGuestNames(form = document) {
+    return Object.fromEntries([...form.querySelectorAll('[data-training-guest-name]')]
+      .map(input => [String(input.dataset.trainingGuestName), String(input.value || '').trim()])
+      .filter(([key, name]) => isTrainingGuestKey(key) && name));
+  }
+
+  function renderTrainingGuestField(label, playerId, guestName = '') {
+    return `<div class="training-picker training-guest-field" data-training-player-field>
+      <span class="training-picker-label">${escapeHtml(label)}</span>
+      <input type="hidden" name="playerId" value="${escapeHtml(playerId)}">
+      <div class="training-guest-control">
+        <span class="training-guest-badge">Gast</span>
+        <input
+          class="training-guest-name-input"
+          type="text"
+          name="guestName"
+          value="${escapeHtml(guestName)}"
+          minlength="2"
+          maxlength="40"
+          required
+          autocomplete="off"
+          placeholder="Name des Gastes"
+          aria-label="${escapeHtml(label)}: Name des Gastes"
+          data-training-guest-name="${escapeHtml(playerId)}"
+        >
+        <button class="training-guest-remove" type="button" data-training-guest-remove aria-label="Gast entfernen und Spieler auswählen">×</button>
+      </div>
+    </div>`;
+  }
+
+  function renderTrainingPlayerFields(playerIds = null, guestNames = {}, form = document.getElementById('training-form')) {
     const target = form?.querySelector('[data-training-player-fields]');
     if (!target || !state.players.length) return;
     const selectablePlayers = getSelectableTrainingPlayers();
+    const normalizedGuestNames = normalizeTrainingGuestNames(guestNames);
     const menuPrefix = form.dataset.trainingAlternative
       ? `training-alternative-${form.dataset.trainingAlternative}`
       : 'training';
     target.innerHTML = Array.from({ length: 4 }, (_, index) => {
       const selectedId = playerIds?.[index] || (index === 0 ? state.profile?.player_id || '' : '');
+      if (isTrainingGuestKey(selectedId)) {
+        return renderTrainingGuestField(`Spieler ${index + 1}`, selectedId, normalizedGuestNames[selectedId] || '');
+      }
       return renderTrainingPicker({
         label: `Spieler ${index + 1}`,
         name: 'playerId',
         value: selectedId,
-        options: [{ value: '', label: 'Auswählen' }, ...selectablePlayers.map(player => ({ value: player.id, label: player.display_name, meta: player.initials || '' }))],
+        options: [
+          { value: '', label: 'Auswählen' },
+          ...selectablePlayers.map(player => ({ value: player.id, label: player.display_name, meta: player.initials || '' })),
+          { value: TRAINING_GUEST_OPTION, label: '+ Gast hinzufügen', meta: 'Name eingeben', isGuestAction: true }
+        ],
         menuId: `${menuPrefix}-player-menu-${index}`,
-        searchable: true
+        searchable: true,
+        playerField: true
       });
     }).join('');
+  }
+
+  function renderTrainingForm(playerIds = null, roundValues = [], form = document.getElementById('training-form'), guestNames = {}) {
+    renderTrainingPlayerFields(playerIds, guestNames, form);
     renderTrainingRounds(roundValues, form, Math.max(1, roundValues.length || 1));
   }
 
@@ -872,7 +949,7 @@
     const normalizedQuery = normalizeTrainingPlayerSearch(query);
     let visibleOptions = 0;
     picker.querySelectorAll('[data-training-picker-value]').forEach(option => {
-      const matches = !normalizedQuery
+      const matches = option.hasAttribute('data-training-guest-option') || !normalizedQuery
         || normalizeTrainingPlayerSearch(option.dataset.trainingPickerSearchText).includes(normalizedQuery);
       option.hidden = !matches;
       if (matches) visibleOptions += 1;
@@ -954,6 +1031,23 @@
     const restoreToggleFocus = picker?.classList.contains('open');
     const form = picker?.closest('.training-form');
     const inputName = picker?.querySelector('input[type="hidden"]')?.name;
+    if (form && inputName === 'playerId' && option.dataset.trainingPickerValue === TRAINING_GUEST_OPTION) {
+      const preservedRounds = readTrainingRoundValues(form);
+      const participantIds = getTrainingParticipantIds(form);
+      const guestNames = getTrainingGuestNames(form);
+      const playerFields = [...form.querySelectorAll('[data-training-player-fields] [data-training-player-field]')];
+      const playerIndex = playerFields.indexOf(picker);
+      const guestKey = `guest:${playerIndex + 1}`;
+      const searchedName = String(picker.querySelector('[data-training-picker-search]')?.value || '').trim();
+      participantIds[playerIndex] = guestKey;
+      guestNames[guestKey] = searchedName;
+      closeTrainingPickerMenus();
+      renderTrainingPlayerFields(participantIds, guestNames, form);
+      renderTrainingRounds(preservedRounds, form, preservedRounds.length);
+      form.querySelector(`[data-training-guest-name="${CSS.escape(guestKey)}"]`)?.focus();
+      setTrainingMessage('', '', form);
+      return;
+    }
     setTrainingPickerValue(picker, option.dataset.trainingPickerValue);
     closeTrainingPickerMenus();
     if (form && (inputName === 'resultFormat' || inputName === 'playerId')) {
@@ -1786,6 +1880,8 @@ Dein Hanako-Leben-Squad`;
       playedOn: String(proposal?.played_on || proposal?.playedOn || ''),
       displayTime: String(proposal?.display_time || proposal?.displayTime || '').slice(0, 5),
       playerIds: [...(proposal?.player_ids || proposal?.playerIds || [])].map(String).sort(),
+      guestNames: Object.entries(normalizeTrainingGuestNames(proposal?.guest_names || proposal?.guestNames || {}))
+        .sort(([left], [right]) => left.localeCompare(right)),
       rounds: (proposal?.rounds || []).map(round => ({
         teamOneIds: [...(round.team_one_ids || round.teamOneIds || [])].map(String).sort(),
         teamTwoIds: [...(round.team_two_ids || round.teamTwoIds || [])].map(String).sort(),
@@ -1967,7 +2063,7 @@ Dein Hanako-Leben-Squad`;
     setTrainingMessage('', '', form);
     if (form.dataset.trainingAlternative) {
       const task = state.trainingTasks.find(item => Number(item.session_id) === Number(form.dataset.trainingAlternative));
-      if (task) renderTrainingForm(task.player_ids, getTrainingRoundValues(task), form);
+      if (task) renderTrainingForm(task.player_ids, getTrainingRoundValues(task), form, task.guest_names);
       const toggle = form.closest('.training-task-card')?.querySelector('[data-training-edit]');
       if (toggle) toggle.textContent = 'Alternative eingeben';
       return;
@@ -1981,7 +2077,9 @@ Dein Hanako-Leben-Squad`;
     const form = event.target.closest('.training-form');
     if (!form) return;
     if (form.querySelector(':invalid') !== event.target) return;
-    const label = event.target.closest('label')?.querySelector('span')?.textContent?.trim() || 'Pflichtfeld';
+    const label = event.target.closest('label')?.querySelector('span')?.textContent?.trim()
+      || event.target.getAttribute('aria-label')
+      || 'Pflichtfeld';
     setTrainingMessage(`Bitte „${label}“ ausfüllen.`, 'error', form);
   }
 
@@ -1992,7 +2090,13 @@ Dein Hanako-Leben-Squad`;
     const data = new FormData(form);
     const playerIds = data.getAll('playerId').map(String);
     if (new Set(playerIds).size !== 4 || playerIds.some(id => !id)) {
-      setTrainingMessage('Bitte vier verschiedene Spieler auswählen.', 'error', form);
+      setTrainingMessage('Bitte vier verschiedene Spieler oder Gäste auswählen.', 'error', form);
+      return;
+    }
+    const guestNames = getTrainingGuestNames(form);
+    const guestIds = playerIds.filter(isTrainingGuestKey);
+    if (guestIds.some(id => !guestNames[id] || guestNames[id].length < 2 || guestNames[id].length > 40)) {
+      setTrainingMessage('Bitte für jeden Gast einen Namen mit 2 bis 40 Zeichen eingeben.', 'error', form);
       return;
     }
     let rounds;
@@ -2020,6 +2124,7 @@ Dein Hanako-Leben-Squad`;
       p_played_on: String(data.get('playedOn')),
       p_display_time: String(data.get('displayTime')),
       p_player_ids: playerIds,
+      p_guest_names: guestNames,
       p_rounds: rounds
     };
     if (editingTrainingId) payload.p_session_id = Number(editingTrainingId);
@@ -2030,6 +2135,7 @@ Dein Hanako-Leben-Squad`;
       playedOn: payload.p_played_on,
       displayTime: payload.p_display_time,
       playerIds,
+      guestNames,
       rounds
     })) {
       setTrainingMessage(UNCHANGED_PROPOSAL_MESSAGE, 'error', form);
@@ -2067,7 +2173,7 @@ Dein Hanako-Leben-Squad`;
     const toggle = form.closest('.training-task-card')?.querySelector('[data-training-edit]');
     if (toggle) toggle.textContent = opening ? 'Alternative schließen' : 'Alternative eingeben';
     if (opening) {
-      renderTrainingForm(task.player_ids, getTrainingRoundValues(task), form);
+      renderTrainingForm(task.player_ids, getTrainingRoundValues(task), form, task.guest_names);
       form.querySelector('[name="playedOn"]').value = task.played_on;
       form.querySelector('[name="displayTime"]').value = String(task.display_time).slice(0, 5);
       syncDateTimeHints(form);
@@ -2262,6 +2368,25 @@ Dein Hanako-Leben-Squad`;
         selectTrainingPickerOption(trainingPickerOption);
         return;
       }
+      const removeTrainingGuest = event.target.closest('[data-training-guest-remove]');
+      if (removeTrainingGuest) {
+        const form = removeTrainingGuest.closest('.training-form');
+        const guestField = removeTrainingGuest.closest('[data-training-player-field]');
+        if (!form || !guestField) return;
+        const preservedRounds = readTrainingRoundValues(form);
+        const participantIds = getTrainingParticipantIds(form);
+        const guestNames = getTrainingGuestNames(form);
+        const playerFields = [...form.querySelectorAll('[data-training-player-fields] [data-training-player-field]')];
+        const playerIndex = playerFields.indexOf(guestField);
+        delete guestNames[participantIds[playerIndex]];
+        participantIds[playerIndex] = '';
+        renderTrainingPlayerFields(participantIds, guestNames, form);
+        renderTrainingRounds(preservedRounds, form, preservedRounds.length);
+        form.querySelectorAll('[data-training-player-field]')[playerIndex]
+          ?.querySelector('[data-training-picker-toggle]')?.focus();
+        setTrainingMessage('', '', form);
+        return;
+      }
       if (event.target.closest('[data-training-round-add]')) {
         const form = event.target.closest('.training-form');
         if (!form) return;
@@ -2316,6 +2441,10 @@ Dein Hanako-Leben-Squad`;
         );
         return;
       }
+      if (event.target.matches('[data-training-guest-name]')) {
+        setTrainingMessage('', '', event.target.closest('.training-form'));
+        return;
+      }
       if (event.target.matches('[data-result-score]')) {
         event.target.value = window.PadelScoreInput.sanitizeScoreValue(event.target.value);
         initializeResultScorePair(event.target);
@@ -2325,7 +2454,15 @@ Dein Hanako-Leben-Squad`;
         else updateResultSummary(event.target.closest('[data-result-submit]'));
       }
     });
-    document.addEventListener('change', event => syncDateTimeHint(event.target));
+    document.addEventListener('change', event => {
+      syncDateTimeHint(event.target);
+      if (event.target.matches('[data-training-guest-name]')) {
+        const form = event.target.closest('.training-form');
+        if (!form) return;
+        const preservedRounds = readTrainingRoundValues(form);
+        renderTrainingRounds(preservedRounds, form, preservedRounds.length);
+      }
+    });
     document.addEventListener('pointerdown', event => {
       const scoreControl = event.target.closest('[data-result-score], [data-result-score-step]');
       if (!scoreControl) return;

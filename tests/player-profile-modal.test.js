@@ -255,7 +255,7 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(html, /class="widget player-profile-widget player-profile-relationships"[\s\S]*id="player-profile-relationships"/);
   assert.match(app, /const eligible = \(records, minimumMatches = 3\)/);
   assert.match(app, /record\.matches >= minimumMatches/);
-  assert.match(app, /\['Lieblingspartner', leaders\.favoritePartners/);
+  assert.match(app, /\['Erfolgspartner', leaders\.favoritePartners/);
   assert.match(app, /\['Lieblingsgegner', leaders\.favoriteOpponents/);
   assert.match(app, /\['Angstgegner', leaders\.fearedOpponents/);
   assert.match(app, /relationships\.map\(\(\[label, records, valueClass\]\)[\s\S]*records\.map\(record =>/);

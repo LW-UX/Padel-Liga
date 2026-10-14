@@ -243,6 +243,8 @@ test('training pairings use selected player names and keep player placeholders',
   const buildPairingOptions = vm.runInNewContext(
     `(() => { ${pairingOptions}\nreturn getTrainingPairingOptions; })()`,
     {
+      getTrainingParticipantIds: form => form.querySelectorAll().map(input => input.value),
+      getTrainingGuestNames: () => ({}),
       getPlayerName: playerId => ({ anna: 'Anna A.', carla: 'Carla C.', dora: 'Dora D.' })[playerId]
     }
   );
@@ -607,7 +609,9 @@ test('training validation is shown inside the training form before any RPC call'
   const rpcIndex = submitHandler.indexOf('state.client.rpc(rpcName, payload)');
   assert.ok(rpcIndex > 0, 'training submit should contain its RPC call');
   const beforeRpc = submitHandler.slice(0, rpcIndex);
-  assert.match(beforeRpc, /setTrainingMessage\('Bitte vier verschiedene Spieler auswählen\.', 'error', form\);\n      return;/);
+  assert.match(beforeRpc, /setTrainingMessage\('Bitte vier verschiedene Spieler oder Gäste auswählen\.', 'error', form\);\n      return;/);
+  assert.match(beforeRpc, /Bitte für jeden Gast einen Namen mit 2 bis 40 Zeichen eingeben/);
+  assert.match(beforeRpc, /p_guest_names: guestNames/);
   assert.match(beforeRpc, /setTrainingMessage\(error\.message, 'error', form\);\n      return;/);
 
   assert.match(tippspielSource, /function handleTrainingInvalid\(event\)/);
@@ -631,7 +635,7 @@ test('training alternatives expand a populated editor inside the current card', 
   assert.match(tippspielSource, /\$\{task\.created_by_me \? '' : renderTrainingAlternativeForm\(task\)\}/);
   assert.match(editor, /document\.querySelector\(`\[data-training-alternative=/);
   assert.match(editor, /form\.hidden = !opening/);
-  assert.match(editor, /renderTrainingForm\(task\.player_ids, getTrainingRoundValues\(task\), form\)/);
+  assert.match(editor, /renderTrainingForm\(task\.player_ids, getTrainingRoundValues\(task\), form, task\.guest_names\)/);
   assert.doesNotMatch(editor, /document\.getElementById\('training-form'\)/);
   assert.doesNotMatch(editor, /scrollIntoView/);
   assert.match(tippspielSource, /const editingTrainingId = form\.dataset\.trainingAlternative \|\| null;/);

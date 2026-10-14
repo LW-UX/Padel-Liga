@@ -8,6 +8,16 @@
     view: 'match',
     payload: null,
     overviewPayloads: [],
+    prematchFacts: null,
+    prematchFactsLoading: false,
+    prematchFactsError: false,
+    poll: null,
+    pollLoading: false,
+    pollError: false,
+    pollSubmitting: false,
+    pollSelectionOpen: false,
+    pollMessage: '',
+    pollBrowserId: null,
     statusChannel: null,
     statusConnected: false,
     auth: null,
@@ -41,7 +51,7 @@
   }
 
   function isMissingRpc(error) {
-    return error?.code === 'PGRST202' || /live_(?:ticker|status|scorer|match|point|game|tiebreak)/i.test(String(error?.message || ''));
+    return error?.code === 'PGRST202' || /(?:live_(?:ticker|status|scorer|match|point|game|tiebreak)|final_four_(?:overview|poll))/i.test(String(error?.message || ''));
   }
 
   function triggersGlobalLiveButton(activeMatch) {
@@ -101,6 +111,23 @@
     return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
   }
 
+  function getPollBrowserId() {
+    if (state.pollBrowserId) return state.pollBrowserId;
+    const storageKey = 'padel-final-four-poll-browser-id';
+    try {
+      const stored = window.localStorage.getItem(storageKey);
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(stored || '')) {
+        state.pollBrowserId = stored;
+        return stored;
+      }
+      state.pollBrowserId = createActionId();
+      window.localStorage.setItem(storageKey, state.pollBrowserId);
+    } catch (_) {
+      state.pollBrowserId = createActionId();
+    }
+    return state.pollBrowserId;
+  }
+
   function profileEmoji(playerId) {
     return (window.PADEL_PLAYERS || []).find(player => player.id === playerId)?.profileEmoji || '👤';
   }
@@ -122,6 +149,33 @@
     return `<div class="live-ticker-team live-ticker-team-${team}">
       ${players.filter(player => Number(player.team) === team).map(player => renderPlayer(player, currentServerId)).join('')}
     </div>`;
+  }
+
+  function getPayloadWinProbability(payload) {
+    const getTeamElo = team => {
+      const elos = (payload?.players || [])
+        .filter(player => Number(player.team) === team)
+        .map(player => player.currentElo == null ? null : Number(player.currentElo))
+        .sort((a, b) => a - b);
+      if (elos.length !== 2 || elos.some(elo => !Number.isFinite(elo))) return null;
+      return elos[0] * 0.7 + elos[1] * 0.3;
+    };
+    const teamOneElo = getTeamElo(1);
+    const teamTwoElo = getTeamElo(2);
+    if (!Number.isFinite(teamOneElo) || !Number.isFinite(teamTwoElo)) return null;
+    const teamOne = Math.round(100 / (1 + Math.pow(10, (teamTwoElo - teamOneElo) / 500)));
+    return { team1: teamOne, team2: 100 - teamOne };
+  }
+
+  function renderProbabilityScore(probability, className = '', showPercentSign = true) {
+    if (!probability) return '';
+    const classes = ['match-probability', className].filter(Boolean).join(' ');
+    const suffix = showPercentSign ? '%' : '';
+    return `<span class="${classes}" aria-label="Gewinnwahrscheinlichkeit ${probability.team1} zu ${probability.team2} Prozent">
+      <span class="match-probability-value">${probability.team1}${suffix}</span>
+      <span class="match-probability-separator" aria-hidden="true">:</span>
+      <span class="match-probability-value">${probability.team2}${suffix}</span>
+    </span>`;
   }
 
   function groupGames(events = []) {
@@ -217,17 +271,180 @@
       };
     }
     if (payload.result) return { isLive: false, isFinished: true, score: payload.result };
-    return { isLive: false, isFinished: false, score: '–:–' };
+    return {
+      isLive: false,
+      isFinished: false,
+      score: '–:–',
+      probability: getPayloadWinProbability(payload)
+    };
+  }
+
+  function formatPrematchNumber(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return '—';
+    return new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 }).format(number);
+  }
+
+  function formatPrematchDate(value) {
+    const date = value ? new Date(value) : null;
+    if (!date || Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat('de-DE', {
+      timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: '2-digit'
+    }).format(date);
+  }
+
+  function renderPrematchHistoryResults(items) {
+    const results = Array.isArray(items) ? [...items] : [];
+    if (!results.length) return '<span class="live-overview-prematch-empty">—</span>';
+    const outcomeLabels = { win: ['S', 'Sieg'], loss: ['N', 'Niederlage'], draw: ['U', 'Unentschieden'] };
+    return `<div class="live-overview-prematch-history">${results.map(item => {
+      const [shortLabel, outcomeLabel] = outcomeLabels[item.outcome] || ['–', 'Ohne Wertung'];
+      const context = [item.label || 'Ligapartie', formatPrematchDate(item.date)]
+        .filter(Boolean)
+        .join(' · ');
+      return `<span class="player-profile-match-outcome live-overview-prematch-history-result ${escapeHtml(item.outcome || 'unfinished')}" aria-label="${escapeHtml(`${outcomeLabel}${context ? ` · ${context}` : ''}`)}" title="${escapeHtml(context)}">${shortLabel}</span>`;
+    }).join('')}</div>`;
+  }
+
+  function renderPrematchLeagueHistory(player) {
+    return renderPrematchHistoryResults(player.leagueHistory);
+  }
+
+  function renderPrematchStreak(player) {
+    const length = Number(player.streak?.length);
+    if (!Number.isFinite(length) || length < 3) return '–';
+    return player.streak.outcome === 'win'
+      ? `${length} Siege in Folge`
+      : `${length} Niederlagen in Folge`;
+  }
+
+  function renderPrematchRelationships(player) {
+    const labels = {
+      successPartner: 'Erfolgspartner',
+      fearedPartner: 'Angstpartner',
+      favoriteOpponent: 'Lieblingsgegner',
+      fearedOpponent: 'Angstgegner'
+    };
+    const relationships = Array.isArray(player.relationships) ? player.relationships : [];
+    if (!relationships.length) return '<span class="live-overview-prematch-empty">—</span>';
+    return `<div class="live-overview-prematch-relationships">${relationships.map(relationship => `<div>
+      <span>${escapeHtml(labels[relationship.kind] || 'Beziehung')}:</span>
+      <button type="button" class="player-profile-link" data-player-profile-id="${escapeHtml(relationship.playerId)}">${escapeHtml(relationship.name)}</button>
+      <small>${formatPrematchNumber(relationship.wins)} von ${formatPrematchNumber(relationship.matches)}</small>
+    </div>`).join('')}</div>`;
+  }
+
+  function renderPrematchFacts() {
+    if (state.prematchFactsLoading) {
+      return `<section class="live-overview-section live-overview-prematch-section">
+        <div class="live-overview-heading spieltag-label">Prematch-Fakten</div>
+        <div class="live-overview-prematch-status">Prematch-Fakten werden geladen …</div>
+      </section>`;
+    }
+    if (state.prematchFactsError) {
+      return `<section class="live-overview-section live-overview-prematch-section">
+        <div class="live-overview-heading spieltag-label">Prematch-Fakten</div>
+        <div class="live-overview-prematch-status">Die Prematch-Fakten sind derzeit nicht verfügbar.</div>
+      </section>`;
+    }
+    const players = state.prematchFacts?.players;
+    if (!Array.isArray(players) || players.length !== 4) return '';
+    const showRelationships = players.some(player =>
+      Array.isArray(player.relationships) && player.relationships.length
+    );
+
+    return `<section class="live-overview-section live-overview-prematch-section">
+      <div class="live-overview-prematch-heading">
+        <div class="live-overview-heading spieltag-label">Prematch-Fakten</div>
+        <span class="th-help-wrap">
+          <span class="help-icon" tabindex="0" aria-label="Titelprognose erklären">?</span>
+          <span class="help-tooltip">Stand vor Beginn des Final Four. Für jeden Spieler werden die mit Elo-Divisor 300 berechneten Siegchancen seiner drei wechselnden Teams addiert und durch sechs geteilt. Rundungsreste werden so verteilt, dass alle vier Prognosen zusammen genau 100 Prozent ergeben.</span>
+        </span>
+      </div>
+      <div class="live-overview-prematch-grid${showRelationships ? ' has-relationships' : ''}">${players.map((player, index) => `<article class="live-overview-prematch-player live-overview-prematch-player-${index + 1}">
+        <button type="button" class="live-ticker-player live-overview-prematch-card player-profile-link" data-player-profile-id="${escapeHtml(player.playerId)}">
+          <span class="live-ticker-player-photo" aria-hidden="true">
+            <img class="live-ticker-player-image" src="assets/players/${encodeURIComponent(player.playerId)}/profile.webp" alt="" data-live-player-image>
+            <span class="live-ticker-player-emoji" hidden>${escapeHtml(profileEmoji(player.playerId))}</span>
+          </span>
+          <span class="live-ticker-player-name">${escapeHtml(player.displayName)}</span>
+          <small class="live-ticker-player-elo">${Number.isFinite(Number(player.elo)) ? `${Math.round(Number(player.elo))} Elo` : 'Elo –'}</small>
+        </button>
+        <div class="live-overview-prematch-fact live-overview-prematch-forecast">
+          <span class="live-overview-prematch-label">Titelprognose</span>
+          <strong>${Number.isFinite(Number(player.titleForecast)) ? Math.round(Number(player.titleForecast)) : '—'} %</strong>
+        </div>
+        <div class="live-overview-prematch-fact">
+          <span class="live-overview-prematch-label">Ligaphase</span>
+          <span>${Number(player.leagueRank)}. Platz</span>
+        </div>
+        <div class="live-overview-prematch-fact">
+          <span class="live-overview-prematch-label">Spiele</span>
+          ${renderPrematchLeagueHistory(player)}
+        </div>
+        <div class="live-overview-prematch-fact">
+          <span class="live-overview-prematch-label">Pflichtspielserie</span>
+          <span>${escapeHtml(renderPrematchStreak(player))}</span>
+        </div>
+        ${showRelationships ? `<div class="live-overview-prematch-fact live-overview-prematch-relationship-fact">
+          <span class="live-overview-prematch-label">Beziehungen</span>
+          ${renderPrematchRelationships(player)}
+        </div>` : ''}
+      </article>`).join('')}</div>
+    </section>`;
+  }
+
+  function renderFinalFourPoll() {
+    if (state.pollLoading) {
+      return `<section class="live-overview-section live-overview-poll-section">
+        <div class="live-overview-heading spieltag-label">Wer gewinnt das Final Four?</div>
+        <div class="live-overview-poll-status">Umfrage wird geladen …</div>
+      </section>`;
+    }
+    if (state.pollError || !state.poll || !Array.isArray(state.poll.options) || state.poll.options.length !== 4) return '';
+
+    const poll = state.poll;
+    const selectedPlayerId = poll.browserVote || null;
+    const showSelection = !poll.closed && (!selectedPlayerId || state.pollSelectionOpen);
+    const resultOptions = poll.options.filter(option => Number(option.votes) > 0);
+
+    const content = showSelection
+      ? `<div class="live-overview-poll-choices" aria-label="Final-Four-Sieger auswählen">
+          ${poll.options.map(option => `<button type="button" class="live-point-team-button live-overview-poll-choice${option.playerId === selectedPlayerId ? ' active' : ''}" data-final-four-poll-vote="${escapeHtml(option.playerId)}" aria-pressed="${option.playerId === selectedPlayerId}"${state.pollSubmitting ? ' disabled' : ''}>
+            <span>Stimme für</span><strong>${escapeHtml(option.displayName)}</strong>
+          </button>`).join('')}
+        </div>`
+      : resultOptions.length
+        ? `<div class="live-overview-poll-result" aria-label="Umfrageergebnis">
+            <div class="live-overview-poll-segments" style="grid-template-columns: ${resultOptions.map(option => `minmax(0, ${Number(option.percentage) || 0}fr)`).join(' ')}">${resultOptions.map(option => `<div class="live-overview-poll-segment">
+              <strong class="live-overview-poll-name">${escapeHtml(option.displayName)}</strong>
+              <span class="live-overview-poll-bar"><span>${Number(option.percentage) || 0} %</span></span>
+            </div>`).join('')}</div>
+          </div>`
+        : '<div class="live-overview-poll-status">Kein Umfrageergebnis verfügbar.</div>';
+
+    return `<section class="live-overview-section live-overview-poll-section">
+      <div class="live-overview-poll-heading">
+        <div class="live-overview-heading spieltag-label">Wer gewinnt das Final Four?</div>
+        ${poll.closed ? '<span class="sh-meta">Abstimmung beendet</span>' : ''}
+      </div>
+      <div class="live-overview-poll-swap${showSelection ? ' is-selection' : ' is-result'}">${content}</div>
+      ${selectedPlayerId && !poll.closed && !showSelection
+        ? '<button type="button" class="text-link live-overview-poll-change" data-final-four-poll-change>Stimme ändern</button>'
+        : ''}
+      ${state.pollMessage ? `<div class="live-overview-poll-message" role="status">${escapeHtml(state.pollMessage)}</div>` : ''}
+    </section>`;
   }
 
   function getOverviewStats(payloads) {
+    const prematchPlayers = new Map((state.prematchFacts?.players || []).map(player => [player.playerId, player]));
     const players = new Map();
     payloads.forEach(payload => {
       (payload.players || []).forEach(player => {
         if (players.has(player.playerId)) return;
         players.set(player.playerId, {
           ...player,
-          seed: players.size + 1,
+          seed: Number(prematchPlayers.get(player.playerId)?.seed) || players.size + 1,
           matches: 0,
           wins: 0,
           gamesWon: 0,
@@ -284,7 +501,9 @@
               </span>
               <span class="live-overview-matchup">
                 <span class="live-overview-team live-overview-team-1${teamOneWinner ? ' is-winner' : ''}">${renderOverviewTeam(payload, 1)}</span>
-                <span class="live-overview-result"><strong>${escapeHtml(matchState.score)}</strong></span>
+                <span class="live-overview-result">${matchState.probability
+                  ? renderProbabilityScore(matchState.probability, 'live-overview-probability')
+                  : `<strong>${escapeHtml(matchState.score)}</strong>`}</span>
                 <span class="live-overview-team live-overview-team-2${teamTwoWinner ? ' is-winner' : ''}">${renderOverviewTeam(payload, 2)}</span>
               </span>
             </button>`;
@@ -296,8 +515,8 @@
         <div class="ranking-wrap live-overview-ranking-wrap">
           <table class="rt calculator-ranking-table final-four-calculator-ranking-table live-overview-table">
             <thead><tr>
-              <th class="col-rank">#</th><th class="col-name">Spieler</th><th class="col-games">Partien</th>
-              <th class="col-wins">Siege</th><th class="col-diff">Diff.</th>
+              <th class="col-rank">#</th><th class="col-name">Spieler</th>
+              <th class="col-wins">Siege</th><th class="col-gv">G:V</th><th class="col-diff">Diff.</th>
             </tr></thead>
             <tbody>${stats.map((player, index) => {
               const diff = player.gamesWon - player.gamesLost;
@@ -305,7 +524,7 @@
               return `<tr class="r${index + 1}">
                 <td class="col-rank rank-position">${index + 1}</td>
                 <td class="col-name"><button class="pname player-profile-link" type="button" data-player-profile-id="${escapeHtml(player.playerId)}">${escapeHtml(player.displayName)}</button></td>
-                <td class="col-games">${player.matches}</td><td class="col-wins rank-score">${player.wins}</td>
+                <td class="col-wins rank-score">${player.wins}</td><td class="col-gv">${player.gamesWon}:${player.gamesLost}</td>
                 <td class="col-diff"><span class="${diffClass}">${diff > 0 ? `+${diff}` : diff}</span></td>
               </tr>`;
             }).join('')}</tbody>
@@ -313,6 +532,8 @@
         </div>
         <div class="sh-meta live-overview-note">Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung<br>Stand nach abgeschlossenen Partien</div>
       </section>
+      ${renderPrematchFacts()}
+      ${renderFinalFourPoll()}
     </div>`;
     if (connection) connection.textContent = livePayload
       ? (state.statusConnected ? 'Live verbunden' : 'Verbindung wird hergestellt …')
@@ -348,13 +569,17 @@
     const score = session?.status === 'finished'
       ? (payload.result || `${session.teamOneGames}:${session.teamTwoGames}`)
       : session ? `${session.teamOneGames}:${session.teamTwoGames}` : (payload.result || '–:–');
+    const pendingProbability = !isLive && session?.status !== 'finished' && !payload.result
+      ? getPayloadWinProbability(payload)
+      : null;
     const players = payload.players || [];
     const currentServer = players.find(player => player.playerId === currentServerId);
     const scoreNote = isLive
       ? (isGamesMode && session?.isTiebreak && session?.status === 'live'
           ? 'Tiebreak läuft'
           : currentServer ? `${currentServer.displayName} schlägt auf` : 'Aufschläger wird festgelegt')
-      : session?.status === 'finished' ? 'Offizielles Ergebnis' : 'Noch nicht begonnen';
+      : session?.status === 'finished' ? 'Offizielles Ergebnis'
+        : pendingProbability ? 'Prozent' : 'Noch nicht begonnen';
     target.innerHTML = `
       <article class="live-ticker-match" data-live-scoreboard>
         <div class="live-ticker-match-meta">
@@ -363,8 +588,10 @@
         <div class="live-ticker-matchup">
           ${renderTeam(players, 1, currentServerId)}
           <div class="live-ticker-scoreboard">
-            <span class="live-ticker-score-label">Spielstand</span>
-            <strong class="live-ticker-score">${escapeHtml(score)}</strong>
+            <span class="live-ticker-score-label">${pendingProbability ? 'Gewinnchance' : 'Spielstand'}</span>
+            ${pendingProbability
+              ? renderProbabilityScore(pendingProbability, 'live-ticker-probability', false)
+              : `<strong class="live-ticker-score">${escapeHtml(score)}</strong>`}
             ${isLive && !isGamesMode ? `<strong class="live-ticker-points" data-live-current-points>${escapeHtml(pointLabel(session))}</strong>` : ''}
             <span class="live-ticker-score-note">${escapeHtml(scoreNote)}</span>
           </div>
@@ -385,13 +612,39 @@
     bindRealtime(isLive ? session.id : null);
   }
 
-  async function load(matchId, { updateUrl = true, view = 'match' } = {}) {
+  async function load(matchId, { updateUrl = true, view = 'match', reloadPrematchFacts = true } = {}) {
     const client = getClient();
     if (!client || !matchId) return null;
+    const nextView = view === 'overview' ? 'overview' : 'match';
+    const keepPrematchFacts = nextView === 'overview'
+      && state.view === 'overview'
+      && String(state.matchId) === String(matchId)
+      && state.prematchFacts;
+    const keepPoll = nextView === 'overview'
+      && state.view === 'overview'
+      && String(state.matchId) === String(matchId)
+      && state.poll;
     const requestId = ++state.loadRequestId;
     state.matchId = matchId;
-    state.view = view === 'overview' ? 'overview' : 'match';
+    state.view = nextView;
     state.overviewPayloads = [];
+    state.prematchFacts = keepPrematchFacts || null;
+    state.prematchFactsLoading = state.view === 'overview' && !keepPrematchFacts;
+    state.prematchFactsError = false;
+    state.poll = keepPoll || null;
+    state.pollLoading = state.view === 'overview' && !keepPoll;
+    state.pollError = false;
+    state.pollSelectionOpen = false;
+    state.pollMessage = '';
+    const prematchFactsRequest = state.view === 'overview' && (reloadPrematchFacts || !keepPrematchFacts)
+      ? client.rpc('get_public_final_four_overview', { p_match_id: matchId })
+      : null;
+    const pollRequest = state.view === 'overview'
+      ? client.rpc('get_public_final_four_poll', {
+          p_match_id: matchId,
+          p_browser_id: getPollBrowserId()
+        })
+      : null;
     const connection = document.getElementById('live-ticker-connection');
     if (connection) connection.textContent = 'Wird aktualisiert …';
     const { data, error } = await client.rpc('get_public_live_ticker', { p_match_id: matchId });
@@ -417,6 +670,24 @@
       if (requestId !== state.loadRequestId) return null;
       state.overviewPayloads = overviewResults.filter(Boolean);
       renderPublic();
+      if (prematchFactsRequest) {
+        const prematchResult = await prematchFactsRequest;
+        if (requestId !== state.loadRequestId) return null;
+        state.prematchFactsLoading = false;
+        state.prematchFactsError = Boolean(prematchResult.error);
+        state.prematchFacts = prematchResult.error ? null : prematchResult.data;
+        if (prematchResult.error && !isMissingRpc(prematchResult.error)) console.error(prematchResult.error);
+        renderPublic();
+      }
+      if (pollRequest) {
+        const pollResult = await pollRequest;
+        if (requestId !== state.loadRequestId) return null;
+        state.pollLoading = false;
+        state.pollError = Boolean(pollResult.error);
+        state.poll = pollResult.error ? null : pollResult.data;
+        if (pollResult.error && !isMissingRpc(pollResult.error)) console.error(pollResult.error);
+        renderPublic();
+      }
     }
     if (updateUrl) {
       const url = new URL(window.location.href);
@@ -436,6 +707,15 @@
     state.view = 'match';
     state.payload = null;
     state.overviewPayloads = [];
+    state.prematchFacts = null;
+    state.prematchFactsLoading = false;
+    state.prematchFactsError = false;
+    state.poll = null;
+    state.pollLoading = false;
+    state.pollError = false;
+    state.pollSubmitting = false;
+    state.pollSelectionOpen = false;
+    state.pollMessage = '';
   }
 
   function bindRealtime(sessionId) {
@@ -453,7 +733,11 @@
         event: '*', schema: 'public', table: 'live_match_sessions'
       }, async () => {
         await refreshStatus();
-        if (state.matchId) await load(state.matchId, { updateUrl: false, view: state.view });
+        if (state.matchId) await load(state.matchId, {
+          updateUrl: false,
+          view: state.view,
+          reloadPrematchFacts: false
+        });
         if (state.auth?.session) await refreshAccount();
       })
       .subscribe(status => {
@@ -812,6 +1096,31 @@
     return data ?? true;
   }
 
+  async function submitFinalFourVote(playerId) {
+    const client = getClient();
+    if (!client || !state.matchId || state.pollSubmitting || state.poll?.closed) return;
+    state.pollSubmitting = true;
+    state.pollMessage = '';
+    renderOverview();
+    const { data, error } = await client.rpc('submit_final_four_vote', {
+      p_match_id: state.matchId,
+      p_player_id: playerId,
+      p_browser_id: getPollBrowserId()
+    });
+    state.pollSubmitting = false;
+    if (error) {
+      state.pollMessage = /beendet|geschlossen/i.test(String(error.message || ''))
+        ? 'Die Abstimmung ist bereits beendet.'
+        : 'Die Stimme konnte gerade nicht gespeichert werden.';
+      if (!isMissingRpc(error)) console.error(error);
+      renderOverview();
+      return;
+    }
+    state.poll = data;
+    state.pollSelectionOpen = false;
+    renderOverview();
+  }
+
   function openCancelDialog(cancelButton) {
     const dialog = document.getElementById('live-cancel-dialog');
     if (!dialog) return;
@@ -872,6 +1181,23 @@
       }
       if (event.target.closest('[data-live-refresh]')) {
         await refreshCurrent();
+        return;
+      }
+      if (event.target.closest('[data-final-four-poll-change]')) {
+        state.pollSelectionOpen = true;
+        state.pollMessage = '';
+        renderOverview();
+        return;
+      }
+      const pollVote = event.target.closest('[data-final-four-poll-vote]');
+      if (pollVote) {
+        const playerId = pollVote.dataset.finalFourPollVote;
+        if (String(playerId) === String(state.poll?.browserVote || '')) {
+          state.pollSelectionOpen = false;
+          renderOverview();
+          return;
+        }
+        await submitFinalFourVote(playerId);
         return;
       }
       const assignmentToggle = event.target.closest('[data-live-assignment-toggle]');
@@ -1127,6 +1453,7 @@
       void refreshAccount();
     });
     window.addEventListener('popstate', () => {
+      if (window.PadelMatchStatistics?.active || new URL(window.location.href).searchParams.has('partie')) return;
       const url = new URL(window.location.href);
       const matchId = url.searchParams.get('live');
       const view = url.searchParams.get('liveView') === 'overview' ? 'overview' : 'match';

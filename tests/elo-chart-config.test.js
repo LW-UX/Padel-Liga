@@ -8,8 +8,18 @@ const root = path.join(__dirname, '..');
 const appSource = fs.readFileSync(path.join(root, 'js', 'app.js'), 'utf8');
 const styleSource = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 
-test('Elo history chart starts at 500 and is 620 pixels high', () => {
-  assert.match(appSource, /min:\s*500,\s*max:\s*1250/);
+test('Elo history chart derives rounded bounds from its values and stays 620 pixels high', () => {
+  const boundsSource = appSource.match(
+    /function getStatisticsEloChartBounds\(datasets = \[\]\) \{[\s\S]*?\n\}/
+  )?.[0] || '';
+  const getBounds = vm.runInNewContext(
+    `(() => { ${boundsSource}\nreturn getStatisticsEloChartBounds; })()`
+  );
+
+  assert.deepEqual({ ...getBounds([{ data: [760, null, 921] }, { data: [815] }]) }, { min: 700, max: 1000 });
+  assert.deepEqual({ ...getBounds([{ data: [20, 30] }]) }, { min: 0, max: 100 });
+  assert.match(appSource, /const eloBounds = getStatisticsEloChartBounds\(datasets\)/);
+  assert.match(appSource, /min:\s*eloBounds\.min,\s*max:\s*eloBounds\.max/);
   assert.match(styleSource, /\.chart-wrap\s*\{[^}]*height:\s*620px;/);
 });
 

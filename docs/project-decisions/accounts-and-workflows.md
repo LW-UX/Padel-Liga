@@ -30,6 +30,7 @@ Diese Datei ist die kanonische Quelle für Rollen, Registrierung, Einladungen, B
 - Allgemeine Kontomeldungen schweben am unteren Rand des Konto-Dialogs und bleiben beim Scrollen sichtbar. Erfolgsmeldungen verschwinden nach fünf Sekunden automatisch; jede Meldung kann bewusst geschlossen werden, während Fehler und laufende Hinweise ohne Interaktion sichtbar bleiben.
 - Nur Admins sehen bei offenen Ligapartien ganz links in der Aktionszeile die endgültige Aktion „Nicht werten“. Danach verschwindet die Partie aus den Kontoaufgaben; Rollen- und Zustandsprüfung erfolgen zusätzlich serverseitig.
 - Trainings werden über die Spieleübersicht angelegt. Formularfehler erscheinen am verursachenden Formular und überschreiben keine allgemeinen Kontomeldungen.
+- Jede Spielerauswahl eines Trainings bietet „Gast hinzufügen“. Danach wird derselbe Teilnehmerplatz zu einem verpflichtenden Namensfeld; der Gastname umfasst zwei bis vierzig Zeichen und kann vor dem Absenden wieder durch einen bestehenden Spieler ersetzt werden.
 - Interne Testprofile werden in Trainingsauswahlen nur für Admins und dafür vorgesehene Testkonten angeboten.
 - Konto- und Profilmodal sperren den Hintergrundscroll und verwenden konsistente Schließen-, Button-, Dropdown- und Score-Komponenten.
 

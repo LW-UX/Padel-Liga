@@ -20,6 +20,7 @@ Diese Datei ist die kanonische Quelle für Saisonidentitäten, Datenquellen, Sai
 - Nach Abschluss der Ligaphase verschwindet der Ligarechner. Nach dem offiziellen Saisonabschluss verschwindet der gesamte Rechnerbereich.
 - Cup-Saisons verwenden eine reduzierte Seitennavigation mit Turnierbaum und Informationen statt Liga-Rangliste, Rechner und Statistik.
 - Die mobile Liga-Rangliste startet kompakt und bietet eine erweiterte, horizontal scrollbare Ansicht. Desktop behält die vollständige Rangliste.
+- Die mobile Final-Four-Tabelle bleibt ohne Ansichtsumschalter kompakt und ohne horizontalen Bildlauf. Neben Platz und Spieler zeigt sie ausschließlich Siege, Spielverhältnis (`G:V`) und Spieldifferenz.
 - Saisonauswahl und Kontoaktion bilden eine gemeinsame responsive Aktionszeile. Gemeinsame Dropdown- und Sekundärbutton-Komponenten werden wiederverwendet.
 - PadelPong ist eine eigenständige Website unter `https://lw-ux.github.io/PadelPong/`. Der Liga-Button öffnet ausschließlich diese feste Adresse in einem neuen Tab und überträgt keinen Saisonkontext.
 - Veröffentlichte Artikel bleiben sichtbar, bis ein neuer veröffentlichter Artikel ihren Platz einnimmt; unveröffentlichte Platzhalter werden nicht angezeigt.
@@ -37,6 +38,7 @@ Diese Datei ist die kanonische Quelle für Saisonidentitäten, Datenquellen, Sai
 - Laufende Partien einer verborgenen Test-Saison lösen den globalen LIVE-Einstieg nicht aus. Innerhalb der Test-Saison bleiben Liveticker und laufende Spielstände direkt nutzbar.
 - Sie enthält dedizierte Testprofile und Szenarien für Konten, Einladungen, Ergebnisse, Gegenvorschläge, Tipps, Training und Liveticker. Der konkrete Datenbestand ist kein Teil des Projektgedächtnisses.
 - Test-Saisons und reine Testpartien sind von öffentlichen Profilen, Karrierewerten, Auszeichnungen, offiziellen Ranglisten und globalem Elo ausgeschlossen.
+- Die Test-Saison darf die vollständige Partievorschau und Partieanalyse mit einer ausschließlich aus ihren Saisonstartwerten und Testpartien berechneten Test-Elo-Historie zeigen. Testpartien, Test-Elo, Serien, Beziehungen und Vorgeschichten bleiben dabei strikt vom offiziellen Datenbestand getrennt.
 - Testdaten werden nur gezielt zurückgesetzt. Persistente Testszenarien bleiben erhalten, wenn ihre Wiederverwendung fachlich gewollt ist.
 
 ## Winter 2026

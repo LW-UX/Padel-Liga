@@ -142,7 +142,7 @@ function relationshipLeaders(matches) {
   const partnerEntries = eligible(partners);
   const opponentEntries = eligible(opponents);
   return {
-    Lieblingspartner: leaders(partnerEntries, entry => entry.winRate > 0.5, 1),
+    Erfolgspartner: leaders(partnerEntries, entry => entry.winRate > 0.5, 1),
     Angstpartner: leaders(partnerEntries, entry => entry.winRate < 0.5, -1),
     Lieblingsgegner: leaders(opponentEntries, entry => entry.winRate > 0.5, 1),
     Angstgegner: leaders(opponentEntries, entry => entry.winRate < 0.5, -1)

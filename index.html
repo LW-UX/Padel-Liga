@@ -17,13 +17,13 @@
   <link rel="manifest" href="manifest.webmanifest">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="data/players.js?v=2026-09-01-profile-emojis"></script>
-  <script src="data/seasons.js?v=2026-10-12-season-id-order"></script>
+  <script src="data/players.js?v=2026-10-14-training-profiles"></script>
+  <script src="data/seasons.js?v=2026-10-14-ranking-notes"></script>
   <script src="data/training-matches.js"></script>
   <script src="data/info.js"></script>
   <script src="data/supabase-config.js"></script>
-  <link rel="stylesheet" href="style.css?v=2026-10-11-typography">
-  <link rel="stylesheet" href="account.css?v=2026-10-11-typography">
+  <link rel="stylesheet" href="style.css?v=2026-10-14-poll-yellow-border">
+  <link rel="stylesheet" href="account.css?v=2026-10-14-training-guests">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -33,6 +33,7 @@
       if (standalone) document.documentElement.classList.add('is-standalone');
     })();
   </script>
+<link rel="stylesheet" href="match-statistics.css?v=2026-10-14-desktop-ranking-fix">
 </head>
 <body>
 
@@ -93,14 +94,7 @@
   <section id="start" class="section active">
     <div class="home-grid">
       <div class="home-main">
-        <article class="widget home-announcement" id="home-announcement">
-          <div class="loading-skeleton skeleton-article" aria-hidden="true">
-            <span class="skeleton-line skeleton-line-kicker"></span>
-            <span class="skeleton-line skeleton-line-title"></span>
-            <span class="skeleton-line"></span>
-            <span class="skeleton-line skeleton-line-short"></span>
-          </div>
-        </article>
+        <article class="widget home-announcement" id="home-announcement" hidden></article>
         <article class="widget home-app-hint">
           <button class="home-app-hint-close" type="button" data-dismiss-app-hint aria-label="App-Hinweis schließen">×</button>
           <div class="widget-label">Jetzt auch als App!</div>
@@ -187,7 +181,7 @@
         <button type="button" data-ranking-view="expanded">Erweitert</button>
       </div>
     </div>
-    <div class="ranking-wrap">
+    <div class="ranking-wrap ranking-main-wrap" data-ranking-view="compact">
       <table class="rt ranking-table compact" id="ranking-table">
         <thead>
           <tr>
@@ -200,7 +194,12 @@
             <th class="col-diff">Diff.</th>
             <th class="col-elo">Elo</th>
             <th class="col-form">Letzte 3</th>
-            <th class="col-winrate">Sieg-%</th>
+            <th class="col-winrate">
+              <span class="th-help-wrap">Sieg-%
+                <span class="help-icon" tabindex="0" aria-label="Sieg-Prozent erklären">?</span>
+                <span class="help-tooltip">Ø Elo-Siegwahrscheinlichkeit der Teams eines Spielers über alle gewerteten Partien.<br>Bei gespielten Partien zählt die Prognose vor der Partie, bei offenen die aktuelle. Nicht die tatsächliche Siegquote.</span>
+              </span>
+            </th>
             <th class="col-placement-factor">
               <span class="th-help-wrap">Platzierungsfaktor
                 <span class="help-icon" tabindex="0" aria-label="Platzierungsfaktor erklären">?</span>
@@ -243,13 +242,12 @@
         </div>
         <button type="button" class="text-link inline-link final-four-detail-link" id="final-four-ranking-detail-link" data-live-view="overview" hidden>Zur Übersicht</button>
       </div>
-      <div class="ranking-wrap">
+      <div class="ranking-wrap final-four-ranking-wrap">
         <table class="rt final-four-table">
           <thead>
             <tr>
               <th class="col-rank">#</th>
               <th class="col-name">Spieler</th>
-              <th class="col-games">Partien</th>
               <th class="col-wins">Siege</th>
               <th class="col-gv">G:V</th>
               <th class="col-diff">Diff.</th>
@@ -258,7 +256,7 @@
           <tbody id="ff-body"></tbody>
         </table>
       </div>
-      <div class="sh-meta ranking-note">Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung</div>
+      <div class="sh-meta ranking-note" id="ff-ranking-note">Spiele: 3  |  Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung</div>
     </div>
   </section>
 
@@ -273,7 +271,7 @@
     </div>
     <div class="statistics-load-error" id="statistics-load-error" role="status" hidden></div>
     <div class="stats-grid">
-      <article class="widget">
+      <article class="widget favorite-check-widget">
         <div class="widget-label">Favoriten-Check</div>
         <div id="favorite-check"></div>
       </article>
@@ -422,7 +420,7 @@
           <div class="widget-label">Simulierte Final4-Tabelle</div>
           <div class="ranking-wrap calculator-ranking-wrap">
             <table class="rt calculator-ranking-table final-four-calculator-ranking-table">
-              <thead><tr><th class="col-rank">#</th><th class="col-name">Spieler</th><th class="col-games">Partien</th><th class="col-wins">Siege</th><th class="col-diff">Diff.</th></tr></thead>
+              <thead><tr><th class="col-rank">#</th><th class="col-name">Spieler</th><th class="col-wins">Siege</th><th class="col-gv">G:V</th><th class="col-diff">Diff.</th></tr></thead>
               <tbody id="final-four-calculator-ranking-body"></tbody>
             </table>
           </div>
@@ -717,9 +715,10 @@
 </dialog>
 
 <script src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
-<script src="js/live-ticker.js?v=2026-10-05-scoring-modes"></script>
-<script src="js/account.js?v=2026-10-08-unrated-matches"></script>
+<script src="js/live-ticker.js?v=2026-10-14-poll-separated-bars"></script>
+<script src="js/account.js?v=2026-10-14-training-guests"></script>
 <script src="js/tippspiel.js?v=2026-10-12-season-id-order"></script>
-<script src="js/app.js?v=2026-10-12-season-id-order"></script>
+<script src="js/match-statistics.js?v=2026-10-14-desktop-ranking-fix"></script>
+<script src="js/app.js?v=2026-10-14-preview-probability"></script>
 </body>
 </html>

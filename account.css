@@ -705,6 +705,53 @@
       min-width: 0;
       overflow: hidden;
     }
+    .training-picker-option[data-training-guest-option] {
+      border-top: 1px solid var(--border);
+      color: var(--accent);
+    }
+    .training-guest-control {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      background: var(--surface);
+      padding: 3px 5px 3px 10px;
+    }
+    .training-guest-badge {
+      color: var(--accent);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .training-guest-name-input {
+      min-width: 0;
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      font: 500 var(--text-sm) var(--font-body);
+      outline: none;
+      padding: 0.35rem 0;
+    }
+    .training-guest-name-input::placeholder { color: var(--dim); opacity: 1; }
+    .training-guest-remove {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--dim);
+      cursor: pointer;
+      font: 1rem/1 var(--font-body);
+      place-items: center;
+    }
+    .training-guest-remove:hover,
+    .training-guest-remove:focus-visible { background: var(--surface2); color: var(--accent); outline: none; }
+    .account-task-player-name.is-guest { color: var(--dim); font-weight: 600; }
     .training-picker-menu { right: auto; left: 0; width: max(100%, 260px); }
     .training-player-fields .training-picker:nth-child(even) .training-picker-menu { right: 0; left: auto; }
     .training-rounds { display: grid; gap: 16px; }

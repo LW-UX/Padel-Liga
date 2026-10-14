@@ -324,10 +324,24 @@ function getCompetitionConfig() {
   return {
     tournamentMode: competition.tournamentMode || 'none',
     qualificationPlaces: Number(competition.qualificationPlaces) || 0,
+    maximumLeagueMatches: Number(competition.maximumLeagueMatches ?? selectedSeason?.maximumLeagueMatches) || 0,
     homeRankingLimit: Number(competition.homeRankingLimit) || 4,
     regularScheduleLocked: Boolean(competition.regularScheduleLocked),
     predictionsEnabled: competition.predictionsEnabled !== false
   };
+}
+
+function getMaximumLeagueMatches() {
+  const configuredMaximum = getCompetitionConfig().maximumLeagueMatches;
+  if (configuredMaximum > 0) return configuredMaximum;
+
+  const appearances = new Map();
+  (PADEL_DATA?.matches || [])
+    .filter(match => getMatchStage(match) === 'league')
+    .forEach(match => [...(match.team1?.spieler || []), ...(match.team2?.spieler || [])]
+      .forEach(name => appearances.set(name, (appearances.get(name) || 0) + 1)));
+
+  return Math.max(0, ...appearances.values());
 }
 
 function isCompletedSeasonMatch(match) {
@@ -954,6 +968,8 @@ function getSelectedViewer() {
 function isParticipantView() {
   return selectedViewerId !== 'sb';
 }
+
+window.PadelLigaGetSelectedViewerId = () => isParticipantView() ? selectedViewerId : null;
 
 function isSelectedPlayer(playerName) {
   return isParticipantView() && getSelectedViewer().name === playerName;
@@ -1754,7 +1770,7 @@ function getPlayerProfileRelationshipLeaders(matches = []) {
   const opponents = new Map();
 
   const recordResult = (records, name, match) => {
-    if (!name) return;
+    if (!name || / · Gast(?: \d+)?$/u.test(String(name))) return;
     const rawMatchWeight = Number(match.matchWeight ?? 1);
     const matchWeight = Number.isFinite(rawMatchWeight) && rawMatchWeight >= 0 ? rawMatchWeight : 1;
     if (matchWeight === 0) return;
@@ -1813,7 +1829,7 @@ function renderPlayerProfileRelationships(matches = []) {
   if (!target) return;
   const leaders = getPlayerProfileRelationshipLeaders(matches);
   const relationships = [
-    ['Lieblingspartner', leaders.favoritePartners, 'pos'],
+    ['Erfolgspartner', leaders.favoritePartners, 'pos'],
     ['Angstpartner', leaders.fearedPartners, 'neg'],
     ['Lieblingsgegner', leaders.favoriteOpponents, 'pos'],
     ['Angstgegner', leaders.fearedOpponents, 'neg']
@@ -2024,6 +2040,8 @@ function renderPlayerProfileHistory() {
             ? '<div class="player-profile-match-score player-profile-unrated-result">ohne Wertung</div>'
             : isComplete && window.PadelLiveTicker?.hasHistory(match.id)
             ? `<button type="button" class="player-profile-match-score" data-live-open-match="${escapeHtml(match.id)}" data-live-season-id="${escapeHtml(match.seasonId || '')}" aria-label="Spielverlauf öffnen">${renderProfileResultDetails(match)}</button>`
+            : isComplete && match.hasMatchStatistics && window.PadelMatchStatistics
+            ? `<button type="button" class="player-profile-match-score" data-match-statistics="${escapeHtml(match.id)}" aria-label="Partieanalyse öffnen">${renderProfileResultDetails(match)}</button>`
             : `<div class="player-profile-match-score"${isComplete ? '' : ' title="Vollständige Sätze werden einzeln gewertet"'}>${renderProfileResultDetails(match)}</div>`}
           <div class="player-profile-match-season">${showSeason ? escapeHtml(getPlayerProfileMatchLabel(match)) : ''}</div>
         </article>`;
@@ -2065,9 +2083,11 @@ function renderPlayerProfile(profile) {
   requestAnimationFrame(() => renderPlayerProfileEloChart(profile.eloSeries || []));
 }
 
-async function openPlayerProfile(playerId, trigger = null) {
+async function openPlayerProfile(playerId, trigger = null, options = {}) {
   const dialog = document.getElementById('player-profile-dialog');
   if (!dialog || !playerId) return;
+  const aboveStatistics = window.PadelMatchStatistics?.prepareProfileOpen(trigger, playerId, options.fromHistory);
+  if (aboveStatistics && dialog.open) dialog.close();
   playerProfileLastTrigger = trigger || document.activeElement;
   const knownPlayer = (PADEL_DATA?.allPlayers || PADEL_DATA?.players || [])
     .find(player => player.id === playerId)
@@ -2090,8 +2110,20 @@ async function openPlayerProfile(playerId, trigger = null) {
 }
 
 window.PadelLigaOpenPlayerProfile = openPlayerProfile;
+window.PadelLigaCapturePlayerProfile = () => ({ data: playerProfileData, expanded: playerProfileExpanded });
+window.PadelLigaRestorePlayerProfile = snapshot => {
+  const profile = document.getElementById('player-profile-dialog');
+  if (!snapshot?.data || !profile) return;
+  ++playerProfileRequestId;
+  if (!profile.open) profile.showModal();
+  renderPlayerProfile(snapshot.data);
+  playerProfileExpanded = snapshot.expanded;
+  renderPlayerProfileHistory();
+};
+window.PadelLigaClosePlayerProfile = options => closePlayerProfile(options);
 
-function closePlayerProfile() {
+function closePlayerProfile(options = {}) {
+  if (!options.fromHistory && window.PadelMatchStatistics?.closeProfile()) return;
   const dialog = document.getElementById('player-profile-dialog');
   if (!dialog?.open) return;
   ++playerProfileRequestId;
@@ -2462,6 +2494,7 @@ function nav(id, el) {
 
 async function openLiveTicker(matchId, options = {}) {
   if (!matchId) return;
+  if (window.PadelMatchStatistics?.active) window.PadelMatchStatistics.restore();
   const targetSeasonId = String(normalizeSeasonId(options.seasonId) || '');
   if (targetSeasonId && targetSeasonId !== String(selectedSeason?.id || '')) {
     const url = new URL(window.location.href);
@@ -2492,6 +2525,10 @@ async function openLiveTicker(matchId, options = {}) {
 }
 
 function closeLiveTicker(options = {}) {
+  if (window.PadelMatchStatistics?.active) {
+    if (!options.fromHistory) window.PadelMatchStatistics.close();
+    return;
+  }
   const url = new URL(window.location.href);
   if (!options.fromHistory && url.searchParams.has('live')) {
     window.history.back();
@@ -2713,7 +2750,7 @@ function renderFirmenRanking() {
     const diffClass = getStatDiffClass(f.spielDiff);
     return `<tr class="r${i+1} ${isSelectedViewerFirma(f.firma) ? 'viewer-highlight' : ''}">
       <td class="col-rank rank-position">${i+1}</td>
-      <td class="col-company"><span class="pname">${f.firma}</span><span class="firma-badge firma-${f.firma}">${f.firma}</span></td>
+      <td class="col-company"><span class="pname">${f.firma}</span></td>
       <td class="col-participants">${f.teilnehmer}</td>
       <td class="col-games">${f.partien}</td>
       <td class="col-wins">${f.siege}</td>
@@ -2823,12 +2860,14 @@ function getFinalFourStats(matches = getFinalFourMatches()) {
 function renderFinalFourRanking() {
   const body = document.getElementById('ff-body');
   const meta = document.getElementById('ff-meta');
+  const note = document.getElementById('ff-ranking-note');
   const detailLink = document.getElementById('final-four-ranking-detail-link');
   if (!body || !meta) return;
 
   const { matches, stats } = getFinalFourStats();
   const detailEntryMatchId = getFinalFourDetailEntryMatchId(matches);
   meta.textContent = `${stats.length} Spieler`;
+  if (note) note.textContent = `Spiele: ${matches.length}  |  Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung`;
   if (detailLink) {
     detailLink.hidden = !detailEntryMatchId;
     if (detailEntryMatchId) detailLink.dataset.liveOpenMatch = detailEntryMatchId;
@@ -2842,7 +2881,6 @@ function renderFinalFourRanking() {
     return `<tr class="r${index + 1}">
       <td class="col-rank rank-position">${index + 1}</td>
       <td class="col-name">${renderPlayerProfileLink(player, 'pname')}</td>
-      <td class="col-games">${player.partien}</td>
       <td class="col-wins rank-score">${player.siege}</td>
       <td class="col-gv">${player.spieleGV}</td>
       <td class="col-diff"><span class="${diffClass}">${diffLabel}</span></td>
@@ -2989,6 +3027,7 @@ function getPlayerForm(player) {
         data-form-match-id="${escapeHtml(match.id)}"
       >${won ? 'S' : 'N'}</span>`;
     })
+    .reverse()
     .join('') || '<span class="neu">—</span>';
 }
 
@@ -3037,22 +3076,27 @@ function renderRanking() {
   updateRankingSortToggle();
   updateRankingViewToggle();
   const table = document.getElementById('ranking-table');
+  const tableWrap = table.closest('.ranking-main-wrap');
   const body = document.getElementById('rl-body');
   const previousPositions = getRankingRowPositions(body, '.ranking-row');
   table.dataset.rankingSort = rankingSortMode;
+  tableWrap.dataset.rankingView = rankingViewMode;
   table.classList.toggle('expanded', rankingViewMode === 'expanded');
   table.classList.toggle('compact', rankingViewMode === 'compact');
 
   const withStats = getRankedPlayers(PADEL_DATA.matches, rankingSortMode);
   const rankMap = getRankingPositionMap('points');
   const firmaShort = { Envidual: 'Env', Headsquare: 'Hsq', Hanako: 'Han' };
+  const maximumLeagueMatches = getMaximumLeagueMatches();
+  const gamesNote = maximumLeagueMatches > 0 ? `Spiele: ${maximumLeagueMatches}` : '';
+  const withGamesNote = (...parts) => parts.filter(Boolean).join('  |  ');
   document.getElementById('rl-meta').textContent = withStats.length + ' Spieler';
   const sortNotes = {
     points: getCompetitionConfig().qualificationPlaces
-      ? `Top ${getCompetitionConfig().qualificationPlaces}: Qualifikationsplätze  |  Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele`
-      : 'Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele',
-    elo: 'Sortierung: Elo · Punkte · Spiel-Differenz · gewonnene Spiele',
-    placement: 'Sortierung: bereinigter Rang aus Punkte-Platz minus Platzierungsfaktor'
+      ? withGamesNote(`Top ${getCompetitionConfig().qualificationPlaces}: Qualifikationsplätze`, gamesNote, 'Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele')
+      : withGamesNote(gamesNote, 'Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele'),
+    elo: withGamesNote(gamesNote, 'Sortierung: Elo · Punkte · Spiel-Differenz · gewonnene Spiele'),
+    placement: withGamesNote(gamesNote, 'Sortierung: bereinigter Rang aus Punkte-Platz minus Platzierungsfaktor')
   };
   document.getElementById('rl-sort-note').textContent = sortNotes[rankingSortMode] || sortNotes.points;
   body.innerHTML = withStats.map((p, i) => {
@@ -3280,15 +3324,17 @@ function renderHomeMatchCard(match, options = {}) {
     ? match.sieger === 2 ? ' mini-match-winner' : ' mini-match-loser'
     : '';
   const statusClass = isPlayed ? ' mini-match-status-played' : '';
+  const statistics = window.PadelMatchStatistics?.entry(match, PADEL_DATA);
+  const centerContent = `<div class="mini-match-prob">${centerMain}</div>
+        <div class="mini-match-label">${centerLabel}</div>`;
 
   return `<div class="mini-match-row ${isViewerMatch(match) ? 'viewer-match' : ''}">
     <div class="mini-match-meta">${formatMatchMeta(match, { relative: options.relative !== false })}</div>
     <div class="mini-match-grid">
       <div class="mini-match-team mini-match-team-1${team1Class}">${renderTeamPlayers(match.team1.spieler)}</div>
-      <div class="mini-match-status${statusClass}">
-        <div class="mini-match-prob">${centerMain}</div>
-        <div class="mini-match-label">${centerLabel}</div>
-      </div>
+      ${statistics
+        ? `<button type="button" class="mini-match-status${statusClass} mini-match-status-action" ${statistics.attributes}>${centerContent}</button>`
+        : `<div class="mini-match-status${statusClass}">${centerContent}</div>`}
       <div class="mini-match-team mini-match-team-2${team2Class}">${renderTeamPlayers(match.team2.spieler)}</div>
     </div>
   </div>`;
@@ -3378,9 +3424,12 @@ function renderArticleBlock(block) {
       [matchup, result] = block.text.split(/\s*\|\s*Ergebnis:\s*/);
       resultLabel = 'Ergebnis';
     }
-    return `<div class="article-match">
+    const match = block.matchId ? PADEL_DATA.matches.find(m => m.id === block.matchId) : null;
+    const detail = window.PadelMatchStatistics?.entry(match, PADEL_DATA);
+    return `<div class="article-match${detail ? ' has-partie-statistics' : ''}">
+      ${detail ? `<button type="button" class="live-ticker-statistics-article-action" ${detail.attributes}></button>` : ''}
       <span>${linkArticlePlayerNames(matchup)}</span>
-      ${result ? `<span class="article-match-result">${resultLabel}: ${result}</span>` : ''}
+      ${result ? `<span class="article-match-result">${resultLabel}: ${result}${detail?.icon || ''}</span>` : ''}
     </div>`;
   }
   if (block.type === 'quote') {
@@ -3724,24 +3773,36 @@ function getPlayedMatchesWithProbability() {
     .filter(item => item.probability);
 }
 
-function renderFavoriteCheck() {
-  const matches = getPlayedMatchesWithProbability()
-    .filter(({ probability }) => probability.team1 !== probability.team2);
+const FAVORITE_CHECK_MIN_PROBABILITY = 55;
 
-  if (!matches.length) {
-    document.getElementById('favorite-check').innerHTML = '<div class="empty-state">Noch keine Favoriten-Daten.</div>';
-    return;
-  }
-
-  const favoriteWins = matches.filter(({ match, probability }) => {
+function getFavoriteCheckStats(matches = getPlayedMatchesWithProbability()) {
+  const favoriteMatches = matches
+    .filter(({ probability }) => Math.max(probability.team1, probability.team2) >= FAVORITE_CHECK_MIN_PROBABILITY);
+  const favoriteWins = favoriteMatches.filter(({ match, probability }) => {
     const favorite = probability.team1 > probability.team2 ? 1 : 2;
     return match.sieger === favorite;
   }).length;
-  const favoriteRate = Math.round((favoriteWins / matches.length) * 100);
+
+  return {
+    matches: favoriteMatches.length,
+    wins: favoriteWins,
+    rate: favoriteMatches.length ? Math.round((favoriteWins / favoriteMatches.length) * 100) : null
+  };
+}
+
+function renderFavoriteCheck() {
+  const stats = getFavoriteCheckStats();
+  const note = `<div class="favorite-check-note">Als Favorit zählt ein Team ab ${FAVORITE_CHECK_MIN_PROBABILITY} % Siegchance.</div>`;
+
+  if (!stats.matches) {
+    document.getElementById('favorite-check').innerHTML = `<div class="empty-state">Noch keine Favoriten-Daten.</div>${note}`;
+    return;
+  }
 
   document.getElementById('favorite-check').innerHTML = `
-    <div class="stat-main">${favoriteRate}%</div>
-    <div class="stat-copy">Favoriten gewannen ${favoriteWins} von ${matches.length} Partien.</div>
+    <div class="stat-main">${stats.rate}%</div>
+    <div class="stat-copy">Favoriten gewannen ${stats.wins} von ${stats.matches} Partien.</div>
+    ${note}
   `;
 }
 
@@ -4258,6 +4319,7 @@ function renderMatchRow(m) {
       </div>
     </div>`;
   }
+  const statistics = window.PadelMatchStatistics?.entry(m, PADEL_DATA);
   if (m.sieger === null) {
     const probability = getMatchWinProbability(m);
     const probabilityHtml = probability
@@ -4271,10 +4333,10 @@ function renderMatchRow(m) {
       ${isLive ? `<button type="button" class="mc-score" data-live-open-match="${escapeHtml(m.id)}" aria-label="Liveticker öffnen, Satzstand 0 zu 0, Spielstand ${Number(activeLive.teamOneGames) || 0} zu ${Number(activeLive.teamTwoGames) || 0}">
         <div class="mc-score-main">0:0</div>
         <div class="mc-score-detail mc-score-live">${Number(activeLive.teamOneGames) || 0}:${Number(activeLive.teamTwoGames) || 0} <span class="mc-score-live-dot" aria-hidden="true">●</span>LIVE</div>
-      </button>` : `<div class="mc-score">
+      </button>` : `${statistics ? `<button type="button" class="mc-score" ${statistics.attributes}>` : '<div class="mc-score">'}
         ${probabilityHtml}
-        <div class="mc-pending-label">${getPendingMatchLabel(m)}</div>
-      </div>`}
+        <div class="mc-pending-label">${getPendingMatchLabel(m)}${statistics?.icon || ''}</div>
+      ${statistics ? '</button>' : '</div>'}`}
       <div class="mc-team mc-team-2">
         <div class="mc-players">${renderTeamPlayers(m.team2.spieler)}</div>
       </div>
@@ -4283,16 +4345,16 @@ function renderMatchRow(m) {
 
   const t1w = m.sieger === 1, t2w = m.sieger === 2;
   const hasLiveHistory = Boolean(window.PadelLiveTicker?.hasHistory(m.id));
-  const liveHistoryIcon = hasLiveHistory ? `<span class="mc-score-details-icon" aria-hidden="true">
+  const liveHistoryIcon = statistics?.icon || (hasLiveHistory ? `<span class="mc-score-details-icon" aria-hidden="true">
     <svg viewBox="0 0 24 24" focusable="false">
       <path d="M4 6h9M4 11h6M4 16h5"></path>
       <circle cx="15.5" cy="14.5" r="3.5"></circle>
       <path d="m18 17 3 3"></path>
     </svg>
-  </span>` : '';
+  </span>` : '');
   const scoreMain = String(m.saetze || '—');
   const scoreDetail = m.ergebnis
-    ? `<div class="mc-score-detail">${hasLiveHistory ? `<span class="mc-score-result-with-details">${m.ergebnis}${liveHistoryIcon}</span>` : m.ergebnis}</div>`
+    ? `<div class="mc-score-detail">${hasLiveHistory || statistics ? `<span class="mc-score-result-with-details">${m.ergebnis}${liveHistoryIcon}</span>` : m.ergebnis}</div>`
     : '';
   const viewerInT1 = isParticipantView() && m.team1.spieler.includes(getSelectedViewer().name);
   const viewerInT2 = isParticipantView() && m.team2.spieler.includes(getSelectedViewer().name);
@@ -4307,14 +4369,14 @@ function renderMatchRow(m) {
     <div class="mc-team mc-team-1 ${t1w?'win':''}">
       <div class="mc-players">${renderTeamPlayers(m.team1.spieler)}</div>
     </div>
-    ${hasLiveHistory ? `<button type="button" class="mc-score" data-live-open-match="${escapeHtml(m.id)}" aria-label="Spielverlauf öffnen">` : '<div class="mc-score">'}
+    ${hasLiveHistory ? `<button type="button" class="mc-score" data-live-open-match="${escapeHtml(m.id)}" aria-label="Spielverlauf öffnen">` : statistics ? `<button type="button" class="mc-score" ${statistics.attributes}>` : '<div class="mc-score">'}
       <div class="mc-result-row">
         ${leftProbability}
         <div class="mc-score-main">${scoreMain}</div>
         ${rightProbability}
       </div>
       ${scoreDetail}
-    ${hasLiveHistory ? '</button>' : '</div>'}
+    ${hasLiveHistory || statistics ? '</button>' : '</div>'}
     <div class="mc-team mc-team-2 ${t2w?'win':''}">
       <div class="mc-players">${renderTeamPlayers(m.team2.spieler)}</div>
     </div>
@@ -4463,6 +4525,7 @@ function renderCupTrophy() {
 }
 
 function renderCupMatchCard(match) {
+  const statistics = window.PadelMatchStatistics?.entry(match, PADEL_DATA);
   const isPlayed = match.sieger !== null;
   const teamOneClass = isPlayed ? (match.sieger === 1 ? ' is-winner' : ' is-loser') : '';
   const teamTwoClass = isPlayed ? (match.sieger === 2 ? ' is-winner' : ' is-loser') : '';
@@ -4473,7 +4536,7 @@ function renderCupMatchCard(match) {
   return `<article class="cup-match-card${isPlayed ? ' is-played' : ''}">
     <div class="cup-match-label">${escapeHtml(getMatchDisplayLabel(match))}</div>
     <div class="cup-match-team${teamOneClass}">${renderTeamPlayers(match.team1.spieler)}</div>
-    <div class="cup-match-status">${status}</div>
+    ${statistics ? `<button type="button" class="cup-match-status" ${statistics.attributes}>${status}${statistics.icon}</button>` : `<div class="cup-match-status">${status}</div>`}
     <div class="cup-match-team${teamTwoClass}">${renderTeamPlayers(match.team2.spieler)}</div>
   </article>`;
 }
@@ -5258,8 +5321,8 @@ function renderFinalFourCalculatorRanking() {
   body.innerHTML = players.map((player, index) => `<tr class="calculator-ranking-row r${index + 1} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id || player.name)}">
     <td class="col-rank rank-position">${index + 1}</td>
     <td class="col-name">${renderPlayerProfileLink(player, 'pname')}</td>
-    <td class="col-games">${player.partien}</td>
     <td class="col-wins rank-score">${player.siege}</td>
+    <td class="col-gv">${player.spieleGV}</td>
     <td class="col-diff"><span class="${getStatDiffClass(player.diff)}">${formatStatDiff(player.diff)}</span></td>
   </tr>`).join('');
   mini.innerHTML = players.map((player, index) => `<div class="calculator-mini-rank-row r${Math.min(index + 1, 4)} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id || player.name)}" title="${escapeHtml(player.name)}">
@@ -6172,6 +6235,19 @@ const eloFinalStraightSegmentPlugin = {
   }
 };
 
+function getStatisticsEloChartBounds(datasets = []) {
+  const values = datasets
+    .flatMap(dataset => dataset.data || [])
+    .filter(value => value !== null && value !== undefined && Number.isFinite(Number(value)))
+    .map(Number);
+  if (!values.length) return { min: 0, max: 100 };
+
+  return {
+    min: Math.max(0, Math.floor((Math.min(...values) - 60) / 50) * 50),
+    max: Math.ceil((Math.max(...values) + 60) / 50) * 50
+  };
+}
+
 function initChart() {
   if (chart) {
     if (!isAllTimeStatistics()) initPlacementChart();
@@ -6212,6 +6288,7 @@ function initChart() {
       hidden: !activePlayers.has(p.id)
     };
   });
+  const eloBounds = getStatisticsEloChartBounds(datasets);
 
   const ctx = document.getElementById('eloChart').getContext('2d');
   chart = new Chart(ctx, {
@@ -6239,7 +6316,7 @@ function initChart() {
       scales: {
         x: { grid: { color: '#222' }, ticks: { color: '#5a5a72', font: { family: 'DM Sans', size: 12 } } },
         y: {
-          min: 500, max: 1250,
+          min: eloBounds.min, max: eloBounds.max,
           grid: { color: '#222' },
           ticks: { color: '#5a5a72', font: { family: 'DM Sans', size: 12 } }
         }
@@ -6421,7 +6498,9 @@ async function initApp() {
     await window.PadelKonto?.init();
     await window.PadelTippspiel?.init(PADEL_DATA);
     const url = new URL(window.location.href);
-    const requestedLiveMatch = url.searchParams.get('live');
+    const requestedStatistics = url.searchParams.get('partie');
+    if (requestedStatistics) await window.PadelMatchStatistics?.open(requestedStatistics, { updateUrl: false, direct: true });
+    const requestedLiveMatch = requestedStatistics ? null : url.searchParams.get('live');
     if (requestedLiveMatch) {
       nav('partien', document.getElementById('partien-nav-button'));
       const liveUrl = new URL(url);
@@ -6436,7 +6515,7 @@ async function initApp() {
       });
     }
     const requestedPlayerProfile = url.searchParams.get('spielerprofil');
-    if (requestedPlayerProfile) {
+    if (requestedPlayerProfile && !requestedStatistics) {
       url.searchParams.delete('spielerprofil');
       window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
       await openPlayerProfile(requestedPlayerProfile);

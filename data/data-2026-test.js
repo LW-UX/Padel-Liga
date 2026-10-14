@@ -4,7 +4,7 @@ window.PADEL_SEASON = {
   title: "Padel-Liga · Test-Saison",
   competition: {
     tournamentMode: "none",
-    qualificationPlaces: 0,
+    qualificationPlaces: 3,
     homeRankingLimit: 4,
     regularScheduleLocked: false,
     predictionsEnabled: true
@@ -19,7 +19,7 @@ window.PADEL_SEASON = {
   shortInfo: [
     "Diese Saison dient ausschließlich zum Testen der neuen Ergebnis- und Bestätigungsabläufe.",
     "Ein Spieler trägt das Ergebnis ein, ein Spieler des gegnerischen Teams bestätigt oder macht einen Gegenvorschlag.",
-    "Bestätigte Ergebnisse aktualisieren Tabelle und Elo automatisch."
+    "Bestätigte Ergebnisse aktualisieren Tabelle und isoliertes Test-Elo automatisch."
   ],
   matchdays: [
     { spieltag: 1, startDate: "2026-07-15", endDate: "2026-07-16" },
@@ -115,8 +115,8 @@ window.PADEL_SEASON = {
       countsForRanking: true,
       countsForElo: true,
       matchday: 3,
-      date: null,
-      time: null,
+      date: "2026-10-20",
+      time: "18.00",
       result: null,
       sets: null,
       winner: null,

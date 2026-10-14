@@ -17,6 +17,14 @@ const scoringModesMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261005120000_live_ticker_scoring_modes.sql'),
   'utf8'
 );
+const prematchMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261014160000_final_four_prematch_facts.sql'),
+  'utf8'
+);
+const prematchHistoryMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261014220000_final_four_prematch_league_history.sql'),
+  'utf8'
+);
 const acceptance = fs.readFileSync(path.join(root, 'tests', 'live-ticker.acceptance.sql'), 'utf8');
 const gamesAcceptance = fs.readFileSync(path.join(root, 'tests', 'live-ticker-games.acceptance.sql'), 'utf8');
 const ticker = fs.readFileSync(path.join(root, 'js', 'live-ticker.js'), 'utf8');
@@ -213,7 +221,8 @@ test('the ticker starts with an overview tab for all three matches and the final
   assert.match(ticker, /class="rt calculator-ranking-table final-four-calculator-ranking-table live-overview-table"/);
   const overview = ticker.match(/function renderOverview\(\) \{[\s\S]*?(?=\n  function renderPublic)/)?.[0] || '';
   assert.match(overview, /<th class="col-diff">Diff\.<\/th>/);
-  assert.doesNotMatch(overview, /class="col-gv"/);
+  assert.match(overview, /<th class="col-gv">G:V<\/th>/);
+  assert.doesNotMatch(overview, /class="col-games"/);
   assert.doesNotMatch(overview, /class="live-ticker-status/);
   assert.match(overview, /class="live-overview-live"/);
   assert.match(overview, /class="live-overview-score-dot"/);
@@ -225,6 +234,91 @@ test('the ticker starts with an overview tab for all three matches and the final
   assert.match(ticker, /liveView', 'overview'/);
   assert.match(app, /url\.searchParams\.get\('liveView'\) === 'overview'/);
   assert.match(ticker, /if \(matchButton\.dataset\.liveView\) options\.view = matchButton\.dataset\.liveView/);
+});
+
+test('the Final Four overview adds aligned neutral Prematch facts without changing match pages', () => {
+  const prematch = ticker.match(/function renderPrematchFacts\(\) \{[\s\S]*?(?=\n  function getOverviewStats)/)?.[0] || '';
+  const overview = ticker.match(/function renderOverview\(\) \{[\s\S]*?(?=\n  function renderPublic)/)?.[0] || '';
+  assert.match(prematch, />Prematch-Fakten</);
+  assert.match(prematch, /live-overview-prematch-card player-profile-link/);
+  assert.match(prematch, /data-live-player-image/);
+  assert.match(prematch, /profileEmoji\(player\.playerId\)/);
+  assert.doesNotMatch(prematch, /live-ticker-team-|live-ticker-scoreboard|Team 1|Team 2/);
+  const labels = ['Titelprognose', 'Ligaphase', 'Spiele', 'Pflichtspielserie', 'Beziehungen'];
+  labels.reduce((lastIndex, label) => {
+    const index = prematch.indexOf(`>${label}<`);
+    assert.ok(index > lastIndex, `${label} must follow the preceding fact`);
+    return index;
+  }, -1);
+  assert.match(prematch, /help-tooltip">Stand vor Beginn des Final Four\. Für jeden Spieler/);
+  assert.doesNotMatch(prematch, /live-overview-prematch-note/);
+  assert.match(prematch, /durch sechs geteilt/);
+  assert.match(prematch, /Elo-Divisor 300/);
+  assert.match(overview, /\$\{renderPrematchFacts\(\)\}/);
+  assert.equal((ticker.match(/\$\{renderPrematchFacts\(\)\}/g) || []).length, 1);
+  assert.match(prematch, /const showRelationships = players\.some\([\s\S]*player\.relationships\.length/);
+  assert.match(prematch, /live-overview-prematch-grid\$\{showRelationships \? ' has-relationships' : ''\}/);
+  assert.match(prematch, /\$\{showRelationships \? `<div class="live-overview-prematch-fact live-overview-prematch-relationship-fact">[\s\S]*: ''\}/);
+  assert.match(style, /\.live-overview-prematch-grid \{[\s\S]*--prematch-row-count: 5;[\s\S]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);[\s\S]*grid-template-rows: repeat\(var\(--prematch-row-count\), auto\);/);
+  assert.match(style, /\.live-overview-prematch-grid\.has-relationships \{ --prematch-row-count: 6; \}/);
+  assert.match(style, /\.live-overview-prematch-player \{[\s\S]*grid-template-rows: subgrid;/);
+  assert.match(style, /@media \(max-width: 768px\)[\s\S]*\.live-overview-prematch-grid \{[\s\S]*grid-template-columns: minmax\(0, 1fr\);/);
+  assert.doesNotMatch(prematch, /renderPrematchForm|>Form</);
+  assert.doesNotMatch(prematch, /is-training|trainingAware/);
+  assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome \{[\s\S]*border: 2px solid currentColor;[\s\S]*background: transparent;/);
+});
+
+test('Prematch facts load independently and degrade without breaking the live overview', () => {
+  const load = ticker.match(/async function load\(matchId[\s\S]*?(?=\n  function close)/)?.[0] || '';
+  assert.match(load, /client\.rpc\('get_public_final_four_overview'/);
+  assert.ok(load.indexOf("client.rpc('get_public_final_four_overview'") < load.indexOf('await Promise.all'));
+  assert.match(load, /state\.prematchFactsError = Boolean\(prematchResult\.error\)/);
+  assert.match(load, /keepPrematchFacts[\s\S]*state\.view === 'overview'[\s\S]*String\(state\.matchId\) === String\(matchId\)/);
+  assert.match(ticker, /reloadPrematchFacts: false/);
+  assert.match(ticker, /Die Prematch-Fakten sind derzeit nicht verfügbar/);
+});
+
+test('the Prematch RPC validates, freezes and rounds the four-player forecast to 100 percent', () => {
+  assert.match(prematchMigration, /create table if not exists public\.final_four_prematch_snapshots/);
+  assert.match(prematchMigration, /create or replace function public\.get_public_final_four_overview/);
+  assert.match(prematchMigration, /\(select count\(\*\) from final_matches\) = 3/);
+  assert.match(prematchMigration, /\(select count\(\*\) from finalists\) = 4/);
+  assert.match(prematchMigration, /count\(\*\) filter \(where member\.team = 1\) <> 2/);
+  assert.match(prematchMigration, /expectation\.expected_wins \* 100 \/ 6/);
+  assert.match(prematchMigration, /100 - sum\(base_percent\) over \(\)/);
+  assert.match(prematchMigration, /exact_percent - base_percent desc, league_rank, player_id/);
+  assert.match(prematchMigration, /order by player\.league_rank, player\.seed, player\.player_id/);
+  assert.match(prematchMigration, /private\.match_detail_streak\([\s\S]*p_context_match_id, false/);
+  assert.match(prematchMigration, /limit 5/);
+  assert.match(prematchMigration, /other_id = any\(p_finalist_ids\)/);
+  assert.match(prematchMigration, /before insert on public\.live_match_sessions/);
+  assert.match(prematchMigration, /before update of actual_sets, winner on public\.matches/);
+  assert.match(prematchMigration, /on conflict \(season_id\) do nothing/);
+  assert.match(prematchMigration, /grant execute on function public\.get_public_final_four_overview\(text\) to anon, authenticated/);
+  assert.doesNotMatch(prematchMigration, /grant select on public\.final_four_prematch_snapshots/);
+  assert.match(prematchHistoryMigration, /create or replace function private\.final_four_prematch_league_history/);
+  assert.match(prematchHistoryMigration, /league_match\.competition_stage = 'league'/);
+  assert.match(prematchHistoryMigration, /'leagueHistory', private\.final_four_prematch_league_history/);
+  assert.match(prematchHistoryMigration, /player\.value - 'form'/);
+  assert.match(prematchHistoryMigration, /update public\.final_four_prematch_snapshots as snapshot/);
+});
+
+test('only Final Four detail views use the split probability score', () => {
+  const matchRow = app.match(/function renderMatchRow\(m\) \{[\s\S]*?(?=\n\}\n\nfunction renderMatchdayGroup)/)?.[0] || '';
+  const overview = ticker.match(/function renderOverview\(\) \{[\s\S]*?(?=\n  function renderPublic)/)?.[0] || '';
+  const publicMatch = ticker.match(/function renderPublic\(\) \{[\s\S]*?(?=\n  async function load)/)?.[0] || '';
+
+  assert.match(matchRow, /`<div class="mc-prob">\$\{probability\.team1\}% : \$\{probability\.team2\}%<\/div>`/);
+  assert.doesNotMatch(matchRow, /renderProbabilityScore/);
+  assert.match(ticker, /function getPayloadWinProbability\(payload\)[\s\S]*player\.currentElo[\s\S]*elos\[0\] \* 0\.7 \+ elos\[1\] \* 0\.3/);
+  assert.match(overview, /renderProbabilityScore\(matchState\.probability, 'live-overview-probability'\)/);
+  assert.match(publicMatch, /renderProbabilityScore\(pendingProbability, 'live-ticker-probability', false\)/);
+  assert.match(publicMatch, /pendingProbability \? 'Prozent' : 'Noch nicht begonnen'/);
+  assert.match(publicMatch, /pendingProbability \? 'Gewinnchance' : 'Spielstand'/);
+  assert.match(style, /\.match-probability \{[\s\S]*grid-template-columns: minmax\(34px, 1fr\) auto minmax\(34px, 1fr\);[\s\S]*column-gap: 0\.4rem;/);
+  assert.match(style, /\.match-probability-value \{[\s\S]*color: var\(--dim\);[\s\S]*font-size: var\(--text-sm\);/);
+  assert.match(style, /\.match-probability-separator \{[\s\S]*color: var\(--dim\);[\s\S]*font-size: var\(--text-sm\);/);
+  assert.match(style, /\.live-ticker-probability :is\(\.match-probability-value, \.match-probability-separator\) \{[\s\S]*font-family: var\(--font-heading\);[\s\S]*font-size: clamp\(2rem, 4vw, 3rem\);/);
 });
 
 test('the public match list always leads with sets and keeps games and history below', () => {

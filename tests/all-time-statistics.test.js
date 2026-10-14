@@ -29,6 +29,17 @@ function evaluateSetDominance(player, matches) {
   return JSON.parse(JSON.stringify(context.result));
 }
 
+function evaluateFavoriteCheck(matches) {
+  const source = app.match(
+    /const FAVORITE_CHECK_MIN_PROBABILITY = 55;[\s\S]*?(?=\nfunction renderFavoriteCheck)/
+  );
+  assert.ok(source, 'favorite-check helper should be present');
+  const context = { matches, result: null };
+  vm.createContext(context);
+  vm.runInContext(`${source[0]}\nresult = getFavoriteCheckStats(matches);`, context);
+  return JSON.parse(JSON.stringify(context.result));
+}
+
 test('statistics page exposes an accessible season and all-time switch', () => {
   assert.match(html, /id="statistics-mode-toggle" aria-label="Statistikzeitraum auswählen"/);
   assert.match(html, /aria-pressed="true" data-statistics-mode="season">Saison<\/button>/);
@@ -69,6 +80,21 @@ test('all-time set dominance compares players per regular set', () => {
   assert.deepEqual(evaluateSetDominance(player, matches), { spielDiff: 7, setCount: 3 });
   assert.match(app, /stats\.spielDiff \/ stats\.setCount/);
   assert.match(app, /Spiele pro \$\{isAllTimeStatistics\(\) \? 'Satz' : 'Partie'\}/);
+});
+
+test('favorite check only counts teams with at least 55 percent win probability', () => {
+  const stats = evaluateFavoriteCheck([
+    { match: { sieger: 1 }, probability: { team1: 54, team2: 46 } },
+    { match: { sieger: 1 }, probability: { team1: 55, team2: 45 } },
+    { match: { sieger: 2 }, probability: { team1: 56, team2: 44 } },
+    { match: { sieger: 2 }, probability: { team1: 45, team2: 55 } }
+  ]);
+
+  assert.deepEqual(stats, { matches: 3, wins: 2, rate: 67 });
+  assert.match(html, /class="widget favorite-check-widget"/);
+  assert.match(app, /Als Favorit zählt ein Team ab \$\{FAVORITE_CHECK_MIN_PROBABILITY\} % Siegchance\./);
+  assert.match(app, /class="favorite-check-note"/);
+  assert.match(style, /\.favorite-check-note \{[\s\S]*?margin-top: auto;[\s\S]*?font-size: var\(--text-xs\);/);
 });
 
 test('public all-time RPC returns only completed official competition data', () => {

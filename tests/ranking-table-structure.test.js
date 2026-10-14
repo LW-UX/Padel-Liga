@@ -34,9 +34,9 @@ test('league-page ranking tables use one named class per column without colgroup
 
   assert.deepEqual(getColumnClasses(targetTables[0], 'th'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-points', 'col-gv', 'col-diff', 'col-elo', 'col-form', 'col-winrate', 'col-placement-factor']);
   assert.deepEqual(getColumnClasses(targetTables[1], 'th'), ['col-rank', 'col-company', 'col-participants', 'col-games', 'col-wins', 'col-points', 'col-diff', 'col-points-per-player']);
-  assert.deepEqual(getColumnClasses(targetTables[2], 'th'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-gv', 'col-diff']);
+  assert.deepEqual(getColumnClasses(targetTables[2], 'th'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff']);
   assert.deepEqual(getColumnClasses(targetTables[3], 'th'), ['col-rank', 'col-name', 'col-games', 'col-points', 'col-diff']);
-  assert.deepEqual(getColumnClasses(targetTables[4], 'th'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-diff']);
+  assert.deepEqual(getColumnClasses(targetTables[4], 'th'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff']);
 });
 
 test('ranking renderers use the same named column classes as their headers', () => {
@@ -51,12 +51,13 @@ test('ranking renderers use the same named column classes as their headers', () 
   renderers.forEach(renderer => assert.doesNotMatch(renderer, legacyLayoutClass));
 
   assert.deepEqual(getColumnClasses(renderers[0], 'td'), ['col-rank', 'col-company', 'col-participants', 'col-games', 'col-wins', 'col-points', 'col-diff', 'col-points-per-player']);
-  assert.deepEqual(getColumnClasses(renderers[1], 'td'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-gv', 'col-diff']);
+  assert.deepEqual(getColumnClasses(renderers[1], 'td'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff']);
   assert.deepEqual(getColumnClasses(renderers[2], 'td'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-points', 'col-gv', 'col-diff', 'col-elo', 'col-form', 'col-winrate', 'col-placement-factor']);
   assert.deepEqual(getColumnClasses(renderers[3], 'td'), ['col-rank', 'col-name', 'col-games', 'col-points', 'col-diff']);
-  assert.deepEqual(getColumnClasses(renderers[4], 'td'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-diff']);
+  assert.deepEqual(getColumnClasses(renderers[4], 'td'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff']);
   renderers.forEach(renderer => assert.match(renderer, /<td class="col-rank rank-position">/));
   assert.match(renderers[0], /<td class="col-points-per-player rank-score">/);
+  assert.doesNotMatch(renderers[0], /firma-badge/);
   assert.match(renderers[1], /<td class="col-wins rank-score">/);
   assert.match(renderers[2], /<td class="col-points rank-score">/);
   assert.match(renderers[3], /<td class="col-points rank-score">/);
@@ -79,6 +80,8 @@ test('ranking layout behavior is expressed through named column selectors', () =
   assert.doesNotMatch(`${app}\n${style}`, /mini-rank-pos|calculator-mini-rank-pos/);
   assert.doesNotMatch(`${app}\n${style}`, /mini-rank-points|punkte-val/);
   assert.doesNotMatch(style, /\.(?:sticky-rank|sticky-name|extended-col|mobile-compact-hidden|ranking-help-header)\b/);
+  assert.match(style, /\.final-four-ranking-wrap,[^]*\.live-overview-ranking-wrap \{\s*overflow-x: hidden;/);
+  assert.match(style, /table\.rt\.final-four-table,[^]*table\.rt\.live-overview-table \{[^}]*min-width: 0;[^}]*table-layout: fixed;/);
 });
 
 test('ranking sort changes reuse the calculator row movement animation', () => {
@@ -91,4 +94,15 @@ test('ranking sort changes reuse the calculator row movement animation', () => {
   assert.match(style, /\.ranking-row \{ transform-origin: center; \}/);
   assert.doesNotMatch(style, /\.ranking-row \{[^}]*will-change: transform/);
   assert.doesNotMatch(app, /getCalculatorRowPositions|animateCalculatorRows|data-calculator-player/);
+});
+
+test('league and final-four notes show the maximum games before sorting', () => {
+  const ranking = getFunctionSource('renderRanking', 'getRankedPlayers');
+  const finalFour = getFunctionSource('renderFinalFourRanking', 'getRankingPositionMap');
+
+  assert.match(app, /function getMaximumLeagueMatches\(\)/);
+  assert.match(ranking, /`Spiele: \$\{maximumLeagueMatches\}`/);
+  assert.match(ranking, /Top \$\{getCompetitionConfig\(\)\.qualificationPlaces\}: Qualifikationsplätze`[^]*gamesNote[^]*'Sortierung:/);
+  assert.match(finalFour, /`Spiele: \$\{matches\.length\}  \|  Sortierung: Siege/);
+  assert.match(page, /id="ff-ranking-note">Spiele: 3  \|  Sortierung: Siege/);
 });

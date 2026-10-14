@@ -1,0 +1,214 @@
+/* Shared ticker shell, with a separate static statistics mode. */
+.live-ticker-statistics-section { margin-top: 1.5rem; padding: 1.2rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.live-ticker-statistics-section > .widget-label { margin: 0 0 .75rem; font-weight: inherit; }
+.live-ticker-statistics-section h3 { font-size: var(--text-base); margin: 0 0 .6rem; }
+.live-ticker-statistics-section p, .live-ticker-statistics-section li { font-size: var(--text-sm); line-height: 1.4; }
+.live-ticker-statistics-section ul { padding-left: 1.2rem; }
+.live-ticker-statistics-players { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.live-ticker-statistics-note { color: var(--dim); font-size: var(--text-xs); line-height: 1.6; margin: 1rem .25rem; }
+.live-ticker-statistics-ranking-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr); gap: 1.4rem; align-items: start; margin-top: 1.5rem; }
+.live-ticker-statistics-ranking-panel,
+.live-ticker-statistics-impact-panel { min-width: 0; margin-top: 0; }
+.live-ticker-statistics-ranking-wrap { margin: 0; overflow-x: hidden; }
+table.rt.live-ticker-statistics-ranking { width: 100%; min-width: 0; margin: 0 !important; table-layout: fixed; }
+.live-ticker-statistics-team-1 { --statistics-team-color: var(--team-one); }
+.live-ticker-statistics-team-2 { --statistics-team-color: var(--team-two); }
+#live-ticker-dialog[data-mode="statistics"] .live-ticker-team-1 { --statistics-team-color: var(--team-one); }
+#live-ticker-dialog[data-mode="statistics"] .live-ticker-team-2 { --statistics-team-color: var(--team-two); }
+#live-ticker-dialog[data-mode="statistics"] .live-ticker-team .live-ticker-player {
+  border-color: var(--statistics-team-color);
+}
+#live-ticker-dialog[data-mode="statistics"] .live-ticker-team .live-ticker-player-photo {
+  border: 2px solid var(--statistics-team-color);
+}
+table.rt.live-ticker-statistics-ranking tbody tr { background: transparent; }
+table.rt.live-ticker-statistics-ranking tbody tr.live-ticker-statistics-ranking-player {
+  background: color-mix(in srgb, var(--statistics-team-color) 10%, var(--surface2));
+}
+table.rt.live-ticker-statistics-ranking tbody tr.live-ticker-statistics-ranking-player:hover {
+  background: color-mix(in srgb, var(--statistics-team-color) 16%, var(--surface));
+}
+.live-ticker-statistics-ranking tbody tr.live-ticker-statistics-ranking-other td {
+  padding-top: .3rem !important;
+  padding-bottom: .3rem !important;
+  color: var(--dim);
+  font-size: var(--text-xs);
+}
+.live-ticker-statistics-ranking tbody tr.live-ticker-statistics-ranking-other .rank-position {
+  font-size: var(--text-xs);
+}
+
+.live-ticker-statistics-ranking th,
+.live-ticker-statistics-ranking td { padding: 8px 16px !important; }
+.live-ticker-statistics-ranking .col-rank { width: 62px; }
+table.rt.live-ticker-statistics-ranking .col-rank {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.live-ticker-statistics-ranking.has-rank-change .col-rank {
+  width: 40px;
+  padding-left: 8px !important;
+  padding-right: 2px !important;
+  white-space: nowrap;
+}
+.live-ticker-statistics-ranking .col-rank-change {
+  width: 24px;
+  padding-left: 0 !important;
+  padding-right: 8px !important;
+  text-align: center;
+  white-space: nowrap;
+}
+.live-ticker-statistics-ranking .col-name { width: auto; min-width: 0; overflow: hidden; }
+.live-ticker-statistics-ranking .col-games,
+.live-ticker-statistics-ranking .col-wins,
+.live-ticker-statistics-ranking .col-points,
+.live-ticker-statistics-ranking .col-diff { width: 90px; }
+.live-ticker-statistics-ranking :is(th, td):is(.col-games, .col-wins, .col-points, .col-diff) {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.live-ticker-statistics-ranking .col-diff { padding-right: 1rem !important; }
+.live-ticker-statistics-ranking .player-profile-link {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: inherit;
+  font: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.live-ticker-statistics-rank-position { white-space: nowrap; }
+.live-ticker-statistics-rank-change { display: block; color: var(--dim); font-size: .82em; font-weight: 700; line-height: 1; text-align: center; }
+.live-ticker-statistics-rank-change.up { color: var(--positiv); }
+.live-ticker-statistics-rank-change.down { color: var(--negativ); }
+.live-ticker-statistics-ranking .r1 .rank-position { color: var(--gold); }
+.live-ticker-statistics-ranking .r2 .rank-position { color: var(--silver); }
+.live-ticker-statistics-ranking .r3 .rank-position { color: var(--bronze); }
+.live-ticker-statistics-ranking tbody tr.live-ticker-statistics-ranking-qualified td:first-child {
+  box-shadow: inset 3px 0 0 var(--text);
+}
+.live-ticker-statistics-ranking tbody tr.live-ticker-statistics-ranking-player td:last-child {
+  box-shadow: inset -3px 0 0 var(--statistics-team-color);
+}
+.live-ticker-statistics-ranking tbody tr.live-ticker-statistics-ranking-other.live-ticker-statistics-ranking-qualified td:first-child {
+  box-shadow: inset 3px 0 0 var(--muted);
+}
+.live-ticker-statistics-context {
+  display: grid;
+  gap: .45rem;
+  margin-top: 1rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  text-align: center;
+}
+.live-ticker-statistics-context p { font-size: var(--text-sm); line-height: 1.45; }
+.live-ticker-statistics-relationship-name { appearance: none; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+.live-ticker-statistics-relationship-record { white-space: nowrap; }
+.live-ticker-statistics-impact-groups { display: grid; gap: 1.1rem; }
+.live-ticker-statistics-impact-player h3 { margin: 0 0 .3rem; }
+.live-ticker-statistics-impact-player ul { margin: 0; }
+.live-ticker-statistics-impact-player-name { appearance: none; padding: 0; border: 0; background: transparent; color: var(--text); font: inherit; font-weight: 600; text-align: left; cursor: pointer; }
+#live-ticker-dialog[data-mode="statistics"] .viewer-player { color: var(--accent2); font-weight: 700; }
+#live-ticker-dialog[data-mode="statistics"] .player-profile-link:is(:hover, :focus-visible, :active) { color: var(--accent) !important; }
+.live-ticker-statistics-empty-impact { color: var(--dim); }
+.live-ticker-statistics-section:has(> .live-ticker-statistics-graph) > .widget-label { margin-bottom: 0; }
+.live-ticker-statistics-graph-picker { display: none; }
+.live-ticker-statistics-graph { position: relative; display: flex; overflow-x: auto; height: 590px; overscroll-behavior-x: contain; }
+.live-ticker-statistics-svg { flex: 1 0 1000px; min-width: 100%; max-width: none; overflow: hidden; }
+.live-ticker-statistics-svg text { fill: var(--text); font-size: 13px; font-family: var(--font-mono); }
+.live-ticker-statistics-svg .live-ticker-statistics-value { font-size: 11px; }
+.live-ticker-statistics-svg .live-ticker-statistics-start-value { fill: var(--dim); }
+.live-ticker-statistics-svg .live-ticker-statistics-win-value { fill: var(--positiv); }
+.live-ticker-statistics-svg .live-ticker-statistics-loss-value { fill: var(--negativ); }
+.live-ticker-statistics-svg .live-ticker-statistics-result-value { fill: var(--statistics-team-color, var(--accent)); }
+.live-ticker-statistics-svg .live-ticker-statistics-delta-value.pos { fill: var(--positiv); }
+.live-ticker-statistics-svg .live-ticker-statistics-delta-value.neg { fill: var(--negativ); }
+.live-ticker-statistics-svg .live-ticker-statistics-delta-value.neu { fill: var(--dim); }
+.live-ticker-statistics-svg .live-ticker-statistics-player-label { font-size: var(--text-base); font-family: var(--font-body); }
+.live-ticker-statistics-svg .live-ticker-statistics-player-label.viewer-player { fill: var(--accent2); font-weight: 700; }
+.live-ticker-statistics-peak-star { stroke-linejoin: round; stroke-width: 1.8; }
+.live-ticker-statistics-peak-star.possible { fill: none; stroke: var(--positiv); }
+.live-ticker-statistics-peak-star.achieved { fill: var(--statistics-team-color, var(--accent)); stroke: var(--statistics-team-color, var(--accent)); }
+.live-ticker-statistics-axis { position: sticky; left: 0; flex: 0 0 60px; order: -1; margin-right: -60px; z-index: 1; height: 516px; background: var(--surface); }
+.live-ticker-statistics-axis span { position: absolute; right: 9px; transform: translateY(-50%); font: var(--text-xs) var(--font-mono); color: var(--dim); }
+.live-ticker-statistics-grid { fill: none; stroke: var(--border); }
+.live-ticker-statistics-line { fill: none; stroke: var(--statistics-team-color, var(--accent)); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.live-ticker-statistics-dot { fill: var(--statistics-team-color, var(--accent)); }
+.live-ticker-statistics-projection-band-strip { stroke: none; }
+.live-ticker-statistics-projection-band-strip.win { fill: var(--positiv); }
+.live-ticker-statistics-projection-band-strip.loss { fill: var(--negativ); }
+.live-ticker-statistics-projection-range { stroke: none; fill-opacity: .3; }
+.live-ticker-statistics-projection-range.win { fill: var(--positiv); }
+.live-ticker-statistics-projection-range.loss { fill: var(--negativ); }
+.live-ticker-statistics-skeleton { display: grid; gap: 1.5rem; }
+.live-ticker-statistics-skeleton-card { display: grid; gap: 1rem; min-height: 165px; padding: 1rem; border: 1px solid var(--border); border-radius: 12px; }
+.live-ticker-statistics-skeleton-card .loading-skeleton { display: block; height: 20px; }
+.live-ticker-statistics-skeleton-card .loading-skeleton:first-child { height: 65px; }
+.live-ticker-statistics-skeleton-meta { height: 48px; }
+.live-ticker-statistics-skeleton-history { height: 100px; }
+.live-ticker-statistics-skeleton-graph { height: 430px; }
+.live-ticker-statistics-notice { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); z-index: 5000; max-width: calc(100% - 2rem); padding: 1rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; }
+.article-match.has-partie-statistics { position: relative; }
+.live-ticker-statistics-article-action { position: absolute; inset: 0; width: 100%; border: 0; border-radius: inherit; background: transparent; cursor: pointer; }
+.has-partie-statistics .article-player-link { position: relative; z-index: 1; }
+.has-partie-statistics .article-match-result { pointer-events: none; }
+[data-match-statistics] { cursor: pointer; }
+[data-match-statistics]:focus-visible, .live-ticker-statistics-graph:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0; background: transparent; }
+@media (max-width: 768px) {
+  .live-ticker-statistics-players { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+  .live-ticker-statistics-section { padding: 1rem .7rem; }
+  .live-ticker-statistics-ranking-layout { grid-template-columns: 1fr; gap: 1.5rem; }
+  .live-ticker-statistics-ranking th,
+  .live-ticker-statistics-ranking td {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+  .live-ticker-statistics-ranking .col-rank { width: 38px; }
+  .live-ticker-statistics-ranking.has-rank-change .col-rank {
+    width: 34px;
+    padding-left: 4px !important;
+    padding-right: 0 !important;
+  }
+  .live-ticker-statistics-ranking .col-rank-change {
+    width: 22px;
+    padding-right: 2px !important;
+  }
+  .live-ticker-statistics-ranking .col-games,
+  .live-ticker-statistics-ranking .col-points { width: 58px !important; }
+  .live-ticker-statistics-ranking .col-diff { width: 48px !important; }
+  .live-ticker-statistics-ranking .col-wins { display: none; }
+  .live-ticker-statistics-graph-picker {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    margin: 1rem 0 0;
+  }
+  .live-ticker-statistics-graph-picker button {
+    min-width: 0;
+    overflow: hidden;
+    padding: .35rem .3rem;
+    font-size: var(--text-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .live-ticker-statistics-graph {
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+  }
+  .live-ticker-statistics-player-graph {
+    opacity: .15;
+    transform: translateX(var(--statistics-lane-offset));
+    transition: opacity .18s ease;
+  }
+  .live-ticker-statistics-player-graph.is-selected { opacity: 1; }
+  .live-ticker-statistics-player-graph:not(.is-selected) .live-ticker-statistics-value,
+  .live-ticker-statistics-player-graph:not(.is-selected) .live-ticker-statistics-peak-star,
+  .live-ticker-statistics-player-label { display: none; }
+}
+#live-match-switcher[hidden] { display: none; }
+.live-ticker-statistics-skeleton .loading-skeleton { background: linear-gradient(100deg, var(--skeleton-base) 20%, var(--skeleton-highlight) 38%, var(--skeleton-base) 56%); background-size: 220% 100%; animation: skeleton-shimmer 1.45s ease-in-out infinite; border-radius: 6px; }
+@media (prefers-reduced-motion: reduce) { .live-ticker-statistics-skeleton .loading-skeleton { animation: none; } }
+.live-ticker-statistics-section, .live-ticker-statistics-graph { min-width: 0; }

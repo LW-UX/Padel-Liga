@@ -18,13 +18,23 @@ const openMatchSixMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261012230000_add_open_test_match_six.sql'),
   'utf8'
 );
+const matchStatisticsMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261014110000_test_season_match_statistics.sql'),
+  'utf8'
+);
+const matchStatisticsShowcaseMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261014120000_test_match_statistics_showcase.sql'),
+  'utf8'
+);
 
 const context = { window: {} };
 vm.runInNewContext(source, context);
 const season = context.window.PADEL_SEASON;
 
-test('test season contains six clean matches including the open matchday-three matches', () => {
+test('test season contains six interactive matches plus a separate statistics history fixture', () => {
   assert.equal(season.id, '2026-test');
+  assert.equal(season.competition.qualificationPlaces, 3);
+  assert.match(season.shortInfo.join(' '), /isoliertes Test-Elo/);
   assert.deepEqual(
     JSON.parse(JSON.stringify(season.matches.map(match => match.id))),
     Array.from({ length: 6 }, (_, index) => `test-2026-partie-${index + 1}`)
@@ -45,6 +55,12 @@ test('test season contains six clean matches including the open matchday-three m
   assert.match(openMatchMigration, /public\.profiles[\s\S]*profile\.player_id = any\(expected_players\)/);
   assert.match(openMatchSixMigration, /target_season_id[\s\S]*'test-2026-partie-6'[\s\S]*'league'[\s\S]*'best-of-three'/);
   assert.match(openMatchSixMigration, /match\.cancelled_at is null[\s\S]*match\.betting_open/);
+  assert.match(matchStatisticsMigration, /recalculate_test_match_elo/);
+  assert.match(matchStatisticsMigration, /set qualification_places = 3/);
+  assert.match(matchStatisticsMigration, /not season\.counts_for_profile/);
+  assert.match(matchStatisticsShowcaseMigration, /test-2026-statistics-history/);
+  assert.match(matchStatisticsShowcaseMigration, /Testbetrieb Nord/);
+  assert.equal(season.matches.find(match => match.id === 'test-2026-partie-6').date, '2026-10-20');
 });
 
 test('all test matches use only the four test players with GMX and Gmail opposing', () => {

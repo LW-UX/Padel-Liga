@@ -22,7 +22,7 @@ Redaktionelle Richtlinien für Saisonartikel. Wo Artikel gespeichert werden und 
    - 1–3 Absätze mit Einordnung: Form, Tabellenplatz, Elo, Vorgeschichte und Verbindungen zwischen den Spielern.
    - 0–2 Zitate, jeweils durch einen Absatz mit Doppelpunkt eingeleitet und von einem kurzen, pointierten Absatz kommentiert.
    - Bereits gespielte Partien heißen `Partie N - Bereits gespielt: …`, haben das Ergebnis im Spielblock und werden als kurzer Spielbericht erzählt statt als Vorschau.
-6. **Abschluss:** eine Zwischenüberschrift wie „Blick auf die Tabelle“ oder „Spieltag N - auf einen Blick“, dazu 1–2 Absätze zur Tabellenlage und zum Saisonziel. Am Ende steht eine kurze, rhythmische Schlusszeile, gern als Rückgriff auf ein Zitat: „Erstmal spielen. Dann rätseln.“
+6. **Abschluss:** eine Zwischenüberschrift wie „Blick auf die Tabelle“ oder „Spieltag N - auf einen Blick“, dazu 1–2 Absätze zur Tabellenlage und zum Saisonziel. Der Artikel darf mit einer Pointe oder einem Rückgriff auf ein Zitat enden, muss es aber nicht. Eine sachliche letzte Information ist ebenso möglich. Eine Dreiergruppe steht nie im Abschluss.
 
 Richtwert für die Länge: 600–900 Wörter.
 
@@ -43,8 +43,8 @@ Vor dem Schreiben wird jede vorgestellte oder bereits gespielte Partie mit dem D
 
 Die Nummerierung dient nur der Übersicht und ist keine Rangfolge.
 
-5. **Beziehungen aus den Spielerprofilen:** Für jeden der vier Spieler wird geprüft, ob sein Partner sein Lieblingspartner oder Angstpartner ist und ob einer der Gegner sein Lieblingsgegner oder Angstgegner ist.
-   - Lieblingspartner, Angstpartner, Lieblingsgegner und Angstgegner werden genau so bestimmt wie im öffentlichen Spielerprofil (siehe [Ranglisten, Statistik und Profile](rankings-statistics-and-profiles.md)).
+5. **Beziehungen aus den Spielerprofilen:** Für jeden der vier Spieler wird geprüft, ob sein Partner sein Erfolgspartner oder Angstpartner ist und ob einer der Gegner sein Lieblingsgegner oder Angstgegner ist.
+   - Erfolgspartner, Angstpartner, Lieblingsgegner und Angstgegner werden genau so bestimmt wie im öffentlichen Spielerprofil (siehe [Ranglisten, Statistik und Profile](rankings-statistics-and-profiles.md)).
    - Pro Spieler wird höchstens eine Beziehung je Artikel und höchstens drei je Saison erwähnt. Treffen mehrere zu, wird die Beziehung genommen, deren Siegquote am weitesten von 50 Prozent entfernt ist. Bei Gleichstand gewinnt die Beziehung mit mehr gemeinsamen Partien.
    - Die zugrunde liegende Bilanz wird im Fließtext genannt, etwa „drei von vier gemeinsamen Partien gewonnen“. Angstpartner und Angstgegner werden wie alle Schwächephasen mit Sympathie erzählt.
 6. **Elo-Höchstwert:** Würde ein Spieler mit einem Sieg in dieser Partie einen neuen Elo-Höchstwert erreichen, wird das erwähnt. Wurde im vorherigen Artikel bereits berichtet, dass er einen neuen Elo-Höchstwert erreicht hat, wird die erneute Möglichkeit nicht erwähnt.
@@ -110,6 +110,7 @@ Treffen mehr optionale Punkte zu, als verwendet werden dürfen, entscheiden dies
 ## Datenformat
 
 - Blocktypen: `p` (Absatz), `h` (Zwischenüberschrift), `match` (Spielblock), `quote` (Zitat mit `author`).
+- Statistikfähige Spielblöcke erhalten zusätzlich eine explizite `matchId`. Der Block öffnet die aktuelle Partiestatistik; Spielerlinks öffnen weiterhin das Profil. Artikeltexte bleiben redaktionelle Momentaufnahmen. Partiezuordnungen werden nicht zur Laufzeit aus Texten hergeleitet.
 - Spielblock: `text` enthält `Vorname I. & Vorname I. vs. Vorname I. & Vorname I.` mit Team 1 zuerst. `result` und `resultLabel` stehen getrennt:
   - Vorschau: `"result": "61 : 39 %"`, `"resultLabel": "Gewinnwahrscheinlichkeit"`
   - Gespielt: `"result": "6:3, 6:3"`, `"resultLabel": "Ergebnis"`. Ein Match-Tie-Break wird als `Match-Tie-Break 10:6` angegeben.
@@ -117,12 +118,20 @@ Treffen mehr optionale Punkte zu, als verwendet werden dürfen, entscheiden dies
 
 ## Sprache und Stil
 
-- **Ton:** Sportjournalismus mit Augenzwinkern. Leicht ironisch und dramatisierend, aber immer wohlwollend. Niederlagen und Schwächephasen werden mit Sympathie erzählt, niemand wird bloßgestellt.
-- **Stilmittel:** rhetorische Fragen, kurze Satzfragmente für Rhythmus („Noch.“, „Mehr braucht es nicht.“), Gegensatzpaare (Technik gegen Spirit, Statistik gegen Kampfgeist), Sportmetaphern und gelegentlich „diese Redaktion“.
+- **Ton:** Sportjournalismus mit Augenzwinkern. Leicht ironisch, aber immer wohlwollend. Niederlagen und Schwächephasen werden mit Sympathie erzählt, niemand wird bloßgestellt.
+- **Natürlich statt glatt:** Die Artikel sollen nicht nach KI klingen. Die folgenden Regeln wirken den typischen Mustern maschinell geschriebener Texte entgegen.
+- **Dramatik in Maßen:** Nicht jede Partie ist ein Schicksalsspiel. Begriffe wie „Topspiel“, „Showdown“ oder „Schicksalsspiel“ werden nur verwendet, wenn die Daten es hergeben, etwa im Kampf um die Tabellenführung oder um das Final Four. Eine gewöhnliche Partie darf auch gewöhnlich beschrieben werden.
+- **Satzlängen:** Kurze und längere Sätze wechseln sich ab, auch Sätze mit Nebensätzen sind erwünscht. Kurze Satzfragmente wie „Noch.“ sind ein gelegentliches Mittel und nicht der Grundrhythmus.
+- **Stilmittel:** Rhetorische Fragen, Sportmetaphern und gelegentlich „diese Redaktion“ sind normale Mittel. Gegensatzpaare (Technik gegen Spirit) und Konstruktionen wie „nicht X, sondern Y“ werden sparsam eingesetzt. Vertraute Wendungen wie „auf dem Papier“ oder „Möge der Beste gewinnen“ werden gelegentlich verwendet.
+- **Dreiergruppen:** Drei aufeinanderfolgende Kurzsätze oder Aufzählungen in Dreierform dürfen vereinzelt vorkommen, aber nicht als Gewohnheit und nie im Abschluss des Artikels.
+- **Absatzenden:** Ein Absatz darf einfach mit einer Information enden. Pointen am Absatzende werden gezielt und nicht in jedem Abschnitt gesetzt. Bei einer noch offenen Partie darf der Abschnitt als Spannungsbogen mit einer Frage enden, aber nicht bei jeder Partie des Artikels.
+- **Umschreibungen:** Spieler werden mit Namen genannt, nicht mit wechselnden Umschreibungen wie „der Routinier“ oder „der Mann der Stunde“, nur um Wiederholungen zu vermeiden. Einzelne Umschreibungen sind möglich, gewachsene Spitznamen wie der Spirit-König bleiben davon unberührt.
+- **Obergrenzen je Artikel:** höchstens zwei Dreiergruppen, höchstens vier Sätze ohne Verb (Zitate ausgenommen), höchstens zwei Konstruktionen nach dem Muster „nicht X, sondern Y“ und höchstens drei Absätze, die mit einer Pointe oder einer Frage enden. Fragen am Ende des Abschnitts einer noch offenen Partie zählen nicht mit, stehen aber höchstens bei jeder zweiten Partie.
+- **Prüfung nach dem Entwurf:** Vor der Abgabe wird der Fließtext gegen diese Regeln geprüft und bei Bedarf überarbeitet. Das Ergebnis der Prüfung wird nicht gesondert berichtet.
 - **Wiederkehrende Erzählstränge:** Spitznamen, Running Gags und frühere Zitate werden über die Saison weitergeführt und wieder aufgegriffen, zum Beispiel der Spirit-König, ein Presseboykott oder notorisch pessimistische Selbsteinschätzungen. Prognosen der Spieler werden später mit dem tatsächlichen Ergebnis abgeglichen.
 - **Firmenduell:** Die Bilanz der beteiligten Unternehmen ist ein fester Erzählstrang.
 - **Namen:** Vorname mit Nachnamensinitial und Punkt („Marco M.“). Nach der ersten Nennung im Abschnitt ist auch der Vorname allein möglich. In Zwischenüberschriften und Spielblöcken werden Namen in dieser Form automatisch mit dem Spielerprofil verlinkt, im Fließtext und in Zitaten nicht.
 - **Zahlen:** im Fließtext eingebettet, nicht als Liste: Platz, Punkte, Bilanz („drei Siege aus drei Spielen“), Differenz („+22“), Gewinnwahrscheinlichkeit („54:46“ oder „14 Prozent“) und Elo.
 - **Elo:** „der Elo“, „der Elo-Score“ oder „der Elo-Höchstwert“, immer mit männlichem Artikel, zum Beispiel „sein Elo von 1149 ist der höchste der Liga“. Nicht „das Elo“ und nicht „Elo-Rating“.
-- **Zeichen:** Als Gedankenstrich dient ` - ` mit Leerzeichen. Anführungszeichen im Fließtext sind deutsche Anführungszeichen „…“.
+- **Zeichen:** Als Gedankenstrich dient ` - ` mit Leerzeichen. Er wird spärlich eingesetzt und nur dort, wo er wirklich passt, nicht als Ersatz für Komma oder Doppelpunkt. Anführungszeichen im Fließtext sind deutsche Anführungszeichen „…“.
 - **Ansprache:** Spieler werden sachlich-locker in der dritten Person beschrieben. Leser werden nicht direkt geduzt.
