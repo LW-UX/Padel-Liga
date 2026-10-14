@@ -1239,6 +1239,7 @@
       gap: 0.45rem;
     }
     .sh-meta { font-size: var(--text-sm); color: var(--muted); }
+    .table-note { font-size: var(--text-xs); }
     .section-subheading { margin-top: 2.5rem; }
     #rangliste > #final-four-ranking-section:first-child .section-subheading,
     #league-calculator[hidden] + #final-four-calculator .section-subheading { margin-top: 0; }
@@ -1890,6 +1891,7 @@
     .ranking-wrap { overflow-x: auto; margin-bottom: 0.75rem; }
     .ranking-note { margin-bottom: 4rem; }
     table.rt { width: 100%; border-collapse: collapse; margin-bottom: 1rem;}
+    .ranking-wrap > table.rt { margin-bottom: 0; }
     .ranking-table { --rank-col-left: 0px; --name-col-left: 74px; }
     .ranking-table.expanded { min-width: 1310px; }
     .ranking-table.compact .col-gv,
@@ -2808,9 +2810,8 @@
       border-radius: 0;
       background: color-mix(in srgb, var(--accent) 5%, var(--surface));
       color: #fff;
-      font-family: var(--font-mono);
       font-size: var(--text-xs);
-      font-weight: 700;
+      letter-spacing: 0.05rem;
     }
     .live-overview-poll-segment:first-child .live-overview-poll-bar {
       border-radius: 8px 0 0 8px;
@@ -3721,6 +3722,7 @@
         min-width: 0;
         table-layout: fixed;
       }
+      table.rt.final-four-table .col-elo { display: none; }
       table.rt.final-four-table .col-rank,
       table.rt.final-four-calculator-ranking-table .col-rank,
       table.rt.live-overview-table .col-rank {

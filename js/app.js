@@ -2943,6 +2943,7 @@ function renderFinalFourRanking() {
   body.innerHTML = stats.map((player, index) => {
     const diffClass = getStatDiffClass(player.diff);
     const diffLabel = player.diff > 0 ? `+${player.diff}` : String(player.diff);
+    const eloPlayer = PADEL_DATA.players.find(entry => entry.name === player.name);
 
     return `<tr class="r${index + 1}">
       <td class="col-rank rank-position">${index + 1}</td>
@@ -2950,6 +2951,7 @@ function renderFinalFourRanking() {
       <td class="col-wins rank-score">${player.siege}</td>
       <td class="col-gv">${player.spieleGV}</td>
       <td class="col-diff"><span class="${diffClass}">${diffLabel}</span></td>
+      <td class="col-elo">${eloPlayer ? getLatestPlayerElo(eloPlayer) : '—'}</td>
     </tr>`;
   }).join('');
 }
@@ -3120,11 +3122,11 @@ function renderRankingMatchCount(player) {
   const tooltipText = `${unratedCount} ${unratedCount === 1 ? 'Partie' : 'Partien'} ohne Wertung`;
   const tooltipId = `ranking-unrated-${String(player.id || player.name).replace(/[^a-z0-9_-]+/gi, '-')}`;
   return `<span class="ranking-games-value">
-    <span>${player.stats.partien}</span>
     <span class="th-help-wrap ranking-unrated-wrap">
-      <button class="ranking-unrated-count" type="button" aria-label="${escapeHtml(tooltipText)}" aria-describedby="${escapeHtml(tooltipId)}" aria-expanded="false" data-help-tooltip-anchor>+${unratedCount}</button>
+      <button class="ranking-unrated-count" type="button" aria-label="${escapeHtml(tooltipText)}" aria-describedby="${escapeHtml(tooltipId)}" aria-expanded="false" data-help-tooltip-anchor>${unratedCount}+</button>
       <span class="help-tooltip" id="${escapeHtml(tooltipId)}" role="tooltip">${escapeHtml(tooltipText)}</span>
     </span>
+    <span>${player.stats.partien}</span>
   </span>`;
 }
 
@@ -4643,6 +4645,14 @@ function renderPartien({ animateSort = false } = {}) {
   updateMatchScopeToggle();
   updateMatchSortToggle();
 
+  const partienSection = document.getElementById('partien');
+  const finalFourSpielplan = document.getElementById('final-four-spielplan');
+  const previousPositions = animateSort
+    ? getRankingRowPositions(partienSection, '.mc', 'matchEntry')
+    : null;
+  finalFourSpielplan.replaceChildren();
+  finalFourSpielplan.hidden = true;
+
   if (isCupSeason()) {
     const played = PADEL_DATA.matches.filter(match => match.sieger !== null).length;
     document.getElementById('sp-meta').textContent = `${played}/${PADEL_DATA.matches.length}`;
@@ -4655,9 +4665,6 @@ function renderPartien({ animateSort = false } = {}) {
   document.getElementById('sp-meta').textContent = `${played}/${regularMatches.length}`;
   const visibleMatches = PADEL_DATA.matches.filter(matchesCurrentMatchScope);
   const spielplan = document.getElementById('spielplan');
-  const previousPositions = animateSort
-    ? getRankingRowPositions(spielplan, '.mc', 'matchEntry')
-    : null;
   const spielplanHtml = matchSortMode === 'date'
     ? renderPartienByDate(visibleMatches)
     : renderPartienByMatchday(visibleMatches);
@@ -4666,7 +4673,14 @@ function renderPartien({ animateSort = false } = {}) {
     ? 'Der Spielplan folgt.'
     : 'Keine Partien für diese Auswahl.';
   spielplan.innerHTML = spielplanHtml || `<div class="empty-state">${emptyMatchesText}</div>`;
-  if (animateSort) animateRankingRows(spielplan, '.mc', previousPositions, 'matchEntry');
+  if (['final-four', 'completed'].includes(getSeasonDisplayPhase())) {
+    const finalFourGroup = spielplan.querySelector('.final-four-group');
+    if (finalFourGroup) {
+      finalFourSpielplan.append(finalFourGroup);
+      finalFourSpielplan.hidden = false;
+    }
+  }
+  if (animateSort) animateRankingRows(partienSection, '.mc', previousPositions, 'matchEntry');
 }
 
 // ── CALCULATOR ────────────────────────────────────────────────────

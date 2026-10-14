@@ -19,8 +19,8 @@ test('match overview defaults to matchdays and exposes date sorting in the ranki
 test('switching match sorting reuses the ranking movement animation for stable match cards', () => {
   assert.match(app, /renderPartien\(\{ animateSort: true \}\)/);
   assert.match(app, /data-match-entry="\$\{escapeHtml\(m\.id\)\}"/);
-  assert.match(app, /getRankingRowPositions\(spielplan, '\.mc', 'matchEntry'\)/);
-  assert.match(app, /animateRankingRows\(spielplan, '\.mc', previousPositions, 'matchEntry'\)/);
+  assert.match(app, /getRankingRowPositions\(partienSection, '\.mc', 'matchEntry'\)/);
+  assert.match(app, /animateRankingRows\(partienSection, '\.mc', previousPositions, 'matchEntry'\)/);
   assert.match(app, /function animateRankingRows\([^]*prefers-reduced-motion: reduce[^]*520ms cubic-bezier/);
 });
 

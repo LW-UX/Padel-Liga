@@ -34,7 +34,7 @@ test('league-page ranking tables use one named class per column without colgroup
 
   assert.deepEqual(getColumnClasses(targetTables[0], 'th'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-points', 'col-gv', 'col-diff', 'col-elo', 'col-form', 'col-winrate', 'col-placement-factor']);
   assert.deepEqual(getColumnClasses(targetTables[1], 'th'), ['col-rank', 'col-company', 'col-participants', 'col-games', 'col-wins', 'col-points', 'col-diff', 'col-points-per-player']);
-  assert.deepEqual(getColumnClasses(targetTables[2], 'th'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff']);
+  assert.deepEqual(getColumnClasses(targetTables[2], 'th'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff', 'col-elo']);
   assert.deepEqual(getColumnClasses(targetTables[3], 'th'), ['col-rank', 'col-name', 'col-games', 'col-points', 'col-diff']);
   assert.deepEqual(getColumnClasses(targetTables[4], 'th'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff']);
 });
@@ -51,7 +51,7 @@ test('ranking renderers use the same named column classes as their headers', () 
   renderers.forEach(renderer => assert.doesNotMatch(renderer, legacyLayoutClass));
 
   assert.deepEqual(getColumnClasses(renderers[0], 'td'), ['col-rank', 'col-company', 'col-participants', 'col-games', 'col-wins', 'col-points', 'col-diff', 'col-points-per-player']);
-  assert.deepEqual(getColumnClasses(renderers[1], 'td'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff']);
+  assert.deepEqual(getColumnClasses(renderers[1], 'td'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff', 'col-elo']);
   assert.deepEqual(getColumnClasses(renderers[2], 'td'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-points', 'col-gv', 'col-diff', 'col-elo', 'col-form', 'col-winrate', 'col-placement-factor']);
   assert.deepEqual(getColumnClasses(renderers[3], 'td'), ['col-rank', 'col-name', 'col-games', 'col-points', 'col-diff']);
   assert.deepEqual(getColumnClasses(renderers[4], 'td'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff']);

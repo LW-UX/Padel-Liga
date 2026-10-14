@@ -358,7 +358,7 @@
         <div class="live-overview-heading spieltag-label">Prematch-Fakten</div>
         <span class="th-help-wrap">
           <span class="help-icon" tabindex="0" aria-label="Titelprognose erklären">?</span>
-          <span class="help-tooltip">Stand vor Beginn des Final Four. Für jeden Spieler werden die mit Elo-Divisor 300 berechneten Siegchancen seiner drei wechselnden Teams addiert und durch sechs geteilt. Rundungsreste werden so verteilt, dass alle vier Prognosen zusammen genau 100 Prozent ergeben.</span>
+          <span class="help-tooltip">Die Titelprognose basiert auf den Siegchancen in den drei wechselnden Teams.<br>Stand vor Beginn des Final Four.</span>
         </span>
       </div>
       <div class="live-overview-prematch-grid${showRelationships ? ' has-relationships' : ''}">${players.map((player, index) => `<article class="live-overview-prematch-player live-overview-prematch-player-${index + 1}">
@@ -530,7 +530,7 @@
             }).join('')}</tbody>
           </table>
         </div>
-        <div class="sh-meta live-overview-note">Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung<br>Stand nach abgeschlossenen Partien</div>
+        <div class="sh-meta live-overview-note table-note">Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung<br>Stand nach abgeschlossenen Partien</div>
       </section>
       ${renderPrematchFacts()}
       ${renderFinalFourPoll()}

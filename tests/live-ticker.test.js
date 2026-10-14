@@ -250,10 +250,9 @@ test('the Final Four overview adds aligned neutral Prematch facts without changi
     assert.ok(index > lastIndex, `${label} must follow the preceding fact`);
     return index;
   }, -1);
-  assert.match(prematch, /help-tooltip">Stand vor Beginn des Final Four\. Für jeden Spieler/);
+  assert.match(prematch, /help-tooltip">Die Titelprognose basiert auf den Siegchancen in den drei wechselnden Teams\./);
   assert.doesNotMatch(prematch, /live-overview-prematch-note/);
-  assert.match(prematch, /durch sechs geteilt/);
-  assert.match(prematch, /Elo-Divisor 300/);
+  assert.match(prematch, /wechselnden Teams\.<br>Stand vor Beginn des Final Four\./);
   assert.match(overview, /\$\{renderPrematchFacts\(\)\}/);
   assert.equal((ticker.match(/\$\{renderPrematchFacts\(\)\}/g) || []).length, 1);
   assert.match(prematch, /const showRelationships = players\.some\([\s\S]*player\.relationships\.length/);

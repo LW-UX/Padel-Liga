@@ -68,7 +68,7 @@ test('profiles and rankings show cancellation without counting it', () => {
   assert.match(app, /player-profile-unrated-result">ohne Wertung/);
   assert.match(style, /\.player-profile-unrated-result[\s\S]*font-style: italic/);
   assert.match(app, /function getPlayerUnratedMatchCount/);
-  assert.match(app, /data-help-tooltip-anchor>\+\$\{unratedCount\}/);
+  assert.match(app, /data-help-tooltip-anchor>\$\{unratedCount\}\+/);
   assert.match(app, /Partie' : 'Partien'\} ohne Wertung/);
   assert.match(style, /\.ranking-unrated-count[\s\S]*color: var\(--dim\)/);
   assert.match(app, /\.help-icon, \[data-help-tooltip-anchor\]/);

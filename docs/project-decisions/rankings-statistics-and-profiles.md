@@ -17,7 +17,7 @@ Diese Datei ist die kanonische Quelle für Elo, Ranglisten, Statistik, öffentli
 - Saisonstatistik ist die Standardansicht. Ein nicht persistenter Umschalter öffnet eine All-Time-Ansicht.
 - All-Time umfasst abgeschlossene offizielle Liga-, Final-Four- und Cup-Partien sowie Spieler mit mindestens einer solchen Partie. Training, Test-Saisons und offene Partien sind ausgeschlossen.
 - Saisonabhängige Auswertungen wie Spieltagsplatzierungen, Qualifikationsprognose und Losglück erscheinen nicht in All-Time.
-- Partien ohne Wertung verändern Rangfolge, Statistiken, All-Time und Beziehungen nicht. In der Ranglistenspalte „Partien“ weist eine kleine graue `+N`-Angabe mit Tooltip auf die zusätzlich abgeschlossenen Partien ohne Wertung hin; die große Zahl bleibt die Zahl gewerteter Partien.
+- Partien ohne Wertung verändern Rangfolge, Statistiken, All-Time und Beziehungen nicht. In der Ranglistenspalte „Partien“ weist eine kleine graue `N+`-Angabe mit Tooltip vor der großen Zahl auf die zusätzlich abgeschlossenen Partien ohne Wertung hin; die große Zahl bleibt die Zahl gewerteter Partien und steht rechtsbündig unter den anderen großen Partiezahlen.
 - „Sieg-%“ bezeichnet die durchschnittliche Elo-Siegwahrscheinlichkeit der jeweiligen Teams eines Spielers über alle gewerteten Partien, nicht seine tatsächliche Siegquote. Für abgeschlossene Partien gilt die historische Prognose vor der Partie, für offene Partien die aktuelle Prognose; angezeigt wird der auf ganze Prozent gerundete Durchschnitt.
 - Im Favoriten-Check der Statistik gilt ein Team ab mindestens 55 Prozent historischer Siegchance vor der Partie als Favorit. Favoritenquote, gewonnene Partien und Gesamtzahl berücksichtigen ausschließlich diese Partien; die Grenze gilt in jeder Saison einschließlich Sommer 2026 sowie in All-Time. Der kurze Grenzwert-Hinweis steht in kleiner Schrift am unteren Rand der Favoriten-Box.
 - Satzdominanz wird als durchschnittliche Spieldifferenz je regulärem Satz berechnet; Tiebreak-Punkte zählen nicht als Games.
@@ -27,6 +27,7 @@ Diese Datei ist die kanonische Quelle für Elo, Ranglisten, Statistik, öffentli
 - Elo-Änderungen werden nicht in öffentlichen Ergebnislisten ausgewiesen, bleiben aber intern nachvollziehbar.
 - Die Firmenrangliste zeigt je Zeile den Firmennamen ohne zusätzliches, gleichlautendes Firmen-Tag.
 - Die Metazeilen unter Liga- und Final-Four-Tabelle nennen vor der Sortierung mit `Spiele: N` die maximale Zahl der Spiele je Spieler; die Firmenrangliste erhält diese Angabe nicht.
+- Die Final-Four-Rangliste auf der Ranglistenseite zeigt auf Desktop als letzte Spalte den gleichen aktuellen Elo-Wert wie die normale Liga-Rangliste. Mobil entfällt diese Spalte; Elo verändert die Final-Four-Sortierung nicht.
 - Die Form-Spalte der Ranglistentabelle zeigt die drei jüngsten gewerteten Partien chronologisch von links nach rechts: die älteste links, die neueste rechts. Ergebnisfarben und die nach Alter abgestufte Deckkraft bleiben an die jeweilige Partie gebunden.
 
 ## Prematch-Fakten des Final Four

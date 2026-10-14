@@ -217,7 +217,7 @@
         <tbody id="rl-body"></tbody>
       </table>
     </div>
-    <div class="sh-meta ranking-note" id="rl-sort-note">Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele</div>
+    <div class="sh-meta ranking-note table-note" id="rl-sort-note">Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele</div>
     <div class="sh section-subheading">
       <div class="sh-title">FIRMEN-RANGLISTE</div>
       <div class="sh-meta" id="fr-meta"></div>
@@ -239,7 +239,7 @@
         <tbody id="fr-body"></tbody>
       </table>
     </div>
-    <div class="sh-meta ranking-note">Sortierung: Punkte pro Teilnehmer · Spiel-Differenz</div>
+    <div class="sh-meta ranking-note table-note">Sortierung: Punkte pro Teilnehmer · Spiel-Differenz</div>
     <div id="final-four-ranking-section">
       <div class="sh section-subheading final-four-heading">
         <div class="sh-heading">
@@ -257,12 +257,13 @@
               <th class="col-wins">Siege</th>
               <th class="col-gv">G:V</th>
               <th class="col-diff">Diff.</th>
+              <th class="col-elo">Elo</th>
             </tr>
           </thead>
           <tbody id="ff-body"></tbody>
         </table>
       </div>
-      <div class="sh-meta ranking-note" id="ff-ranking-note">Spiele: 3  |  Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung</div>
+      <div class="sh-meta ranking-note table-note" id="ff-ranking-note">Spiele: 3  |  Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung</div>
     </div>
   </section>
 
@@ -335,6 +336,7 @@
 
   <!-- SPIELE -->
   <section id="partien" class="section">
+    <div id="final-four-spielplan" hidden></div>
     <div class="sh sh-with-control">
       <div class="sh-heading">
         <div class="sh-title" id="partien-title">PARTIEN</div>
@@ -430,7 +432,7 @@
               <tbody id="final-four-calculator-ranking-body"></tbody>
             </table>
           </div>
-          <p class="sh-meta final-four-ranking-note">Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung</p>
+          <p class="sh-meta final-four-ranking-note table-note">Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung</p>
           <div class="final-four-calculator-winner" id="final-four-calculator-winner" role="status"></div>
         </div>
       </div>

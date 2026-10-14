@@ -17,6 +17,7 @@ Diese Datei ist die kanonische Quelle für Saisonidentitäten, Datenquellen, Sai
 - Eine aktive Standardsaison bleibt bis zu ihrem offiziellen Abschluss die Voreinstellung. Eine vorbereitete Nachfolgesaison kann bereits auswählbar sein, ohne automatisch Standard zu werden.
 - Der globale LIVE-Einstieg wechselt vor dem Öffnen des bildschirmfüllenden Livetickers in die Saison der laufenden Partie. Unter der Detailansicht liegt die Partienübersicht dieser Saison; Schließen führt dorthin, ein weiterer Browser-Zurück-Schritt führt in den zuvor betrachteten Saisonkontext.
 - Rangliste, Partien und Rechner folgen der erreichten Wettbewerbsphase. Frühere abgeschlossene Phasen bleiben unterhalb der jeweils aktuellen Phase sichtbar.
+- Sobald das Final Four die aktuelle Phase ist, steht sein gesamter Partienbereich oberhalb der Überschrift „Partien“ samt Sortierung und Filtern. Diese Anordnung bleibt nach Saisonabschluss erhalten; Sortierung und Filter gelten weiterhin auch für die Final-Four-Partien.
 - Nach Abschluss der Ligaphase verschwindet der Ligarechner. Nach dem offiziellen Saisonabschluss verschwindet der gesamte Rechnerbereich.
 - Cup-Saisons verwenden eine reduzierte Seitennavigation mit Turnierbaum und Informationen statt Liga-Rangliste, Rechner und Statistik.
 - Die mobile Liga-Rangliste startet kompakt und bietet eine erweiterte, horizontal scrollbare Ansicht. Desktop behält die vollständige Rangliste.
