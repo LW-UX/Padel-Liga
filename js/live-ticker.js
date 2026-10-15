@@ -371,7 +371,7 @@
             <img class="live-ticker-player-image" src="assets/players/${encodeURIComponent(player.playerId)}/profile.webp" alt="" data-live-player-image>
             <span class="live-ticker-player-emoji" hidden>${escapeHtml(profileEmoji(player.playerId))}</span>
           </span>
-          <span class="live-ticker-player-name">${escapeHtml(player.displayName)}</span>
+          <span class="live-ticker-player-name">${escapeHtml(player.displayName)}${player.participationStatus === 'replacement' ? '<span aria-hidden="true">*</span><span class="sr-only">, nachgerückt</span>' : ''}</span>
           <small class="live-ticker-player-elo">${Number.isFinite(Number(player.elo)) ? `${Math.round(Number(player.elo))} Elo` : 'Elo –'}</small>
         </button>
         <div class="live-overview-prematch-fact live-overview-prematch-forecast">
@@ -528,6 +528,9 @@
       return;
     }
     const stats = getOverviewStats(payloads);
+    const replacementPlayer = Array.isArray(state.prematchFacts?.players)
+      ? state.prematchFacts.players.find(player => player.participationStatus === 'replacement')
+      : null;
     const livePayload = payloads.find(payload => ['live', 'needs_server', 'ready_to_finish'].includes(payload.session?.status));
     target.innerHTML = `<div class="live-overview">
       <section class="live-overview-section">
@@ -566,14 +569,14 @@
               const diffClass = diff > 0 ? 'pos' : diff < 0 ? 'neg' : 'neu';
               return `<tr class="r${index + 1}">
                 <td class="col-rank rank-position">${index + 1}</td>
-                <td class="col-name"><button class="pname player-profile-link" type="button" data-player-profile-id="${escapeHtml(player.playerId)}">${escapeHtml(player.displayName)}</button></td>
+                <td class="col-name"><button class="pname player-profile-link" type="button" data-player-profile-id="${escapeHtml(player.playerId)}">${escapeHtml(player.displayName)}${replacementPlayer?.playerId === player.playerId ? '<span aria-hidden="true">*</span><span class="sr-only">, nachgerückt</span>' : ''}</button></td>
                 <td class="col-wins rank-score">${player.wins}</td><td class="col-gv">${player.gamesWon}:${player.gamesLost}</td>
                 <td class="col-diff"><span class="${diffClass}">${diff > 0 ? `+${diff}` : diff}</span></td>
               </tr>`;
             }).join('')}</tbody>
           </table>
         </div>
-        <div class="sh-meta live-overview-note table-note">Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung<br>Stand nach abgeschlossenen Partien</div>
+        <div class="sh-meta live-overview-note table-note">Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung<br>Stand nach abgeschlossenen Partien${replacementPlayer ? `<span class="ranking-absence-note">*${escapeHtml(replacementPlayer.displayName)} ist für ${escapeHtml(replacementPlayer.replacesDisplayName)} nachgerückt.</span>` : ''}</div>
       </section>
       ${renderPrematchFacts()}
       ${renderFinalFourPoll()}

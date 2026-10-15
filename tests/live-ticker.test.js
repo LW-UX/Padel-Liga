@@ -252,12 +252,15 @@ test('the Final Four overview adds aligned neutral Prematch facts without changi
   }, -1);
   assert.match(prematch, /help-tooltip">Die Titelprognose basiert auf den Siegchancen in den drei wechselnden Teams\./);
   assert.match(prematch, /const replacementPlayer = activePlayers\.find\(player => player\.participationStatus === 'replacement'\)/);
+  assert.match(prematch, /player\.participationStatus === 'replacement' \? '<span aria-hidden="true">\*<\/span><span class="sr-only">, nachgerückt<\/span>'/);
   assert.doesNotMatch(prematch, /live-overview-prematch-note/);
   assert.match(prematch, /wechselnden Teams\.<br>Stand vor Beginn des Final Four\./);
   assert.match(prematch, /live-overview-prematch-tooltip-paragraph">\$\{escapeHtml\(replacementPlayer\.displayName\)\} ist für \$\{escapeHtml\(replacementPlayer\.replacesDisplayName\)\} nachgerückt\.<\/span>/);
   assert.doesNotMatch(prematch, /live-overview-prematch-participation">Nachgerückt für/);
   assert.match(style, /\.live-overview-prematch-tooltip-paragraph \{[\s\S]*display: block;[\s\S]*margin-top: 0\.65rem;/);
   assert.match(overview, /\$\{renderPrematchFacts\(\)\}/);
+  assert.match(overview, /replacementPlayer\?\.playerId === player\.playerId/);
+  assert.match(overview, /\*\$\{escapeHtml\(replacementPlayer\.displayName\)\} ist für \$\{escapeHtml\(replacementPlayer\.replacesDisplayName\)\} nachgerückt\./);
   assert.equal((ticker.match(/\$\{renderPrematchFacts\(\)\}/g) || []).length, 1);
   assert.match(prematch, /const showRelationships = activePlayers\.some\([\s\S]*player\.relationships\.length/);
   assert.match(prematch, /live-overview-prematch-grid\$\{showRelationships \? ' has-relationships' : ''\}/);
