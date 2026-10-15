@@ -2765,6 +2765,9 @@
       justify-content: center;
       gap: 0.35rem;
     }
+    .live-overview-prematch-withdrawn .live-overview-prematch-history {
+      grid-template-columns: repeat(3, 32px);
+    }
     .live-overview-prematch-relationships {
       display: grid;
       justify-items: center;
@@ -4082,13 +4085,15 @@
         border-top: 1px solid var(--border);
         border-left: 0;
       }
+      .live-overview-prematch-withdrawn .live-overview-prematch-history {
+        grid-template-columns: repeat(6, 32px);
+      }
       .live-overview-prematch-heading .help-tooltip {
         right: auto;
         left: 0;
         transform: none;
       }
       .live-overview-prematch-forecast strong { font-size: 2.8rem; }
-      .live-overview-prematch-history { grid-template-columns: repeat(3, 32px); }
       .live-overview-poll-section { margin-top: 2.5rem; }
       .live-overview-poll-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .live-overview-poll-swap { min-height: 188px; }

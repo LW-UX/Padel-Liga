@@ -270,7 +270,8 @@ test('the Final Four overview adds aligned neutral Prematch facts without changi
   assert.match(style, /\.live-overview-prematch-withdrawn \{[\s\S]*grid-template-columns: minmax\(170px, 1\.25fr\) repeat\(4, minmax\(0, 1fr\)\);/);
   assert.match(style, /\.live-overview-prematch-withdrawn \.live-overview-prematch-fact \{[\s\S]*align-content: start;[\s\S]*padding: 0\.8rem/);
   assert.match(style, /\.live-overview-prematch-history \{[\s\S]*?grid-template-columns: repeat\(6, 32px\);/);
-  assert.match(style, /@media \(max-width: 768px\)[\s\S]*?\.live-overview-prematch-history \{ grid-template-columns: repeat\(3, 32px\); \}/);
+  assert.match(style, /\.live-overview-prematch-withdrawn \.live-overview-prematch-history \{[\s\S]*?grid-template-columns: repeat\(3, 32px\);/);
+  assert.match(style, /@media \(max-width: 768px\)[\s\S]*?\.live-overview-prematch-withdrawn \.live-overview-prematch-history \{[\s\S]*?grid-template-columns: repeat\(6, 32px\);/);
   assert.match(prematch, /\$\{showRelationships \? `<div class="live-overview-prematch-fact live-overview-prematch-relationship-fact">[\s\S]*: ''\}/);
   assert.match(style, /\.live-overview-prematch-grid \{[\s\S]*--prematch-row-count: 5;[\s\S]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);[\s\S]*grid-template-rows: repeat\(var\(--prematch-row-count\), auto\);/);
   assert.match(style, /\.live-overview-prematch-grid\.has-relationships \{ --prematch-row-count: 6; \}/);
