@@ -1252,7 +1252,7 @@ function getPlayerProfileSeasonMatchResult(match) {
   return match.result ?? match.ergebnis ?? null;
 }
 
-function getPlayerProfileFinalFourRanking(matches = []) {
+function getPlayerProfileFinalFourRanking(matches = [], leagueRanks = null) {
   const finalFourMatches = matches
     .filter(match => getMatchStage(match) === 'final-four')
     .sort((left, right) =>
@@ -1279,7 +1279,7 @@ function getPlayerProfileFinalFourRanking(matches = []) {
       total.gameDiff += gamesFor - gamesAgainst;
       return total;
     }, { wins: 0, gamesWon: 0, gameDiff: 0 });
-    return { playerId, seed: seedIndex + 1, ...stats };
+    return { playerId, seed: leagueRanks?.get(playerId) || seedIndex + 1, ...stats };
   }).sort((left, right) =>
     right.wins - left.wins
     || right.gameDiff - left.gameDiff
@@ -1297,7 +1297,11 @@ function getPlayerProfileFinalRoundOverview(seasonPayload, playerId) {
   if (!playerMatches.length) return null;
 
   const hasFinalFour = playerMatches.some(match => getMatchStage(match) === 'final-four');
-  const ranking = hasFinalFour ? getPlayerProfileFinalFourRanking(seasonMatches) : [];
+  const leagueRanks = typeof PADEL_DATA !== 'undefined'
+    && PADEL_DATA && seasonPayload?.id === PADEL_DATA.id
+    ? new Map(getRankedPlayers(PADEL_DATA.matches).map((player, index) => [player.id, index + 1]))
+    : null;
+  const ranking = hasFinalFour ? getPlayerProfileFinalFourRanking(seasonMatches, leagueRanks) : [];
   const placement = ranking.findIndex(entry => entry.playerId === playerId) + 1;
   const stats = playerMatches.reduce((total, match) => {
     const winner = getPlayerProfileSeasonMatchWinner(match);
@@ -2883,6 +2887,9 @@ function getSingleSetGameDiff(match, playerName) {
 
 function getFinalFourStats(matches = getFinalFourMatches()) {
   const names = getFinalFourPlayerNames(matches);
+  const leagueRanks = typeof getRankingPositionMap === 'function'
+    ? getRankingPositionMap('points')
+    : null;
 
   return {
     matches,
@@ -2906,7 +2913,7 @@ function getFinalFourStats(matches = getFinalFourMatches()) {
 
       return {
         name,
-        seed: index + 1,
+        seed: leagueRanks?.get(name) || index + 1,
         partien: playedMatches.length,
         siege,
         gamesWon: gameStats.won,
@@ -3158,6 +3165,7 @@ function renderRanking() {
   const maximumLeagueMatches = getMaximumLeagueMatches();
   const gamesNote = maximumLeagueMatches > 0 ? `Spiele: ${maximumLeagueMatches}` : '';
   const withGamesNote = (...parts) => parts.filter(Boolean).join('  |  ');
+  const showMarcoAbsence = normalizeSeasonId(PADEL_DATA.id) === '2026-sommer';
   document.getElementById('rl-meta').textContent = withStats.length + ' Spieler';
   const sortNotes = {
     points: getCompetitionConfig().qualificationPlaces
@@ -3166,7 +3174,14 @@ function renderRanking() {
     elo: withGamesNote(gamesNote, 'Sortierung: Elo · Punkte · Spiel-Differenz · gewonnene Spiele'),
     placement: withGamesNote(gamesNote, 'Sortierung: bereinigter Rang aus Punkte-Platz minus Platzierungsfaktor')
   };
-  document.getElementById('rl-sort-note').textContent = sortNotes[rankingSortMode] || sortNotes.points;
+  const rankingNote = document.getElementById('rl-sort-note');
+  rankingNote.textContent = sortNotes[rankingSortMode] || sortNotes.points;
+  if (showMarcoAbsence) {
+    const absenceNote = document.createElement('span');
+    absenceNote.className = 'ranking-absence-note';
+    absenceNote.textContent = '* Marco M. fällt krankheitsbedingt beim Final Four aus. Der fünftplatzierte Ludwig W. rückt nach.';
+    rankingNote.append(absenceNote);
+  }
   body.innerHTML = withStats.map((p, i) => {
     const currentRank = i + 1;
     const pointsRank = rankMap.get(p.name);
@@ -3178,9 +3193,12 @@ function renderRanking() {
     const rankingPlayerLabel = isMobileViewport() && rankingViewMode === 'expanded'
       ? p.initials || p.name
       : p.name;
+    const absenceMark = showMarcoAbsence && p.id === 'marco_m'
+      ? '<span class="ranking-absence-mark"><span aria-hidden="true">*</span><span class="sr-only">Krankheitsbedingter Ausfall beim Final Four</span></span>'
+      : '';
     return `<tr class="ranking-row r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(p.id || p.name)}">
       <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${renderPointsRankReference(currentRank, pointsRank)}</span></td>
-      <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span></span></td>
+      <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}${absenceMark}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span></span></td>
       <td class="col-games">${renderRankingMatchCount(p)}</td>
       <td class="col-wins">${p.stats.siege}</td>
       <td class="col-points rank-score">${p.stats.punkte}</td>

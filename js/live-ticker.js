@@ -348,8 +348,12 @@
       </section>`;
     }
     const players = state.prematchFacts?.players;
-    if (!Array.isArray(players) || players.length !== 4) return '';
-    const showRelationships = players.some(player =>
+    if (!Array.isArray(players) || ![4, 5].includes(players.length)) return '';
+    const activePlayers = players.filter(player => player.participationStatus !== 'withdrawn');
+    const withdrawnPlayer = players.find(player => player.participationStatus === 'withdrawn');
+    if (activePlayers.length !== 4 || (players.length === 5 && !withdrawnPlayer)) return '';
+    const replacementPlayer = activePlayers.find(player => player.participationStatus === 'replacement');
+    const showRelationships = activePlayers.some(player =>
       Array.isArray(player.relationships) && player.relationships.length
     );
 
@@ -358,10 +362,10 @@
         <div class="live-overview-heading spieltag-label">Prematch-Fakten</div>
         <span class="th-help-wrap">
           <span class="help-icon" tabindex="0" aria-label="Titelprognose erklären">?</span>
-          <span class="help-tooltip">Die Titelprognose basiert auf den Siegchancen in den drei wechselnden Teams.<br>Stand vor Beginn des Final Four.</span>
+          <span class="help-tooltip">Die Titelprognose basiert auf den Siegchancen in den drei wechselnden Teams.<br>Stand vor Beginn des Final Four.${replacementPlayer ? `<span class="live-overview-prematch-tooltip-paragraph">${escapeHtml(replacementPlayer.displayName)} ist für ${escapeHtml(replacementPlayer.replacesDisplayName)} nachgerückt.</span>` : ''}</span>
         </span>
       </div>
-      <div class="live-overview-prematch-grid${showRelationships ? ' has-relationships' : ''}">${players.map((player, index) => `<article class="live-overview-prematch-player live-overview-prematch-player-${index + 1}">
+      <div class="live-overview-prematch-grid${showRelationships ? ' has-relationships' : ''}">${activePlayers.map((player, index) => `<article class="live-overview-prematch-player live-overview-prematch-player-${index + 1}">
         <button type="button" class="live-ticker-player live-overview-prematch-card player-profile-link" data-player-profile-id="${escapeHtml(player.playerId)}">
           <span class="live-ticker-player-photo" aria-hidden="true">
             <img class="live-ticker-player-image" src="assets/players/${encodeURIComponent(player.playerId)}/profile.webp" alt="" data-live-player-image>
@@ -372,7 +376,7 @@
         </button>
         <div class="live-overview-prematch-fact live-overview-prematch-forecast">
           <span class="live-overview-prematch-label">Titelprognose</span>
-          <strong>${Number.isFinite(Number(player.titleForecast)) ? Math.round(Number(player.titleForecast)) : '—'} %</strong>
+          <strong>${player.titleForecast == null ? '—' : `${Math.round(Number(player.titleForecast))} %`}</strong>
         </div>
         <div class="live-overview-prematch-fact">
           <span class="live-overview-prematch-label">Ligaphase</span>
@@ -391,6 +395,41 @@
           ${renderPrematchRelationships(player)}
         </div>` : ''}
       </article>`).join('')}</div>
+    </section>`;
+  }
+
+  function renderWithdrawnPrematchFacts() {
+    const players = state.prematchFacts?.players;
+    if (!Array.isArray(players)) return '';
+    const withdrawnPlayer = players.find(player => player.participationStatus === 'withdrawn');
+    if (!withdrawnPlayer) return '';
+
+    return `<section class="live-overview-section live-overview-withdrawn-section">
+      <div class="live-overview-heading spieltag-label">Qualifiziert · krankheitsbedingt ausgefallen</div>
+      <article class="live-overview-prematch-withdrawn">
+        <div class="live-overview-prematch-withdrawn-identity">
+          <button type="button" class="live-ticker-player live-overview-prematch-card player-profile-link" data-player-profile-id="${escapeHtml(withdrawnPlayer.playerId)}">
+            <span class="live-ticker-player-photo" aria-hidden="true">
+              <img class="live-ticker-player-image" src="assets/players/${encodeURIComponent(withdrawnPlayer.playerId)}/profile.webp" alt="" data-live-player-image>
+              <span class="live-ticker-player-emoji" hidden>${escapeHtml(profileEmoji(withdrawnPlayer.playerId))}</span>
+            </span>
+            <span class="live-ticker-player-name">${escapeHtml(withdrawnPlayer.displayName)}</span>
+            <small class="live-ticker-player-elo">${Number.isFinite(Number(withdrawnPlayer.elo)) ? `${Math.round(Number(withdrawnPlayer.elo))} Elo` : 'Elo –'}</small>
+          </button>
+        </div>
+        <div class="live-overview-prematch-fact live-overview-prematch-forecast">
+          <span class="live-overview-prematch-label">Titelprognose</span><strong>—</strong>
+        </div>
+        <div class="live-overview-prematch-fact">
+          <span class="live-overview-prematch-label">Ligaphase</span><span>${Number(withdrawnPlayer.leagueRank)}. Platz</span>
+        </div>
+        <div class="live-overview-prematch-fact">
+          <span class="live-overview-prematch-label">Spiele</span>${renderPrematchLeagueHistory(withdrawnPlayer)}
+        </div>
+        <div class="live-overview-prematch-fact">
+          <span class="live-overview-prematch-label">Pflichtspielserie</span><span>${escapeHtml(renderPrematchStreak(withdrawnPlayer))}</span>
+        </div>
+      </article>
     </section>`;
   }
 
@@ -428,10 +467,12 @@
         <div class="live-overview-heading spieltag-label">Wer gewinnt das Final Four?</div>
         ${poll.closed ? '<span class="sh-meta">Abstimmung beendet</span>' : ''}
       </div>
-      <div class="live-overview-poll-swap${showSelection ? ' is-selection' : ' is-result'}">${content}</div>
-      ${selectedPlayerId && !poll.closed && !showSelection
-        ? '<button type="button" class="text-link live-overview-poll-change" data-final-four-poll-change>Stimme ändern</button>'
-        : ''}
+      <div class="live-overview-poll-swap${showSelection ? ' is-selection' : ' is-result'}">
+        ${content}
+        ${selectedPlayerId && !poll.closed && !showSelection
+          ? '<button type="button" class="text-link live-overview-poll-change" data-final-four-poll-change>Stimme ändern</button>'
+          : ''}
+      </div>
       ${state.pollMessage ? `<div class="live-overview-poll-message" role="status">${escapeHtml(state.pollMessage)}</div>` : ''}
     </section>`;
   }
@@ -444,7 +485,9 @@
         if (players.has(player.playerId)) return;
         players.set(player.playerId, {
           ...player,
-          seed: Number(prematchPlayers.get(player.playerId)?.seed) || players.size + 1,
+          seed: Number(prematchPlayers.get(player.playerId)?.leagueRank)
+            || Number(prematchPlayers.get(player.playerId)?.seed)
+            || players.size + 1,
           matches: 0,
           wins: 0,
           gamesWon: 0,
@@ -534,6 +577,7 @@
       </section>
       ${renderPrematchFacts()}
       ${renderFinalFourPoll()}
+      ${renderWithdrawnPrematchFacts()}
     </div>`;
     if (connection) connection.textContent = livePayload
       ? (state.statusConnected ? 'Live verbunden' : 'Verbindung wird hergestellt …')

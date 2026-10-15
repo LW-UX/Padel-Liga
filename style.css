@@ -957,7 +957,15 @@
       .player-profile-match-date { grid-column: 1; grid-row: 1; }
       .player-profile-match-outcome { grid-row: 2; }
       .player-profile-match-teams { grid-row: 2; }
-      .player-profile-match-score { grid-column: 3; grid-row: 2; text-align: right; min-height: 44px; }
+      .player-profile-match-score {
+        display: flex;
+        grid-column: 3;
+        grid-row: 2;
+        align-items: flex-start;
+        justify-content: flex-end;
+        min-height: 44px;
+        text-align: right;
+      }
       .player-profile-match-season { grid-column: 3; grid-row: 1; }
     }
 
@@ -1888,8 +1896,10 @@
     .info-article-readmore { display: inline-flex; }
 
     /* ── RANKING TABLE ── */
-    .ranking-wrap { overflow-x: auto; margin-bottom: 0.75rem; }
+    .ranking-wrap { overflow-x: auto; overflow-y: hidden; margin-bottom: 0.75rem; }
+    .ranking-main-wrap[data-ranking-view="compact"] { overflow: visible; }
     .ranking-note { margin-bottom: 4rem; }
+    .ranking-absence-note { display: block; margin-top: 0.4rem; }
     table.rt { width: 100%; border-collapse: collapse; margin-bottom: 1rem;}
     .ranking-wrap > table.rt { margin-bottom: 0; }
     .ranking-table { --rank-col-left: 0px; --name-col-left: 74px; }
@@ -1982,6 +1992,13 @@
       display: inline-flex;
       align-items: center;
       white-space: nowrap;
+    }
+    .ranking-absence-mark {
+      flex: 0 0 auto;
+      align-self: flex-start;
+      margin: -0.1em 0.35rem 0 0.06rem;
+      font-size: 0.78em;
+      line-height: 1;
     }
     .ranking-table.expanded thead .col-rank,
     .ranking-table.expanded thead .col-name {
@@ -2654,6 +2671,10 @@
       right: auto;
       left: 0;
     }
+    .live-overview-prematch-tooltip-paragraph {
+      display: block;
+      margin-top: 0.65rem;
+    }
     .live-overview-prematch-grid {
       --prematch-row-count: 5;
       display: grid;
@@ -2674,6 +2695,37 @@
     .live-overview-prematch-player-2 { grid-column: 2; }
     .live-overview-prematch-player-3 { grid-column: 3; }
     .live-overview-prematch-player-4 { grid-column: 4; }
+    .live-overview-withdrawn-section {
+      grid-column: 1 / -1;
+      min-width: 0;
+      margin-top: 2.5rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+    }
+    .live-overview-withdrawn-section .live-overview-heading { margin-bottom: 0.85rem; }
+    .live-overview-prematch-withdrawn {
+      display: grid;
+      grid-template-columns: minmax(170px, 1.25fr) repeat(4, minmax(0, 1fr));
+      align-items: start;
+      gap: 0.85rem 1rem;
+    }
+    .live-overview-prematch-withdrawn-identity {
+      display: grid;
+      justify-items: center;
+      gap: 0.35rem;
+      min-width: 0;
+      text-align: center;
+    }
+    .live-overview-prematch-withdrawn .live-overview-prematch-fact {
+      align-self: stretch;
+      align-content: start;
+      padding: 2.2rem 0.35rem 0 1rem;
+      border-top: 0;
+      border-left: 1px solid var(--border);
+    }
+    .live-overview-prematch-withdrawn .live-overview-prematch-forecast strong {
+      font-size: 2.2rem;
+    }
     .live-overview-prematch-card {
       width: 100%;
       height: 100%;
@@ -2708,8 +2760,8 @@
       line-height: 1;
     }
     .live-overview-prematch-history {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(6, 32px);
       justify-content: center;
       gap: 0.35rem;
     }
@@ -2766,7 +2818,9 @@
     }
     .live-overview-poll-choice { min-height: 88px; }
     .live-overview-poll-swap {
+      position: relative;
       min-width: 0;
+      min-height: 88px;
       animation: live-overview-poll-slide-in 240ms ease-out both;
     }
     @keyframes live-overview-poll-slide-in {
@@ -2824,7 +2878,11 @@
     }
     .live-overview-poll-change {
       display: block;
-      margin: 0.9rem auto 0;
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      margin: 0;
+      transform: translateX(-50%);
     }
     .live-overview-poll-status,
     .live-overview-poll-message {
@@ -3708,8 +3766,6 @@
       .widget,
       .info-card { padding: 1rem; }
       .ranking-wrap { margin-left: 0; margin-right: 0; }
-      .ranking-main-wrap[data-ranking-view="compact"] { overflow: visible; }
-      .ranking-main-wrap[data-ranking-view="expanded"] { overflow-x: auto; }
       table.rt { min-width: 500px; }
       .final-four-ranking-wrap,
       .live-overview-ranking-wrap {
@@ -4014,14 +4070,32 @@
         padding-top: 1.5rem;
         border-top: 1px solid var(--border);
       }
+      .live-overview-prematch-withdrawn {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.75rem;
+      }
+      .live-overview-prematch-withdrawn-identity {
+        grid-column: 1;
+      }
+      .live-overview-prematch-withdrawn .live-overview-prematch-fact {
+        padding: 0.8rem 0.35rem 0;
+        border-top: 1px solid var(--border);
+        border-left: 0;
+      }
       .live-overview-prematch-heading .help-tooltip {
         right: auto;
         left: 0;
         transform: none;
       }
       .live-overview-prematch-forecast strong { font-size: 2.8rem; }
+      .live-overview-prematch-history { grid-template-columns: repeat(3, 32px); }
       .live-overview-poll-section { margin-top: 2.5rem; }
       .live-overview-poll-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .live-overview-poll-swap { min-height: 188px; }
+      .live-overview-poll-swap.is-result {
+        display: grid;
+        align-items: center;
+      }
       .live-overview-poll-heading {
         align-items: flex-start;
         flex-direction: column;
