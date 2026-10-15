@@ -4535,15 +4535,6 @@ function renderTournamentGroup(matches, fallbackTitle, className) {
   const detailEntryMatchId = className === 'final-four-group'
     ? getFinalFourDetailEntryMatchId()
     : null;
-  const podiumPlacements = className === 'final-four-group'
-    ? getHomeSeasonPodiumPlacements()
-    : [];
-  const podium = podiumPlacements.length === 3
-    ? `<div class="final-four-page-podium">${renderFinalFourPodiumSteps(podiumPlacements.map(placement => ({
-        place: placement.place,
-        displayName: placement.player.name
-      })), { overviewMatchId: detailEntryMatchId })}</div>`
-    : '';
   const detailLink = detailEntryMatchId
     ? `<button type="button" class="text-link inline-link final-four-detail-link" data-live-open-match="${escapeHtml(detailEntryMatchId)}" data-live-view="overview">Zur Übersicht</button>`
     : '';
@@ -4555,7 +4546,6 @@ function renderTournamentGroup(matches, fallbackTitle, className) {
       </div>
       ${detailLink}
     </div>
-    ${podium}
     <div class="match-list">${matches.map(renderMatchRow).join('')}</div>
   </div>`;
 }

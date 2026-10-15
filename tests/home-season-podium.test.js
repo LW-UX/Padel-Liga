@@ -84,23 +84,18 @@ test('test season no longer receives a hard-coded podium preview', () => {
   assert.doesNotMatch(source, /PADEL_DATA\?\.id === '2026-test'/);
 });
 
-test('completed podium is reused in the Final Four matches section without headings', () => {
+test('completed podium is not rendered in the Final Four matches section', () => {
   const tournamentGroup = source.match(/function renderTournamentGroup\([^]*?(?=\nfunction matchesCurrentMatchScope)/)?.[0] || '';
   assert.match(tournamentGroup, /className === 'final-four-group'/);
-  assert.match(tournamentGroup, /getHomeSeasonPodiumPlacements\(\)/);
-  assert.match(tournamentGroup, /renderFinalFourPodiumSteps/);
-  assert.match(tournamentGroup, /class="final-four-page-podium"/);
-  assert.doesNotMatch(tournamentGroup, /Unser Champion|home-season-podium-kicker/);
-  assert.match(style, /\.final-four-page-podium/);
+  assert.doesNotMatch(tournamentGroup, /getHomeSeasonPodiumPlacements|renderFinalFourPodiumSteps|final-four-page-podium/);
+  assert.doesNotMatch(style, /\.final-four-page-podium/);
 });
 
-test('only podium steps outside the overview open the Final Four overview', () => {
+test('homepage podium steps open the Final Four overview', () => {
   const homePodium = source.match(/function renderHomeSeasonPodium\([^]*?(?=\nfunction renderHome)/)?.[0] || '';
-  const tournamentGroup = source.match(/function renderTournamentGroup\([^]*?(?=\nfunction matchesCurrentMatchScope)/)?.[0] || '';
   const podiumSteps = source.match(/function renderFinalFourPodiumSteps\([^]*?(?=\nwindow\.PadelLigaSeasonPodium)/)?.[0] || '';
 
   assert.match(homePodium, /renderFinalFourPodiumSteps\([^]*\{ overviewMatchId \}\)/);
-  assert.match(tournamentGroup, /renderFinalFourPodiumSteps\([^]*overviewMatchId: detailEntryMatchId/);
   assert.match(podiumSteps, /<button type="button" class="home-season-podium-step"[^>]*data-live-open-match=/);
   assert.match(podiumSteps, /data-live-view="overview"/);
   assert.match(podiumSteps, /<div class="home-season-podium-step" aria-hidden="true">/);

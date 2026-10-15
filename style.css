@@ -2691,12 +2691,7 @@
       min-width: 0;
       overflow: hidden;
     }
-    .final-four-page-podium {
-      overflow: hidden;
-      margin: 0.75rem 0 1.25rem;
-    }
-    .live-overview-podium .home-season-podium-steps,
-    .final-four-page-podium .home-season-podium-steps { margin-top: 0; }
+    .live-overview-podium .home-season-podium-steps { margin-top: 0; }
     .live-overview-section { min-width: 0; }
     .live-overview-heading {
       margin-bottom: 0.85rem;
