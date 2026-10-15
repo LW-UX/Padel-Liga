@@ -1321,6 +1321,99 @@
     }
     .home-side { display: grid; gap: 18px; }
     .home-main { display: grid; gap: 18px; align-content: start; }
+    .home-season-podium {
+      overflow: hidden;
+      margin-bottom: 18px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background:
+        radial-gradient(circle at 50% 0, color-mix(in srgb, var(--accent) 9%, transparent), transparent 42%),
+        var(--surface);
+      padding: 1.55rem 2rem 0;
+      text-align: center;
+    }
+    .home-season-podium-kicker {
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .home-season-podium h2 {
+      margin-top: 0.35rem;
+      font-family: var(--font-heading);
+      font-size: clamp(2.35rem, 6vw, 4rem);
+      font-weight: 400;
+      letter-spacing: 0.035em;
+      line-height: 1;
+    }
+    .home-season-podium-steps {
+      display: grid;
+      width: min(700px, 100%);
+      margin: 1.15rem auto 0;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.14fr) minmax(0, 1fr);
+      align-items: end;
+      gap: 8px;
+    }
+    .home-season-podium-place {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .home-season-podium-place .cup-trophy {
+      width: 52px;
+      margin: 0 auto 0.35rem;
+      filter: drop-shadow(0 0 16px color-mix(in srgb, var(--accent) 18%, transparent));
+    }
+    .home-season-podium-player {
+      overflow: hidden;
+      margin-bottom: 0.7rem;
+      color: var(--text);
+      font-size: clamp(0.86rem, 2.5vw, 1.3rem);
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .home-season-podium-place--1 .home-season-podium-player {
+      color: var(--accent);
+      font-size: clamp(1.1rem, 3.4vw, 1.75rem);
+    }
+    .home-season-podium-step {
+      display: grid;
+      min-height: 92px;
+      place-items: center;
+      border-top: 1px solid color-mix(in srgb, var(--dim) 34%, transparent);
+      background: color-mix(in srgb, var(--surface2) 64%, var(--surface));
+    }
+    .home-season-podium-step span {
+      color: color-mix(in srgb, var(--text) 26%, transparent);
+      font-family: var(--font-heading);
+      font-size: 3rem;
+      line-height: 1;
+    }
+    .home-season-podium-place--1 .home-season-podium-step {
+      min-height: 140px;
+      border-top-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    }
+    .home-season-podium-place--1 .home-season-podium-step span { color: var(--accent); }
+    .home-season-podium-place--3 .home-season-podium-step { min-height: 72px; }
+    @media (max-width: 600px) {
+      .home-season-podium {
+        margin-bottom: 12px;
+        padding: 1.25rem 0.75rem 0;
+      }
+      .home-season-podium h2 { font-size: 2.55rem; }
+      .home-season-podium-steps { gap: 5px; }
+      .home-season-podium-place .cup-trophy { width: 42px; }
+      .home-season-podium-player { font-size: 0.74rem; }
+      .home-season-podium-place--1 .home-season-podium-player { font-size: 0.92rem; }
+      .home-season-podium-step { min-height: 74px; }
+      .home-season-podium-place--1 .home-season-podium-step { min-height: 112px; }
+      .home-season-podium-place--3 .home-season-podium-step { min-height: 58px; }
+      .home-season-podium-step span { font-size: 2.4rem; }
+    }
     .home-app-hint {
       position: relative;
       border: 1px solid var(--accent2) !important;

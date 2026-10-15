@@ -3562,6 +3562,41 @@ function renderHomeAnnouncement(now = new Date()) {
   );
 }
 
+function renderHomeSeasonPodium() {
+  const container = document.getElementById('home-season-podium');
+  if (!container) return;
+
+  // Temporäre, feste Vorschau ausschließlich für die verborgene Test-Saison.
+  const testPlacements = selectedSeason?.id === '2026-test'
+    ? [
+        { place: 1, playerId: 'ludwig_w' },
+        { place: 2, playerId: 'ludi_gmx' },
+        { place: 3, playerId: 'ludi_gmail' }
+      ]
+    : [];
+
+  const placements = testPlacements.map(placement => ({
+    ...placement,
+    player: PADEL_DATA.players.find(player => player.id === placement.playerId)
+  }));
+  const isVisible = placements.length === 3 && placements.every(placement => placement.player);
+
+  container.hidden = !isVisible;
+  container.innerHTML = isVisible ? `
+    <div class="home-season-podium-kicker">Saison ${escapeHtml(PADEL_DATA.label || selectedSeason.label || selectedSeason.id)} beendet</div>
+    <h2 id="home-season-podium-title">Unser Champion</h2>
+    <div class="home-season-podium-steps" role="img" aria-label="${escapeHtml(placements[0].player.name)} gewinnt vor ${escapeHtml(placements[1].player.name)} und ${escapeHtml(placements[2].player.name)}">
+      ${[placements[1], placements[0], placements[2]].map(placement => `
+        <div class="home-season-podium-place home-season-podium-place--${placement.place}">
+          ${placement.place === 1 ? renderCupTrophy() : ''}
+          <div class="home-season-podium-player">${escapeHtml(placement.player.name)}</div>
+          <div class="home-season-podium-step" aria-hidden="true"><span>${placement.place}</span></div>
+        </div>
+      `).join('')}
+    </div>
+  ` : '';
+}
+
 function renderHome() {
   ['home-short-info', 'home-ranking', 'home-next-matches', 'home-recent-matches'].forEach(id => {
     const target = document.getElementById(id);
@@ -3574,6 +3609,7 @@ function renderHome() {
     .join('');
 
   renderHomeAnnouncement();
+  renderHomeSeasonPodium();
 
   document.getElementById('home-articles').innerHTML = `
     <div class="home-article-preview" id="home-article-preview">

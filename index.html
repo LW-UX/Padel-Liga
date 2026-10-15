@@ -15,7 +15,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=2026-10-14-played-order">
+  <link rel="stylesheet" href="style.css?v=2026-10-15-test-podium">
   <link rel="stylesheet" href="account.css?v=2026-10-14-training-guests">
   <script>
     (function () {
@@ -39,7 +39,7 @@
   <script defer src="js/live-ticker.js?v=2026-10-14-loading"></script>
   <script defer src="js/account.js?v=2026-10-14-loading"></script>
   <script defer src="js/match-statistics.js?v=2026-10-14-played-order"></script>
-  <script defer src="js/app.js?v=2026-10-14-loading"></script>
+  <script defer src="js/app.js?v=2026-10-15-season-finished-label"></script>
 </head>
 <body>
 
@@ -98,10 +98,11 @@
 
   <!-- START -->
   <section id="start" class="section active">
+    <section class="home-season-podium" id="home-season-podium" aria-labelledby="home-season-podium-title" hidden></section>
     <div class="home-grid">
       <div class="home-main">
         <article class="widget home-announcement" id="home-announcement" hidden></article>
-        <article class="widget home-app-hint">
+        <article class="widget home-app-hint" hidden>
           <button class="home-app-hint-close" type="button" data-dismiss-app-hint aria-label="App-Hinweis schließen">×</button>
           <div class="widget-label">Jetzt auch als App!</div>
           <p class="home-app-hint-text">Diese Webseite auf dem Handy öffnen, im Browser-Menü auf Teilen drücken und zum Home-Bildschirm hinzufügen. Name vergeben, speichern und schon ist die App auf dem Handy für uneingeschränkten Zugriff.</p>
