@@ -3562,33 +3562,52 @@ function renderHomeAnnouncement(now = new Date()) {
   );
 }
 
+function getHomeSeasonPodiumPlacements() {
+  if (PADEL_DATA?.id === '2026-test') {
+    const previewPlacements = [
+      { place: 1, playerId: 'ludwig_w' },
+      { place: 2, playerId: 'ludi_gmx' },
+      { place: 3, playerId: 'ludi_gmail' }
+    ].map(placement => ({
+      place: placement.place,
+      player: PADEL_DATA.players.find(player => player.id === placement.playerId)
+    }));
+    return previewPlacements.every(placement => placement.player) ? previewPlacements : [];
+  }
+
+  if (!PADEL_DATA?.completedAt
+    || !['direct-final-four', 'top8-semifinals'].includes(getCompetitionConfig().tournamentMode)) return [];
+
+  const matches = getFinalFourMatches();
+  if (!getFinalFourDetailEntryMatchId(matches)
+    || matches.some(match => isCancelledMatch(match)
+      || ![1, 2].includes(match.sieger)
+      || !match.ergebnis)) return [];
+
+  const { stats } = getFinalFourStats(matches);
+  if (stats.length !== 4) return [];
+
+  const playersByName = new Map(PADEL_DATA.players.map(player => [player.name, player]));
+  const placements = stats.slice(0, 3).map((stat, index) => ({
+    place: index + 1,
+    player: playersByName.get(stat.name)
+  }));
+  return placements.every(placement => placement.player) ? placements : [];
+}
+
 function renderHomeSeasonPodium() {
   const container = document.getElementById('home-season-podium');
   if (!container) return;
 
-  // Temporäre, feste Vorschau ausschließlich für die verborgene Test-Saison.
-  const testPlacements = selectedSeason?.id === '2026-test'
-    ? [
-        { place: 1, playerId: 'ludwig_w' },
-        { place: 2, playerId: 'ludi_gmx' },
-        { place: 3, playerId: 'ludi_gmail' }
-      ]
-    : [];
-
-  const placements = testPlacements.map(placement => ({
-    ...placement,
-    player: PADEL_DATA.players.find(player => player.id === placement.playerId)
-  }));
-  const isVisible = placements.length === 3 && placements.every(placement => placement.player);
-
-  container.hidden = !isVisible;
-  container.innerHTML = isVisible ? `
+  const placements = getHomeSeasonPodiumPlacements();
+  container.hidden = placements.length !== 3;
+  container.innerHTML = placements.length === 3 ? `
     <div class="home-season-podium-kicker">Saison ${escapeHtml(PADEL_DATA.label || selectedSeason.label || selectedSeason.id)} beendet</div>
     <h2 id="home-season-podium-title">Unser Champion</h2>
     <div class="home-season-podium-steps" role="img" aria-label="${escapeHtml(placements[0].player.name)} gewinnt vor ${escapeHtml(placements[1].player.name)} und ${escapeHtml(placements[2].player.name)}">
       ${[placements[1], placements[0], placements[2]].map(placement => `
         <div class="home-season-podium-place home-season-podium-place--${placement.place}">
-          ${placement.place === 1 ? renderCupTrophy() : ''}
+          ${placement.place === 1 ? renderWanderpokalTrophy() : ''}
           <div class="home-season-podium-player">${escapeHtml(placement.player.name)}</div>
           <div class="home-season-podium-step" aria-hidden="true"><span>${placement.place}</span></div>
         </div>
@@ -4642,6 +4661,20 @@ function renderCupTrophy() {
       <path class="cup-trophy-line" d="M46 31H25v12c0 22 11 34 29 37M114 31h21v12c0 22-11 34-29 37"/>
       <path class="cup-trophy-line" d="M80 95v25M59 137h42M65 120h30v17H65z"/>
       <path class="cup-trophy-accent" d="m80 35 5 11 12 2-9 8 3 12-11-6-11 6 3-12-9-8 12-2 5-11Z"/>
+    </svg>
+  </div>`;
+}
+
+function renderWanderpokalTrophy() {
+  return `<div class="cup-trophy wanderpokal-trophy" aria-hidden="true">
+    <svg viewBox="0 0 120 242" role="presentation" focusable="false">
+      <path class="wanderpokal-outline" d="M25 8C12 16 7 28 14 40c11 13 28 22 46 28 18-6 35-15 46-28 7-12 2-24-11-32M25 8l17 43M95 8 78 51"/>
+      <path class="wanderpokal-outline" d="M14 40l5 17Q39 73 60 82Q81 73 101 57l5-17"/>
+      <path class="wanderpokal-outline" d="M22 68Q40 86 60 94Q80 86 98 68L95 80Q78 96 60 104Q42 96 25 80Z"/>
+      <path class="wanderpokal-outline" d="M29 93Q44 108 60 116Q76 108 91 93L88 105Q74 119 60 126Q46 119 32 105Z"/>
+      <path class="wanderpokal-outline" d="M36 118Q48 131 60 138Q72 131 84 118L70 169H50Z"/>
+      <path class="wanderpokal-outline" d="M54 169h12v8H54zM50 177h20l-4 13H54l-4-13ZM54 190l-11 24h34l-11-24"/>
+      <path class="wanderpokal-outline" d="M35 214h50l4 24H31l4-24Z"/>
     </svg>
   </div>`;
 }

@@ -19,6 +19,7 @@ Diese Datei ist die kanonische Quelle für Saisonidentitäten, Datenquellen, Sai
 - Rangliste, Partien und Rechner folgen der erreichten Wettbewerbsphase. Frühere abgeschlossene Phasen bleiben unterhalb der jeweils aktuellen Phase sichtbar.
 - Sobald das Final Four die aktuelle Phase ist, steht sein gesamter Partienbereich oberhalb der Überschrift „Partien“ samt Sortierung und Filtern. Diese Anordnung bleibt nach Saisonabschluss erhalten; Sortierung und Filter gelten weiterhin auch für die Final-Four-Partien.
 - Nach Abschluss der Ligaphase verschwindet der Ligarechner. Nach dem offiziellen Saisonabschluss verschwindet der gesamte Rechnerbereich.
+- Nach dem offiziellen Abschluss einer Ligasaison mit vollständig gespieltem Final Four zeigt die Startseite oberhalb der bisherigen Inhalte ein Siegestreppchen. Es zeigt den Sieger mittig, den Zweitplatzierten links und den Drittplatzierten rechts. Die Plätze folgen der offiziellen Final-Four-Tabelle; Cup-Saisons erhalten dieses Treppchen nicht.
 - Cup-Saisons verwenden eine reduzierte Seitennavigation mit Turnierbaum und Informationen statt Liga-Rangliste, Rechner und Statistik.
 - Die mobile Liga-Rangliste startet kompakt und bietet eine erweiterte, horizontal scrollbare Ansicht. Desktop behält die vollständige Rangliste.
 - Die mobile Final-Four-Tabelle bleibt ohne Ansichtsumschalter kompakt und ohne horizontalen Bildlauf. Neben Platz und Spieler zeigt sie ausschließlich Siege, Spielverhältnis (`G:V`) und Spieldifferenz.

@@ -1362,9 +1362,17 @@
       justify-content: flex-end;
     }
     .home-season-podium-place .cup-trophy {
-      width: 52px;
-      margin: 0 auto 0.35rem;
-      filter: drop-shadow(0 0 16px color-mix(in srgb, var(--accent) 18%, transparent));
+      width: 58px;
+      margin: 0 auto 0.3rem;
+      color: var(--accent);
+      filter: none;
+    }
+    .wanderpokal-outline {
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 3;
     }
     .home-season-podium-player {
       overflow: hidden;
@@ -1406,7 +1414,7 @@
       }
       .home-season-podium h2 { font-size: 2.55rem; }
       .home-season-podium-steps { gap: 5px; }
-      .home-season-podium-place .cup-trophy { width: 42px; }
+      .home-season-podium-place .cup-trophy { width: 48px; }
       .home-season-podium-player { font-size: 0.74rem; }
       .home-season-podium-place--1 .home-season-podium-player { font-size: 0.92rem; }
       .home-season-podium-step { min-height: 74px; }
