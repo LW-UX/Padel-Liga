@@ -11,13 +11,13 @@ const migration = fs.readFileSync(
   'utf8'
 );
 
-test('the poll follows the four active Prematch players and precedes the withdrawn qualifier', () => {
+test('the poll precedes the Prematch facts and the withdrawn qualifier', () => {
   const overview = ticker.match(/function renderOverview\(\) \{[\s\S]*?(?=\n  function renderPublic)/)?.[0] || '';
   const prematch = ticker.match(/function renderPrematchFacts\(\) \{[\s\S]*?(?=\n  function renderFinalFourPoll)/)?.[0] || '';
 
   assert.equal((ticker.match(/\$\{renderFinalFourPoll\(\)\}/g) || []).length, 1);
-  assert.ok(overview.indexOf('${renderPrematchFacts()}') < overview.indexOf('${renderFinalFourPoll()}'));
-  assert.ok(overview.indexOf('${renderFinalFourPoll()}') < overview.indexOf('${renderWithdrawnPrematchFacts()}'));
+  assert.ok(overview.indexOf('${renderFinalFourPoll()}') < overview.indexOf('${renderPrematchFacts()}'));
+  assert.ok(overview.indexOf('${renderPrematchFacts()}') < overview.indexOf('${renderWithdrawnPrematchFacts()}'));
   assert.doesNotMatch(prematch, /renderFinalFourPoll|live-overview-poll-section/);
   assert.match(style, /\.live-overview-poll-section \{[\s\S]*grid-column: 1 \/ -1;/);
   assert.match(style, /\.live-overview-withdrawn-section \{[\s\S]*grid-column: 1 \/ -1;/);

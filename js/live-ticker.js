@@ -517,6 +517,49 @@
     );
   }
 
+  function getOverviewPodiumPlacements(payloads, stats) {
+    const normalizeSeasonId = value => String(value || '') === 'test-2026' ? '2026-test' : String(value || '');
+    const seasonId = normalizeSeasonId(payloads[0]?.seasonId);
+    const sharedPresentation = window.PadelLigaSeasonPodium?.getPresentation?.();
+    const sharedPlacements = normalizeSeasonId(sharedPresentation?.seasonId) === seasonId
+      ? sharedPresentation.placements
+      : [];
+    const overviewPlayerIds = new Set(stats.map(player => player.playerId));
+
+    if (seasonId === '2026-test') {
+      const playersById = new Map(stats.map(player => [player.playerId, player]));
+      const testPlacements = [
+        { place: 1, playerId: 'ludwig_w' },
+        { place: 2, playerId: 'ludi_gmx' },
+        { place: 3, playerId: 'ludi_gmail' }
+      ].map(placement => ({
+        ...placement,
+        displayName: playersById.get(placement.playerId)?.displayName
+      }));
+      if (testPlacements.every(placement => placement.displayName)) return testPlacements;
+    }
+
+    if (sharedPlacements?.length === 3
+      && sharedPlacements.every(placement => overviewPlayerIds.has(placement.playerId))) {
+      return sharedPlacements;
+    }
+
+    const finalFourIsComplete = payloads.length === 3
+      && payloads.every(payload => payload.result && [1, 2].includes(Number(payload.winner)));
+    if (!finalFourIsComplete || stats.length !== 4) return [];
+    return stats.slice(0, 3).map((player, index) => ({
+      place: index + 1,
+      playerId: player.playerId,
+      displayName: player.displayName
+    }));
+  }
+
+  function renderOverviewPodium(payloads, stats) {
+    const placements = getOverviewPodiumPlacements(payloads, stats);
+    const podium = window.PadelLigaSeasonPodium?.renderSteps?.(placements) || '';
+    return podium ? `<div class="live-overview-podium">${podium}</div>` : '';
+  }
+
   function renderOverview() {
     const target = document.getElementById('live-ticker-content');
     const connection = document.getElementById('live-ticker-connection');
@@ -533,6 +576,7 @@
       : null;
     const livePayload = payloads.find(payload => ['live', 'needs_server', 'ready_to_finish'].includes(payload.session?.status));
     target.innerHTML = `<div class="live-overview">
+      ${renderOverviewPodium(payloads, stats)}
       <section class="live-overview-section">
         <div class="live-overview-heading spieltag-label">Partien</div>
         <div class="live-overview-matches">
@@ -578,8 +622,8 @@
         </div>
         <div class="sh-meta live-overview-note table-note">Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung<br>Stand nach abgeschlossenen Partien${replacementPlayer ? `<span class="ranking-absence-note">*${escapeHtml(replacementPlayer.displayName)} ist für ${escapeHtml(replacementPlayer.replacesDisplayName)} nachgerückt.</span>` : ''}</div>
       </section>
-      ${renderPrematchFacts()}
       ${renderFinalFourPoll()}
+      ${renderPrematchFacts()}
       ${renderWithdrawnPrematchFacts()}
     </div>`;
     if (connection) connection.textContent = livePayload

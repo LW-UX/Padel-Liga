@@ -236,6 +236,20 @@ test('the ticker starts with an overview tab for all three matches and the final
   assert.match(ticker, /if \(matchButton\.dataset\.liveView\) options\.view = matchButton\.dataset\.liveView/);
 });
 
+test('the completed Final Four overview starts with the shared podium and no headings', () => {
+  const podium = ticker.match(/function renderOverviewPodium\([^]*?(?=\n  function renderOverview)/)?.[0] || '';
+  const overview = ticker.match(/function renderOverview\(\) \{[^]*?(?=\n  function renderPublic)/)?.[0] || '';
+  assert.match(ticker, /const finalFourIsComplete = payloads\.length === 3/);
+  assert.match(ticker, /payloads\.every\(payload => payload\.result && \[1, 2\]\.includes\(Number\(payload\.winner\)\)\)/);
+  assert.match(ticker, /if \(seasonId === '2026-test'\)[\s\S]*playerId: 'ludwig_w'[\s\S]*playerId: 'ludi_gmx'[\s\S]*playerId: 'ludi_gmail'/);
+  assert.match(podium, /PadelLigaSeasonPodium\?\.renderSteps/);
+  assert.match(podium, /class="live-overview-podium"/);
+  assert.doesNotMatch(podium, /<h[1-6]|Saison .* beendet|Unser Champion/);
+  assert.ok(overview.indexOf('${renderOverviewPodium(payloads, stats)}') < overview.indexOf('>Partien<'));
+  assert.match(app, /window\.PadelLigaSeasonPodium = \{[\s\S]*renderSteps: renderFinalFourPodiumSteps/);
+  assert.match(style, /\.live-overview-podium \{[\s\S]*grid-column: 1 \/ -1;/);
+});
+
 test('the Final Four overview adds aligned neutral Prematch facts without changing match pages', () => {
   const prematch = ticker.match(/function renderPrematchFacts\(\) \{[\s\S]*?(?=\n  function getOverviewStats)/)?.[0] || '';
   const overview = ticker.match(/function renderOverview\(\) \{[\s\S]*?(?=\n  function renderPublic)/)?.[0] || '';

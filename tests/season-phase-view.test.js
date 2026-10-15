@@ -134,6 +134,7 @@ test('Final4 detail view unlocks as soon as the same four participants fill all 
 });
 
 test('ranking, matches, and calculator share the phase layout controls', () => {
+  assert.match(html, /id="home-final-four-cta"[^>]*hidden>[\s\S]*id="home-final-four-link"[^>]*data-live-view="overview"/);
   assert.match(html, /id="final-four-ranking-section"/);
   assert.match(html, /id="final-four-ranking-detail-link"[^>]*data-live-view="overview"[^>]*hidden>Zur Übersicht<\/button>/);
   assert.match(html, /id="league-calculator"/);
@@ -143,6 +144,9 @@ test('ranking, matches, and calculator share the phase layout controls', () => {
   assert.match(app, /leagueCalculator\.hidden = phase !== 'league'/);
   assert.match(app, /section\.id === 'rechner' && calculatorUnavailable/);
   assert.match(app, /homeCalculatorLink\.hidden = calculatorUnavailable/);
+  assert.match(app, /finalFourEntryMatchId = getFinalFourDetailEntryMatchId\(\)/);
+  assert.match(app, /finalFourCta\.hidden = !finalFourEntryMatchId/);
+  assert.match(app, /finalFourLink\.dataset\.liveOpenMatch = finalFourEntryMatchId/);
   assert.match(app, /renderPartienByMatchday[\s\S]*joinSeasonPhaseSections/);
   assert.match(app, /renderPartienByDate[\s\S]*joinSeasonPhaseSections/);
   assert.match(app, /data-live-open-match="\$\{escapeHtml\(detailEntryMatchId\)\}" data-live-view="overview"/);

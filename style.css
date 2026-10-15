@@ -1321,6 +1321,26 @@
     }
     .home-side { display: grid; gap: 18px; }
     .home-main { display: grid; gap: 18px; align-content: start; }
+    .home-final-four-cta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+      background:
+        radial-gradient(circle at 0 50%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 65%),
+        var(--surface);
+    }
+    .home-final-four-cta .home-final-four-title {
+      margin-bottom: 0;
+      color: var(--text);
+      font-family: var(--font-heading);
+      font-size: 1.2rem;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      line-height: 1;
+    }
+    .home-final-four-cta .text-link { flex: 0 0 auto; white-space: nowrap; }
     .home-season-podium {
       overflow: hidden;
       margin-bottom: 18px;
@@ -1380,6 +1400,7 @@
       color: var(--text);
       font-size: clamp(0.86rem, 2.5vw, 1.3rem);
       font-weight: 600;
+      text-align: center;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
@@ -1389,7 +1410,7 @@
     }
     .home-season-podium-step {
       display: grid;
-      min-height: 92px;
+      min-height: 64px;
       place-items: center;
       border-top: 1px solid color-mix(in srgb, var(--dim) 34%, transparent);
       background: color-mix(in srgb, var(--surface2) 64%, var(--surface));
@@ -1401,12 +1422,12 @@
       line-height: 1;
     }
     .home-season-podium-place--1 .home-season-podium-step {
-      min-height: 140px;
+      min-height: 96px;
       border-top-color: var(--accent);
       background: color-mix(in srgb, var(--accent) 10%, var(--surface));
     }
     .home-season-podium-place--1 .home-season-podium-step span { color: var(--accent); }
-    .home-season-podium-place--3 .home-season-podium-step { min-height: 72px; }
+    .home-season-podium-place--3 .home-season-podium-step { min-height: 52px; }
     @media (max-width: 600px) {
       .home-season-podium {
         margin-bottom: 12px;
@@ -1417,9 +1438,9 @@
       .home-season-podium-place .cup-trophy { width: 48px; }
       .home-season-podium-player { font-size: 0.74rem; }
       .home-season-podium-place--1 .home-season-podium-player { font-size: 0.92rem; }
-      .home-season-podium-step { min-height: 74px; }
-      .home-season-podium-place--1 .home-season-podium-step { min-height: 112px; }
-      .home-season-podium-place--3 .home-season-podium-step { min-height: 58px; }
+      .home-season-podium-step { min-height: 58px; }
+      .home-season-podium-place--1 .home-season-podium-step { min-height: 84px; }
+      .home-season-podium-place--3 .home-season-podium-step { min-height: 46px; }
       .home-season-podium-step span { font-size: 2.4rem; }
     }
     .home-app-hint {
@@ -2648,6 +2669,12 @@
       gap: 1.25rem;
       align-items: start;
     }
+    .live-overview-podium {
+      grid-column: 1 / -1;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .live-overview-podium .home-season-podium-steps { margin-top: 0; }
     .live-overview-section { min-width: 0; }
     .live-overview-heading {
       margin-bottom: 0.85rem;
@@ -2759,6 +2786,8 @@
       grid-column: 1 / -1;
       min-width: 0;
       margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
     }
     .live-overview-prematch-heading {
       display: flex;

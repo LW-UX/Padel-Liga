@@ -3604,15 +3604,11 @@ function renderHomeSeasonPodium() {
   container.innerHTML = placements.length === 3 ? `
     <div class="home-season-podium-kicker">Saison ${escapeHtml(PADEL_DATA.label || selectedSeason.label || selectedSeason.id)} beendet</div>
     <h2 id="home-season-podium-title">Unser Champion</h2>
-    <div class="home-season-podium-steps" role="img" aria-label="${escapeHtml(placements[0].player.name)} gewinnt vor ${escapeHtml(placements[1].player.name)} und ${escapeHtml(placements[2].player.name)}">
-      ${[placements[1], placements[0], placements[2]].map(placement => `
-        <div class="home-season-podium-place home-season-podium-place--${placement.place}">
-          ${placement.place === 1 ? renderWanderpokalTrophy() : ''}
-          <div class="home-season-podium-player">${escapeHtml(placement.player.name)}</div>
-          <div class="home-season-podium-step" aria-hidden="true"><span>${placement.place}</span></div>
-        </div>
-      `).join('')}
-    </div>
+    ${renderFinalFourPodiumSteps(placements.map(placement => ({
+      place: placement.place,
+      playerId: placement.player.id,
+      displayName: placement.player.name
+    })))}
   ` : '';
 }
 
@@ -3629,6 +3625,15 @@ function renderHome() {
 
   renderHomeAnnouncement();
   renderHomeSeasonPodium();
+
+  const finalFourCta = document.getElementById('home-final-four-cta');
+  const finalFourLink = document.getElementById('home-final-four-link');
+  const finalFourEntryMatchId = getFinalFourDetailEntryMatchId();
+  if (finalFourCta && finalFourLink) {
+    finalFourCta.hidden = !finalFourEntryMatchId;
+    if (finalFourEntryMatchId) finalFourLink.dataset.liveOpenMatch = finalFourEntryMatchId;
+    else delete finalFourLink.dataset.liveOpenMatch;
+  }
 
   document.getElementById('home-articles').innerHTML = `
     <div class="home-article-preview" id="home-article-preview">
@@ -4678,6 +4683,34 @@ function renderWanderpokalTrophy() {
     </svg>
   </div>`;
 }
+
+function renderFinalFourPodiumSteps(placements) {
+  const placementsByPlace = new Map((placements || []).map(placement => [Number(placement.place), placement]));
+  const orderedPlacements = [1, 2, 3].map(place => placementsByPlace.get(place));
+  if (orderedPlacements.some(placement => !placement?.displayName)) return '';
+
+  return `<div class="home-season-podium-steps" role="img" aria-label="${escapeHtml(orderedPlacements[0].displayName)} gewinnt vor ${escapeHtml(orderedPlacements[1].displayName)} und ${escapeHtml(orderedPlacements[2].displayName)}">
+    ${[orderedPlacements[1], orderedPlacements[0], orderedPlacements[2]].map(placement => `
+      <div class="home-season-podium-place home-season-podium-place--${placement.place}">
+        ${placement.place === 1 ? renderWanderpokalTrophy() : ''}
+        <div class="home-season-podium-player">${escapeHtml(placement.displayName)}</div>
+        <div class="home-season-podium-step" aria-hidden="true"><span>${placement.place}</span></div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+window.PadelLigaSeasonPodium = {
+  getPresentation: () => ({
+    seasonId: PADEL_DATA?.id || null,
+    placements: getHomeSeasonPodiumPlacements().map(placement => ({
+      place: placement.place,
+      playerId: placement.player.id,
+      displayName: placement.player.name
+    }))
+  }),
+  renderSteps: renderFinalFourPodiumSteps
+};
 
 function renderCupMatchCard(match) {
   const statistics = window.PadelMatchStatistics?.entry(match, PADEL_DATA);
