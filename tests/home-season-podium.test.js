@@ -5,6 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'utf8');
+const style = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
 const functionNames = [
   'countsForRanking', 'isCancelledMatch', 'getMatchStage', 'hasAssignedMatchPlayers', 'getFinalFourMatches',
   'getFinalFourDetailEntryMatchId', 'getFinalFourPlayerNames', 'getPlayerMatchTeamIndex',
@@ -26,6 +27,7 @@ function setup() {
   const context = vm.createContext({});
   vm.runInContext(`
     let PADEL_DATA = {
+      id: '2026-sommer',
       completedAt: '2026-10-15T20:00:00Z',
       competition: { tournamentMode: 'direct-final-four' },
       players: ['A', 'B', 'C', 'D'].map(name => ({ id: name, name })),
@@ -73,4 +75,21 @@ test('podium requires three valid Final Four results and known participants', ()
   assert.deepEqual(Array.from(context.getPlacements()), []);
   context.updateMatch(2, { ergebnis: '6:1', team2: { playerIds: ['B', 'E'], spieler: ['B', 'E'] } });
   assert.deepEqual(Array.from(context.getPlacements()), []);
+});
+
+test('test season no longer receives a hard-coded podium preview', () => {
+  const context = setup();
+  context.updateSeason({ id: '2026-test', completedAt: null, competition: { tournamentMode: 'none' } });
+  assert.deepEqual(Array.from(context.getPlacements()), []);
+  assert.doesNotMatch(source, /PADEL_DATA\?\.id === '2026-test'/);
+});
+
+test('completed podium is reused in the Final Four matches section without headings', () => {
+  const tournamentGroup = source.match(/function renderTournamentGroup\([^]*?(?=\nfunction matchesCurrentMatchScope)/)?.[0] || '';
+  assert.match(tournamentGroup, /className === 'final-four-group'/);
+  assert.match(tournamentGroup, /getHomeSeasonPodiumPlacements\(\)/);
+  assert.match(tournamentGroup, /renderFinalFourPodiumSteps/);
+  assert.match(tournamentGroup, /class="final-four-page-podium"/);
+  assert.doesNotMatch(tournamentGroup, /Unser Champion|home-season-podium-kicker/);
+  assert.match(style, /\.final-four-page-podium/);
 });

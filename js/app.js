@@ -3563,18 +3563,6 @@ function renderHomeAnnouncement(now = new Date()) {
 }
 
 function getHomeSeasonPodiumPlacements() {
-  if (PADEL_DATA?.id === '2026-test') {
-    const previewPlacements = [
-      { place: 1, playerId: 'ludwig_w' },
-      { place: 2, playerId: 'ludi_gmx' },
-      { place: 3, playerId: 'ludi_gmail' }
-    ].map(placement => ({
-      place: placement.place,
-      player: PADEL_DATA.players.find(player => player.id === placement.playerId)
-    }));
-    return previewPlacements.every(placement => placement.player) ? previewPlacements : [];
-  }
-
   if (!PADEL_DATA?.completedAt
     || !['direct-final-four', 'top8-semifinals'].includes(getCompetitionConfig().tournamentMode)) return [];
 
@@ -4543,6 +4531,15 @@ function renderTournamentGroup(matches, fallbackTitle, className) {
 
   const title = getMatchdayInfo(matches[0].spieltag)?.title || fallbackTitle;
   const played = matches.filter(match => match.sieger !== null).length;
+  const podiumPlacements = className === 'final-four-group'
+    ? getHomeSeasonPodiumPlacements()
+    : [];
+  const podium = podiumPlacements.length === 3
+    ? `<div class="final-four-page-podium">${renderFinalFourPodiumSteps(podiumPlacements.map(placement => ({
+        place: placement.place,
+        displayName: placement.player.name
+      })))}</div>`
+    : '';
   const detailEntryMatchId = className === 'final-four-group'
     ? getFinalFourDetailEntryMatchId()
     : null;
@@ -4557,6 +4554,7 @@ function renderTournamentGroup(matches, fallbackTitle, className) {
       </div>
       ${detailLink}
     </div>
+    ${podium}
     <div class="match-list">${matches.map(renderMatchRow).join('')}</div>
   </div>`;
 }

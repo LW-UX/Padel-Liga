@@ -577,19 +577,6 @@
       : [];
     const overviewPlayerIds = new Set(stats.map(player => player.playerId));
 
-    if (seasonId === '2026-test') {
-      const playersById = new Map(stats.map(player => [player.playerId, player]));
-      const testPlacements = [
-        { place: 1, playerId: 'ludwig_w' },
-        { place: 2, playerId: 'ludi_gmx' },
-        { place: 3, playerId: 'ludi_gmail' }
-      ].map(placement => ({
-        ...placement,
-        displayName: playersById.get(placement.playerId)?.displayName
-      }));
-      if (testPlacements.every(placement => placement.displayName)) return testPlacements;
-    }
-
     if (sharedPlacements?.length === 3
       && sharedPlacements.every(placement => overviewPlayerIds.has(placement.playerId))) {
       return sharedPlacements;

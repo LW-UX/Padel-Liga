@@ -131,6 +131,10 @@
     .auth-form input:focus,
     .auth-form select:focus { border-color: var(--accent); }
     .auth-form-link { justify-self: center; margin-top: 0; }
+    #auth-guest-view .auth-form-link[hidden] {
+      display: inline-flex !important;
+      visibility: hidden;
+    }
     .auth-dialog-copy { color: var(--dim); font-size: 0.88rem; line-height: 1.5; margin: -0.35rem 0 1rem; }
     .player-email-privacy { color: var(--dim); font-size: 0.75rem; line-height: 1.45; }
     .player-email-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
@@ -166,6 +170,7 @@
     .player-invite-preview:focus-within { border-color: var(--accent); }
     .player-invite-expiry { color: var(--dim); font-size: 0.75rem; line-height: 1.45; margin: 0; }
     .auth-message { min-height: 1.25rem; color: var(--dim); font-size: 0.82rem; margin-top: 0.8rem; }
+    #auth-dialog #auth-message { min-height: 2.5rem; line-height: 1.5; }
     .auth-message.error { color: var(--negativ); }
     .auth-message.success { color: var(--positiv); }
     .account-auth-message {

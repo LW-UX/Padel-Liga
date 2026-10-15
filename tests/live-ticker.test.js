@@ -241,7 +241,7 @@ test('the completed Final Four overview starts with the shared podium and no hea
   const overview = ticker.match(/function renderOverview\(\) \{[^]*?(?=\n  function renderPublic)/)?.[0] || '';
   assert.match(ticker, /const finalFourIsComplete = payloads\.length === 3/);
   assert.match(ticker, /payloads\.every\(payload => payload\.result && \[1, 2\]\.includes\(Number\(payload\.winner\)\)\)/);
-  assert.match(ticker, /if \(seasonId === '2026-test'\)[\s\S]*playerId: 'ludwig_w'[\s\S]*playerId: 'ludi_gmx'[\s\S]*playerId: 'ludi_gmail'/);
+  assert.doesNotMatch(ticker, /if \(seasonId === '2026-test'\)/);
   assert.match(podium, /PadelLigaSeasonPodium\?\.renderSteps/);
   assert.match(podium, /class="live-overview-podium"/);
   assert.doesNotMatch(podium, /<h[1-6]|Saison .* beendet|Unser Champion/);
