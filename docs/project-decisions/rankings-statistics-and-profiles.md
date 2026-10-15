@@ -56,10 +56,10 @@ Diese Datei ist die kanonische Quelle für Elo, Ranglisten, Statistik, öffentli
 ## Auszeichnungen und Farben
 
 - Auszeichnungen sind explizite Datenbankeinträge und werden nicht aus Mockups oder laufenden Platzierungen erfunden. Ohne Einträge wird der Bereich ausgeblendet.
-- Champion-Auszeichnungen stehen vor den gleichwertigen Auszeichnungen „Finale“ und „Final 4“; innerhalb einer Wertigkeitsgruppe steht die neueste zuerst.
+- Champion-Auszeichnungen stehen vor den gleichwertigen Auszeichnungen „Finale“ und „Final 4“; innerhalb einer Wertigkeitsgruppe steht die neueste zuerst. Ein Liga-Champion erhält für dieselbe Saison ausschließlich die Champion-Auszeichnung und führt nicht zusätzlich die Final-Four-Auszeichnung.
 - Liga und Cup besitzen getrennte Metallfarbwelten. Saisonfarben für Sommer, Winter, Cup und neutrale Saisons werden zentral nach Saison-Typ bestimmt und nur für saisonbezogene Profilvisualisierungen verwendet.
 - Nach einem bestätigten Cup-Finale entstehen Champion-Auszeichnungen für das Gewinnerteam und Finale-Auszeichnungen für das Verliererteam.
-- Final-Four-Auszeichnungen entstehen erst bei feststehender Qualifikation. Der Champion wird nach vollständigem Final Four anhand von Siegen, Spiel-Differenz, gewonnenen Spielen und Ausgangsplatzierung bestimmt.
+- Final-Four-Auszeichnungen entstehen erst bei feststehender Qualifikation. Eine reine Nachrücker-Teilnahme begründet keine Final-Four-Auszeichnung. Der Champion wird nach vollständigem Final Four anhand von Siegen, Spiel-Differenz, gewonnenen Spielen und Ausgangsplatzierung bestimmt.
 
 ## Werte in der Partiestatistik
 

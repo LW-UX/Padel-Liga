@@ -24,6 +24,10 @@ const finalFourReplacementMigration = fs.readFileSync(
   path.join(repositoryRoot, 'supabase/migrations/20261015090000_summer_2026_final_four_replacement.sql'),
   'utf8'
 );
+const exclusiveChampionAchievementMigration = fs.readFileSync(
+  path.join(repositoryRoot, 'supabase/migrations/20261015110000_exclusive_league_champion_achievement.sql'),
+  'utf8'
+);
 const appSource = fs.readFileSync(path.join(repositoryRoot, 'js/app.js'), 'utf8');
 const tippspielSource = fs.readFileSync(path.join(repositoryRoot, 'js/tippspiel.js'), 'utf8');
 
@@ -58,6 +62,18 @@ test('Final4 winner uses wins, game difference, games won, and actual league ran
   assert.doesNotMatch(finalFourTiebreakMigration, /head_to_head|best_base/);
   assert.match(finalFourTiebreakMigration, /create or replace function private\.award_tournament_winner/);
   assert.match(finalFourTiebreakMigration, /commit;\s*$/);
+});
+
+test('league champions keep only the champion achievement', () => {
+  assert.match(exclusiveChampionAchievementMigration,
+    /create or replace function private\.award_tournament_winner/);
+  assert.match(exclusiveChampionAchievementMigration,
+    /delete from public\.player_achievements as achievement[\s\S]*achievement\.player_id = winner_player_id[\s\S]*achievement\.kind = 'final_four'/);
+  assert.match(exclusiveChampionAchievementMigration,
+    /using public\.player_achievements as champion[\s\S]*champion\.kind = 'winner'/);
+  assert.match(exclusiveChampionAchievementMigration,
+    /achievement\.player_id = 'ludwig_w'[\s\S]*achievement\.kind = 'final_four'/);
+  assert.match(exclusiveChampionAchievementMigration, /commit;\s*$/);
 });
 
 test('tournament games affect Elo and profiles but never league points', () => {

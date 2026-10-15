@@ -331,7 +331,8 @@
       top: 0;
       z-index: 200;
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
       gap: 8px;
       width: min(100% - 4rem, 1100px);
       margin: 0 auto 2rem;
@@ -360,8 +361,6 @@
       color: var(--accent);
       background: color-mix(in srgb, var(--accent) 8%, var(--surface));
     }
-    .site-nav.tip-site-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .is-cup-season .site-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .viewer-picker {
       position: relative;
       flex: 0 0 auto;
