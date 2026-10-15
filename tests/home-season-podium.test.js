@@ -93,3 +93,16 @@ test('completed podium is reused in the Final Four matches section without headi
   assert.doesNotMatch(tournamentGroup, /Unser Champion|home-season-podium-kicker/);
   assert.match(style, /\.final-four-page-podium/);
 });
+
+test('only podium steps outside the overview open the Final Four overview', () => {
+  const homePodium = source.match(/function renderHomeSeasonPodium\([^]*?(?=\nfunction renderHome)/)?.[0] || '';
+  const tournamentGroup = source.match(/function renderTournamentGroup\([^]*?(?=\nfunction matchesCurrentMatchScope)/)?.[0] || '';
+  const podiumSteps = source.match(/function renderFinalFourPodiumSteps\([^]*?(?=\nwindow\.PadelLigaSeasonPodium)/)?.[0] || '';
+
+  assert.match(homePodium, /renderFinalFourPodiumSteps\([^]*\{ overviewMatchId \}\)/);
+  assert.match(tournamentGroup, /renderFinalFourPodiumSteps\([^]*overviewMatchId: detailEntryMatchId/);
+  assert.match(podiumSteps, /<button type="button" class="home-season-podium-step"[^>]*data-live-open-match=/);
+  assert.match(podiumSteps, /data-live-view="overview"/);
+  assert.match(podiumSteps, /<div class="home-season-podium-step" aria-hidden="true">/);
+  assert.match(style, /button\.home-season-podium-step:hover/);
+});

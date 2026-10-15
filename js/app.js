@@ -3588,6 +3588,7 @@ function renderHomeSeasonPodium() {
   if (!container) return;
 
   const placements = getHomeSeasonPodiumPlacements();
+  const overviewMatchId = getFinalFourDetailEntryMatchId();
   container.hidden = placements.length !== 3;
   container.innerHTML = placements.length === 3 ? `
     <div class="home-season-podium-kicker">Saison ${escapeHtml(PADEL_DATA.label || selectedSeason.label || selectedSeason.id)} beendet</div>
@@ -3596,7 +3597,7 @@ function renderHomeSeasonPodium() {
       place: placement.place,
       playerId: placement.player.id,
       displayName: placement.player.name
-    })))}
+    })), { overviewMatchId })}
   ` : '';
 }
 
@@ -4531,6 +4532,9 @@ function renderTournamentGroup(matches, fallbackTitle, className) {
 
   const title = getMatchdayInfo(matches[0].spieltag)?.title || fallbackTitle;
   const played = matches.filter(match => match.sieger !== null).length;
+  const detailEntryMatchId = className === 'final-four-group'
+    ? getFinalFourDetailEntryMatchId()
+    : null;
   const podiumPlacements = className === 'final-four-group'
     ? getHomeSeasonPodiumPlacements()
     : [];
@@ -4538,11 +4542,8 @@ function renderTournamentGroup(matches, fallbackTitle, className) {
     ? `<div class="final-four-page-podium">${renderFinalFourPodiumSteps(podiumPlacements.map(placement => ({
         place: placement.place,
         displayName: placement.player.name
-      })))}</div>`
+      })), { overviewMatchId: detailEntryMatchId })}</div>`
     : '';
-  const detailEntryMatchId = className === 'final-four-group'
-    ? getFinalFourDetailEntryMatchId()
-    : null;
   const detailLink = detailEntryMatchId
     ? `<button type="button" class="text-link inline-link final-four-detail-link" data-live-open-match="${escapeHtml(detailEntryMatchId)}" data-live-view="overview">Zur Übersicht</button>`
     : '';
@@ -4682,17 +4683,20 @@ function renderWanderpokalTrophy() {
   </div>`;
 }
 
-function renderFinalFourPodiumSteps(placements) {
+function renderFinalFourPodiumSteps(placements, { overviewMatchId = null } = {}) {
   const placementsByPlace = new Map((placements || []).map(placement => [Number(placement.place), placement]));
   const orderedPlacements = [1, 2, 3].map(place => placementsByPlace.get(place));
   if (orderedPlacements.some(placement => !placement?.displayName)) return '';
+  const interactive = Boolean(overviewMatchId);
 
-  return `<div class="home-season-podium-steps" role="img" aria-label="${escapeHtml(orderedPlacements[0].displayName)} gewinnt vor ${escapeHtml(orderedPlacements[1].displayName)} und ${escapeHtml(orderedPlacements[2].displayName)}">
+  return `<div class="home-season-podium-steps" role="${interactive ? 'group' : 'img'}" aria-label="${escapeHtml(orderedPlacements[0].displayName)} gewinnt vor ${escapeHtml(orderedPlacements[1].displayName)} und ${escapeHtml(orderedPlacements[2].displayName)}">
     ${[orderedPlacements[1], orderedPlacements[0], orderedPlacements[2]].map(placement => `
       <div class="home-season-podium-place home-season-podium-place--${placement.place}">
         ${placement.place === 1 ? renderWanderpokalTrophy() : ''}
         <div class="home-season-podium-player">${escapeHtml(placement.displayName)}</div>
-        <div class="home-season-podium-step" aria-hidden="true"><span>${placement.place}</span></div>
+        ${interactive
+          ? `<button type="button" class="home-season-podium-step" data-live-open-match="${escapeHtml(overviewMatchId)}" data-live-view="overview" aria-label="Platz ${placement.place}: Final-Four-Übersicht öffnen"><span aria-hidden="true">${placement.place}</span></button>`
+          : `<div class="home-season-podium-step" aria-hidden="true"><span>${placement.place}</span></div>`}
       </div>
     `).join('')}
   </div>`;
