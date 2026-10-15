@@ -18,6 +18,7 @@
     pollSelectionOpen: false,
     pollMessage: '',
     pollBrowserId: null,
+    pollLayoutObserver: null,
     statusChannel: null,
     statusConnected: false,
     auth: null,
@@ -130,6 +131,55 @@
 
   function profileEmoji(playerId) {
     return (window.PADEL_PLAYERS || []).find(player => player.id === playerId)?.profileEmoji || '👤';
+  }
+
+  function playerInitials(playerId, displayName) {
+    const storedInitials = (window.PADEL_PLAYERS || [])
+      .find(player => String(player.id) === String(playerId))?.initials;
+    if (storedInitials) return storedInitials;
+    return String(displayName || '')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(part => part.charAt(0))
+      .join('')
+      .toLocaleUpperCase('de-DE');
+  }
+
+  function disconnectPollLayoutObserver() {
+    state.pollLayoutObserver?.disconnect();
+    state.pollLayoutObserver = null;
+  }
+
+  function syncPollOuterAlignment() {
+    const segments = [...document.querySelectorAll('.live-overview-poll-segment')];
+    segments.forEach(segment => {
+      const segmentWidth = segment.getBoundingClientRect().width;
+      const name = segment.querySelector('.live-overview-poll-name');
+      const percentage = segment.querySelector('.live-overview-poll-percentage');
+      const nameWidth = name?.getBoundingClientRect().width || 0;
+      const percentageWidth = percentage && getComputedStyle(percentage).display !== 'none'
+        ? percentage.getBoundingClientRect().width
+        : 0;
+      segment.classList.toggle('is-poll-name-overflowing', nameWidth > segmentWidth + 0.5);
+      segment.classList.toggle('is-poll-percentage-overflowing', percentageWidth > segmentWidth + 0.5);
+    });
+  }
+
+  function observePollLayout() {
+    disconnectPollLayoutObserver();
+    const segments = [...document.querySelectorAll('.live-overview-poll-segment')];
+    if (!segments.length) return;
+    syncPollOuterAlignment();
+    if (!window.ResizeObserver) return;
+    state.pollLayoutObserver = new ResizeObserver(syncPollOuterAlignment);
+    segments.forEach(segment => {
+      state.pollLayoutObserver.observe(segment);
+      const name = segment.querySelector('.live-overview-poll-name');
+      const percentage = segment.querySelector('.live-overview-poll-percentage');
+      if (name) state.pollLayoutObserver.observe(name);
+      if (percentage) state.pollLayoutObserver.observe(percentage);
+    });
   }
 
   function renderPlayer(player, currentServerId) {
@@ -456,8 +506,9 @@
       : resultOptions.length
         ? `<div class="live-overview-poll-result" aria-label="Umfrageergebnis">
             <div class="live-overview-poll-segments" style="grid-template-columns: ${resultOptions.map(option => `minmax(0, ${Number(option.percentage) || 0}fr)`).join(' ')}">${resultOptions.map(option => `<div class="live-overview-poll-segment">
-              <strong class="live-overview-poll-name">${escapeHtml(option.displayName)}</strong>
-              <span class="live-overview-poll-bar"><span>${Number(option.percentage) || 0} %</span></span>
+              <strong class="live-overview-poll-name"><span class="live-overview-poll-name-full" aria-hidden="true">${escapeHtml(option.displayName)}</span><span class="live-overview-poll-name-short" aria-hidden="true">${escapeHtml(playerInitials(option.playerId, option.displayName))}</span><span class="sr-only">${escapeHtml(option.displayName)}</span></strong>
+              <span class="live-overview-poll-bar"><span class="live-overview-poll-bar-value">${Number(option.percentage) || 0} %</span></span>
+              <span class="live-overview-poll-percentage">${Number(option.percentage) || 0} %</span>
             </div>`).join('')}</div>
           </div>`
         : '<div class="live-overview-poll-status">Kein Umfrageergebnis verfügbar.</div>';
@@ -567,6 +618,7 @@
     const payloads = state.overviewPayloads;
     if (!payloads.length) {
       target.innerHTML = '<div class="empty-state">Die Übersicht wird geladen …</div>';
+      disconnectPollLayoutObserver();
       if (connection) connection.textContent = 'Wird aktualisiert …';
       return;
     }
@@ -626,6 +678,7 @@
       ${renderPrematchFacts()}
       ${renderWithdrawnPrematchFacts()}
     </div>`;
+    observePollLayout();
     if (connection) connection.textContent = livePayload
       ? (state.statusConnected ? 'Live verbunden' : 'Verbindung wird hergestellt …')
       : 'Übersicht';
@@ -637,6 +690,7 @@
     const switcher = document.getElementById('live-match-switcher');
     const connection = document.getElementById('live-ticker-connection');
     const payload = state.payload;
+    disconnectPollLayoutObserver();
     if (!target || !switcher) return;
     if (!payload) {
       target.innerHTML = '<div class="empty-state">Für diese Partie ist kein Liveticker verfügbar.</div>';
@@ -794,6 +848,7 @@
 
   function close() {
     state.loadRequestId += 1;
+    disconnectPollLayoutObserver();
     state.matchId = null;
     state.view = 'match';
     state.payload = null;

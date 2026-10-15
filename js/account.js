@@ -8,6 +8,7 @@
     profile: null,
     authMode: 'login',
     passwordFlow: requestedAuthFlow,
+    resultTaskScope: 'relevant',
     resultTasks: [],
     trainingTasks: [],
     players: [],
@@ -117,6 +118,16 @@
     return getMatchAtTimestamp(task?.match_at) <= Date.now();
   }
 
+  function isTestResultTask(task) {
+    const seasonId = String(task?.season_id || '');
+    return seasonId === '2026-test' || seasonId === 'test-2026';
+  }
+
+  function getVisibleResultTasks() {
+    if (state.profile?.app_role !== 'admin' || state.resultTaskScope === 'all') return state.resultTasks;
+    return state.resultTasks.filter(task => !isTestResultTask(task));
+  }
+
   function getPlayerResultTaskGroups(tasks = [], now = Date.now(), includeAll = false) {
     const compareBySchedule = (first, second) => getMatchAtTimestamp(first.match_at)
       - getMatchAtTimestamp(second.match_at);
@@ -161,7 +172,7 @@
 
   function getActionableResultTasks() {
     const groups = getPlayerResultTaskGroups(
-      state.resultTasks,
+      getVisibleResultTasks(),
       Date.now(),
       state.profile?.app_role === 'admin'
     );
@@ -234,6 +245,15 @@
       if (playerArea) playerArea.hidden = !isPlayerAccount() || !state.extendedPlayerFeatures;
       const trainingButton = document.querySelector('[data-training-toggle]');
       if (trainingButton) trainingButton.disabled = state.playerToolsLoading || !state.playerToolsReady;
+      const resultScopeToggle = document.querySelector('[data-account-result-scope-toggle]');
+      if (resultScopeToggle) {
+        resultScopeToggle.hidden = state.profile?.app_role !== 'admin';
+        resultScopeToggle.querySelectorAll('[data-account-result-scope]').forEach(button => {
+          const isActive = button.dataset.accountResultScope === state.resultTaskScope;
+          button.classList.toggle('active', isActive);
+          button.setAttribute('aria-pressed', String(isActive));
+        });
+      }
       const gamesEmpty = document.getElementById('account-games-empty');
       if (gamesEmpty) gamesEmpty.hidden = isPlayerAccount() && state.extendedPlayerFeatures;
       const inviteButton = document.getElementById('player-invite-open');
@@ -586,7 +606,7 @@
     }
     target?.setAttribute('aria-busy', 'false');
     const isAdmin = state.profile?.app_role === 'admin';
-    const groups = getPlayerResultTaskGroups(state.resultTasks, Date.now(), isAdmin);
+    const groups = getPlayerResultTaskGroups(getVisibleResultTasks(), Date.now(), isAdmin);
     const visibleTrainingTasks = state.trainingTasks.filter(isTrainingTaskVisible);
     renderResultTaskGroups(document.getElementById('result-task-list'), groups, visibleTrainingTasks);
     visibleTrainingTasks.forEach(task => {
@@ -1213,6 +1233,7 @@
     state.playerToolsReady = false;
     state.playerToolsLoading = false;
     state.playerToolsError = null;
+    state.resultTaskScope = 'relevant';
     state.resultTasks = [];
     state.trainingTasks = [];
     state.players = [];
@@ -2286,6 +2307,12 @@ Dein Hanako-Leben-Squad`;
       }
       if (event.target.closest('[data-account-tasks-retry]')) {
         void refreshPlayerTools({ force: true });
+        return;
+      }
+      const resultScopeButton = event.target.closest('[data-account-result-scope]');
+      if (resultScopeButton && state.profile?.app_role === 'admin') {
+        state.resultTaskScope = resultScopeButton.dataset.accountResultScope === 'all' ? 'all' : 'relevant';
+        render();
         return;
       }
       if (event.target.closest('[data-auth-close]')) {

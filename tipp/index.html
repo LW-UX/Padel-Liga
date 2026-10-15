@@ -9,14 +9,14 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../data/icon-32.png">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
   <link rel="stylesheet" href="../style.css?v=2026-10-11-typography">
-  <link rel="stylesheet" href="../account.css?v=2026-10-14-training-guests">
+  <link rel="stylesheet" href="../account.css?v=2026-10-15-admin-relevant-filter">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="../data/players.js?v=2026-10-14-training-profiles"></script>
   <script defer src="../data/seasons.js?v=2026-10-12-season-id-order"></script>
   <script defer src="../data/supabase-config.js"></script>
   <script defer src="../js/score-input.js?v=2026-09-22-unified-score-counters"></script>
-  <script defer src="../js/account.js?v=2026-10-14-loading"></script>
+  <script defer src="../js/account.js?v=2026-10-15-admin-relevant-filter"></script>
   <script defer src="../js/tippspiel.js?v=2026-10-14-loading"></script>
   <script defer src="../js/tipp-page.js?v=2026-10-12-season-id-order"></script>
 </head>
@@ -141,6 +141,10 @@
             <div class="account-section-heading">
               <h3 class="sh-title">Spieleübersicht</h3>
               <button class="secondary-button" type="button" data-training-toggle>Training hinzufügen</button>
+            </div>
+            <div class="match-scope-toggle account-result-scope-toggle" aria-label="Spieleübersicht filtern" data-account-result-scope-toggle hidden>
+              <button type="button" class="active" data-account-result-scope="relevant" aria-pressed="true">Relevant</button>
+              <button type="button" data-account-result-scope="all" aria-pressed="false">Alle</button>
             </div>
             <div data-training-form-group hidden>
               <div class="spieltag-label"><span>Training</span></div>

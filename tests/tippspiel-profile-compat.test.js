@@ -139,6 +139,35 @@ test('result tasks load across seasons without a separate admin archive', () => 
   assert.doesNotMatch(tippspielSource, /renderAdminAllMatches/);
 });
 
+test('admin relevant scope excludes only test-season result tasks', () => {
+  const helperSource = tippspielSource.match(
+    /function isTestResultTask\(task\) \{[\s\S]*?(?=\n  function getPlayerResultTaskGroups)/
+  )?.[0] || '';
+  const state = {
+    profile: { app_role: 'admin' },
+    resultTaskScope: 'relevant',
+    resultTasks: [
+      { match_id: 'summer', season_id: '2026-sommer' },
+      { match_id: 'test-current', season_id: '2026-test' },
+      { match_id: 'test-legacy', season_id: 'test-2026' }
+    ]
+  };
+  const getVisibleResultTasks = vm.runInNewContext(
+    `(() => { ${helperSource}\nreturn getVisibleResultTasks; })()`,
+    { state }
+  );
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(getVisibleResultTasks().map(task => task.match_id))),
+    ['summer']
+  );
+  state.resultTaskScope = 'all';
+  assert.equal(getVisibleResultTasks().length, 3);
+  state.profile.app_role = 'player';
+  state.resultTaskScope = 'relevant';
+  assert.equal(getVisibleResultTasks().length, 3);
+});
+
 test('games are player-scoped for players and unfiltered for admins', () => {
   const timestampSource = tippspielSource.match(
     /function getMatchAtTimestamp\(value, fallback = Number\.POSITIVE_INFINITY\) \{[\s\S]*?(?=\n  function getBerlinMatchAtParts)/

@@ -23,6 +23,7 @@ Diese Datei ist die kanonische Quelle für Rollen, Registrierung, Einladungen, B
 - Der private Konto-Dialog ist vom öffentlichen Spielerprofil getrennt. Bei verknüpften Spielern kann aus dem Konto direkt in das öffentliche Profil gewechselt werden.
 - Öffentliche Seiteninhalte und Detailansichten sind unabhängig von privaten Kontoaufgaben nutzbar. Der Aufgabenzähler lädt nach dem Seitenaufbau im Hintergrund; beim Öffnen lädt die Spieleübersicht ihren aktuellen Stand und zeigt währenddessen einen Ladezustand mit Wiederholungsmöglichkeit bei Fehlern.
 - Spielaufgaben werden saison- und wettbewerbsübergreifend nach ihrem fachlichen Zustand gruppiert: zu bestätigen, Ergebnis eintragen, terminiert und geplant.
+- Admins sehen in der Spieleübersicht standardmäßig nur relevante Partien ohne die verborgene Test-Saison und können dort auf alle Partien einschließlich Testpartien umschalten. Für andere Rollen erscheint dieser Filter nicht.
 - Nur vollständig mit vier unterschiedlichen Spielern besetzte offizielle Partien werden als Aufgabe angeboten. Platzhalter erzeugen keine Terminierungs- oder Ergebnisaktionen.
 - Spieler sehen nur eigene Liga- und Trainingsaufgaben. Admins sehen den administrativ zulässigen Umfang; reine Tipper sehen keine Ergebnisaufgaben.
 - Eigene wartende Vorschläge sind als nicht aktiv erkennbar. Fremde Vorschläge können bestätigt oder durch eine echte Alternative ersetzt werden.

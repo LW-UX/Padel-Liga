@@ -16,7 +16,7 @@
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css?v=2026-10-15-compact-podium-final-four-heading-v3">
-  <link rel="stylesheet" href="account.css?v=2026-10-14-training-guests">
+  <link rel="stylesheet" href="account.css?v=2026-10-15-admin-relevant-filter">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -37,7 +37,7 @@
   <script defer src="js/elo-forecast.js?v=2026-10-14-shared-auto-tip"></script>
   <script defer src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
   <script defer src="js/live-ticker.js?v=2026-10-15-podium-v5"></script>
-  <script defer src="js/account.js?v=2026-10-14-loading"></script>
+  <script defer src="js/account.js?v=2026-10-15-admin-relevant-filter"></script>
   <script defer src="js/match-statistics.js?v=2026-10-14-played-order"></script>
   <script defer src="js/app.js?v=2026-10-15-home-final-four"></script>
 </head>
@@ -653,6 +653,10 @@
             <div class="account-section-heading">
               <h3 class="sh-title">Spieleübersicht</h3>
               <button class="secondary-button" type="button" data-training-toggle>Training hinzufügen</button>
+            </div>
+            <div class="match-scope-toggle account-result-scope-toggle" aria-label="Spieleübersicht filtern" data-account-result-scope-toggle hidden>
+              <button type="button" class="active" data-account-result-scope="relevant" aria-pressed="true">Relevant</button>
+              <button type="button" data-account-result-scope="all" aria-pressed="false">Alle</button>
             </div>
             <div data-training-form-group hidden>
               <div class="spieltag-label">

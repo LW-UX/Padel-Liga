@@ -2931,6 +2931,8 @@
     }
     .live-overview-poll-section {
       grid-column: 1 / -1;
+      width: 100%;
+      max-width: 100%;
       min-width: 0;
       margin-top: 3rem;
       padding-top: 2rem;
@@ -2952,6 +2954,8 @@
     .live-overview-poll-choice { min-height: 88px; }
     .live-overview-poll-swap {
       position: relative;
+      width: 100%;
+      max-width: 100%;
       min-width: 0;
       min-height: 88px;
       animation: live-overview-poll-slide-in 240ms ease-out both;
@@ -2961,7 +2965,10 @@
       to { opacity: 1; transform: translateY(0); }
     }
     .live-overview-poll-result {
+      width: 100%;
+      max-width: 100%;
       min-width: 0;
+      overflow: hidden;
       padding-top: 0.25rem;
     }
     .live-overview-poll-segments {
@@ -2969,10 +2976,13 @@
       align-items: end;
       gap: clamp(3px, 0.6vw, 6px);
       width: 100%;
+      max-width: 100%;
       min-width: 0;
     }
     .live-overview-poll-segment {
+      container: live-overview-poll-segment / inline-size;
       display: grid;
+      grid-template-columns: minmax(0, 1fr);
       grid-template-rows: minmax(1.5rem, auto) 30px;
       min-width: 0;
       gap: 0.4rem;
@@ -2982,10 +2992,24 @@
       position: relative;
       z-index: 1;
       justify-self: center;
-      max-width: max-content;
+      width: max-content;
+      max-width: none;
       font-size: var(--text-sm);
       line-height: 1.25;
       white-space: nowrap;
+    }
+    .live-overview-poll-name-short { display: none; }
+    @container live-overview-poll-segment (max-width: 80px) {
+      .live-overview-poll-name-full { display: none; }
+      .live-overview-poll-name-short { display: inline; }
+    }
+    .live-overview-poll-segment:first-child.is-poll-name-overflowing .live-overview-poll-name {
+      justify-self: start;
+      text-align: left;
+    }
+    .live-overview-poll-segment:last-child.is-poll-name-overflowing .live-overview-poll-name {
+      justify-self: end;
+      text-align: right;
     }
     .live-overview-poll-bar {
       display: grid;
@@ -3000,6 +3024,7 @@
       font-size: var(--text-xs);
       letter-spacing: 0.05rem;
     }
+    .live-overview-poll-percentage { display: none; }
     .live-overview-poll-segment:first-child .live-overview-poll-bar {
       border-radius: 8px 0 0 8px;
     }
@@ -4237,13 +4262,30 @@
         gap: 0.35rem;
       }
       .live-overview-poll-segment {
-        grid-template-rows: minmax(1.4rem, auto) 28px;
+        grid-template-rows: minmax(1.4rem, auto) 28px minmax(1.2rem, auto);
         gap: 0.35rem;
       }
       .live-overview-poll-name { font-size: var(--text-xs); }
       .live-overview-poll-bar { font-size: var(--text-xs); }
+      .live-overview-poll-bar-value { display: none; }
+      .live-overview-poll-percentage {
+        display: block;
+        justify-self: center;
+        width: max-content;
+        color: #fff;
+        font-size: var(--text-xs);
+        letter-spacing: 0.05rem;
+      }
+      .live-overview-poll-segment:first-child.is-poll-percentage-overflowing .live-overview-poll-percentage {
+        justify-self: start;
+        text-align: left;
+      }
+      .live-overview-poll-segment:last-child.is-poll-percentage-overflowing .live-overview-poll-percentage {
+        justify-self: end;
+        text-align: right;
+      }
       .live-ticker-matchup {
-        grid-template-columns: minmax(0, 1fr) 100px minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) 112px minmax(0, 1fr);
         gap: 0.5rem;
         padding: 0 0.6rem 1.35rem;
       }

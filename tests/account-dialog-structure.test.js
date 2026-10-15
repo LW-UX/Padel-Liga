@@ -74,6 +74,9 @@ test('both account dialogs expose one four-group game overview', () => {
     assert.doesNotMatch(source, /id="training-history"/);
     assert.match(source, /id="open-results-section"[\s\S]*data-training-toggle/);
     assert.match(source, /<h3 class="sh-title">Spieleübersicht<\/h3>/);
+    assert.match(source, /class="match-scope-toggle account-result-scope-toggle"[^>]*data-account-result-scope-toggle hidden/);
+    assert.match(source, /data-account-result-scope="relevant"[^>]*>Relevant<\/button>/);
+    assert.match(source, /data-account-result-scope="all"[^>]*>Alle<\/button>/);
     assert.doesNotMatch(source, /<h3 class="sh-title">Trainingsspiele<\/h3>/);
     assert.doesNotMatch(source, /id="training-task-list"/);
     assert.match(source, /<button class="secondary-button"[^>]*data-auth-logout/);
@@ -81,7 +84,7 @@ test('both account dialogs expose one four-group game overview', () => {
     assert.match(source, /<button class="secondary-button"[^>]*data-training-toggle/);
     assert.match(source, /data-auth-logout>Ausloggen<\/button>/);
     assert.match(source, /data-training-toggle>Training hinzufügen<\/button>/);
-    assert.match(source, /<div data-training-form-group hidden>\s*<div class="spieltag-label"><span>Training<\/span><\/div>\s*<form class="training-form" id="training-form" hidden>/);
+    assert.match(source, /<div data-training-form-group hidden>[\s\S]*?<div class="spieltag-label">[\s\S]*?Training[\s\S]*?<form class="training-form" id="training-form" hidden>/);
     assert.doesNotMatch(source, /picker-toggle-chevron/);
     assert.doesNotMatch(source, /auth-logout-button|compact-button|account-task-count|result-task-count/);
     assert.doesNotMatch(source, /Ligaübergreifend|Saisonunabhängig/);
@@ -114,6 +117,8 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.doesNotMatch(style, /\.auth-logout-button|\.compact-button|\.account-task-count|\.account-task-league/);
   assert.doesNotMatch(style, /\.picker-toggle-chevron/);
   assert.match(accountScript, /playerProfileButton\.hidden = !isPlayerAccount\(\)/);
+  assert.match(accountScript, /resultScopeToggle\.hidden = state\.profile\?\.app_role !== 'admin'/);
+  assert.match(accountScript, /state\.resultTaskScope = resultScopeButton\.dataset\.accountResultScope === 'all' \? 'all' : 'relevant'/);
   assert.match(accountScript, /form\.closest\('\[data-training-form-group\]'\)[\s\S]*formGroup\.hidden = !opening/);
   assert.match(accountScript, /closeAuthDialog\(\);[\s\S]*window\.PadelLigaOpenPlayerProfile\(playerId, document\.querySelector\('\[data-auth-open\]'\)\)/);
   assert.match(accountScript, /searchParams\.set\('spielerprofil', playerId\)/);
@@ -147,7 +152,7 @@ test('date and time hints are dimmed while Safari and iOS receive controlled tex
   assert.match(accountScript, /data-datetime-hint="TT\.MM\.JJJJ"><input type="date" name="(?:playedOn|scheduledDate)"/);
   assert.match(accountScript, /data-datetime-hint="--:--"><input type="time" name="(?:playedTime|scheduledTime|displayTime)"/);
   assert.match(accountScript, /document\.addEventListener\('input', event => \{\s*syncDateTimeHint\(event\.target\)/);
-  assert.match(accountScript, /document\.addEventListener\('change', event => syncDateTimeHint\(event\.target\)\)/);
+  assert.match(accountScript, /document\.addEventListener\('change', event => \{\s*syncDateTimeHint\(event\.target\)/);
   assert.match(accountScript, /form\.reset\(\);\s*syncDateTimeHints\(form\);/);
   assert.match(style, /\.datetime-input-shell \{ display: contents; \}/);
   assert.match(style, /\.datetime-input-shell\.is-empty input \{ color: var\(--dim\); \}/);

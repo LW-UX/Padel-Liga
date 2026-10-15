@@ -238,6 +238,8 @@
       padding-top: 24px;
     }
     .account-section-heading { display: flex; align-items: center; justify-content: space-between; }
+    .account-result-scope-toggle { justify-self: start; }
+    .account-result-scope-toggle[hidden] { display: none; }
     .account-task-list { display: grid; gap: 18px; }
     #result-task-list { gap: 40px; }
     #result-task-list > .account-task-group {
