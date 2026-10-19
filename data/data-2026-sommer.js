@@ -1313,7 +1313,7 @@ window.PADEL_SEASON = {
     },
     {
       "id": "partie28",
-      "displayLabel": "Final 1",
+      "displayLabel": "Final Four 1",
       "spieltag": 8,
       "format": "single-set",
       "countsForRanking": false,
@@ -1337,7 +1337,7 @@ window.PADEL_SEASON = {
     },
     {
       "id": "partie29",
-      "displayLabel": "Final 2",
+      "displayLabel": "Final Four 2",
       "spieltag": 8,
       "format": "single-set",
       "countsForRanking": false,
@@ -1361,7 +1361,7 @@ window.PADEL_SEASON = {
     },
     {
       "id": "partie30",
-      "displayLabel": "Final 3",
+      "displayLabel": "Final Four 3",
       "spieltag": 8,
       "format": "single-set",
       "countsForRanking": false,
@@ -1389,7 +1389,7 @@ window.PADEL_SEASON = {
       "spieltag": 1,
       "startDate": "2026-05-11",
       "endDate": "2026-05-24",
-      "title": "Der Aufschlag ist gemacht - die Padel-Liga Sommer 2026 startet!",
+      "title": "Die Padel-Liga Sommer 2026 startet!",
       "meta": "SPIELTAG 1  ·  11. MAI - 22. MAI 2026",
       "body": [
         {
@@ -1493,7 +1493,7 @@ window.PADEL_SEASON = {
       "spieltag": 2,
       "startDate": "2026-05-25",
       "endDate": "2026-06-07",
-      "title": "Weiter geht's - der zweite Spieltag steht in den Startlöchern",
+      "title": "Der zweite Spieltag steht in den Startlöchern",
       "meta": "SPIELTAG 2  ·  25. MAI - 5. JUNI 2026",
       "body": [
         {
@@ -1537,7 +1537,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Spieltag 2 hat bereits sein erstes Resultat. Ludwig W und Cristian B bezwangen Niklas K und Greta P mit 7:5 und 6:1 und legten damit früh ein Ausrufezeichen in der Tabelle. Was dabei kaum jemand ahnte: Cristian B spielte das gesamte Match mit geprellten Rippen - Nachwirkungen eines Fußballspiels vom Sonntag zuvor. Dass das Team gegen Ende trotzdem so dominant auftrat, unterstreicht die Klasse dieser Paarung."
+          "text": "Spieltag 2 hat bereits sein erstes Resultat. Ludwig W und Cristian B bezwangen Niklas K und Greta P mit 7:5 und 6:1 und legten damit früh ein Ausrufezeichen in der Rangliste. Was dabei kaum jemand ahnte: Cristian B spielte das gesamte Match mit geprellten Rippen - Nachwirkungen eines Fußballspiels vom Sonntag zuvor. Dass das Team gegen Ende trotzdem so dominant auftrat, unterstreicht die Klasse dieser Paarung."
         },
         {
           "type": "p",
@@ -1601,7 +1601,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Obwohl Partie 1 und Partie 3 aus Spieltag 1 krankheits- und urlaubsbedingt noch ausstehen, nimmt die Liga dennoch an Fahrt auf. Die Tabelle beginnt sich zu formen, die ersten Charaktere zeigen sich und mit jedem Spiel wird klarer, wer hier wirklich für den Titel spielt."
+          "text": "Obwohl Partie 1 und Partie 3 aus Spieltag 1 krankheits- und urlaubsbedingt noch ausstehen, nimmt die Liga dennoch an Fahrt auf. Die Rangliste beginnt sich zu formen, die ersten Charaktere zeigen sich und mit jedem Spiel wird klarer, wer hier wirklich für den Titel spielt."
         }
       ]
     },
@@ -1618,7 +1618,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Und trotzdem: Die Tabelle nimmt Formen an. Ludwig W thront mit sechs Punkten an der Spitze. Jonas L hat letzten Mittwoch nachgelegt. Gleichzeitig stehen sieben von achtzehn SpielerInnen noch bei null - kein Spiel, kein Punkt, kein Satz. Für sie ist die Liga bisher ein Versprechen, das noch eingelöst werden muss. Spieltag 3 soll das ändern."
+          "text": "Und trotzdem: Die Rangliste nimmt Formen an. Ludwig W thront mit sechs Punkten an der Spitze. Jonas L hat letzten Mittwoch nachgelegt. Gleichzeitig stehen sieben von achtzehn SpielerInnen noch bei null - kein Spiel, kein Punkt, kein Satz. Für sie ist die Liga bisher ein Versprechen, das noch eingelöst werden muss. Spieltag 3 soll das ändern."
         },
         {
           "type": "h",
@@ -1640,7 +1640,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Der Presseboykott steht. Ihr Partner Raphael H, Platz 4 in der Tabelle mit drei Punkten und einer Satzdifferenz von +7, ist da deutlich gesprächsfreudiger:"
+          "text": "Der Presseboykott steht. Ihr Partner Raphael H, Platz 4 in der Rangliste mit drei Punkten und einer Satzdifferenz von +7, ist da deutlich gesprächsfreudiger:"
         },
         {
           "type": "quote",
@@ -1701,7 +1701,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Was man wissen muss: Irene ist blutiger Anfänger. Nach dem Sommerfest letzten Jahres wird sie erst zum zweiten Mal überhaupt einen Padelschläger in der Hand halten. An ihrer Seite steht Luca W, Platz 3 der Tabelle, ein Sieg, drei Punkte, die drittbeste Satzdifferenz der Liga. Kann er die Unerfahrenheit seiner Partnerin kompensieren?"
+          "text": "Was man wissen muss: Irene ist blutiger Anfänger. Nach dem Sommerfest letzten Jahres wird sie erst zum zweiten Mal überhaupt einen Padelschläger in der Hand halten. An ihrer Seite steht Luca W, Platz 3 der Rangliste, ein Sieg, drei Punkte, die drittbeste Satzdifferenz der Liga. Kann er die Unerfahrenheit seiner Partnerin kompensieren?"
         },
         {
           "type": "p",
@@ -1748,15 +1748,15 @@ window.PADEL_SEASON = {
         },
         {
           "type": "h",
-          "text": "Blick auf die Tabelle"
+          "text": "Blick auf die Rangliste"
         },
         {
           "type": "p",
-          "text": "Ludwig W führt die Liga an. Jonas L, Luca W und Raphael H bilden ein enges Verfolgerfeld. Sieben Spieler warten noch auf ihr erstes Spiel, für sie beginnt die Liga jetzt erst richtig. Und am Ende der Tabelle? Niklas K braucht mit null Punkten aus zwei Spielen und einer Differenz von -14 dringend eine Wende. Vielleicht klappt dies nach frisch getankter Kraft im Urlaub."
+          "text": "Ludwig W führt die Liga an. Jonas L, Luca W und Raphael H bilden ein enges Verfolgerfeld. Sieben Spieler warten noch auf ihr erstes Spiel, für sie beginnt die Liga jetzt erst richtig. Und am Ende der Rangliste? Niklas K braucht mit null Punkten aus zwei Spielen und einer Differenz von -14 dringend eine Wende. Vielleicht klappt dies nach frisch getankter Kraft im Urlaub."
         },
         {
           "type": "p",
-          "text": "Die Tabelle nimmt Formen an und wer jetzt noch keinen Punkt hat, muss langsam anfangen zu liefern."
+          "text": "Die Rangliste nimmt Formen an und wer jetzt noch keinen Punkt hat, muss langsam anfangen zu liefern."
         }
       ]
     },
@@ -1773,7 +1773,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Die Tabelle hat sich ordentlich durchgeschüttelt. Und passend dazu gibt es eine Neuigkeit, die das ganze Erlebnis auf ein neues Level hebt."
+          "text": "Die Rangliste hat sich ordentlich durchgeschüttelt. Und passend dazu gibt es eine Neuigkeit, die das ganze Erlebnis auf ein neues Level hebt."
         },
         {
           "type": "h",
@@ -1852,7 +1852,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Es gibt Gewinnwahrscheinlichkeiten, die Mut machen. Und es gibt 14 Prozent. Leonie R. und Niklas K. - Platz 18 und 17 der Tabelle, zusammen null Siege aus vier Spielen - gehen als das statistisch schwächste Team des Spieltags ins Rennen. Auf die Zahl angesprochen, reagiert Niklas erschrocken:"
+          "text": "Es gibt Gewinnwahrscheinlichkeiten, die Mut machen. Und es gibt 14 Prozent. Leonie R. und Niklas K. - Platz 18 und 17 der Rangliste, zusammen null Siege aus vier Spielen - gehen als das statistisch schwächste Team des Spieltags ins Rennen. Auf die Zahl angesprochen, reagiert Niklas erschrocken:"
         },
         {
           "type": "quote",
@@ -1901,7 +1901,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Die Liga hat sich verändert. Jonas L. und Marcel M. thronen mit je acht Punkten und makelloser Bilanz an der Spitze, dahinter ein dichtes Mittelfeld, in dem ein einziger Sieg mehrere Plätze gutmachen kann. Lukas P. schuldet der Liga noch den Beweis, dass die Vorschusslorbeeren des Bürofunks berechtigt waren. Und am unteren Ende der Tabelle kämpfen Leonie R. und Niklas K. mit 14 Prozent gegen die Mathematik."
+          "text": "Die Liga hat sich verändert. Jonas L. und Marcel M. thronen mit je acht Punkten und makelloser Bilanz an der Spitze, dahinter ein dichtes Mittelfeld, in dem ein einziger Sieg mehrere Plätze gutmachen kann. Lukas P. schuldet der Liga noch den Beweis, dass die Vorschusslorbeeren des Bürofunks berechtigt waren. Und am unteren Ende der Rangliste kämpfen Leonie R. und Niklas K. mit 14 Prozent gegen die Mathematik."
         },
         {
           "type": "p",
@@ -2056,7 +2056,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "h",
-          "text": "Der Blick auf die Tabelle - und das große Ziel"
+          "text": "Der Blick auf die Rangliste - und das große Ziel"
         },
         {
           "type": "p",
@@ -2077,11 +2077,11 @@ window.PADEL_SEASON = {
       "body": [
         {
           "type": "p",
-          "text": "Die Tabelle spricht eine klare Sprache: Die Top 5 bestehen komplett aus allen 5 Envidual-Spielern. Luca W. führt mit 12 Punkten, Ludwig W., Marcel M. und Chris M. folgen mit je 11. Somit würde Envidual alle vier Final-Four-Finalisten stellen. Noch."
+          "text": "Die Rangliste spricht eine klare Sprache: Die Top 5 bestehen komplett aus allen 5 Envidual-Spielern. Luca W. führt mit 12 Punkten, Ludwig W., Marcel M. und Chris M. folgen mit je 11. Somit würde Envidual alle vier Final-Four-Finalisten stellen. Noch."
         },
         {
           "type": "p",
-          "text": "Denn mag man dem neuen Turnierrechner (Prognosen lassen sich manuell oder automatisch berechnen) Glauben schenken, steht am Ende Marco M. als Favorit auf Platz 1 der Final-Four-Prognose. Und das trotz aktuell nur Platz 9 in der Tabelle. Aber nicht jeder findet die Zahlenspielerei hilfreich:"
+          "text": "Denn mag man dem neuen Turnierrechner (Prognosen lassen sich manuell oder automatisch berechnen) Glauben schenken, steht am Ende Marco M. als Favorit auf Platz 1 der Final-Four-Prognose. Und das trotz aktuell nur Platz 9 in der Rangliste. Aber nicht jeder findet die Zahlenspielerei hilfreich:"
         },
         {
           "type": "quote",
@@ -2189,7 +2189,7 @@ window.PADEL_SEASON = {
       "body": [
         {
           "type": "p",
-          "text": "Der letzte Spieltag ist da! Mit ihm liefert die Liga Drama bis zum Schluss. Die Tabelle ist eng, die Final-Four-Plätze umkämpft und mittendrin zwei Ereignisse, auf die alle gewartet haben: Niklas K. und Greta P. haben ihren ersten Sieg geholt."
+          "text": "Der letzte Spieltag ist da! Mit ihm liefert die Liga Drama bis zum Schluss. Die Rangliste ist eng, die Final-Four-Plätze umkämpft und mittendrin zwei Ereignisse, auf die alle gewartet haben: Niklas K. und Greta P. haben ihren ersten Sieg geholt."
         },
         {
           "type": "p",
@@ -2263,7 +2263,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Vier Spieler, die in dieser Liga mehr gelitten als gefeiert haben. Und doch steckt in dieser Partie mehr, als die Tabelle verrät. Greta P. kommt mit dem Rückenwind ihres ersten Saisonsiegs, der ihr Selbstvertrauen auf ein neues Level gehoben haben dürfte. Kann sie dieses Momentum auch ohne den Zweitplatzierten der Liga an ihrer Seite mitnehmen? An ihrer Seite steht dieses Mal Martin B. mit einem Punkt und auf Platz 16 gelistet."
+          "text": "Vier Spieler, die in dieser Liga mehr gelitten als gefeiert haben. Und doch steckt in dieser Partie mehr, als die Rangliste verrät. Greta P. kommt mit dem Rückenwind ihres ersten Saisonsiegs, der ihr Selbstvertrauen auf ein neues Level gehoben haben dürfte. Kann sie dieses Momentum auch ohne den Zweitplatzierten der Liga an ihrer Seite mitnehmen? An ihrer Seite steht dieses Mal Martin B. mit einem Punkt und auf Platz 16 gelistet."
         },
         {
           "type": "p",
@@ -2296,7 +2296,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "<em>Platz 1 · 5 Siege aus 5 Partien · 15 Punkte · Elo 1199</em>"
+          "text": "Platz 1 · 5 Siege aus 5 Partien · 15 Punkte · Elo 1199"
         },
         {
           "type": "p",
@@ -2312,7 +2312,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "<em>Platz 2 · 5 Siege aus 6 Partien · 15 Punkte · Elo 1051</em>"
+          "text": "Platz 2 · 5 Siege aus 6 Partien · 15 Punkte · Elo 1051"
         },
         {
           "type": "p",
@@ -2328,7 +2328,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "<em>Platz 3 · 5 Siege aus 6 Partien · 14 Punkte · Elo 1011</em>"
+          "text": "Platz 3 · 5 Siege aus 6 Partien · 14 Punkte · Elo 1011"
         },
         {
           "type": "p",
@@ -2344,7 +2344,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "<em>Platz 4 · 5 Siege aus 6 Partien · 14 Punkte · Elo 1170</em>"
+          "text": "Platz 4 · 5 Siege aus 6 Partien · 14 Punkte · Elo 1170"
         },
         {
           "type": "p",
@@ -2364,11 +2364,11 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "<em>Platz 5 · 4 Siege aus 5 Partien · 11 Punkte · Elo 1134</em>"
+          "text": "Platz 5 · 4 Siege aus 5 Partien · 11 Punkte · Elo 1134"
         },
         {
           "type": "p",
-          "text": "Er hat die Liga organisiert, den Spielplan gebaut und die Tabelle gepflegt. Jetzt steht er auf Platz 5. Das ist der undankbarste Rang, allerdings hat er eine ganze Partie weniger gespielt. Diese steht noch aus. In der Partie 10 trifft Ludwig an der Seite von Marco M. auf Agnes K. und Lukas P. Die Siegwahrscheinlichkeit liegt bei 87 zu 13, doch ein Sieg allein reicht nicht. Es muss mindestens ein 6:2, 6:1 her. Dann zieht Ludwig vorbei und Marcel, der Favorit, schaut beim Final Four von draußen zu. Partie 10 war zu Redaktionsschluss noch nicht gespielt, die Frage ist also offen."
+          "text": "Er hat die Liga organisiert, den Spielplan gebaut und die Rangliste gepflegt. Jetzt steht er auf Platz 5. Das ist der undankbarste Rang, allerdings hat er eine ganze Partie weniger gespielt. Diese steht noch aus. In der Partie 10 trifft Ludwig an der Seite von Marco M. auf Agnes K. und Lukas P. Die Siegwahrscheinlichkeit liegt bei 87 zu 13, doch ein Sieg allein reicht nicht. Es muss mindestens ein 6:2, 6:1 her. Dann zieht Ludwig vorbei und Marcel, der Favorit, schaut beim Final Four von draußen zu. Partie 10 war zu Redaktionsschluss noch nicht gespielt, die Frage ist also offen."
         },
         {
           "type": "p",
@@ -2382,9 +2382,208 @@ window.PADEL_SEASON = {
     },
     {
       "spieltag": "abschluss",
-      "startDate": null,
+      "startDate": "2026-10-19",
       "endDate": null,
-      "title": "Abschlussartikel"
+      "title": "Der Gedankenspieler ist Champion",
+      "meta": "SAISONABSCHLUSS  ·  SOMMER 2026",
+      "body": [
+        {
+          "type": "p",
+          "text": "Nach fünf Monaten, 25 Ligapartien und einem Final Four, das nach gut einer Stunde entschieden war, hat die Padel-Liga ihren ersten Champion: Luca W. Leicht gemacht hat es ihm das Finale nicht. Drei der vier Finalisten gewannen zwei Sätze, somit entschied am Ende der letzte Schlüssel der Final-Four-Rangliste."
+        },
+        {
+          "type": "p",
+          "text": "Bevor es um den Titel ging, musste die Liga allerdings einen prominenten Ausfall verkraften."
+        },
+        {
+          "type": "h",
+          "text": "Ein Invalidentreff zum Finale"
+        },
+        {
+          "type": "p",
+          "text": "Im Porträt vor dem Final Four hatte diese Redaktion das Immunsystem als einzige Schwachstelle von Marco M. ausgemacht. Wie es dann so kommen sollte, fiel Marco kurzfristig krankheitsbedingt aus. Für ihn rückte Ludwig W. nach, der Fünfte der Ligaphase."
+        },
+        {
+          "type": "p",
+          "text": "Ganz gesund war allerdings auch der Rest des Feldes nicht. Ludwig war in der Woche davor selbst krank, Marcel M. erwischte es über das Wochenende und Jonas L. in der Finalwoche. Luca W. hatte noch den Marathon in den Beinen. Es war also ein richtiger Invalidentreff. Da es aber alle irgendwie getroffen hatte, glich es sich am Ende wieder aus."
+        },
+        {
+          "type": "p",
+          "text": "Entsprechend offen war die Ausgangslage. Der Turnierrechner sah Marcel mit 29 Prozent knapp vor Ludwig mit 28 Prozent, Luca kam auf 23 und Jonas auf 20 Prozent. Die Abstimmung war sich noch weniger einig: Luca, Jonas und Marcel erhielten je vier Stimmen, Ludwig zwei. Einen klaren Favoriten gab es also nicht und genau so verlief der Abend auch."
+        },
+        {
+          "type": "h",
+          "text": "Final Four 1 - Vier Spiele am Stück"
+        },
+        {
+          "type": "match",
+          "matchId": "season-2026-partie-28",
+          "text": "Luca W. & Jonas L. vs. Marcel M. & Ludwig W.",
+          "result": "5:7",
+          "resultLabel": "Ergebnis"
+        },
+        {
+          "type": "p",
+          "text": "Der Auftakt gehörte lange Luca W. und Jonas L. Nach ausgeglichenen ersten Spielen setzten sie sich auf 5:3 ab und brauchten nur noch ein Spiel zum Satzgewinn. Das kam nicht mehr. Marcel M. und Ludwig W. gewannen die folgenden vier Spiele, zum Schluss ging auch Lucas eigenes Aufschlagspiel verloren. Der erste Satz des Abends endete 7:5 für Marcel und Ludwig."
+        },
+        {
+          "type": "h",
+          "text": "Final Four 2 - Das Comeback"
+        },
+        {
+          "type": "match",
+          "matchId": "season-2026-partie-29",
+          "text": "Luca W. & Ludwig W. vs. Jonas L. & Marcel M.",
+          "result": "6:4",
+          "resultLabel": "Ergebnis"
+        },
+        {
+          "type": "p",
+          "text": "Im zweiten Satz drehte sich die Geschichte um. Diesmal liefen Luca W. und Ludwig W. hinterher: 0:2, 1:3, 2:4. Jonas L. und Marcel M. schienen den Satz im Griff zu haben. Dann gewannen Luca und Ludwig ihrerseits vier Spiele in Folge. Zum 6:4 schlug Ludwig auf und gewann seinen zweiten Satz."
+        },
+        {
+          "type": "p",
+          "text": "Ganz überraschend kam das nicht. In der Liga hatten die beiden zwar nie zusammengespielt, aus den Trainings kannten sie sich aber bestens: Alle fünf gemeinsamen Trainingspartien hatten sie gewonnen. Im Final Four kam nun auch der erste offizielle Sieg dazu."
+        },
+        {
+          "type": "h",
+          "text": "Final Four 3 - Die Entscheidung"
+        },
+        {
+          "type": "match",
+          "matchId": "season-2026-partie-30",
+          "text": "Luca W. & Marcel M. vs. Jonas L. & Ludwig W.",
+          "result": "6:3",
+          "resultLabel": "Ergebnis"
+        },
+        {
+          "type": "p",
+          "text": "Vor dem letzten Satz hatten Luca W., Marcel M. und Ludwig W. je einen Sieg auf dem Konto. Luca und Marcel ließen nichts anbrennen. Nach einem frühen Break zum 3:1 lagen sie durchgehend vorn. Marcel servierte schließlich zum 6:3 aus. Vor Partie 26 hatte sich Luca augenzwinkernd noch als „Puppenspieler“ bezeichnet, der „die Zügel in der Hand“ habe."
+        },
+        {
+          "type": "h",
+          "text": "Am Ende entscheidet die Setzliste"
+        },
+        {
+          "type": "p",
+          "text": "Nach drei Sätzen stand eine Rangliste, die man kaum knapper hätte konstruieren können. Luca W. und Marcel M. hatten je zwei Siege und jeweils 17:14 Spiele, also eine Differenz von +3. Ludwig W. kam ebenfalls auf zwei Siege, mit 16:15 Spielen aber nur auf +1. Weil Siege, Spieldifferenz und gewonnene Spiele bei Luca und Marcel identisch waren, griff der letzte Schlüssel: die Setzliste des Final Four. Luca war als Zweiter der Ligaphase an Position 1 gesetzt, Marcel als Vierter an Position 3. Damit ist Luca W. offiziell Champion, Marcel wird Zweiter und Ludwig Dritter."
+        },
+        {
+          "type": "p",
+          "text": "Vor Spieltag 5 hatte Luca gesagt, am Ende werde auch Glück eine Rolle spielen. Nach dem Titel sieht er das genauso:"
+        },
+        {
+          "type": "quote",
+          "text": "Es ist mir eine riesige Ehre, als erster Padel-Liga Champion in die Geschichte einzugehen. Gerade nach der bitteren Marathon-Niederlage kommt dieser Titel genau zur richtigen Zeit und ist Balsam für die geschundene Sportlerseele. <br> Natürlich bin ich mir bewusst, dass ich heute nicht meinen besten Tag erwischt habe und über weite Strecken von meinen Teammates gecarried wurde. <br>Aber wie sagt man so schön: Glück gehört eben auch dazu. Und am Ende fragt sowieso keiner mehr, wie der Titel zustande gekommen ist.",
+          "author": "Luca W."
+        },
+        {
+          "type": "p",
+          "text": "Gecarried oder nicht: Zwei der drei Sätze hat er gewonnen. Über die Setzliste redet in ein paar Wochen ohnehin niemand mehr. Über die ganze Saison gesehen hat Luca ohnehin die stärkste Entwicklung hinter sich: Sein Elo stieg von 800 auf 1090, kein anderer Spieler legte so viel zu."
+        },
+        {
+          "type": "p",
+          "text": "Für Marcel ist das bitter. Der Turnierrechner hatte ihn vorn gesehen, im Porträt galt er als Favorit des Teilnehmerfelds. Dabei hätte ein einziges zusätzliches Spiel gereicht. Sein Elo-Score stieg in der Saison trotzdem von 1000 auf 1179, der zweithöchste Wert der Liga."
+        },
+        {
+          "type": "p",
+          "text": "Jonas L. blieb an diesem Abend ohne Satzgewinn und wurde Vierter. Am nächsten dran war er gleich zu Beginn, als ihm und Luca beim Stand von 5:3 nur noch ein Spiel fehlte. Danach zeigte er sich als fairer Verlierer:"
+        },
+        {
+          "type": "quote",
+          "text": "Ich bedanke mich bei der Turnierleitung und gratuliere dem Turniersieger.",
+          "author": "Jonas L."
+        },
+        {
+          "type": "h",
+          "text": "Eine Fußnote zum Material"
+        },
+        {
+          "type": "p",
+          "text": "Fast das gesamte Teilnehmerfeld spielt mit den Büroschlägern von Decathlon. Zwei Ausnahmen gibt es: Marcel spielt einen Advanced-Schläger, Luca hat mit einem neuen Profischläger nachgezogen. Ausgerechnet diese beiden belegen nun die Plätze 1 und 2 des Final Four. Ob das schon Pay2Win ist oder einfach eine Materialschlacht, die der Rest der Liga noch nicht angenommen hat, mag jeder selbst beurteilen."
+        },
+        {
+          "type": "h",
+          "text": "Zwei Konstanten: Marco und Jonas"
+        },
+        {
+          "type": "p",
+          "text": "Wer sich die Statistik „Platzierungen nach Spieltag“ ansieht, findet zwei Namen, die sich durch die ganze Saison ziehen. Die Statistik ordnet jede Partie ihrem Spieltag zu, egal wann sie tatsächlich gespielt wurde. Nach jedem der sieben Spieltage standen Marco M. und Jonas L. unter den besten vier. Ihre Final-Four-Teilnahme war also hochverdient."
+        },
+        {
+          "type": "p",
+          "text": "Marco beendete die Ligaphase als einziger Spieler ohne Niederlage: fünf Siege aus fünf Partien, 15 Punkte, 60:15 Spiele und ein Elo von 1199, der höchste der Liga. Seine sechste Partie fand nie statt."
+        },
+        {
+          "type": "p",
+          "text": "Jonas kam ohne jede Vorkenntnis in die Liga und schloss die Ligaphase als Dritter ab, mit fünf Siegen aus sechs Partien und 14 Punkten. Sein „Easy Win“ vor Partie 8 klang damals nach Übermut, mit 6:0, 6:2 gegen Irene W. und Leonie R. hielt er Wort. Vor Partie 23 hoffte er, dass „der Marco fit und kalt“ sei. An diesem Tag war er es, gemeinsam gewannen sie 6:0, 6:0. Beim Finale hat es mit der Vorkenntnis dann leider nicht für mehr gereicht."
+        },
+        {
+          "type": "h",
+          "text": "Was wäre, wenn: die Auslosung"
+        },
+        {
+          "type": "p",
+          "text": "Die Rangliste kennt eine weitere Sortierung: den Platzierungsfaktor/Losfaktor. Er versucht das Losglück oder Lospech zu visualisieren. Für jeden Spieler wird die durchschnittliche Platzierung seiner Partner mit der seiner Gegner verglichen. Wer mit schwächer platzierten Partnern gegen stärker platzierte Gegner antreten musste, hatte eine schwere Auslosung und rückt nach oben. Wer es leichter hatte, rutscht nach unten."
+        },
+        {
+          "type": "p",
+          "text": "Nach dieser Rechnung sähe die Rangliste anders aus. Luca W. und Marcel M. blieben mit den Plätzen 1 und 2 in den Final Four. Dahinter rückten Greta P. von Platz 10 auf 3 und Chris M. von Platz 7 auf 4. Greta macht damit den größten Sprung der Liga. Ludwig W. bliebe Fünfter. Jonas L. fiele dagegen auf Platz 7, Marco M. sogar von Platz 1 auf 10. Das Porträt hatte es schon angedeutet: Sein Weg ins Final Four war nicht der steinigste."
+        },
+        {
+          "type": "p",
+          "text": "An der Wertung ändert das nichts, gespielt werden muss jede Auslosung. Marco hat alle fünf Partien gewonnen, egal gegen wen."
+        },
+        {
+          "type": "h",
+          "text": "Die Liga hinter dem Finale"
+        },
+        {
+          "type": "p",
+          "text": "Knapp hinter den Final-Four-Plätzen landeten Cristian B. und Chris M. mit je elf Punkten und vier Siegen aus sechs Partien. Cristian ist damit der beste Hanako-Spieler der Saison. Seine Ankündigung, nach der überstandenen Rippenprellung „ab jetzt jedes Spiel“ zu gewinnen, hielt bis Partie 22. Chris verlor zum Auftakt das erste Mayr-Duell gegen Marcel und gewann danach vier der fünf Partien."
+        },
+        {
+          "type": "p",
+          "text": "Andreas L. kam auf zehn Punkte, Lukas P. auf neun, beide mit weniger Partien als der Rest, weil Partie 19 ausfiel. Andreas lieferte mit „Erstmal spielen, dann können wir rätseln“ so etwas wie das Motto der Saison. An der Seite von Ludwig gewann er das 6:0, 6:0 gegen Florian Z. und Leonie R., obwohl er verspätet und ohne Aufwärmen angetreten war. Lukas galt nach seiner Debütniederlage schon als enttäuschter Geheimfavorit, gewann dann aber alle drei weiteren Partien. Er beendet die Saison mit 2 Partien weniger und einem Elo von 1155, dem dritthöchsten der Liga."
+        },
+        {
+          "type": "p",
+          "text": "Irene W. ging als blutige Anfängerin in die Saison und gewann zwei Partien, darunter das 10:7 im Match-Tie-Break mit Luca gegen Christoph L. und Florian, der vorher angekündigt hatte: „Wir werden sie vernichten.“ In Partie 22 am 26. August zeigte sie dann so viel Einsatz, dass ihr Knie nicht mehr mitmachte und sie sich verletzte. Gute Besserung weiterhin an dieser Stelle."
+        },
+        {
+          "type": "p",
+          "text": "Partie 22 war ausgerechnet jene, die Irene „mit verbundenen Augen“ gewinnen wollte. Gewonnen haben sie Greta P. und Christoph am grünen Tisch. Für Greta war es nach dem 6:0, 6:0 an der Seite von Jonas der zweite Sieg, das am zweiten Spieltag angekündigte Comeback ist damit eingelöst. Christoph sagte seine Niederlagen über die Saison zuverlässiger voraus als jeder Algorithmus, lag aber nicht immer ganz richtig. Aus dem prophezeiten 0:6, 0:6 in Partie 20 wurde ein 3:6, 4:6."
+        },
+        {
+          "type": "p",
+          "text": "Florian kassierte nach seiner Kampfansage erst das 7:10 gegen Irene und Luca, gewann später zwei Partien in Folge und musste daneben zweimal ein 0:6, 0:6 hinnehmen. Raphael H. wollte vor Partie 9 „taktisch, notfalls auch sportlich“ arbeiten, verlor im Match-Tie-Break und landete mit zwei Siegen und sieben Punkten im Mittelfeld."
+        },
+        {
+          "type": "p",
+          "text": "Leonie R. hatte vor ihrem ersten Spiel angekündigt, das Turnier zu gewinnen. Es folgten fünf Niederlagen und ein Presseboykott. In Partie 27 am 23. September, dem letzten Ligaspiel der Saison, gewann sie dann mit Lukas 6:1, 6:3 gegen Greta und Martin B. Den Titel hat sie verpasst, das letzte Wort der Ligaphase hatte trotzdem sie."
+        },
+        {
+          "type": "p",
+          "text": "Niklas K. fand seine Siegchance vor Partie 15 noch „dramatisch“ und musste vier Niederlagen hinnehmen, bevor er mit Chris seinen ersten Sieg feierte. Martin B. und Agnes K. blieben ohne Sieg. Martin holte seinen einzigen Punkt in Partie 17, als er mit Luca sogar den ersten Satz im Tie-Break gegen Florian und Ludwig gewann. Agnes war in Partie 25 an der Seite von Andreas mit 3:6, 3:6 am nächsten dran. Abschrecken lassen sich die beiden davon nicht: Martin und Agnes sind auch in der Winter-Saison wieder dabei. Dass der erste Sieg irgendwann kommt, haben Leonie und Niklas in diesem Sommer vorgemacht."
+        },
+        {
+          "type": "h",
+          "text": "Envidual vorne, Winter-Saison startet"
+        },
+        {
+          "type": "p",
+          "text": "Unter dem Strich war es die Saison von Envidual. Alle vier Final-Four-Spieler kamen aus dem Jung-Unternehmen, zusammengerechnet gewannen die fünf Envidual-Spieler 23 ihrer 29 Ligapartien. Headsquare stellte mit Marco den einzigen Ungeschlagenen, Hanako mit Cristian den besten Spieler außerhalb der Top 5."
+        },
+        {
+          "type": "p",
+          "text": "Im Optimalfall geht es noch im Oktober bereits weiter. Die Winter-Saison soll so schnell wie möglich starten. Luca freut sich nach eigenen Worten schon darauf, seinen Titel zu verteidigen. Bis dahin bleibt er der erste Champion der Padel-Liga. Zum Abschluss hat der Champion selbst das Wort:"
+        },
+        {
+          "type": "quote",
+          "text": "Ganz wie in den guten alten Hallenturnierzeiten: Wir gratulieren dem Turniersieger und wünschen allen Teilnehmern und Zuschauern einen guten Nachhauseweg!",
+          "author": "Luca W."
+        }
+      ]
     }
   ]
 };
