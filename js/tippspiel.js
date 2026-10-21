@@ -22,6 +22,7 @@
     leaderboard: [],
     leaderboardReady: false,
     leaderboardError: null,
+    seasonCompleted: null,
     saving: new Set(),
     ready: false,
     error: null,
@@ -399,11 +400,14 @@
     `).join('');
     empty.textContent = state.leaderboardError || (!state.leaderboardReady && state.error)
       ? 'Die Rangliste kann gerade nicht geladen werden.'
-      : !state.leaderboardReady
-        ? 'Rangliste wird geladen …'
-        : !state.leaderboard.length
-          ? 'Die Rangliste füllt sich, sobald der erste Tipp gespeichert wurde.'
-          : '';
+      : state.leaderboard.length
+        ? ''
+        // Ohne bekannten Saisonstatus bleibt offen, ob noch Tipps folgen können.
+        : !state.leaderboardReady || state.seasonCompleted === null
+          ? 'Rangliste wird geladen …'
+          : state.seasonCompleted
+            ? 'In dieser Saison wurden keine Tipps abgegeben.'
+            : 'Die Rangliste füllt sich, sobald der erste Tipp gespeichert wurde.';
   }
 
   async function loadPredictions({ accountReady } = {}) {
@@ -467,11 +471,19 @@
     const legacySeasonId = LEGACY_DATABASE_SEASON_IDS[seasonId];
     const seasonIds = legacySeasonId ? [seasonId, legacySeasonId] : [seasonId];
     const participantsPromise = (async () => {
-      for (const candidateId of seasonIds) {
-        const { data, error } = await state.client.rpc('get_public_season', { p_season_id: candidateId });
-        if (!error && Array.isArray(data?.participants)) return data.participants;
+      try {
+        for (const candidateId of seasonIds) {
+          const { data, error } = await state.client.rpc('get_public_season', { p_season_id: candidateId });
+          if (!error && Array.isArray(data?.participants)) {
+            state.seasonCompleted = Boolean(data.completedAt);
+            return data.participants;
+          }
+        }
+        return state.season?.participants || [];
+      } finally {
+        if (state.seasonCompleted === null) state.seasonCompleted = Boolean(state.season?.completedAt);
+        renderLeaderboard();
       }
-      return state.season?.participants || [];
     })();
     const [{ data: matches, error: matchesError }, participants] = await Promise.all([
       state.client

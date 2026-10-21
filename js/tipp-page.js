@@ -169,7 +169,7 @@
       const accountReady = window.PadelKonto.init();
       await Promise.all([
         loadScript(`../${selected.file}`),
-        loadScript('../js/tippspiel.js?v=2026-10-21-own-floor')
+        loadScript('../js/tippspiel.js?v=2026-10-21-completed-season')
       ]);
       const season = hydrateSeason(window.PADEL_SEASON);
       document.querySelectorAll('[data-season-label]').forEach(node => { node.textContent = season.label; });
