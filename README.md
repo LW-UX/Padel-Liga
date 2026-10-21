@@ -16,7 +16,7 @@ padel-liga/
 ├── js/
 │   ├── app.js                    Navigation, Berechnungen und Darstellung
 │   ├── account.js                Login, Konto, Spielaufgaben und Einladungen
-│   └── tippspiel.js              Tipps und Tippspiel-Tabelle
+│   └── tippspiel.js              Tipps und Tippspiel-Rangliste
 ├── data/
 │   ├── players.js                Globale Spieler-Stammdaten
 │   ├── seasons.js                Verfügbare Saisons und Standard-Saison
@@ -144,7 +144,7 @@ Trainingsspiele liegen saisonunabhängig in `data/training-matches.js`. Auch Spi
 }
 ```
 
-Die beiden Flags müssen bei Trainingsspielen immer `false` sein. Die Anwendung prüft dies beim Laden, damit ein Trainingsspiel nicht versehentlich Tabelle oder Elo verändert.
+Die beiden Flags müssen bei Trainingsspielen immer `false` sein. Die Anwendung prüft dies beim Laden, damit ein Trainingsspiel nicht versehentlich Rangliste oder Elo verändert.
 
 ## Weitere Saison anlegen
 
@@ -161,13 +161,13 @@ index.html?saison=2026-sommer
 
 ## Tippspiel und Benutzerkonten
 
-Das Tippspiel liegt unter `/tipp/` und verwendet Supabase für Benutzerkonten, gespeicherte Tipps und die öffentliche Tabelle. Bei Best-of-three-Partien wird das Satzergebnis getippt, bei einem Final-Four-Satz der genaue Satzendstand:
+Das Tippspiel liegt unter `/tipp/` und verwendet Supabase für Benutzerkonten, gespeicherte Tipps und die öffentliche Rangliste. Bei Best-of-three-Partien wird das Satzergebnis getippt, bei einem Final-Four-Satz der genaue Satzendstand:
 
 - exakt richtiges Ergebnis: 4 Punkte,
 - richtiger Sieger bei anderem Satzergebnis: 2 Punkte,
 - falscher Sieger: 0 Punkte.
 
-Ein Tipp kann bis zum in der Datenbank hinterlegten Spielbeginn geändert werden. Turnierpartien werden erst nach vollständiger Teilnehmerzuordnung sowie mit Datum und Uhrzeit geöffnet. Sobald bei einem Spiel `actual_sets` gesetzt wird, schließt die Datenbank das Spiel automatisch für weitere Tipps und die Tabelle berechnet die Punkte neu. Sommer 2026 deaktiviert das Tippspiel über die Saisonkonfiguration.
+Ein Tipp kann bis zum in der Datenbank hinterlegten Spielbeginn geändert werden. Turnierpartien werden erst nach vollständiger Teilnehmerzuordnung sowie mit Datum und Uhrzeit geöffnet. Sobald bei einem Spiel `actual_sets` gesetzt wird, schließt die Datenbank das Spiel automatisch für weitere Tipps und die Rangliste berechnet die Punkte neu. Sommer 2026 deaktiviert das Tippspiel über die Saisonkonfiguration.
 
 Die Datenbank trennt Spieler, Saisons, Ligen, Saison-Teilnahmen, Spiele, Turnierteilnahmen, Benutzerkonten und Tipps. Dadurch kann jede Saison ihren eigenen Turniermodus verwenden, ohne bestehende Saisonstrukturen zu verändern.
 
@@ -192,7 +192,7 @@ Spieler können im Konto-Dialog ein saisonunabhängiges Training mit Datum, Uhrz
 
 ## Firmenregistrierung und Spielereinladungen
 
-Nutzer dürfen mit einer freigegebenen Firmen-E-Mail weiterhin selbst ein Tippkonto erstellen. Die geschützte Tabelle `private.signup_email_domains` und der Hook `private.hook_restrict_signup_by_email_domain` begrenzen diese Registrierung auf die eingetragenen Domains. Solange die Tabelle leer oder der Hook nicht aktiviert ist, bleibt die Registrierung für alle E-Mail-Domains offen. Der Hook wird in Supabase unter **Authentication → Hooks → Before User Created** mit folgendem Ziel aktiviert:
+Nutzer dürfen mit einer freigegebenen Firmen-E-Mail weiterhin selbst ein Tippkonto erstellen. Die geschützte Rangliste `private.signup_email_domains` und der Hook `private.hook_restrict_signup_by_email_domain` begrenzen diese Registrierung auf die eingetragenen Domains. Solange die Rangliste leer oder der Hook nicht aktiviert ist, bleibt die Registrierung für alle E-Mail-Domains offen. Der Hook wird in Supabase unter **Authentication → Hooks → Before User Created** mit folgendem Ziel aktiviert:
 
 ```text
 pg-functions://postgres/private/hook_restrict_signup_by_email_domain

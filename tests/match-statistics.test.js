@@ -1,6 +1,5 @@
 const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');
 const {availability,entry,render,graphGeometry,analysisResultY,skeleton,headerMeta,playedOrderLabel}=require('../js/match-statistics.js');
-const {getAutoTipForecast,projectElo}=require('../js/elo-forecast.js');
 const fixture=require('./fixtures/match-statistics.cjs');
 const source=fs.readFileSync(path.resolve(__dirname,'../js/match-statistics.js'),'utf8');
 const appSource=fs.readFileSync(path.resolve(__dirname,'../js/app.js'),'utf8');
@@ -30,28 +29,42 @@ test('cup preview is limited to the occupied active round',()=>{
  assert.equal(availability({...match,stage:'quarterfinal'},cup,now),'preview');
  assert.equal(availability({...match,stage:'final'},cup,now),'basic');
 });
-test('only a full preview carries the details icon',()=>{
- assert.match(entry(match,season).icon,/mc-score-details-icon/);
- assert.equal(entry({...match,spieltag:3},season).icon,'');
+test('preview availability is exposed without the former details icon and only for full previews',()=>{
+ assert.equal(entry(match,season).mode,'preview');
+ assert.equal(entry(match,season).icon,'');
+ assert.equal(entry({...match,spieltag:5},season),null,'distant matches without a full preview stay unlinked');
  assert.equal(entry({...match,sieger:1},season).icon,'');
+});
+test('edited direct links cannot open previews outside the full preview window',()=>{
+ const opening=source.match(/async function open\(matchId[\s\S]*?window\.PadelLiveTicker\?\.close\(\);/)?.[0]||'';
+ assert.match(opening,/availability\(seasonMatch, season\) === 'basic'[\s\S]*rejectUnavailable/,'season matches are checked before the dialog opens');
+ assert.match(source,/data\.availability === 'basic'\) \{ rejectUnavailable/,'server responses without a full preview are not rendered');
+ assert.match(appSource,/window\.PadelLigaGetSeasonData = \(\) => PADEL_DATA;/);
+});
+test('article match blocks link regular statistics and Final Four histories with yellow score feedback',()=>{
+ assert.match(appSource,/const statisticsDetail = window\.PadelMatchStatistics\?\.entry\(match, PADEL_DATA\)/);
+ assert.match(appSource,/getMatchStage\(match\) === 'final-four'[\s\S]*data-live-open-match/);
+ assert.match(appSource,/class="article-match-action"/);
+ assert.match(statisticsStyleSource,/\.article-match-action:is\(:hover, :focus-visible\) ~ \.article-match-result \{ color: var\(--accent\); \}/);
 });
 test('content order, exclusions, escaped data and empty sections',()=>{
  const d=fixture();d.players[0].displayName='<img src=x onerror=alert(1)>';
  const html=render(d);assert.doesNotMatch(html,/<img src=x/);assert.match(html,/Erfolgspartner/);
- assert.match(html,/class="live-ticker-statistics-context"[\s\S]*?Firmenduell[\s\S]*?<strong>Rematch #1<\/strong>[\s\S]*?6:2, 6:3[\s\S]*?spielt mit ihrer aktuellen Erfolgspartnerin[\s\S]*?\(3 von 4\)/);
- assert.doesNotMatch(html,/live-ticker-statistics-player-notes/);
+ assert.match(html,/class="match-statistics-context"[\s\S]*?Firmenduell[\s\S]*?<strong>Rematch #1<\/strong>[\s\S]*?6:2, 6:3[\s\S]*?spielt mit ihrer aktuellen Erfolgspartnerin[\s\S]*?\(3 von 4\)/);
+ assert.doesNotMatch(html,/match-statistics-player-notes/);
  assert.doesNotMatch(html,/Vorgeschichte der Partie/);
- assert.ok(html.indexOf('live-ticker-statistics-context')<html.indexOf('Rangliste'));assert.ok(html.indexOf('Rangliste')<html.indexOf('Was sich verändern kann'));assert.ok(html.indexOf('Was sich verändern kann')<html.indexOf('Elo-Entwicklung'));
+ assert.ok(html.indexOf('match-statistics-context')<html.indexOf('Rangliste'));assert.ok(html.indexOf('Rangliste')<html.indexOf('Was sich verändern kann'));assert.ok(html.indexOf('Was sich verändern kann')<html.indexOf('Elo-Entwicklung'));
  assert.ok(html.indexOf('Elo-Entwicklung')<html.indexOf('Werte und Prognosen können sich'));assert.doesNotMatch(html,/Stand:/);
  assert.doesNotMatch(html,/<title>|Dominanz|Auszeichnungen|Lieblingspartner/);
- assert.match(html,/<h2 class="widget-label"><span class="live-ticker-statistics-heading">Elo-Entwicklung<span class="th-help-wrap live-ticker-statistics-heading-help">/);
- assert.match(html,/data-help-tooltip-anchor>\?<\/span>[\s\S]*Die Fächer zeigen die Bereiche der möglichen Elo-Werte nach der Partie: grün bei einem Sieg und rot bei einer Niederlage\. Die gestrichelte Linie zeigt den Elo-Wert des Auto-Tipps\./);
+ assert.match(html,/<h2 class="widget-label"><span class="match-statistics-heading">Elo-Entwicklung<span class="th-help-wrap match-statistics-heading-help">/);
+ assert.match(html,/data-help-tooltip-anchor>\?<\/span>[\s\S]*Die Fächer zeigen die Bereiche der möglichen Elo-Werte nach der Partie: grün bei einem Sieg und rot bei einer Niederlage\. Die gestrichelte Linie zeigt die Elo-Prognose des wahrscheinlichsten Ergebnisses\./);
+ assert.doesNotMatch(html,/Auto-Tipp/);
  d.rematches=[];d.company=null;d.impacts=[];d.countsForElo=false;d.players.forEach(player=>{player.relationships=[];});const empty=render(d);
- assert.doesNotMatch(empty,/live-ticker-statistics-context|Vorgeschichte|Elo-Entwicklung/);assert.match(empty,/Keine bedeutenden Auswirkungen/);
+ assert.doesNotMatch(empty,/match-statistics-context|Vorgeschichte|Elo-Entwicklung/);assert.match(empty,/Keine bedeutenden Auswirkungen/);
  assert.match(render({...d,availability:'basic'}),/ausführliche Vorschau folgt/);
  assert.doesNotMatch(render({...d,availability:'basic'}),/Rangliste/);
 });
-test('relationship facts use centered sentences in their own container',()=>{
+test('relationship facts combine each player\'s statements in one centered sentence',()=>{
  const d=fixture();
  d.players[0].relationships=[
   {kind:'successPartner',playerId:'agnes_k',name:'Agnes K.',matches:4,wins:3},
@@ -66,48 +79,51 @@ test('relationship facts use centered sentences in their own container',()=>{
   {kind:'fearedOpponent',playerId:'agnes_k',name:'Agnes K.',matches:4,wins:1}
  ];
  const html=render(d);
- const context=html.match(/<section class="live-ticker-statistics-context"[\s\S]*?<\/section>/)?.[0]||'';
- assert.equal((context.match(/live-ticker-statistics-context-fact live-ticker-statistics-relationship/g)||[]).length,8);
+ const context=html.match(/<section class="match-statistics-context"[\s\S]*?<\/section>/)?.[0]||'';
+ assert.equal((context.match(/match-statistics-context-fact match-statistics-relationship/g)||[]).length,2);
  assert.match(context,/Firmenduell/);
  assert.match(context,/<strong>Rematch #1<\/strong>/);
- assert.match(context,/spielt mit ihrer aktuellen Erfolgspartnerin/);
- assert.match(context,/spielt mit ihrem aktuellen Angstpartner/);
- assert.match(context,/trifft auf ihren aktuellen Lieblingsgegner/);
- assert.match(context,/trifft auf ihren aktuellen Angstgegner/);
- assert.match(context,/spielt mit seinem aktuellen Erfolgspartner/);
- assert.match(context,/spielt mit seiner aktuellen Angstpartnerin/);
- assert.match(context,/trifft auf seinen aktuellen Lieblingsgegner/);
- assert.match(context,/trifft auf seine aktuelle Angstgegnerin/);
+ assert.match(context,/data-player-profile-id="greta_p"[\s\S]*spielt mit ihrer aktuellen Erfolgspartnerin[\s\S]*, spielt mit ihrem aktuellen Angstpartner[\s\S]*, trifft auf ihren aktuellen Lieblingsgegner[\s\S]* und trifft auf ihren aktuellen Angstgegner/);
+ assert.match(context,/data-player-profile-id="christoph_l"[\s\S]*spielt mit seinem aktuellen Erfolgspartner[\s\S]*, spielt mit seiner aktuellen Angstpartnerin[\s\S]*, trifft auf seinen aktuellen Lieblingsgegner[\s\S]* und trifft auf seine aktuelle Angstgegnerin/);
+ assert.equal((context.match(/data-player-profile-id="greta_p"/g)||[]).length,1);
+ assert.equal((context.match(/data-player-profile-id="christoph_l"/g)||[]).length,2);
+});
+test('two relationship facts are connected with und without a comma',()=>{
+ const d=fixture();
+ d.players[0].relationships.push({kind:'fearedOpponent',playerId:'marco_m',name:'Marco M.',matches:3,wins:1});
+ const context=render(d).match(/<section class="match-statistics-context"[\s\S]*?<\/section>/)?.[0]||'';
+ assert.match(context,/Greta P\.[\s\S]*spielt mit ihrer aktuellen Erfolgspartnerin[\s\S]*\(3 von 4\)<\/span> und trifft auf ihren aktuellen Angstgegner[\s\S]*\(1 von 3\)<\/span>\.<\/p>/);
+ assert.doesNotMatch(context,/<\/span>, und/);
 });
 test('rematches and earlier duels form one numbered multiline fact',()=>{
  const d=fixture();
  d.rematches.push({id:'older',date:'2026-05-01T16:00:00Z',season:'Winter 2025',result:'4:6, 6:4, 10:8',team:2,outcome:'loss'});
  const html=render(d);
- const history=html.match(/<p class="live-ticker-statistics-context-fact live-ticker-statistics-rematches">[\s\S]*?<\/p>/)?.[0]||'';
+ const history=html.match(/<p class="match-statistics-context-fact match-statistics-rematches">[\s\S]*?<\/p>/)?.[0]||'';
  assert.match(history,/<strong>Rematch #2<\/strong>[\s\S]*?6:2, 6:3<\/span><br><span><strong>Früheres Duell<\/strong>/);
  assert.match(history,/6:4, 4:6, 8:10/);
- assert.equal((html.match(/live-ticker-statistics-rematches/g)||[]).length,1);
+ assert.equal((html.match(/match-statistics-rematches/g)||[]).length,1);
 });
 test('possible Elo peaks use an outline icon and achieved peaks use a filled icon',()=>{
  const preview=render(fixture());
- const previewImpactPanel=preview.match(/<section class="live-ticker-statistics-section live-ticker-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
+ const previewImpactPanel=preview.match(/<section class="match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
  assert.match(previewImpactPanel,/Greta P\.[\s\S]*?Kann einen neuen Elo-Höchstwert erreichen\./);
  assert.equal((preview.match(/Kann einen neuen Elo-Höchstwert erreichen\./g)||[]).length,1);
  assert.doesNotMatch(preview,/Neuer Höchstwert möglich/);
- assert.match(preview,/class="live-ticker-statistics-peak-star possible"/);
- assert.match(preview,/href="#statistics-peak-star-icon"[^>]+width="14" height="14" class="live-ticker-statistics-peak-star possible"/);
+ assert.match(preview,/class="match-statistics-peak-star possible"/);
+ assert.match(preview,/href="#statistics-peak-star-icon"[^>]+width="14" height="14" class="match-statistics-peak-star possible"/);
  assert.doesNotMatch(preview,/★/);
  const analysis=render(fixture('analysis'));
- const impactPanel=analysis.match(/<section class="live-ticker-statistics-section live-ticker-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
+ const impactPanel=analysis.match(/<section class="match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
  assert.match(impactPanel,/Greta P\.[\s\S]*?Erreicht einen neuen Elo-Höchstwert\./);
  assert.equal((analysis.match(/Erreicht einen neuen Elo-Höchstwert\./g)||[]).length,1);
- assert.match(analysis,/class="live-ticker-statistics-peak-star achieved"/);
- assert.match(analysis,/class="live-ticker-statistics-value live-ticker-statistics-delta-value pos">\+36<\/text>/);
- assert.match(analysis,/class="live-ticker-statistics-value live-ticker-statistics-delta-value neg">-36<\/text>/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-peak-star\.possible \{ fill: none; stroke: var\(--positiv\); \}/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-peak-star\.achieved \{ fill: var\(--statistics-team-color, var\(--accent\)\);/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-svg \.live-ticker-statistics-delta-value\.pos \{ fill: var\(--positiv\); \}/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-svg \.live-ticker-statistics-delta-value\.neg \{ fill: var\(--negativ\); \}/);
+ assert.match(analysis,/class="match-statistics-peak-star achieved"/);
+ assert.match(analysis,/class="match-statistics-value match-statistics-delta-value pos">\+36<\/text>/);
+ assert.match(analysis,/class="match-statistics-value match-statistics-delta-value neg">-36<\/text>/);
+ assert.match(statisticsStyleSource,/\.match-statistics-peak-star\.possible \{ fill: none; stroke: var\(--positiv\); \}/);
+ assert.match(statisticsStyleSource,/\.match-statistics-peak-star\.achieved \{ fill: var\(--statistics-team-color, var\(--accent\)\);/);
+ assert.match(statisticsStyleSource,/\.match-statistics-svg \.match-statistics-delta-value\.pos \{ fill: var\(--positiv\); \}/);
+ assert.match(statisticsStyleSource,/\.match-statistics-svg \.match-statistics-delta-value\.neg \{ fill: var\(--negativ\); \}/);
 });
 test('significant impacts are grouped as facts below each affected player',()=>{
  const d=fixture();
@@ -115,7 +131,7 @@ test('significant impacts are grouped as facts below each affected player',()=>{
   {kind:'qualificationPossible',playerId:'agnes_k',places:4,onWin:true}
  );
  const html=render(d);
- const panel=html.match(/<section class="live-ticker-statistics-section live-ticker-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
+ const panel=html.match(/<section class="match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
  assert.equal((panel.match(/data-player-profile-id="agnes_k"/g)||[]).length,1);
  assert.match(panel,/Agnes K\.[\s\S]*Kann bei einem Sieg die Tabellenführung übernehmen\.[\s\S]*Kann bei einem Sieg die Top 4 erreichen\./);
  assert.doesNotMatch(panel,/Agnes K\. kann|Team 1 gewinnt/);
@@ -173,8 +189,8 @@ test('team-wide match outcomes appear once in the general match context',()=>{
   const d=fixture('analysis');
   d.impacts.push(impact);
   const html=render(d);
-  const context=html.match(/<section class="live-ticker-statistics-context"[\s\S]*?<\/section>/)?.[0]||'';
-  const panel=html.match(/<section class="live-ticker-statistics-section live-ticker-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
+  const context=html.match(/<section class="match-statistics-context"[\s\S]*?<\/section>/)?.[0]||'';
+  const panel=html.match(/<section class="match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
   assert.equal(html.split(text).length-1,1);
   assert.ok(context.includes(text));
   assert.doesNotMatch(panel,/Favoritenrolle|statistische Überraschung/);
@@ -197,22 +213,22 @@ test('statistical upset starts at 45 percent',()=>{
  }
 });
 test('interactive player names use the accent color in the statistics dialog',()=>{
- assert.match(statisticsStyleSource,/#live-ticker-dialog\[data-mode="statistics"\] \.player-profile-link:is\(:hover, :focus-visible, :active\) \{ color: var\(--accent\) !important; \}/);
+ assert.match(statisticsStyleSource,/#detail-view-dialog\[data-mode="statistics"\] \.player-profile-link:is\(:hover, :focus-visible, :active\) \{ color: var\(--accent\) !important; \}/);
 });
 test('the selected viewer is blue and bold throughout the statistics dialog',()=>{
  const html=render(fixture(),'agnes_k');
  assert.equal((html.match(/viewer-player/g)||[]).length,5);
- assert.match(html,/live-ticker-player-name viewer-player">Agnes K\./);
+ assert.match(html,/match-detail-player-name viewer-player">Agnes K\./);
  assert.match(html,/pname player-profile-link viewer-player" data-player-profile-id="agnes_k"/);
- assert.match(html,/live-ticker-statistics-impact-player-name player-profile-link viewer-player" data-player-profile-id="agnes_k"/);
- assert.match(html,/live-ticker-statistics-relationship-name player-profile-link viewer-player" data-player-profile-id="agnes_k"/);
- assert.match(html,/live-ticker-statistics-player-label viewer-player">Agnes K\./);
+ assert.match(html,/match-statistics-impact-player-name player-profile-link viewer-player" data-player-profile-id="agnes_k"/);
+ assert.match(html,/match-statistics-relationship-name player-profile-link viewer-player" data-player-profile-id="agnes_k"/);
+ assert.match(html,/match-statistics-player-label viewer-player">Agnes K\./);
  assert.doesNotMatch(render(fixture()),/viewer-player/);
  assert.match(appSource,/window\.PadelLigaGetSelectedViewerId = \(\) => isParticipantView\(\) \? selectedViewerId : null;/);
- assert.match(source,/render\(data, window\.PadelLigaGetSelectedViewerId\?\.\(\)\)/);
- assert.match(statisticsStyleSource,/#live-ticker-dialog\[data-mode="statistics"\] \.viewer-player \{ color: var\(--accent2\); font-weight: 700; \}/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-svg \.live-ticker-statistics-player-label\.viewer-player \{ fill: var\(--accent2\); font-weight: 700; \}/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-context \{[\s\S]*?text-align: center;/);
+ assert.match(source,/render\(activeData, window\.PadelLigaGetSelectedViewerId\?\.\(\), \{/);
+ assert.match(statisticsStyleSource,/#detail-view-dialog\[data-mode="statistics"\] \.viewer-player \{ color: var\(--accent2\); font-weight: 700; \}/);
+ assert.match(statisticsStyleSource,/\.match-statistics-svg \.match-statistics-player-label\.viewer-player \{ fill: var\(--accent2\); font-weight: 700; \}/);
+ assert.match(statisticsStyleSource,/\.match-statistics-context \{[\s\S]*?text-align: center;/);
 });
 test('match header and full ranking follow ticker and ranking conventions',()=>{
  const d=fixture();d.players[0].profileEmoji='👩';
@@ -222,63 +238,63 @@ test('match header and full ranking follow ticker and ranking conventions',()=>{
  assert.equal(playedOrderLabel({...d,availability:'analysis',leaguePlayedOrdinal:18}),'Als 18. Partie gespielt');
  assert.equal(playedOrderLabel(d),'');
  assert.doesNotMatch(html,/Partievorschau|Partieanalyse/);
- assert.match(html,/<div class="live-ticker-match-meta"><span class="live-ticker-status">Offen<\/span><\/div>/);
- assert.match(analysisHtml,/<div class="live-ticker-match-meta"><span class="live-ticker-status is-finished">Beendet<\/span><\/div>/);
- assert.match(html,/Gewinnchance[\s\S]*match-probability live-ticker-probability match-statistics-probability[\s\S]*match-probability-value">61<\/span>[\s\S]*match-probability-separator"[^>]*>:<\/span>[\s\S]*match-probability-value">39<\/span>[\s\S]*live-ticker-score-note">Prozent<\/span>/);
+ assert.match(html,/<div class="match-detail-meta"><span class="match-detail-status">Offen<\/span><\/div>/);
+ assert.match(analysisHtml,/<div class="match-detail-meta"><span class="match-detail-status is-finished">Beendet<\/span><\/div>/);
+ assert.match(html,/Gewinnchance[\s\S]*match-probability match-detail-probability match-statistics-probability[\s\S]*match-probability-value">61<\/span>[\s\S]*match-probability-separator"[^>]*>:<\/span>[\s\S]*match-probability-value">39<\/span>[\s\S]*match-detail-score-note">Prozent<\/span>/);
  assert.match(analysisHtml,/61% : 39%/);
- assert.doesNotMatch(html,/20\.10\.2026/);assert.match(html,/live-ticker-player-emoji" hidden>👩/);
- assert.match(html,/class="rt live-ticker-statistics-ranking"/);
- assert.equal((html.match(/live-ticker-statistics-ranking-gap/g)||[]).length,0);
- assert.equal((html.match(/live-ticker-statistics-ranking-player/g)||[]).length,4);
- assert.equal((html.match(/live-ticker-statistics-ranking-other/g)||[]).length,4);
- assert.equal((html.match(/live-ticker-statistics-ranking-qualified/g)||[]).length,8);
- assert.match(html,/live-ticker-statistics-ranking-player r1 live-ticker-statistics-ranking-qualified[\s\S]*?live-ticker-statistics-rank-position">1<\/span>/);
- assert.match(html,/live-ticker-statistics-ranking-player r3 live-ticker-statistics-ranking-qualified[\s\S]*?live-ticker-statistics-rank-position">3<\/span>/);
- assert.doesNotMatch(render({...d,qualificationPlaces:0}),/live-ticker-statistics-ranking-qualified/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-ranking \.col-diff \{ padding-right: 1rem !important; \}/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-ranking tbody tr\.live-ticker-statistics-ranking-player td:last-child \{\s*box-shadow: inset -3px 0 0 var\(--statistics-team-color\);/);
- assert.match(statisticsStyleSource,/#live-ticker-dialog\[data-mode="statistics"\] \.live-ticker-team \.live-ticker-player-photo \{\s*border: 2px solid var\(--statistics-team-color\);/);
+ assert.doesNotMatch(html,/20\.10\.2026/);assert.match(html,/match-detail-player-emoji" hidden>👩/);
+ assert.match(html,/class="rt match-statistics-ranking"/);
+ assert.equal((html.match(/match-statistics-ranking-gap/g)||[]).length,0);
+ assert.equal((html.match(/match-statistics-ranking-player/g)||[]).length,4);
+ assert.equal((html.match(/match-statistics-ranking-other/g)||[]).length,4);
+ assert.equal((html.match(/match-statistics-ranking-qualified/g)||[]).length,8);
+ assert.match(html,/match-statistics-ranking-player r1 match-statistics-ranking-qualified[\s\S]*?match-statistics-rank-position">1<\/span>/);
+ assert.match(html,/match-statistics-ranking-player r3 match-statistics-ranking-qualified[\s\S]*?match-statistics-rank-position">3<\/span>/);
+ assert.doesNotMatch(render({...d,qualificationPlaces:0}),/match-statistics-ranking-qualified/);
+ assert.match(statisticsStyleSource,/\.match-statistics-ranking \.col-diff \{ padding-right: 1rem !important; \}/);
+ assert.match(statisticsStyleSource,/\.match-statistics-ranking tbody tr\.match-statistics-ranking-player td:last-child \{\s*box-shadow: inset -3px 0 0 var\(--statistics-team-color\);/);
+ assert.match(statisticsStyleSource,/#detail-view-dialog\[data-mode="statistics"\] \.match-detail-team \.match-detail-player-photo \{\s*border: 2px solid var\(--statistics-team-color\);/);
  const withoutBoundary={...d};delete withoutBoundary.qualificationPlaces;
  global.window={PADEL_SEASONS:[{id:'2026-sommer',qualificationPlaces:4},{id:'2026-winter',databaseId:'winter-2026',qualificationPlaces:8}]};
  try {
-  assert.equal((render(withoutBoundary).match(/live-ticker-statistics-ranking-qualified/g)||[]).length,4);
-  assert.equal((render({...withoutBoundary,seasonId:'winter-2026'}).match(/live-ticker-statistics-ranking-qualified/g)||[]).length,8);
+  assert.equal((render(withoutBoundary).match(/match-statistics-ranking-qualified/g)||[]).length,4);
+  assert.equal((render({...withoutBoundary,seasonId:'winter-2026'}).match(/match-statistics-ranking-qualified/g)||[]).length,8);
  } finally { delete global.window; }
- assert.match(html,/live-ticker-statistics-ranking-layout/);
- assert.match(html,/live-ticker-statistics-section live-ticker-statistics-ranking-panel/);
- assert.match(html,/live-ticker-statistics-section live-ticker-statistics-impact-panel/);
- assert.equal((html.match(/<h2 class="widget-label">/g)||[]).length,4);
+ assert.match(html,/match-statistics-ranking-layout/);
+ assert.match(html,/match-statistics-section match-statistics-ranking-panel/);
+ assert.match(html,/match-statistics-section match-statistics-impact-panel/);
+ assert.equal((html.match(/<h2 class="widget-label">/g)||[]).length,3);
  assert.doesNotMatch(html,/<h2 class="spieltag-label">/);
  assert.doesNotMatch(html,/Siege in Folge|Niederlagen in Folge/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-ranking tbody tr\.live-ticker-statistics-ranking-other td \{[\s\S]*?font-size: var\(--text-xs\);/);
+ assert.match(statisticsStyleSource,/\.match-statistics-ranking tbody tr\.match-statistics-ranking-other td \{[\s\S]*?font-size: var\(--text-xs\);/);
  assert.match(html,/<th class="col-rank"><span aria-hidden="true">#<\/span><span class="sr-only">Platz<\/span><\/th>/);
  assert.match(html,/<th class="col-wins">Siege<\/th>/);
  assert.match(html,/<td class="col-wins">3<\/td>/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-ranking :is\(th, td\):is\(\.col-games, \.col-wins, \.col-points, \.col-diff\) \{[\s\S]*?text-align: center;[\s\S]*?font-variant-numeric: tabular-nums;/);
- assert.match(statisticsStyleSource,/@media \(max-width: 768px\) \{[\s\S]*?\.live-ticker-statistics-ranking \.col-wins \{ display: none; \}/);
- assert.match(statisticsStyleSource,/table\.rt\.live-ticker-statistics-ranking \{ width: 100%; min-width: 0;[\s\S]*?table-layout: fixed;/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-ranking \.player-profile-link \{[\s\S]*?text-overflow: ellipsis;/);
+ assert.match(statisticsStyleSource,/\.match-statistics-ranking :is\(th, td\):is\(\.col-games, \.col-wins, \.col-points, \.col-diff\) \{[\s\S]*?text-align: center;[\s\S]*?font-variant-numeric: tabular-nums;/);
+ assert.match(statisticsStyleSource,/@media \(max-width: 768px\) \{[\s\S]*?\.match-statistics-ranking \.col-wins \{ display: none; \}/);
+ assert.match(statisticsStyleSource,/table\.rt\.match-statistics-ranking \{ width: 100%; min-width: 0;[\s\S]*?table-layout: fixed;/);
+ assert.match(statisticsStyleSource,/\.match-statistics-ranking \.player-profile-link \{[\s\S]*?text-overflow: ellipsis;/);
 });
 test('completed league order is rendered below title and season metadata in text-xs',()=>{
- assert.match(indexSource,/<div class="sh-title" id="live-ticker-title">FINAL FOUR<\/div>\s*<div class="sh-meta" id="live-ticker-season-label"><\/div>\s*<div class="live-ticker-dialog-played-order" id="match-statistics-played-order" hidden><\/div>/);
- assert.match(styleSource,/\.live-ticker-dialog-played-order \{[\s\S]*?font-size: var\(--text-xs\);/);
+ assert.match(indexSource,/<div class="sh-title" id="detail-view-title">FINAL FOUR<\/div>\s*<div class="sh-meta" id="detail-view-context"><\/div>\s*<div class="detail-view-played-order" id="match-statistics-played-order" hidden><\/div>/);
+ assert.match(styleSource,/\.detail-view-played-order \{[\s\S]*?font-size: var\(--text-xs\);/);
  assert.match(source,/function restore\(\) \{[\s\S]*?setPlayedOrder\(\);/);
 });
 test('completed rankings align historical movement in a dedicated column',()=>{
  const preview=render(fixture());
- assert.doesNotMatch(preview,/live-ticker-statistics-rank-change/);
+ assert.doesNotMatch(preview,/match-statistics-rank-change/);
  assert.doesNotMatch(preview,/col-rank-change/);
  const analysis=render(fixture('analysis'));
  assert.match(analysis,/<th class="col-rank-change"><span class="sr-only">Platzänderung<\/span><\/th>/);
- assert.match(analysis,/live-ticker-statistics-rank-position">1<\/span><\/td><td class="col-rank-change"><span class="live-ticker-statistics-rank-change up" aria-label="Tabellenplatz verbessert">↑<\/span>/);
- assert.match(analysis,/live-ticker-statistics-rank-position">2<\/span><\/td><td class="col-rank-change"><span class="live-ticker-statistics-rank-change down" aria-label="Tabellenplatz verschlechtert">↓<\/span>/);
- assert.match(analysis,/live-ticker-statistics-rank-position">3<\/span><\/td><td class="col-rank-change"><span class="live-ticker-statistics-rank-change same" aria-label="Tabellenplatz unverändert">–<\/span>/);
- assert.match(analysis,/class="rt live-ticker-statistics-ranking has-rank-change"/);
- assert.match(statisticsStyleSource,/table\.rt\.live-ticker-statistics-ranking \.col-rank \{[\s\S]*?text-align: center;[\s\S]*?font-variant-numeric: tabular-nums;/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-ranking\.has-rank-change \.col-rank \{[\s\S]*?width: 40px;[\s\S]*?padding-left: 8px !important;[\s\S]*?padding-right: 2px !important;/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-ranking \.col-rank-change \{[\s\S]*?width: 24px;[\s\S]*?padding-left: 0 !important;[\s\S]*?padding-right: 8px !important;[\s\S]*?text-align: center;/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-rank-change\.up \{ color: var\(--positiv\); \}/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-rank-change\.down \{ color: var\(--negativ\); \}/);
+ assert.match(analysis,/match-statistics-rank-position">1<\/span><\/td><td class="col-rank-change"><span class="match-statistics-rank-change up" aria-label="Tabellenplatz verbessert">↑<\/span>/);
+ assert.match(analysis,/match-statistics-rank-position">2<\/span><\/td><td class="col-rank-change"><span class="match-statistics-rank-change down" aria-label="Tabellenplatz verschlechtert">↓<\/span>/);
+ assert.match(analysis,/match-statistics-rank-position">3<\/span><\/td><td class="col-rank-change"><span class="match-statistics-rank-change same" aria-label="Tabellenplatz unverändert">–<\/span>/);
+ assert.match(analysis,/class="rt match-statistics-ranking has-rank-change"/);
+ assert.match(statisticsStyleSource,/table\.rt\.match-statistics-ranking \.col-rank \{[\s\S]*?text-align: center;[\s\S]*?font-variant-numeric: tabular-nums;/);
+ assert.match(statisticsStyleSource,/\.match-statistics-ranking\.has-rank-change \.col-rank \{[\s\S]*?width: 40px;[\s\S]*?padding-left: 8px !important;[\s\S]*?padding-right: 2px !important;/);
+ assert.match(statisticsStyleSource,/\.match-statistics-ranking \.col-rank-change \{[\s\S]*?width: 24px;[\s\S]*?padding-left: 0 !important;[\s\S]*?padding-right: 8px !important;[\s\S]*?text-align: center;/);
+ assert.match(statisticsStyleSource,/\.match-statistics-rank-change\.up \{ color: var\(--positiv\); \}/);
+ assert.match(statisticsStyleSource,/\.match-statistics-rank-change\.down \{ color: var\(--negativ\); \}/);
 });
 test('alternating between match and profile reuses one browser history entry',()=>{
  assert.match(source,/prepareProfileOpen[\s\S]*?history\.replaceState\(\{ \.\.\.window\.history\.state, statisticsProfile: playerId/);
@@ -293,7 +309,7 @@ test('homepage match cards link only their center values without a details icon'
 });
 test('match score hover colors every value and keeps the icon in the lower line',()=>{
  assert.match(styleSource,/button\.mc-score:hover :is\(\.mc-score-main, \.mc-prob, \.mc-result-prob, \.mc-pending-label, \.mc-score-detail, \.mc-score-details-icon\)/);
- assert.match(styleSource,/#spielplan \.mc\.played button\.mc-score \.mc-score-detail \{\s*pointer-events: auto;/);
+ assert.match(styleSource,/:is\(#spielplan, #final-four-spielplan\) \.mc\.played button\.mc-score \.mc-score-detail \{\s*pointer-events: auto;/);
  assert.match(styleSource,/\.mc-score-result-with-details,[\s\S]*?\.mc-pending-label:has\(\.mc-score-details-icon\)[\s\S]*?display: inline-flex/);
  assert.match(styleSource,/\.mc-score-details-icon \{[\s\S]*?position: static;[\s\S]*?margin-left: 5px;[\s\S]*?transform: none/);
 });
@@ -305,11 +321,11 @@ test('graph remains finite and clipped for identical, tight and extreme Elo valu
  }
  const html=render(fixture());
  assert.match(html,/viewBox="0 0 1000 590" width="1000" height="590"/);
- assert.match(html,/class="live-ticker-statistics-value live-ticker-statistics-start-value">1\.050<\/text>/);
- assert.match(html,/<use href="#statistics-peak-star-icon"[^>]+class="live-ticker-statistics-peak-star possible"\/><text x="[^"]+" y="[^"]+" text-anchor="end" class="live-ticker-statistics-value live-ticker-statistics-win-value">↗ 1\.135<\/text><text x="[^"]+" y="[^"]+" text-anchor="end" class="live-ticker-statistics-value live-ticker-statistics-win-value">↘ 1\.090<\/text>/);
- assert.match(html,/<text x="[^"]+" y="[^"]+" text-anchor="end" class="live-ticker-statistics-value live-ticker-statistics-loss-value">↗ 1\.010<\/text><text x="[^"]+" y="[^"]+" text-anchor="end" class="live-ticker-statistics-value live-ticker-statistics-loss-value">↘ 965<\/text>/);
- assert.doesNotMatch(html,/live-ticker-statistics-(?:win|loss)-value[\s\S]*?\sbis\s[\s\S]*?<\/text>/);
- assert.doesNotMatch(html,/live-ticker-statistics-elo-values|Ausgangswert:|Bei Sieg:|Bei Niederlage:/);
+ assert.match(html,/class="match-statistics-value match-statistics-start-value">1\.050<\/text>/);
+ assert.match(html,/<use href="#statistics-peak-star-icon"[^>]+class="match-statistics-peak-star possible"\/><text x="[^"]+" y="[^"]+" text-anchor="end" class="match-statistics-value match-statistics-win-value">↗ 1\.135<\/text><text x="[^"]+" y="[^"]+" text-anchor="end" class="match-statistics-value match-statistics-win-value">↘ 1\.090<\/text>/);
+ assert.match(html,/<text x="[^"]+" y="[^"]+" text-anchor="end" class="match-statistics-value match-statistics-loss-value">↗ 1\.010<\/text><text x="[^"]+" y="[^"]+" text-anchor="end" class="match-statistics-value match-statistics-loss-value">↘ 965<\/text>/);
+ assert.doesNotMatch(html,/match-statistics-(?:win|loss)-value[\s\S]*?\sbis\s[\s\S]*?<\/text>/);
+ assert.doesNotMatch(html,/match-statistics-elo-values|Ausgangswert:|Bei Sieg:|Bei Niederlage:/);
  const geometry=graphGeometry(fixture().players,false);assert.equal(geometry.y(geometry.max),28);
  const layoutGeometry={plotTop:28,nameY:556,y:value=>value};
  assert.equal(analysisResultY(layoutGeometry,100,200),170);
@@ -318,68 +334,48 @@ test('graph remains finite and clipped for identical, tight and extreme Elo valu
  assert.ok([200,30,510].every((endpoint,index)=>Math.abs(endpoint-[170,54,480][index])>=24));
  assert.match(skeleton(),/role="status"/);assert.match(skeleton(),/aria-hidden="true"/);assert.doesNotMatch(skeleton(),/tabindex|<button/);
 });
-test('preview Elo projections use uniform confidence bands with the Elo favorite forecast',()=>{
+test('preview Elo projections use uniform confidence bands with a dashed forecast path',()=>{
  const html=render(fixture());
- assert.equal((html.match(/live-ticker-statistics-projection-band win/g)||[]).length,4);
- assert.equal((html.match(/live-ticker-statistics-projection-band loss/g)||[]).length,4);
- assert.doesNotMatch(html,/live-ticker-statistics-projection-band-strip|fill-opacity=/);
- assert.ok(html.indexOf('live-ticker-statistics-projection-band loss')<html.indexOf('live-ticker-statistics-projection-band win'));
+ assert.equal((html.match(/match-statistics-projection-band win/g)||[]).length,4);
+ assert.equal((html.match(/match-statistics-projection-band loss/g)||[]).length,4);
+ assert.doesNotMatch(html,/match-statistics-projection-band-strip|fill-opacity=/);
+ assert.ok(html.indexOf('match-statistics-projection-band loss')<html.indexOf('match-statistics-projection-band win'));
  assert.doesNotMatch(html,/<linearGradient|<stop/);
- assert.doesNotMatch(html,/live-ticker-statistics-projection-dot/);
- assert.equal((html.match(/live-ticker-statistics-forecast-line win/g)||[]).length,2);
- assert.equal((html.match(/live-ticker-statistics-forecast-line loss/g)||[]).length,2);
- assert.equal((html.match(/live-ticker-statistics-forecast-dot/g)||[]).length,4);
- const even=render({...fixture(),probability:.5});
- assert.equal((even.match(/live-ticker-statistics-forecast-line win/g)||[]).length,2);
- assert.equal((even.match(/live-ticker-statistics-forecast-line loss/g)||[]).length,2);
- const bandPaths=[...html.matchAll(/<path d="([^"]+)" class="live-ticker-statistics-projection-band (?:win|loss)"\/>/g)].map(match=>match[1]);
+ assert.doesNotMatch(html,/match-statistics-projection-dot/);
+ assert.equal((html.match(/match-statistics-forecast-line win/g)||[]).length,2);
+ assert.equal((html.match(/match-statistics-forecast-line loss/g)||[]).length,2);
+ assert.equal((html.match(/match-statistics-forecast-dot/g)||[]).length,4);
+ const bandPaths=[...html.matchAll(/<path d="([^"]+)" class="match-statistics-projection-band (?:win|loss)"\/>/g)].map(match=>match[1]);
  assert.equal(bandPaths.length,8);assert.ok(bandPaths.every(path=>path.includes(' C')&&path.endsWith(' Z')));
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-projection-band \{ stroke: none; fill-opacity: \.5; \}/);
- const forecastPaths=[...html.matchAll(/<path d="([^"]+)" class="live-ticker-statistics-forecast-line (?:win|loss)"\/>/g)].map(match=>match[1]);
+ assert.match(statisticsStyleSource,/\.match-statistics-projection-band \{ stroke: none; fill-opacity: \.5; \}/);
+ const forecastPaths=[...html.matchAll(/<path d="([^"]+)" class="match-statistics-forecast-line (?:win|loss)"\/>/g)].map(match=>match[1]);
  assert.equal(forecastPaths.length,4);assert.ok(forecastPaths.every(path=>path.includes(' C')));
- const analysisPaths=[...render(fixture('analysis')).matchAll(/<path d="([^"]+)" class="live-ticker-statistics-line"\/>/g)].map(match=>match[1]);
+ const analysisPaths=[...render(fixture('analysis')).matchAll(/<path d="([^"]+)" class="match-statistics-line"\/>/g)].map(match=>match[1]);
  assert.equal(analysisPaths.length,4);assert.ok(analysisPaths.every(path=>path.includes(' C')));
 });
-test('preview forecast uses the calculator auto-tip score for the exact Elo projection',()=>{
- const cases=[[80,['6','0'],['6','0']], [70,['6','1'],['6','1']], [63,['6','2'],['6','2']], [58,['6','3'],['6','3']], [54,['6','4'],['6','4']], [53,['6','4'],['4','6']]];
- for(const [probability,set1,set2] of cases){
-  const forecast=getAutoTipForecast(probability,[1050,1100],[1000,950]);
-  assert.deepEqual(forecast.entry.set1,set1);
-  assert.deepEqual(forecast.entry.set2,set2);
-  const html=render({...fixture(),probability:probability/100});
-  const panel=html.match(/<section class="live-ticker-statistics-section live-ticker-statistics-autotip-panel">[\s\S]*?<\/section>/)?.[0]||'';
-  const result=[...forecast.score.regularSets,...(forecast.score.matchTiebreak?[forecast.score.matchTiebreak]:[])].map(set=>set.join(':')).join(', ');
-  assert.ok(panel.includes(result));
-  assert.ok(panel.includes(probability===53?'2:1':'2:0'));
-  assert.ok(html.indexOf('Auto-Tipp-Prognose')<html.indexOf('Was sich verändern kann'));
+test('the auto-tip result panel stays absent while the Elo forecast path remains',()=>{
+ for(const data of [fixture(),fixture('analysis'),fixture('basic'),{...fixture(),probability:null},{...fixture(),countsForElo:false}]){
+  assert.doesNotMatch(render(data),/Auto-Tipp|match-statistics-autotip/);
  }
- const close=getAutoTipForecast(53,[1050,1100],[1000,950]);
- assert.deepEqual(close.entry.tb,['10','8']);
- assert.equal(projectElo(1050,[1000,950],true,close.pointFactor),1092);
- const tied=getAutoTipForecast(50,[1050,1100],[1000,1200]);
- assert.equal(tied.winner,2);assert.deepEqual(tied.entry.set1,['4','6']);
- const tiedData=fixture();tiedData.probability=.5;tiedData.players[3].elo.before=1200;
- assert.match(render(tiedData),/Satzergebnis 1:2[\s\S]*4:6, 6:4, 8:10/);
- assert.match(render({...fixture(),probability:.2}),/Satzergebnis 0:2[\s\S]*0:6, 0:6/);
- for(const data of [fixture('analysis'),fixture('basic'),{...fixture(),probability:null},{...fixture(),countsForElo:false}]){
-  assert.doesNotMatch(render(data),/Auto-Tipp-Prognose/);
- }
+ assert.match(render(fixture()),/match-statistics-forecast-line/);
+ assert.doesNotMatch(source,/renderAutoTipForecast|match-statistics-autotip/);
+ assert.doesNotMatch(statisticsStyleSource,/match-statistics-autotip/);
  assert.match(appSource,/window\.PadelEloForecast\.getAutoTipForecast/);
 });
 test('played Elo graphs keep solid 30 percent ranges behind the actual line',()=>{
  const html=render(fixture('analysis'));
- assert.equal((html.match(/live-ticker-statistics-projection-range win/g)||[]).length,4);
- assert.equal((html.match(/live-ticker-statistics-projection-range loss/g)||[]).length,4);
- assert.doesNotMatch(html,/live-ticker-statistics-projection-band-strip/);
+ assert.equal((html.match(/match-statistics-projection-range win/g)||[]).length,4);
+ assert.equal((html.match(/match-statistics-projection-range loss/g)||[]).length,4);
+ assert.doesNotMatch(html,/match-statistics-projection-band-strip/);
  assert.doesNotMatch(html,/<linearGradient|<stop/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-projection-range \{ stroke: none; fill-opacity: \.3; \}/);
- const firstRange=html.indexOf('live-ticker-statistics-projection-range');
- const firstLine=html.indexOf('live-ticker-statistics-line');
+ assert.match(statisticsStyleSource,/\.match-statistics-projection-range \{ stroke: none; fill-opacity: \.3; \}/);
+ const firstRange=html.indexOf('match-statistics-projection-range');
+ const firstLine=html.indexOf('match-statistics-line');
  assert.ok(firstRange>=0&&firstRange<firstLine,'the actual Elo line must be painted above the possible ranges');
 });
 test('mobile Elo graph overlays all players and selects the active trace',()=>{
  const html=render(fixture());
- assert.match(html,/live-ticker-statistics-graph-picker match-scope-toggle" role="group" aria-label="Spieler für Elo-Entwicklung auswählen"/);
+ assert.match(html,/match-statistics-graph-picker match-scope-toggle" role="group" aria-label="Spieler für Elo-Entwicklung auswählen"/);
  assert.match(html,/<button type="button" class="active" data-statistics-graph-select="greta_p" aria-pressed="true">Greta P\.<\/button>/);
  assert.equal((html.match(/data-statistics-graph-select=/g)||[]).length,4);
  assert.equal((html.match(/data-statistics-graph-player=/g)||[]).length,4);
@@ -387,9 +383,9 @@ test('mobile Elo graph overlays all players and selects the active trace',()=>{
  assert.match(html,/data-statistics-graph-player="marco_m" style="--statistics-lane-offset:-705px"/);
  assert.ok(html.lastIndexOf('data-statistics-graph-player="greta_p"')>html.lastIndexOf('data-statistics-graph-player="marco_m"'));
  assert.match(source,/graphPlayerButton = event\.target\.closest\('\[data-statistics-graph-select\]'\)[\s\S]*?button\.classList\.toggle\('active', isActive\)[\s\S]*?classList\.toggle\('is-selected', player === selected\)[\s\S]*?selected\.parentElement\.append\(selected\)/);
- assert.match(statisticsStyleSource,/@media \(max-width: 768px\)[\s\S]*?\.live-ticker-statistics-graph \{[\s\S]*?overflow-x: hidden;/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-graph-picker \{[\s\S]*?display: grid;[\s\S]*?grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-player-graph \{[\s\S]*?opacity: \.15;[\s\S]*?translateX\(var\(--statistics-lane-offset\)\)/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-player-graph\.is-selected \{ opacity: 1; \}/);
- assert.match(statisticsStyleSource,/\.live-ticker-statistics-player-graph:not\(\.is-selected\) \.live-ticker-statistics-value,[\s\S]*?\.live-ticker-statistics-player-label \{ display: none; \}/);
+ assert.match(statisticsStyleSource,/@media \(max-width: 768px\)[\s\S]*?\.match-statistics-graph \{[\s\S]*?overflow-x: hidden;/);
+ assert.match(statisticsStyleSource,/\.match-statistics-graph-picker \{[\s\S]*?display: grid;[\s\S]*?grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
+ assert.match(statisticsStyleSource,/\.match-statistics-player-graph \{[\s\S]*?opacity: \.15;[\s\S]*?translateX\(var\(--statistics-lane-offset\)\)/);
+ assert.match(statisticsStyleSource,/\.match-statistics-player-graph\.is-selected \{ opacity: 1; \}/);
+ assert.match(statisticsStyleSource,/\.match-statistics-player-graph:not\(\.is-selected\) \.match-statistics-value,[\s\S]*?\.match-statistics-player-label \{ display: none; \}/);
 });

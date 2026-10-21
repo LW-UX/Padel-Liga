@@ -59,9 +59,9 @@ test('legacy profiles without app_role still publish their player id', async () 
                     return {
                       data: {
                         id: session.user.id,
-                        display_name: 'Ludi GMX',
+                        display_name: 'Test GMX',
                         player_id: 'ludi_gmx',
-                        players: { display_name: 'Ludi GMX' }
+                        players: { display_name: 'Test GMX' }
                       },
                       error: null
                     };
@@ -238,16 +238,17 @@ test('all training selectors reuse the custom page viewer dropdown', () => {
   assert.match(styleSource, /\.training-picker\.open \.training-picker-search-input/);
 });
 
-test('Ludi training profiles are visible only to Ludi players and admins', () => {
+test('test training profiles are visible only to test players and admins', () => {
   const visibilityHelpers = tippspielSource.match(
-    /function isLudiTrainingPlayer\(player\) \{[\s\S]*?(?=\n  function renderTrainingForm)/
+    /function isTestTrainingPlayer\(player\) \{[\s\S]*?(?=\n  function renderTrainingForm)/
   )?.[0] || '';
   const getSelectablePlayers = vm.runInNewContext(
     `(() => { ${visibilityHelpers}\nreturn getSelectableTrainingPlayers; })()`
   );
   const players = [
     { id: 'regular', display_name: 'Anna A.' },
-    { id: 'ludi-gmx', display_name: 'Ludi GMX' },
+    { id: 'ludi_gmx', display_name: 'Test GMX' },
+    { id: 'test_net', display_name: 'Test Net' },
     { id: 'ludwig', display_name: 'Ludwig W.' }
   ];
 
@@ -256,12 +257,16 @@ test('Ludi training profiles are visible only to Ludi players and admins', () =>
     ['regular', 'ludwig']
   );
   assert.deepEqual(
-    JSON.parse(JSON.stringify(getSelectablePlayers(players, { app_role: 'player', player_id: 'ludi-gmx' }))).map(player => player.id),
-    ['regular', 'ludi-gmx', 'ludwig']
+    JSON.parse(JSON.stringify(getSelectablePlayers(players, { app_role: 'player', player_id: 'ludi_gmx' }))).map(player => player.id),
+    ['regular', 'ludi_gmx', 'test_net', 'ludwig']
+  );
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(getSelectablePlayers(players, { app_role: 'player', player_id: 'test_net' }))).map(player => player.id),
+    ['regular', 'ludi_gmx', 'test_net', 'ludwig']
   );
   assert.deepEqual(
     JSON.parse(JSON.stringify(getSelectablePlayers(players, { app_role: 'admin', player_id: 'regular' }))).map(player => player.id),
-    ['regular', 'ludi-gmx', 'ludwig']
+    ['regular', 'ludi_gmx', 'test_net', 'ludwig']
   );
 });
 
@@ -321,7 +326,7 @@ test('scheduling, unscheduling, unrated matches and future result entry use thei
   assert.match(tippspielSource, /openUnrateDialog\(cancelMatchButton\)/);
   assert.match(indexSource, /<dialog class="auth-dialog" id="unrate-match-dialog"[^>]*aria-labelledby="unrate-match-title"[^>]*aria-describedby="unrate-match-description">/);
   assert.match(indexSource, /<h2 id="unrate-match-title">Partie nicht werten\?<\/h2>/);
-  assert.match(indexSource, /Diese Partie wird dauerhaft als „ohne Wertung“ markiert\. Sie zählt nicht für Tabelle, Elo oder Tipps\. Diese Aktion kann nicht rückgängig gemacht werden\./);
+  assert.match(indexSource, /Diese Partie wird dauerhaft als „ohne Wertung“ markiert\. Sie zählt nicht für Rangliste, Elo oder Tipps\. Diese Aktion kann nicht rückgängig gemacht werden\./);
   assert.match(indexSource, /data-unrate-close>Abbrechen<\/button>[\s\S]*class="danger-button"[^>]*data-unrate-confirm>Nicht werten<\/button>/);
   assert.match(tippspielSource, /querySelector\('\.secondary-button\[data-unrate-close\]'\)\?\.focus\(\)/);
   assert.match(styleSource, /\.danger-button \{[\s\S]*background: var\(--negativ\)/);
@@ -653,7 +658,7 @@ test('training messages reset across every form lifecycle transition', () => {
   assert.match(tippspielSource, /function editTraining\(sessionId\)[\s\S]*setTrainingMessage\('', '', form\);/);
   assert.match(tippspielSource, /if \(opening\) \{\n          setTrainingMessage\('', '', form\);[\s\S]*renderTrainingForm\(\);/);
   assert.match(tippspielSource, /function closeTrainingForm\(form =[\s\S]*formGroup\.hidden = true/);
-  assert.match(tippspielSource, /button\.disabled = false;\n    setTrainingMessage\('', '', form\);\n    form\.reset\(\);[\s\S]*setAuthMessage\('Training wurde zur Bestätigung gesendet\.', 'success'\);/);
+  assert.match(tippspielSource, /button\.disabled = false;\n    setTrainingMessage\('', '', form\);\n    form\.reset\(\);[\s\S]*setAuthMessage\(state\.profile\?\.app_role === 'admin' \? 'Training wurde direkt eingetragen\.' : 'Training wurde zur Bestätigung gesendet\.', 'success'\);/);
 });
 
 test('training alternatives expand a populated editor inside the current card', () => {

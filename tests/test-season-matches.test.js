@@ -18,6 +18,14 @@ const openMatchSixMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261012230000_add_open_test_match_six.sql'),
   'utf8'
 );
+const additionalMatchesMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261019120000_add_test_matches_seven_to_nine.sql'),
+  'utf8'
+);
+const matchdayWindowsMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261019130000_set_test_matchday_windows.sql'),
+  'utf8'
+);
 const matchStatisticsMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261014110000_test_season_match_statistics.sql'),
   'utf8'
@@ -31,13 +39,13 @@ const context = { window: {} };
 vm.runInNewContext(source, context);
 const season = context.window.PADEL_SEASON;
 
-test('test season contains six interactive matches plus a separate statistics history fixture', () => {
+test('test season contains nine interactive matches plus a separate statistics history fixture', () => {
   assert.equal(season.id, '2026-test');
   assert.equal(season.competition.qualificationPlaces, 3);
   assert.match(season.shortInfo.join(' '), /isoliertes Test-Elo/);
   assert.deepEqual(
     JSON.parse(JSON.stringify(season.matches.map(match => match.id))),
-    Array.from({ length: 6 }, (_, index) => `test-2026-partie-${index + 1}`)
+    Array.from({ length: 9 }, (_, index) => `test-2026-partie-${index + 1}`)
   );
   assert.ok(season.matches.every(match => (
     match.result === null && match.sets === null && match.winner === null
@@ -45,16 +53,26 @@ test('test season contains six interactive matches plus a separate statistics hi
   assert.match(migration, /delete from public\.matches[\s\S]*id not in/);
   assert.match(migration, /delete from public\.result_proposals/);
   assert.match(migration, /delete from public\.match_elo_changes/);
-  assert.deepEqual(JSON.parse(JSON.stringify(season.matchdays.at(-1))), {
-    spieltag: 3,
-    startDate: '2026-10-05',
-    endDate: '2026-10-09'
-  });
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(season.matchdays.slice(-3))),
+    [
+      { spieltag: 3, startDate: '2026-10-05', endDate: '2026-11-12' },
+      { spieltag: 4, startDate: '2026-11-15', endDate: '2026-12-15' },
+      { spieltag: 5, startDate: '2027-01-01', endDate: '2027-01-21' }
+    ]
+  );
   assert.match(openMatchMigration, /values \('test-2026', 3, null, null, null\)/);
   assert.match(openMatchMigration, /'test-2026-partie-5'[\s\S]*'league'[\s\S]*'best-of-three'[\s\S]*null/);
   assert.match(openMatchMigration, /public\.profiles[\s\S]*profile\.player_id = any\(expected_players\)/);
   assert.match(openMatchSixMigration, /target_season_id[\s\S]*'test-2026-partie-6'[\s\S]*'league'[\s\S]*'best-of-three'/);
   assert.match(openMatchSixMigration, /match\.cancelled_at is null[\s\S]*match\.betting_open/);
+  assert.match(additionalMatchesMigration, /'test-2026-partie-7'[\s\S]*'test-2026-partie-8'[\s\S]*'test-2026-partie-9'/);
+  assert.match(additionalMatchesMigration, /target_season_id, 4, null, null, null[\s\S]*target_season_id, 5, null, null, null/);
+  assert.match(additionalMatchesMigration, /match\.counts_for_ranking[\s\S]*match\.counts_for_elo[\s\S]*match\.betting_open/);
+  assert.match(matchdayWindowsMigration, /target_season_id, 3, '2026-10-05', '2026-11-12'/);
+  assert.match(matchdayWindowsMigration, /target_season_id, 4, '2026-11-15', '2026-12-15'/);
+  assert.match(matchdayWindowsMigration, /target_season_id, 5, '2027-01-01', '2027-01-21'/);
+  assert.match(matchdayWindowsMigration, /on conflict \(season_id, matchday\) do update set/);
   assert.match(matchStatisticsMigration, /recalculate_test_match_elo/);
   assert.match(matchStatisticsMigration, /set qualification_places = 3/);
   assert.match(matchStatisticsMigration, /not season\.counts_for_profile/);
@@ -63,15 +81,17 @@ test('test season contains six interactive matches plus a separate statistics hi
   assert.equal(season.matches.find(match => match.id === 'test-2026-partie-6').date, '2026-10-20');
 });
 
-test('all test matches use only the four test players with GMX and Gmail opposing', () => {
-  const expectedPlayers = ['ludi_gmail', 'ludi_gmx', 'ludi_ionos', 'ludwig_w'];
+test('all test matches use only the test players with GMX and Gmail opposing', () => {
+  const testNetMatchIds = [3, 4, 5, 6, 7, 8, 9].map(number => `test-2026-partie-${number}`);
   const participantIds = JSON.parse(JSON.stringify(
     season.participants.map(participant => participant.playerId).sort()
   ));
 
-  assert.deepEqual(participantIds, expectedPlayers);
+  assert.deepEqual(participantIds, ['ludi_gmail', 'ludi_gmx', 'ludi_ionos', 'ludwig_w', 'test_net']);
 
   season.matches.forEach(match => {
+    const fourthPlayer = testNetMatchIds.includes(match.id) ? 'test_net' : 'ludwig_w';
+    const expectedPlayers = ['ludi_gmail', 'ludi_gmx', 'ludi_ionos', fourthPlayer].sort();
     const playerIds = JSON.parse(JSON.stringify(
       [...match.team1.playerIds, ...match.team2.playerIds].sort()
     ));

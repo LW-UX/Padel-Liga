@@ -4,11 +4,14 @@ Redaktionelle Richtlinien für Saisonartikel. Wo Artikel gespeichert werden und 
 
 ## Grundsätze
 
+- Die Ligaartikel erscheinen auf Startseite und im Archiv unter dem Zeitungskopf `PadelPost`. Der Kopf beginnt direkt mit der Wortmarke; darunter folgt die bestehende Spieltags- und Datumszeile. Unter der Artikelüberschrift steht die Herausgeberzeile `HEADSQUARE × HANAKO × ENVIDUAL`. Wortmarke und zweizeilige Initiale verwenden die mit der Website ausgelieferte Schrift `Manufacturing Consent`; die Initiale ist blau. Zeitlich begrenzte Startseitenankündigungen gehören nicht zur `PadelPost` und erhalten weder den Zeitungskopf noch die Initiale. Statt einer Meta-Zeile tragen sie optional ein einfaches Widget-Label wie die übrigen Startseiten-Widgets. Eine Ankündigung erscheint auf der Startseite der Saison, in deren Saisondatei sie steht.
 - Jeder Spieltag erhält einen Spieltagsartikel. Er blickt kurz auf die Ereignisse seit dem letzten Artikel zurück und stellt anschließend alle Partien des neuen Spieltags vor.
 - Daneben gibt es freie Artikel, etwa Final-Four-Berichte, Saisonrückblicke, Porträts oder Sonderthemen. Sie sind an den festen Aufbau nicht gebunden und wählen eine zum Thema passende Gliederung. Grundsätze, Datenformat sowie Sprache und Stil gelten für alle Artikel.
 - Fakten wie Ergebnisse, Tabellenplätze, Punkte, Differenzen, Elo-Werte und Gewinnwahrscheinlichkeiten stammen aus der Datenbank, und zwar mit dem Stand zum Zeitpunkt des Schreibens.
 - Zitate, Szenen, Wetter, Verletzungen, Urlaube und Hintergründe stammen ausschließlich von der Redaktion, also vom Nutzer. Nichts davon wird erfunden. Fehlt ein Zitat, wird die Partie ohne Zitat vorgestellt.
 - Zitate werden wörtlich übernommen, auch umgangssprachliche Formulierungen. Höchstens offensichtliche Tippfehler werden korrigiert.
+- Die Rolle eines Spielers als Organisator oder Ligaleitung wird im Artikel nicht hervorgehoben.
+- Themenwünsche von Spielern fließen ohne Nennung des Absenders in den Text ein.
 
 ## Aufbau von Spieltagsartikeln
 
@@ -22,7 +25,7 @@ Redaktionelle Richtlinien für Saisonartikel. Wo Artikel gespeichert werden und 
    - 1–3 Absätze mit Einordnung: Form, Tabellenplatz, Elo, Vorgeschichte und Verbindungen zwischen den Spielern.
    - 0–2 Zitate, jeweils durch einen Absatz mit Doppelpunkt eingeleitet und von einem kurzen, pointierten Absatz kommentiert.
    - Bereits gespielte Partien heißen `Partie N - Bereits gespielt: …`, haben das Ergebnis im Spielblock und werden als kurzer Spielbericht erzählt statt als Vorschau.
-6. **Abschluss:** eine Zwischenüberschrift wie „Blick auf die Tabelle“ oder „Spieltag N - auf einen Blick“, dazu 1–2 Absätze zur Tabellenlage und zum Saisonziel. Der Artikel darf mit einer Pointe oder einem Rückgriff auf ein Zitat enden, muss es aber nicht. Eine sachliche letzte Information ist ebenso möglich. Eine Dreiergruppe steht nie im Abschluss.
+6. **Abschluss:** eine Zwischenüberschrift wie „Blick auf die Rangliste“ oder „Spieltag N - auf einen Blick“, dazu 1–2 Absätze zur Ranglistenlage und zum Saisonziel. Der Artikel darf mit einer Pointe oder einem Rückgriff auf ein Zitat enden, muss es aber nicht. Eine sachliche letzte Information ist ebenso möglich. Eine Dreiergruppe steht nie im Abschluss.
 
 Richtwert für die Länge: 600–900 Wörter.
 
@@ -50,7 +53,7 @@ Die Nummerierung dient nur der Übersicht und ist keine Rangfolge.
 6. **Elo-Höchstwert:** Würde ein Spieler mit einem Sieg in dieser Partie einen neuen Elo-Höchstwert erreichen, wird das erwähnt. Wurde im vorherigen Artikel bereits berichtet, dass er einen neuen Elo-Höchstwert erreicht hat, wird die erneute Möglichkeit nicht erwähnt.
 7. **Klatsche oder Dominanz im letzten Spiel:** Hat ein Spieler sein letztes Spiel mit mindestens 12:3 Spielen gewonnen oder verloren, kann von Dominanz beziehungsweise einer Klatsche oder Ähnlichem die Rede sein. Gezählt werden die Spiele der regulären Sätze, ein Match-Tie-Break zählt nicht.
 8. **Serien:** Hat ein Spieler seine letzten drei gewerteten Partien alle gewonnen, kann das als Gewinnsträhne erwähnt werden. Hat er seine letzten drei gewerteten Partien alle verloren, kann das als Negativlauf erwähnt werden. Gezählt werden bestätigte offizielle Partien über Saisongrenzen hinweg, aber keine Trainings.
-9. **Tabellenlage:** Erwähnt werden kann, wenn ein Spieler allein durch das Ergebnis dieser Partie den ersten Platz übernehmen oder in die Top 8 hinein- beziehungsweise aus ihnen herausrutschen kann. Alle anderen Ergebnisse, auch noch offene Partien, bleiben dabei unberücksichtigt. Angegeben wird, ob dafür jeder Sieg beziehungsweise jede Niederlage reicht oder nur ein deutliches Ergebnis. Das geschieht höchstens zweimal pro Spieler und Saison. Der Abschluss „Blick auf die Tabelle“ zählt dabei nicht mit.
+9. **Ranglistenlage:** Erwähnt werden kann, wenn ein Spieler allein durch das Ergebnis dieser Partie den ersten Platz übernehmen oder in die Top 8 hinein- beziehungsweise aus ihnen herausrutschen kann. Alle anderen Ergebnisse, auch noch offene Partien, bleiben dabei unberücksichtigt. Angegeben wird, ob dafür jeder Sieg beziehungsweise jede Niederlage reicht oder nur ein deutliches Ergebnis. Das geschieht höchstens zweimal pro Spieler und Saison. Der Abschluss „Blick auf die Rangliste“ zählt dabei nicht mit.
 10. **Früher Vogel und Langschläfer:** Ist ein Spieler der Partie der All-Time-Früher-Vogel oder All-Time-Langschläfer, wie in der All-Time-Statistik nach durchschnittlicher Anstoßzeit bestimmt, kann das erwähnt werden. Das geschieht höchstens zweimal pro Saison. Wechselt der Titel seit dem letzten Artikel auf einen anderen Spieler, kann der Wechsel zusätzlich erwähnt werden.
 11. **Ergebnis des vergangenen Spiels:** als letzte Möglichkeit, wenn zu einem Spieler sonst nichts zu erzählen ist.
 
@@ -60,7 +63,7 @@ Diese Informationen werden nicht systematisch geprüft, sondern genannt, wenn si
 
 - Ein Spieler war Final-Four-Teilnehmer der letzten Saison.
 - Ein Spieler ist Champion der letzten Liga- oder Cup-Saison. Auch saisonübergreifende Titel können genannt werden, etwa „zweimaliger Champion“. Grundlage sind die Auszeichnungen in der Datenbank.
-- Spieler in Tabellennähe haben unterschiedlich viele Partien gespielt, zum Beispiel „er führt, hat aber auch schon eine Partie mehr“ oder „mit einem Spiel in der Hinterhand“. Im Abschluss „Blick auf die Tabelle“ gehört das in der Regel dazu.
+- Spieler in Ranglistennähe haben unterschiedlich viele Partien gespielt, zum Beispiel „er führt, hat aber auch schon eine Partie mehr“ oder „mit einem Spiel in der Hinterhand“. Im Abschluss „Blick auf die Rangliste“ gehört das in der Regel dazu.
 
 ### Versetzt gespielte Partien
 
@@ -73,7 +76,7 @@ Partien werden nicht in der Reihenfolge der Spieltage gespielt. Spieler haben de
 
 - Für vorgespielte Partien gelten dieselben Checks, aber als feststehende Tatsache statt als Möglichkeit: „setzt sich durch den Sieg an die Spitze“, „erreicht einen neuen Elo-Höchstwert“, „die Serie hält“, „die Revanche gelingt“.
 - Klatsche oder Dominanz bezieht sich bei vorgespielten Partien auf diese Partie selbst.
-- Tabelle, Elo und Serien in den übrigen Vorschauen berücksichtigen das Ergebnis der vorgespielten Partien bereits.
+- Rangliste, Elo und Serien in den übrigen Vorschauen berücksichtigen das Ergebnis der vorgespielten Partien bereits.
 
 ### Auswahl der optionalen Punkte
 
@@ -98,19 +101,19 @@ Treffen mehr optionale Punkte zu, als verwendet werden dürfen, entscheiden dies
 ## Ablauf der Artikelerstellung
 
 1. **Input der Redaktion:** Der Nutzer liefert Zitate, Hintergründe und sonstige Informationen.
-   - Die datenbankbasierten Recherche-Checks werden in einem Durchgang mit `tools/article-research.mjs <saison-id> <spieltag> [--seit JJJJ-MM-TT]` erhoben. Das Skript liest nur und gibt Tabelle, seit dem Stichtag gespielte Partien sowie pro Partie und Spieler die zutreffenden Checks aus. Zitate, der Abgleich mit früheren Artikeln und die Auswahl bleiben redaktionelle Arbeit.
+   - Die datenbankbasierten Recherche-Checks werden in einem Durchgang mit `tools/article-research.mjs <saison-id> <spieltag> [--seit JJJJ-MM-TT]` erhoben. Das Skript liest nur und gibt Rangliste, seit dem Stichtag gespielte Partien sowie pro Partie und Spieler die zutreffenden Checks aus. Zitate, der Abgleich mit früheren Artikeln und die Auswahl bleiben redaktionelle Arbeit.
 2. **Stichpunkt-Entwurf:** Vor dem Fließtext wird ein Entwurf in Stichpunkten vorgelegt:
    - Titelvorschlag sowie Stichpunkte für Einstieg und Abschluss.
    - Pro Partie die vorgesehenen Punkte mit den konkreten Zahlen, getrennt nach Pflichtpunkten und gewählten optionalen Punkten, jeweils mit kurzer Begründung der Auswahl.
    - Pro Partie zusätzlich 2–3 weitere Fakten, die spannend sein könnten, aber nicht vorgesehen sind, jeweils mit dem Grund, warum sie nicht enthalten sind, etwa eine erreichte Saisongrenze oder das Limit pro Partie.
 3. **Nachsteuern:** Der Nutzer kann Punkte tauschen, streichen oder ergänzen. Seine Vorgaben haben Vorrang vor den Auswahlkriterien und Grenzen dieser Richtlinie.
-4. **Fließtext:** Erst nach der Freigabe des Stichpunkt-Entwurfs wird der Artikel ausformuliert.
+4. **Fließtext:** Erst nach der ausdrücklichen und eindeutigen Freigabe des Stichpunkt-Entwurfs durch den Nutzer wird der Artikel ausformuliert und in die Saisondatei eingetragen. Wie bei Datenbank-Schreibaktionen gilt nur eine klare Zustimmung als Freigabe. Beantwortete Rückfragen, Korrekturen am Entwurf oder Fragen des Nutzers sind keine Freigabe; nach ihnen wird der überarbeitete Entwurf erneut vorgelegt.
 
 
 ## Datenformat
 
 - Blocktypen: `p` (Absatz), `h` (Zwischenüberschrift), `match` (Spielblock), `quote` (Zitat mit `author`).
-- Statistikfähige Spielblöcke erhalten zusätzlich eine explizite `matchId`. Der Block öffnet die aktuelle Partiestatistik; Spielerlinks öffnen weiterhin das Profil. Artikeltexte bleiben redaktionelle Momentaufnahmen. Partiezuordnungen werden nicht zur Laufzeit aus Texten hergeleitet.
+- Spielblöcke mit Detailansicht erhalten zusätzlich eine explizite `matchId`. Der Block öffnet bei regulären Partien die aktuelle Partiestatistik und bei Final-Four-Partien den jeweiligen Liveticker-Verlauf; Spielerlinks öffnen weiterhin das Profil. Beim Hover und Tastaturfokus färbt sich die Ergebnis- beziehungsweise Gewinnwahrscheinlichkeitszeile gelb. Artikeltexte bleiben redaktionelle Momentaufnahmen. Partiezuordnungen werden nicht zur Laufzeit aus Texten hergeleitet.
 - Spielblock: `text` enthält `Vorname I. & Vorname I. vs. Vorname I. & Vorname I.` mit Team 1 zuerst. `result` und `resultLabel` stehen getrennt:
   - Vorschau: `"result": "61 : 39 %"`, `"resultLabel": "Gewinnwahrscheinlichkeit"`
   - Gespielt: `"result": "6:3, 6:3"`, `"resultLabel": "Ergebnis"`. Ein Match-Tie-Break wird als `Match-Tie-Break 10:6` angegeben.
@@ -121,9 +124,10 @@ Treffen mehr optionale Punkte zu, als verwendet werden dürfen, entscheiden dies
 - **Ton:** Sportjournalismus mit Augenzwinkern. Leicht ironisch, aber immer wohlwollend. Niederlagen und Schwächephasen werden mit Sympathie erzählt, niemand wird bloßgestellt.
 - **Natürlich statt glatt:** Die Artikel sollen nicht nach KI klingen. Die folgenden Regeln wirken den typischen Mustern maschinell geschriebener Texte entgegen.
 - **Dramatik in Maßen:** Nicht jede Partie ist ein Schicksalsspiel. Begriffe wie „Topspiel“, „Showdown“ oder „Schicksalsspiel“ werden nur verwendet, wenn die Daten es hergeben, etwa im Kampf um die Tabellenführung oder um das Final Four. Eine gewöhnliche Partie darf auch gewöhnlich beschrieben werden.
+- **Kein „, und“:** Zwei Hauptsätze werden nie mit Komma und „und“ verbunden. Sie stehen als eigene Sätze, werden ohne Komma zu einem Satz mit gemeinsamem Subjekt zusammengezogen oder über ein inhaltliches Bindewort wie „somit“, „also“, „da … aber“ oder „zwar … aber“ verknüpft. Zitate bleiben davon unberührt.
 - **Satzlängen:** Kurze und längere Sätze wechseln sich ab, auch Sätze mit Nebensätzen sind erwünscht. Kurze Satzfragmente wie „Noch.“ sind ein gelegentliches Mittel und nicht der Grundrhythmus.
 - **Stilmittel:** Rhetorische Fragen, Sportmetaphern und gelegentlich „diese Redaktion“ sind normale Mittel. Gegensatzpaare (Technik gegen Spirit) und Konstruktionen wie „nicht X, sondern Y“ werden sparsam eingesetzt. Vertraute Wendungen wie „auf dem Papier“ oder „Möge der Beste gewinnen“ werden gelegentlich verwendet.
-- **Dreiergruppen:** Drei aufeinanderfolgende Kurzsätze oder Aufzählungen in Dreierform dürfen vereinzelt vorkommen, aber nicht als Gewohnheit und nie im Abschluss des Artikels.
+- **Dreiergruppen:** Drei aufeinanderfolgende Kurzsätze oder Aufzählungen in Dreierform dürfen vereinzelt vorkommen, aber nicht als Gewohnheit, nie im Abschluss und nie im Titel des Artikels.
 - **Absatzenden:** Ein Absatz darf einfach mit einer Information enden. Pointen am Absatzende werden gezielt und nicht in jedem Abschnitt gesetzt. Bei einer noch offenen Partie darf der Abschnitt als Spannungsbogen mit einer Frage enden, aber nicht bei jeder Partie des Artikels.
 - **Umschreibungen:** Spieler werden mit Namen genannt, nicht mit wechselnden Umschreibungen wie „der Routinier“ oder „der Mann der Stunde“, nur um Wiederholungen zu vermeiden. Einzelne Umschreibungen sind möglich, gewachsene Spitznamen wie der Spirit-König bleiben davon unberührt.
 - **Obergrenzen je Artikel:** höchstens zwei Dreiergruppen, höchstens vier Sätze ohne Verb (Zitate ausgenommen), höchstens zwei Konstruktionen nach dem Muster „nicht X, sondern Y“ und höchstens drei Absätze, die mit einer Pointe oder einer Frage enden. Fragen am Ende des Abschnitts einer noch offenen Partie zählen nicht mit, stehen aber höchstens bei jeder zweiten Partie.

@@ -61,9 +61,17 @@ test('Winter contains two semifinals and the three rotating Final Four sets', ()
   );
 });
 
-test('Winter 2026 has no participants before the live roster is confirmed', () => {
+test('Winter 2026 fallback matches the confirmed roster migration', () => {
   const { PADEL_SEASON } = loadWindowScript('data/data-2026-winter.js');
-  assert.deepEqual(JSON.parse(JSON.stringify(PADEL_SEASON.participants)), []);
+  const migration = fs.readFileSync(
+    path.join(repositoryRoot, 'supabase/migrations/20261021120000_winter_2026_participants.sql'),
+    'utf8'
+  );
+  const migrationParticipants = [...migration.matchAll(/\('([a-z_]+)', (\d+)\)/g)]
+    .map(([, playerId, startElo]) => ({ playerId, startElo: Number(startElo) }));
+
+  assert.equal(PADEL_SEASON.participants.length, 20);
+  assert.deepEqual(JSON.parse(JSON.stringify(PADEL_SEASON.participants)), migrationParticipants);
 });
 
 test('the cleanup removes Winter participants and the automation keeps Sommer active', () => {

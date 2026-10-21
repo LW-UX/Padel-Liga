@@ -25,6 +25,14 @@ const prematchHistoryMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261014220000_final_four_prematch_league_history.sql'),
   'utf8'
 );
+const longestStreakMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261016130000_final_four_longest_official_streak.sql'),
+  'utf8'
+);
+const longestWinStreakMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261016140000_final_four_longest_win_streak.sql'),
+  'utf8'
+);
 const acceptance = fs.readFileSync(path.join(root, 'tests', 'live-ticker.acceptance.sql'), 'utf8');
 const gamesAcceptance = fs.readFileSync(path.join(root, 'tests', 'live-ticker-games.acceptance.sql'), 'utf8');
 const ticker = fs.readFileSync(path.join(root, 'js', 'live-ticker.js'), 'utf8');
@@ -147,8 +155,8 @@ test('discarding a live ticker uses the styled page dialog instead of a browser 
 
 test('the public view links only live or archived result centers and keeps profiles independent', () => {
   assert.match(index, /id="live-ticker-link"[\s\S]*data-live-open-active[\s\S]*hidden/);
-  assert.match(index, /<dialog class="live-ticker-dialog" id="live-ticker-dialog"/);
-  assert.match(index, /<section class="live-ticker-dialog-content" id="liveticker">/);
+  assert.match(index, /<dialog class="detail-view-dialog" id="detail-view-dialog"/);
+  assert.match(index, /<section class="detail-view-content" id="detail-view">/);
   assert.match(app, /class="mc-score" data-live-open-match/);
   assert.match(app, /PadelLiveTicker\?\.hasHistory\(m\.id\)/);
   assert.match(app, /class="player-profile-match-score" data-live-open-match/);
@@ -158,9 +166,9 @@ test('the public view links only live or archived result centers and keeps profi
   assert.match(ticker, /data-live-game-points/);
   assert.match(ticker, /label !== 'Spiel'/);
   assert.match(ticker, /isLive && !isGamesMode \? `<strong class="live-ticker-points" data-live-current-points>\$\{escapeHtml\(pointLabel\(session\)\)\}<\/strong>` : ''/);
-  assert.match(ticker, /class="live-ticker-match"/);
+  assert.match(ticker, /class="match-detail"/);
   assert.match(ticker, /class="live-ticker-game-line"/);
-  assert.match(ticker, /class="live-ticker-player-photo"/);
+  assert.match(ticker, /class="match-detail-player-photo"/);
   assert.doesNotMatch(ticker, /Aufschlag gehalten/);
 });
 
@@ -198,7 +206,9 @@ test('matches from the hidden test season do not trigger the global live entry',
   assert.match(globalLiveFilter, /window\.PADEL_SEASONS/);
   assert.match(globalLiveFilter, /String\(option\.id\) === String\(activeMatch\.seasonId\)/);
   assert.match(globalLiveFilter, /return !season\?\.hidden/);
-  assert.match(ticker, /liveButton\.hidden = !triggersGlobalLiveButton\(state\.activeMatch\)/);
+  assert.match(ticker, /const showGlobalLiveAction = triggersGlobalLiveButton\(state\.activeMatch\)/);
+  assert.match(ticker, /liveButton\.hidden = !showGlobalLiveAction/);
+  assert.match(ticker, /PadelGlobalActions\?\.setLiveActive\(showGlobalLiveAction\)/);
   assert.match(ticker, /active && triggersGlobalLiveButton\(state\.activeMatch\)/);
 });
 
@@ -206,11 +216,11 @@ test('the ticker opens as a full-screen detail dialog and keeps tab changes in o
   const openTicker = app.match(/async function openLiveTicker\(matchId, options = \{\}\) \{[\s\S]*?(?=\n\}\n\nfunction closeLiveTicker)/)?.[0] || '';
   assert.match(openTicker, /dialog\.showModal\(\)/);
   assert.doesNotMatch(openTicker, /nav\('liveticker'/);
-  assert.match(style, /\.live-ticker-dialog \{[\s\S]*width: 100vw;[\s\S]*height: 100dvh/);
+  assert.match(style, /\.detail-view-dialog \{[\s\S]*width: 100vw;[\s\S]*height: 100dvh/);
   assert.match(ticker, /const replacesExistingLiveRoute = url\.searchParams\.has\('live'\)/);
   assert.match(ticker, /replacesExistingLiveRoute \? 'replaceState' : 'pushState'/);
   assert.match(app, /function closeLiveTicker\(options = \{\}\)[\s\S]*window\.history\.back\(\)/);
-  assert.match(app, /liveTickerDialog\?\.addEventListener\('cancel'[\s\S]*closeLiveTicker\(\)/);
+  assert.match(app, /detailViewDialog\?\.addEventListener\('cancel'[\s\S]*closeLiveTicker\(\)/);
   assert.match(ticker, /PadelLigaCloseLiveTicker\?\.\(\{ fromHistory: true \}\)/);
   assert.match(app, /nav\('partien'[\s\S]*replaceState\(\{ liveBase: true \}[\s\S]*pushState\(\{ liveMatchId: requestedLiveMatch \}/);
 });
@@ -223,7 +233,7 @@ test('the ticker starts with an overview tab for all three matches and the final
   assert.match(overview, /<th class="col-diff">Diff\.<\/th>/);
   assert.match(overview, /<th class="col-gv">G:V<\/th>/);
   assert.doesNotMatch(overview, /class="col-games"/);
-  assert.doesNotMatch(overview, /class="live-ticker-status/);
+  assert.doesNotMatch(overview, /class="match-detail-status/);
   assert.match(overview, /class="live-overview-live"/);
   assert.match(overview, /class="live-overview-score-dot"/);
   assert.match(ticker, /score: `\$\{session\.teamOneGames\}:\$\{session\.teamTwoGames\}`/);
@@ -255,10 +265,10 @@ test('the Final Four overview adds aligned neutral Prematch facts without changi
   const overview = ticker.match(/function renderOverview\(\) \{[\s\S]*?(?=\n  function renderPublic)/)?.[0] || '';
   assert.match(prematch, />Prematch-Fakten</);
   assert.match(prematch, /live-overview-prematch-card player-profile-link/);
-  assert.match(prematch, /data-live-player-image/);
+  assert.match(prematch, /data-detail-player-image/);
   assert.match(prematch, /profileEmoji\(player\.playerId\)/);
-  assert.doesNotMatch(prematch, /live-ticker-team-|live-ticker-scoreboard|Team 1|Team 2/);
-  const labels = ['Titelprognose', 'Ligaphase', 'Spiele', 'Pflichtspielserie', 'Beziehungen'];
+  assert.doesNotMatch(prematch, /match-detail-team-|match-detail-scoreboard|Team 1|Team 2/);
+  const labels = ['Titelprognose', 'Ligaphase', 'Spiele', 'Längste Siegesserie', 'Beziehungen'];
   labels.reduce((lastIndex, label) => {
     const index = prematch.indexOf(`>${label}<`);
     assert.ok(index > lastIndex, `${label} must follow the preceding fact`);
@@ -332,6 +342,16 @@ test('the Prematch RPC validates, freezes and rounds the four-player forecast to
   assert.match(prematchHistoryMigration, /'leagueHistory', private\.final_four_prematch_league_history/);
   assert.match(prematchHistoryMigration, /player\.value - 'form'/);
   assert.match(prematchHistoryMigration, /update public\.final_four_prematch_snapshots as snapshot/);
+  assert.match(longestStreakMigration, /create or replace function private\.final_four_prematch_longest_streak/);
+  assert.match(longestStreakMigration, /match_history\.kind <> 'training'/);
+  assert.match(longestStreakMigration, /group by history\.outcome, history\.streak_group/);
+  assert.match(longestStreakMigration, /order by[\s\S]*streak\.length desc,[\s\S]*streak\.ended_position desc/);
+  assert.match(longestStreakMigration, /where streak\.length >= 3/);
+  assert.match(longestStreakMigration, /update public\.final_four_prematch_snapshots as snapshot/);
+  assert.match(longestStreakMigration, /update public\.final_four_replacements as replacement/);
+  assert.match(longestWinStreakMigration, /where history\.outcome = 'win'/);
+  assert.match(longestWinStreakMigration, /update public\.final_four_prematch_snapshots as snapshot/);
+  assert.match(longestWinStreakMigration, /update public\.final_four_replacements as replacement/);
 });
 
 test('only Final Four detail views use the split probability score', () => {
@@ -343,13 +363,13 @@ test('only Final Four detail views use the split probability score', () => {
   assert.doesNotMatch(matchRow, /renderProbabilityScore/);
   assert.match(ticker, /function getPayloadWinProbability\(payload\)[\s\S]*player\.currentElo[\s\S]*elos\[0\] \* 0\.7 \+ elos\[1\] \* 0\.3/);
   assert.match(overview, /renderProbabilityScore\(matchState\.probability, 'live-overview-probability'\)/);
-  assert.match(publicMatch, /renderProbabilityScore\(pendingProbability, 'live-ticker-probability', false\)/);
+  assert.match(publicMatch, /renderProbabilityScore\(pendingProbability, 'match-detail-probability', false\)/);
   assert.match(publicMatch, /pendingProbability \? 'Prozent' : 'Noch nicht begonnen'/);
   assert.match(publicMatch, /pendingProbability \? 'Gewinnchance' : 'Spielstand'/);
   assert.match(style, /\.match-probability \{[\s\S]*grid-template-columns: minmax\(34px, 1fr\) auto minmax\(34px, 1fr\);[\s\S]*column-gap: 0\.4rem;/);
   assert.match(style, /\.match-probability-value \{[\s\S]*color: var\(--dim\);[\s\S]*font-size: var\(--text-sm\);/);
   assert.match(style, /\.match-probability-separator \{[\s\S]*color: var\(--dim\);[\s\S]*font-size: var\(--text-sm\);/);
-  assert.match(style, /\.live-ticker-probability :is\(\.match-probability-value, \.match-probability-separator\) \{[\s\S]*font-family: var\(--font-heading\);[\s\S]*font-size: clamp\(2rem, 4vw, 3rem\);/);
+  assert.match(style, /\.match-detail-probability :is\(\.match-probability-value, \.match-probability-separator\) \{[\s\S]*font-family: var\(--font-heading\);[\s\S]*font-size: clamp\(2rem, 4vw, 3rem\);/);
 });
 
 test('the public match list always leads with sets and keeps games and history below', () => {

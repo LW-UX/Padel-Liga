@@ -29,6 +29,14 @@ const adminEmailExceptionMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260909250000_admin_invitation_email_exceptions.sql'),
   'utf8'
 );
+const testNetAccountMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261020190000_add_test_net_account.sql'),
+  'utf8'
+);
+const correctedTestNetEmailMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261020191000_correct_test_net_email.sql'),
+  'utf8'
+);
 
 test('company users can register while admins also get a player invitation dialog', () => {
   pages.forEach(source => {
@@ -110,4 +118,16 @@ test('public self-registration is restricted while admin-assigned emails may use
   assert.match(adminEmailExceptionMigration, /private\.player_email_allowlist/);
   assert.match(adminEmailExceptionMigration, /or exists \(select 1 from private\.signup_email_domains where domain = requested_domain\)/);
   assert.doesNotMatch(adminEmailExceptionMigration, /nicht für Spielerzugänge freigegeben/);
+});
+
+test('Test Net receives the same private player-role access as the other test accounts', () => {
+  assert.match(testNetAccountMigration, /'test_net', 'Test Net', 'TNET', 'Test', 800/);
+  assert.match(testNetAccountMigration, /decode\('[a-f0-9]{64}', 'hex'\),[\s\S]*'test_net',[\s\S]*'player'/);
+  assert.doesNotMatch(testNetAccountMigration, /@/);
+  assert.doesNotMatch(testNetAccountMigration, /season_players/);
+  assert.match(correctedTestNetEmailMigration, /auth_user\.email_confirmed_at is null/);
+  assert.match(correctedTestNetEmailMigration, /Der unbestätigte Fehlzugang besitzt bereits abhängige Aktivität/);
+  assert.match(correctedTestNetEmailMigration, /delete from auth\.users where id = target_user_id/);
+  assert.match(correctedTestNetEmailMigration, /update private\.player_email_allowlist[\s\S]*set email_hash/);
+  assert.doesNotMatch(correctedTestNetEmailMigration, /@/);
 });

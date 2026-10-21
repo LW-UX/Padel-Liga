@@ -119,6 +119,20 @@ function evaluateProfileSummaryFormats(wins, matches, gameDiff) {
   return JSON.parse(JSON.stringify(context.result));
 }
 
+function evaluateLongestProfileWinStreak(matches) {
+  const functionSource = app.match(
+    /function getLongestPlayerProfileWinStreak\(matches = \[\]\) \{[\s\S]*?(?=\nfunction getPlayerProfileAchievementHighlights)/
+  );
+  assert.ok(functionSource, 'profile winning streak helpers should be present');
+  const context = { matches, result: null };
+  vm.createContext(context);
+  vm.runInContext(
+    `${functionSource[0]}\nresult = { length: getLongestPlayerProfileWinStreak(matches), label: renderPlayerProfileWinStreak(matches) };`,
+    context
+  );
+  return JSON.parse(JSON.stringify(context.result));
+}
+
 function evaluateParticipationOrder(participations, seasons) {
   const legacyIds = app.match(/const LEGACY_SEASON_IDS = Object\.freeze\(\{[\s\S]*?\}\);/);
   const normalizeId = app.match(/function normalizeSeasonId\(id\) \{[\s\S]*?\n\}/);
@@ -186,6 +200,20 @@ function evaluateFinalRoundOverview(matches, playerId) {
   return JSON.parse(JSON.stringify(context.result));
 }
 
+function evaluateParticipationActive(participation, seasonPayload) {
+  const functionSource = app.match(
+    /function isPlayerProfileParticipationActive\(participation, seasonPayload\) \{[\s\S]*?\n\}/
+  );
+  assert.ok(functionSource, 'profile participation status helper should be present');
+  const context = { participation, seasonPayload, result: null };
+  vm.createContext(context);
+  vm.runInContext(
+    `${functionSource[0]}\nresult = isPlayerProfileParticipationActive(participation, seasonPayload);`,
+    context
+  );
+  return context.result;
+}
+
 function evaluateAchievementHighlights(achievements) {
   const limitSource = app.match(/const PLAYER_PROFILE_ACHIEVEMENT_LIMIT = 4;/);
   const functionSource = app.match(
@@ -224,15 +252,18 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /const labels = series\.map\(item => formatProfileDate\(item\.matchAt \|\| item\.date\)\)/);
   assert.doesNotMatch(app, /const labels = series\.map\(item => item\.label/);
   assert.match(app, /function renderProfileMatchCount\(value\)[\s\S]*?player-profile-stat-fraction/);
+  assert.match(app, /renderPlayerProfileStats\(profile\.summary \|\| \{\}, profile\.matches \|\| \[\]\)/);
   assert.match(app, /renderProfileMatchCount\(summary\.matches\), 'Partien', '', true/);
   assert.match(app, /renderProfileMatchCount\(summary\.wins\).*renderProfileMatchCount\(summary\.losses\)/);
-  assert.match(app, /'Partien G:V'[\s\S]*?'Siegquote'[\s\S]*?'Spiele G:V'[\s\S]*?'Spieldifferenz'[\s\S]*?'Ø Spieldifferenz'/);
+  assert.match(app, /'Siegquote'[\s\S]*?'Partien'[\s\S]*?'Partien G:V'[\s\S]*?'Spiele G:V'[\s\S]*?'Spieldifferenz'[\s\S]*?'Ø Spieldifferenz'[\s\S]*?'Längste Siegesserie'/);
+  assert.match(app, /renderPlayerProfileWinStreak\(matches\), 'Längste Siegesserie', '', true/);
   assert.match(app, /'Spieldifferenz', getPlayerProfileSignedValueClass\(summary\.gameDiff\)/);
   assert.match(app, /'Ø Spieldifferenz', getPlayerProfileSignedValueClass\(gameDiffPerMatch\)/);
   assert.match(style, /\.player-profile-stat-value\.negative \{ color: var\(--negativ\); \}/);
   assert.match(style, /\.player-profile-stat-fraction \{ font-size: var\(--text-base\); \}/);
-  assert.match(style, /\.player-profile-stats \{[\s\S]*?grid-template-columns: repeat\(7, minmax\(0, 1fr\)\);/);
-  assert.match(style, /\.player-profile-stat:first-child \{ grid-column: 1 \/ -1; border-right: 0; \}/);
+  assert.match(style, /\.player-profile-stats \{[\s\S]*?grid-template-columns: repeat\(8, minmax\(0, 1fr\)\);/);
+  assert.match(style, /\.player-profile-stat:nth-child\(even\) \{ border-right: 0; \}/);
+  assert.doesNotMatch(style, /\.player-profile-stat:first-child \{ grid-column: 1 \/ -1;/);
   assert.doesNotMatch(style, /\.player-profile-stat:last-child \{ grid-column: 1 \/ -1;/);
   assert.match(html, /id="player-profile-avatar-placeholder"/);
   assert.match(app, /identity\.profileEmoji \|\| knownPlayer\?\.profileEmoji/);
@@ -253,8 +284,12 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(style, /@media \(max-width: 999px\) \{[\s\S]*?\.player-profile-match \{[\s\S]*?grid-template-columns: 30px minmax\(0, 1fr\) auto;/);
   assert.doesNotMatch(app, /\(match\.partnerNames \|\| \[\]\)\.join\(' \/ '\)/);
   assert.match(html, /class="widget player-profile-widget player-profile-relationships"[\s\S]*id="player-profile-relationships"/);
+  assert.match(html, /id="player-profile-relationships-heading"[\s\S]*Mitspieler &amp; Gegner/);
   assert.match(app, /const eligible = \(records, minimumMatches = 3\)/);
   assert.match(app, /record\.matches >= minimumMatches/);
+  assert.match(app, /heading\.hidden = relationships\.length > 0/);
+  assert.match(app, /Noch keine Wertung – sie zählt ab 3 gemeinsamen Partien/);
+  assert.match(style, /#player-profile-relationships\.has-results \{ margin-top: 0; \}/);
   assert.match(app, /\['Erfolgspartner', leaders\.favoritePartners/);
   assert.match(app, /\['Lieblingsgegner', leaders\.favoriteOpponents/);
   assert.match(app, /\['Angstgegner', leaders\.fearedOpponents/);
@@ -299,6 +334,29 @@ test('profile summary derives win rate and game difference per weighted match', 
   });
 });
 
+test('profile summary shows the longest cross-league winning streak without training', () => {
+  assert.deepEqual(evaluateLongestProfileWinStreak([
+    { id: 'new-3', kind: 'league', outcome: 'win', isComplete: true },
+    { id: 'training', kind: 'training', outcome: 'loss', isComplete: true },
+    { id: 'new-2', kind: 'final-four', outcome: 'win', isComplete: true },
+    { id: 'new-1', kind: 'league', outcome: 'win', isComplete: true },
+    { id: 'break', kind: 'league', outcome: 'loss', isComplete: true },
+    { id: 'old-2', kind: 'league', outcome: 'win', isComplete: true },
+    { id: 'old-1', kind: 'league', outcome: 'win', isComplete: true }
+  ]), { length: 3, label: '3<span class="player-profile-stat-fraction"> Siege</span>' });
+  assert.deepEqual(evaluateLongestProfileWinStreak([
+    { id: 'cancelled', kind: 'league', outcome: 'unfinished', isCancelled: true },
+    { id: 'win-2', kind: 'league', outcome: 'win', isComplete: true },
+    { id: 'win-1', kind: 'league', outcome: 'win', isComplete: true }
+  ]), { length: 2, label: '2<span class="player-profile-stat-fraction"> Siege</span>' });
+  assert.deepEqual(evaluateLongestProfileWinStreak([
+    { id: 'only-win', kind: 'league', outcome: 'win', isComplete: true }
+  ]), { length: 1, label: '1<span class="player-profile-stat-fraction"> Sieg</span>' });
+  assert.deepEqual(evaluateLongestProfileWinStreak([
+    { id: 'only-loss', kind: 'league', outcome: 'loss', isComplete: true }
+  ]), { length: 0, label: '—' });
+});
+
 test('profile participations show the newest season first', () => {
   const participations = [
     { seasonId: '2026-sommer', seasonLabel: 'Sommer 2026', isActive: true },
@@ -314,6 +372,12 @@ test('profile participations show the newest season first', () => {
     ['2026-winter', '2026-sommer']
   );
   assert.deepEqual(participations.map(participation => participation.seasonId), ['2026-sommer', '2026-winter']);
+});
+
+test('profile only marks an active and unfinished season as ongoing', () => {
+  assert.equal(evaluateParticipationActive({ isActive: true }, { completedAt: null }), true);
+  assert.equal(evaluateParticipationActive({ isActive: true }, { completedAt: '2026-10-15T20:00:00Z' }), false);
+  assert.equal(evaluateParticipationActive({ isActive: false }, { completedAt: null }), false);
 });
 
 test('profile participation overview ends with weighted training statistics', () => {
@@ -351,6 +415,7 @@ test('profile season overview separates league and qualified final-round results
   assert.match(app, /renderPlayerProfileParticipationStats\(participation, 'Punkte', participation\.points\)/);
   assert.match(app, /renderPlayerProfileParticipationStats\(finalRound, 'Siege', finalRound\.wins\)/);
   assert.match(app, /getPlayerProfileSeasonPayload\(participation\.seasonId\)/);
+  assert.match(app, /isActive: isPlayerProfileParticipationActive\(participation, payloads\[index\]\)/);
 
   const team = (teamOne, teamTwo) => ({
     team1: { playerIds: teamOne },
@@ -397,6 +462,7 @@ test('profile season overview separates league and qualified final-round results
 
 test('player names open profiles by stable id and team cards no longer apply presets', () => {
   assert.match(app, /data-player-profile-id="\$\{escapeHtml\(playerId\)\}"/);
+  assert.match(app, /player\?\.id \|\| getPlayerIdByName\(playerName\)/);
   assert.match(app, /function renderTeamPlayers\(players\)/);
   assert.doesNotMatch(app, /class="calculator-match-team" role="button"/);
 });
@@ -517,7 +583,8 @@ test('training rounds stay grouped and only incomplete score parts are dimmed', 
   assert.match(app, /function groupPlayerProfileMatches\(matches = \[\]\)/);
   assert.match(app, /data-profile-match-group=/);
   assert.match(app, /showDate = index === 0/);
-  assert.match(app, /showSeason = group\.kind === 'training'[\s\S]*?\? index === 0[\s\S]*?: index === group\.matches\.length - 1/);
+  assert.match(app, /showGroupLabelFirst = group\.kind === 'training' \|\| group\.kind === 'final-four'/);
+  assert.match(app, /showSeason = showGroupLabelFirst[\s\S]*?\? index === 0[\s\S]*?: index === group\.matches\.length - 1/);
   assert.match(app, /Number\(match\.matchWeight\) > 0/);
   assert.match(app, /player-profile-score-partial/);
   assert.match(app, /renderProfileResultDetails\(match\)/);
@@ -536,7 +603,7 @@ test('Final4 profile matches form one half-weight league-styled group', () => {
   assert.match(app, /return seasonCode \? `FINAL4 \$\{seasonCode\}` : 'FINAL4'/);
   assert.match(app, /kind === 'final-four' \? 0\.5 : 1/);
   assert.match(app, /showDate = index === 0/);
-  assert.match(app, /index === group\.matches\.length - 1/);
+  assert.match(app, /showGroupLabelFirst = group\.kind === 'training' \|\| group\.kind === 'final-four'/);
   assert.doesNotMatch(style, /player-profile-match-group\.final-four \.player-profile-match-outcome/);
   assert.match(finalFourProfileMigration, /match\.competition_stage = 'final_four' then 'final-four'/);
   assert.match(finalFourProfileMigration, /when p_kind = 'final-four' then 0\.5::numeric/);

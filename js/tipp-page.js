@@ -54,7 +54,7 @@
       ? rawSeason.matches
       : rawSeason.matches.map(match => ({
           ...match,
-          id: `season-${rawSeason.id}-partie-${String(match.id).match(/\d+$/)?.[0] || match.id}`,
+          id: `${rawSeason.matchIdPrefix || `season-${rawSeason.id}`}-partie-${String(match.id).match(/\d+$/)?.[0] || match.id}`,
           matchday: match.spieltag,
           date: match.datum,
           time: match.uhrzeit,
@@ -91,7 +91,7 @@
     const toggle = picker.querySelector('[data-season-toggle]');
     const label = document.getElementById('season-picker-label');
     const menu = document.getElementById('season-menu');
-    label.textContent = selected.label;
+    label.textContent = selected.shortLabel || selected.label;
     menu.innerHTML = getSeasonOptions().map(option =>
       `<button type="button" class="season-option ${option.id === selected.id ? 'active' : ''}" role="option" aria-selected="${option.id === selected.id}" data-season-id="${option.id}"><span>${option.label}</span></button>`
     ).join('');
@@ -126,14 +126,35 @@
     ligaLink.href = `../?saison=${encodeURIComponent(selected.id)}`;
   }
 
+  function showSection(id) {
+    // Wie auf der Ligaseite bleibt eine bereits oben angeheftete Navigation stehen.
+    const navigation = document.querySelector('.tip-site-nav');
+    const navigationPinned = Boolean(navigation) && navigation.getBoundingClientRect().top <= 1;
+    document.querySelectorAll('main > .section').forEach(section => section.classList.toggle('active', section.id === id));
+    document.querySelectorAll('.tip-site-nav button').forEach(button => button.classList.toggle('active', button.dataset.tipNav === id));
+    if (navigationPinned) window.scrollTo({ top: document.querySelector('.site-header')?.offsetHeight || 0, behavior: 'instant' });
+  }
+
   function bindNavigation() {
     document.addEventListener('click', event => {
       const control = event.target.closest('[data-tip-nav]');
       if (!control) return;
-      const id = control.dataset.tipNav;
-      document.querySelectorAll('main > .section').forEach(section => section.classList.toggle('active', section.id === id));
-      document.querySelectorAll('.tip-site-nav button').forEach(button => button.classList.toggle('active', button.dataset.tipNav === id));
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      showSection(control.dataset.tipNav);
+    });
+    // Mobil per horizontalem Wischen zwischen den Bereichen wechseln, wie auf der Ligaseite.
+    const mobileViewportQuery = window.matchMedia('(max-width: 768px)');
+    window.PadelSwipeGesture?.attach(document.querySelector('main'), {
+      enabled: () => mobileViewportQuery.matches,
+      onSwipe: step => {
+        const sections = [...document.querySelectorAll('.tip-site-nav button[data-tip-nav]')]
+          .filter(button => !button.hidden)
+          .map(button => button.dataset.tipNav);
+        const currentIndex = sections.indexOf(document.querySelector('main > .section.active')?.id);
+        const targetId = currentIndex === -1 ? null : sections[currentIndex + step];
+        if (!targetId) return;
+        showSection(targetId);
+        window.PadelSwipeGesture.animateIn(document.getElementById(targetId), step);
+      }
     });
   }
 
@@ -145,11 +166,15 @@
       renderSeasonPicker(selected);
       bindNavigation();
       window.PADEL_SEASON = null;
-      await loadScript(`../${selected.file}`);
+      const accountReady = window.PadelKonto.init();
+      await Promise.all([
+        loadScript(`../${selected.file}`),
+        loadScript('../js/tippspiel.js?v=2026-10-21-own-floor')
+      ]);
       const season = hydrateSeason(window.PADEL_SEASON);
       document.querySelectorAll('[data-season-label]').forEach(node => { node.textContent = season.label; });
-      await window.PadelKonto.init();
-      await window.PadelTippspiel.init(season);
+      if (!window.PadelTippspiel?.init) throw new Error('Das Tippspiel-Modul ist nicht verfügbar.');
+      await window.PadelTippspiel.init(season, { accountReady });
     } catch (error) {
       document.querySelector('main').innerHTML = `<div class="empty-state">Die Tippspiel-Daten konnten nicht geladen werden.</div>`;
       console.error(error);

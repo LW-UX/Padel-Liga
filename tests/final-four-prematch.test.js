@@ -18,6 +18,12 @@ const leagueHistoryMigration = fs.readFileSync(path.join(
 const titleForecastDivisorMigration = fs.readFileSync(path.join(
   root, 'supabase', 'migrations', '20261014234000_final_four_title_forecast_divisor.sql'
 ), 'utf8');
+const longestStreakMigration = fs.readFileSync(path.join(
+  root, 'supabase', 'migrations', '20261016130000_final_four_longest_official_streak.sql'
+), 'utf8');
+const longestWinStreakMigration = fs.readFileSync(path.join(
+  root, 'supabase', 'migrations', '20261016140000_final_four_longest_win_streak.sql'
+), 'utf8');
 const earlierMigrations = fs.readdirSync(path.join(root, 'supabase', 'migrations'))
   .filter(file => file.endsWith('.sql') && file < migrationName)
   .sort();
@@ -114,6 +120,13 @@ create table public.live_match_sessions(
 create table public.result_proposals(
   match_id text not null references public.matches(id)
 );
+create table public.final_four_replacements(
+  season_id text primary key references public.seasons(id),
+  original_player_id text not null references public.players(id),
+  replacement_player_id text not null references public.players(id),
+  original_prematch_facts jsonb not null,
+  replaced_at timestamptz not null default now()
+);
 `;
 
 async function addMatch(db, id, {
@@ -160,17 +173,25 @@ test('Final Four Prematch SQL validates participants, composes facts and freezes
     await db.exec(`
       insert into public.players values
         ('a','Anna',1000),('b','Ben',1000),('c','Chris',1000),('d','Dana',1000),('e','Emil',1000);
-      insert into public.seasons values('season','Saison',true);
-      insert into public.season_players select 'season',id,1000 from public.players;
+      insert into public.seasons values('old-season','Alte Saison',true),('season','Saison',true);
+      insert into public.season_players
+        select season.id,player.id,1000
+        from public.seasons as season cross join public.players as player;
       insert into public.season_tournament_players values
         ('season','final_four',1,'a',1),
         ('season','final_four',2,'b',2),
         ('season','final_four',3,'c',3),
         ('season','final_four',4,'d',4);
     `);
+    for (let index = 1; index <= 4; index += 1) {
+      await addMatch(db, `old-history-${index}`, {
+        season: 'old-season', at: `2026-08-0${index}T12:00:00Z`, winner: 1
+      });
+    }
+    const currentSeasonWinners = [2, 1, 1, 2, 1, 1];
     for (let index = 1; index <= 6; index += 1) {
       await addMatch(db, `history-${index}`, {
-        at: `2026-09-0${index}T12:00:00Z`, winner: 1
+        at: `2026-09-0${index}T12:00:00Z`, winner: currentSeasonWinners[index - 1]
       });
     }
     await db.exec(`
@@ -200,7 +221,8 @@ test('Final Four Prematch SQL validates participants, composes facts and freezes
     assert.deepEqual(value.players[0].leagueHistory.map(match => match.id), [
       'history-1', 'history-2', 'history-3', 'history-4', 'history-5', 'history-6'
     ]);
-    assert.equal(value.players[0].streak.length, 6, 'training never changes the official streak');
+    assert.equal(value.players[0].streak, null,
+      'the former calculation sees only the current two-win run');
     assert.ok(value.players[0].relationships.some(relation =>
       relation.kind === 'successPartner' && relation.playerId === 'b'
     ));
@@ -221,9 +243,15 @@ test('Final Four Prematch SQL validates participants, composes facts and freezes
     assert.deepEqual(value.players.map(player => player.titleForecast), [35, 30, 25, 10]);
 
     await db.exec("insert into public.live_match_sessions(match_id,started_at) values('ff-1','2026-10-14T12:00:00Z')");
+    await db.exec(longestStreakMigration);
+    await db.exec(longestWinStreakMigration);
     const frozen = await facts();
     assert.equal(frozen.isFrozen, true);
     assert.equal(new Date(frozen.snapshotAt).toISOString(), '2026-10-14T12:00:00.000Z');
+    assert.deepEqual(frozen.players[0].streak, { outcome: 'win', length: 4 },
+      'the migration backfills the frozen, cross-season longest streak and ignores training');
+    assert.equal(frozen.players[2].streak, null,
+      'a historical four-loss run is not presented as a winning streak');
     await db.exec("update public.match_elo_changes set new_elo=500 where match_id='history-3'");
     assert.deepEqual((await facts()).players, frozen.players, 'later Elo changes cannot rewrite the snapshot');
 
@@ -258,12 +286,14 @@ test('hidden test season fixture adds ranked finalists and backfills the histori
     await db.exec(migration);
     await db.exec(leagueHistoryMigration);
     await db.exec(titleForecastDivisorMigration);
+    await db.exec(longestStreakMigration);
+    await db.exec(longestWinStreakMigration);
     await db.exec(`
       insert into public.players values
-        ('ludi_gmx','Ludi GMX',995),
+        ('ludi_gmx','Test GMX',995),
         ('ludwig_w','Ludwig W.',1045),
-        ('ludi_ionos','Ludi Ionos',776),
-        ('ludi_gmail','Ludi Gmail',683);
+        ('ludi_ionos','Test Ionos',776),
+        ('ludi_gmail','Test Gmail',683);
       insert into public.seasons values('test-2026','Test-Saison',false);
       insert into public.season_players select 'test-2026',id,initial_elo from public.players;
     `);

@@ -15,8 +15,8 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=2026-10-15-final-four-page-podium">
-  <link rel="stylesheet" href="account.css?v=2026-10-15-admin-relevant-filter">
+  <link rel="stylesheet" href="style.css?v=2026-10-21-swipe-hint">
+  <link rel="stylesheet" href="account.css?v=2026-10-21-games-help">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -26,20 +26,23 @@
       if (standalone) document.documentElement.classList.add('is-standalone');
     })();
   </script>
-<link rel="stylesheet" href="match-statistics.css?v=2026-10-14-elo-band-tooltip">
+  <link rel="stylesheet" href="match-statistics.css?v=2026-10-21-tip-buttons">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script defer src="data/players.js?v=2026-10-14-training-profiles"></script>
-  <script defer src="data/seasons.js?v=2026-10-14-ranking-notes"></script>
+  <script defer src="data/players.js?v=2026-10-20-test-net-emoji"></script>
+  <script defer src="data/seasons.js?v=2026-10-21-test-windows"></script>
   <script defer src="data/training-matches.js"></script>
   <script defer src="data/info.js"></script>
   <script defer src="data/supabase-config.js"></script>
+  <script defer src="js/global-actions.js?v=2026-10-20-speed-dial-player"></script>
   <script defer src="js/elo-forecast.js?v=2026-10-14-shared-auto-tip"></script>
   <script defer src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
-  <script defer src="js/live-ticker.js?v=2026-10-15-podium-no-preview"></script>
-  <script defer src="js/account.js?v=2026-10-15-admin-relevant-filter"></script>
-  <script defer src="js/match-statistics.js?v=2026-10-14-played-order"></script>
-  <script defer src="js/app.js?v=2026-10-15-final-four-page-podium"></script>
+  <script defer src="js/live-ticker.js?v=2026-10-20-mobile-global-actions"></script>
+  <script defer src="js/account.js?v=2026-10-21-recovery-link"></script>
+  <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
+  <script defer src="js/swipe-gesture.js?v=2026-10-21-swipe-pager"></script>
+  <script defer src="js/match-statistics.js?v=2026-10-21-swipe-pager"></script>
+  <script defer src="js/app.js?v=2026-10-21-swipe-scroll"></script>
 </head>
 <body>
 
@@ -47,18 +50,46 @@
   <div class="hero">
     <div class="hero-topbar">
       <div class="hero-eyebrow" id="hero-orgs">Headsquare × Hanako × Envidual</div>
-      <div class="context-actions">
-        <button class="secondary-button" id="live-ticker-link" type="button" data-live-open-active hidden><span aria-hidden="true">●</span> LIVE</button>
-        <div class="season-picker" id="season-picker">
-          <button class="secondary-button secondary-button--dropdown" type="button" data-season-toggle aria-haspopup="listbox" aria-expanded="false">
-            <span id="season-picker-label"><span class="loading-skeleton skeleton-pill" aria-hidden="true"></span></span>
+      <div class="context-actions global-actions" id="global-actions" data-global-actions>
+        <button class="global-actions-dismiss" type="button" data-global-actions-dismiss aria-label="Schnellzugriffe schließen" tabindex="-1"></button>
+        <div class="global-actions-list" id="global-actions-list" data-global-actions-list>
+          <button class="secondary-button global-action global-action--live" id="live-ticker-link" type="button" data-live-open-active data-global-action data-global-action-close hidden><span class="global-action-icon" aria-hidden="true">●</span><span>LIVE</span></button>
+          <a class="external-game-link global-action" id="external-game-link" href="https://lw-ux.github.io/PadelPong/" target="_blank" rel="noopener" aria-label="PadelPong in neuem Tab öffnen" title="PadelPong" data-global-action data-global-action-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10l3 3 1 8-3 1-4-4h-4l-4 4-3-1 1-8z"/><path d="M7 9v5m-2.5-2.5h5M16 10h.01M18 13h.01"/></svg>
+            <span class="global-action-label">PadelPong</span>
+          </a>
+          <a class="header-icon-link global-action" id="tipp-link" href="tipp/" aria-label="PadelTipp öffnen" title="PadelTipp" data-global-action data-global-action-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+            <span class="global-action-label">PadelTipp</span>
+          </a>
+          <div class="season-picker" id="season-picker">
+            <button class="secondary-button secondary-button--dropdown global-action" type="button" data-season-toggle data-global-action aria-haspopup="listbox" aria-expanded="false">
+              <span class="season-picker-trophy" aria-hidden="true">
+                <svg viewBox="0 0 28 32" role="presentation" focusable="false">
+                  <path class="season-picker-trophy-line" d="M8 3h12v5c0 5-2.4 8.5-6 10-3.6-1.5-6-5-6-10V3Z"/>
+                  <path class="season-picker-trophy-line" d="M8 6H4v2c0 4 2 6 5.3 6.7M20 6h4v2c0 4-2 6-5.3 6.7"/>
+                  <path class="season-picker-trophy-line" d="M14 18v6M11 24h6v4M9 28h10"/>
+                </svg>
+              </span>
+              <span id="season-picker-label"><span class="loading-skeleton skeleton-pill" aria-hidden="true"></span></span>
+            </button>
+            <div class="season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
+          </div>
+          <button class="auth-button global-action" id="auth-button" type="button" data-auth-open data-global-action data-global-action-close>
+            <svg class="auth-user-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/>
+            </svg>
+            <span class="auth-button-label">Login</span>
           </button>
-          <div class="season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
         </div>
-        <a class="external-game-link" id="external-game-link" href="https://lw-ux.github.io/PadelPong/" target="_blank" rel="noopener" aria-label="PadelPong in neuem Tab öffnen" title="PadelPong">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10l3 3 1 8-3 1-4-4h-4l-4 4-3-1 1-8z"/><path d="M7 9v5m-2.5-2.5h5M16 10h.01M18 13h.01"/></svg>
-        </a>
-        <button class="auth-button" id="auth-button" type="button" data-auth-open>Login</button>
+        <button class="global-actions-toggle" type="button" data-global-actions-toggle aria-expanded="false" aria-controls="global-actions-list" aria-label="Schnellzugriffe öffnen">
+          <svg class="global-actions-toggle-menu" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/></svg>
+          <svg class="global-actions-toggle-close" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 18 18M18 6 6 18"/></svg>
+          <span class="global-actions-toggle-badge" data-global-actions-badge hidden></span>
+        </button>
       </div>
     </div>
     <div class="hero-title-row">
@@ -66,12 +97,12 @@
       <div class="hero-actions">
         <div class="viewer-picker" id="viewer-picker">
           <div class="viewer-split-button">
-            <button class="viewer-profile-button" id="viewer-profile-button" type="button" aria-label="Spielerprofil öffnen" title="Spielerprofil öffnen" disabled>
+            <button class="viewer-profile-button" id="viewer-profile-button" type="button" aria-label="Spielerprofil öffnen" title="Spielerprofil öffnen" data-global-action data-global-action-close disabled>
               <img class="viewer-profile-image" id="viewer-profile-image" alt="" hidden>
               <span class="viewer-profile-emoji" id="viewer-profile-emoji" aria-hidden="true">👤</span>
             </button>
             <div class="viewer-combobox">
-              <button class="secondary-button secondary-button--dropdown" type="button" data-viewer-toggle aria-haspopup="listbox" aria-expanded="false" aria-controls="viewer-menu">
+              <button class="secondary-button secondary-button--dropdown" type="button" data-viewer-toggle data-global-action aria-haspopup="listbox" aria-expanded="false" aria-controls="viewer-menu">
                 <span class="viewer-label-full" id="viewer-label-full">Spieler auswählen</span>
                 <span class="viewer-label-short" id="viewer-label-short">Auswählen</span>
               </button>
@@ -117,14 +148,16 @@
               <span class="skeleton-line skeleton-line-medium"></span>
             </div>
           </div>
-          <button class="text-link" data-nav-target="infos">Alle alten Artikel</button>
+          <button class="text-link" data-nav-target="infos">Zum PadelPost-Archiv</button>
         </article>
       </div>
 
       <div class="home-side">
         <article class="widget home-final-four-cta" id="home-final-four-cta" hidden>
-          <h2 class="home-final-four-title">Final Four Übersicht</h2>
-          <button type="button" class="text-link inline-link" id="home-final-four-link" data-live-view="overview">Zur Übersicht</button>
+          <div class="widget-label">Übersicht</div>
+          <h2>Final Four</h2>
+          <p>Alles auf einen Blick: Spiele, Rangliste, Prematch-Fakten, Spielverlauf und Co.</p>
+          <button type="button" class="text-link" id="home-final-four-link" data-live-view="overview">Zur Übersicht</button>
         </article>
 
         <article class="widget">
@@ -186,7 +219,7 @@
       <div class="match-scope-toggle ranking-sort-toggle" id="ranking-sort-toggle" aria-label="Rangliste sortieren">
         <button type="button" class="active" data-ranking-sort="points">Punkte</button>
         <button type="button" data-ranking-sort="elo">Elo</button>
-        <button type="button" data-ranking-sort="placement">Platzierungsfaktor</button>
+        <button type="button" data-ranking-sort="draw-factor">Losfaktor</button>
       </div>
       <div class="match-scope-toggle ranking-view-toggle" id="ranking-view-toggle" aria-label="Ranglistenansicht">
         <button type="button" class="active" data-ranking-view="compact">Kompakt</button>
@@ -212,9 +245,9 @@
                 <span class="help-tooltip">Ø Elo-Siegwahrscheinlichkeit der Teams eines Spielers über alle gewerteten Partien.<br>Bei gespielten Partien zählt die Prognose vor der Partie, bei offenen die aktuelle. Nicht die tatsächliche Siegquote.</span>
               </span>
             </th>
-            <th class="col-placement-factor">
-              <span class="th-help-wrap">Platzierungsfaktor
-                <span class="help-icon" tabindex="0" aria-label="Platzierungsfaktor erklären">?</span>
+            <th class="col-draw-factor">
+              <span class="th-help-wrap">Losfaktor
+                <span class="help-icon" tabindex="0" aria-label="Losfaktor erklären">?</span>
                 <span class="help-tooltip">Ø Platz Mitspieler / Ø Platz Gegenspieler / Differenz.<br>Positive Werte bedeuten: Die Gegner waren im Schnitt stärker platziert als die Mitspieler.</span>
               </span>
             </th>
@@ -285,11 +318,17 @@
     <div class="statistics-load-error" id="statistics-load-error" role="status" hidden></div>
     <div class="stats-grid">
       <article class="widget favorite-check-widget">
-        <div class="widget-label">Favoriten-Check</div>
+        <div class="widget-label">
+          <span class="sh-title-with-help">Favoriten-Check
+            <span class="th-help-wrap">
+              <span class="help-icon" tabindex="0" role="button" aria-label="Favoriten-Check erklären" aria-describedby="favorite-check-help" aria-expanded="false" data-help-tooltip-anchor>?</span>
+              <span class="help-tooltip" id="favorite-check-help" role="tooltip">Als Favorit zählt ein Team ab 55 % Siegchance.</span>
+            </span>
+          </span>
+        </div>
         <div id="favorite-check"></div>
       </article>
       <article class="widget">
-        <div class="widget-label">Ø-Spielzeit</div>
         <div id="stats-time-performance"></div>
       </article>
       <article class="widget">
@@ -324,23 +363,56 @@
         <div id="stats-elo-points-deviation"></div>
       </article>
       <article class="widget">
-        <div id="stats-points-placement-deviation"></div>
+        <div id="stats-points-draw-factor-deviation"></div>
       </article>
     </div>
     <div class="chart-box stats-chart-box">
       <div class="chart-box-title widget-label">Elo-Score</div>
       <div class="filter-controls">
         <div class="filter-toggle-btns">
-          <button class="fb-toggle" data-chart-toggle-all="true">Alle an</button>
-          <button class="fb-toggle" data-chart-toggle-all="false">Alle aus</button>
+          <div class="filter-toggle-all">
+            <button class="fb-toggle" data-chart-toggle-all="true">Alle an</button>
+            <button class="fb-toggle" data-chart-toggle-all="false">Alle aus</button>
+          </div>
+          <div class="filter-company-row" id="filter-company-row"></div>
         </div>
         <div class="filter-row" id="filter-row"></div>
       </div>
       <div class="chart-wrap"><canvas id="eloChart"></canvas></div>
     </div>
+    <div class="all-time-ranking" data-all-time-statistic hidden>
+      <div class="sh sh-with-control section-subheading">
+        <div class="sh-heading">
+          <div class="sh-title">EWIGE RANGLISTE</div>
+          <div class="sh-meta" id="all-time-ranking-meta"></div>
+        </div>
+        <div class="match-scope-toggle ranking-view-toggle" id="all-time-ranking-view-toggle" aria-label="Ranglistenansicht">
+          <button type="button" class="active" data-all-time-ranking-view="compact">Kompakt</button>
+          <button type="button" data-all-time-ranking-view="expanded">Erweitert</button>
+        </div>
+      </div>
+      <div class="ranking-wrap ranking-main-wrap" id="all-time-ranking-wrap" data-ranking-view="compact">
+        <table class="rt ranking-table compact" id="all-time-ranking-table" data-ranking-sort="points">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-name">Spieler</th>
+              <th class="col-games">Partien</th>
+              <th class="col-wins">Siege</th>
+              <th class="col-points">Punkte</th>
+              <th class="col-gv">G:V</th>
+              <th class="col-diff">Diff.</th>
+              <th class="col-elo">Elo</th>
+            </tr>
+          </thead>
+          <tbody id="all-time-ranking-body"></tbody>
+        </table>
+      </div>
+      <div class="sh-meta ranking-note table-note" id="all-time-ranking-note">Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele</div>
+    </div>
   </section>
 
-  <!-- SPIELE -->
+  <!-- PARTIEN -->
   <section id="partien" class="section">
     <div id="final-four-spielplan" hidden></div>
     <div class="sh sh-with-control">
@@ -387,12 +459,12 @@
             <div id="calculator-matches" class="calculator-match-list"></div>
           </div>
           <aside class="calculator-mobile-mini-ranking" aria-label="Kurzrangliste">
-            <div class="calculator-mini-title">Tabelle</div>
+            <div class="calculator-mini-title">Rangliste</div>
             <div id="calculator-mini-ranking"></div>
           </aside>
         </div>
         <div class="calculator-panel calculator-ranking-panel">
-          <div class="widget-label">Simulierte Tabelle</div>
+          <div class="widget-label">Simulierte Rangliste</div>
           <div class="ranking-wrap calculator-ranking-wrap">
             <table class="rt calculator-ranking-table">
               <thead>
@@ -415,7 +487,7 @@
         <div class="sh-title sh-title-with-help">FINAL4-RECHNER
           <span class="th-help-wrap">
             <span class="help-icon" tabindex="0" aria-label="Final4-Rechner erklären">?</span>
-            <span class="help-tooltip">Jede der drei Partien besteht aus einem Satz. Trage die Ergebnisse ein, um die Final4-Tabelle live zu berechnen.<br>Nach zwei gültigen Sätzen siehst du, welcher Endstand im verbleibenden Satz welchen Gesamtsieger ergibt.<br>Alle Eingaben sind Simulationen. Zurücksetzen stellt die bestätigten Ergebnisse wieder her.</span>
+            <span class="help-tooltip">Jede der drei Partien besteht aus einem Satz. Trage die Ergebnisse ein, um die Final4-Rangliste live zu berechnen.<br>Nach zwei gültigen Sätzen siehst du, welcher Endstand im verbleibenden Satz welchen Gesamtsieger ergibt.<br>Alle Eingaben sind Simulationen. Zurücksetzen stellt die bestätigten Ergebnisse wieder her.</span>
           </span>
         </div>
         <button type="button" class="secondary-button" data-calculator-reset="final-four">Zurücksetzen</button>
@@ -426,12 +498,12 @@
             <div id="final-four-calculator-matches" class="calculator-match-list"></div>
           </div>
           <aside class="calculator-mobile-mini-ranking" aria-label="Final4-Kurzrangliste">
-            <div class="calculator-mini-title">Tabelle</div>
+            <div class="calculator-mini-title">Rangliste</div>
             <div id="final-four-calculator-mini-ranking"></div>
           </aside>
         </div>
         <div class="calculator-panel calculator-ranking-panel">
-          <div class="widget-label">Simulierte Final4-Tabelle</div>
+          <div class="widget-label">Simulierte Final4-Rangliste</div>
           <div class="ranking-wrap calculator-ranking-wrap">
             <table class="rt calculator-ranking-table final-four-calculator-ranking-table">
               <thead><tr><th class="col-rank">#</th><th class="col-name">Spieler</th><th class="col-wins">Siege</th><th class="col-gv">G:V</th><th class="col-diff">Diff.</th></tr></thead>
@@ -458,7 +530,11 @@
     </div>
     <div class="info-layout">
       <aside class="info-card info-menu-card">
-        <div class="widget-label">Inhalte</div>
+        <div class="widget-label info-menu-desktop-label">Inhalte</div>
+        <button type="button" class="info-menu-toggle" data-info-menu-toggle aria-expanded="false" aria-controls="info-menu">
+          <span>Inhalte</span>
+          <span class="info-menu-chevron" aria-hidden="true"></span>
+        </button>
         <nav id="info-menu" class="info-menu"></nav>
       </aside>
       <div id="info-sections" class="info-sections"></div>
@@ -467,19 +543,25 @@
 
 </main>
 
-<dialog class="live-ticker-dialog" id="live-ticker-dialog" aria-labelledby="live-ticker-title">
-  <div class="live-ticker-dialog-shell">
-    <header class="live-ticker-dialog-header">
-      <button class="secondary-button live-ticker-dialog-back" type="button" data-live-back aria-label="Final Four schließen">Zurück</button>
-      <div class="live-ticker-dialog-heading">
-        <div class="sh-title" id="live-ticker-title">FINAL FOUR</div>
-        <div class="sh-meta" id="live-ticker-season-label"></div>
-        <div class="live-ticker-dialog-played-order" id="match-statistics-played-order" hidden></div>
+<dialog class="detail-view-dialog" id="detail-view-dialog" aria-labelledby="detail-view-title">
+  <div class="detail-view-shell">
+    <header class="detail-view-header">
+      <button class="secondary-button detail-view-back" type="button" data-detail-view-back aria-label="Final Four schließen">Zurück</button>
+      <div class="detail-view-heading">
+        <div class="sh-title" id="detail-view-title">FINAL FOUR</div>
+        <div class="sh-meta" id="detail-view-context"></div>
+        <div class="detail-view-played-order" id="match-statistics-played-order" hidden></div>
+      </div>
+      <div class="detail-view-pager" id="match-statistics-pager" hidden>
+        <button class="secondary-button detail-view-step" type="button" data-statistics-step="-1" aria-label="Vorherige Partie"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 18-6-6 6-6"></path></svg></button>
+        <button class="secondary-button detail-view-step" type="button" data-statistics-step="1" aria-label="Nächste Partie"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"></path></svg></button>
+        <!-- Vorübergehender mobiler Wischhinweis; entfällt, sobald das Wischen gelernt ist. -->
+        <span class="detail-view-swipe-hint" aria-hidden="true"><svg viewBox="0 0 32 24" focusable="false"><path d="M5 7h22M8.5 3.5 5 7l3.5 3.5M23.5 3.5 27 7l-3.5 3.5"></path><circle cx="16" cy="16.5" r="3.5"></circle></svg></span>
       </div>
     </header>
-    <section class="live-ticker-dialog-content" id="liveticker">
-      <div class="live-ticker-nav" id="live-match-switcher" aria-label="Final-Four-Partie auswählen"></div>
-      <div id="live-ticker-content">
+    <section class="detail-view-content" id="detail-view">
+      <div class="final-four-view-nav" id="final-four-view-switcher" aria-label="Final-Four-Partie auswählen"></div>
+      <div id="detail-view-body">
         <div class="empty-state">Der Liveticker wird geladen …</div>
       </div>
     </section>
@@ -487,7 +569,7 @@
 </dialog>
 
 <dialog class="auth-dialog" id="live-cancel-dialog" aria-labelledby="live-cancel-title" aria-describedby="live-cancel-description">
-  <button class="modal-close-button auth-dialog-close" type="button" data-live-cancel-close aria-label="Dialog schließen">×</button>
+  <button class="modal-close-button auth-dialog-close" type="button" data-live-cancel-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="auth-dialog-card">
     <div class="widget-label">Liveticker</div>
     <h2 id="live-cancel-title">Liveticker verwerfen?</h2>
@@ -500,7 +582,7 @@
 </dialog>
 
 <dialog class="auth-dialog" id="unschedule-match-dialog" aria-labelledby="unschedule-match-title" aria-describedby="unschedule-match-description">
-  <button class="modal-close-button auth-dialog-close" type="button" data-unschedule-close aria-label="Dialog schließen">×</button>
+  <button class="modal-close-button auth-dialog-close" type="button" data-unschedule-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="auth-dialog-card">
     <div class="widget-label">Partie</div>
     <h2 id="unschedule-match-title">Termin löschen</h2>
@@ -513,11 +595,11 @@
 </dialog>
 
 <dialog class="auth-dialog" id="unrate-match-dialog" aria-labelledby="unrate-match-title" aria-describedby="unrate-match-description">
-  <button class="modal-close-button auth-dialog-close" type="button" data-unrate-close aria-label="Dialog schließen">×</button>
+  <button class="modal-close-button auth-dialog-close" type="button" data-unrate-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="auth-dialog-card">
     <div class="widget-label">Partie</div>
     <h2 id="unrate-match-title">Partie nicht werten?</h2>
-    <p class="auth-dialog-copy" id="unrate-match-description">Diese Partie wird dauerhaft als „ohne Wertung“ markiert. Sie zählt nicht für Tabelle, Elo oder Tipps. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+    <p class="auth-dialog-copy" id="unrate-match-description">Diese Partie wird dauerhaft als „ohne Wertung“ markiert. Sie zählt nicht für die Rangliste, Elo oder Tipps. Diese Aktion kann nicht rückgängig gemacht werden.</p>
     <div class="player-email-actions">
       <button class="secondary-button" type="button" data-unrate-close>Abbrechen</button>
       <button class="danger-button" type="button" data-unrate-confirm>Nicht werten</button>
@@ -536,7 +618,7 @@
       <path fill="currentColor" d="M200.02 1121.56s-80.68-130 36.83-314.82c4.43 9.89 62.18 171.83-36.83 314.82ZM276.97 1068.8s147.88 39.26 290.4-127.04c-10.75-1.35-182.49-9.37-290.4 127.04ZM406.9 880.71s151.77-19.39 221.06-227.15c-10.46 2.8-172.56 60.13-221.06 227.15ZM455.75 672.06s137.49-67.14 136.34-286.15c-9.01 6.02-144.08 112.4-136.34 286.15ZM433.81 451.28s114.46-101.53 54.66-312.22c-7.07 8.21-108.69 146.9-54.66 312.22ZM362.89 294.13S427.61 162.55 303.36 0c-3.33 9.82-44.14 169.22 59.53 294.13ZM354.31 979.19s-124.57-113.02-62.56-340.04c7.78 9 118.53 154.78 62.56 340.04ZM444.63 725.92S314.02 651.85 309.1 431.05c9.35 6.39 135.2 104.98 135.53 294.87ZM319.89 275.41c-37.43-27.19-80.51-45.93-124.95-58.81.09 9.22 1.36 18.42 3.77 27.31 2.98 11.02 7.68 21.51 12.86 31.69 41.4 81.32 125.52 158.37 217.36 176.43-.3-10.34-7.29-24.21-10.17-34.36-16.65-58.66-49.18-106.17-98.87-142.27ZM217.74 132.82C156.73 83.5 78.53 55.89.08 55.98c-1.88 24.66 30.62 47.43 47.64 60.31 38.98 29.48 79.99 49.56 127.66 62.42 29.34 7.92 62.33 14.28 92.79 14.23.91 0 1.95-.07 2.51-.78.8-1.03.04-2.5-.73-3.56-6.03-8.36-13.82-15.26-20.15-23.39-9.47-12.14-20.09-22.72-32.06-32.4Z"/>
     </symbol>
   </svg>
-  <button class="modal-close-button player-profile-close" type="button" data-player-profile-close aria-label="Spielerprofil schließen">×</button>
+  <button class="modal-close-button player-profile-close" type="button" data-player-profile-close aria-label="Spielerprofil schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="player-profile-shell">
     <div class="player-profile-state" id="player-profile-state" role="status">Spielerprofil wird geladen …</div>
     <div class="player-profile-content" id="player-profile-content" hidden>
@@ -554,11 +636,10 @@
             <div class="player-profile-achievements" id="player-profile-achievements" hidden></div>
           </div>
         </header>
+        <article class="widget player-profile-widget player-profile-stats-widget">
+          <section class="player-profile-stats" id="player-profile-stats" aria-label="All-Time-Statistiken"></section>
+        </article>
       </div>
-
-      <article class="widget player-profile-widget player-profile-stats-widget">
-        <section class="player-profile-stats" id="player-profile-stats" aria-label="All-Time-Statistiken"></section>
-      </article>
 
       <article class="widget player-profile-widget player-profile-elo-panel">
         <div class="player-profile-section-heading">
@@ -577,7 +658,7 @@
       </article>
 
       <article class="widget player-profile-widget player-profile-relationships">
-        <div class="player-profile-section-heading"><h3 class="widget-label">Mitspieler &amp; Gegner</h3></div>
+        <div class="player-profile-section-heading" id="player-profile-relationships-heading"><h3 class="widget-label">Mitspieler &amp; Gegner</h3></div>
         <div id="player-profile-relationships"></div>
       </article>
 
@@ -591,7 +672,7 @@
 </dialog>
 
 <dialog class="auth-dialog" id="auth-dialog" aria-labelledby="auth-dialog-title">
-  <button class="modal-close-button auth-dialog-close" type="button" data-auth-close aria-label="Dialog schließen">×</button>
+  <button class="modal-close-button auth-dialog-close" type="button" data-auth-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="auth-dialog-card">
     <div id="auth-guest-view">
       <div class="widget-label">Dein Padel-Konto</div>
@@ -651,7 +732,18 @@
         <div class="account-player-area" id="account-player-area" hidden>
           <section class="account-section" id="open-results-section">
             <div class="account-section-heading">
-              <h3 class="sh-title">Spieleübersicht</h3>
+              <h3 class="sh-title sh-title-with-help">Spieleübersicht
+                <span class="th-help-wrap account-games-help">
+                  <span class="help-icon" tabindex="0" role="button" aria-label="Spieleübersicht erklären" aria-describedby="account-games-help" aria-expanded="false" data-help-tooltip-anchor>?</span>
+                  <span class="help-tooltip" id="account-games-help" role="tooltip">
+                    <span class="account-games-help-block">Hier siehst du alle deine eigenen Liga- und Trainingsspiele, sortiert nach dem, was als Nächstes zu tun ist.</span>
+                    <span class="account-games-help-block"><strong>Terminieren</strong>Bei einem geplanten Spiel Datum und Uhrzeit wählen und „Terminieren“ klicken. Über „Termin ändern“ oder „Termin löschen“ passt du ihn später an.</span>
+                    <span class="account-games-help-block"><strong>Ergebnis eintragen</strong>Nach dem Spiel die Sätze eintragen, den tatsächlichen Spielzeitpunkt prüfen und „Zur Bestätigung senden“ klicken.</span>
+                    <span class="account-games-help-block"><strong>Bestätigen</strong>Ergebnisse des anderen Teams stehen unter „Zu bestätigen“. Stimmt es, klickst du „Ergebnis bestätigen“, sonst „Alternative eingeben“. Ohne Reaktion gilt ein Vorschlag nach 48 Stunden als bestätigt.</span>
+                    <span class="account-games-help-block"><strong>Training</strong>Über „Training hinzufügen“ Datum, Uhrzeit und vier Spieler wählen (auch Gäste), Ergebnis eintragen und zur Bestätigung senden. Trainings zählen nicht für Rangliste und Elo.</span>
+                  </span>
+                </span>
+              </h3>
               <button class="secondary-button" type="button" data-training-toggle>Training hinzufügen</button>
             </div>
             <div class="match-scope-toggle account-result-scope-toggle" aria-label="Spieleübersicht filtern" data-account-result-scope-toggle hidden>
@@ -691,7 +783,7 @@
 </dialog>
 
 <dialog class="auth-dialog player-invite-dialog" id="player-invite-dialog" aria-labelledby="player-invite-title">
-  <button class="modal-close-button auth-dialog-close" type="button" data-player-invite-close aria-label="Einladung schließen">×</button>
+  <button class="modal-close-button auth-dialog-close" type="button" data-player-invite-close aria-label="Einladung schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="auth-dialog-card">
     <div class="widget-label">Kontoverwaltung</div>
     <h2 id="player-invite-title">Spielerzugänge</h2>

@@ -173,7 +173,7 @@ const seasonLeague = allMatches.filter(match => match.seasonId === seasonId && m
 const matchNumber = match => match.label || `Partie ${String(match.id).match(/(\d+)$/)?.[1] ?? match.id}`;
 const teamText = ids => ids.map(name).join(' & ');
 
-// Tabelle der laufenden Saison, optional ohne eine bestimmte Partie.
+// Rangliste der laufenden Saison, optional ohne eine bestimmte Partie.
 function buildTable(excludedMatchId = null) {
   const entries = data.seasonPlayers.map(id => {
     const entry = { id, points: 0, played: 0, wins: 0, gameDiff: 0, gamesWon: 0, open: 0 };
@@ -404,10 +404,10 @@ function achievements(id) {
 const lines = [];
 const day = data.matchdays.find(entry => entry.matchday === matchday);
 lines.push(`# ${data.season.label} · Spieltag ${matchday}${day?.starts_on ? ` (${formatDate(day.starts_on)} - ${formatDate(day.ends_on)})` : ''}`);
-lines.push('Stand: Datenbank jetzt. Elo und Profile sind global, die Tabelle betrifft nur diese Saison.');
+lines.push('Stand: Datenbank jetzt. Elo und Profile sind global, die Rangliste betrifft nur diese Saison.');
 
 if (hasTable) {
-  lines.push('', `## Tabelle (Top ${places} qualifiziert)`);
+  lines.push('', `## Rangliste (Top ${places} qualifiziert)`);
   table.forEach(entry => {
     lines.push(`${entry.rank}. ${name(entry.id)} (${company(entry.id)}) · ${entry.points} P · ${entry.wins}/${entry.played} Siege · Diff ${signed(entry.gameDiff)} · offen bis ST ${matchday}: ${entry.open} · Elo ${currentElo(entry.id) || '—'}`);
   });
@@ -475,7 +475,7 @@ for (const match of matchdayMatches) {
       !lastIsThisMatch && lastMatchText(id) && `Letztes Spiel: ${lastMatchText(id)}`
     ].filter(Boolean);
     const entry = tableById.get(id);
-    const tableText = entry ? `Platz ${entry.rank}, ${entry.points} P aus ${entry.played}` : 'nicht in der Tabelle';
+    const tableText = entry ? `Platz ${entry.rank}, ${entry.points} P aus ${entry.played}` : 'nicht in der Rangliste';
     return [`- ${name(id)} (${company(id)}, ${tableText}, Elo ${currentElo(id) || '—'})`, ...facts.map(fact => `  - ${fact}`)];
   });
 

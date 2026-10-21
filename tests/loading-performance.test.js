@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
 const account = fs.readFileSync(path.join(root, 'js/account.js'), 'utf8');
 const tipping = fs.readFileSync(path.join(root, 'js/tippspiel.js'), 'utf8');
+const tippingPage = fs.readFileSync(path.join(root, 'js/tipp-page.js'), 'utf8');
 
 function fn(source, name, indent = '') {
   const match = source.match(new RegExp(`${indent}(?:async )?function ${name}\\([^]*?\\n${indent}}`));
@@ -19,7 +20,7 @@ function deferred() {
   return { promise, resolve, reject };
 }
 
-test('season file and database start together and hydrate only after both finish', async () => {
+test('season file and database start together and hydrate before Padeltipp forecasts', async () => {
   const script = deferred(), database = deferred(), calls = [];
   const context = vm.createContext({
     window: {},
@@ -39,7 +40,17 @@ test('season file and database start together and hydrate only after both finish
   script.resolve();
   const result = await request;
   assert.equal(result.matches[0].id, 'db');
+  assert.equal(result.matches[0].forecast, undefined);
   assert.deepEqual(result.articles, ['editorial']);
+});
+
+test('season-wide Padeltipp forecasts load only after account startup', () => {
+  const initApp = app.match(/async function initApp\(\) \{[\s\S]*?(?=\n\}\n\nconst mobileViewportQuery)/)?.[0] || '';
+  const seasonLoad = initApp.indexOf('await loadActiveSeason()');
+  const accountLoad = initApp.indexOf('await window.PadelKonto?.init()');
+  const forecastLoad = initApp.lastIndexOf('await loadActiveSeasonForecasts()');
+  assert.ok(seasonLoad >= 0 && seasonLoad < accountLoad);
+  assert.ok(accountLoad < forecastLoad);
 });
 
 test('sections render on demand and hidden sections stay invalid until opened', () => {
@@ -119,20 +130,209 @@ test('chart library loads once on demand and allows a retry after a failed downl
   }
 });
 
-test('disabled tipping clears old data without issuing public or private queries', async () => {
+test('closed tipping still loads existing rankings and personal tips', async () => {
   const state = { client: {}, season: { competition: { predictionsEnabled: false } },
     databaseMatches: new Map([['old', {}]]), predictions: new Map([['old', '2:0']]), leaderboard: [{}] };
+  const calls = [];
   let renders = 0;
   const context = vm.createContext({ state, window: {}, render: () => renders++,
-    loadPublicData: () => { throw Error('unexpected query'); },
-    loadPredictions: () => { throw Error('unexpected query'); } });
+    loadPublicData: async () => { calls.push('public'); state.leaderboard = [{ user_id: 'one' }]; },
+    loadPredictions: async () => { calls.push('private'); state.predictions = new Map([['past', '2:0']]); } });
   vm.runInContext(fn(tipping, 'refresh', '  '), context);
   await context.refresh();
   assert.equal(state.ready, true);
-  assert.equal(state.databaseMatches.size, 0);
-  assert.equal(state.predictions.size, 0);
-  assert.equal(state.leaderboard.length, 0);
+  assert.deepEqual(calls, ['public', 'private']);
+  assert.equal(state.predictions.get('past'), '2:0');
+  assert.equal(state.leaderboard.length, 1);
   assert.equal(renders, 1);
+});
+
+test('a closed season keeps historical matches visible without reopening submissions', () => {
+  const match = { id: 'past', sieger: null, team1: { playerIds: ['a', 'b'] }, team2: { playerIds: ['c', 'd'] } };
+  const state = {
+    season: { competition: { predictionsEnabled: false }, matches: [match] },
+    databaseMatches: new Map([['past', { betting_open: true, actual_sets: null, cancelled_at: null, match_at: null }]])
+  };
+  const context = vm.createContext({ state, window: { PadelPreviewWindow: { availability: () => 'preview' } } });
+  vm.runInContext([
+    fn(tipping, 'getPredictionLocalMatches', '  '),
+    fn(tipping, 'getActualSets', '  '),
+    fn(tipping, 'isCancelledMatch', '  '),
+    fn(tipping, 'isOwnMatch', '  '),
+    fn(tipping, 'getPreviewWindowMatch', '  '),
+    fn(tipping, 'isOutsidePreviewWindow', '  '),
+    fn(tipping, 'isPredictionOpen', '  ')
+  ].join('\n'), context);
+  assert.equal(context.getPredictionLocalMatches().length, 1);
+  assert.equal(context.isPredictionOpen(match), false);
+  state.season.competition.predictionsEnabled = true;
+  assert.equal(context.isPredictionOpen(match), true);
+});
+
+test('Padeltipp starts season, module and account together without blocking on account startup', async () => {
+  const calls = [];
+  const accountReady = deferred(), seasonReady = deferred(), moduleReady = deferred();
+  const season = { id: '2026-sommer', label: 'Sommer 2026' };
+  const window = {
+    PADEL_SEASON: null,
+    PadelKonto: { init() { calls.push('account'); return accountReady.promise; } }
+  };
+  const context = vm.createContext({
+    window,
+    document: {
+      querySelectorAll() { return []; },
+      querySelector() { return { innerHTML: '' }; }
+    },
+    console,
+    normalizeLegacySeasonUrl() {},
+    getSelectedSeason: () => ({ file: 'data/season.js' }),
+    renderSeasonPicker() {},
+    bindNavigation() {},
+    hydrateSeason: value => value,
+    async loadScript(pathname) {
+      if (pathname.includes('data/season.js')) {
+        calls.push('season');
+        await seasonReady.promise;
+        window.PADEL_SEASON = season;
+      } else {
+        calls.push('tippspiel-module');
+        await moduleReady.promise;
+        window.PadelTippspiel = { async init(value, options) {
+          assert.equal(options.accountReady, accountReady.promise);
+          calls.push(`tippspiel:${value.id}`);
+        } };
+      }
+    }
+  });
+  vm.runInContext(fn(tippingPage, 'init', '  '), context);
+  const request = context.init();
+  assert.deepEqual(calls, ['account', 'season', 'tippspiel-module']);
+  moduleReady.resolve();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls.length, 3);
+  seasonReady.resolve();
+  await request;
+  assert.deepEqual(calls, ['account', 'season', 'tippspiel-module', 'tippspiel:2026-sommer']);
+  accountReady.resolve();
+});
+
+test('public Padeltipp rankings render while account, matches and Elo are still loading', async () => {
+  const accountReady = deferred(), matches = deferred(), participants = deferred(), leaderboard = deferred();
+  const calls = [], events = new Map();
+  const nodes = new Map(['prediction-ranking-body', 'prediction-ranking-empty', 'prediction-matches']
+    .map(id => [id, { innerHTML: '', textContent: '' }]));
+  let session = null;
+  const client = {
+    from(table) {
+      calls.push(table);
+      return { select() {
+        if (table === 'matches') return { in() { return matches.promise; } };
+        return Promise.resolve({ data: [{ match_id: 'one', prediction: '2:0' }] });
+      } };
+    },
+    rpc(name) {
+      calls.push(name);
+      return name === 'get_public_season' ? participants.promise : leaderboard.promise;
+    }
+  };
+  const window = {
+    PadelKonto: {
+      init: () => accountReady.promise,
+      getClient: () => client,
+      getSession: () => session
+    },
+    addEventListener(name, handler) { events.set(name, handler); }
+  };
+  const context = vm.createContext({
+    window, console,
+    document: {
+      getElementById: id => nodes.get(id),
+      addEventListener() {}
+    }
+  });
+  vm.runInContext(tipping, context);
+  const request = window.PadelTippspiel.init({ id: '2026-winter', matches: [] });
+  assert.deepEqual(calls, ['get_public_season', 'matches', 'get_prediction_leaderboard']);
+  assert.equal(events.has('padel:auth-state-changed'), false);
+  leaderboard.resolve({ data: [{ user_id: 'viewer', display_name: 'Tipper', points: 4 }] });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.match(nodes.get('prediction-ranking-body').innerHTML, /Tipper/);
+  assert.equal(nodes.get('prediction-ranking-empty').textContent, '');
+  assert.match(nodes.get('prediction-matches').innerHTML, /werden geladen/);
+  assert.equal(calls.includes('predictions'), false);
+
+  session = { user: { id: 'viewer' } };
+  accountReady.resolve();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls.filter(name => name === 'predictions').length, 1);
+  assert.equal(calls.filter(name => name === 'get_prediction_leaderboard').length, 1);
+  assert.equal(events.has('padel:auth-state-changed'), true);
+  matches.resolve({ data: [] });
+  participants.resolve({ data: { participants: [] } });
+  await request;
+  assert.match(nodes.get('prediction-ranking-body').innerHTML, /authenticated-player-highlight/);
+});
+
+test('Padeltipp legacy rankings fall back independently and recover from a request failure', async () => {
+  const calls = [], state = { leaderboard: [] };
+  let failure = false;
+  state.client = { async rpc(name, { p_season_id }) {
+    calls.push(p_season_id);
+    if (failure) return { error: { message: 'offline' } };
+    return { data: p_season_id === '2026' ? [{ user_id: 'legacy' }] : [] };
+  } };
+  let renders = 0;
+  const context = vm.createContext({ state, renderLeaderboard: () => renders++ });
+  vm.runInContext(fn(tipping, 'loadLeaderboard', '  '), context);
+  await context.loadLeaderboard('2026-sommer', '2026');
+  assert.deepEqual(calls, ['2026-sommer', '2026']);
+  assert.equal(state.leaderboard[0].user_id, 'legacy');
+  assert.equal(state.leaderboardReady, true);
+  failure = true;
+  await assert.rejects(context.loadLeaderboard('2026-sommer', '2026'), { message: 'offline' });
+  assert.equal(state.leaderboardError, 'offline');
+  failure = false;
+  await context.loadLeaderboard('2026-sommer', '2026');
+  assert.equal(state.leaderboardError, null);
+  assert.equal(renders, 3);
+});
+
+test('personal Padeltipp responses cannot restore tips after logout', async () => {
+  const pending = deferred();
+  let session = { user: { id: 'viewer' } };
+  const state = {
+    session, predictions: new Map(),
+    client: { from: () => ({ select: () => pending.promise }) }
+  };
+  const context = vm.createContext({ state, window: { PadelKonto: { getSession: () => session } } });
+  vm.runInContext(fn(tipping, 'loadPredictions', '  '), context);
+  const request = context.loadPredictions();
+  session = null;
+  pending.resolve({ data: [{ match_id: 'one', prediction: '2:0' }] });
+  await request;
+  assert.equal(state.predictions.size, 0);
+});
+
+test('the Padeltipp page reuses the legacy season match prefix', () => {
+  const window = {
+    PADEL_PLAYERS: [
+      { id: 'a', name: 'A' }, { id: 'b', name: 'B' },
+      { id: 'c', name: 'C' }, { id: 'd', name: 'D' }
+    ]
+  };
+  const context = vm.createContext({ window });
+  vm.runInContext(fn(tippingPage, 'hydrateSeason', '  '), context);
+  const season = context.hydrateSeason({
+    id: '2026-sommer',
+    matchIdPrefix: 'season-2026',
+    players: window.PADEL_PLAYERS,
+    matches: [{
+      id: 'partie1', spieltag: 1, datum: null, uhrzeit: null, ergebnis: null, saetze: null, sieger: null,
+      team1: { spieler: ['A', 'B'] }, team2: { spieler: ['C', 'D'] }
+    }]
+  });
+  assert.equal(season.matches[0].id, 'season-2026-partie-1');
+  assert.deepEqual(JSON.parse(JSON.stringify(season.matches[0].team1.playerIds)), ['a', 'b']);
 });
 
 test('account startup publishes identity without waiting for private game tasks', async () => {

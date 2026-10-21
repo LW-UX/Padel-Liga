@@ -1,7 +1,8 @@
-/* Partiestatistik: one fresh RPC per opening, no live subscription or result cache. */
+/* Partiestatistik: fresh RPCs per opening, no live subscription. Neighbours in the browsing order are prefetched while the view stays open. */
 (function () {
   'use strict';
   const eloForecast = typeof module !== 'undefined' ? require('./elo-forecast.js') : window.PadelEloForecast;
+  const previewWindow = typeof module !== 'undefined' ? require('./preview-window.js') : window.PadelPreviewWindow;
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const number = value => value == null || !Number.isFinite(Number(value)) ? '—' : Number(value).toLocaleString('de-DE', { maximumFractionDigits: 1 });
   const signed = value => value == null ? '—' : `${value > 0 ? '+' : ''}${number(value)}`;
@@ -13,33 +14,17 @@
   const playedOrderLabel = data => Number.isInteger(Number(data?.leaguePlayedOrdinal)) && Number(data.leaguePlayedOrdinal) > 0
     ? `Als ${Number(data.leaguePlayedOrdinal)}. Partie gespielt`
     : '';
-  const day = now => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(now);
   const icon = '<span class="mc-score-details-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4 6h9M4 11h6M4 16h5"></path><circle cx="15.5" cy="14.5" r="3.5"></circle><path d="m18 17 3 3"></path></svg></span>';
-  function availability(match, season, now = new Date()) {
-    if (!match || match.type === 'training' || match.cancelledAt || match.isCancelled || match.stage === 'final-four' || match.stage === 'final_four') return null;
-    if (match.team1?.playerIds?.length !== 2 || match.team2?.playerIds?.length !== 2) return null;
-    const matches = season?.matches || [];
-    const cup = season?.competition?.tournamentMode === 'knockout_redraw';
-    if (!cup && match.stage === 'semifinal' && matches.some(m => m.stage === 'league' && !m.cancelledAt && m.sieger == null)) return null;
-    if (match.sieger != null) return 'analysis';
-    if (match.countsForElo !== true) return null;
-    if (match.matchAt || (!cup && match.stage === 'semifinal')) return 'preview';
-    if (cup) {
-      const stages = ['quarterfinal', 'semifinal', 'final'];
-      const active = stages.find(stage => matches.some(m => m.stage === stage && m.sieger == null && !m.cancelledAt));
-      return match.stage === active ? 'preview' : 'basic';
-    }
-    const today = day(now);
-    const windows = [...(season?.matchdays || [])].sort((a, b) => String(a.startDate).localeCompare(String(b.startDate)) || a.spieltag - b.spieltag);
-    const own = windows.find(d => Number(d.spieltag) === Number(match.spieltag));
-    if (own?.endDate < today) return 'preview';
-    const upcoming = windows.filter(d => d.endDate >= today).slice(0, 2);
-    return upcoming.some(d => Number(d.spieltag) === Number(match.spieltag)) ? 'preview' : 'basic';
-  }
+  const availability = (match, season, now) => previewWindow.availability(match, season, now);
   function entry(match, season) {
     const mode = availability(match, season);
-    if (!mode) return null;
-    return { attributes: `data-match-statistics="${esc(match.id)}" aria-label="${esc(mode === 'analysis' ? 'Partieanalyse öffnen' : 'Partievorschau öffnen')}"`, icon: mode === 'preview' ? icon : '' };
+    // Weiter entfernte Partien besitzen noch keine ausführliche Vorschau und bleiben unverlinkt.
+    if (!mode || mode === 'basic') return null;
+    return {
+      mode,
+      attributes: `data-match-statistics="${esc(match.id)}" aria-label="${esc(mode === 'analysis' ? 'Partieanalyse öffnen' : 'Partievorschau öffnen')}"`,
+      icon: ''
+    };
   }
   const relationshipTerms = {
     successPartner: ['Erfolgspartner', 'Erfolgspartnerin'],
@@ -48,11 +33,11 @@
     fearedOpponent: ['Angstgegner', 'Angstgegnerin']
   };
   function section(title, body, helpText = '') {
-    const help = !helpText ? '' : `<span class="th-help-wrap live-ticker-statistics-heading-help">
+    const help = !helpText ? '' : `<span class="th-help-wrap match-statistics-heading-help">
       <span class="help-icon" tabindex="0" role="button" aria-label="${esc(title)} erklären" aria-describedby="match-statistics-elo-help" aria-expanded="false" data-help-tooltip-anchor>?</span>
       <span class="help-tooltip" id="match-statistics-elo-help" role="tooltip">${esc(helpText)}</span>
     </span>`;
-    return body ? `<section class="live-ticker-statistics-section"><h2 class="widget-label"><span class="live-ticker-statistics-heading">${esc(title)}${help}</span></h2>${body}</section>` : '';
+    return body ? `<section class="match-statistics-section"><h2 class="widget-label"><span class="match-statistics-heading">${esc(title)}${help}</span></h2>${body}</section>` : '';
   }
   function playerEmoji(player) {
     if (['👨', '👩'].includes(player?.profileEmoji)) return player.profileEmoji;
@@ -78,35 +63,103 @@
   }
   const viewerClass = (player, selectedPlayerId) => player?.playerId === selectedPlayerId ? ' viewer-player' : '';
   function playerBlock(p, selectedPlayerId) {
-    return `<button type="button" class="live-ticker-player player-profile-link" data-player-profile-id="${esc(p.playerId)}">
-      <span class="live-ticker-player-photo" aria-hidden="true"><img class="live-ticker-player-image" src="assets/players/${encodeURIComponent(p.playerId)}/profile.webp" alt="" data-live-player-image><span class="live-ticker-player-emoji" hidden>${esc(playerEmoji(p))}</span></span>
-      <span class="live-ticker-player-name${viewerClass(p, selectedPlayerId)}">${esc(p.displayName)}</span>${p.elo ? `<small class="live-ticker-player-elo">${number(p.elo.before)} Elo</small>` : ''}</button>`;
+    return `<button type="button" class="match-detail-player player-profile-link" data-player-profile-id="${esc(p.playerId)}">
+      <span class="match-detail-player-photo" aria-hidden="true"><img class="match-detail-player-image" src="assets/players/${encodeURIComponent(p.playerId)}/profile.webp" alt="" data-detail-player-image><span class="match-detail-player-emoji" hidden>${esc(playerEmoji(p))}</span></span>
+      <span class="match-detail-player-name${viewerClass(p, selectedPlayerId)}">${esc(p.displayName)}</span>${p.elo ? `<small class="match-detail-player-elo">${number(p.elo.before)} Elo</small>` : ''}</button>`;
   }
   function renderHead(data, selectedPlayerId) {
     const teamOneProbability = data.probability == null ? null : Math.round(data.probability * 100);
     const teamTwoProbability = teamOneProbability == null ? null : 100 - teamOneProbability;
     const probability = teamOneProbability == null ? '' : `${teamOneProbability} : ${teamTwoProbability}`;
-    const previewProbability = teamOneProbability == null ? '' : `<span class="match-probability live-ticker-probability match-statistics-probability" aria-label="Gewinnwahrscheinlichkeit ${teamOneProbability} zu ${teamTwoProbability} Prozent">
+    const previewProbability = teamOneProbability == null ? '' : `<span class="match-probability match-detail-probability match-statistics-probability" aria-label="Gewinnwahrscheinlichkeit ${teamOneProbability} zu ${teamTwoProbability} Prozent">
         <span class="match-probability-value">${teamOneProbability}</span>
         <span class="match-probability-separator" aria-hidden="true">:</span>
         <span class="match-probability-value">${teamTwoProbability}</span>
       </span>`;
     const analysisProbability = probability.replace(/(\d+)/g, '$1%');
     const analysis = data.availability === 'analysis';
-    return `<article class="live-ticker-match"><div class="live-ticker-match-meta"><span class="live-ticker-status${analysis ? ' is-finished' : ''}">${analysis ? 'Beendet' : 'Offen'}</span></div>
-      <div class="live-ticker-matchup"><div class="live-ticker-team live-ticker-team-1">${data.players.filter(p => p.team === 1).map(p => playerBlock(p, selectedPlayerId)).join('')}</div>
-      <div class="live-ticker-scoreboard"><span class="live-ticker-score-label">${analysis ? 'Ergebnis' : 'Gewinnchance'}</span>
-      ${analysis ? `<strong class="live-ticker-score">${esc(data.sets || '—')}</strong>` : previewProbability || '<strong class="live-ticker-score">—</strong>'}
-      ${analysis ? `<span class="live-ticker-score-note">${esc(data.result)}</span>${analysisProbability ? `<span class="live-ticker-score-note">${analysisProbability}</span>` : ''}` : previewProbability ? '<span class="live-ticker-score-note">Prozent</span>' : ''}
+    return `<article class="match-detail"><div class="match-detail-meta"><span class="match-detail-status${analysis ? ' is-finished' : ''}">${analysis ? 'Beendet' : 'Offen'}</span></div>
+      <div class="match-detail-matchup"><div class="match-detail-team match-detail-team-1">${data.players.filter(p => p.team === 1).map(p => playerBlock(p, selectedPlayerId)).join('')}</div>
+      <div class="match-detail-scoreboard"><span class="match-detail-score-label">${analysis ? 'Ergebnis' : 'Gewinnchance'}</span>
+      ${analysis ? `<strong class="match-detail-score">${esc(data.sets || '—')}</strong>` : previewProbability || '<strong class="match-detail-score">—</strong>'}
+      ${analysis ? `<span class="match-detail-score-note">${esc(data.result)}</span>${analysisProbability ? `<span class="match-detail-score-note">${analysisProbability}</span>` : ''}` : previewProbability ? '<span class="match-detail-score-note">Prozent</span>' : ''}
       </div>
-      <div class="live-ticker-team live-ticker-team-2">${data.players.filter(p => p.team === 2).map(p => playerBlock(p, selectedPlayerId)).join('')}</div></div></article>`;
+      <div class="match-detail-team match-detail-team-2">${data.players.filter(p => p.team === 2).map(p => playerBlock(p, selectedPlayerId)).join('')}</div></div></article>`;
+  }
+  function renderForecastResult(forecast, { lockedAction = '' } = {}) {
+    const totalVotes = Math.max(0, Number(forecast?.totalVotes) || 0);
+    const teamOnePercentage = totalVotes
+      ? Math.min(100, Math.max(0, Number(forecast?.team1Percentage) || 0))
+      : 0;
+    const teamTwoPercentage = totalVotes ? 100 - teamOnePercentage : 0;
+    const hasBothTeamColors = teamOnePercentage > 0 && teamTwoPercentage > 0;
+    return `<div class="match-forecast-result-wrap${lockedAction ? ' is-guest-locked' : ''}">
+      <div class="match-forecast-result" aria-label="Tipps: Team 1 ${teamOnePercentage} Prozent, Team 2 ${teamTwoPercentage} Prozent">
+        <div class="match-forecast-percentages"><span>${teamOnePercentage} %</span><span>${teamTwoPercentage} %</span></div>
+        <div class="match-forecast-bar${totalVotes ? ' has-votes' : ''}${hasBothTeamColors ? ' has-both-team-colors' : ''}">
+          <span class="match-forecast-team-one" style="width:${teamOnePercentage / 2}%"></span>
+          <span class="match-forecast-team-two" style="width:${teamTwoPercentage / 2}%"></span>
+        </div>
+      </div>
+      ${lockedAction ? `<button type="button" class="match-forecast-login" data-auth-open>${esc(lockedAction)}</button>` : ''}
+    </div>`;
+  }
+  function renderMatchForecast(data, forecast, options = {}) {
+    if (data.availability === 'basic') return '';
+    if (forecast === null && !options.message) return '';
+    if (!forecast || forecast.error) {
+      return `<section class="match-forecast" data-match-forecast>
+        <strong class="widget-label match-forecast-question">Wer wird gewinnen?</strong>
+        <div class="match-forecast-status" role="status">${esc(options.message || 'Die Tipps konnten nicht geladen werden.')}</div>
+      </section>`;
+    }
+    const session = options.session || null;
+    const authenticatedPlayerId = options.profile?.player_id || null;
+    const isOwnMatch = Boolean(authenticatedPlayerId && data.players?.some(player => player.playerId === authenticatedPlayerId));
+    const emailConfirmed = Boolean(session?.user?.email_confirmed_at);
+    const selectionOpen = Boolean(options.selectionOpen);
+    const submitting = Boolean(options.submitting);
+    const selectedPrediction = forecast.userPrediction || null;
+    const showSelection = Boolean(!isOwnMatch && emailConfirmed && forecast.open && (!selectedPrediction || selectionOpen));
+    const control = showSelection
+      ? `<div class="match-forecast-choices" aria-label="Exakten Tipp auswählen">
+          <button type="button" class="live-point-team-button match-forecast-choice${selectedPrediction === '2:0' ? ' active' : ''}" data-match-forecast-prediction="2:0" aria-pressed="${selectedPrediction === '2:0'}"${submitting ? ' disabled' : ''}>
+            <strong>Team 1</strong><span>2:0</span>
+          </button>
+          <button type="button" class="live-point-team-button match-forecast-choice${selectedPrediction === '2:1' ? ' active' : ''}" data-match-forecast-prediction="2:1" aria-pressed="${selectedPrediction === '2:1'}"${submitting ? ' disabled' : ''}>
+            <strong>Team 1</strong><span>2:1</span>
+          </button>
+          <button type="button" class="live-point-team-button match-forecast-choice${selectedPrediction === '1:2' ? ' active' : ''}" data-match-forecast-prediction="1:2" aria-pressed="${selectedPrediction === '1:2'}"${submitting ? ' disabled' : ''}>
+            <strong>Team 2</strong><span>1:2</span>
+          </button>
+          <button type="button" class="live-point-team-button match-forecast-choice${selectedPrediction === '0:2' ? ' active' : ''}" data-match-forecast-prediction="0:2" aria-pressed="${selectedPrediction === '0:2'}"${submitting ? ' disabled' : ''}>
+            <strong>Team 2</strong><span>0:2</span>
+          </button>
+        </div>`
+      : renderForecastResult(forecast, {
+          lockedAction: !isOwnMatch && forecast.open && !emailConfirmed
+            ? session ? 'E-Mail bestätigen, um zu tippen' : 'Einloggen, um zu tippen'
+            : ''
+        });
+    const change = !isOwnMatch && emailConfirmed && forecast.open && selectedPrediction && !showSelection
+      ? '<button type="button" class="text-link match-forecast-change" data-match-forecast-change>Tipp ändern</button>'
+      : '';
+    const ownMatchNotice = isOwnMatch && forecast.open
+      ? '<span class="match-forecast-own-notice" role="status">Eigene Partie. Kein Tipp möglich.</span>'
+      : '';
+    return `<section class="match-forecast" data-match-forecast>
+      <strong class="widget-label match-forecast-question">Wer wird gewinnen?</strong>
+      <div class="match-forecast-control">${control}</div>
+      <div class="match-forecast-action">${change}${ownMatchNotice}</div>
+      ${options.message ? `<div class="match-forecast-message" role="status">${esc(options.message)}</div>` : ''}
+    </section>`;
   }
   function historyFacts(data) {
     const facts = [];
     const company = data.company;
     const companyText = !company ? '' : company.kind === 'internal' ? `Firmeninternes Duell · ${company.company}`
       : `Firmenduell · ${company.team1} gegen ${company.team2} · Bilanz ${company.wins1}:${company.wins2}`;
-    if (companyText) facts.push(`<p class="live-ticker-statistics-context-fact">${esc(companyText)}</p>`);
+    if (companyText) facts.push(`<p class="match-statistics-context-fact">${esc(companyText)}</p>`);
     const latest = data.rematches?.[0];
     const rematchLabel = !latest ? '' : data.availability !== 'analysis' ? 'Rematch'
       : latest.outcome === (data.winner === 1 ? 'win' : 'loss') ? 'Erneuter Sieg' : latest.outcome === 'draw' ? 'Rematch' : 'Revanche';
@@ -116,7 +169,7 @@
       const label = index === 0 ? `${rematchLabel} #${rematches.length}` : 'Früheres Duell';
       return `<span><strong>${esc(label)}</strong> · ${esc(date(r.date))} · ${esc(r.season)} · ${esc(result)}</span>`;
     });
-    if (rematchLines.length) facts.push(`<p class="live-ticker-statistics-context-fact live-ticker-statistics-rematches">${rematchLines.join('<br>')}</p>`);
+    if (rematchLines.length) facts.push(`<p class="match-statistics-context-fact match-statistics-rematches">${rematchLines.join('<br>')}</p>`);
     const resultImpact = (data.impacts || []).find(impact => ['upset', 'favoriteConfirmed'].includes(impact.kind));
     const resultTeam = Number(resultImpact?.team);
     const resultProbability = Number(resultImpact?.probability);
@@ -125,17 +178,22 @@
       const resultText = resultImpact.kind === 'upset'
         ? `Team ${resultTeam} sorgt für eine statistische Überraschung bei zuvor ${Math.round(resultProbability * 100)} % Gewinnchance.`
         : `Team ${resultTeam} bestätigt Favoritenrolle bei zuvor ${Math.round(resultProbability * 100)} % Gewinnchance.`;
-      facts.push(`<p class="live-ticker-statistics-context-fact">${resultText}</p>`);
+      facts.push(`<p class="match-statistics-context-fact">${resultText}</p>`);
     }
     return facts;
   }
   function relationshipPlayerLink(playerId, displayName, selectedPlayerId) {
-    return `<button type="button" class="live-ticker-statistics-relationship-name player-profile-link${viewerClass({ playerId }, selectedPlayerId)}" data-player-profile-id="${esc(playerId)}">${esc(displayName)}</button>`;
+    return `<button type="button" class="match-statistics-relationship-name player-profile-link${viewerClass({ playerId }, selectedPlayerId)}" data-player-profile-id="${esc(playerId)}">${esc(displayName)}</button>`;
+  }
+  function joinRelationshipClauses(clauses) {
+    if (clauses.length < 2) return clauses[0] || '';
+    return `${clauses.slice(0, -1).join(', ')} und ${clauses.at(-1)}`;
   }
   function renderContext(data, selectedPlayerId) {
     const seen = new Set();
     const facts = historyFacts(data);
     (data.players || []).forEach(player => {
+      const clauses = [];
       (player.relationships || []).forEach(relationship => {
         const relationshipPlayerId = relationship.playerId || relationship.name;
         const relationshipPlayer = (data.players || []).find(candidate => candidate.playerId === relationshipPlayerId)
@@ -146,13 +204,15 @@
         const key = `${relationship.kind}:${pairKey}`;
         if (seen.has(key)) return;
         seen.add(key);
-        const subject = relationshipPlayerLink(player.playerId, player.displayName, selectedPlayerId);
         const other = relationshipPlayerLink(relationshipPlayerId, relationship.name, selectedPlayerId);
-        facts.push(`<p class="live-ticker-statistics-context-fact live-ticker-statistics-relationship">${subject} ${phrase} ${other} <span class="live-ticker-statistics-relationship-record">(${number(relationship.wins)} von ${number(relationship.matches)})</span>.</p>`);
+        clauses.push(`${phrase} ${other} <span class="match-statistics-relationship-record">(${number(relationship.wins)} von ${number(relationship.matches)})</span>`);
       });
+      if (!clauses.length) return;
+      const subject = relationshipPlayerLink(player.playerId, player.displayName, selectedPlayerId);
+      facts.push(`<p class="match-statistics-context-fact match-statistics-relationship">${subject} ${joinRelationshipClauses(clauses)}.</p>`);
     });
     return facts.length
-      ? `<section class="live-ticker-statistics-context" aria-label="Einordnung der Partie">${facts.join('')}</section>`
+      ? `<section class="match-statistics-context" aria-label="Einordnung der Partie">${facts.join('')}</section>`
       : '';
   }
   function getQualificationPlaces(data) {
@@ -175,7 +235,7 @@
     const label = direction === 'up' ? 'Tabellenplatz verbessert'
       : direction === 'down' ? 'Tabellenplatz verschlechtert'
         : 'Tabellenplatz unverändert';
-    return `<span class="live-ticker-statistics-rank-change ${direction}" aria-label="${label}">${symbol}</span>`;
+    return `<span class="match-statistics-rank-change ${direction}" aria-label="${label}">${symbol}</span>`;
   }
   function renderPlayerRanking(data, selectedPlayerId) {
     const activePlayers = new Map(data.players.map(player => [player.playerId, player]));
@@ -192,13 +252,13 @@
       const statistics = player.statistics || {};
       const rank = Number(statistics.rank);
       const activePlayer = activePlayers.get(player.playerId);
-      const teamClass = !activePlayer ? '' : Number(activePlayer.team) === 2 ? ' live-ticker-statistics-team-2' : ' live-ticker-statistics-team-1';
-      const rowClass = activePlayer ? 'live-ticker-statistics-ranking-player' : 'live-ticker-statistics-ranking-other';
+      const teamClass = !activePlayer ? '' : Number(activePlayer.team) === 2 ? ' match-statistics-team-2' : ' match-statistics-team-1';
+      const rowClass = activePlayer ? 'match-statistics-ranking-player' : 'match-statistics-ranking-other';
       const qualificationClass = hasRanking && qualificationPlaces > 0 && rank <= qualificationPlaces
-        ? ' live-ticker-statistics-ranking-qualified'
+        ? ' match-statistics-ranking-qualified'
         : '';
       rows.push(`<tr class="${rowClass}${hasRanking ? ` r${Math.min(rank, 4)}` : ''}${qualificationClass}${teamClass}">
-        ${hasRanking ? `<td class="col-rank rank-position"><span class="live-ticker-statistics-rank-position">${number(rank)}</span></td>${analysis ? `<td class="col-rank-change">${renderRankChange(statistics, analysis)}</td>` : ''}` : ''}
+        ${hasRanking ? `<td class="col-rank rank-position"><span class="match-statistics-rank-position">${number(rank)}</span></td>${analysis ? `<td class="col-rank-change">${renderRankChange(statistics, analysis)}</td>` : ''}` : ''}
         <td class="col-name"><button type="button" class="pname player-profile-link${viewerClass(player, selectedPlayerId)}" data-player-profile-id="${esc(player.playerId)}">${esc(player.displayName)}</button></td>
         <td class="col-games">${number(statistics.played)}</td>
         ${hasRanking ? `<td class="col-wins">${number(statistics.wins)}</td>` : ''}
@@ -206,46 +266,32 @@
         <td class="col-diff"><span class="${Number(statistics.gameDiff) > 0 ? 'pos' : Number(statistics.gameDiff) < 0 ? 'neg' : 'neu'}">${signed(statistics.gameDiff)}</span></td>
       </tr>`);
     });
-    return `<div class="ranking-wrap live-ticker-statistics-ranking-wrap"><table class="rt live-ticker-statistics-ranking${analysis ? ' has-rank-change' : ''}">
+    return `<div class="ranking-wrap match-statistics-ranking-wrap"><table class="rt match-statistics-ranking${analysis ? ' has-rank-change' : ''}">
       <thead><tr>${hasRanking ? `<th class="col-rank"><span aria-hidden="true">#</span><span class="sr-only">Platz</span></th>${analysis ? '<th class="col-rank-change"><span class="sr-only">Platzänderung</span></th>' : ''}` : ''}<th class="col-name">Spieler</th><th class="col-games">Partien</th>${hasRanking ? '<th class="col-wins">Siege</th><th class="col-points">Punkte</th>' : ''}<th class="col-diff">Diff.</th></tr></thead>
       <tbody>${rows.join('')}</tbody></table></div>`;
   }
   function renderPlayersAndImpacts(data, impactGroups, selectedPlayerId) {
     const impactTitle = data.availability === 'analysis' ? 'Was sich verändert hat' : 'Was sich verändern kann';
     const impactBody = impactGroups.length
-      ? `<div class="live-ticker-statistics-impact-groups">${impactGroups.map(({ player, facts }) => `<div class="live-ticker-statistics-impact-player">
-        <h3><button type="button" class="live-ticker-statistics-impact-player-name player-profile-link${viewerClass(player, selectedPlayerId)}" data-player-profile-id="${esc(player.playerId)}">${esc(player.displayName)}</button></h3>
+      ? `<div class="match-statistics-impact-groups">${impactGroups.map(({ player, facts }) => `<div class="match-statistics-impact-player">
+        <h3><button type="button" class="match-statistics-impact-player-name player-profile-link${viewerClass(player, selectedPlayerId)}" data-player-profile-id="${esc(player.playerId)}">${esc(player.displayName)}</button></h3>
         <ul>${facts.map(text => `<li>${esc(text)}</li>`).join('')}</ul>
       </div>`).join('')}</div>`
-      : '<p class="live-ticker-statistics-empty-impact">Keine bedeutenden Auswirkungen.</p>';
-    return `<div class="live-ticker-statistics-ranking-layout">
-      <section class="live-ticker-statistics-section live-ticker-statistics-ranking-panel"><h2 class="widget-label">Rangliste</h2>${renderPlayerRanking(data, selectedPlayerId)}</section>
-      <div class="live-ticker-statistics-side-panels">
-        ${renderAutoTipForecast(data)}
-        <section class="live-ticker-statistics-section live-ticker-statistics-impact-panel"><h2 class="widget-label">${impactTitle}</h2>${impactBody}</section>
+      : '<p class="match-statistics-empty-impact">Keine bedeutenden Auswirkungen.</p>';
+    return `<div class="match-statistics-ranking-layout">
+      <section class="match-statistics-section match-statistics-ranking-panel"><h2 class="widget-label">Rangliste</h2>${renderPlayerRanking(data, selectedPlayerId)}</section>
+      <div class="match-statistics-side-panels">
+        <section class="match-statistics-section match-statistics-impact-panel"><h2 class="widget-label">${impactTitle}</h2>${impactBody}</section>
       </div>
     </div>`;
   }
-  function autoTipForecast(data) {
+  function eloPathForecast(data) {
     if (data.probability == null) return null;
     return eloForecast?.getAutoTipForecast(
       Number(data.probability) * 100,
       data.players.filter(player => Number(player.team) === 1).map(player => player.elo?.before),
       data.players.filter(player => Number(player.team) === 2).map(player => player.elo?.before)
     );
-  }
-  function renderAutoTipForecast(data) {
-    if (data.availability !== 'preview' || !data.countsForElo) return '';
-    const forecast = autoTipForecast(data);
-    if (!forecast) return '';
-    const sets = forecast.score.matchTiebreak ? (forecast.winner === 1 ? '2:1' : '1:2') : (forecast.winner === 1 ? '2:0' : '0:2');
-    const result = [...forecast.score.regularSets, ...(forecast.score.matchTiebreak ? [forecast.score.matchTiebreak] : [])]
-      .map(set => set.join(':')).join(', ');
-    return `<section class="live-ticker-statistics-section live-ticker-statistics-autotip-panel">
-      <h2 class="widget-label">Auto-Tipp-Prognose</h2>
-      <strong class="live-ticker-statistics-autotip-score" aria-label="Satzergebnis ${sets}">${sets}</strong>
-      <span class="live-ticker-statistics-autotip-result">${esc(result)}</span>
-    </section>`;
   }
   function graphGeometry(players, analysis) {
     const values = players.flatMap(p => [
@@ -278,20 +324,20 @@
     const startHeight = 2;
     const low = Math.min(Number(valueA), Number(valueB));
     const high = Math.max(Number(valueA), Number(valueB));
-    return `<path d="${smoothBandPath(x1, startY - startHeight / 2, startY + startHeight / 2, x2, geometry.y(high), geometry.y(low))}" class="live-ticker-statistics-projection-band ${cls}"/>`;
+    return `<path d="${smoothBandPath(x1, startY - startHeight / 2, startY + startHeight / 2, x2, geometry.y(high), geometry.y(low))}" class="match-statistics-projection-band ${cls}"/>`;
   }
   function projectionRange(x1, startY, x2, valueA, valueB, geometry, cls) {
-    return `<path d="${smoothBandPath(x1, startY, startY, x2, geometry.y(valueA), geometry.y(valueB))}" class="live-ticker-statistics-projection-range ${cls}"/>`;
+    return `<path d="${smoothBandPath(x1, startY, startY, x2, geometry.y(valueA), geometry.y(valueB))}" class="match-statistics-projection-range ${cls}"/>`;
   }
   function forecastProjection(data, player) {
     const teamOne = data.players.filter(item => Number(item.team) === 1);
     const teamTwo = data.players.filter(item => Number(item.team) === 2);
     const teamOneElos = teamOne.map(item => Number(item.elo?.before));
     const teamTwoElos = teamTwo.map(item => Number(item.elo?.before));
-    const forecast = autoTipForecast(data);
+    const forecast = eloPathForecast(data);
     if (!forecast) return null;
     const ownTeam = Number(player.team);
-    const opponentElos = (ownTeam === 1 ? teamTwoElos : teamOneElos);
+    const opponentElos = ownTeam === 1 ? teamTwoElos : teamOneElos;
     const won = ownTeam === forecast.winner;
     const value = eloForecast.projectElo(player.elo?.before, opponentElos, won, forecast.pointFactor);
     return value == null ? null : { outcome: won ? 'win' : 'loss', value };
@@ -301,7 +347,7 @@
     const gap = 5;
     const textWidth = [...String(label)].length * 6.6;
     const x = rightX - textWidth - gap - size;
-    return `<use href="#statistics-peak-star-icon" x="${x}" y="${textY - 11}" width="${size}" height="${size}" class="live-ticker-statistics-peak-star ${state}"/>`;
+    return `<use href="#statistics-peak-star-icon" x="${x}" y="${textY - 11}" width="${size}" height="${size}" class="match-statistics-peak-star ${state}"/>`;
   }
   function analysisResultY(geometry, before, after) {
     const endpointY = geometry.y(after);
@@ -319,7 +365,7 @@
     const peakIcon = peakBefore != null && high > Number(peakBefore)
       ? peakStarIcon(x, y, highLabel, 'possible')
       : '';
-    return `${peakIcon}<text x="${x}" y="${y}" text-anchor="end" class="live-ticker-statistics-value ${className}">${highLabel}</text><text x="${x}" y="${y + 15}" text-anchor="end" class="live-ticker-statistics-value ${className}">↘ ${number(low)}</text>`;
+    return `${peakIcon}<text x="${x}" y="${y}" text-anchor="end" class="match-statistics-value ${className}">${highLabel}</text><text x="${x}" y="${y + 15}" text-anchor="end" class="match-statistics-value ${className}">↘ ${number(low)}</text>`;
   }
   function renderGraph(data, selectedPlayerId) {
     if (!data.countsForElo) return '';
@@ -327,19 +373,19 @@
     const g = graphGeometry(data.players, analysis);
     const lanes = data.players.map((p, i) => {
       const e = p.elo || {}, x = 60 + i * 235;
-      const teamClass = Number(p.team) === 2 ? 'live-ticker-statistics-team-2' : 'live-ticker-statistics-team-1';
+      const teamClass = Number(p.team) === 2 ? 'match-statistics-team-2' : 'match-statistics-team-1';
       const available = e.before != null && (!analysis || e.after != null);
       const analysisRanges = !analysis || !available ? ''
         : [['lossMin', 'lossMax', 'loss'], ['winMin', 'winMax', 'win']].map(([a, b, cls]) => e[a] == null || e[b] == null ? ''
           : projectionRange(x + 30, g.y(e.before), x + 195, e[a], e[b], g, cls)).join('');
       const forecast = analysis || !available ? null : forecastProjection(data, p);
       const forecastLine = !forecast ? ''
-        : `<path d="${smoothLinePath(x + 30, g.y(e.before), x + 195, g.y(forecast.value))}" class="live-ticker-statistics-forecast-line ${forecast.outcome}"/><circle cx="${x + 195}" cy="${g.y(forecast.value)}" r="4" class="live-ticker-statistics-forecast-dot ${forecast.outcome}"/>`;
+        : `<path d="${smoothLinePath(x + 30, g.y(e.before), x + 195, g.y(forecast.value))}" class="match-statistics-forecast-line ${forecast.outcome}"/><circle cx="${x + 195}" cy="${g.y(forecast.value)}" r="4" class="match-statistics-forecast-dot ${forecast.outcome}"/>`;
       const shape = !available ? '' : analysis
-        ? `${analysisRanges}<path d="${smoothLinePath(x + 30, g.y(e.before), x + 195, g.y(e.after))}" class="live-ticker-statistics-line"/><circle cx="${x + 195}" cy="${g.y(e.after)}" r="5" class="live-ticker-statistics-dot"/>`
+        ? `${analysisRanges}<path d="${smoothLinePath(x + 30, g.y(e.before), x + 195, g.y(e.after))}" class="match-statistics-line"/><circle cx="${x + 195}" cy="${g.y(e.after)}" r="5" class="match-statistics-dot"/>`
         : [['lossMin', 'lossMax', 'loss'], ['winMin', 'winMax', 'win']].map(([a, b, cls]) => e[a] == null || e[b] == null ? ''
           : projectionBand(x + 30, g.y(e.before), x + 195, e[a], e[b], g, cls)).join('') + forecastLine;
-      const startValue = available ? `<text x="${x + 22}" y="${g.y(e.before) + 24}" text-anchor="end" class="live-ticker-statistics-value live-ticker-statistics-start-value">${number(e.before)}</text>` : '';
+      const startValue = available ? `<text x="${x + 22}" y="${g.y(e.before) + 24}" text-anchor="end" class="match-statistics-value match-statistics-start-value">${number(e.before)}</text>` : '';
       const resultY = analysis && available ? analysisResultY(g, e.before, e.after) : null;
       const resultLabel = analysis && available ? number(e.after) : '';
       const resultDelta = analysis && available
@@ -348,41 +394,41 @@
       const resultDeltaClass = resultDelta > 0 ? 'pos' : resultDelta < 0 ? 'neg' : 'neu';
       const peakReached = analysis && e.peakBefore != null && e.after != null && e.after > e.peakBefore;
       const resultValues = !available ? '' : analysis
-        ? `${peakReached ? peakStarIcon(x + 195, resultY, resultLabel, 'achieved') : ''}<text x="${x + 195}" y="${resultY}" text-anchor="end" class="live-ticker-statistics-value live-ticker-statistics-result-value">${resultLabel}</text><text x="${x + 195}" y="${resultY + 15}" text-anchor="end" class="live-ticker-statistics-value live-ticker-statistics-delta-value ${resultDeltaClass}">${signed(resultDelta)}</text>`
+        ? `${peakReached ? peakStarIcon(x + 195, resultY, resultLabel, 'achieved') : ''}<text x="${x + 195}" y="${resultY}" text-anchor="end" class="match-statistics-value match-statistics-result-value">${resultLabel}</text><text x="${x + 195}" y="${resultY + 15}" text-anchor="end" class="match-statistics-value match-statistics-delta-value ${resultDeltaClass}">${signed(resultDelta)}</text>`
         : `${projectionValueLabel(
             x + 195,
             Math.max(g.plotTop + 14, Math.min(g.y(e.winMin), g.y(e.winMax)) - 27),
             e.winMin,
             e.winMax,
-            'live-ticker-statistics-win-value',
+            'match-statistics-win-value',
             e.peakBefore
           )}${projectionValueLabel(
             x + 195,
             Math.min(g.nameY - 51, Math.max(g.y(e.lossMin), g.y(e.lossMax)) + 24),
             e.lossMin,
             e.lossMax,
-            'live-ticker-statistics-loss-value',
+            'match-statistics-loss-value',
             e.peakBefore
           )}`;
-      return `<g class="live-ticker-statistics-player-graph ${teamClass}${i === 0 ? ' is-selected' : ''}" data-statistics-graph-player="${esc(p.playerId)}" style="--statistics-lane-offset:${-i * 235}px">
+      return `<g class="match-statistics-player-graph ${teamClass}${i === 0 ? ' is-selected' : ''}" data-statistics-graph-player="${esc(p.playerId)}" style="--statistics-lane-offset:${-i * 235}px">
         <clipPath id="statistics-lane-${i}"><rect x="${x}" y="${g.plotTop}" width="225" height="${g.plotBottom - g.plotTop + 1}"/></clipPath>
-        <g clip-path="url(#statistics-lane-${i})">${shape}${available ? `<circle cx="${x + 30}" cy="${g.y(e.before)}" r="5" class="live-ticker-statistics-dot"/>` : ''}</g>
+        <g clip-path="url(#statistics-lane-${i})">${shape}${available ? `<circle cx="${x + 30}" cy="${g.y(e.before)}" r="5" class="match-statistics-dot"/>` : ''}</g>
         ${startValue}${resultValues}
-        <text x="${x + 115}" y="${g.nameY}" text-anchor="middle" class="live-ticker-statistics-player-label${viewerClass(p, selectedPlayerId)}">${esc(p.displayName)}</text>
+        <text x="${x + 115}" y="${g.nameY}" text-anchor="middle" class="match-statistics-player-label${viewerClass(p, selectedPlayerId)}">${esc(p.displayName)}</text>
       </g>`;
     });
     const selectedLaneLast = [...lanes.slice(1), lanes[0]].join('');
-    const playerSelect = `<div class="live-ticker-statistics-graph-picker match-scope-toggle" role="group" aria-label="Spieler für Elo-Entwicklung auswählen">
+    const playerSelect = `<div class="match-statistics-graph-picker match-scope-toggle" role="group" aria-label="Spieler für Elo-Entwicklung auswählen">
       ${data.players.map((player, index) => `<button type="button" class="${index === 0 ? 'active' : ''}" data-statistics-graph-select="${esc(player.playerId)}" aria-pressed="${index === 0 ? 'true' : 'false'}">${esc(player.displayName)}</button>`).join('')}
     </div>`;
-    return section('Elo-Entwicklung', `${playerSelect}<div class="live-ticker-statistics-graph" tabindex="0" role="region" aria-label="Elo-Diagramm der vier Spieler">
-      <svg viewBox="0 0 1000 590" width="1000" height="590" aria-hidden="true" class="live-ticker-statistics-svg">
+    return section('Elo-Entwicklung', `${playerSelect}<div class="match-statistics-graph" tabindex="0" role="region" aria-label="Elo-Diagramm der vier Spieler">
+      <svg viewBox="0 0 1000 590" width="1000" height="590" aria-hidden="true" class="match-statistics-svg">
         <defs><symbol id="statistics-peak-star-icon" viewBox="0 0 24 24"><path d="M12 2.5 14.94 8.46 21.52 9.42 16.76 14.06 17.88 20.61 12 17.52 6.12 20.61 7.24 14.06 2.48 9.42 9.06 8.46 12 2.5Z"/></symbol></defs>
-        ${g.ticks.map(t => `<path d="M60 ${g.y(t)} H995" class="live-ticker-statistics-grid"/>`).join('')}${selectedLaneLast}
-      </svg><div class="live-ticker-statistics-axis" aria-hidden="true">${g.ticks.map(t => `<span style="top:${g.y(t)}px">${number(Math.round(t))}</span>`).join('')}</div></div>`,
+        ${g.ticks.map(t => `<path d="M60 ${g.y(t)} H995" class="match-statistics-grid"/>`).join('')}${selectedLaneLast}
+      </svg><div class="match-statistics-axis" aria-hidden="true">${g.ticks.map(t => `<span style="top:${g.y(t)}px">${number(Math.round(t))}</span>`).join('')}</div></div>`,
       analysis
         ? 'Die Flächen zeigen, welche Elo-Werte bei dieser Partie möglich waren: grün bei einem Sieg und rot bei einer Niederlage. Die durchgezogene Linie zeigt die tatsächliche Elo-Entwicklung. Am Endwert steht die Veränderung durch diese Partie.'
-        : 'Die Fächer zeigen die Bereiche der möglichen Elo-Werte nach der Partie: grün bei einem Sieg und rot bei einer Niederlage. Die gestrichelte Linie zeigt den Elo-Wert des Auto-Tipps.');
+        : 'Die Fächer zeigen die Bereiche der möglichen Elo-Werte nach der Partie: grün bei einem Sieg und rot bei einer Niederlage. Die gestrichelte Linie zeigt die Elo-Prognose des wahrscheinlichsten Ergebnisses.');
   }
   function impactText(impact, data) {
     const condition = impact.onWin ? 'bei einem Sieg' : 'bei einer Niederlage';
@@ -421,26 +467,142 @@
     });
     return data.players.map(player => ({ player, facts: factsByPlayer.get(player.playerId) || [] })).filter(group => group.facts.length);
   }
-  function render(data, selectedPlayerId = null) {
+  function render(data, selectedPlayerId = null, forecastOptions = {}) {
     const head = renderHead(data, selectedPlayerId);
-    if (data.availability === 'basic') return `${head}<p class="live-ticker-statistics-note">Die ausführliche Vorschau folgt näher am Spieltag.</p>`;
-    return head + renderContext(data, selectedPlayerId) + renderPlayersAndImpacts(data, groupImpacts(data), selectedPlayerId) + renderGraph(data, selectedPlayerId)
-      + (data.availability === 'preview' ? '<p class="live-ticker-statistics-note">Werte und Prognosen können sich durch weitere bestätigte Partien bis zum Spielbeginn verändern.</p>' : '');
+    if (data.availability === 'basic') return `${head}<p class="match-statistics-note">Die ausführliche Vorschau folgt näher am Spieltag.</p>`;
+    const forecast = Object.prototype.hasOwnProperty.call(forecastOptions, 'forecast')
+      ? renderMatchForecast(data, forecastOptions.forecast, forecastOptions)
+      : '';
+    return head + forecast
+      + renderContext(data, selectedPlayerId) + renderPlayersAndImpacts(data, groupImpacts(data), selectedPlayerId) + renderGraph(data, selectedPlayerId)
+      + (data.availability === 'preview' ? '<p class="match-statistics-note">Werte und Prognosen können sich durch weitere bestätigte Partien bis zum Spielbeginn verändern.</p>' : '');
   }
   function skeleton() {
-    const card = '<div class="live-ticker-statistics-skeleton-card"><span class="loading-skeleton"></span><span class="loading-skeleton"></span><span class="loading-skeleton"></span></div>';
-    return `<p class="sr-only" role="status">Partiestatistik wird geladen …</p><div aria-hidden="true" class="live-ticker-statistics-skeleton">
-      <div class="live-ticker-statistics-players">${card.repeat(4)}</div><div class="loading-skeleton live-ticker-statistics-skeleton-meta"></div>
-      <div class="loading-skeleton live-ticker-statistics-skeleton-history"></div><div class="live-ticker-statistics-players">${card.repeat(4)}</div>
-      <div class="loading-skeleton live-ticker-statistics-skeleton-graph"></div><div class="loading-skeleton live-ticker-statistics-skeleton-history"></div></div>`;
+    const card = '<div class="match-statistics-skeleton-card"><span class="loading-skeleton"></span><span class="loading-skeleton"></span><span class="loading-skeleton"></span></div>';
+    return `<p class="sr-only" role="status">Partiestatistik wird geladen …</p><div aria-hidden="true" class="match-statistics-skeleton">
+      <div class="match-statistics-players">${card.repeat(4)}</div><div class="loading-skeleton match-statistics-skeleton-meta"></div>
+      <div class="loading-skeleton match-statistics-skeleton-history"></div><div class="match-statistics-players">${card.repeat(4)}</div>
+      <div class="loading-skeleton match-statistics-skeleton-graph"></div><div class="loading-skeleton match-statistics-skeleton-history"></div></div>`;
   }
-  const api = { availability, entry, icon, render, skeleton, graphGeometry, analysisResultY, headerMeta, playedOrderLabel };
+  const api = { availability, entry, icon, render, renderMatchForecast, renderForecastResult, skeleton, graphGeometry, analysisResultY, headerMeta, playedOrderLabel };
   if (typeof module !== 'undefined') module.exports = api;
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
   let request = 0, active = null, returnState = null, profileOnTop = false, currentRoute = null, routeNumber = 0;
+  let activeData = null, activeForecast = null, forecastSelectionOpen = false, forecastSubmitting = false, forecastMessage = '';
+  let forecastRefreshPromise = null;
+  let sequence = [];
   const routeContexts = new Map();
-  const dialog = () => document.getElementById('live-ticker-dialog');
-  const content = () => document.getElementById('live-ticker-content');
+  // Vorgeladene Nachbarpartien gelten nur, solange die Detailansicht geöffnet bleibt.
+  const prefetched = new Map();
+  const PREFETCH_MAX_AGE = 2 * 60 * 1000;
+  const PREFETCH_DELAY = 300;
+  const dialog = () => document.getElementById('detail-view-dialog');
+  const content = () => document.getElementById('detail-view-body');
+  const getClient = () => {
+    const config = window.PADEL_SUPABASE_CONFIG;
+    return window.PadelKonto?.getClient?.()
+      || window.PADEL_SUPABASE_CLIENT
+      || (config && window.supabase?.createClient(config.url, config.publishableKey));
+  };
+  const getSession = () => window.PadelKonto?.getSession?.() || null;
+  function renderActiveContent() {
+    if (!activeData) return;
+    content().innerHTML = render(activeData, window.PadelLigaGetSelectedViewerId?.(), {
+      forecast: activeForecast,
+      session: getSession(),
+      profile: window.PadelKonto?.getProfile?.() || null,
+      selectionOpen: forecastSelectionOpen,
+      submitting: forecastSubmitting,
+      message: forecastMessage
+    });
+    content().setAttribute('aria-busy', 'false');
+  }
+  async function loadForecast(client, matchId) {
+    const { data, error } = await client.rpc('get_public_match_forecast', { p_match_id: matchId });
+    if (error) return { error: true };
+    return data ?? null;
+  }
+  function takePrefetched(matchId) {
+    const entry = prefetched.get(matchId);
+    prefetched.delete(matchId);
+    return entry && Date.now() - entry.time < PREFETCH_MAX_AGE ? entry : null;
+  }
+  async function loadDetail(client, matchId, cached) {
+    const result = cached ? await cached.detail : null;
+    if (result && !result.error && result.data) return result;
+    return client.rpc('get_public_match_detail', { p_match_id: matchId });
+  }
+  async function loadInitialForecast(client, matchId, cached) {
+    if (cached) {
+      const forecast = await cached.forecast;
+      if (!forecast?.error) return forecast;
+    }
+    return loadForecast(client, matchId);
+  }
+  function neighbours(matchId) {
+    const index = sequence.indexOf(matchId);
+    return index === -1 ? [] : [sequence[index + 1], sequence[index - 1]].filter(Boolean);
+  }
+  // Die aktuelle Partie lädt zuerst; Nachbarn folgen danach nacheinander und blockieren nichts.
+  function schedulePrefetch(token) {
+    setTimeout(async () => {
+      for (const matchId of neighbours(active)) {
+        if (token !== request) return;
+        const existing = prefetched.get(matchId);
+        if (existing && Date.now() - existing.time < PREFETCH_MAX_AGE) continue;
+        const client = getClient();
+        if (!client) return;
+        const entry = {
+          time: Date.now(),
+          detail: Promise.resolve(client.rpc('get_public_match_detail', { p_match_id: matchId })).catch(() => ({ error: true })),
+          forecast: loadForecast(client, matchId).catch(() => ({ error: true }))
+        };
+        prefetched.set(matchId, entry);
+        await Promise.all([entry.detail, entry.forecast]);
+      }
+    }, PREFETCH_DELAY);
+  }
+  function updatePager() {
+    const pager = document.getElementById('match-statistics-pager');
+    if (!pager) return;
+    const index = active ? sequence.indexOf(active) : -1;
+    const focused = pager.contains(document.activeElement) ? document.activeElement : null;
+    pager.hidden = index === -1 || sequence.length < 2;
+    pager.querySelector('[data-statistics-step="-1"]').disabled = index <= 0;
+    pager.querySelector('[data-statistics-step="1"]').disabled = index === -1 || index >= sequence.length - 1;
+    // Am Listenende bleibt der Fokus im Dialog statt mit dem deaktivierten Pfeil zu verschwinden.
+    if (focused?.disabled) (pager.querySelector('[data-statistics-step]:not(:disabled)') || document.querySelector('[data-detail-view-back]'))?.focus({ preventScroll: true });
+  }
+  function step(direction) {
+    if (!active || profileOnTop) return;
+    const target = sequence[sequence.indexOf(active) + direction];
+    if (!target) return;
+    void open(target, { keepSequence: true, step: direction });
+  }
+  async function refreshActiveForecast() {
+    if (!active || !activeData) return;
+    if (forecastRefreshPromise) return forecastRefreshPromise;
+    const matchId = active;
+    const client = getClient();
+    if (!client) return;
+    const requestPromise = loadForecast(client, matchId);
+    forecastRefreshPromise = requestPromise;
+    try {
+      const forecast = await requestPromise;
+      if (active !== matchId) return;
+      if (forecast?.error && activeForecast && !activeForecast.error) {
+        forecastMessage = 'Die Tipps konnten nicht aktualisiert werden.';
+        renderActiveContent();
+        return;
+      }
+      activeForecast = forecast;
+      forecastSelectionOpen = false;
+      forecastMessage = '';
+      renderActiveContent();
+    } finally {
+      if (forecastRefreshPromise === requestPromise) forecastRefreshPromise = null;
+    }
+  }
   function setPlayedOrder(data = null) {
     const target = document.getElementById('match-statistics-played-order');
     if (!target) return;
@@ -449,15 +611,17 @@
     target.hidden = !label;
   }
   function restore() {
-    ++request; active = null; currentRoute = null;
+    ++request; active = null; activeData = null; activeForecast = null; currentRoute = null;
+    forecastSelectionOpen = false; forecastSubmitting = false; forecastMessage = '';
+    sequence = []; prefetched.clear(); updatePager();
     if (dialog()?.dataset.mode !== 'statistics') return;
     const profile = document.getElementById('player-profile-dialog');
     if (profile?.open) window.PadelLigaClosePlayerProfile?.({ fromHistory: true });
     profileOnTop = false;
     dialog().close(); delete dialog().dataset.mode;
-    document.getElementById('live-match-switcher').hidden = false;
-    document.querySelector('[data-live-back]').setAttribute('aria-label', 'Final Four schließen');
-    document.getElementById('live-ticker-title').textContent = 'FINAL FOUR';
+    document.getElementById('final-four-view-switcher').hidden = false;
+    document.querySelector('[data-detail-view-back]').setAttribute('aria-label', 'Final Four schließen');
+    document.getElementById('detail-view-title').textContent = 'FINAL FOUR';
     setPlayedOrder();
     if (returnState) {
       window.scrollTo({ top: returnState.scroll, behavior: 'instant' });
@@ -478,12 +642,22 @@
   }
   function notice(message) {
     let target = document.getElementById('match-statistics-notice');
-    if (!target) { target = document.createElement('p'); target.id = 'match-statistics-notice'; target.className = 'live-ticker-statistics-notice'; target.setAttribute('role', 'status'); document.body.append(target); }
+    if (!target) { target = document.createElement('p'); target.id = 'match-statistics-notice'; target.className = 'match-statistics-notice'; target.setAttribute('role', 'status'); document.body.append(target); }
     target.textContent = message;
     setTimeout(() => target.remove(), 6000);
   }
-  async function open(matchId, { updateUrl = true, direct = false, trigger = null, returnContext = null } = {}) {
+  function rejectUnavailable(message) {
+    const url = new URL(window.location.href); url.searchParams.delete('partie');
+    window.history.replaceState({ ...window.history.state, matchStatistics: null }, '', url);
+    restore(); notice(message);
+  }
+  const previewPendingMessage = 'Die Partievorschau ist erst näher am Spieltag verfügbar.';
+  async function open(matchId, { updateUrl = true, direct = false, trigger = null, returnContext = null, keepSequence = false, step: stepDirection = 0 } = {}) {
     if (!matchId) return;
+    // Manuell geänderte Partie-Links öffnen keine Vorschau außerhalb ihres Fensters.
+    const season = window.PadelLigaGetSeasonData?.();
+    const seasonMatch = season?.matches?.find(match => match.id === matchId);
+    if (seasonMatch && availability(seasonMatch, season) === 'basic') { rejectUnavailable(previewPendingMessage); return; }
     window.PadelLiveTicker?.close();
     const fromProfileAbove = profileOnTop && trigger?.closest('#player-profile-dialog');
     if (fromProfileAbove) {
@@ -497,18 +671,30 @@
       returnState = returnContext || { trigger: trigger || document.activeElement, triggerMatch: (trigger || document.activeElement)?.dataset.matchStatistics, scroll: window.scrollY, profileOpen: profile?.open, profileScroll: profile?.scrollTop, profileSnapshot: window.PadelLigaCapturePlayerProfile?.() };
       if (returnContext?.profileOpen && (!profile?.open || window.PadelLigaCapturePlayerProfile?.().data !== returnContext.profileSnapshot?.data)) window.PadelLigaRestorePlayerProfile?.(returnContext.profileSnapshot);
     }
+    if (!keepSequence) {
+      sequence = (!active && returnContext?.sequence) || window.PadelLigaGetMatchStatisticsSequence?.(trigger, matchId) || [];
+      if (returnState) returnState.sequence = sequence;
+    }
     active = matchId;
+    activeData = null;
+    activeForecast = null;
+    forecastSelectionOpen = false;
+    forecastSubmitting = false;
+    forecastMessage = '';
     const token = ++request;
     dialog().dataset.mode = 'statistics';
-    document.querySelector('[data-live-back]').setAttribute('aria-label', 'Partiestatistik schließen');
-    document.getElementById('live-ticker-title').textContent = 'PARTIESTATISTIK';
-    document.getElementById('live-ticker-season-label').textContent = '';
+    document.querySelector('[data-detail-view-back]').setAttribute('aria-label', 'Partiestatistik schließen');
+    document.getElementById('detail-view-title').textContent = 'PARTIESTATISTIK';
+    document.getElementById('detail-view-context').textContent = '';
     setPlayedOrder();
-    document.getElementById('live-match-switcher').hidden = true;
+    document.getElementById('final-four-view-switcher').hidden = true;
+    updatePager();
+    const cached = takePrefetched(matchId);
     content().innerHTML = skeleton(); content().setAttribute('aria-busy', 'true');
     if (!dialog().open) dialog().showModal();
-    document.querySelector('[data-live-back]').focus({ preventScroll: true });
-    dialog().querySelector('.live-ticker-dialog-shell').scrollTop = 0;
+    if (stepDirection) window.PadelSwipeGesture?.animateIn(content(), stepDirection);
+    else document.querySelector('[data-detail-view-back]').focus({ preventScroll: true });
+    dialog().querySelector('.detail-view-shell').scrollTop = 0;
     if (updateUrl) {
       const url = new URL(window.location.href);
       const replacing = url.searchParams.has('partie') || Boolean(currentRoute);
@@ -519,17 +705,14 @@
     }
     if (!updateUrl) currentRoute = window.history.state?.statisticsRoute || null;
     try {
-      const config = window.PADEL_SUPABASE_CONFIG;
-      const client = window.PADEL_SUPABASE_CLIENT || (config && window.supabase?.createClient(config.url, config.publishableKey));
+      const client = getClient();
       if (!client) throw new Error('Verbindung nicht verfügbar');
-      const { data, error } = await client.rpc('get_public_match_detail', { p_match_id: matchId });
+      const detailResult = await loadDetail(client, matchId, cached);
       if (token !== request) return;
+      const { data, error } = detailResult;
       if (error) throw error;
-      if (!data) {
-        const url = new URL(window.location.href); url.searchParams.delete('partie');
-        window.history.replaceState({ ...window.history.state, matchStatistics: null }, '', url);
-        restore(); notice('Für diese Partie ist keine Partiestatistik verfügbar.'); return;
-      }
+      if (!data) { rejectUnavailable('Für diese Partie ist keine Partiestatistik verfügbar.'); return; }
+      if (data.availability === 'basic') { rejectUnavailable(previewPendingMessage); return; }
       // Direct links get an in-page return destination only after successful validation.
       if (direct) {
         const route = new URL(window.location.href), base = new URL(route); base.searchParams.delete('partie');
@@ -538,10 +721,19 @@
         routeContexts.set(currentRoute, returnState);
         window.history.pushState({ ...window.history.state, matchStatistics: matchId, statisticsRoute: currentRoute, statisticsProfile: null, statisticsTop: 'match' }, '', route);
       }
-      document.getElementById('live-ticker-title').textContent = data.label;
+      document.getElementById('detail-view-title').textContent = data.label;
       setPlayedOrder(data);
-      document.getElementById('live-ticker-season-label').textContent = headerMeta(data);
-      content().innerHTML = render(data, window.PadelLigaGetSelectedViewerId?.()); content().setAttribute('aria-busy', 'false');
+      document.getElementById('detail-view-context').textContent = headerMeta(data);
+      activeData = data;
+      forecastMessage = 'Tipps werden geladen …';
+      renderActiveContent();
+      if (direct) { schedulePrefetch(token); return; }
+      const forecast = await loadInitialForecast(client, matchId, cached);
+      if (token !== request) return;
+      activeForecast = forecast;
+      forecastMessage = '';
+      renderActiveContent();
+      schedulePrefetch(token);
     } catch (error) {
       if (token !== request) return;
       content().setAttribute('aria-busy', 'false');
@@ -549,7 +741,7 @@
     }
   }
   function prepareProfileOpen(trigger, playerId, fromHistory = false) {
-    if (!active || (!fromHistory && !trigger?.closest('#live-ticker-dialog'))) return false;
+    if (!active || (!fromHistory && !trigger?.closest('#detail-view-dialog'))) return false;
     profileOnTop = true;
     if (!fromHistory) window.history.replaceState({ ...window.history.state, statisticsProfile: playerId, statisticsTop: 'profile' }, '', window.location.href);
     return true;
@@ -560,16 +752,65 @@
     window.history.replaceState({ ...window.history.state, statisticsProfile: null, statisticsTop: 'match' }, '', window.location.href);
     return false;
   }
-  Object.assign(api, { open, close, restore, prepareProfileOpen, closeProfile });
+  async function submitQuickPrediction(prediction) {
+    if (!active || !activeData || !activeForecast?.open || forecastSubmitting || !['2:0', '2:1', '1:2', '0:2'].includes(prediction)) return;
+    const authenticatedPlayerId = window.PadelKonto?.getProfile?.()?.player_id;
+    if (authenticatedPlayerId && activeData.players?.some(player => player.playerId === authenticatedPlayerId)) return;
+    const client = getClient();
+    if (!client) return;
+    forecastSubmitting = true;
+    forecastMessage = '';
+    renderActiveContent();
+    const matchId = active;
+    const { data, error } = await client.rpc('submit_match_quick_prediction', {
+      p_match_id: matchId,
+      p_prediction: prediction
+    });
+    if (active !== matchId) return;
+    forecastSubmitting = false;
+    if (error) {
+      const errorMessage = String(error.message || '');
+      forecastMessage = /bestätigen/i.test(errorMessage)
+        ? 'Bitte bestätige zuerst deine E-Mail-Adresse.'
+        : /Eigene Partien/i.test(errorMessage)
+        ? 'Die eigene Partie kann nicht getippt werden.'
+        : /beendet|geöffnet|geschlossen/i.test(errorMessage)
+        ? 'Die Tippabgabe ist bereits beendet.'
+        : 'Der Tipp konnte gerade nicht gespeichert werden.';
+      renderActiveContent();
+      return;
+    }
+    activeForecast = data;
+    forecastSelectionOpen = false;
+    forecastMessage = '';
+    renderActiveContent();
+    window.dispatchEvent(new CustomEvent('padel:match-forecast-changed', {
+      detail: { forecast: data }
+    }));
+  }
+  Object.assign(api, { open, close, restore, prepareProfileOpen, closeProfile, refreshForecast: refreshActiveForecast });
   Object.defineProperty(api, 'active', { get: () => active });
   window.PadelMatchStatistics = api;
   document.addEventListener('click', event => {
+    const forecastChoice = event.target.closest('[data-match-forecast-prediction]');
+    if (forecastChoice) {
+      void submitQuickPrediction(forecastChoice.dataset.matchForecastPrediction);
+      return;
+    }
+    if (event.target.closest('[data-match-forecast-change]')) {
+      forecastSelectionOpen = true;
+      forecastMessage = '';
+      renderActiveContent();
+      return;
+    }
     const retry = event.target.closest('[data-statistics-retry]');
-    if (retry && active) { void open(active, { updateUrl: false }); return; }
+    if (retry && active) { void open(active, { updateUrl: false, keepSequence: true }); return; }
+    const stepButton = event.target.closest('[data-statistics-step]');
+    if (stepButton) { step(Number(stepButton.dataset.statisticsStep)); return; }
     const graphPlayerButton = event.target.closest('[data-statistics-graph-select]');
     if (graphPlayerButton) {
-      const picker = graphPlayerButton.closest('.live-ticker-statistics-graph-picker');
-      const graph = picker?.closest('.live-ticker-statistics-section')?.querySelector('.live-ticker-statistics-svg');
+      const picker = graphPlayerButton.closest('.match-statistics-graph-picker');
+      const graph = picker?.closest('.match-statistics-section')?.querySelector('.match-statistics-svg');
       const players = [...(graph?.querySelectorAll('[data-statistics-graph-player]') || [])];
       const selected = players.find(player => player.dataset.statisticsGraphPlayer === graphPlayerButton.dataset.statisticsGraphSelect);
       picker.querySelectorAll('[data-statistics-graph-select]').forEach(button => {
@@ -583,6 +824,25 @@
     }
     const button = event.target.closest('[data-match-statistics]');
     if (button && !event.target.closest('[data-player-profile-id]')) { event.preventDefault(); void open(button.dataset.matchStatistics, { trigger: button }); }
+  });
+  window.addEventListener('padel:auth-state-changed', () => {
+    // Prognosen enthalten den eigenen Tipp und dürfen kontoübergreifend nicht wiederverwendet werden.
+    prefetched.clear();
+    if (active && activeData) void refreshActiveForecast();
+  });
+  document.addEventListener('keydown', event => {
+    if (!active || profileOnTop || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (!dialog()?.open || dialog().dataset.mode !== 'statistics') return;
+    // Andere Dialoge oberhalb der Partiestatistik behalten ihre Pfeiltasten.
+    if ([...document.querySelectorAll('dialog[open]')].some(other => other !== dialog() && other.id !== 'player-profile-dialog')) return;
+    if (event.target.closest?.('input, select, textarea, [contenteditable]')) return;
+    event.preventDefault();
+    step(event.key === 'ArrowRight' ? 1 : -1);
+  });
+  window.PadelSwipeGesture?.attach(dialog()?.querySelector('.detail-view-shell'), {
+    enabled: () => Boolean(active) && !profileOnTop && dialog()?.dataset.mode === 'statistics',
+    onSwipe: step
   });
   window.addEventListener('popstate', async () => {
     const id = new URL(window.location.href).searchParams.get('partie');

@@ -37,7 +37,9 @@ test('Cup 2027 is selectable without replacing Sommer 2026 as default', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(cupOption)), {
     id: '2027-cup',
     label: 'Cup 2027',
+    shortLabel: 'Cup27',
     visualTheme: 'cup',
+    qualificationPlaces: 0,
     file: 'data/data-2027-cup.js',
     default: false
   });

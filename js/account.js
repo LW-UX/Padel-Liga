@@ -1,7 +1,10 @@
 (function () {
   const ACCOUNT_SUCCESS_MESSAGE_DURATION = 5000;
+  // Supabase verwirft ?auth=…, wenn die Zieladresse nicht freigegeben ist; type=… im Hash kommt immer mit.
   const requestedAuthFlow = String(window.location?.search || '')
-    .match(/(?:^|[?&])auth=(invite|recovery)(?:&|$)/)?.[1] || null;
+    .match(/(?:^|[?&])auth=(invite|recovery)(?:&|$)/)?.[1]
+    || String(window.location?.hash || '').match(/(?:^#|&)type=(invite|recovery)(?:&|$)/)?.[1]
+    || null;
   const state = {
     client: null,
     session: null,
@@ -225,8 +228,11 @@
     button.innerHTML = isLoggedIn
       ? `<svg class="auth-user-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/>
-        </svg>${taskCount ? `<span class="auth-task-badge">${taskCount}</span>` : ''}`
-      : 'Login';
+        </svg><span class="auth-button-label">Konto</span>${taskCount ? `<span class="auth-task-badge">${taskCount}</span>` : ''}`
+      : `<svg class="auth-user-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/>
+        </svg><span class="auth-button-label">Login</span>`;
+    window.PadelGlobalActions?.setAccountTaskCount(taskCount);
     button.classList.toggle('is-authenticated', isLoggedIn);
     button.classList.toggle('secondary-button', isLoggedIn);
     button.setAttribute('aria-label', isLoggedIn ? `Spieleübersicht von ${displayName} öffnen` : 'Einloggen');
@@ -557,7 +563,7 @@
     return `<div class="result-task-wrap">
       <article class="account-task-card result-task-card${hasAuthenticatedPlayer ? ' has-authenticated-player' : ''}${isActionable ? ' is-actionable' : ''}${isWaiting ? ' is-waiting' : ''}">
         <div class="account-task-meta">
-          <span class="widget-label">${escapeHtml(getTaskLeagueLabel(task))} · ${escapeHtml(getTaskMatchLabel(task))}</span>
+          <span class="mc-nr">${escapeHtml(getTaskLeagueLabel(task))} · ${escapeHtml(getTaskMatchLabel(task))}</span>
           ${renderResultTaskStatus(task)}
         </div>
         ${groupKey === 'future' ? `<div class="result-card-timing">${escapeHtml(formatMatchAt(task.proposed_match_at || task.match_at))}</div>` : ''}
@@ -866,7 +872,7 @@
         <div class="training-round-head">
           ${renderTrainingPicker({ label: 'Paarung', name: 'pairing', value: value.pairing, options: pairingOptions, menuId: `${menuPrefix}-pairing-menu-${index}` })}
           ${renderTrainingPicker({ label: 'Ergebnisformat', name: 'resultFormat', value: value.resultFormat, options: formatOptions, menuId: `${menuPrefix}-format-menu-${index}` })}
-          <button class="training-round-remove" type="button" data-training-round-remove="${index}" aria-label="${index === 0 ? 'Trainingseingabe schließen' : `Spielergebnis ${index + 1} entfernen`}">×</button>
+          <button class="training-round-remove" type="button" data-training-round-remove="${index}" aria-label="${index === 0 ? 'Trainingseingabe schließen' : `Spielergebnis ${index + 1} entfernen`}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
         </div>
         ${renderTrainingScoreCounters(value, value.resultFormat)}
         <div class="result-entry-summary training-round-summary" data-training-round-summary aria-live="polite">Satzergebnis wird automatisch berechnet.</div>
@@ -875,17 +881,14 @@
     target.querySelectorAll('[data-training-round]').forEach(updateTrainingRoundSummary);
   }
 
-  function isLudiTrainingPlayer(player) {
-    const displayName = String(player?.display_name || '')
-      .trim()
-      .toLocaleLowerCase('de-DE');
-    return /^ludi(?:\s|$)/u.test(displayName);
+  function isTestTrainingPlayer(player) {
+    return ['ludi_gmail', 'ludi_gmx', 'ludi_ionos', 'test_net'].includes(String(player?.id || ''));
   }
 
   function getSelectableTrainingPlayers(players = state.players, profile = state.profile) {
     const authenticatedPlayer = players.find(player => String(player.id) === String(profile?.player_id));
-    const canSeeLudiPlayers = profile?.app_role === 'admin' || isLudiTrainingPlayer(authenticatedPlayer);
-    return canSeeLudiPlayers ? players : players.filter(player => !isLudiTrainingPlayer(player));
+    const canSeeTestPlayers = profile?.app_role === 'admin' || isTestTrainingPlayer(authenticatedPlayer);
+    return canSeeTestPlayers ? players : players.filter(player => !isTestTrainingPlayer(player));
   }
 
   function getTrainingParticipantIds(form = document) {
@@ -1117,7 +1120,7 @@
       <div class="training-rounds" data-training-rounds></div>
       <div class="auth-message training-message" data-training-message role="status" aria-live="polite"></div>
       <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
-      <button class="primary-button" type="submit">Alternative senden</button>
+      <button class="primary-button" type="submit">${state.profile?.app_role === 'admin' ? 'Training eintragen' : 'Alternative senden'}</button>
     </form>`;
   }
 
@@ -1126,7 +1129,7 @@
     const hasAuthenticatedPlayer = Boolean(state.profile?.player_id && task.player_ids.includes(state.profile.player_id));
     return `<article class="account-task-card training-task-card${hasAuthenticatedPlayer ? ' has-authenticated-player' : ''}${task.created_by_me ? ' is-waiting' : ' is-actionable'}">
       <div class="account-task-meta">
-        <span class="widget-label">Training · Partie ${escapeHtml(task.training_number || index + 1)}</span>
+        <span class="mc-nr">Training · Partie ${escapeHtml(task.training_number || index + 1)}</span>
         <span class="account-task-status${task.created_by_me ? '' : ' is-open'}">${task.created_by_me ? 'Auf Bestätigung warten' : 'Zu bestätigen'}</span>
       </div>
       <div class="training-task-rounds">${rounds.map((round, roundIndex) => renderTrainingTaskRound(task, round, roundIndex, rounds.length)).join('')}</div>
@@ -1403,7 +1406,7 @@
         });
         if (error) throw error;
         if (!data.session) {
-          setAuthMessage('Bitte bestätige deine E-Mail und logge dich danach ein.', 'success');
+          setAuthMessage('Bitte bestätige deine E-Mail und logge dich danach ein. Schau bitte auch in deinem Spam-Ordner nach.', 'success');
           return;
         }
       } else {
@@ -1449,7 +1452,7 @@
       redirectTo: getAuthRedirectUrl('recovery')
     });
     if (error) setAuthMessage(getFriendlyAuthError(error), 'error');
-    else setAuthMessage('Du erhältst gleich eine E-Mail zum Zurücksetzen deines Passworts.', 'success');
+    else setAuthMessage('Du erhältst gleich eine E-Mail zum Zurücksetzen deines Passworts. Schau bitte auch in deinem Spam-Ordner nach.', 'success');
   }
 
   function finishPasswordFlow() {
@@ -1962,7 +1965,7 @@ Dein Hanako-Leben-Squad`;
     try {
       const { error } = await state.client.rpc('confirm_match_result', { p_proposal_id: Number(proposalId) });
       if (error) throw error;
-      setAuthMessage('Ergebnis bestätigt. Tabelle und Elo wurden aktualisiert.', 'success');
+      setAuthMessage('Ergebnis bestätigt. Rangliste und Elo wurden aktualisiert.', 'success');
       await refresh();
       publishOfficialResultChange();
     } catch (error) {
@@ -2262,7 +2265,7 @@ Dein Hanako-Leben-Squad`;
     form.hidden = true;
     const formGroup = form.closest('[data-training-form-group]');
     if (formGroup) formGroup.hidden = true;
-    setAuthMessage('Training wurde zur Bestätigung gesendet.', 'success');
+    setAuthMessage(state.profile?.app_role === 'admin' ? 'Training wurde direkt eingetragen.' : 'Training wurde zur Bestätigung gesendet.', 'success');
     await refresh();
   }
 
@@ -2466,6 +2469,9 @@ Dein Hanako-Leben-Squad`;
         if (formGroup) formGroup.hidden = !opening;
         if (opening) {
           setTrainingMessage('', '', form);
+          form.querySelector('[type="submit"]').textContent = state.profile?.app_role === 'admin'
+            ? 'Training eintragen'
+            : 'Training zur Bestätigung senden';
           renderTrainingForm();
         } else {
           closeTrainingForm(form);

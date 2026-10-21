@@ -81,8 +81,9 @@ test('profiles and rankings show cancellation without counting it', () => {
 
 test('tips remain visible but are excluded from scoring', () => {
   assert.match(tipping, /cancelled_at/);
-  assert.match(tipping, /isCancelled \? 'Ohne Wertung'/);
-  assert.match(tipping, /Dein Tipp: \$\{selected\} · Nicht gewertet/);
+  assert.match(tipping, /if \(isCancelled\) return \{ label: 'Ohne Wertung', classes: 'is-locked' \}/);
+  assert.match(tipping, /getPredictionLocalMatches/);
+  assert.doesNotMatch(tipping, /prediction-save-state/);
   assert.match(migration, /where match\.season_id = p_season_id and match\.cancelled_at is null/);
 });
 

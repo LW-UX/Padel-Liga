@@ -11,6 +11,10 @@ with payload as (
   select item
   from payload
   cross join lateral jsonb_array_elements(value -> 'players') as item
+), returned_ranking_players as (
+  select item
+  from payload
+  cross join lateral jsonb_array_elements(value -> 'rankingPlayers') as item
 )
 select jsonb_build_object(
   'anonymousExecute', has_function_privilege(
@@ -19,6 +23,7 @@ select jsonb_build_object(
     'EXECUTE'
   ),
   'playerCount', (select count(*) from returned_players),
+  'rankingPlayerCount', (select count(*) from returned_ranking_players),
   'matchCount', (select count(*) from returned_matches),
   'seasonIds', coalesce((
     select jsonb_agg(season_id order by season_id)
@@ -91,6 +96,32 @@ select jsonb_build_object(
       from returned_matches as match
       where (match.item #> '{team1,playerIds}') ? (player.item ->> 'playerId')
          or (match.item #> '{team2,playerIds}') ? (player.item ->> 'playerId')
+    )
+  ),
+  'rankingPlayersWithoutLeagueSeason', (
+    select count(*)
+    from returned_ranking_players as player
+    where not exists (
+      select 1
+      from public.season_players as participant
+      join public.seasons as season
+        on season.id = participant.season_id
+       and season.counts_for_profile
+       and season.tournament_mode in ('none', 'direct_final_four', 'top8_semifinals')
+      where participant.player_id = player.item ->> 'playerId'
+    )
+  ),
+  'leagueSeasonPlayersMissingFromRanking', (
+    select count(*)
+    from public.season_players as participant
+    join public.seasons as season
+      on season.id = participant.season_id
+     and season.counts_for_profile
+     and season.tournament_mode in ('none', 'direct_final_four', 'top8_semifinals')
+    where not exists (
+      select 1
+      from returned_ranking_players as player
+      where player.item ->> 'playerId' = participant.player_id
     )
   ),
   'playersWithWrongInitialCount', (

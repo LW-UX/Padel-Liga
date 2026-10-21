@@ -8,93 +8,183 @@
   <link rel="icon" href="../favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="../data/icon-32.png">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-  <link rel="stylesheet" href="../style.css?v=2026-10-11-typography">
-  <link rel="stylesheet" href="../account.css?v=2026-10-15-admin-relevant-filter">
+  <link rel="stylesheet" href="../style.css?v=2026-10-21-swipe-hint">
+  <link rel="stylesheet" href="../account.css?v=2026-10-21-games-help">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script defer src="../data/players.js?v=2026-10-14-training-profiles"></script>
-  <script defer src="../data/seasons.js?v=2026-10-12-season-id-order"></script>
+  <script defer src="../data/players.js?v=2026-10-20-test-net-emoji"></script>
+  <script defer src="../data/seasons.js?v=2026-10-21-test-windows"></script>
   <script defer src="../data/supabase-config.js"></script>
+  <script defer src="../js/global-actions.js?v=2026-10-20-speed-dial-player"></script>
   <script defer src="../js/score-input.js?v=2026-09-22-unified-score-counters"></script>
-  <script defer src="../js/account.js?v=2026-10-15-admin-relevant-filter"></script>
-  <script defer src="../js/tippspiel.js?v=2026-10-14-loading"></script>
-  <script defer src="../js/tipp-page.js?v=2026-10-12-season-id-order"></script>
+  <script defer src="../js/account.js?v=2026-10-21-recovery-link"></script>
+  <script defer src="../js/preview-window.js?v=2026-10-21-tip-window"></script>
+  <script defer src="../js/swipe-gesture.js?v=2026-10-21-swipe-pager"></script>
+  <script defer src="../js/tipp-page.js?v=2026-10-21-tip-swipe-scroll"></script>
 </head>
 <body class="tip-page">
 <header class="site-header">
   <div class="hero">
     <div class="hero-topbar">
-      <div class="hero-eyebrow">TIPPSPIEL</div>
-      <div class="context-actions">
-        <a class="context-link" id="liga-link" href="../">Zur Liga</a>
-        <div class="season-picker" id="season-picker">
-          <button class="secondary-button secondary-button--dropdown" type="button" data-season-toggle aria-haspopup="listbox" aria-expanded="false">
-            <span id="season-picker-label"></span>
+      <div class="hero-eyebrow">Headsquare × Hanako × Envidual</div>
+      <div class="context-actions global-actions" id="global-actions" data-global-actions>
+        <button class="global-actions-dismiss" type="button" data-global-actions-dismiss aria-label="Schnellzugriffe schließen" tabindex="-1"></button>
+        <div class="global-actions-list" id="global-actions-list" data-global-actions-list>
+          <a class="context-link global-action" id="liga-link" href="../" data-global-action data-global-action-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg>
+            <span>Zurück zur Liga</span>
+          </a>
+          <a class="external-game-link global-action global-action--mobile-only" id="external-game-link" href="https://lw-ux.github.io/PadelPong/" target="_blank" rel="noopener" aria-label="PadelPong in neuem Tab öffnen" title="PadelPong" data-global-action data-global-action-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10l3 3 1 8-3 1-4-4h-4l-4 4-3-1 1-8z"/><path d="M7 9v5m-2.5-2.5h5M16 10h.01M18 13h.01"/></svg>
+            <span class="global-action-label">PadelPong</span>
+          </a>
+          <div class="season-picker" id="season-picker">
+            <button class="secondary-button secondary-button--dropdown global-action" type="button" data-season-toggle data-global-action aria-haspopup="listbox" aria-expanded="false">
+              <span class="season-picker-trophy" aria-hidden="true">
+                <svg viewBox="0 0 28 32" role="presentation" focusable="false">
+                  <path class="season-picker-trophy-line" d="M8 3h12v5c0 5-2.4 8.5-6 10-3.6-1.5-6-5-6-10V3Z"/>
+                  <path class="season-picker-trophy-line" d="M8 6H4v2c0 4 2 6 5.3 6.7M20 6h4v2c0 4-2 6-5.3 6.7"/>
+                  <path class="season-picker-trophy-line" d="M14 18v6M11 24h6v4M9 28h10"/>
+                </svg>
+              </span>
+              <span id="season-picker-label"></span>
+            </button>
+            <div class="season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
+          </div>
+          <button class="auth-button global-action" id="auth-button" type="button" data-auth-open data-global-action data-global-action-close>
+            <svg class="auth-user-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/>
+            </svg>
+            <span class="auth-button-label">Login</span>
           </button>
-          <div class="season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
         </div>
-        <button class="auth-button" id="auth-button" type="button" data-auth-open>Login</button>
+        <button class="global-actions-toggle" type="button" data-global-actions-toggle aria-expanded="false" aria-controls="global-actions-list" aria-label="Schnellzugriffe öffnen">
+          <svg class="global-actions-toggle-menu" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/></svg>
+          <svg class="global-actions-toggle-close" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 18 18M18 6 6 18"/></svg>
+          <span class="global-actions-toggle-badge" data-global-actions-badge hidden></span>
+        </button>
       </div>
     </div>
     <div class="hero-title-row">
-      <h1><button class="hero-home-button" type="button" data-tip-nav="tippen" aria-label="Zur Tippseite">PADEL<em>TIPP</em></button></h1>
+      <h1><button class="hero-home-button" type="button" data-tip-nav="tippuebersicht" aria-label="Zur Tipprangliste">PADEL<em>TIPP</em></button></h1>
     </div>
   </div>
 </header>
 
 <nav class="site-nav tip-site-nav" aria-label="Tippspiel-Navigation">
-  <button class="active" data-tip-nav="tippen">Tippen</button>
-  <button data-tip-nav="tippuebersicht">Tippübersicht</button>
+  <button class="active" data-tip-nav="tippuebersicht">Tipprangliste</button>
+  <button data-tip-nav="tippen">Tippabgabe</button>
+  <button data-tip-nav="tippinfos">Infos</button>
 </nav>
 
 <main>
-  <section id="tippen" class="section active">
+  <section id="tippuebersicht" class="section active">
     <div class="sh">
-      <div class="sh-title">TIPPEN</div>
-      <div class="sh-meta" id="prediction-meta">Saison <span data-season-label></span></div>
+      <div class="sh-title">TIPPRANGLISTE</div>
+      <div class="sh-meta">Teilnehmer mit Tippwertung</div>
     </div>
-    <div class="prediction-main">
-      <article class="widget prediction-rules">
-        <div class="widget-label">So wird gewertet</div>
-        <div class="prediction-rule-grid">
-          <div><strong>4</strong><span>Exaktes Satzergebnis</span><small>z. B. 2:0 → 2:0</small></div>
-          <div><strong>2</strong><span>Richtige Richtung</span><small>z. B. 2:0 → 2:1</small></div>
-          <div><strong>0</strong><span>Falscher Sieger</span><small>z. B. 2:0 → 1:2</small></div>
-        </div>
-      </article>
-      <div id="prediction-auth-hint"></div>
-      <div id="prediction-matches" class="prediction-match-list"></div>
+    <div class="ranking-wrap">
+      <table class="rt ranking-table compact prediction-ranking-table" data-ranking-sort="points">
+        <thead>
+          <tr>
+            <th class="col-rank">#</th>
+            <th class="col-name">Name</th>
+            <th class="col-games">Tipps</th>
+            <th class="col-wins">Exakt</th>
+            <th class="col-points">Punkte</th>
+          </tr>
+        </thead>
+        <tbody id="prediction-ranking-body"></tbody>
+      </table>
     </div>
+    <div id="prediction-ranking-empty" class="empty-state">Rangliste wird geladen …</div>
   </section>
 
-  <section id="tippuebersicht" class="section">
-    <div class="sh">
-      <div class="sh-title">TIPPÜBERSICHT</div>
-      <div class="sh-meta">Alle Teilnehmer mit mindestens einem Tipp</div>
-    </div>
-    <article class="widget prediction-ranking-panel standalone-ranking-panel">
-      <div class="widget-label">Padeltipp-Rangliste</div>
-      <div class="ranking-wrap prediction-ranking-wrap">
-        <table class="rt prediction-ranking-table">
-          <thead>
-            <tr>
-              <th class="l rn">#</th>
-              <th class="l">Name</th>
-              <th>Tipps</th>
-              <th>Exakt</th>
-              <th>Punkte</th>
-            </tr>
-          </thead>
-          <tbody id="prediction-ranking-body"></tbody>
-        </table>
+  <section id="tippen" class="section">
+    <div class="sh sh-with-control">
+      <div class="sh-heading">
+        <div class="sh-title">TIPPABGABE</div>
+        <div class="sh-meta" id="prediction-meta">Saison <span data-season-label></span></div>
       </div>
-      <div id="prediction-ranking-empty" class="empty-state"></div>
-    </article>
+      <div class="match-scope-toggle ranking-sort-toggle" id="prediction-sort-toggle" aria-label="Tippabgabe sortieren">
+        <button type="button" class="active" data-prediction-sort="status" aria-pressed="true">Status</button>
+        <button type="button" data-prediction-sort="matchday" aria-pressed="false">Spieltage</button>
+      </div>
+    </div>
+    <div id="prediction-matches" class="prediction-match-list"></div>
+  </section>
+
+  <section id="tippinfos" class="section">
+    <div class="sh">
+      <div class="sh-title">INFOS</div>
+      <div class="sh-meta">Funktionsweise und Punktevergabe</div>
+    </div>
+    <div class="prediction-info-layout">
+      <article class="info-card prediction-info-about">
+        <p>Beim Padeltipp sagst du vor dem Spiel voraus, welches Team gewinnt und wie das genaue Satzergebnis ausfällt.<br>Dein Tipp ist nur eine persönliche Prognose. Er verändert weder das Spielergebnis noch die Elo-Rangliste.</p>
+        <div class="info-group">
+          <h3>Ab wann kann ich tippen?</h3>
+          <ul class="clean-list">
+            <li>Getippt werden die Partien, die gerade anstehen: alle terminierten Partien sowie die Partien des aktuellen und des nächsten Spieltags.</li>
+            <li>Das sind dieselben Partien, für die es auch die ausführliche Partievorschau gibt. So tippst du mit aktuellen Elo-Werten und nicht ins Blaue.</li>
+            <li>Weiter entfernte Partien stehen unter „Demnächst tippbar“ mit dem Datum, ab dem sie freigegeben werden.</li>
+            <li>Wird eine Partie vorher terminiert, kannst du sie sofort tippen.</li>
+          </ul>
+        </div>
+        <div class="info-group">
+          <h3>Bis wann kann ich tippen?</h3>
+          <ul class="clean-list">
+            <li>Bei offenen Partien kannst du deinen Tipp bis zum eingetragenen Spielbeginn abgeben und ändern.</li>
+            <li>Mit Erreichen dieses Zeitpunkts schließt die Tippabgabe automatisch.</li>
+            <li>Ohne eingetragenen Termin bleibt eine freigegebene Partie offen, bis ein Ergebnis eingetragen wird.</li>
+          </ul>
+        </div>
+        <div class="info-group">
+          <h3>Was passiert bei einer Verschiebung?</h3>
+          <ul class="clean-list">
+            <li>Dein bisheriger Tipp bleibt erhalten.</li>
+            <li>Sobald der neue Termin eingetragen ist, richtet sich der Tippschluss nach dem neuen Spielbeginn.</li>
+            <li>Solange die Partie zum Tippen freigegeben ist, kannst du deinen Tipp bis dahin ändern oder noch einen Tipp abgeben.</li>
+          </ul>
+        </div>
+        <div class="info-group">
+          <h3>Wann wird ausgewertet?</h3>
+          <ul class="clean-list">
+            <li>Nachdem das Ergebnis eingetragen und bestätigt wurde, wird dein Tipp automatisch ausgewertet.</li>
+            <li>Deine Punkte fließen dann in die Tipprangliste ein.</li>
+            <li>Ein Ergebnis, das noch auf Bestätigung wartet, zählt noch nicht.</li>
+          </ul>
+        </div>
+        <div class="info-group">
+          <h3>Was gilt bei meiner eigenen Partie?</h3>
+          <ul class="clean-list">
+            <li>Deine eigene Partie kannst du nicht tippen.</li>
+            <li>Nach der Wertung erhältst du dafür automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Fremdtipp auf diese Partie.</li>
+            <li>Nicht abgegebene Tipps zählen dabei nicht mit.</li>
+            <li>Wurde gar kein Tipp abgegeben, gibt es keine Gutschrift.</li>
+          </ul>
+        </div>
+      </article>
+      <aside class="prediction-info-sidebar">
+        <article class="widget prediction-info-account">
+          <div class="widget-label">Dein Konto</div>
+          <div id="prediction-auth-hint"></div>
+        </article>
+        <article class="widget prediction-rules">
+          <div class="widget-label">Tipppunkte</div>
+          <div class="prediction-rule-grid">
+            <div><strong>4</strong><span>Exaktes Satzergebnis</span><small>z. B. 2:0 → 2:0</small></div>
+            <div><strong>2</strong><span>Richtige Richtung</span><small>z. B. 2:0 → 2:1</small></div>
+            <div><strong>0</strong><span>Falscher Sieger</span><small>z. B. 2:0 → 1:2</small></div>
+          </div>
+        </article>
+      </aside>
+    </div>
   </section>
 </main>
 
 <dialog class="auth-dialog" id="auth-dialog" aria-labelledby="auth-dialog-title">
-  <button class="modal-close-button auth-dialog-close" type="button" data-auth-close aria-label="Dialog schließen">×</button>
+  <button class="modal-close-button auth-dialog-close" type="button" data-auth-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="auth-dialog-card">
     <div id="auth-guest-view">
       <div class="widget-label">Dein Padel-Konto</div>
@@ -139,7 +229,18 @@
         <div class="account-player-area" id="account-player-area" hidden>
           <section class="account-section" id="open-results-section">
             <div class="account-section-heading">
-              <h3 class="sh-title">Spieleübersicht</h3>
+              <h3 class="sh-title sh-title-with-help">Spieleübersicht
+                <span class="th-help-wrap account-games-help">
+                  <span class="help-icon" tabindex="0" role="button" aria-label="Spieleübersicht erklären" aria-describedby="account-games-help" aria-expanded="false" data-help-tooltip-anchor>?</span>
+                  <span class="help-tooltip" id="account-games-help" role="tooltip">
+                    <span class="account-games-help-block">Hier siehst du alle deine eigenen Liga- und Trainingsspiele, sortiert nach dem, was als Nächstes zu tun ist.</span>
+                    <span class="account-games-help-block"><strong>Terminieren</strong>Bei einem geplanten Spiel Datum und Uhrzeit wählen und „Terminieren“ klicken. Über „Termin ändern“ oder „Termin löschen“ passt du ihn später an.</span>
+                    <span class="account-games-help-block"><strong>Ergebnis eintragen</strong>Nach dem Spiel die Sätze eintragen, den tatsächlichen Spielzeitpunkt prüfen und „Zur Bestätigung senden“ klicken.</span>
+                    <span class="account-games-help-block"><strong>Bestätigen</strong>Ergebnisse des anderen Teams stehen unter „Zu bestätigen“. Stimmt es, klickst du „Ergebnis bestätigen“, sonst „Alternative eingeben“. Ohne Reaktion gilt ein Vorschlag nach 48 Stunden als bestätigt.</span>
+                    <span class="account-games-help-block"><strong>Training</strong>Über „Training hinzufügen“ Datum, Uhrzeit und vier Spieler wählen (auch Gäste), Ergebnis eintragen und zur Bestätigung senden. Trainings zählen nicht für Rangliste und Elo.</span>
+                  </span>
+                </span>
+              </h3>
               <button class="secondary-button" type="button" data-training-toggle>Training hinzufügen</button>
             </div>
             <div class="match-scope-toggle account-result-scope-toggle" aria-label="Spieleübersicht filtern" data-account-result-scope-toggle hidden>
@@ -170,7 +271,7 @@
 </dialog>
 
 <dialog class="auth-dialog player-invite-dialog" id="player-invite-dialog" aria-labelledby="player-invite-title">
-  <button class="modal-close-button auth-dialog-close" type="button" data-player-invite-close aria-label="Einladung schließen">×</button>
+  <button class="modal-close-button auth-dialog-close" type="button" data-player-invite-close aria-label="Einladung schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="auth-dialog-card">
     <div class="widget-label">Kontoverwaltung</div>
     <h2 id="player-invite-title">Spielerzugänge</h2>

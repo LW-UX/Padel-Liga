@@ -112,7 +112,7 @@ window.PADEL_INFO = {
       "title": "Ergebnismeldung",
       "paragraphs": [
         "Nachdem die Partie absolviert ist, tragen die Spieler das Ergebnis selbst auf der Webseite ein. Dafür oben rechts über „Login“ anmelden, im Konto die Partie öffnen und unter „Ergebnis eintragen“ die Sätze sowie Datum und Uhrzeit der Partie angeben.",
-        "Ein Spieler meldet das Ergebnis für sein Team. Das gegnerische Team bestätigt es oder schickt eine korrigierte Alternative. Erfolgt innerhalb von 48 Stunden keine Reaktion, wird das Ergebnis automatisch bestätigt und zählt für Tabelle und Elo.",
+        "Ein Spieler meldet das Ergebnis für sein Team. Das gegnerische Team bestätigt es oder schickt eine korrigierte Alternative. Erfolgt innerhalb von 48 Stunden keine Reaktion, wird das Ergebnis automatisch bestätigt und zählt für Rangliste und Elo.",
         "Wer noch keinen Kontozugang hat, meldet sich bitte bei Ludwig.",
         "Alternativ kann das Ergebnis weiterhin im Teams-Kanal Sport | Headsquare & Hanako & Envidual, per Mail an Hanako Leben Squad oder direkt an Ludwig gemeldet werden, und zwar mit folgenden Angaben:"
       ],
@@ -127,8 +127,7 @@ window.PADEL_INFO = {
       "title": "Punktevergabe",
       "paragraphs": [
         "Die Punkte werden wie im Eishockey vergeben. Bei einem Zwei-Satz-Sieg gibt es 3 Punkte für die Gewinner und 0 Punkte für die Verlierer.",
-        "Steht es nach beiden Sätzen 1:1, erhalten beide Teams einen Punkt. Im Match-Tie-Break wird um den Extrapunkt gespielt.",
-        "Für die Tabelle werden nachstehende Kriterien in der aufgeführten Reihenfolge zur Ermittlung der Platzierung herangezogen:"
+        "Steht es nach beiden Sätzen 1:1, erhalten beide Teams einen Punkt. Im Match-Tie-Break wird um den Extrapunkt gespielt."
       ],
       "table": [
         [
@@ -157,10 +156,20 @@ window.PADEL_INFO = {
           "0:2"
         ]
       ],
+      "paragraphsAfterTable": [
+        "Für die Rangliste werden nachstehende Kriterien in der aufgeführten Reihenfolge zur Ermittlung der Platzierung herangezogen:"
+      ],
       "items": [
         "Anzahl Punkte",
         "Spiel-Differenz",
         "Anzahl gewonnener Spiele"
+      ]
+    },
+    {
+      "title": "PadelTipp",
+      "paragraphs": [
+        "Deine eigene Partie kannst du nicht tippen. Nach der Wertung erhältst du dafür automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Fremdtipp auf diese Partie.",
+        "Nicht abgegebene Tipps zählen dabei nicht mit. Wurde gar kein Tipp abgegeben, gibt es keine Gutschrift."
       ]
     }
   ]

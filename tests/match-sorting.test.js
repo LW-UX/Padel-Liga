@@ -7,6 +7,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
+const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 
 test('match overview defaults to matchdays and exposes date sorting in the ranking position', () => {
   assert.match(html, /id="match-sort-toggle"[\s\S]*class="active" data-match-sort="matchday">Spieltage/);
@@ -22,6 +23,13 @@ test('switching match sorting reuses the ranking movement animation for stable m
   assert.match(app, /getRankingRowPositions\(partienSection, '\.mc', 'matchEntry'\)/);
   assert.match(app, /animateRankingRows\(partienSection, '\.mc', previousPositions, 'matchEntry'\)/);
   assert.match(app, /function animateRankingRows\([^]*prefers-reduced-motion: reduce[^]*520ms cubic-bezier/);
+});
+
+test('league and Final Four match plans share score-detail hover and mobile click behavior', () => {
+  assert.match(style, /:is\(#spielplan, #final-four-spielplan\) \.mc\.played \.mc-score-detail/);
+  assert.match(style, /:is\(#spielplan, #final-four-spielplan\):has\(\.mc\.played:hover\)/);
+  assert.match(app, /document\.querySelectorAll\('#spielplan, #final-four-spielplan'\)\.forEach\(matchPlan => \{/);
+  assert.match(app, /matchPlan\.classList\.toggle\('played-details-visible'\)/);
 });
 
 test('date sorting places matches without a complete date and time last', () => {
@@ -53,7 +61,8 @@ test('date sorting places matches without a complete date and time last', () => 
   assert.match(app, /function getMatchSortDate\(match\)[\s\S]*getMatchdayInfo\(match\.spieltag\)\?\.startDate/);
   assert.match(app, /scheduledMatches = sortedMatches\.filter\(hasMatchSortDate\)/);
   assert.match(app, /if \(matchScope === 'open'\) return match\.sieger === null/);
-  assert.match(app, /return hasScheduledDateTime\(match\) \? 'Terminiert' : 'Ausstehend'/);
+  assert.doesNotMatch(app, /function getPendingMatchLabel/);
+  assert.match(app, /statistics\?\.mode === 'preview' \? renderMatchForecastLine\(m\) : ''/);
 });
 
 test('open scope includes scheduled matches without a result and excludes completed matches', () => {

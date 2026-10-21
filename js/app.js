@@ -8,6 +8,7 @@ let matchScope = 'all';
 let matchSortMode = 'matchday';
 let rankingSortMode = 'points';
 let rankingViewMode = 'compact';
+let allTimeRankingViewMode = 'compact';
 let calculatorResults = new Map();
 let finalFourCalculatorResults = new Map();
 let activeCalculatorMatchId = null;
@@ -233,6 +234,7 @@ async function loadDatabaseSeasonOptions() {
       databaseId: season.id,
       label: staticOption?.label || season.label,
       startDate: season.starts_on,
+      completedAt: season.completed_at,
       visualTheme: season.visual_theme || staticOption?.visualTheme || 'neutral',
       default: Boolean(season.is_active)
     };
@@ -267,6 +269,23 @@ async function loadDatabaseSeasonPayload(seasonReference) {
       seasonId: normalizeSeasonId(match.seasonId)
     }))
   };
+}
+
+async function loadDatabaseMatchForecasts(seasonReference) {
+  const client = getSupabaseClient();
+  if (!client) return [];
+  const publicId = normalizeSeasonId(typeof seasonReference === 'object' ? seasonReference.id : seasonReference);
+  const option = typeof seasonReference === 'object'
+    ? seasonReference
+    : getAllSeasonOptions().find(season => season.id === publicId);
+  const databaseId = option?.databaseId || (typeof seasonReference === 'string' ? seasonReference : publicId);
+  const { data, error } = await client.rpc('get_public_match_forecasts', { p_season_id: databaseId });
+  if (error) {
+    if (error.code === 'PGRST202' || /get_public_match_forecasts/i.test(String(error.message || ''))) return [];
+    console.warn('Partieprognosen konnten nicht geladen werden:', error);
+    return [];
+  }
+  return Array.isArray(data) ? data : [];
 }
 
 async function loadDatabaseAllTimeStatisticsPayload() {
@@ -652,7 +671,7 @@ function hydrateSeasonData(rawSeason) {
     }
     matchIds.add(match.id);
     if (match.countsForRanking !== false || match.countsForElo !== false) {
-      throw new Error(`Trainingsspiel ${match.id} darf weder Tabelle noch Elo verändern.`);
+      throw new Error(`Trainingsspiel ${match.id} darf weder Rangliste noch Elo verändern.`);
     }
   });
 
@@ -691,7 +710,7 @@ function hydrateSeasonData(rawSeason) {
 
 function hydrateAllTimeStatisticsData(rawData) {
   const centralPlayers = new Map((window.PADEL_PLAYERS || []).map(player => [player.id, player]));
-  const players = rawData.players.map(entry => {
+  const hydratePlayer = (entry, { includeHistory = false } = {}) => {
     const player = centralPlayers.get(entry.playerId);
     if (!player) throw new Error(`Unbekannte All-Time-Spieler-ID ${entry.playerId}.`);
 
@@ -700,7 +719,7 @@ function hydrateAllTimeStatisticsData(rawData) {
       currentElo: entry.currentElo === null || entry.currentElo === undefined
         ? null
         : Number(entry.currentElo),
-      history: (entry.eloHistory || []).map(historyEntry => ({
+      history: includeHistory ? (entry.eloHistory || []).map(historyEntry => ({
         ...historyEntry,
         date: historyEntry.date || getBerlinDateTimeParts(historyEntry.matchAt).date,
         elo: Number(historyEntry.elo),
@@ -711,9 +730,10 @@ function hydrateAllTimeStatisticsData(rawData) {
           ? null
           : Number(historyEntry.delta),
         interveningEvents: []
-      }))
+      })) : []
     };
-  });
+  };
+  const players = rawData.players.map(entry => hydratePlayer(entry, { includeHistory: true }));
   const playerIds = new Set(players.map(player => player.id));
   const matches = rawData.matches.map(match => {
     const hydratedMatch = hydrateMatch(match, centralPlayers);
@@ -723,11 +743,15 @@ function hydrateAllTimeStatisticsData(rawData) {
     }
     return hydratedMatch;
   });
+  const rankingPlayers = Array.isArray(rawData.rankingPlayers)
+    ? rawData.rankingPlayers.map(entry => hydratePlayer(entry))
+    : [];
 
   return {
     id: 'all-time',
     label: 'All-Time',
     players,
+    rankingPlayers,
     matches,
     completedAt: null,
     eloFinalDate: null
@@ -780,6 +804,23 @@ async function loadSeasonData(season) {
   }
 
   return hydrateSeasonData(rawSeason);
+}
+
+function applyMatchForecasts(forecastSummaries = []) {
+  const forecastsByMatch = new Map(forecastSummaries.map(forecast => [forecast.matchId, forecast]));
+  PADEL_DATA.matches.forEach(match => {
+    match.forecast = forecastsByMatch.get(match.id) || null;
+  });
+}
+
+async function loadActiveSeasonForecasts() {
+  if (!selectedSeason?.id || !PADEL_DATA?.matches) return;
+  const requestedSeasonId = selectedSeason.id;
+  const forecastSummaries = await loadDatabaseMatchForecasts(selectedSeason);
+  if (selectedSeason?.id !== requestedSeasonId || PADEL_DATA.id !== requestedSeasonId) return;
+  applyMatchForecasts(forecastSummaries);
+  invalidateSections(['partien']);
+  renderActiveSection();
 }
 
 async function loadActiveSeason() {
@@ -852,8 +893,10 @@ function applySeasonMetadata() {
 
   const seasonLabel = document.getElementById('season-picker-label');
   const seasonMenu = document.getElementById('season-menu');
+  const tippLink = document.getElementById('tipp-link');
+  if (tippLink) tippLink.href = `tipp/?saison=${encodeURIComponent(selectedSeason.id)}`;
   if (seasonLabel && seasonMenu) {
-    seasonLabel.textContent = selectedSeason.label;
+    seasonLabel.textContent = selectedSeason.shortLabel || selectedSeason.label;
     seasonMenu.innerHTML = getSeasonOptions().map(season => `
       <button
         type="button"
@@ -884,6 +927,7 @@ function resetSeasonState() {
   matchSortMode = 'matchday';
   rankingSortMode = 'points';
   rankingViewMode = 'compact';
+  allTimeRankingViewMode = 'compact';
   calculatorResults = new Map();
   finalFourCalculatorResults = new Map();
   activeCalculatorMatchId = null;
@@ -942,6 +986,7 @@ async function refreshActiveSeasonView() {
       updateViewerPicker();
       invalidateSections();
       renderActiveSection();
+      await loadActiveSeasonForecasts();
     }
   })().catch(error => {
     console.error('Die Saisonansicht konnte nach dem Ergebnis nicht aktualisiert werden:', error);
@@ -977,6 +1022,35 @@ function isParticipantView() {
 }
 
 window.PadelLigaGetSelectedViewerId = () => isParticipantView() ? selectedViewerId : null;
+window.PadelLigaGetSeasonData = () => PADEL_DATA;
+
+// Reihenfolge zum Blättern in der Partiestatistik: Profil und Artikel behalten ihre
+// eigene Liste, alle anderen Einstiege folgen dem Spielplan in seiner aktuellen Einstellung.
+function getMatchStatisticsIds(container) {
+  return [...new Set([...(container?.querySelectorAll('[data-match-statistics]') || [])]
+    .map(element => element.dataset.matchStatistics))];
+}
+
+function getMatchStatisticsSequence(trigger, matchId) {
+  const ownList = trigger?.closest('#player-profile-dialog, .article-card');
+  if (ownList) {
+    const ids = getMatchStatisticsIds(ownList);
+    if (ids.includes(matchId)) return ids;
+  }
+  if (trigger) {
+    ensureSectionRendered('partien');
+    const ids = getMatchStatisticsIds(document.getElementById('partien'));
+    if (ids.includes(matchId)) return ids;
+  }
+  // Direkte Links ohne Listenkontext blättern nach Partienummer durch den Spielplan.
+  const ids = (PADEL_DATA?.matches || [])
+    .filter(match => window.PadelMatchStatistics?.entry(match, PADEL_DATA))
+    .sort(compareMatchesByNumber)
+    .map(match => match.id);
+  return ids.includes(matchId) ? ids : [];
+}
+
+window.PadelLigaGetMatchStatisticsSequence = getMatchStatisticsSequence;
 
 function isSelectedPlayer(playerName) {
   return isParticipantView() && getSelectedViewer().name === playerName;
@@ -1017,6 +1091,7 @@ function filterViewerOptions(query = '') {
 
 function keepViewerSearchVisible(searchInput) {
   if (!searchInput || !isMobileViewport()) return;
+  if (searchInput.closest('[data-global-actions]')) return;
   const alignInput = () => {
     if (document.activeElement !== searchInput) return;
     const viewportTop = window.visualViewport?.offsetTop || 0;
@@ -1113,7 +1188,11 @@ function selectViewer(id) {
   invalidateSections(['start', 'rangliste', 'partien', 'rechner', 'verlauf']);
   renderActiveSection();
   if (restoreToggleFocus) {
-    picker.querySelector('[data-viewer-toggle]')?.focus({ preventScroll: true });
+    if (picker.closest('[data-global-actions]')) {
+      window.PadelGlobalActions?.close({ restoreFocus: true });
+    } else {
+      picker.querySelector('[data-viewer-toggle]')?.focus({ preventScroll: true });
+    }
   }
 }
 
@@ -1195,6 +1274,14 @@ window.addEventListener('padel:live-status-changed', () => {
   invalidateSections(['start', 'partien']);
   renderActiveSection();
   if (playerProfileData) renderPlayerProfileHistory();
+});
+window.addEventListener('padel:match-forecast-changed', event => {
+  const forecast = event.detail?.forecast;
+  const match = forecast?.matchId && PADEL_DATA?.matches?.find(item => item.id === forecast.matchId);
+  if (!match) return;
+  match.forecast = forecast;
+  invalidateSections(['partien']);
+  renderActiveSection();
 });
 
 function invalidatePlayerProfileCache() {
@@ -1326,6 +1413,10 @@ function getPlayerProfileFinalRoundOverview(seasonPayload, playerId) {
   };
 }
 
+function isPlayerProfileParticipationActive(participation, seasonPayload) {
+  return Boolean(participation?.isActive && !seasonPayload?.completedAt);
+}
+
 async function enrichPlayerProfileSeasonPhases(profile) {
   const participations = profile?.participations || [];
   const playerId = profile?.identity?.id;
@@ -1337,6 +1428,7 @@ async function enrichPlayerProfileSeasonPhases(profile) {
     ...profile,
     participations: participations.map((participation, index) => ({
       ...participation,
+      isActive: isPlayerProfileParticipationActive(participation, payloads[index]),
       finalRound: getPlayerProfileFinalRoundOverview(payloads[index], playerId)
     }))
   };
@@ -1407,7 +1499,7 @@ function getLocalPlayerProfile(playerId) {
   const participation = rankedPlayer ? [{
     seasonId: selectedSeason.id,
     seasonLabel: PADEL_DATA.label || selectedSeason.label,
-    isActive: Boolean(selectedSeason.default),
+    isActive: Boolean(selectedSeason.default && !(PADEL_DATA?.completedAt || selectedSeason.completedAt)),
     rank: rankedPlayers.findIndex(item => item.id === player.id) + 1,
     matches: rankedPlayer.stats.partien,
     wins: rankedPlayer.stats.siege,
@@ -1541,6 +1633,27 @@ function formatProfileGameDiffPerMatch(gameDiff, matches) {
   return average > 0 ? `+${formatted}` : formatted;
 }
 
+function getLongestPlayerProfileWinStreak(matches = []) {
+  let longest = 0;
+  let current = 0;
+  matches.forEach(match => {
+    if (match.kind === 'training' || match.isCancelled || match.isComplete === false) return;
+    if (match.outcome === 'win') {
+      current += 1;
+      longest = Math.max(longest, current);
+    } else if (match.outcome === 'loss') {
+      current = 0;
+    }
+  });
+  return longest;
+}
+
+function renderPlayerProfileWinStreak(matches = []) {
+  const longest = getLongestPlayerProfileWinStreak(matches);
+  if (longest < 1) return '—';
+  return `${longest}<span class="player-profile-stat-fraction"> ${longest === 1 ? 'Sieg' : 'Siege'}</span>`;
+}
+
 function getPlayerProfileAchievementHighlights(achievements = []) {
   const kindOrder = { winner: 0, final_four: 1, finalist: 1, custom: 2 };
   return [...achievements]
@@ -1597,7 +1710,7 @@ function renderPlayerProfileAchievements(achievements = []) {
   }).join('');
 }
 
-function renderPlayerProfileStats(summary = {}) {
+function renderPlayerProfileStats(summary = {}, matches = []) {
   const target = document.getElementById('player-profile-stats');
   if (!target) return;
   const gameDiffPerMatch = Number(summary.matches) > 0
@@ -1605,12 +1718,13 @@ function renderPlayerProfileStats(summary = {}) {
     : null;
   const stats = [
     [summary.currentElo ?? '—', `Elo · Peak ${summary.peakElo ?? '—'}`],
+    [formatProfileWinRate(summary.wins, summary.matches), 'Siegquote'],
     [renderProfileMatchCount(summary.matches), 'Partien', '', true],
     [`${renderProfileMatchCount(summary.wins)}:${renderProfileMatchCount(summary.losses)}`, 'Partien G:V', '', true],
-    [formatProfileWinRate(summary.wins, summary.matches), 'Siegquote'],
     [`${summary.gamesFor ?? 0}:${summary.gamesAgainst ?? 0}`, 'Spiele G:V'],
-    [formatProfileSignedValue(summary.gameDiff), 'Spieldifferenz', getPlayerProfileSignedValueClass(summary.gameDiff)],
-    [formatProfileGameDiffPerMatch(summary.gameDiff, summary.matches), 'Ø Spieldifferenz', getPlayerProfileSignedValueClass(gameDiffPerMatch)]
+    [`${escapeHtml(formatProfileSignedValue(summary.gameDiff))}<span class="player-profile-stat-fraction player-profile-stat-symbol"> Ω</span>`, 'Spieldifferenz', getPlayerProfileSignedValueClass(summary.gameDiff), true],
+    [`${escapeHtml(formatProfileGameDiffPerMatch(summary.gameDiff, summary.matches))}<span class="player-profile-stat-fraction player-profile-stat-symbol"> Ø</span>`, 'Spieldifferenz', getPlayerProfileSignedValueClass(gameDiffPerMatch), true],
+    [renderPlayerProfileWinStreak(matches), 'Längste Serie', '', true]
   ];
   target.innerHTML = stats.map(([value, label, valueClass = '', valueIsHtml = false]) => `
     <div class="player-profile-stat">
@@ -1856,6 +1970,7 @@ function getPlayerProfileRelationshipLeaders(matches = []) {
 
 function renderPlayerProfileRelationships(matches = []) {
   const target = document.getElementById('player-profile-relationships');
+  const heading = document.getElementById('player-profile-relationships-heading');
   if (!target) return;
   const leaders = getPlayerProfileRelationshipLeaders(matches);
   const relationships = [
@@ -1865,8 +1980,10 @@ function renderPlayerProfileRelationships(matches = []) {
     ['Angstgegner', leaders.fearedOpponents, 'neg']
   ].filter(([, records]) => records.length);
 
+  if (heading) heading.hidden = relationships.length > 0;
+  target.classList.toggle('has-results', relationships.length > 0);
   if (!relationships.length) {
-    target.innerHTML = '<div class="empty-state">Auswertung ab 3 Partien und einer Quote über beziehungsweise unter 50 %.</div>';
+    target.innerHTML = '<div class="empty-state">Noch keine Wertung – sie zählt ab 3 gemeinsamen Partien mit einer Quote über oder unter 50 %.</div>';
     return;
   }
 
@@ -1882,7 +1999,7 @@ function renderPlayerProfileRelationships(matches = []) {
 
   target.innerHTML = `<div class="stat-shift-groups">
     ${relationships.map(([label, records, valueClass]) => `<div class="stat-shift-group">
-      <div class="stat-shift-label">${label}</div>
+      <div class="widget-label">${label}</div>
       <div class="stat-shift-list">
         ${records.map(record => `<div class="stat-shift-item">
           <div class="stat-shift-head">
@@ -2056,7 +2173,8 @@ function renderPlayerProfileHistory() {
         const partner = renderPlayerProfileNames(match.partnerNames, 'ohne Partner');
         const opponents = renderPlayerProfileNames(match.opponentNames);
         const showDate = index === 0;
-        const showSeason = group.kind === 'training'
+        const showGroupLabelFirst = group.kind === 'training' || group.kind === 'final-four';
+        const showSeason = showGroupLabelFirst
           ? index === 0
           : index === group.matches.length - 1;
         return `<article class="player-profile-match ${outcome}">
@@ -2104,7 +2222,7 @@ function renderPlayerProfile(profile) {
     identity.profileEmoji || knownPlayer?.profileEmoji
   );
   renderPlayerProfileAchievements(profile.achievements || []);
-  renderPlayerProfileStats(profile.summary || {});
+  renderPlayerProfileStats(profile.summary || {}, profile.matches || []);
   renderPlayerProfileParticipations(profile.participations || [], profile.matches || []);
   renderPlayerProfileRelationships(profile.matches || []);
   renderPlayerProfileHistory();
@@ -2176,8 +2294,29 @@ function closePlayerProfile(options = {}) {
   playerProfileChart?.destroy();
   playerProfileChart = null;
   playerProfileData = null;
-  playerProfileLastTrigger?.focus?.();
+  const profileReturnTarget = playerProfileLastTrigger?.closest?.('[inert]')
+    ? document.querySelector('[data-global-actions-toggle]')
+    : playerProfileLastTrigger;
+  profileReturnTarget?.focus?.();
 }
+
+document.addEventListener('pointerover', event => {
+  if (event.pointerType !== 'mouse') return;
+  const playerToggleControl = event.target.closest('[data-player-toggle-id]');
+  if (playerToggleControl) setHoveredEloChartPlayers([playerToggleControl.dataset.playerToggleName]);
+  const companyToggleControl = event.target.closest('[data-company-toggle]');
+  if (companyToggleControl) {
+    setHoveredEloChartPlayers(getStatisticsCompanyPlayers(companyToggleControl.dataset.companyToggle).map(player => player.name));
+  }
+});
+
+document.addEventListener('pointerout', event => {
+  if (event.pointerType !== 'mouse') return;
+  const playerToggleControl = event.target.closest('[data-player-toggle-id]');
+  if (playerToggleControl && !playerToggleControl.contains(event.relatedTarget)) setHoveredEloChartPlayers();
+  const companyToggleControl = event.target.closest('[data-company-toggle]');
+  if (companyToggleControl && !companyToggleControl.contains(event.relatedTarget)) setHoveredEloChartPlayers();
+});
 
 document.addEventListener('click', event => {
   const helpTooltipAnchor = event.target.closest('[data-help-tooltip-anchor]');
@@ -2193,8 +2332,8 @@ document.addEventListener('click', event => {
   }
   closePinnedHelpTooltips();
 
-  const liveBackControl = event.target.closest('[data-live-back]');
-  if (liveBackControl) {
+  const detailViewBackControl = event.target.closest('[data-detail-view-back]');
+  if (detailViewBackControl) {
     closeLiveTicker();
     return;
   }
@@ -2278,6 +2417,12 @@ document.addEventListener('click', event => {
     return;
   }
 
+  const allTimeRankingViewControl = event.target.closest('[data-all-time-ranking-view]');
+  if (allTimeRankingViewControl) {
+    setAllTimeRankingView(allTimeRankingViewControl.dataset.allTimeRankingView);
+    return;
+  }
+
   const statisticsModeControl = event.target.closest('[data-statistics-mode]');
   if (statisticsModeControl) {
     void setStatisticsMode(statisticsModeControl.dataset.statisticsMode);
@@ -2296,9 +2441,60 @@ document.addEventListener('click', event => {
     return;
   }
 
+  const infoMenuControl = event.target.closest('[data-info-menu-toggle]');
+  if (infoMenuControl) {
+    const expanded = infoMenuControl.getAttribute('aria-expanded') === 'true';
+    infoMenuControl.setAttribute('aria-expanded', String(!expanded));
+    infoMenuControl.closest('.info-menu-card')?.classList.toggle('is-expanded', !expanded);
+    return;
+  }
+
+  const infoMenuLink = event.target.closest('#info-menu a');
+  if (infoMenuLink && mobileViewportQuery.matches) {
+    event.preventDefault();
+    const infoMenuCard = infoMenuLink.closest('.info-menu-card');
+    const infoMenu = infoMenuCard?.querySelector('.info-menu');
+    const targetId = decodeURIComponent(infoMenuLink.hash.slice(1));
+    const target = targetId ? document.getElementById(targetId) : null;
+    infoMenuCard?.classList.remove('is-expanded');
+    infoMenuCard?.querySelector('[data-info-menu-toggle]')?.setAttribute('aria-expanded', 'false');
+
+    if (target) {
+      let didNavigate = false;
+      const navigateToTarget = () => {
+        if (didNavigate) return;
+        didNavigate = true;
+        window.history.pushState(null, '', infoMenuLink.hash);
+        target.scrollIntoView();
+      };
+
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        window.requestAnimationFrame(navigateToTarget);
+      } else {
+        const handleMenuTransitionEnd = transitionEvent => {
+          if (transitionEvent.propertyName !== 'grid-template-rows') return;
+          infoMenu?.removeEventListener('transitionend', handleMenuTransitionEnd);
+          navigateToTarget();
+        };
+        infoMenu?.addEventListener('transitionend', handleMenuTransitionEnd);
+        window.setTimeout(() => {
+          infoMenu?.removeEventListener('transitionend', handleMenuTransitionEnd);
+          navigateToTarget();
+        }, 300);
+      }
+    }
+    return;
+  }
+
   const chartToggleAllControl = event.target.closest('[data-chart-toggle-all]');
   if (chartToggleAllControl) {
     toggleAll(chartToggleAllControl.dataset.chartToggleAll === 'true');
+    return;
+  }
+
+  const companyToggleControl = event.target.closest('[data-company-toggle]');
+  if (companyToggleControl) {
+    toggleCompany(companyToggleControl.dataset.companyToggle);
     return;
   }
 
@@ -2430,7 +2626,9 @@ document.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
       event.preventDefault();
       closeViewerMenu();
-      document.querySelector('[data-viewer-toggle]')?.focus();
+      if (!document.querySelector('[data-viewer-toggle]')?.closest('[inert]')) {
+        document.querySelector('[data-viewer-toggle]')?.focus({ preventScroll: true });
+      }
       return;
     }
     const visibleOptions = [...document.querySelectorAll('#viewer-menu [data-viewer-id]')]
@@ -2452,8 +2650,10 @@ document.addEventListener('keydown', event => {
     return;
   }
   if (event.key === 'Escape') {
+    const openPickerToggle = document.querySelector('.viewer-picker.open [data-viewer-toggle], .season-picker.open [data-season-toggle]');
     closeViewerMenu();
     closeSeasonMenu();
+    openPickerToggle?.focus({ preventScroll: true });
     closePinnedHelpTooltips();
     hideFormTooltip();
   }
@@ -2497,7 +2697,7 @@ function updateMatchSortToggle() {
 }
 
 function setRankingSort(mode) {
-  rankingSortMode = ['elo', 'placement'].includes(mode) ? mode : 'points';
+  rankingSortMode = ['elo', 'draw-factor'].includes(mode) ? mode : 'points';
   renderRanking();
 }
 
@@ -2508,7 +2708,7 @@ function updateRankingSortToggle() {
   const buttons = toggle.querySelectorAll('button');
   buttons[0]?.classList.toggle('active', rankingSortMode === 'points');
   buttons[1]?.classList.toggle('active', rankingSortMode === 'elo');
-  buttons[2]?.classList.toggle('active', rankingSortMode === 'placement');
+  buttons[2]?.classList.toggle('active', rankingSortMode === 'draw-factor');
 }
 
 function setRankingView(mode) {
@@ -2523,6 +2723,20 @@ function updateRankingViewToggle() {
   const buttons = toggle.querySelectorAll('button');
   buttons[0].classList.toggle('active', rankingViewMode === 'compact');
   buttons[1].classList.toggle('active', rankingViewMode === 'expanded');
+}
+
+function setAllTimeRankingView(mode) {
+  allTimeRankingViewMode = mode === 'expanded' ? 'expanded' : 'compact';
+  renderAllTimeRanking();
+}
+
+function updateAllTimeRankingViewToggle() {
+  const toggle = document.getElementById('all-time-ranking-view-toggle');
+  if (!toggle) return;
+
+  const buttons = toggle.querySelectorAll('button');
+  buttons[0].classList.toggle('active', allTimeRankingViewMode === 'compact');
+  buttons[1].classList.toggle('active', allTimeRankingViewMode === 'expanded');
 }
 
 // ── NAV ───────────────────────────────────────────────────────────
@@ -2553,13 +2767,15 @@ function renderActiveSection() {
 }
 
 function nav(id, el) {
+  // Vor dem Umschalten messen: Ein noch nicht gerenderter Bereich verkürzt die Seite kurzzeitig.
+  const navigationPinned = isNavigationPinned();
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   const activeButton = el || document.querySelector(`nav button[data-section="${id}"]`);
   if (activeButton) activeButton.classList.add('active');
-  scrollToTopInstantly(id === 'liveticker');
   renderActiveSection();
+  if (navigationPinned || id === 'detail-view') scrollToTopInstantly();
 }
 
 async function openLiveTicker(matchId, options = {}) {
@@ -2575,18 +2791,18 @@ async function openLiveTicker(matchId, options = {}) {
     window.location.assign(url);
     return;
   }
-  const dialog = document.getElementById('live-ticker-dialog');
+  const dialog = document.getElementById('detail-view-dialog');
   if (!dialog) return;
   if (!dialog.open) {
     liveTickerReturnState = {
       trigger: document.activeElement,
       scrollY: window.scrollY
     };
-    document.getElementById('live-match-switcher').innerHTML = '';
-    document.getElementById('live-ticker-content').innerHTML = '<div class="empty-state">Der Liveticker wird geladen …</div>';
+    document.getElementById('final-four-view-switcher').innerHTML = '';
+    document.getElementById('detail-view-body').innerHTML = '<div class="empty-state">Der Liveticker wird geladen …</div>';
     dialog.showModal();
   }
-  const seasonLabel = document.getElementById('live-ticker-season-label');
+  const seasonLabel = document.getElementById('detail-view-context');
   if (seasonLabel) seasonLabel.textContent = selectedSeason?.label || PADEL_DATA?.label || '';
   await window.PadelLiveTicker?.load(matchId, {
     updateUrl: options.updateUrl !== false,
@@ -2605,7 +2821,7 @@ function closeLiveTicker(options = {}) {
     return;
   }
   window.PadelLiveTicker?.close();
-  const dialog = document.getElementById('live-ticker-dialog');
+  const dialog = document.getElementById('detail-view-dialog');
   if (dialog?.open) dialog.close();
   const returnState = liveTickerReturnState;
   liveTickerReturnState = null;
@@ -2623,14 +2839,18 @@ function closeLiveTicker(options = {}) {
 window.PadelLigaOpenLiveTicker = openLiveTicker;
 window.PadelLigaCloseLiveTicker = closeLiveTicker;
 
-function scrollToTopInstantly(force = false) {
+function isNavigationPinned() {
+  const navigation = document.querySelector('.site-nav');
+  return Boolean(navigation) && navigation.getBoundingClientRect().top <= 1;
+}
+
+function scrollToTopInstantly() {
   const root = document.documentElement;
   const navigation = document.querySelector('.site-nav');
   const header = document.querySelector('.site-header');
   const targetTop = header ? header.offsetHeight : 0;
-  const navigationTop = navigation ? navigation.getBoundingClientRect().top : 0;
 
-  if (!navigation || (!force && navigationTop > 1)) return;
+  if (!navigation) return;
 
   root.classList.add('instant-scroll');
   window.scrollTo(0, targetTop);
@@ -2939,8 +3159,17 @@ function renderFinalFourRanking() {
 
   const { matches, stats } = getFinalFourStats();
   const detailEntryMatchId = getFinalFourDetailEntryMatchId(matches);
+  const showSummerReplacement = normalizeSeasonId(PADEL_DATA.id) === '2026-sommer';
   meta.textContent = `${stats.length} Spieler`;
-  if (note) note.textContent = `Spiele: ${matches.length}  |  Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung`;
+  if (note) {
+    note.textContent = `Spiele: ${matches.length}  |  Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ligaplatzierung`;
+    if (showSummerReplacement) {
+      const replacementNote = document.createElement('span');
+      replacementNote.className = 'ranking-absence-note';
+      replacementNote.textContent = '*Ludwig W. ist für Marco M. nachgerückt.';
+      note.append(replacementNote);
+    }
+  }
   if (detailLink) {
     detailLink.hidden = !detailEntryMatchId;
     if (detailEntryMatchId) detailLink.dataset.liveOpenMatch = detailEntryMatchId;
@@ -2951,10 +3180,13 @@ function renderFinalFourRanking() {
     const diffClass = getStatDiffClass(player.diff);
     const diffLabel = player.diff > 0 ? `+${player.diff}` : String(player.diff);
     const eloPlayer = PADEL_DATA.players.find(entry => entry.name === player.name);
+    const replacementMark = showSummerReplacement && eloPlayer?.id === 'ludwig_w'
+      ? '<span class="ranking-absence-mark"><span aria-hidden="true">*</span><span class="sr-only">, nachgerückt für Marco M.</span></span>'
+      : '';
 
     return `<tr class="r${index + 1}">
       <td class="col-rank rank-position">${index + 1}</td>
-      <td class="col-name">${renderPlayerProfileLink(player, 'pname')}</td>
+      <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(player, 'pname')}${replacementMark}</span></td>
       <td class="col-wins rank-score">${player.siege}</td>
       <td class="col-gv">${player.spieleGV}</td>
       <td class="col-diff"><span class="${diffClass}">${diffLabel}</span></td>
@@ -2993,8 +3225,8 @@ function renderPointsRankReference(currentRank, pointsRank) {
   </span>`;
 }
 
-function getPlayerMatches(player) {
-  return PADEL_DATA.matches.filter(match =>
+function getPlayerMatches(player, matches = PADEL_DATA.matches) {
+  return matches.filter(match =>
     match.team1.spieler.includes(player.name) || match.team2.spieler.includes(player.name)
   );
 }
@@ -3005,20 +3237,20 @@ function getPlayerMatchTeamIndex(player, match) {
   return null;
 }
 
-function getPlayerMatchProbability(player, match) {
+function getPlayerMatchProbability(player, match, data = PADEL_DATA) {
   const probability = match.sieger === null
     ? getMatchWinProbability(match)
-    : getHistoricalMatchWinProbability(match);
+    : getHistoricalMatchWinProbability(match, data);
   const teamIndex = getPlayerMatchTeamIndex(player, match);
 
   if (!probability || !teamIndex) return null;
   return teamIndex === 1 ? probability.team1 : probability.team2;
 }
 
-function getPlayerWinQuote(player) {
-  const probabilities = getPlayerMatches(player)
+function getPlayerWinQuote(player, matches = PADEL_DATA.matches, data = PADEL_DATA) {
+  const probabilities = getPlayerMatches(player, matches)
     .filter(countsForRanking)
-    .map(match => getPlayerMatchProbability(player, match))
+    .map(match => getPlayerMatchProbability(player, match, data))
     .filter(probability => Number.isFinite(probability));
 
   if (!probabilities.length) return null;
@@ -3044,11 +3276,11 @@ function formatSignedDecimal(value) {
   return rounded > 0 ? `+${rounded.toFixed(1)}` : rounded.toFixed(1);
 }
 
-function getPlayerPlacementFactor(player, rankMap) {
+function getPlayerDrawFactor(player, rankMap, matches = PADEL_DATA.matches) {
   const partnerPlaces = [];
   const opponentPlaces = [];
 
-  getPlayerMatches(player).filter(countsForRanking).forEach(match => {
+  getPlayerMatches(player, matches).filter(countsForRanking).forEach(match => {
     const teamIndex = getPlayerMatchTeamIndex(player, match);
     if (!teamIndex) return;
 
@@ -3072,15 +3304,15 @@ function getPlayerPlacementFactor(player, rankMap) {
   return { partnerAverage, opponentAverage, diff };
 }
 
-function formatPlacementFactor(factor) {
+function formatDrawFactor(factor) {
   if (!factor || !Number.isFinite(factor.diff)) return '—';
 
   const diffClass = getDeltaClass(factor.diff);
-  return `<span class="pf-muted">${formatDecimal(factor.partnerAverage)}</span><span class="pf-muted"> / </span><span class="pf-muted">${formatDecimal(factor.opponentAverage)}</span><span class="pf-muted"> / </span><span class="${diffClass}">${formatSignedDecimal(factor.diff)}</span>`;
+  return `<span class="draw-factor-muted">${formatDecimal(factor.partnerAverage)}</span><span class="draw-factor-muted"> / </span><span class="draw-factor-muted">${formatDecimal(factor.opponentAverage)}</span><span class="draw-factor-muted"> / </span><span class="${diffClass}">${formatSignedDecimal(factor.diff)}</span>`;
 }
 
-function getPlayerForm(player) {
-  return getPlayerMatches(player)
+function getPlayerForm(player, matches = PADEL_DATA.matches) {
+  return getPlayerMatches(player, matches)
     .filter(countsForRanking)
     .filter(match => match.sieger !== null)
     .sort((a, b) => getMatchOrderKey(b).localeCompare(getMatchOrderKey(a)))
@@ -3106,11 +3338,11 @@ function getPlayerForm(player) {
     .join('') || '<span class="neu">—</span>';
 }
 
-function getPlayerRankingExtras(player, rankMap) {
+function getPlayerRankingExtras(player, rankMap, matches = PADEL_DATA.matches, data = PADEL_DATA) {
   return {
-    winQuote: getPlayerWinQuote(player),
-    placementFactor: getPlayerPlacementFactor(player, rankMap),
-    form: getPlayerForm(player)
+    winQuote: getPlayerWinQuote(player, matches, data),
+    drawFactor: getPlayerDrawFactor(player, rankMap, matches),
+    form: getPlayerForm(player, matches)
   };
 }
 
@@ -3122,8 +3354,8 @@ function getPlayerUnratedMatchCount(player, matches = PADEL_DATA.matches) {
   ).length;
 }
 
-function renderRankingMatchCount(player) {
-  const unratedCount = getPlayerUnratedMatchCount(player);
+function renderRankingMatchCount(player, matches = PADEL_DATA.matches) {
+  const unratedCount = getPlayerUnratedMatchCount(player, matches);
   if (!unratedCount) return String(player.stats.partien);
 
   const tooltipText = `${unratedCount} ${unratedCount === 1 ? 'Partie' : 'Partien'} ohne Wertung`;
@@ -3137,9 +3369,9 @@ function renderRankingMatchCount(player) {
   </span>`;
 }
 
-function getPlacementAdjustedRank(player, rankMap) {
+function getDrawFactorAdjustedRank(player, rankMap) {
   const currentRank = rankMap.get(player.name);
-  const factor = getPlayerPlacementFactor(player, rankMap);
+  const factor = getPlayerDrawFactor(player, rankMap);
 
   if (!Number.isFinite(currentRank)) return Infinity;
   if (!Number.isFinite(factor.diff)) return currentRank;
@@ -3172,7 +3404,7 @@ function renderRanking() {
       ? withGamesNote(`Top ${getCompetitionConfig().qualificationPlaces}: Qualifikationsplätze`, gamesNote, 'Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele')
       : withGamesNote(gamesNote, 'Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele'),
     elo: withGamesNote(gamesNote, 'Sortierung: Elo · Punkte · Spiel-Differenz · gewonnene Spiele'),
-    placement: withGamesNote(gamesNote, 'Sortierung: bereinigter Rang aus Punkte-Platz minus Platzierungsfaktor')
+    'draw-factor': withGamesNote(gamesNote, 'Sortierung: bereinigter Rang aus Punkte-Platz minus Losfaktor')
   };
   const rankingNote = document.getElementById('rl-sort-note');
   rankingNote.textContent = sortNotes[rankingSortMode] || sortNotes.points;
@@ -3207,12 +3439,80 @@ function renderRanking() {
       <td class="col-elo">${getLatestPlayerElo(p)}</td>
       <td class="col-form">${extras.form}</td>
       <td class="col-winrate">${extras.winQuote === null ? '—' : `${extras.winQuote}%`}</td>
-      <td class="col-placement-factor">${formatPlacementFactor(extras.placementFactor)}</td>
+      <td class="col-draw-factor">${formatDrawFactor(extras.drawFactor)}</td>
     </tr>`;
   }).join('');
   animateRankingRows(body, '.ranking-row', previousPositions);
   renderFirmenRanking();
   renderFinalFourRanking();
+}
+
+function getAllTimeLeagueMatches() {
+  return (allTimeStatisticsData?.matches || []).filter(match =>
+    match.sieger !== null &&
+    match.saetze &&
+    countsForRanking(match) &&
+    getMatchStage(match) === 'league'
+  );
+}
+
+function getAllTimeRankingPlayers(matches) {
+  if (allTimeStatisticsData?.rankingPlayers?.length) {
+    return allTimeStatisticsData.rankingPlayers;
+  }
+
+  const playerNames = new Set(matches.flatMap(match => [
+    ...match.team1.spieler,
+    ...match.team2.spieler
+  ]));
+  return (allTimeStatisticsData?.players || []).filter(player => playerNames.has(player.name));
+}
+
+function renderAllTimeRanking() {
+  const table = document.getElementById('all-time-ranking-table');
+  const tableWrap = document.getElementById('all-time-ranking-wrap');
+  const body = document.getElementById('all-time-ranking-body');
+  const meta = document.getElementById('all-time-ranking-meta');
+  if (!table || !tableWrap || !body || !meta || !allTimeStatisticsData) return;
+
+  updateAllTimeRankingViewToggle();
+  tableWrap.dataset.rankingView = allTimeRankingViewMode;
+  table.classList.toggle('expanded', allTimeRankingViewMode === 'expanded');
+  table.classList.toggle('compact', allTimeRankingViewMode === 'compact');
+
+  const matches = getAllTimeLeagueMatches();
+  const players = getAllTimeRankingPlayers(matches);
+  const rankedPlayers = players
+    .map(player => ({ ...player, stats: getPlayerStats(player, matches) }))
+    .sort((left, right) =>
+      right.stats.punkte - left.stats.punkte ||
+      right.stats.spielDiff - left.stats.spielDiff ||
+      right.stats.gewonneneSpiele - left.stats.gewonneneSpiele
+    );
+  const firmaShort = { Envidual: 'Env', Headsquare: 'Hsq', Hanako: 'Han' };
+
+  meta.textContent = `${rankedPlayers.length} Spieler`;
+  body.innerHTML = rankedPlayers.map((player, index) => {
+    const currentRank = index + 1;
+    const spielDiffStr = player.stats.partien > 0
+      ? player.stats.spielDiff >= 0 ? `+${player.stats.spielDiff}` : String(player.stats.spielDiff)
+      : '—';
+    const spielDiffClass = getStatDiffClass(player.stats.spielDiff);
+    const rankingPlayerLabel = isMobileViewport() && allTimeRankingViewMode === 'expanded'
+      ? player.initials || player.name
+      : player.name;
+
+    return `<tr class="ranking-row r${Math.min(currentRank, 4)} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id || player.name)}">
+      <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span></span></td>
+      <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(player, 'pname', rankingPlayerLabel)}<span class="firma-badge firma-${player.firma}"><span class="firma-full">${player.firma}</span><span class="firma-short">${firmaShort[player.firma] || player.firma}</span></span></span></td>
+      <td class="col-games">${renderRankingMatchCount(player, matches)}</td>
+      <td class="col-wins">${player.stats.siege}</td>
+      <td class="col-points rank-score">${player.stats.punkte}</td>
+      <td class="col-gv">${player.stats.partien > 0 ? player.stats.spieleGV : '—'}</td>
+      <td class="col-diff"><span class="${player.stats.partien > 0 ? spielDiffClass : 'neu'}">${spielDiffStr}</span></td>
+      <td class="col-elo">${getLatestPlayerElo(player)}</td>
+    </tr>`;
+  }).join('');
 }
 
 function getRankedPlayers(matches = PADEL_DATA.matches, sortMode = 'points') {
@@ -3224,10 +3524,10 @@ function getRankedPlayers(matches = PADEL_DATA.matches, sortMode = 'points') {
       b.stats.spielDiff - a.stats.spielDiff ||
       b.stats.gewonneneSpiele - a.stats.gewonneneSpiele
     );
-  } else if (sortMode === 'placement') {
+  } else if (sortMode === 'draw-factor') {
     const rankMap = getRankingPositionMap('points');
     withStats.sort((a, b) =>
-      getPlacementAdjustedRank(a, rankMap) - getPlacementAdjustedRank(b, rankMap) ||
+      getDrawFactorAdjustedRank(a, rankMap) - getDrawFactorAdjustedRank(b, rankMap) ||
       b.stats.punkte - a.stats.punkte ||
       b.stats.spielDiff - a.stats.spielDiff ||
       b.stats.gewonneneSpiele - a.stats.gewonneneSpiele
@@ -3250,8 +3550,10 @@ function getPlayerIdByName(playerName) {
 }
 
 function renderPlayerProfileLink(player, className = '', displayName = '') {
-  const playerId = typeof player === 'string' ? getPlayerIdByName(player) : player?.id;
   const playerName = typeof player === 'string' ? player : player?.name;
+  const playerId = typeof player === 'string'
+    ? getPlayerIdByName(player)
+    : player?.id || getPlayerIdByName(playerName);
   const visibleName = displayName || playerName;
   if (!playerId || !playerName) return `<span class="${escapeHtml(className)}">${escapeHtml(visibleName || '')}</span>`;
 
@@ -3376,11 +3678,7 @@ function formatRelativeMatchDate(match) {
 function formatMatchMeta(match, options = {}) {
   const matchLabel = getMatchDisplayLabel(match);
   const date = options.relative ? formatRelativeMatchDate(match) : formatMatchDate(match);
-  return date ? `${matchLabel} | ${date}` : matchLabel;
-}
-
-function getPendingMatchLabel(match) {
-  return hasScheduledDateTime(match) ? 'Terminiert' : 'Ausstehend';
+  return date ? `${matchLabel} – ${date}` : matchLabel;
 }
 
 function renderHomeMatchCard(match, options = {}) {
@@ -3402,7 +3700,7 @@ function renderHomeMatchCard(match, options = {}) {
   const centerMain = isPlayed
     ? String(match.saetze || '—')
     : probability ? `${probability.team1}% : ${probability.team2}%` : '—';
-  const centerLabel = isPlayed ? match.ergebnis : getPendingMatchLabel(match);
+  const centerLabel = isPlayed ? match.ergebnis : '';
   const team1Class = isPlayed
     ? match.sieger === 1 ? ' mini-match-winner' : ' mini-match-loser'
     : '';
@@ -3412,7 +3710,7 @@ function renderHomeMatchCard(match, options = {}) {
   const statusClass = isPlayed ? ' mini-match-status-played' : '';
   const statistics = window.PadelMatchStatistics?.entry(match, PADEL_DATA);
   const centerContent = `<div class="mini-match-prob">${centerMain}</div>
-        <div class="mini-match-label">${centerLabel}</div>`;
+        ${centerLabel ? `<div class="mini-match-label">${centerLabel}</div>` : ''}`;
 
   return `<div class="mini-match-row ${isViewerMatch(match) ? 'viewer-match' : ''}">
     <div class="mini-match-meta">${formatMatchMeta(match, { relative: options.relative !== false })}</div>
@@ -3466,10 +3764,22 @@ function renderArticleMeta(meta) {
   return renderSplitMeta(label, details.join(' | '), 'article-meta');
 }
 
-function renderArticleCard(article) {
-  return `<article class="article-card">
+function renderArticleNewspaperHeader(article) {
+  return `<header class="article-newspaper-header">
+    <div class="article-newspaper-masthead" aria-label="PadelPost">
+      <span>Padel</span><span>Post</span>
+    </div>
     ${renderArticleMeta(article.meta || `Spieltag ${article.spieltag}`)}
+  </header>`;
+}
+
+function renderArticleCard(article, { newspaper = true } = {}) {
+  return `<article class="article-card${newspaper ? ' article-newspaper' : ''}">
+    ${newspaper
+      ? renderArticleNewspaperHeader(article)
+      : article.meta ? renderArticleMeta(article.meta) : ''}
     <h3>${article.title}</h3>
+    ${newspaper ? '<div class="article-newspaper-publisher">United we Padel</div>' : ''}
     ${article.body ? `<div class="article-body">${article.body.map(renderArticleBlock).join('')}</div>` : ''}
   </article>`;
 }
@@ -3511,9 +3821,15 @@ function renderArticleBlock(block) {
       resultLabel = 'Ergebnis';
     }
     const match = block.matchId ? PADEL_DATA.matches.find(m => m.id === block.matchId) : null;
-    const detail = window.PadelMatchStatistics?.entry(match, PADEL_DATA);
-    return `<div class="article-match${detail ? ' has-partie-statistics' : ''}">
-      ${detail ? `<button type="button" class="live-ticker-statistics-article-action" ${detail.attributes}></button>` : ''}
+    const statisticsDetail = window.PadelMatchStatistics?.entry(match, PADEL_DATA);
+    const detail = statisticsDetail || (match && getMatchStage(match) === 'final-four'
+      ? {
+          attributes: `data-live-open-match="${escapeHtml(match.id)}" aria-label="Spielverlauf öffnen"`,
+          icon: ''
+        }
+      : null);
+    return `<div class="article-match${detail ? ' has-partie-detail' : ''}">
+      ${detail ? `<button type="button" class="article-match-action" ${detail.attributes}></button>` : ''}
       <span>${linkArticlePlayerNames(matchup)}</span>
       ${result ? `<span class="article-match-result">${resultLabel}: ${result}${detail?.icon || ''}</span>` : ''}
     </div>`;
@@ -3544,7 +3860,9 @@ function renderHomeAnnouncement(now = new Date()) {
   const announcement = getVisibleHomeAnnouncement(PADEL_DATA.homeAnnouncement, now);
 
   container.hidden = !announcement;
-  container.innerHTML = announcement ? renderArticleCard(announcement) : '';
+  container.innerHTML = announcement
+    ? `${announcement.label ? `<div class="widget-label">${escapeHtml(announcement.label)}</div>` : ''}${renderArticleCard(announcement, { newspaper: false })}${announcement.link ? `<button class="text-link" data-nav-target="${escapeHtml(announcement.link.target)}">${escapeHtml(announcement.link.label)}</button>` : ''}`
+    : '';
 
   if (homeAnnouncementExpiryTimer !== null) {
     window.clearTimeout(homeAnnouncementExpiryTimer);
@@ -3626,7 +3944,7 @@ function renderHome() {
 
   document.getElementById('home-articles').innerHTML = `
     <div class="home-article-preview" id="home-article-preview">
-      ${getCurrentArticle() ? renderArticleCard(getCurrentArticle()) : '<div class="empty-state">Noch keine Artikel für diese Saison.</div>'}
+      ${getCurrentArticle() ? renderArticleCard(getCurrentArticle()) : '<div class="empty-state">Noch keine PadelPost-Ausgabe für diese Saison.</div>'}
     </div>
     <button class="text-link article-readmore" id="article-readmore" data-expand-home-article>Weiterlesen</button>
   `;
@@ -3726,6 +4044,9 @@ function renderStatisticsModeState({ loading = false } = {}) {
   });
   document.querySelectorAll('[data-season-only-statistic]').forEach(element => {
     element.hidden = isAllTimeStatistics();
+  });
+  document.querySelectorAll('[data-all-time-statistic]').forEach(element => {
+    element.hidden = !isAllTimeStatistics();
   });
 
   const errorTarget = document.getElementById('statistics-load-error');
@@ -3864,11 +4185,10 @@ function getNormalizedWinnerSetAverages() {
     const sets = getRegularSetScores(match);
 
     sets.forEach(([team1Games, team2Games], index) => {
-      const winnerGames = match.sieger === 1 ? team1Games : team2Games;
-      const loserGames = match.sieger === 1 ? team2Games : team1Games;
+      if (team1Games === team2Games) return;
 
-      setTotals[index].winnerGames += winnerGames;
-      setTotals[index].loserGames += loserGames;
+      setTotals[index].winnerGames += Math.max(team1Games, team2Games);
+      setTotals[index].loserGames += Math.min(team1Games, team2Games);
       setTotals[index].count += 1;
     });
 
@@ -3927,17 +4247,15 @@ function getFavoriteCheckStats(matches = getPlayedMatchesWithProbability()) {
 
 function renderFavoriteCheck() {
   const stats = getFavoriteCheckStats();
-  const note = `<div class="favorite-check-note">Als Favorit zählt ein Team ab ${FAVORITE_CHECK_MIN_PROBABILITY} % Siegchance.</div>`;
 
   if (!stats.matches) {
-    document.getElementById('favorite-check').innerHTML = `<div class="empty-state">Noch keine Favoriten-Daten.</div>${note}`;
+    document.getElementById('favorite-check').innerHTML = '<div class="empty-state">Noch keine Favoriten-Daten.</div>';
     return;
   }
 
   document.getElementById('favorite-check').innerHTML = `
     <div class="stat-main">${stats.rate}%</div>
     <div class="stat-copy">Favoriten gewannen ${stats.wins} von ${stats.matches} Partien.</div>
-    ${note}
   `;
 }
 
@@ -4021,7 +4339,7 @@ function renderRankingDeviationFact(targetId, fromMode, toMode, topDirection = '
   const modeLabels = {
     points: 'Punkte',
     elo: 'Elo',
-    placement: 'Platzierungsfaktor'
+    'draw-factor': 'Losfaktor'
   };
   const labels = getRankingDeviationLabels(targetId);
   const { up, down } = getRankingDeviationGroups(fromMode, toMode, topDirection);
@@ -4038,11 +4356,11 @@ function renderRankingDeviationFact(targetId, fromMode, toMode, topDirection = '
   target.innerHTML = `
     <div class="stat-shift-groups">
       <div class="stat-shift-group">
-        <div class="stat-shift-label">${escapeHtml(labels.top)}</div>
+        <div class="widget-label">${escapeHtml(labels.top)}</div>
         <div class="stat-shift-list">${up.length ? up.map(renderShiftItem).join('') : '<div class="empty-state">Keine Aufsteiger.</div>'}</div>
       </div>
       <div class="stat-shift-group">
-        <div class="stat-shift-label">${escapeHtml(labels.bottom)}</div>
+        <div class="widget-label">${escapeHtml(labels.bottom)}</div>
         <div class="stat-shift-list">${down.length ? down.map(renderShiftItem).join('') : '<div class="empty-state">Keine Absteiger.</div>'}</div>
       </div>
     </div>
@@ -4200,21 +4518,21 @@ function renderTimePerformance() {
   target.innerHTML = `
     <div class="stat-shift-groups">
       <div class="stat-shift-group">
-        <div class="stat-shift-label">Früher Vogel</div>
+        <div class="widget-label">Früher Vogel</div>
         <div class="stat-time-row">
           <div class="stat-time-text">
             ${renderPlayerProfileLink(earliest.player, `mini-rank-name ${isSelectedPlayer(earliest.player.name) ? 'viewer-player' : ''}`)}
-            <div class="stat-meta-line">Ø aus ${earliest.count} Partien</div>
+            <div class="stat-meta-line">Ø-Spielbeginn aus ${earliest.count} Partien</div>
           </div>
           <span class="stat-split-value">${formatAverageMatchTime(earliest.averageMinutes)}</span>
         </div>
       </div>
       <div class="stat-shift-group">
-        <div class="stat-shift-label">Langschläfer</div>
+        <div class="widget-label">Langschläfer</div>
         <div class="stat-time-row">
           <div class="stat-time-text">
             ${renderPlayerProfileLink(latest.player, `mini-rank-name ${isSelectedPlayer(latest.player.name) ? 'viewer-player' : ''}`)}
-            <div class="stat-meta-line">Ø aus ${latest.count} Partien</div>
+            <div class="stat-meta-line">Ø-Spielbeginn aus ${latest.count} Partien</div>
           </div>
           <span class="stat-split-value">${formatAverageMatchTime(latest.averageMinutes)}</span>
         </div>
@@ -4322,8 +4640,10 @@ function renderStatistik() {
   renderAverageSetScoreFact();
   if (!isAllTimeStatistics()) {
     renderRankingDeviationFact('stats-elo-points-deviation', 'points', 'elo', 'positive');
-    renderRankingDeviationFact('stats-points-placement-deviation', 'points', 'placement', 'positive');
+    renderRankingDeviationFact('stats-points-draw-factor-deviation', 'points', 'draw-factor', 'positive');
     renderFinalFourForecast();
+  } else {
+    renderAllTimeRanking();
   }
   renderTimePerformance();
   renderSetDominance();
@@ -4362,6 +4682,7 @@ function renderInfoSection(section, id) {
       <tr>${row.map(cell => index === 0 ? `<th>${cell}</th>` : `<td>${cell}</td>`).join('')}</tr>
     `).join('')}</table></div>`
     : '';
+  const paragraphsAfterTable = (section.paragraphsAfterTable || []).map(p => `<p>${p}</p>`).join('');
   const note = section.note ? `<p class="info-note">${section.note}</p>` : '';
 
   return `<article class="info-card info-anchor" id="${id}">
@@ -4370,6 +4691,7 @@ function renderInfoSection(section, id) {
     ${paragraphs}
     ${groups}
     ${table}
+    ${paragraphsAfterTable}
     ${items}
     ${note}
   </article>`;
@@ -4400,18 +4722,24 @@ function renderInfos() {
   const articles = PADEL_DATA.articles || [];
   const sectionLinks = [
     { id: 'kurzinfo', title: 'Kurzinfo' },
-    ...PADEL_INFO.sections.map(section => ({ id: sectionId(section.title), title: section.title })),
-    { id: 'artikel', title: 'Artikel' },
-    ...articles.map(article => ({
-      id: `artikel-${article.spieltag}`,
-      title: getInfoArticleMenuTitle(article),
-      sub: true
-    }))
+    ...PADEL_INFO.sections.map(section => ({ id: sectionId(section.title), title: section.title }))
   ];
+  const articleLinks = articles.map(article => ({
+      id: `artikel-${article.spieltag}`,
+      title: getInfoArticleMenuTitle(article)
+    }));
 
-  document.getElementById('info-menu').innerHTML = sectionLinks
-    .map(link => `<a href="#${link.id}" class="${link.sub ? 'is-sub' : ''}">${link.title}</a>`)
-    .join('');
+  document.getElementById('info-menu').innerHTML = `<div class="info-menu-list">
+    ${sectionLinks.map(link => `<a href="#${link.id}">${link.title}</a>`).join('')}
+    <div class="info-menu-submenu">
+      <a href="#artikel" class="info-menu-padelpost-link">PadelPost</a>
+      <div class="info-menu-subitems" id="info-menu-padelpost">
+        ${articleLinks.length
+          ? articleLinks.map(link => `<a href="#${link.id}" class="is-sub">${link.title}</a>`).join('')
+          : '<a href="#artikel" class="is-sub">Archiv</a>'}
+      </div>
+    </div>
+  </div>`;
 
   const shortInfo = `<article class="info-card info-anchor" id="kurzinfo">
     <h2>Kurzinfo</h2>
@@ -4420,11 +4748,11 @@ function renderInfos() {
 
   const articleSection = `<section class="info-article-section info-anchor" id="artikel">
     <div class="sh info-article-heading">
-      <div class="sh-title">ARTIKEL</div>
+      <div class="sh-title">PADELPOST</div>
       <div class="sh-meta">Archiv</div>
     </div>
     <div class="info-articles-stack">
-      ${articles.length ? articles.map(renderInfoArticle).join('') : '<article class="info-card"><div class="empty-state">Noch keine Artikel für diese Saison.</div></article>'}
+      ${articles.length ? articles.map(renderInfoArticle).join('') : '<article class="info-card"><div class="empty-state">Noch keine PadelPost-Ausgabe für diese Saison.</div></article>'}
     </div>
   </section>`;
 
@@ -4436,6 +4764,23 @@ function renderInfos() {
 }
 
 // ── MATCHES ───────────────────────────────────────────────────────
+function renderMatchForecastLine(match) {
+  const forecast = match?.forecast;
+  const totalVotes = Math.max(0, Number(forecast?.totalVotes) || 0);
+  const teamOnePercentage = totalVotes
+    ? Math.min(100, Math.max(0, Number(forecast?.team1Percentage) || 0))
+    : 0;
+  const teamTwoPercentage = totalVotes ? 100 - teamOnePercentage : 0;
+  const hasBothTeamColors = teamOnePercentage > 0 && teamTwoPercentage > 0;
+  const label = totalVotes
+    ? `Abstimmung: Team 1 ${teamOnePercentage} Prozent, Team 2 ${teamTwoPercentage} Prozent`
+    : 'Abstimmung: noch keine Stimme';
+  return `<span class="mc-forecast-line${totalVotes ? ' has-votes' : ''}${hasBothTeamColors ? ' has-both-team-colors' : ''}" role="img" aria-label="${label}">
+    <span class="mc-forecast-team-one" style="width:${teamOnePercentage / 2}%"></span>
+    <span class="mc-forecast-team-two" style="width:${teamTwoPercentage / 2}%"></span>
+  </span>`;
+}
+
 function renderMatchRow(m) {
   const activeLive = window.PadelLiveTicker?.activeMatch;
   const isLive = activeLive?.matchId === m.id;
@@ -4470,7 +4815,7 @@ function renderMatchRow(m) {
         <div class="mc-score-detail mc-score-live">${Number(activeLive.teamOneGames) || 0}:${Number(activeLive.teamTwoGames) || 0} <span class="mc-score-live-dot" aria-hidden="true">●</span>LIVE</div>
       </button>` : `${statistics ? `<button type="button" class="mc-score" ${statistics.attributes}>` : '<div class="mc-score">'}
         ${probabilityHtml}
-        <div class="mc-pending-label">${getPendingMatchLabel(m)}${statistics?.icon || ''}</div>
+        ${statistics?.mode === 'preview' ? renderMatchForecastLine(m) : ''}
       ${statistics ? '</button>' : '</div>'}`}
       <div class="mc-team mc-team-2">
         <div class="mc-players">${renderTeamPlayers(m.team2.spieler)}</div>
@@ -5586,6 +5931,8 @@ const CHART_GRAY_MIX = 0.28;
 
 let chart = null;
 let placementChart = null;
+let hoveredEloChartPlayerNames = new Set();
+let hoveredPlacementChartPlayerName = null;
 
 function getChartBaseColor(player, fallbackIndex = 0) {
   const centralIndex = (window.PADEL_PLAYERS || []).findIndex(item => item.id === player?.id);
@@ -5624,81 +5971,129 @@ function dimChartColor(color) {
   return color;
 }
 
+function isEloChartHighlighted(playerName) {
+  return hoveredEloChartPlayerNames.has(playerName) || isSelectedPlayer(playerName);
+}
+
 function getEloChartColor(color, playerName) {
-  return isParticipantView() && getSelectedViewer().name !== playerName
+  return isParticipantView() && !isEloChartHighlighted(playerName)
     ? dimChartColor(color)
     : color;
 }
 
 function getEloChartLineWidth(playerName) {
-  return isParticipantView() && getSelectedViewer().name === playerName ? 3 : 1;
+  return isEloChartHighlighted(playerName) ? 3 : 1;
 }
 
 function getEloChartPointRadius(playerName) {
-  return isParticipantView() && getSelectedViewer().name !== playerName ? 3 : 4;
+  return isParticipantView() && !isEloChartHighlighted(playerName) ? 3 : 4;
+}
+
+function getEloChartOrder(playerName) {
+  return hoveredEloChartPlayerNames.has(playerName) ? -1 : 0;
+}
+
+function isPlacementChartHighlighted(playerName) {
+  return playerName === hoveredPlacementChartPlayerName || isSelectedPlayer(playerName);
 }
 
 function getPlacementLabelWeight(playerName) {
-  return isParticipantView() && getSelectedViewer().name === playerName ? 700 : 300;
+  return isPlacementChartHighlighted(playerName) ? 700 : 300;
 }
 
 function getPlacementLabelColor(playerName, color) {
-  return isParticipantView() && getSelectedViewer().name !== playerName
+  return isParticipantView() && !isPlacementChartHighlighted(playerName)
     ? dimChartColor(color)
     : color;
 }
 
 function getPlacementChartColor(color, playerName) {
-  return isParticipantView() && getSelectedViewer().name !== playerName
+  return isParticipantView() && !isPlacementChartHighlighted(playerName)
     ? dimChartColor(color)
     : color;
 }
 
 function getPlacementChartLineWidth(playerName) {
-  return isParticipantView() && getSelectedViewer().name === playerName ? 3 : 1;
+  return isPlacementChartHighlighted(playerName) ? 3 : 1;
 }
 
 function getPlacementChartPointRadius(playerName, hasPlayed, hasBye) {
   if (hasPlayed) {
-    return isParticipantView() && getSelectedViewer().name === playerName ? 4 : 3;
+    return isPlacementChartHighlighted(playerName) ? 4 : 3;
   }
 
   return hasBye ? 3 : 0;
 }
 
+function getPlacementChartOrder(playerName) {
+  return playerName === hoveredPlacementChartPlayerName ? -1 : 0;
+}
+
+function isEloChartDatasetHidden(player, activePlayers) {
+  return !activePlayers.has(player.id) && !hoveredEloChartPlayerNames.has(player.name);
+}
+
+function updateEloChartFocus() {
+  if (!chart) return;
+  const activePlayers = getStatisticsPlayerFilter();
+  chart.data.datasets.forEach((dataset, index) => {
+    const player = chart.$players[index];
+    dataset.hidden = isEloChartDatasetHidden(player, activePlayers);
+    const color = getEloChartColor(getChartBaseColor(player, index), player.name);
+    dataset.borderColor = color;
+    dataset.pointBackgroundColor = color;
+    dataset.pointBorderColor = color;
+    dataset.pointHoverBackgroundColor = color;
+    dataset.pointHoverBorderColor = color;
+    dataset.borderWidth = getEloChartLineWidth(player.name);
+    dataset.pointRadius = getEloChartPointRadius(player.name);
+    dataset.order = getEloChartOrder(player.name);
+  });
+  chart.update();
+}
+
+function setHoveredEloChartPlayers(playerNames = []) {
+  const nextNames = new Set(playerNames);
+  if (nextNames.size === hoveredEloChartPlayerNames.size && [...nextNames].every(name => hoveredEloChartPlayerNames.has(name))) return;
+  hoveredEloChartPlayerNames = nextNames;
+  updateEloChartFocus();
+}
+
+function updatePlacementChartFocus() {
+  if (!placementChart) return;
+  placementChart.data.datasets.forEach((dataset, index) => {
+    const player = PADEL_DATA.players[index];
+    const color = getPlacementChartColor(getChartBaseColor(player, index), player.name);
+    const playedFlags = dataset.playedFlags;
+    const byeFlags = dataset.byeFlags;
+    dataset.borderColor = color;
+    dataset.pointBackgroundColor = playedFlags.map(hasMatch => hasMatch ? color : 'transparent');
+    dataset.pointBorderColor = playedFlags.map((hasMatch, pointIndex) => hasMatch || byeFlags[pointIndex] ? color : 'transparent');
+    dataset.borderWidth = getPlacementChartLineWidth(player.name);
+    dataset.pointRadius = playedFlags.map((hasMatch, pointIndex) =>
+      getPlacementChartPointRadius(player.name, hasMatch, byeFlags[pointIndex])
+    );
+    dataset.segment.borderColor = ctx => getPlacementSegmentColor(ctx, playedFlags, color);
+    dataset.order = getPlacementChartOrder(player.name);
+  });
+  placementChart.update();
+}
+
+function setHoveredPlacementChartPlayer(playerName) {
+  if (hoveredPlacementChartPlayerName === playerName) return;
+  hoveredPlacementChartPlayerName = playerName;
+  updatePlacementChartFocus();
+}
+
 function updateChartViewerFocus() {
   if (chart) {
-    chart.data.datasets.forEach((dataset, index) => {
-      const player = chart.$players[index];
-      const color = getEloChartColor(getChartBaseColor(player, index), player.name);
-      dataset.borderColor = color;
-      dataset.pointBackgroundColor = color;
-      dataset.pointBorderColor = color;
-      dataset.pointHoverBackgroundColor = color;
-      dataset.pointHoverBorderColor = color;
-      dataset.borderWidth = getEloChartLineWidth(player.name);
-      dataset.pointRadius = getEloChartPointRadius(player.name);
-    });
-    chart.update();
+    hoveredEloChartPlayerNames = new Set();
+    updateEloChartFocus();
+    renderFilter();
   }
 
-  if (placementChart) {
-    placementChart.data.datasets.forEach((dataset, index) => {
-      const player = PADEL_DATA.players[index];
-      const color = getPlacementChartColor(getChartBaseColor(player, index), player.name);
-      const playedFlags = dataset.playedFlags;
-      const byeFlags = dataset.byeFlags;
-      dataset.borderColor = color;
-      dataset.pointBackgroundColor = playedFlags.map(hasMatch => hasMatch ? color : 'transparent');
-      dataset.pointBorderColor = playedFlags.map((hasMatch, pointIndex) => hasMatch || byeFlags[pointIndex] ? color : 'transparent');
-      dataset.borderWidth = getPlacementChartLineWidth(player.name);
-      dataset.pointRadius = playedFlags.map((hasMatch, pointIndex) =>
-        getPlacementChartPointRadius(player.name, hasMatch, byeFlags[pointIndex])
-      );
-      dataset.segment.borderColor = ctx => getPlacementSegmentColor(ctx, playedFlags, color);
-    });
-    placementChart.update();
-  }
+  hoveredPlacementChartPlayerName = null;
+  updatePlacementChartFocus();
 }
 
 function parseDateValue(date) {
@@ -6352,17 +6747,39 @@ const placementLabelPlugin = {
     ctx.save();
     ctx.textBaseline = 'middle';
 
+    chartInstance.$placementLabelBoxes = [];
     chartInstance.data.datasets.forEach((dataset, datasetIndex) => {
       const meta = chartInstance.getDatasetMeta(datasetIndex);
       if (!meta.data.length) return;
 
       const point = meta.data[meta.data.length - 1];
+      const x = Math.min(point.x + 8, chartArea.right + 8);
       ctx.font = `${getPlacementLabelWeight(dataset.label)} 11px DM Sans`;
       ctx.fillStyle = getPlacementLabelColor(dataset.label, dataset.baseColor || dataset.borderColor);
-      ctx.fillText(dataset.label, Math.min(point.x + 8, chartArea.right + 8), point.y);
+      ctx.fillText(dataset.label, x, point.y);
+      chartInstance.$placementLabelBoxes.push({
+        playerName: dataset.label,
+        left: x,
+        right: x + ctx.measureText(dataset.label).width,
+        top: point.y - 7,
+        bottom: point.y + 7
+      });
     });
 
     ctx.restore();
+  },
+  afterEvent(chartInstance, args) {
+    const { event } = args;
+    if (event.type === 'mouseout') {
+      setHoveredPlacementChartPlayer(null);
+      return;
+    }
+    if (event.type !== 'mousemove') return;
+
+    const label = (chartInstance.$placementLabelBoxes || []).find(box =>
+      event.x >= box.left && event.x <= box.right && event.y >= box.top && event.y <= box.bottom
+    );
+    setHoveredPlacementChartPlayer(label?.playerName || null);
   }
 };
 
@@ -6400,8 +6817,8 @@ function getStatisticsEloChartBounds(datasets = []) {
   if (!values.length) return { min: 0, max: 100 };
 
   return {
-    min: Math.max(0, Math.floor((Math.min(...values) - 60) / 50) * 50),
-    max: Math.ceil((Math.max(...values) + 60) / 50) * 50
+    min: Math.max(0, Math.floor((Math.min(...values) - 50) / 50) * 50),
+    max: Math.ceil((Math.max(...values) + 50) / 50) * 50
   };
 }
 
@@ -6453,6 +6870,7 @@ function initChart() {
       pointHoverBorderColor: color,
       borderWidth: getEloChartLineWidth(p.name),
       pointRadius: getEloChartPointRadius(p.name),
+      order: getEloChartOrder(p.name),
       pointHoverRadius: 5,
       tension: 0.3,
       spanGaps: true,
@@ -6519,6 +6937,7 @@ function getPlacementSegmentColor(context, playedFlags, color) {
 
 function initPlacementChart() {
   if (placementChart) return;
+  hoveredPlacementChartPlayerName = null;
   const { matchDays, placementsByPlayer, playedByPlayer, byeByPlayer, statsByPlayer } = getPlacementSeries();
   const maxPlace = PADEL_DATA.players.length;
   const datasets = PADEL_DATA.players.map((p, i) => {
@@ -6546,6 +6965,7 @@ function initPlacementChart() {
       pointHitRadius: playedFlags.map(hasMatch => hasMatch ? 8 : 0),
       pointHoverRadius: playedFlags.map(hasMatch => hasMatch ? 5 : 0),
       tension: 0,
+      order: getPlacementChartOrder(p.name),
       segment: {
         borderColor: ctx => getPlacementSegmentColor(ctx, playedFlags, color)
       }
@@ -6599,17 +7019,51 @@ function initPlacementChart() {
   });
 }
 
+const CHART_FILTER_COMPANIES = ['Envidual', 'Hanako', 'Headsquare'];
+
+function getPlayerCompany(player) {
+  return (window.PADEL_PLAYERS || []).find(item => item.id === player?.id)?.firma || player?.firma || null;
+}
+
+function getStatisticsCompanyPlayers(company) {
+  return getStatisticsPlayers().filter(player => getPlayerCompany(player) === company);
+}
+
+function renderCompanyFilter() {
+  const activePlayers = getStatisticsPlayerFilter();
+  document.getElementById('filter-company-row').innerHTML = CHART_FILTER_COMPANIES.map(company => {
+    const companyPlayers = getStatisticsCompanyPlayers(company);
+    if (!companyPlayers.length) return '';
+    const on = companyPlayers.every(player => activePlayers.has(player.id));
+    return `<button
+      class="fb-toggle fb-company fb-company-${company} ${on ? 'on' : ''}"
+      data-company-toggle="${company}"
+      aria-pressed="${on}"
+    >${company}</button>`;
+  }).join('');
+}
+
 function renderFilter() {
+  renderCompanyFilter();
   const activePlayers = getStatisticsPlayerFilter();
   document.getElementById('filter-row').innerHTML = getStatisticsPlayers().map((p,i) => {
     const on = activePlayers.has(p.id);
     const color = getChartBaseColor(p, i);
+    const selectedIcon = isSelectedPlayer(p.name)
+      ? `<span class="fb-selected-icon" title="Ausgewählter Spieler" aria-label="Ausgewählter Spieler">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="8.5"></circle>
+          <circle class="fb-selected-icon-dot" cx="12" cy="12" r="3"></circle>
+        </svg>
+      </span>`
+      : '';
     return `<button
       class="fb ${on?'on':''}"
       style="${on ? `--player-color:${color};` : ''}"
       data-player-toggle-id="${p.id}"
       data-player-toggle-index="${i}"
-    >${p.name}</button>`;
+      data-player-toggle-name="${escapeHtml(p.name)}"
+    >${p.name}${selectedIcon}</button>`;
   }).join('');
 }
 
@@ -6619,18 +7073,33 @@ function toggleP(id, i, btn) {
   const activePlayers = getStatisticsPlayerFilter();
   const player = getStatisticsPlayers()[i];
   const color = getChartBaseColor(player, i);
-  ds.hidden = !ds.hidden;
-  if (ds.hidden) { activePlayers.delete(id); btn.classList.remove('on'); btn.style = ''; }
-  else { activePlayers.add(id); btn.classList.add('on'); btn.style = `--player-color:${color};`; }
+  if (activePlayers.has(player.id)) { activePlayers.delete(player.id); btn.classList.remove('on'); btn.style = ''; }
+  else { activePlayers.add(player.id); btn.classList.add('on'); btn.style = `--player-color:${color};`; }
+  ds.hidden = isEloChartDatasetHidden(player, activePlayers);
   chart.update();
+  renderCompanyFilter();
 }
 
 function toggleAll(on) {
   if (!chart) return;
   const activePlayers = getStatisticsPlayerFilter();
   getStatisticsPlayers().forEach((p, i) => {
-    chart.data.datasets[i].hidden = !on;
     if (on) activePlayers.add(p.id); else activePlayers.delete(p.id);
+    chart.data.datasets[i].hidden = isEloChartDatasetHidden(p, activePlayers);
+  });
+  chart.update();
+  renderFilter();
+}
+
+function toggleCompany(company) {
+  if (!chart) return;
+  const activePlayers = getStatisticsPlayerFilter();
+  const companyPlayers = getStatisticsCompanyPlayers(company);
+  const on = !companyPlayers.every(player => activePlayers.has(player.id));
+  getStatisticsPlayers().forEach((player, i) => {
+    if (getPlayerCompany(player) !== company) return;
+    if (on) activePlayers.add(player.id); else activePlayers.delete(player.id);
+    chart.data.datasets[i].hidden = isEloChartDatasetHidden(player, activePlayers);
   });
   chart.update();
   renderFilter();
@@ -6701,23 +7170,49 @@ async function initApp() {
   } catch (error) {
     console.error('Das Konto konnte nicht initialisiert werden:', error);
   }
+
+  await loadActiveSeasonForecasts();
+  await window.PadelMatchStatistics?.refreshForecast?.();
 }
 
 const mobileViewportQuery = window.matchMedia('(max-width: 768px)');
 mobileViewportQuery.addEventListener?.('change', () => {
   if (!mobileViewportQuery.matches) {
-    document.getElementById('spielplan')?.classList.remove('played-details-visible');
+    document.querySelectorAll('#spielplan, #final-four-spielplan')
+      .forEach(matchPlan => matchPlan.classList.remove('played-details-visible'));
   }
   invalidateSections(['rangliste']);
   renderActiveSection();
 });
 
-const spielplan = document.getElementById('spielplan');
-spielplan?.addEventListener('click', event => {
-  if (!mobileViewportQuery.matches) return;
-  if (!event.target.closest('.mc.played')) return;
-  if (event.target.closest('button, a, input, select, textarea')) return;
-  spielplan.classList.toggle('played-details-visible');
+document.querySelectorAll('#spielplan, #final-four-spielplan').forEach(matchPlan => {
+  matchPlan.addEventListener('click', event => {
+    if (!mobileViewportQuery.matches) return;
+    if (!event.target.closest('.mc.played')) return;
+    if (event.target.closest('button, a, input, select, textarea')) return;
+    matchPlan.classList.toggle('played-details-visible');
+  });
+});
+
+// Mobil per horizontalem Wischen zwischen den Hauptbereichen wechseln.
+function getSwipeableSections() {
+  const sections = [...document.querySelectorAll('nav.site-nav button[data-section]')]
+    .filter(button => !button.hidden)
+    .map(button => button.dataset.section);
+  if (!document.body.classList.contains('is-cup-season')) sections.unshift('start');
+  return sections;
+}
+
+window.PadelSwipeGesture?.attach(document.querySelector('main'), {
+  enabled: () => mobileViewportQuery.matches,
+  onSwipe: step => {
+    const sections = getSwipeableSections();
+    const currentIndex = sections.indexOf(document.querySelector('main > .section.active')?.id);
+    const targetId = currentIndex === -1 ? null : sections[currentIndex + step];
+    if (!targetId) return;
+    nav(targetId);
+    window.PadelSwipeGesture.animateIn(document.getElementById(targetId), step);
+  }
 });
 
 const playerProfileDialog = document.getElementById('player-profile-dialog');
@@ -6729,8 +7224,8 @@ playerProfileDialog?.addEventListener('click', event => {
   if (event.target === playerProfileDialog) closePlayerProfile();
 });
 
-const liveTickerDialog = document.getElementById('live-ticker-dialog');
-liveTickerDialog?.addEventListener('cancel', event => {
+const detailViewDialog = document.getElementById('detail-view-dialog');
+detailViewDialog?.addEventListener('cancel', event => {
   event.preventDefault();
   closeLiveTicker();
 });

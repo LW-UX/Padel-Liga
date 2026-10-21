@@ -17,6 +17,8 @@ test('Elo history chart derives rounded bounds from its values and stays 620 pix
   );
 
   assert.deepEqual({ ...getBounds([{ data: [760, null, 921] }, { data: [815] }]) }, { min: 700, max: 1000 });
+  assert.deepEqual({ ...getBounds([{ data: [801, 1199] }]) }, { min: 750, max: 1250 });
+  assert.deepEqual({ ...getBounds([{ data: [800, 1200] }]) }, { min: 750, max: 1250 });
   assert.deepEqual({ ...getBounds([{ data: [20, 30] }]) }, { min: 0, max: 100 });
   assert.match(appSource, /const eloBounds = getStatisticsEloChartBounds\(datasets\)/);
   assert.match(appSource, /min:\s*eloBounds\.min,\s*max:\s*eloBounds\.max/);

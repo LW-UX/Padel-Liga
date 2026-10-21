@@ -12,6 +12,10 @@ const migration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20261014170000_training_guests.sql'),
   'utf8'
 );
+const guestCountFixMigration = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20261016160000_fix_training_guest_count.sql'),
+  'utf8'
+);
 
 test('training player pickers turn a guest choice into a required name field', () => {
   assert.match(account, /\{ value: TRAINING_GUEST_OPTION, label: '\+ Gast hinzufügen'/);
@@ -70,5 +74,17 @@ test('guest migration keeps identities scoped to one training session', () => {
   assert.match(migration, /join public\.players as profile_player on profile_player\.id = participant\.player_id/);
   assert.match(migration, /private\.training_participant_display_name\(member\.player_id, session\.guest_names\)/);
   assert.match(migration, /selected_session\.guest_names = candidate_session\.guest_names/);
+  assert.match(migration, /select count\(\*\) from jsonb_object_keys\(normalized_guest_names\)/);
+  assert.doesNotMatch(migration, /jsonb_object_length/);
   assert.doesNotMatch(migration, /insert into public\.players/);
+});
+
+test('deployed training guest validation is repaired without recreating the RPC', () => {
+  assert.match(guestCountFixMigration, /pg_get_functiondef\(function_signature\)/);
+  assert.match(guestCountFixMigration,
+    /replace\([\s\S]*unsupported_expression,[\s\S]*supported_expression/);
+  assert.match(guestCountFixMigration,
+    /\(select count\(\*\) from jsonb_object_keys\(normalized_guest_names\)\)/);
+  assert.match(guestCountFixMigration,
+    /if position\(supported_expression in current_definition\) = 0 then/);
 });

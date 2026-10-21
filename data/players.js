@@ -12,9 +12,10 @@ window.PADEL_PLAYERS = [
   { id: "leonie_r", name: "Leonie R.", initials: "LR", firma: "Hanako", profileEmoji: "👩" },
   { id: "lisa_s", name: "Lisa S.", initials: "LS", firma: "Envidual", profileEmoji: "👩" },
   { id: "luca_w", name: "Luca W.", initials: "LW", firma: "Envidual", profileEmoji: "👨" },
-  { id: "ludi_gmail", name: "Ludi Gmail", initials: "LGML", firma: "Test", profileEmoji: "👨" },
-  { id: "ludi_gmx", name: "Ludi GMX", initials: "LGMX", firma: "Test", profileEmoji: "👨" },
-  { id: "ludi_ionos", name: "Ludi Ionos", initials: "LION", firma: "Test", profileEmoji: "👩" },
+  { id: "ludi_gmail", name: "Test Gmail", initials: "TGML", firma: "Test", profileEmoji: "👨" },
+  { id: "ludi_gmx", name: "Test GMX", initials: "TGMX", firma: "Test", profileEmoji: "👨" },
+  { id: "ludi_ionos", name: "Test Ionos", initials: "TION", firma: "Test", profileEmoji: "👩" },
+  { id: "test_net", name: "Test Net", initials: "TNET", firma: "Test", profileEmoji: "👨" },
   { id: "ludwig_w", name: "Ludwig W.", initials: "LuW", firma: "Envidual", profileEmoji: "👨" },
   { id: "lukas_p", name: "Lukas P.", initials: "LP", firma: "Headsquare", profileEmoji: "👨" },
   { id: "lukas_t", name: "Lukas T.", initials: "LT", firma: "Envidual", profileEmoji: "👨" },
@@ -22,5 +23,6 @@ window.PADEL_PLAYERS = [
   { id: "marco_m", name: "Marco M.", initials: "MaMay", firma: "Headsquare", profileEmoji: "👨" },
   { id: "martin_b", name: "Martin B.", initials: "MB", firma: "Headsquare", profileEmoji: "👨" },
   { id: "niklas_k", name: "Niklas K.", initials: "NK", firma: "Hanako", profileEmoji: "👨" },
-  { id: "raphael_h", name: "Raphael H.", initials: "RH", firma: "Headsquare", profileEmoji: "👨" }
+  { id: "raphael_h", name: "Raphael H.", initials: "RH", firma: "Headsquare", profileEmoji: "👨" },
+  { id: "yonatan_g", name: "Yonatan G.", initials: "YG", firma: "Envidual", profileEmoji: "👨" }
 ];

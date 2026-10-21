@@ -10,15 +10,16 @@ const style = [
 ].join('\n');
 const accountScript = fs.readFileSync(path.join(root, 'js', 'account.js'), 'utf8');
 const tippspielScript = fs.readFileSync(path.join(root, 'js', 'tippspiel.js'), 'utf8');
+const tippPageScript = fs.readFileSync(path.join(root, 'js', 'tipp-page.js'), 'utf8');
 const appScript = fs.readFileSync(path.join(root, 'js', 'app.js'), 'utf8');
 const ligaPage = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const tippspielPage = fs.readFileSync(path.join(root, 'tipp', 'index.html'), 'utf8');
 const pages = [ligaPage, tippspielPage];
 
 test('pages keep their intended context links and account dialogs place logout in the header', () => {
-  assert.match(ligaPage, /class="context-actions"[\s\S]*data-season-toggle[\s\S]*data-auth-open/);
+  assert.match(ligaPage, /class="context-actions global-actions"[\s\S]*data-season-toggle[\s\S]*data-auth-open/);
   assert.doesNotMatch(ligaPage, /id="tippspiel-link"/);
-  assert.match(tippspielPage, /class="context-actions"[\s\S]*id="liga-link"[\s\S]*data-season-toggle[\s\S]*data-auth-open/);
+  assert.match(tippspielPage, /class="context-actions global-actions"[\s\S]*id="liga-link"[\s\S]*data-season-toggle[\s\S]*data-auth-open/);
 
   pages.forEach(source => {
     assert.doesNotMatch(source, /<span>Saison<\/span>/);
@@ -40,7 +41,9 @@ test('account behavior and styles stay independent from the optional prediction 
   assert.match(ligaPage, /account\.css[^>]*>[\s\S]*js\/account\.js/);
   assert.doesNotMatch(ligaPage, /js\/tippspiel\.js/);
   assert.doesNotMatch(appScript, /PadelTippspiel/);
-  assert.match(tippspielPage, /account\.css[^>]*>[\s\S]*js\/account\.js[^>]*>[\s\S]*js\/tippspiel\.js/);
+  assert.match(tippspielPage, /account\.css[^>]*>[\s\S]*js\/account\.js[^>]*>[\s\S]*js\/tipp-page\.js/);
+  assert.doesNotMatch(tippspielPage, /<script[^>]+js\/tippspiel\.js/);
+  assert.match(tippPageScript, /await window\.PadelKonto\.init\(\);[\s\S]*loadScript\('\.\.\/js\/tippspiel\.js/);
   assert.match(accountScript, /window\.PadelKonto = \{/);
   assert.match(accountScript, /function handleAuthSubmit/);
   assert.match(accountScript, /function renderResultTasks/);
@@ -73,7 +76,7 @@ test('both account dialogs expose one four-group game overview', () => {
     assert.doesNotMatch(source, /id="admin-all-matches"/);
     assert.doesNotMatch(source, /id="training-history"/);
     assert.match(source, /id="open-results-section"[\s\S]*data-training-toggle/);
-    assert.match(source, /<h3 class="sh-title">Spieleübersicht<\/h3>/);
+    assert.match(source, /<h3 class="sh-title sh-title-with-help">Spieleübersicht[\s\S]*?id="account-games-help"[\s\S]*?<\/h3>/);
     assert.match(source, /class="match-scope-toggle account-result-scope-toggle"[^>]*data-account-result-scope-toggle hidden/);
     assert.match(source, /data-account-result-scope="relevant"[^>]*>Relevant<\/button>/);
     assert.match(source, /data-account-result-scope="all"[^>]*>Alle<\/button>/);
@@ -90,7 +93,7 @@ test('both account dialogs expose one four-group game overview', () => {
     assert.doesNotMatch(source, /Ligaübergreifend|Saisonunabhängig/);
   });
   assert.match(pages[0], /<button type="button" class="secondary-button" data-calculator-reset>Zurücksetzen<\/button>/);
-  assert.match(pages[0], /class="secondary-button secondary-button--dropdown"[^>]*data-season-toggle/);
+  assert.match(pages[0], /class="secondary-button secondary-button--dropdown global-action"[^>]*data-season-toggle/);
   assert.match(pages[0], /class="secondary-button secondary-button--dropdown"[^>]*data-viewer-toggle/);
   assert.match(pages[0], /data-viewer-search role="combobox"[^>]*aria-label="Spieler suchen"[^>]*disabled/);
   assert.match(pages[0], /id="viewer-profile-image"[^>]*alt=""[^>]*hidden/);
@@ -107,7 +110,7 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(accountScript, /filterTrainingPlayerOptions\(picker\);\s*searchInput\.focus\(\{ preventScroll: true \}\);/);
   assert.match(accountScript, /function keepTrainingPickerSearchVisible\(searchInput\)[\s\S]*targetOffset = Math\.min\(200,[\s\S]*window\.setTimeout\(alignInput, 350\)/);
   assert.match(accountScript, /searchInput\.focus\(\{ preventScroll: true \}\);\s*keepTrainingPickerSearchVisible\(searchInput\);/);
-  assert.match(pages[1], /class="secondary-button secondary-button--dropdown"[^>]*data-season-toggle/);
+  assert.match(pages[1], /class="secondary-button secondary-button--dropdown global-action"[^>]*data-season-toggle/);
   assert.match(style, /\.sh-title \{[^}]*font-size: var\(--text-heading\);[^}]*font-weight: 400;/);
   assert.match(style, /\.secondary-button \{[\s\S]*font-family: var\(--font-body\);[\s\S]*font-size: 0\.78rem;[\s\S]*font-weight: 500;/);
   assert.match(style, /\.secondary-button--dropdown \{[^}]*position: relative;[^}]*padding-right: 1\.8rem;/);
@@ -124,7 +127,7 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(accountScript, /searchParams\.set\('spielerprofil', playerId\)/);
   assert.match(appScript, /window\.PadelLigaOpenPlayerProfile = openPlayerProfile/);
   assert.match(appScript, /searchParams\.get\('spielerprofil'\)[\s\S]*openPlayerProfile\(requestedPlayerProfile\)/);
-  assert.match(style, /#result-task-list > \.account-task-group \{[\s\S]*border-top: 1px solid var\(--border\);[\s\S]*padding-top: 18px;/);
+  assert.match(style, /#result-task-list > \.account-task-group \{\s*margin-top: 2rem;\s*\}/);
   assert.match(style, /\.account-task-card\.is-actionable \{[\s\S]*border-color: var\(--accent\);/);
   assert.match(style, /\.account-task-card\.is-waiting[\s\S]*opacity: 0\.58/);
   assert.match(style, /\.result-entry-actions \{[\s\S]*align-items: center;[\s\S]*justify-content: space-between;/);

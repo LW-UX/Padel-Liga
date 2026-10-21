@@ -19,18 +19,21 @@ window.PADEL_SEASON = {
   shortInfo: [
     "Diese Saison dient ausschließlich zum Testen der neuen Ergebnis- und Bestätigungsabläufe.",
     "Ein Spieler trägt das Ergebnis ein, ein Spieler des gegnerischen Teams bestätigt oder macht einen Gegenvorschlag.",
-    "Bestätigte Ergebnisse aktualisieren Tabelle und isoliertes Test-Elo automatisch."
+    "Bestätigte Ergebnisse aktualisieren Rangliste und isoliertes Test-Elo automatisch."
   ],
   matchdays: [
-    { spieltag: 1, startDate: "2026-07-15", endDate: "2026-07-16" },
-    { spieltag: 2, startDate: "2026-12-01", endDate: "2026-12-03" },
-    { spieltag: 3, startDate: "2026-10-05", endDate: "2026-10-09" }
+    { spieltag: 1, startDate: "2026-07-04", endDate: "2026-07-16" },
+    { spieltag: 2, startDate: "2026-08-10", endDate: "2026-08-22" },
+    { spieltag: 3, startDate: "2026-10-05", endDate: "2026-11-12" },
+    { spieltag: 4, startDate: "2026-11-15", endDate: "2026-12-15" },
+    { spieltag: 5, startDate: "2027-01-01", endDate: "2027-01-21" }
   ],
   participants: [
     { playerId: "ludi_gmx", startElo: 800 },
     { playerId: "ludi_gmail", startElo: 800 },
     { playerId: "ludi_ionos", startElo: 800 },
-    { playerId: "ludwig_w", startElo: 1100 }
+    { playerId: "ludwig_w", startElo: 1100 },
+    { playerId: "test_net", startElo: 800 }
   ],
   matches: [
     {
@@ -75,7 +78,7 @@ window.PADEL_SEASON = {
       result: null,
       sets: null,
       winner: null,
-      team1: { playerIds: ["ludi_gmail", "ludwig_w"] },
+      team1: { playerIds: ["ludi_gmail", "test_net"] },
       team2: { playerIds: ["ludi_gmx", "ludi_ionos"] }
     },
     {
@@ -91,7 +94,7 @@ window.PADEL_SEASON = {
       sets: null,
       winner: null,
       team1: { playerIds: ["ludi_gmail", "ludi_ionos"] },
-      team2: { playerIds: ["ludi_gmx", "ludwig_w"] }
+      team2: { playerIds: ["ludi_gmx", "test_net"] }
     },
     {
       id: "test-2026-partie-5",
@@ -106,7 +109,7 @@ window.PADEL_SEASON = {
       sets: null,
       winner: null,
       team1: { playerIds: ["ludi_gmx", "ludi_ionos"] },
-      team2: { playerIds: ["ludi_gmail", "ludwig_w"] }
+      team2: { playerIds: ["ludi_gmail", "test_net"] }
     },
     {
       id: "test-2026-partie-6",
@@ -121,7 +124,52 @@ window.PADEL_SEASON = {
       sets: null,
       winner: null,
       team1: { playerIds: ["ludi_gmx", "ludi_ionos"] },
-      team2: { playerIds: ["ludi_gmail", "ludwig_w"] }
+      team2: { playerIds: ["ludi_gmail", "test_net"] }
+    },
+    {
+      id: "test-2026-partie-7",
+      type: "season",
+      seasonId: "2026-test",
+      countsForRanking: true,
+      countsForElo: true,
+      matchday: 4,
+      date: null,
+      time: null,
+      result: null,
+      sets: null,
+      winner: null,
+      team1: { playerIds: ["ludi_gmx", "ludi_ionos"] },
+      team2: { playerIds: ["ludi_gmail", "test_net"] }
+    },
+    {
+      id: "test-2026-partie-8",
+      type: "season",
+      seasonId: "2026-test",
+      countsForRanking: true,
+      countsForElo: true,
+      matchday: 4,
+      date: null,
+      time: null,
+      result: null,
+      sets: null,
+      winner: null,
+      team1: { playerIds: ["ludi_gmx", "test_net"] },
+      team2: { playerIds: ["ludi_gmail", "ludi_ionos"] }
+    },
+    {
+      id: "test-2026-partie-9",
+      type: "season",
+      seasonId: "2026-test",
+      countsForRanking: true,
+      countsForElo: true,
+      matchday: 5,
+      date: null,
+      time: null,
+      result: null,
+      sets: null,
+      winner: null,
+      team1: { playerIds: ["ludi_gmx", "ludi_ionos"] },
+      team2: { playerIds: ["ludi_gmail", "test_net"] }
     }
   ],
   articles: []

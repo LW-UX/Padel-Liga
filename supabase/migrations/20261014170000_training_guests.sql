@@ -125,7 +125,7 @@ begin
     raise exception 'Mindestens ein Spieler oder Gast ist unbekannt.';
   end if;
   if (select count(*) from public.players as player where player.id = any(p_player_ids))
-      + jsonb_object_length(normalized_guest_names) <> 4 then
+      + (select count(*) from jsonb_object_keys(normalized_guest_names)) <> 4 then
     raise exception 'Jeder Gast benötigt einen Namen.';
   end if;
   if jsonb_typeof(p_rounds) <> 'array' or jsonb_array_length(p_rounds) < 1 then

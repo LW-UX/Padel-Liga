@@ -81,7 +81,7 @@
   }
 
   function renderDialogSeasonLabel(payload) {
-    const target = document.getElementById('live-ticker-season-label');
+    const target = document.getElementById('detail-view-context');
     if (!target) return;
     target.textContent = [payload?.seasonLabel, formatDate(payload?.matchAt)].filter(Boolean).join(' · ');
   }
@@ -184,19 +184,19 @@
 
   function renderPlayer(player, currentServerId) {
     const serving = player.playerId === currentServerId;
-    return `<button class="live-ticker-player player-profile-link" type="button" data-player-profile-id="${escapeHtml(player.playerId)}">
+    return `<button class="match-detail-player player-profile-link" type="button" data-player-profile-id="${escapeHtml(player.playerId)}">
       ${serving ? '<span class="live-ticker-serve" title="Aufschlag" aria-label="hat Aufschlag">◉</span>' : ''}
-      <span class="live-ticker-player-photo" aria-hidden="true">
-        <img class="live-ticker-player-image" src="assets/players/${encodeURIComponent(player.playerId)}/profile.webp" alt="" data-live-player-image>
-        <span class="live-ticker-player-emoji" hidden>${escapeHtml(profileEmoji(player.playerId))}</span>
+      <span class="match-detail-player-photo" aria-hidden="true">
+        <img class="match-detail-player-image" src="assets/players/${encodeURIComponent(player.playerId)}/profile.webp" alt="" data-detail-player-image>
+        <span class="match-detail-player-emoji" hidden>${escapeHtml(profileEmoji(player.playerId))}</span>
       </span>
-      <span class="live-ticker-player-name">${escapeHtml(player.displayName)}</span>
-      <small class="live-ticker-player-elo">${Number.isFinite(Number(player.currentElo)) ? `${Math.round(Number(player.currentElo))} Elo` : 'Elo –'}</small>
+      <span class="match-detail-player-name">${escapeHtml(player.displayName)}</span>
+      <small class="match-detail-player-elo">${Number.isFinite(Number(player.currentElo)) ? `${Math.round(Number(player.currentElo))} Elo` : 'Elo –'}</small>
     </button>`;
   }
 
   function renderTeam(players, team, currentServerId) {
-    return `<div class="live-ticker-team live-ticker-team-${team}">
+    return `<div class="match-detail-team match-detail-team-${team}">
       ${players.filter(player => Number(player.team) === team).map(player => renderPlayer(player, currentServerId)).join('')}
     </div>`;
   }
@@ -289,7 +289,7 @@
   }
 
   function renderSwitcher(payload) {
-    const switcher = document.getElementById('live-match-switcher');
+    const switcher = document.getElementById('final-four-view-switcher');
     if (!switcher) return;
     switcher.innerHTML = `<button type="button"
       class="${state.view === 'overview' ? 'active' : ''}"
@@ -363,9 +363,7 @@
   function renderPrematchStreak(player) {
     const length = Number(player.streak?.length);
     if (!Number.isFinite(length) || length < 3) return '–';
-    return player.streak.outcome === 'win'
-      ? `${length} Siege in Folge`
-      : `${length} Niederlagen in Folge`;
+    return `${length} Siege in Folge`;
   }
 
   function renderPrematchRelationships(player) {
@@ -387,13 +385,13 @@
   function renderPrematchFacts() {
     if (state.prematchFactsLoading) {
       return `<section class="live-overview-section live-overview-prematch-section">
-        <div class="live-overview-heading spieltag-label">Prematch-Fakten</div>
+        <div class="widget-label">Prematch-Fakten</div>
         <div class="live-overview-prematch-status">Prematch-Fakten werden geladen …</div>
       </section>`;
     }
     if (state.prematchFactsError) {
       return `<section class="live-overview-section live-overview-prematch-section">
-        <div class="live-overview-heading spieltag-label">Prematch-Fakten</div>
+        <div class="widget-label">Prematch-Fakten</div>
         <div class="live-overview-prematch-status">Die Prematch-Fakten sind derzeit nicht verfügbar.</div>
       </section>`;
     }
@@ -409,20 +407,20 @@
 
     return `<section class="live-overview-section live-overview-prematch-section">
       <div class="live-overview-prematch-heading">
-        <div class="live-overview-heading spieltag-label">Prematch-Fakten</div>
+        <div class="widget-label">Prematch-Fakten</div>
         <span class="th-help-wrap">
           <span class="help-icon" tabindex="0" aria-label="Titelprognose erklären">?</span>
           <span class="help-tooltip">Die Titelprognose basiert auf den Siegchancen in den drei wechselnden Teams.<br>Stand vor Beginn des Final Four.${replacementPlayer ? `<span class="live-overview-prematch-tooltip-paragraph">${escapeHtml(replacementPlayer.displayName)} ist für ${escapeHtml(replacementPlayer.replacesDisplayName)} nachgerückt.</span>` : ''}</span>
         </span>
       </div>
       <div class="live-overview-prematch-grid${showRelationships ? ' has-relationships' : ''}">${activePlayers.map((player, index) => `<article class="live-overview-prematch-player live-overview-prematch-player-${index + 1}">
-        <button type="button" class="live-ticker-player live-overview-prematch-card player-profile-link" data-player-profile-id="${escapeHtml(player.playerId)}">
-          <span class="live-ticker-player-photo" aria-hidden="true">
-            <img class="live-ticker-player-image" src="assets/players/${encodeURIComponent(player.playerId)}/profile.webp" alt="" data-live-player-image>
-            <span class="live-ticker-player-emoji" hidden>${escapeHtml(profileEmoji(player.playerId))}</span>
+        <button type="button" class="match-detail-player live-overview-prematch-card player-profile-link" data-player-profile-id="${escapeHtml(player.playerId)}">
+          <span class="match-detail-player-photo" aria-hidden="true">
+            <img class="match-detail-player-image" src="assets/players/${encodeURIComponent(player.playerId)}/profile.webp" alt="" data-detail-player-image>
+            <span class="match-detail-player-emoji" hidden>${escapeHtml(profileEmoji(player.playerId))}</span>
           </span>
-          <span class="live-ticker-player-name">${escapeHtml(player.displayName)}${player.participationStatus === 'replacement' ? '<span aria-hidden="true">*</span><span class="sr-only">, nachgerückt</span>' : ''}</span>
-          <small class="live-ticker-player-elo">${Number.isFinite(Number(player.elo)) ? `${Math.round(Number(player.elo))} Elo` : 'Elo –'}</small>
+          <span class="match-detail-player-name">${escapeHtml(player.displayName)}${player.participationStatus === 'replacement' ? '<span aria-hidden="true">*</span><span class="sr-only">, nachgerückt</span>' : ''}</span>
+          <small class="match-detail-player-elo">${Number.isFinite(Number(player.elo)) ? `${Math.round(Number(player.elo))} Elo` : 'Elo –'}</small>
         </button>
         <div class="live-overview-prematch-fact live-overview-prematch-forecast">
           <span class="live-overview-prematch-label">Titelprognose</span>
@@ -437,7 +435,7 @@
           ${renderPrematchLeagueHistory(player)}
         </div>
         <div class="live-overview-prematch-fact">
-          <span class="live-overview-prematch-label">Pflichtspielserie</span>
+          <span class="live-overview-prematch-label">Längste Siegesserie</span>
           <span>${escapeHtml(renderPrematchStreak(player))}</span>
         </div>
         ${showRelationships ? `<div class="live-overview-prematch-fact live-overview-prematch-relationship-fact">
@@ -455,16 +453,16 @@
     if (!withdrawnPlayer) return '';
 
     return `<section class="live-overview-section live-overview-withdrawn-section">
-      <div class="live-overview-heading spieltag-label">Qualifiziert · krankheitsbedingt ausgefallen</div>
+      <div class="widget-label">Qualifiziert · krankheitsbedingt ausgefallen</div>
       <article class="live-overview-prematch-withdrawn">
         <div class="live-overview-prematch-withdrawn-identity">
-          <button type="button" class="live-ticker-player live-overview-prematch-card player-profile-link" data-player-profile-id="${escapeHtml(withdrawnPlayer.playerId)}">
-            <span class="live-ticker-player-photo" aria-hidden="true">
-              <img class="live-ticker-player-image" src="assets/players/${encodeURIComponent(withdrawnPlayer.playerId)}/profile.webp" alt="" data-live-player-image>
-              <span class="live-ticker-player-emoji" hidden>${escapeHtml(profileEmoji(withdrawnPlayer.playerId))}</span>
+          <button type="button" class="match-detail-player live-overview-prematch-card player-profile-link" data-player-profile-id="${escapeHtml(withdrawnPlayer.playerId)}">
+            <span class="match-detail-player-photo" aria-hidden="true">
+              <img class="match-detail-player-image" src="assets/players/${encodeURIComponent(withdrawnPlayer.playerId)}/profile.webp" alt="" data-detail-player-image>
+              <span class="match-detail-player-emoji" hidden>${escapeHtml(profileEmoji(withdrawnPlayer.playerId))}</span>
             </span>
-            <span class="live-ticker-player-name">${escapeHtml(withdrawnPlayer.displayName)}</span>
-            <small class="live-ticker-player-elo">${Number.isFinite(Number(withdrawnPlayer.elo)) ? `${Math.round(Number(withdrawnPlayer.elo))} Elo` : 'Elo –'}</small>
+            <span class="match-detail-player-name">${escapeHtml(withdrawnPlayer.displayName)}</span>
+            <small class="match-detail-player-elo">${Number.isFinite(Number(withdrawnPlayer.elo)) ? `${Math.round(Number(withdrawnPlayer.elo))} Elo` : 'Elo –'}</small>
           </button>
         </div>
         <div class="live-overview-prematch-fact live-overview-prematch-forecast">
@@ -477,7 +475,7 @@
           <span class="live-overview-prematch-label">Spiele</span>${renderPrematchLeagueHistory(withdrawnPlayer)}
         </div>
         <div class="live-overview-prematch-fact">
-          <span class="live-overview-prematch-label">Pflichtspielserie</span><span>${escapeHtml(renderPrematchStreak(withdrawnPlayer))}</span>
+          <span class="live-overview-prematch-label">Längste Siegesserie</span><span>${escapeHtml(renderPrematchStreak(withdrawnPlayer))}</span>
         </div>
       </article>
     </section>`;
@@ -486,7 +484,7 @@
   function renderFinalFourPoll() {
     if (state.pollLoading) {
       return `<section class="live-overview-section live-overview-poll-section">
-        <div class="live-overview-heading spieltag-label">Wer gewinnt das Final Four?</div>
+        <div class="widget-label">Wer gewinnt das Final Four?</div>
         <div class="live-overview-poll-status">Umfrage wird geladen …</div>
       </section>`;
     }
@@ -515,7 +513,7 @@
 
     return `<section class="live-overview-section live-overview-poll-section">
       <div class="live-overview-poll-heading">
-        <div class="live-overview-heading spieltag-label">Wer gewinnt das Final Four?</div>
+        <div class="widget-label">Wer gewinnt das Final Four?</div>
         ${poll.closed ? '<span class="sh-meta">Abstimmung beendet</span>' : ''}
       </div>
       <div class="live-overview-poll-swap${showSelection ? ' is-selection' : ' is-result'}">
@@ -599,7 +597,7 @@
   }
 
   function renderOverview() {
-    const target = document.getElementById('live-ticker-content');
+    const target = document.getElementById('detail-view-body');
     const connection = document.getElementById('live-ticker-connection');
     if (!target) return;
     const payloads = state.overviewPayloads;
@@ -617,7 +615,7 @@
     target.innerHTML = `<div class="live-overview">
       ${renderOverviewPodium(payloads, stats)}
       <section class="live-overview-section">
-        <div class="live-overview-heading spieltag-label">Partien</div>
+        <div class="widget-label">Partien</div>
         <div class="live-overview-matches">
           ${payloads.map((payload, index) => {
             const matchState = getOverviewMatchState(payload);
@@ -640,7 +638,7 @@
         </div>
       </section>
       <section class="live-overview-section">
-        <div class="live-overview-heading spieltag-label">Tabelle</div>
+        <div class="widget-label">Rangliste</div>
         <div class="ranking-wrap live-overview-ranking-wrap">
           <table class="rt calculator-ranking-table final-four-calculator-ranking-table live-overview-table">
             <thead><tr>
@@ -659,7 +657,7 @@
             }).join('')}</tbody>
           </table>
         </div>
-        <div class="sh-meta live-overview-note table-note">Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ausgangsplatzierung<br>Stand nach abgeschlossenen Partien${replacementPlayer ? `<span class="ranking-absence-note">*${escapeHtml(replacementPlayer.displayName)} ist für ${escapeHtml(replacementPlayer.replacesDisplayName)} nachgerückt.</span>` : ''}</div>
+        <div class="sh-meta live-overview-note table-note">Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ligaplatzierung<br>Stand nach abgeschlossenen Partien${replacementPlayer ? `<span class="ranking-absence-note">*${escapeHtml(replacementPlayer.displayName)} ist für ${escapeHtml(replacementPlayer.replacesDisplayName)} nachgerückt.</span>` : ''}</div>
       </section>
       ${renderFinalFourPoll()}
       ${renderPrematchFacts()}
@@ -673,8 +671,8 @@
   }
 
   function renderPublic() {
-    const target = document.getElementById('live-ticker-content');
-    const switcher = document.getElementById('live-match-switcher');
+    const target = document.getElementById('detail-view-body');
+    const switcher = document.getElementById('final-four-view-switcher');
     const connection = document.getElementById('live-ticker-connection');
     const payload = state.payload;
     disconnectPollLayoutObserver();
@@ -713,19 +711,19 @@
       : session?.status === 'finished' ? 'Offizielles Ergebnis'
         : pendingProbability ? 'Prozent' : 'Noch nicht begonnen';
     target.innerHTML = `
-      <article class="live-ticker-match" data-live-scoreboard>
-        <div class="live-ticker-match-meta">
-          <span class="live-ticker-status${isLive ? ' is-live' : session?.status === 'finished' ? ' is-finished' : ''}">${statusLabel}${payload.corrected ? ' · Nachträglich korrigiert' : ''}</span>
+      <article class="match-detail" data-live-scoreboard>
+        <div class="match-detail-meta">
+          <span class="match-detail-status${isLive ? ' is-live' : session?.status === 'finished' ? ' is-finished' : ''}">${statusLabel}${payload.corrected ? ' · Nachträglich korrigiert' : ''}</span>
         </div>
-        <div class="live-ticker-matchup">
+        <div class="match-detail-matchup">
           ${renderTeam(players, 1, currentServerId)}
-          <div class="live-ticker-scoreboard">
-            <span class="live-ticker-score-label">${pendingProbability ? 'Gewinnchance' : 'Spielstand'}</span>
+          <div class="match-detail-scoreboard">
+            <span class="match-detail-score-label">${pendingProbability ? 'Gewinnchance' : 'Spielstand'}</span>
             ${pendingProbability
-              ? renderProbabilityScore(pendingProbability, 'live-ticker-probability', false)
-              : `<strong class="live-ticker-score">${escapeHtml(score)}</strong>`}
+              ? renderProbabilityScore(pendingProbability, 'match-detail-probability', false)
+              : `<strong class="match-detail-score">${escapeHtml(score)}</strong>`}
             ${isLive && !isGamesMode ? `<strong class="live-ticker-points" data-live-current-points>${escapeHtml(pointLabel(session))}</strong>` : ''}
-            <span class="live-ticker-score-note">${escapeHtml(scoreNote)}</span>
+            <span class="match-detail-score-note">${escapeHtml(scoreNote)}</span>
           </div>
           ${renderTeam(players, 2, currentServerId)}
         </div>
@@ -735,7 +733,7 @@
         </div>` : ''}
       </article>
       <section class="live-ticker-history-section">
-        <div class="live-ticker-history-head spieltag-label">Spielverlauf</div>
+        <div class="widget-label">Spielverlauf</div>
         ${renderHistory(payload)}
       </section>`;
     if (connection) connection.textContent = isLive
@@ -899,7 +897,9 @@
     state.activeMatch = data?.activeMatch || null;
     state.historyMatchIds = new Set(data?.historyMatchIds || []);
     const liveButton = document.getElementById('live-ticker-link');
-    if (liveButton) liveButton.hidden = !triggersGlobalLiveButton(state.activeMatch);
+    const showGlobalLiveAction = triggersGlobalLiveButton(state.activeMatch);
+    if (liveButton) liveButton.hidden = !showGlobalLiveAction;
+    window.PadelGlobalActions?.setLiveActive(showGlobalLiveAction);
     window.dispatchEvent(new CustomEvent('padel:live-status-changed', {
       detail: { activeMatch: state.activeMatch, historyMatchIds: [...state.historyMatchIds] }
     }));
@@ -1192,7 +1192,7 @@
       ${renderWriterControls(task)}
       ${task.result ? `<button class="text-link" type="button" data-live-open-match="${escapeHtml(task.matchId)}">Spielverlauf öffnen</button>` : ''}
     </article>`).join('');
-    target.innerHTML = `${state.accountMessage ? `<div class="auth-message">${escapeHtml(state.accountMessage)}</div>` : ''}${requestHtml}${matchHtml}`;
+    target.innerHTML = `${requestHtml}${matchHtml}${state.accountMessage ? `<div class="auth-message">${escapeHtml(state.accountMessage)}</div>` : ''}`;
   }
 
   async function refreshAccount() {
@@ -1270,7 +1270,7 @@
 
   function bindEvents() {
     document.addEventListener('error', event => {
-      const image = event.target.closest?.('[data-live-player-image]');
+      const image = event.target.closest?.('[data-detail-player-image]');
       if (!image) return;
       image.hidden = true;
       image.nextElementSibling?.removeAttribute('hidden');
