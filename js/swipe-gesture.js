@@ -1,10 +1,10 @@
 /* Horizontale Wischgeste mit bewusst strengen Schwellen, damit vertikales Scrollen nichts auslöst. */
 (function () {
   'use strict';
-  const MIN_DISTANCE = 80;
-  const MIN_WIDTH_SHARE = 0.25;
-  const MAX_DURATION = 700;
-  const DIRECTION_RATIO = 2.5;
+  const MIN_DISTANCE = 50;
+  const MIN_WIDTH_SHARE = 0.15;
+  const MAX_DURATION = 1500;
+  const DIRECTION_RATIO = 2;
   const EDGE_GUARD = 24;
   const ignoredTargets = 'input, select, textarea, canvas, [contenteditable], [data-no-swipe]';
 
