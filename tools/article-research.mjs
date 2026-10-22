@@ -207,6 +207,8 @@ const table = buildTable();
 const tableById = new Map(table.map(entry => [entry.id, entry]));
 const places = Number(data.season.qualification_places) || 8;
 const hasTable = data.season.tournament_mode !== 'knockout_redraw' && table.length > 0;
+// Tabellenlage zählt erst, wenn zehn Spieler (in kleineren Ligen alle) mindestens zwei Partien haben.
+const rankingReady = entries => entries.filter(entry => entry.played >= 2).length >= Math.min(10, entries.length);
 
 // Tabellenlage allein durch diese Partie; alle anderen Partien bleiben unverändert.
 // Deutlich: 2:0 mit 12:0 Spielen, knapp: 2:1 mit ausgeglichenen Spielen.
@@ -232,7 +234,9 @@ function tableOutlook(id, match) {
   const team = match.team1.includes(id) ? 1 : 2;
 
   if (match.winner !== null) {
-    const before = buildTable(match.id).find(other => other.id === id)?.rank;
+    const tableBefore = buildTable(match.id);
+    if (!rankingReady(tableBefore)) return [];
+    const before = tableBefore.find(other => other.id === id)?.rank;
     if (!before || before === entry.rank) return [];
     const crossed = before > places && entry.rank <= places ? `, damit in den Top ${places}`
       : before <= places && entry.rank > places ? `, damit aus den Top ${places}` : '';
@@ -240,6 +244,7 @@ function tableOutlook(id, match) {
     return [`durch diese Partie von Platz ${before} auf Platz ${entry.rank}${top}${crossed}`];
   }
 
+  if (!rankingReady(table)) return [];
   const win = { clear: rankAfter(match, team, 'clearWin', id), close: rankAfter(match, team, 'closeWin', id) };
   const loss = { clear: rankAfter(match, 3 - team, 'clearWin', id), close: rankAfter(match, 3 - team, 'closeWin', id) };
   const how = (close, verb) => close ? `mit jedem ${verb}` : `nur mit deutlichem ${verb}`;

@@ -116,6 +116,70 @@ test('all-time ranking excludes Final Four, Cup and open matches from every valu
   });
 });
 
+test('all-time ranking scopes weight Final Four and training sets as half matches', () => {
+  const source = app.match(
+    /function countsForRanking\(match\) \{[\s\S]*?(?=\nfunction isCancelledMatch)/
+  )?.[0];
+  const stageSource = app.match(/function getMatchStage\(match\) \{[\s\S]*?(?=\nfunction isCupSeason)/)?.[0];
+  const scopeSource = app.match(
+    /const ALL_TIME_RANKING_SCOPES = [\s\S]*?(?=\nfunction formatAllTimeRankingValue)/
+  )?.[0];
+  [source, stageSource, scopeSource].forEach(item => assert.ok(item, 'all-time scope helpers should be present'));
+  const team1 = { playerIds: ['a', 'b'] };
+  const team2 = { playerIds: ['c', 'd'] };
+  const context = {
+    allTimeStatisticsData: {
+      rankingPlayers: [{ id: 'a' }, { id: 'e' }],
+      players: [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }],
+      trainingPlayers: [{ id: 'a' }, { id: 'f' }],
+      matches: [
+        { id: 'league', stage: 'league', countsForRanking: true, countsForElo: true, sieger: 1, saetze: '2:1', ergebnis: '6:2, 3:6 - 10:8', team1, team2 },
+        { id: 'final-four', stage: 'final-four', countsForRanking: false, countsForElo: true, sieger: 1, saetze: '1:0', ergebnis: '6:4', team1, team2 },
+        { id: 'cup', stage: 'quarterfinal', countsForRanking: false, countsForElo: true, sieger: 2, saetze: '0:2', ergebnis: '2:6, 3:6', team1, team2 },
+        { id: 'unrated', stage: 'league', countsForRanking: false, countsForElo: false, sieger: 1, saetze: '2:0', ergebnis: '6:0, 6:0', team1, team2 }
+      ],
+      trainingRounds: [{
+        team1: { playerIds: ['a'] },
+        team2: { playerIds: ['f'] },
+        matchWeight: 0.5,
+        team1Wins: 0.5,
+        team2Wins: 0,
+        team1Points: 1.5,
+        team2Points: 0,
+        team1Games: 6,
+        team2Games: 3
+      }]
+    },
+    result: null
+  };
+  vm.createContext(context);
+  vm.runInContext(`${source}\n${stageSource}\n${scopeSource}
+    const summarize = scope => Object.fromEntries(getAllTimeScopedRankingPlayers(scope).map(player => [player.id, player.stats]));
+    result = { official: summarize('official'), training: summarize('training') };`, context);
+  const result = JSON.parse(JSON.stringify(context.result));
+
+  assert.deepEqual(result.official.a, {
+    partien: 2.5,
+    siege: 1.5,
+    punkte: 3.5,
+    spielDiff: -4,
+    gewonneneSpiele: 20,
+    spieleGV: '20:24'
+  });
+  assert.equal(result.official.e.partien, 0);
+  assert.equal(result.official.f, undefined);
+  assert.deepEqual(result.training.a, {
+    partien: 3,
+    siege: 2,
+    punkte: 5,
+    spielDiff: -1,
+    gewonneneSpiele: 26,
+    spieleGV: '26:27'
+  });
+  assert.equal(result.training.f.partien, 0.5);
+  assert.match(html, /class="active" data-all-time-ranking-scope="league"[^>]*>Ligaphase<\/button>/);
+});
+
 test('all-time set dominance compares players per regular set', () => {
   const player = { name: 'Spieler A' };
   const matches = [

@@ -13,6 +13,8 @@ const rankChangesMigration = fs.readFileSync(path.join(root, 'supabase/migration
 const analysisEloRangesMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261014140000_match_statistics_analysis_elo_ranges.sql'), 'utf8');
 const favoriteThresholdMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261014150000_match_statistics_favorite_threshold.sql'), 'utf8');
 const playedOrderMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261014235000_match_statistics_played_order.sql'), 'utf8');
+const previewWindowMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261021150000_test_season_preview_window.sql'), 'utf8');
+const rankingThresholdMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261022170000_match_statistics_ranking_threshold.sql'), 'utf8');
 const migrations = fs.readdirSync(path.join(root, 'supabase/migrations')).sort().filter(f => f < '20261013100000');
 test('result impact migration uses inclusive 45 and 55 percent boundaries',()=>{
   assert.match(favoriteThresholdMigration,/value\s*<=\s*0\.45\b/);
@@ -45,10 +47,7 @@ async function addMatch(db,id,{ season='season', at=null,winner=null,stage='leag
   await db.query('insert into matches(id,season_id,match_at,winner,actual_sets,result_details,competition_stage,matchday,counts_for_elo,counts_for_ranking) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',[id,season,at,winner,winner===1?'2:0':winner===2?'0:2':null,winner===1?'6:2, 6:2':winner===2?'2:6, 2:6':null,stage,day,elo,ranking]);
   await db.query("insert into match_players select $1,id,case when id in ('a','b') then 1 else 2 end,case when id in ('a','c') then 1 else 2 end from players where id in ('a','b','c','d')",[id]);
 }
-test('match detail SQL: historical isolation, eligibility, calculations and public permissions', { skip: !process.env.PGLITE_MODULE }, async t => {
-  const { PGlite } = require(process.env.PGLITE_MODULE);
-  const db = new PGlite();
-  t.after(() => db.close());
+async function setupMatchDetail(db) {
   await db.exec(schema);
   for (const name of ['training_regular_set_state','training_tiebreak_state','profile_regular_game_totals','profile_training_metrics']) await db.exec(existingFunction(name));
   // Profile wrapper's existing dependency is stubbed only for its JSON decoration test.
@@ -63,6 +62,12 @@ test('match detail SQL: historical isolation, eligibility, calculations and publ
   await db.exec(analysisEloRangesMigration);
   await db.exec(favoriteThresholdMigration);
   await db.exec(playedOrderMigration);
+}
+test('match detail SQL: historical isolation, eligibility, calculations and public permissions', { skip: !process.env.PGLITE_MODULE }, async t => {
+  const { PGlite } = require(process.env.PGLITE_MODULE);
+  const db = new PGlite();
+  t.after(() => db.close());
+  await setupMatchDetail(db);
   await db.exec(`insert into players values ('a','Anna','One',800),('b','Ben','One',800),('c','Chris','Two',800),('d','Dana','Two',800),('e','Emil','Three',800),('f','Frida','Three',800);
     insert into seasons(id,label) values('season','Saison');
     insert into season_players select 'season',id,'main',1100 from players;
@@ -158,4 +163,34 @@ test('match detail SQL: historical isolation, eligibility, calculations and publ
   t.diagnostic(`Local SQL, average of 5 warm reads: ${Math.round((performance.now()-started)/5)} ms`);
   await db.exec("set role anon"); assert.equal((await detail('played')).availability,'analysis');
   await assert.rejects(db.query("select private.match_detail_elo('a','season',now(),'x',false)"),/permission denied/);
+});
+test('ranking impacts wait until ten league players have played twice', { skip: !process.env.PGLITE_MODULE }, async t => {
+  const { PGlite } = require(process.env.PGLITE_MODULE);
+  const db = new PGlite();
+  t.after(() => db.close());
+  await setupMatchDetail(db);
+  await db.exec(previewWindowMigration);
+  await db.exec(rankingThresholdMigration);
+  await db.exec(`insert into players select 'p'||lpad(i::text,2,'0'),'Spieler '||lpad(i::text,2,'0'),null,800 from generate_series(1,12) i;
+    insert into seasons(id,label,qualification_places) values('season','Saison',8);
+    insert into season_players select 'season',id,'main',1100 from players;
+    insert into season_matchdays select 'season',i,current_date+(i-1)*14,current_date+i*14-1 from generate_series(1,6) i;`);
+  const addTeams = async (id,[one,two],at=null) => {
+    await db.query("insert into matches(id,season_id,match_at,winner,actual_sets,result_details) values($1,'season',$2,$3,$4,$5)",
+      [id,at,at?1:null,at?'2:0':null,at?'6:2, 6:2':null]);
+    for (const [team,players] of [[1,one],[2,two]]) for (const [index,player] of players.entries())
+      await db.query('insert into match_players values($1,$2,$3,$4)',[id,'p'+player,team,index+1]);
+  };
+  const rankingKinds = async id => (await db.query('select public.get_public_match_detail($1) d',[id])).rows[0].d.impacts
+    .map(impact => impact.kind).filter(kind => /^(leader|qualification)/.test(kind));
+  await addTeams('next',[['01','02'],['03','04']]);
+  assert.deepEqual(await rankingKinds('next'),[],'no ranking talk before any match');
+  // Every player of p03 to p12 plays twice; after four matches only eight of them have two matches.
+  const rounds = [[['03','04'],['05','06']],[['07','08'],['09','10']],[['11','12'],['03','04']],[['05','06'],['07','08']],[['09','10'],['11','12']]];
+  for (const [index,teams] of rounds.slice(0,4).entries()) await addTeams(`m${index+1}`,teams,`2026-01-0${index+1}T12:00Z`);
+  assert.deepEqual(await rankingKinds('next'),[],'eight players with two matches are not enough');
+  assert.deepEqual(await rankingKinds('m1'),[],'early analyses skip leader and qualification changes');
+  await addTeams('m5',rounds[4],'2026-01-05T12:00Z');
+  assert.deepEqual(await rankingKinds('m5'),[],'analyses use the table before the match');
+  assert.ok((await rankingKinds('next')).includes('qualificationPossible'),'ten players with two matches unlock ranking impacts');
 });

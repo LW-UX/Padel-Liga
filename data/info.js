@@ -164,13 +164,6 @@ window.PADEL_INFO = {
         "Spiel-Differenz",
         "Anzahl gewonnener Spiele"
       ]
-    },
-    {
-      "title": "PadelTipp",
-      "paragraphs": [
-        "Deine eigene Partie kannst du nicht tippen. Nach der Wertung erhältst du dafür automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Fremdtipp auf diese Partie.",
-        "Nicht abgegebene Tipps zählen dabei nicht mit. Wurde gar kein Tipp abgegeben, gibt es keine Gutschrift."
-      ]
     }
   ]
 };

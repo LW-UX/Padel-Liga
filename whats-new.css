@@ -1,0 +1,156 @@
+/* „Was ist neu?“: Kopfzeilen-Button und Release-Notes-Dialog im Stil eines App-Updates. */
+    .whats-new-button {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      padding: 0.45rem 0.9rem 0.45rem 0.7rem;
+      white-space: nowrap;
+    }
+    .whats-new-button svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: var(--accent);
+      stroke-linejoin: round;
+      stroke-width: 1.6;
+    }
+    .whats-new-button:hover,
+    .whats-new-button:focus-visible { border-color: var(--accent); color: var(--accent); }
+    .whats-new-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .whats-new-button-dot {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      display: none;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 2px var(--bg);
+    }
+    .whats-new-button.is-unseen { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+    .whats-new-button.is-unseen .whats-new-button-dot { display: block; }
+
+    .whats-new-dialog { width: min(calc(100vw - 16px), 560px); }
+    .whats-new-card { padding: 1.75rem 1.5rem 1.5rem; }
+    .whats-new-hero {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 1.1rem;
+      padding-right: 2.5rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .whats-new-app-icon {
+      display: block;
+      width: 76px;
+      height: 76px;
+      border-radius: 18px;
+      box-shadow: 0 0 0 1px var(--border), 0 12px 32px rgba(0,0,0,0.45);
+    }
+    .whats-new-dialog h2 { font-size: 2.4rem; line-height: 0.95; margin: 0.2rem 0 0.35rem; }
+    .whats-new-dialog h2 em { color: var(--accent); font-style: normal; }
+    .whats-new-version {
+      margin: 0;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+    }
+    .whats-new-features {
+      display: grid;
+      gap: 1.15rem;
+      list-style: none;
+      margin: 1.35rem 0 0;
+      padding: 0;
+    }
+    .whats-new-feature {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr);
+      align-items: start;
+      gap: 0.9rem;
+    }
+    .whats-new-feature-icon {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+      color: var(--accent);
+    }
+    .whats-new-feature-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.7;
+    }
+    .whats-new-feature h3,
+    .whats-new-more h3 {
+      margin: 0.1rem 0 0.25rem;
+      font-family: var(--font-body);
+      font-size: 0.98rem;
+      font-weight: 700;
+    }
+    .whats-new-feature p {
+      margin: 0;
+      color: var(--dim);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    .whats-new-more {
+      margin-top: 1.35rem;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+      padding: 0.9rem 1rem;
+    }
+    .whats-new-more h3 { margin-top: 0; margin-bottom: 0.55rem; }
+    .whats-new-more ul {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.4rem 1rem;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      color: var(--dim);
+      font-size: 0.86rem;
+    }
+    .whats-new-more li { position: relative; padding-left: 1rem; }
+    .whats-new-more li::before {
+      content: '';
+      position: absolute;
+      top: 0.5em;
+      left: 0;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .whats-new-confirm { width: 100%; min-height: 44px; margin-top: 1.35rem; font-size: 0.95rem; }
+
+    @media (max-width: 768px) {
+      .global-actions .whats-new-button.global-action { gap: 9px; min-height: 44px; padding: 0.65rem 1rem; }
+      .global-actions .whats-new-button svg { width: 20px; height: 20px; }
+      .whats-new-card { padding: 1.4rem 1.1rem 1.1rem; }
+      .whats-new-hero { gap: 0.9rem; }
+      .whats-new-app-icon { width: 64px; height: 64px; border-radius: 15px; }
+      .whats-new-dialog h2 { font-size: 2.05rem; }
+    }
+    @media (max-width: 420px) {
+      .whats-new-more ul { grid-template-columns: 1fr; }
+    }

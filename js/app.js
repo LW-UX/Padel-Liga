@@ -9,6 +9,7 @@ let matchSortMode = 'matchday';
 let rankingSortMode = 'points';
 let rankingViewMode = 'compact';
 let allTimeRankingViewMode = 'compact';
+let allTimeRankingScope = 'league';
 let calculatorResults = new Map();
 let finalFourCalculatorResults = new Map();
 let activeCalculatorMatchId = null;
@@ -20,6 +21,7 @@ let seasonRefreshRequested = false;
 let playerProfileChart = null;
 let playerProfileData = null;
 let playerProfileExpanded = false;
+let playerProfileMatchScope = 'past';
 let playerProfileRequestId = 0;
 let playerProfileSeasonPayloadCache = new Map();
 const PLAYER_PROFILE_CACHE_TTL = 30000;
@@ -749,12 +751,30 @@ function hydrateAllTimeStatisticsData(rawData) {
   const rankingPlayers = Array.isArray(rawData.rankingPlayers)
     ? rawData.rankingPlayers.map(entry => hydratePlayer(entry))
     : [];
+  const trainingPlayers = Array.isArray(rawData.trainingPlayers)
+    ? rawData.trainingPlayers.map(entry => hydratePlayer(entry))
+    : [];
+  // Trainingsabschnitte kommen bereits gewichtet; Gäste sind serverseitig entfernt.
+  const trainingRounds = (rawData.trainingRounds || []).map(round => ({
+    ...round,
+    team1: { playerIds: round.team1?.playerIds || [] },
+    team2: { playerIds: round.team2?.playerIds || [] },
+    matchWeight: Number(round.matchWeight) || 0,
+    team1Wins: Number(round.team1Wins) || 0,
+    team2Wins: Number(round.team2Wins) || 0,
+    team1Points: Number(round.team1Points) || 0,
+    team2Points: Number(round.team2Points) || 0,
+    team1Games: Number(round.team1Games) || 0,
+    team2Games: Number(round.team2Games) || 0
+  }));
 
   return {
     id: 'all-time',
     label: 'All-Time',
     players,
     rankingPlayers,
+    trainingPlayers,
+    trainingRounds,
     matches,
     completedAt: null,
     eloFinalDate: null
@@ -950,6 +970,7 @@ function resetSeasonState() {
   rankingSortMode = 'points';
   rankingViewMode = 'compact';
   allTimeRankingViewMode = 'compact';
+  allTimeRankingScope = 'league';
   calculatorResults = new Map();
   finalFourCalculatorResults = new Map();
   activeCalculatorMatchId = null;
@@ -2176,6 +2197,19 @@ function getVisiblePlayerProfileMatchGroups(matches) {
 }
 
 function renderPlayerProfileHistory() {
+  document.querySelectorAll('[data-player-profile-match-scope]').forEach(button => {
+    const active = button.dataset.playerProfileMatchScope === playerProfileMatchScope;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  if (playerProfileMatchScope === 'upcoming') {
+    void renderPlayerProfileUpcomingMatches();
+    return;
+  }
+  renderPlayerProfilePastMatches();
+}
+
+function renderPlayerProfilePastMatches() {
   const target = document.getElementById('player-profile-match-list');
   const showAll = document.getElementById('player-profile-show-all');
   if (!target || !showAll) return;
@@ -2230,11 +2264,99 @@ function renderPlayerProfileHistory() {
   showAll.textContent = 'Alle Partien anzeigen';
 }
 
+// Kommende Partien umfassen offene Pflichtspiele aller laufenden öffentlichen Saisons.
+async function loadPlayerProfileUpcomingSeasons() {
+  const seasons = getSeasonOptions().filter(season => !season.completedAt);
+  const loaded = await Promise.all(seasons.map(async season => {
+    try {
+      const payload = await getPlayerProfileSeasonPayload(season.id);
+      if (!payload) return null;
+      const data = payload === PADEL_DATA ? PADEL_DATA : hydrateSeasonData(payload);
+      return { ...data, label: data.label || season.label };
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  }));
+  return loaded.filter(Boolean);
+}
+
+function getPlayerProfileUpcomingSortKey(match, season) {
+  if (hasScheduledDateTime(match)) {
+    return `0|${toDateKey(match.datum)}|${String(getMatchTimeMinutes(match)).padStart(4, '0')}`;
+  }
+  const matchday = (season.matchdays || []).find(item => item.spieltag === match.spieltag);
+  return matchday?.startDate
+    ? `1|${matchday.startDate}`
+    : `2|${season.startDate || ''}|${String(match.spieltag ?? 999).padStart(3, '0')}`;
+}
+
+function getPlayerProfileUpcomingMatches(playerId, seasons) {
+  return seasons.flatMap(season => (season.allMatches || season.matches || [])
+    .filter(match => !isCancelledMatch(match) && match.sieger === null)
+    .map(match => ({ match, season, team: getPlayerProfileSeasonMatchTeam(match, playerId) }))
+    .filter(entry => entry.team))
+    .map(entry => ({ ...entry, sortKey: getPlayerProfileUpcomingSortKey(entry.match, entry.season) }))
+    .sort((left, right) => left.sortKey.localeCompare(right.sortKey)
+      || compareMatchesByNumber(left.match, right.match));
+}
+
+function formatPlayerProfileUpcomingDate(match, season) {
+  if (hasScheduledDateTime(match)) return formatProfileDate(match.datum);
+  const matchday = (season.matchdays || []).find(item => item.spieltag === match.spieltag);
+  return matchday?.title || (match.spieltag ? `Spieltag ${match.spieltag}` : '');
+}
+
+function renderPlayerProfileUpcomingMatch({ match, season, team }, playerId) {
+  const ownTeam = team === 1 ? match.team1 : match.team2;
+  const opponentTeam = team === 1 ? match.team2 : match.team1;
+  const partnerNames = ownTeam.spieler.filter((_, index) => ownTeam.playerIds[index] !== playerId);
+  const probability = getMatchWinProbabilityFromElos(match, getLatestPlayerEloValue, {
+    players: season.allPlayers || season.players || []
+  });
+  const ownProbability = probability ? probability[`team${team}`] : null;
+  const probabilityContent = ownProbability === null
+    ? '—'
+    : `<span class="player-profile-result">${ownProbability} % <span class="player-profile-win-chance-label">Siegchance</span></span>`;
+  const statistics = window.PadelMatchStatistics?.entry(match, season);
+  return `<article class="player-profile-match upcoming">
+    <div class="player-profile-match-date">${escapeHtml(formatPlayerProfileUpcomingDate(match, season))}</div>
+    <div class="player-profile-match-outcome unfinished" aria-label="Noch nicht gespielt">–</div>
+    <div class="player-profile-match-teams">
+      <div class="player-profile-match-team-line"><span>mit</span> ${renderPlayerProfileNames(partnerNames, 'ohne Partner')}</div>
+      <div class="player-profile-match-team-line"><span>vs.</span> ${renderPlayerProfileNames(opponentTeam.spieler)}</div>
+    </div>
+    ${statistics
+      ? `<button type="button" class="player-profile-match-score" ${statistics.attributes}>${probabilityContent}</button>`
+      : `<div class="player-profile-match-score">${probabilityContent}</div>`}
+    <div class="player-profile-match-season">${escapeHtml(season.label || '')}</div>
+  </article>`;
+}
+
+async function renderPlayerProfileUpcomingMatches() {
+  const target = document.getElementById('player-profile-match-list');
+  const showAll = document.getElementById('player-profile-show-all');
+  if (!target || !showAll) return;
+  const profile = playerProfileData;
+  const playerId = profile?.identity?.id;
+  showAll.hidden = true;
+  if (!target.querySelector('.player-profile-match.upcoming')) {
+    target.innerHTML = '<div class="empty-state">Kommende Partien werden geladen …</div>';
+  }
+  const seasons = await loadPlayerProfileUpcomingSeasons();
+  if (playerProfileData !== profile || playerProfileMatchScope !== 'upcoming') return;
+  const matches = getPlayerProfileUpcomingMatches(playerId, seasons);
+  target.innerHTML = matches.length
+    ? matches.map(entry => `<section class="player-profile-match-group">${renderPlayerProfileUpcomingMatch(entry, playerId)}</section>`).join('')
+    : '<div class="empty-state">Keine kommenden Partien.</div>';
+}
+
 function renderPlayerProfile(profile) {
   const identity = profile.identity || {};
   const knownPlayer = (window.PADEL_PLAYERS || []).find(player => player.id === identity.id);
   playerProfileData = profile;
   playerProfileExpanded = false;
+  playerProfileMatchScope = 'past';
   document.getElementById('player-profile-name').textContent = identity.displayName || 'Spielerprofil';
   const profileCompany = identity.company || 'Padel-Liga';
   const profileCompanyElement = document.getElementById('player-profile-company');
@@ -2302,7 +2424,11 @@ async function openPlayerProfile(playerId, trigger = null, options = {}) {
 }
 
 window.PadelLigaOpenPlayerProfile = openPlayerProfile;
-window.PadelLigaCapturePlayerProfile = () => ({ data: playerProfileData, expanded: playerProfileExpanded });
+window.PadelLigaCapturePlayerProfile = () => ({
+  data: playerProfileData,
+  expanded: playerProfileExpanded,
+  matchScope: playerProfileMatchScope
+});
 window.PadelLigaRestorePlayerProfile = snapshot => {
   const profile = document.getElementById('player-profile-dialog');
   if (!snapshot?.data || !profile) return;
@@ -2310,6 +2436,7 @@ window.PadelLigaRestorePlayerProfile = snapshot => {
   if (!profile.open) profile.showModal();
   renderPlayerProfile(snapshot.data);
   playerProfileExpanded = snapshot.expanded;
+  playerProfileMatchScope = snapshot.matchScope === 'upcoming' ? 'upcoming' : 'past';
   renderPlayerProfileHistory();
 };
 window.PadelLigaClosePlayerProfile = options => closePlayerProfile(options);
@@ -2386,6 +2513,16 @@ document.addEventListener('click', event => {
     return;
   }
 
+  const playerProfileMatchScopeControl = event.target.closest('[data-player-profile-match-scope]');
+  if (playerProfileMatchScopeControl) {
+    const scope = playerProfileMatchScopeControl.dataset.playerProfileMatchScope;
+    if (scope !== playerProfileMatchScope) {
+      playerProfileMatchScope = scope;
+      renderPlayerProfileHistory();
+    }
+    return;
+  }
+
   const appHintDismissControl = event.target.closest('[data-dismiss-app-hint]');
   if (appHintDismissControl) {
     dismissAppHint();
@@ -2443,6 +2580,12 @@ document.addEventListener('click', event => {
   const rankingViewControl = event.target.closest('[data-ranking-view]');
   if (rankingViewControl) {
     setRankingView(rankingViewControl.dataset.rankingView);
+    return;
+  }
+
+  const allTimeRankingScopeControl = event.target.closest('[data-all-time-ranking-scope]');
+  if (allTimeRankingScopeControl) {
+    setAllTimeRankingScope(allTimeRankingScopeControl.dataset.allTimeRankingScope);
     return;
   }
 
@@ -2756,6 +2899,11 @@ function updateRankingViewToggle() {
 
 function setAllTimeRankingView(mode) {
   allTimeRankingViewMode = mode === 'expanded' ? 'expanded' : 'compact';
+  renderAllTimeRanking();
+}
+
+function setAllTimeRankingScope(scope) {
+  allTimeRankingScope = ALL_TIME_RANKING_SCOPES.includes(scope) ? scope : 'league';
   renderAllTimeRanking();
 }
 
@@ -3497,6 +3645,113 @@ function getAllTimeRankingPlayers(matches) {
   return (allTimeStatisticsData?.players || []).filter(player => playerNames.has(player.name));
 }
 
+const ALL_TIME_RANKING_SCOPES = ['league', 'official', 'training'];
+const ALL_TIME_RANKING_SORT_NOTE = 'Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele';
+
+function getAllTimeOfficialMatches() {
+  return (allTimeStatisticsData?.matches || []).filter(match =>
+    match.sieger !== null &&
+    match.saetze &&
+    (countsForRanking(match) || match.countsForElo === true)
+  );
+}
+
+function getRegularGameTotals(result) {
+  return String(result || '').split(',').reduce((totals, part) => {
+    const clean = part
+      .split(/[–-]/)[0]
+      .replace(/\s*\([^)]*\)/g, '')
+      .trim();
+    const score = clean.match(/^(\d+):(\d+)$/);
+    if (!score) return totals;
+    const games1 = Number(score[1]);
+    const games2 = Number(score[2]);
+    if (games1 > 7 || games2 > 7) return totals;
+    return [totals[0] + games1, totals[1] + games2];
+  }, [0, 0]);
+}
+
+// Final-Four-Sätze zählen wie im Profil als halbe Partie; ein gewonnener Satz bringt 1,5 Punkte.
+function getAllTimeMatchContribution(match) {
+  const isFinalFour = getMatchStage(match) === 'final-four';
+  const [sets1, sets2] = match.saetze.split(':').map(Number);
+  const [games1, games2] = getRegularGameTotals(match.ergebnis);
+  const matchWeight = isFinalFour ? 0.5 : 1;
+  const getPoints = (ownSets, otherSets, won) => {
+    if (isFinalFour) return won ? 1.5 : 0;
+    if (ownSets === 2 && otherSets === 0) return 3;
+    if (ownSets === 2 && otherSets === 1) return 2;
+    if (ownSets === 1 && otherSets === 2) return 1;
+    return 0;
+  };
+
+  return {
+    team1: { playerIds: match.team1.playerIds },
+    team2: { playerIds: match.team2.playerIds },
+    matchWeight,
+    team1Wins: match.sieger === 1 ? matchWeight : 0,
+    team2Wins: match.sieger === 2 ? matchWeight : 0,
+    team1Points: getPoints(sets1, sets2, match.sieger === 1),
+    team2Points: getPoints(sets2, sets1, match.sieger === 2),
+    team1Games: games1,
+    team2Games: games2
+  };
+}
+
+function getAllTimeScopedStats(contributions) {
+  const totalsByPlayer = new Map();
+  contributions.forEach(entry => {
+    [1, 2].forEach(team => {
+      const otherTeam = team === 1 ? 2 : 1;
+      (entry[`team${team}`]?.playerIds || []).forEach(playerId => {
+        const totals = totalsByPlayer.get(playerId) || { partien: 0, siege: 0, punkte: 0, myGames: 0, oppGames: 0 };
+        totals.partien += entry.matchWeight;
+        totals.siege += entry[`team${team}Wins`];
+        totals.punkte += entry[`team${team}Points`];
+        totals.myGames += entry[`team${team}Games`];
+        totals.oppGames += entry[`team${otherTeam}Games`];
+        totalsByPlayer.set(playerId, totals);
+      });
+    });
+  });
+
+  return new Map([...totalsByPlayer].map(([playerId, totals]) => [playerId, {
+    partien: totals.partien,
+    siege: totals.siege,
+    punkte: totals.punkte,
+    spielDiff: totals.myGames - totals.oppGames,
+    gewonneneSpiele: totals.myGames,
+    spieleGV: totals.partien > 0 ? `${totals.myGames}:${totals.oppGames}` : '—'
+  }]));
+}
+
+function getAllTimeScopedRankingPlayers(scope) {
+  const includeTraining = scope === 'training';
+  const contributions = getAllTimeOfficialMatches().map(getAllTimeMatchContribution);
+  if (includeTraining) contributions.push(...(allTimeStatisticsData?.trainingRounds || []));
+  const statsByPlayer = getAllTimeScopedStats(contributions);
+  const rankingPlayerIds = new Set((allTimeStatisticsData?.rankingPlayers || []).map(player => player.id));
+  const emptyStats = { partien: 0, siege: 0, punkte: 0, spielDiff: 0, gewonneneSpiele: 0, spieleGV: '—' };
+  const playersById = new Map();
+  [
+    ...(allTimeStatisticsData?.rankingPlayers || []),
+    ...(allTimeStatisticsData?.players || []),
+    ...(includeTraining ? allTimeStatisticsData?.trainingPlayers || [] : [])
+  ].forEach(player => {
+    if (!playersById.has(player.id)) playersById.set(player.id, player);
+  });
+
+  return [...playersById.values()]
+    .filter(player => rankingPlayerIds.has(player.id) || statsByPlayer.get(player.id)?.partien > 0)
+    .map(player => ({ ...player, stats: statsByPlayer.get(player.id) || emptyStats }));
+}
+
+function formatAllTimeRankingValue(value) {
+  return Number.isInteger(value)
+    ? String(value)
+    : value.toLocaleString('de-DE', { maximumFractionDigits: 1 });
+}
+
 function renderAllTimeRanking() {
   const table = document.getElementById('all-time-ranking-table');
   const tableWrap = document.getElementById('all-time-ranking-wrap');
@@ -3509,10 +3764,23 @@ function renderAllTimeRanking() {
   table.classList.toggle('expanded', allTimeRankingViewMode === 'expanded');
   table.classList.toggle('compact', allTimeRankingViewMode === 'compact');
 
+  const isLeagueScope = allTimeRankingScope === 'league';
+  document.querySelectorAll('[data-all-time-ranking-scope]').forEach(button => {
+    button.classList.toggle('active', button.dataset.allTimeRankingScope === allTimeRankingScope);
+  });
+  const note = document.getElementById('all-time-ranking-note');
+  if (note) {
+    const halfMatchNote = allTimeRankingScope === 'training'
+      ? 'Final-Four- und Trainingssätze zählen als halbe Partie, ein gewonnener Satz bringt 1,5 Punkte'
+      : 'Final-Four-Sätze zählen als halbe Partie, ein gewonnener Satz bringt 1,5 Punkte';
+    note.textContent = isLeagueScope ? ALL_TIME_RANKING_SORT_NOTE : `${halfMatchNote}  |  ${ALL_TIME_RANKING_SORT_NOTE}`;
+  }
+
   const matches = getAllTimeLeagueMatches();
-  const players = getAllTimeRankingPlayers(matches);
+  const players = isLeagueScope
+    ? getAllTimeRankingPlayers(matches).map(player => ({ ...player, stats: getPlayerStats(player, matches) }))
+    : getAllTimeScopedRankingPlayers(allTimeRankingScope);
   const rankedPlayers = players
-    .map(player => ({ ...player, stats: getPlayerStats(player, matches) }))
     .sort((left, right) =>
       right.stats.punkte - left.stats.punkte ||
       right.stats.spielDiff - left.stats.spielDiff ||
@@ -3534,9 +3802,9 @@ function renderAllTimeRanking() {
     return `<tr class="ranking-row r${Math.min(currentRank, 4)} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id || player.name)}">
       <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span></span></td>
       <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(player, 'pname', rankingPlayerLabel)}<span class="firma-badge firma-${player.firma}"><span class="firma-full">${player.firma}</span><span class="firma-short">${firmaShort[player.firma] || player.firma}</span></span></span></td>
-      <td class="col-games">${renderRankingMatchCount(player, matches)}</td>
-      <td class="col-wins">${player.stats.siege}</td>
-      <td class="col-points rank-score">${player.stats.punkte}</td>
+      <td class="col-games">${isLeagueScope ? renderRankingMatchCount(player, matches) : formatAllTimeRankingValue(player.stats.partien)}</td>
+      <td class="col-wins">${formatAllTimeRankingValue(player.stats.siege)}</td>
+      <td class="col-points rank-score">${formatAllTimeRankingValue(player.stats.punkte)}</td>
       <td class="col-gv">${player.stats.partien > 0 ? player.stats.spieleGV : '—'}</td>
       <td class="col-diff"><span class="${player.stats.partien > 0 ? spielDiffClass : 'neu'}">${spielDiffStr}</span></td>
       <td class="col-elo">${getLatestPlayerElo(player)}</td>
@@ -4479,9 +4747,9 @@ function renderFinalFourForecast() {
   if (!target) return;
 
   const qualificationPlaces = getCompetitionConfig().qualificationPlaces || 4;
-  const forecast = getFinalFourForecast().slice(0, qualificationPlaces);
+  const forecast = getFinalFourForecast().slice(0, 4);
   const label = document.getElementById('stats-qualification-forecast-label');
-  if (label) label.textContent = qualificationPlaces > 4 ? `Top-${qualificationPlaces}-Prognose` : 'Final-Four-Prognose';
+  if (label) label.textContent = qualificationPlaces > 4 ? 'Top-4-Prognose' : 'Final-Four-Prognose';
   const openMatches = PADEL_DATA.matches
     .filter(countsForRanking)
     .filter(match => match.sieger === null).length;

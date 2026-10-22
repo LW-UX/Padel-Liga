@@ -3,7 +3,11 @@
   "configurations": [
     {
       "name": "padel-liga",
-      "url": "http://localhost:8765",
+      "runtimeExecutable": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node",
+      "runtimeArgs": [
+        "-e",
+        "const h=require('http'),f=require('fs'),p=require('path');const r='/Users/ludwigwagner/Documents/GitHub/Padel-Liga';const t={'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css','.json':'application/json','.webmanifest':'application/manifest+json','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.ico':'image/x-icon','.woff2':'font/woff2'};h.createServer((q,s)=>{let u=decodeURIComponent(q.url.split('?')[0]);let fp=p.join(r,u);if(!fp.startsWith(r)){s.writeHead(403);return s.end();}if(u.endsWith('/'))fp=p.join(fp,'index.html');f.readFile(fp,(e,b)=>{if(e){s.writeHead(404);return s.end('not found');}s.writeHead(200,{'content-type':t[p.extname(fp)]||'application/octet-stream'});s.end(b);});}).listen(Number(process.env.PORT)||8765,'127.0.0.1');"
+      ],
       "port": 8765
     }
   ]
