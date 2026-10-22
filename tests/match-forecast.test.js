@@ -24,7 +24,7 @@ const archivedForecastMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261020140000_preserve_archived_match_forecasts.sql'),
   'utf8'
 );
-const { renderMatchForecast } = require('../js/match-statistics.js');
+const { renderMatchForecast, isForecastConcealed, concealedForecastPercentage } = require('../js/match-statistics.js');
 const fixture = require('./fixtures/match-statistics.cjs');
 
 const forecast = patch => ({
@@ -80,6 +80,7 @@ test('guests see a dimmed aggregate with login, while closed and historical resu
   const guest = renderMatchForecast(data, forecast(), {});
   assert.match(guest, /is-guest-locked/);
   assert.match(guest, /data-auth-open>Einloggen, um zu tippen/);
+  assert.doesNotMatch(guest, /75 %|25 %/);
 
   const unconfirmed = renderMatchForecast(data, forecast(), { session: { user: { id: 'u' } } });
   assert.match(unconfirmed, /data-auth-open>E-Mail bestätigen, um zu tippen/);
@@ -94,6 +95,26 @@ test('guests see a dimmed aggregate with login, while closed and historical resu
   assert.match(analysis, /75 %/);
   assert.doesNotMatch(analysis, /data-auth-open|Tipp ändern/);
   assert.equal(renderMatchForecast(fixture('basic'), forecast(), {}), '');
+});
+
+test('open forecasts stay concealed until the own tip, the tipping deadline or an own match', () => {
+  assert.equal(isForecastConcealed(forecast()), true);
+  assert.equal(isForecastConcealed(forecast(), { hasOwnPrediction: true }), false);
+  assert.equal(isForecastConcealed(forecast(), { isOwnMatch: true }), false);
+  assert.equal(isForecastConcealed(forecast({ open: false })), false);
+  assert.equal(isForecastConcealed(null), false);
+
+  const value = concealedForecastPercentage('season-2026-partie-1');
+  assert.equal(concealedForecastPercentage('season-2026-partie-1'), value);
+  assert.ok(value >= 20 && value <= 80);
+
+  const guest = renderMatchForecast(fixture(), forecast(), {});
+  assert.match(guest, new RegExp(`match-forecast-team-one" style="width:${value / 2}%`));
+  assert.match(guest, new RegExp(`match-forecast-percentages"><span>${value} %</span><span>${100 - value} %</span>`));
+
+  const line = app.match(/function renderMatchForecastLine\(match\) \{[\s\S]*?(?=\n\}\n\nfunction renderMatchRow)/)?.[0] || '';
+  assert.match(line, /isForecastConcealed/);
+  assert.match(line, /hasOwnPrediction: ownPredictionMatchIds\.has\(match\.id\)/);
 });
 
 test('a player cannot tip their own match even when another viewer is selected', () => {

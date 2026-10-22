@@ -86,15 +86,29 @@
       </div>
       <div class="match-detail-team match-detail-team-2">${data.players.filter(p => p.team === 2).map(p => playerBlock(p, selectedPlayerId)).join('')}</div></div></article>`;
   }
-  function renderForecastResult(forecast, { lockedAction = '' } = {}) {
-    const totalVotes = Math.max(0, Number(forecast?.totalVotes) || 0);
-    const teamOnePercentage = totalVotes
+  // Solange eine Partie offen ist und kein eigener Tipp vorliegt, ersetzt ein je Partie fester Scheinwert die echte Verteilung.
+  function isForecastConcealed(forecast, { isOwnMatch = false, hasOwnPrediction = false } = {}) {
+    return Boolean(forecast?.open && !isOwnMatch && !hasOwnPrediction);
+  }
+  function concealedForecastPercentage(matchId) {
+    let hash = 2166136261;
+    for (const char of String(matchId || '')) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+    return 20 + ((hash >>> 0) % 61);
+  }
+  function renderForecastResult(forecast, { lockedAction = '', concealed = false } = {}) {
+    const totalVotes = concealed ? 1 : Math.max(0, Number(forecast?.totalVotes) || 0);
+    const teamOnePercentage = concealed
+      ? concealedForecastPercentage(forecast?.matchId)
+      : totalVotes
       ? Math.min(100, Math.max(0, Number(forecast?.team1Percentage) || 0))
       : 0;
     const teamTwoPercentage = totalVotes ? 100 - teamOnePercentage : 0;
     const hasBothTeamColors = teamOnePercentage > 0 && teamTwoPercentage > 0;
+    const label = concealed
+      ? 'Tipps: Verteilung erst nach eigenem Tipp sichtbar'
+      : `Tipps: Team 1 ${teamOnePercentage} Prozent, Team 2 ${teamTwoPercentage} Prozent`;
     return `<div class="match-forecast-result-wrap${lockedAction ? ' is-guest-locked' : ''}">
-      <div class="match-forecast-result" aria-label="Tipps: Team 1 ${teamOnePercentage} Prozent, Team 2 ${teamTwoPercentage} Prozent">
+      <div class="match-forecast-result" aria-label="${label}">
         <div class="match-forecast-percentages"><span>${teamOnePercentage} %</span><span>${teamTwoPercentage} %</span></div>
         <div class="match-forecast-bar${totalVotes ? ' has-votes' : ''}${hasBothTeamColors ? ' has-both-team-colors' : ''}">
           <span class="match-forecast-team-one" style="width:${teamOnePercentage / 2}%"></span>
@@ -139,7 +153,8 @@
       : renderForecastResult(forecast, {
           lockedAction: !isOwnMatch && forecast.open && !emailConfirmed
             ? session ? 'E-Mail bestätigen, um zu tippen' : 'Einloggen, um zu tippen'
-            : ''
+            : '',
+          concealed: isForecastConcealed(forecast, { isOwnMatch, hasOwnPrediction: Boolean(selectedPrediction) })
         });
     const change = !isOwnMatch && emailConfirmed && forecast.open && selectedPrediction && !showSelection
       ? '<button type="button" class="text-link match-forecast-change" data-match-forecast-change>Tipp ändern</button>'
@@ -484,7 +499,7 @@
       <div class="loading-skeleton match-statistics-skeleton-history"></div><div class="match-statistics-players">${card.repeat(4)}</div>
       <div class="loading-skeleton match-statistics-skeleton-graph"></div><div class="loading-skeleton match-statistics-skeleton-history"></div></div>`;
   }
-  const api = { availability, entry, icon, render, renderMatchForecast, renderForecastResult, skeleton, graphGeometry, analysisResultY, headerMeta, playedOrderLabel };
+  const api = { availability, entry, icon, render, renderMatchForecast, renderForecastResult, isForecastConcealed, concealedForecastPercentage, skeleton, graphGeometry, analysisResultY, headerMeta, playedOrderLabel };
   if (typeof module !== 'undefined') module.exports = api;
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
   let request = 0, active = null, returnState = null, profileOnTop = false, currentRoute = null, routeNumber = 0;

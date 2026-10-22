@@ -13,6 +13,8 @@ let calculatorResults = new Map();
 let finalFourCalculatorResults = new Map();
 let activeCalculatorMatchId = null;
 let calculatorAutoTip = false;
+let ownPredictionMatchIds = new Set();
+let ownPredictionRequest = 0;
 let activeSeasonRefreshPromise = null;
 let seasonRefreshRequested = false;
 let playerProfileChart = null;
@@ -815,6 +817,24 @@ function applyMatchForecasts(forecastSummaries = []) {
   });
 }
 
+// Eigene Tipps entscheiden nur, ob die Partienübersicht die echte Verteilung statt des Scheinbalkens zeigt.
+async function loadOwnPredictionMatchIds() {
+  const requestId = ++ownPredictionRequest;
+  const client = window.PadelKonto?.getClient?.() || getSupabaseClient();
+  const userId = window.PadelKonto?.getSession?.()?.user?.id || null;
+  if (!client || !userId) {
+    ownPredictionMatchIds = new Set();
+    return;
+  }
+  const { data, error } = await client.from('predictions').select('match_id');
+  if (requestId !== ownPredictionRequest) return;
+  if (error) {
+    console.warn('Eigene Tipps konnten nicht geladen werden:', error);
+    return;
+  }
+  ownPredictionMatchIds = new Set((data || []).map(row => row.match_id));
+}
+
 async function loadActiveSeasonForecasts() {
   if (!selectedSeason?.id || !PADEL_DATA?.matches) return;
   const requestedSeasonId = selectedSeason.id;
@@ -1277,10 +1297,17 @@ window.addEventListener('padel:live-status-changed', () => {
   renderActiveSection();
   if (playerProfileData) renderPlayerProfileHistory();
 });
+window.addEventListener('padel:auth-state-changed', async () => {
+  await loadOwnPredictionMatchIds();
+  if (!PADEL_DATA?.matches) return;
+  invalidateSections(['start', 'partien']);
+  renderActiveSection();
+});
 window.addEventListener('padel:match-forecast-changed', event => {
   const forecast = event.detail?.forecast;
   const match = forecast?.matchId && PADEL_DATA?.matches?.find(item => item.id === forecast.matchId);
   if (!match) return;
+  if (forecast.userPrediction) ownPredictionMatchIds.add(match.id);
   match.forecast = forecast;
   invalidateSections(['partien']);
   renderActiveSection();
@@ -4766,15 +4793,30 @@ function renderInfos() {
 }
 
 // ── MATCHES ───────────────────────────────────────────────────────
+function isAuthenticatedPlayerMatch(match) {
+  const playerId = window.PadelKonto?.getProfile?.()?.player_id || null;
+  const playerName = playerId && PADEL_DATA?.players.find(player => player.id === playerId)?.name;
+  return Boolean(playerName && [...match.team1.spieler, ...match.team2.spieler].includes(playerName));
+}
+
 function renderMatchForecastLine(match) {
   const forecast = match?.forecast;
-  const totalVotes = Math.max(0, Number(forecast?.totalVotes) || 0);
-  const teamOnePercentage = totalVotes
+  const statistics = window.PadelMatchStatistics;
+  const concealed = Boolean(statistics?.isForecastConcealed?.(forecast, {
+    isOwnMatch: isAuthenticatedPlayerMatch(match),
+    hasOwnPrediction: ownPredictionMatchIds.has(match.id)
+  }));
+  const totalVotes = concealed ? 1 : Math.max(0, Number(forecast?.totalVotes) || 0);
+  const teamOnePercentage = concealed
+    ? statistics.concealedForecastPercentage(match.id)
+    : totalVotes
     ? Math.min(100, Math.max(0, Number(forecast?.team1Percentage) || 0))
     : 0;
   const teamTwoPercentage = totalVotes ? 100 - teamOnePercentage : 0;
   const hasBothTeamColors = teamOnePercentage > 0 && teamTwoPercentage > 0;
-  const label = totalVotes
+  const label = concealed
+    ? 'Abstimmung: Verteilung erst nach eigenem Tipp sichtbar'
+    : totalVotes
     ? `Abstimmung: Team 1 ${teamOnePercentage} Prozent, Team 2 ${teamTwoPercentage} Prozent`
     : 'Abstimmung: noch keine Stimme';
   return `<span class="mc-forecast-line${totalVotes ? ' has-votes' : ''}${hasBothTeamColors ? ' has-both-team-colors' : ''}" role="img" aria-label="${label}">
