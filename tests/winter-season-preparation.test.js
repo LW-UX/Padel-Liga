@@ -19,19 +19,19 @@ test('Sommer 2026 remains the repository default while Winter is selectable', ()
   assert.equal(PADEL_SEASONS.find(season => season.default)?.id, '2026-sommer');
   assert.equal(PADEL_SEASON.id, '2026-winter');
   assert.equal(PADEL_SEASON.label, 'Winter 2026');
-  assert.equal(PADEL_SEASON.startDate, '2026-10-01');
+  assert.equal(PADEL_SEASON.startDate, '2026-11-02');
   assert.deepEqual(
     JSON.parse(JSON.stringify(PADEL_SEASON.competition)),
     {
       tournamentMode: 'top8-semifinals',
       qualificationPlaces: 8,
       homeRankingLimit: 4,
-      regularScheduleLocked: false,
-      predictionsEnabled: false
+      regularScheduleLocked: true,
+      predictionsEnabled: true
     }
   );
-  assert.equal(PADEL_SEASON.matches.length, 5);
-  assert.equal(PADEL_SEASON.matchdays.length, 0);
+  assert.equal(PADEL_SEASON.matches.length, 35);
+  assert.equal(PADEL_SEASON.matchdays.length, 8);
 });
 
 test('Winter contains two semifinals and the three rotating Final Four sets', () => {
@@ -72,6 +72,43 @@ test('Winter 2026 fallback matches the confirmed roster migration', () => {
 
   assert.equal(PADEL_SEASON.participants.length, 20);
   assert.deepEqual(JSON.parse(JSON.stringify(PADEL_SEASON.participants)), migrationParticipants);
+});
+
+test('Winter 2026 fallback schedule matches the regular schedule migration', () => {
+  const { PADEL_SEASON } = loadWindowScript('data/data-2026-winter.js');
+  const migration = fs.readFileSync(
+    path.join(repositoryRoot, 'supabase/migrations/20261022120000_winter_2026_regular_schedule.sql'),
+    'utf8'
+  );
+  const migrationTeams = new Map();
+  for (const [, matchId, playerId, team, position] of migration.matchAll(/\('(winter-2026-partie-\d+)', '([a-z_]+)', ([12]), ([12])\)/g)) {
+    if (!migrationTeams.has(matchId)) migrationTeams.set(matchId, { 1: [], 2: [] });
+    migrationTeams.get(matchId)[team][Number(position) - 1] = playerId;
+  }
+  const migrationMatchdays = Object.fromEntries(
+    [...migration.matchAll(/\('(winter-2026-partie-\d+)', (\d), '/g)].map(([, matchId, matchday]) => [matchId, Number(matchday)])
+  );
+  const leagueMatches = PADEL_SEASON.matches.filter(match => match.stage === 'league');
+  const participantIds = new Set(PADEL_SEASON.participants.map(participant => participant.playerId));
+  const matchCounts = new Map();
+
+  assert.equal(leagueMatches.length, 30);
+  assert.equal(migrationTeams.size, 30);
+  for (const match of leagueMatches) {
+    assert.deepEqual([...match.team1.playerIds], migrationTeams.get(match.id)[1]);
+    assert.deepEqual([...match.team2.playerIds], migrationTeams.get(match.id)[2]);
+    assert.equal(match.matchday, migrationMatchdays[match.id]);
+    for (const playerId of [...match.team1.playerIds, ...match.team2.playerIds]) {
+      assert.ok(participantIds.has(playerId));
+      matchCounts.set(playerId, (matchCounts.get(playerId) || 0) + 1);
+    }
+  }
+  assert.equal(matchCounts.size, 20);
+  assert.ok([...matchCounts.values()].every(count => count === 6));
+  assert.deepEqual(
+    [...PADEL_SEASON.matches.filter(match => match.stage !== 'league').map(match => match.matchday)],
+    [7, 7, 8, 8, 8]
+  );
 });
 
 test('the cleanup removes Winter participants and the automation keeps Sommer active', () => {
