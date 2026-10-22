@@ -25,11 +25,11 @@ const achievementMigration = fs.readFileSync(
   'utf8'
 );
 
-test('Cup 2027 is selectable without replacing Sommer 2026 as default', () => {
+test('Cup 2027 is selectable without replacing Winter 2026 as default', () => {
   const { PADEL_SEASONS } = loadWindowScript('data/seasons.js');
   const cupOption = PADEL_SEASONS.find(season => season.id === '2027-cup');
 
-  assert.equal(PADEL_SEASONS.find(season => season.default)?.id, '2026-sommer');
+  assert.equal(PADEL_SEASONS.find(season => season.default)?.id, '2026-winter');
   assert.equal(
     PADEL_SEASONS.findIndex(season => season.id === '2027-cup'),
     PADEL_SEASONS.findIndex(season => season.id === '2026-winter') + 1

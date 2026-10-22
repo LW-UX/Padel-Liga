@@ -56,5 +56,6 @@ Diese Datei ist die kanonische Quelle für Saisonidentitäten, Datenquellen, Sai
 - In der Ligaphase von „Winter 2026“ hat jeder Teilnehmer 6 Partien. Partner und Gegner werden für jede Partie neu gelost; statt fester Termine gibt es Zeitfenster, in denen sich die Spieler selbst abstimmen.
 - „Winter 2026“ verwendet den Top-8-Modus mit Halbfinale (siehe [Partien, Training und Turniere](matches-and-tournaments.md)).
 - „Winter 2026“ bietet ein Tippspiel an.
+- Nach dem offiziellen Abschluss von „Sommer 2026“ ist „Winter 2026“ die Standardsaison beim Aufruf von Liga und Tippseite.
 - Der reguläre Ligaspielplan von „Winter 2026“ umfasst sechs Spieltage mit je fünf Partien. Er wurde einmalig rechnergestützt und seedbasiert unter festen Regeln ausgelost (unter anderem höchstens 150 Punkte Team-Elo-Differenz auf Basis fester Planungs-Elo-Werte, keine wiederholte Partnerschaft, mindestens elf verschiedene Gegner je Spieler) und unverändert übernommen. Der Spielplan ist gesperrt; Teams werden nicht nachträglich getauscht oder neu ausgelost.
 - Jeder Winter-Ligaspieltag ist ein zweiwöchiges Zeitfenster von Montag bis Freitag der Folgewoche. Zwischen dem dritten und vierten Spieltag liegt eine Winterpause. Halbfinale und Final Four folgen als Spieltage 7 und 8 ohne eigenes Zeitfenster.

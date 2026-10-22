@@ -12,11 +12,11 @@ function loadWindowScript(file) {
   return window;
 }
 
-test('Sommer 2026 remains the repository default while Winter is selectable', () => {
+test('Winter 2026 is the repository default season', () => {
   const { PADEL_SEASONS } = loadWindowScript('data/seasons.js');
   const { PADEL_SEASON } = loadWindowScript('data/data-2026-winter.js');
 
-  assert.equal(PADEL_SEASONS.find(season => season.default)?.id, '2026-sommer');
+  assert.equal(PADEL_SEASONS.find(season => season.default)?.id, '2026-winter');
   assert.equal(PADEL_SEASON.id, '2026-winter');
   assert.equal(PADEL_SEASON.label, 'Winter 2026');
   assert.equal(PADEL_SEASON.startDate, '2026-11-02');

@@ -7,7 +7,7 @@ window.PADEL_SEASONS = [
     qualificationPlaces: 4,
     maximumLeagueMatches: 6,
     file: "data/data-2026-sommer.js?v=2026-10-13-match-statistics",
-    default: true
+    default: false
   },
   {
     id: "2026-winter",
@@ -17,7 +17,7 @@ window.PADEL_SEASONS = [
     qualificationPlaces: 8,
     maximumLeagueMatches: 6,
     file: "data/data-2026-winter.js?v=2026-10-22-winter-break",
-    default: false
+    default: true
   },
   {
     id: "2027-cup",

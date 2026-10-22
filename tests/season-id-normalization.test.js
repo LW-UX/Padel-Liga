@@ -30,7 +30,7 @@ test('season IDs and filenames use the sortable year-type schema', () => {
   assert.equal(winter.shortLabel, 'Wi26');
   assert.equal(testSeason.shortLabel, 'Test');
   assert.match(summer.file, /^data\/data-2026-sommer\.js/);
-  assert.equal(summer.default, true);
+  assert.equal(winter.default, true);
   assert.equal(PADEL_SEASON.id, '2026-sommer');
   assert.equal(PADEL_SEASON.matchIdPrefix, 'season-2026');
   assert.match(testSeason.file, /^data\/data-2026-test\.js/);
