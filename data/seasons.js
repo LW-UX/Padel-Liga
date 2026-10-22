@@ -16,7 +16,7 @@ window.PADEL_SEASONS = [
     visualTheme: "winter",
     qualificationPlaces: 8,
     maximumLeagueMatches: 6,
-    file: "data/data-2026-winter.js?v=2026-10-22-schedule-predictions",
+    file: "data/data-2026-winter.js?v=2026-10-22-winter-break",
     default: false
   },
   {

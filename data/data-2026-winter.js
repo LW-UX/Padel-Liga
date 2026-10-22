@@ -33,6 +33,9 @@ window.PADEL_SEASON = {
     { spieltag: 7, startDate: null, endDate: null, title: "Halbfinale" },
     { spieltag: 8, startDate: null, endDate: null, title: "Final Four" }
   ],
+  matchdayBreaks: [
+    { title: "Winterpause", startDate: "2026-12-14", endDate: "2027-01-15" }
+  ],
   participants: [
     { playerId: "marco_m", startElo: 1199 },
     { playerId: "luca_w", startElo: 1090 },

@@ -794,6 +794,7 @@ async function loadSeasonData(season) {
         ...databaseSeason,
         articles: staticSeason?.articles || [],
         homeAnnouncement: staticSeason?.homeAnnouncement || null,
+        matchdayBreaks: staticSeason?.matchdayBreaks || [],
         shortInfo: databaseSeason.shortInfo?.length ? databaseSeason.shortInfo : staticSeason?.shortInfo || [],
         organizations: databaseSeason.organizations?.length ? databaseSeason.organizations : staticSeason?.organizations || []
       }
@@ -4872,6 +4873,24 @@ function renderMatchdayGroup(spieltag, matches) {
   </div>`;
 }
 
+// Pausen erscheinen nur zwischen zwei sichtbaren Spieltagen der Spieltagsansicht.
+function getMatchdayBreakBetween(previousMatchday, nextMatchday) {
+  const previousEnd = getMatchdayInfo(previousMatchday)?.endDate;
+  const nextStart = getMatchdayInfo(nextMatchday)?.startDate;
+  if (!previousEnd || !nextStart) return null;
+  return (PADEL_DATA.matchdayBreaks || []).find(matchdayBreak =>
+    matchdayBreak.startDate > previousEnd && matchdayBreak.endDate < nextStart
+  ) || null;
+}
+
+function renderMatchdayBreak(matchdayBreak) {
+  if (!matchdayBreak) return '';
+
+  return `<div class="spieltag-group matchday-break">
+    ${renderSplitMeta(matchdayBreak.title, formatMatchdayRange(matchdayBreak), 'spieltag-label')}
+  </div>`;
+}
+
 function renderTournamentGroup(matches, fallbackTitle, className) {
   if (!matches.length) return '';
 
@@ -4924,11 +4943,12 @@ function renderPartienByMatchday(matches) {
     .sort(compareMatchesByNumber);
   const matchdays = [...new Set(regularMatches.map(match => match.spieltag))].sort((a, b) => a - b);
 
-  const regularHtml = matchdays.map(matchday => {
+  const regularHtml = matchdays.map((matchday, index) => {
     const matchesForDay = regularMatches
       .filter(match => match.spieltag === matchday)
       .sort(compareMatchesByNumber);
-    return renderMatchdayGroup(matchday, matchesForDay);
+    const matchdayBreak = index > 0 ? getMatchdayBreakBetween(matchdays[index - 1], matchday) : null;
+    return renderMatchdayBreak(matchdayBreak) + renderMatchdayGroup(matchday, matchesForDay);
   }).join('');
   const semifinalHtml = renderTournamentGroup(semifinalMatches, 'Halbfinale', 'semifinal-group');
   const finalFourHtml = renderTournamentGroup(finalFourMatches, 'Final Four', 'final-four-group');

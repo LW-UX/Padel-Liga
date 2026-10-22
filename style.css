@@ -2631,6 +2631,7 @@
       color: var(--dim); 
       margin-bottom: 18px; 
     }
+    .matchday-break .spieltag-label { margin-bottom: 0; }
     .match-list { display: flex; flex-direction: column; gap: 12px; }
     .final-four-detail-link {
       align-items: center;
