@@ -233,7 +233,7 @@
         ? `Partievorschau öffnen, Gewinnwahrscheinlichkeit ${probability.team1} zu ${probability.team2} Prozent`
         : 'Partievorschau öffnen';
     const resultClass = actualValue ? ' prediction-match-center--result' : '';
-    return `<a class="prediction-match-center prediction-match-center-link${resultClass}" href="${getMatchDetailHref(match)}" aria-label="${escapeHtml(ariaLabel)}">${escapeHtml(label)}</a>`;
+    return `<a class="prediction-match-center prediction-match-center-link${resultClass}" href="${getMatchDetailHref(match)}" data-match-statistics="${escapeHtml(match.id)}" aria-label="${escapeHtml(ariaLabel)}">${escapeHtml(label)}</a>`;
   }
 
   function getStatusChip({ isCancelled, isOwn, isOpen, isUpcoming, isSaving, actualValue, selected, points }) {
@@ -280,7 +280,7 @@
         const isAuthenticatedPlayer = playerId === state.profile?.player_id;
         const className = `prediction-player${isAuthenticatedPlayer ? ' is-authenticated-player' : ''}`;
         if (!playerId) return `<span class="${className}">${escapeHtml(player)}</span>`;
-        return `<a class="${className} player-profile-link" href="../?spielerprofil=${encodeURIComponent(playerId)}" aria-label="Profil von ${escapeHtml(player)} öffnen">${escapeHtml(player)}</a>`;
+        return `<a class="${className} player-profile-link" href="../?spielerprofil=${encodeURIComponent(playerId)}" data-player-profile-id="${escapeHtml(playerId)}" aria-label="Profil von ${escapeHtml(player)} öffnen">${escapeHtml(player)}</a>`;
       })
       .join('<span class="mc-player-sep"> &amp; </span>');
   }

@@ -48,6 +48,7 @@ const LEGACY_SEASON_IDS = Object.freeze({
   'test-2026': '2026-test'
 });
 let playerProfileLastTrigger = null;
+const isDetailEmbed = document.documentElement.classList.contains('is-detail-embed');
 
 function getViewerStorageKey() {
   return `${VIEWER_STORAGE_KEY_PREFIX}:${selectedSeason?.id || 'default'}`;
@@ -7151,6 +7152,7 @@ async function initApp() {
   }
 
   finishInitialLoading();
+  if (isDetailEmbed) initDetailEmbed();
 
   const url = new URL(window.location.href);
   const requestedStatistics = url.searchParams.get('partie');
@@ -7183,6 +7185,7 @@ async function initApp() {
   } catch (error) {
     console.error('Die verlinkte Detailansicht konnte nicht initialisiert werden:', error);
   }
+  if (isDetailEmbed) reportDetailEmbedState();
 
   try {
     if (!liveTickerInitialized) await window.PadelLiveTicker?.init();
@@ -7193,6 +7196,31 @@ async function initApp() {
 
   await loadActiveSeasonForecasts();
   await window.PadelMatchStatistics?.refreshForecast?.();
+}
+
+// Eingebettet zeigt die Liga nur ihre Detailansichten wie Spielerprofil und Partie über der Tippseite an.
+function postToDetailEmbedParent(message) {
+  window.parent.postMessage(message, window.location.origin);
+}
+
+function reportDetailEmbedState() {
+  const open = [...document.querySelectorAll('dialog')].some(dialog => dialog.open);
+  postToDetailEmbedParent({ type: open ? 'padel:detail-opened' : 'padel:detail-closed' });
+}
+
+function initDetailEmbed() {
+  window.addEventListener('message', event => {
+    if (event.origin !== window.location.origin || event.source !== window.parent) return;
+    if (event.data?.type !== 'padel:open-detail') return;
+    const opening = event.data.playerId
+      ? openPlayerProfile(event.data.playerId)
+      : window.PadelMatchStatistics?.open(event.data.matchId);
+    // Auch eine abgelehnte Detailansicht meldet ihren Zustand, damit die Tippseite nicht verdeckt bleibt.
+    void Promise.resolve(opening).finally(reportDetailEmbedState);
+  });
+  window.addEventListener('padel:match-forecast-changed', () => postToDetailEmbedParent({ type: 'padel:match-forecast-changed' }));
+  const observer = new MutationObserver(() => setTimeout(reportDetailEmbedState));
+  document.querySelectorAll('dialog').forEach(dialog => observer.observe(dialog, { attributes: true, attributeFilter: ['open'] }));
 }
 
 const mobileViewportQuery = window.matchMedia('(max-width: 768px)');

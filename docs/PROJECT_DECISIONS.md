@@ -6,6 +6,7 @@ Dieses Dokument ist der Wegweiser zum fachlichen Projektgedächtnis. Die verbind
 
 - [Saisons und Seiten](project-decisions/seasons-and-pages.md): Saisonidentitäten, Datenstrategie, Navigation, Seitenphasen, Cup und Test-Saison.
 - [Partien, Training und Turniere](project-decisions/matches-and-tournaments.md): Termine, Ergebnisse, Bestätigung, Turnierfortschritt, Liveticker, Training und Rechner.
+- [Ligaspielplan-Auslosung](project-decisions/league-schedule.md): Modus, Regeln und Kontrollausgabe für die seedbasierte Auslosung eines Ligaspielplans mit 20 Teilnehmern.
 - [Konten und Arbeitsabläufe](project-decisions/accounts-and-workflows.md): Rollen, Registrierung, Einladungen, Berechtigungen und Konto-Dialog.
 - [Ranglisten, Statistik und Profile](project-decisions/rankings-statistics-and-profiles.md): Elo, Ranglisten, All-Time-Statistik, Profile und Auszeichnungen.
 - [Tippspiel](project-decisions/tipping.md): Tippbarkeit, Fristen, Wertung und Tippseite.

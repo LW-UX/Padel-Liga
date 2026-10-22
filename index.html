@@ -15,7 +15,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=2026-10-22-winter-break">
+  <link rel="stylesheet" href="style.css?v=2026-10-22-detail-overlay">
   <link rel="stylesheet" href="account.css?v=2026-10-21-games-help">
   <script>
     (function () {
@@ -24,6 +24,10 @@
         || window.matchMedia('(display-mode: minimal-ui)').matches
         || window.navigator.standalone === true;
       if (standalone) document.documentElement.classList.add('is-standalone');
+      // Die Tippseite bettet die Liga ein, um nur deren Detailansichten über sich anzuzeigen.
+      if (new URLSearchParams(window.location.search).get('einbettung') === 'detail' && window.parent !== window) {
+        document.documentElement.classList.add('is-detail-embed');
+      }
     })();
   </script>
   <link rel="stylesheet" href="match-statistics.css?v=2026-10-21-tip-buttons">
@@ -42,7 +46,7 @@
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/match-statistics.js?v=2026-10-21-swipe-pager"></script>
-  <script defer src="js/app.js?v=2026-10-22-winter-break"></script>
+  <script defer src="js/app.js?v=2026-10-22-detail-overlay"></script>
 </head>
 <body>
 

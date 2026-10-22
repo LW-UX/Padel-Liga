@@ -158,6 +158,77 @@
     });
   }
 
+  // Spielerprofile und Partiedetails erscheinen über der Tippseite; dafür wird die Liga im Detailmodus eingebettet.
+  const ligaDetailFrame = { element: null, ready: false, pendingDetail: null, returnFocus: null, forecastChanged: false };
+
+  function postLigaDetail(detail) {
+    const frame = ligaDetailFrame.element;
+    frame.hidden = false;
+    frame.classList.add('is-loading');
+    frame.contentWindow.postMessage({ type: 'padel:open-detail', ...detail }, window.location.origin);
+  }
+
+  function openLigaDetail(detail, trigger = null) {
+    if (!detail.playerId && !detail.matchId) return;
+    ligaDetailFrame.returnFocus = trigger || document.activeElement;
+    if (ligaDetailFrame.element) {
+      if (ligaDetailFrame.ready) postLigaDetail(detail);
+      else ligaDetailFrame.pendingDetail = detail;
+      return;
+    }
+    const url = new URL('../', window.location.href);
+    url.searchParams.set('saison', getSelectedSeason()?.id || '');
+    url.searchParams.set('einbettung', 'detail');
+    if (detail.playerId) url.searchParams.set('spielerprofil', detail.playerId);
+    else url.searchParams.set('partie', detail.matchId);
+    const element = document.createElement('iframe');
+    element.className = 'liga-detail-frame is-loading';
+    element.title = detail.playerId ? 'Spielerprofil' : 'Partiedetails';
+    element.src = url.href;
+    ligaDetailFrame.element = element;
+    document.body.append(element);
+  }
+
+  function bindLigaDetails() {
+    window.PadelLigaOpenPlayerProfile = (playerId, trigger) => openLigaDetail({ playerId }, trigger);
+    document.addEventListener('click', event => {
+      const link = event.target.closest('[data-player-profile-id], [data-match-statistics]');
+      if (!link || event.defaultPrevented || event.button !== 0
+        || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      openLigaDetail(link.dataset.playerProfileId
+        ? { playerId: link.dataset.playerProfileId }
+        : { matchId: link.dataset.matchStatistics }, link);
+    });
+    window.addEventListener('message', event => {
+      const frame = ligaDetailFrame.element;
+      if (!frame || event.origin !== window.location.origin || event.source !== frame.contentWindow) return;
+      const type = event.data?.type;
+      if (type === 'padel:match-forecast-changed') ligaDetailFrame.forecastChanged = true;
+      if (type !== 'padel:detail-opened' && type !== 'padel:detail-closed') return;
+      ligaDetailFrame.ready = true;
+      const pendingDetail = ligaDetailFrame.pendingDetail;
+      ligaDetailFrame.pendingDetail = null;
+      if (pendingDetail) {
+        postLigaDetail(pendingDetail);
+        return;
+      }
+      if (type === 'padel:detail-opened') {
+        frame.classList.remove('is-loading');
+        frame.focus();
+        return;
+      }
+      if (frame.hidden) return;
+      frame.hidden = true;
+      frame.classList.remove('is-loading');
+      ligaDetailFrame.returnFocus?.focus?.();
+      if (ligaDetailFrame.forecastChanged) {
+        ligaDetailFrame.forecastChanged = false;
+        void window.PadelTippspiel?.refresh();
+      }
+    });
+  }
+
   async function init() {
     try {
       normalizeLegacySeasonUrl();
@@ -169,7 +240,7 @@
       const accountReady = window.PadelKonto.init();
       await Promise.all([
         loadScript(`../${selected.file}`),
-        loadScript('../js/tippspiel.js?v=2026-10-21-completed-season')
+        loadScript('../js/tippspiel.js?v=2026-10-22-detail-overlay')
       ]);
       const season = hydrateSeason(window.PADEL_SEASON);
       document.querySelectorAll('[data-season-label]').forEach(node => { node.textContent = season.label; });
@@ -181,5 +252,6 @@
     }
   }
 
+  bindLigaDetails();
   init();
 })();

@@ -4,6 +4,7 @@ Vor fachlichen oder technischen Änderungen sind nur die für die Aufgabe einsch
 
 - Saison, Saison-ID, Datenquelle, Navigation oder Seitenphase: `docs/project-decisions/seasons-and-pages.md`
 - Partie, Training, Termin, Ergebnis, Bestätigung, Turnier, Liveticker oder Rechner: `docs/project-decisions/matches-and-tournaments.md`
+- Ligaspielplan erstellen, Auslosung, Planungs-Elo oder Seed: `docs/project-decisions/league-schedule.md`
 - Anmeldung, Konto, Rolle, Einladung, Berechtigung oder Konto-Dialog: `docs/project-decisions/accounts-and-workflows.md`
 - Elo, Rangliste, Statistik, Profil oder Auszeichnung: `docs/project-decisions/rankings-statistics-and-profiles.md`
 - Tippseite, Tipp, Tippschluss oder Tippwertung: `docs/project-decisions/tipping.md`
