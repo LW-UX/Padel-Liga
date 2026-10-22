@@ -598,7 +598,7 @@
     }
     .player-profile-dialog::backdrop {
       background: rgba(3,4,8,0.7);
-      backdrop-filter: blur(wpx);
+      backdrop-filter: blur(2px);
     }
     html.is-detail-embed,
     html.is-detail-embed body { background: transparent; }
