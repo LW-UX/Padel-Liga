@@ -906,7 +906,7 @@
       --team-one: var(--accent2);
       --team-two: var(--text);
       margin-top: 2rem;
-      min-width: 360px;
+      min-height: 360px;
     }
     .player-profile-compare-result { display: grid; gap: 12px; }
     .player-profile-compare-result:empty { display: none; }
