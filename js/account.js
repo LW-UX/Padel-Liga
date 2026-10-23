@@ -327,7 +327,7 @@
     switch (task.competition_stage) {
       case 'quarterfinal': return `Viertelfinale ${number}`;
       case 'semifinal': return `Halbfinale ${number}`;
-      case 'final_four': return `Final ${number}`;
+      case 'final_four': return `Final Four ${number}`;
       case 'final': return 'Finale';
       default: return `Partie ${number}`;
     }

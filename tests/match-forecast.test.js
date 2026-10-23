@@ -152,7 +152,7 @@ test('match cards use only a solid forecast line and homepage pending labels are
 
 test('detail layout is three-column, borderless and responsive with centered mobile change action', () => {
   assert.match(statisticsStyle, /\.match-forecast \{[\s\S]*grid-template-columns: minmax\(150px, \.7fr\) minmax\(320px, 1\.6fr\) minmax\(150px, \.7fr\);/);
-  assert.match(statisticsStyle, /\.match-forecast-choices \{[\s\S]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);[\s\S]*gap: 4px;/);
+  assert.match(statisticsStyle, /\.match-forecast-choices \{[\s\S]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);[\s\S]*gap: 8px;/);
   assert.match(statisticsStyle, /\.match-forecast-bar \{[\s\S]*height: 8px;[\s\S]*border: 0;[\s\S]*background: transparent;/);
   assert.match(statisticsStyle, /\.match-forecast-bar::before,[\s\S]*width: calc\(50% - 2px\);[\s\S]*background: var\(--border\);/);
   assert.match(statisticsStyle, /\.match-forecast-team-one \{ right: 50%; background: var\(--team-one\); \}/);
@@ -183,12 +183,13 @@ test('database contract replaces separate votes with exact predictions', () => {
 
 test('preview details render before their Padeltipp forecast is requested', () => {
   const open = statisticsSource.match(/async function open\(matchId,[\s\S]*?(?=\n  function prepareProfileOpen)/)?.[0] || '';
-  const detailRequest = open.indexOf("client.rpc('get_public_match_detail'");
+  const detailRequest = open.indexOf('await loadDetail(client, matchId, cached)');
   const detailRender = open.indexOf("forecastMessage = 'Tipps werden geladen …'");
-  const forecastRequest = open.indexOf('const forecast = await loadForecast');
+  const forecastRequest = open.indexOf('const forecast = await loadInitialForecast');
   assert.ok(detailRequest >= 0 && detailRequest < detailRender);
   assert.ok(detailRender < forecastRequest);
-  assert.match(open, /if \(direct\) return;[\s\S]*const forecast = await loadForecast/);
+  assert.match(open, /if \(direct\) \{ schedulePrefetch\(token\); return; \}[\s\S]*const forecast = await loadInitialForecast/);
+  assert.match(statisticsSource, /async function loadDetail\([\s\S]*?client\.rpc\('get_public_match_detail'/);
   assert.match(statisticsSource, /return data \?\? null;/);
 });
 

@@ -160,5 +160,5 @@ test('only official result changes refresh the complete season view', () => {
   assert.match(tippspiel, /confirmResult[\s\S]*publishOfficialResultChange\(\)/);
   assert.match(app, /addEventListener\('padel:official-result-changed'/);
   assert.match(app, /PADEL_DATA = await loadSeasonData\(selectedSeason\)/);
-  assert.match(app, /window\.PadelTippspiel\?\.setSeasonData\?\.\(PADEL_DATA\)/);
+  assert.match(app, /addEventListener\('padel:official-result-changed', \(\) => \{[\s\S]*?refreshActiveSeasonView\(\)/);
 });

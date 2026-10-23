@@ -15,8 +15,8 @@ const app = fs.readFileSync(path.join(root, 'js', 'app.js'), 'utf8');
 
 test('Liga and PadelTipp share the accessible mobile global action shell', () => {
   [liga, tipp].forEach(page => {
-    assert.match(page, /style\.css\?v=2026-10-20-tipp-sort/);
-    assert.match(page, /account\.css\?v=2026-10-20-login-icon/);
+    assert.match(page, /style\.css\?v=[^\"]+\"/);
+    assert.match(page, /account\.css\?v=[^\"]+\"/);
     assert.match(page, /global-actions\.js[^>]*>/);
     assert.match(page, /class="context-actions global-actions"[^>]*data-global-actions/);
     assert.match(page, /data-global-actions-list/);

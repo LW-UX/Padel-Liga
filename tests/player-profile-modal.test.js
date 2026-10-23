@@ -255,10 +255,10 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /renderPlayerProfileStats\(profile\.summary \|\| \{\}, profile\.matches \|\| \[\]\)/);
   assert.match(app, /renderProfileMatchCount\(summary\.matches\), 'Partien', '', true/);
   assert.match(app, /renderProfileMatchCount\(summary\.wins\).*renderProfileMatchCount\(summary\.losses\)/);
-  assert.match(app, /'Siegquote'[\s\S]*?'Partien'[\s\S]*?'Partien G:V'[\s\S]*?'Spiele G:V'[\s\S]*?'Spieldifferenz'[\s\S]*?'Ø Spieldifferenz'[\s\S]*?'Längste Siegesserie'/);
-  assert.match(app, /renderPlayerProfileWinStreak\(matches\), 'Längste Siegesserie', '', true/);
+  assert.match(app, /'Siegquote'[\s\S]*?'Partien'[\s\S]*?'Partien G:V'[\s\S]*?'Spiele G:V'[\s\S]*?'Spieldifferenz'[\s\S]*? Ø<\/span>`, 'Spieldifferenz'[\s\S]*?'Längste Serie'/);
+  assert.match(app, /renderPlayerProfileWinStreak\(matches\), 'Längste Serie', '', true/);
   assert.match(app, /'Spieldifferenz', getPlayerProfileSignedValueClass\(summary\.gameDiff\)/);
-  assert.match(app, /'Ø Spieldifferenz', getPlayerProfileSignedValueClass\(gameDiffPerMatch\)/);
+  assert.match(app, / Ø<\/span>`, 'Spieldifferenz', getPlayerProfileSignedValueClass\(gameDiffPerMatch\)/);
   assert.match(style, /\.player-profile-stat-value\.negative \{ color: var\(--negativ\); \}/);
   assert.match(style, /\.player-profile-stat-fraction \{ font-size: var\(--text-base\); \}/);
   assert.match(style, /\.player-profile-stats \{[\s\S]*?grid-template-columns: repeat\(8, minmax\(0, 1fr\)\);/);
@@ -270,7 +270,8 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /image\.onload = \(\) => \{\s*image\.hidden = false;\s*placeholder\.hidden = true;/);
   assert.match(players, /id: "chris_m"[^\n]+profileEmoji: "👨"/);
   assert.match(players, /id: "agnes_k"[^\n]+profileEmoji: "👩"/);
-  assert.doesNotMatch(html, /data-player-profile-filter|aria-label="Partien filtern"/);
+  assert.doesNotMatch(html, /data-player-profile-filter/);
+  assert.match(html, /class="match-scope-toggle" aria-label="Partien filtern">[\s\S]*?data-player-profile-match-scope="past" aria-pressed="true">Vergangene<[\s\S]*?data-player-profile-match-scope="upcoming" aria-pressed="false">Kommende</);
   assert.match(html, /class="secondary-button player-profile-show-all"[^>]*data-player-profile-show-all/);
   assert.match(app, /const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;/);
   assert.match(app, /startDate: season\.starts_on/);
@@ -409,7 +410,7 @@ test('profile season overview separates league and qualified final-round results
   assert.match(app, /const finalRoundLabel = finalRound\?\.placement \? `\$\{finalRound\.label\}\.` : finalRound\?\.label/);
   assert.match(app, /player-profile-participation-phase-heading">Finalrunde<\/div>[\s\S]*?renderPlayerProfileParticipationStats\(finalRound, 'Siege', finalRound\.wins\)[\s\S]*?player-profile-participation-phase-result[\s\S]*?\$\{escapeHtml\(finalRoundLabel\)\}/);
   assert.match(app, /participation\.isActive \? '<em class="player-profile-participation-status">Laufend<\/em>' : ''/);
-  assert.match(style, /\.player-profile-participation-status \{[\s\S]*?color: var\(--dim\);[\s\S]*?font-size: 0\.72rem;[\s\S]*?font-style: italic;/);
+  assert.match(style, /\.player-profile-participation-status \{[\s\S]*?color: var\(--dim\);[\s\S]*?font-size: var\(--text-sm\);[\s\S]*?font-style: italic;/);
   assert.match(style, /\.player-profile-participation-phase \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto;[\s\S]*?align-items: center;/);
   assert.match(style, /\.player-profile-participation-phase-result\.player-profile-participation-placement \{[\s\S]*?font-family: var\(--font-heading\);[\s\S]*?font-size: var\(--text-heading\);[\s\S]*?line-height: 1;/);
   assert.match(app, /renderPlayerProfileParticipationStats\(participation, 'Punkte', participation\.points\)/);

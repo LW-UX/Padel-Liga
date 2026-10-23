@@ -326,7 +326,7 @@ test('scheduling, unscheduling, unrated matches and future result entry use thei
   assert.match(tippspielSource, /openUnrateDialog\(cancelMatchButton\)/);
   assert.match(indexSource, /<dialog class="auth-dialog" id="unrate-match-dialog"[^>]*aria-labelledby="unrate-match-title"[^>]*aria-describedby="unrate-match-description">/);
   assert.match(indexSource, /<h2 id="unrate-match-title">Partie nicht werten\?<\/h2>/);
-  assert.match(indexSource, /Diese Partie wird dauerhaft als „ohne Wertung“ markiert\. Sie zählt nicht für Rangliste, Elo oder Tipps\. Diese Aktion kann nicht rückgängig gemacht werden\./);
+  assert.match(indexSource, /Diese Partie wird dauerhaft als „ohne Wertung“ markiert\. Sie zählt nicht für die Rangliste, Elo oder Tipps\. Diese Aktion kann nicht rückgängig gemacht werden\./);
   assert.match(indexSource, /data-unrate-close>Abbrechen<\/button>[\s\S]*class="danger-button"[^>]*data-unrate-confirm>Nicht werten<\/button>/);
   assert.match(tippspielSource, /querySelector\('\.secondary-button\[data-unrate-close\]'\)\?\.focus\(\)/);
   assert.match(styleSource, /\.danger-button \{[\s\S]*background: var\(--negativ\)/);

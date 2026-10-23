@@ -9,6 +9,7 @@ const migration = fs.readFileSync(
   'utf8'
 );
 const tippspiel = fs.readFileSync(path.join(root, 'js', 'account.js'), 'utf8');
+const indexSource = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
 test('match unscheduling is authenticated and restricted to participants or admins', () => {
   assert.match(migration, /create or replace function public\.unschedule_match\(p_match_id text\)/);
@@ -31,8 +32,13 @@ test('future and overdue match cards confirm and submit schedule deletion', () =
     /function renderResultTaskBody\(task, groupKey\) \{[\s\S]*?(?=\n  function renderResultTaskCard)/
   )?.[0] || '';
   assert.match(taskBody, /groupKey === 'future'[\s\S]*data-match-unschedule/);
-  assert.match(taskBody, /groupKey === 'past'[\s\S]*renderResultForm\(task, false, false, true\)/);
+  assert.match(taskBody, /groupKey === 'past'[\s\S]*renderResultForm\(task, false, false, true, true\)/);
   assert.match(tippspiel, /allowUnschedule[\s\S]*data-match-unschedule[\s\S]*class="primary-button" type="submit"/);
-  assert.match(tippspiel, /window\.confirm\('Soll der Termin dieser Partie wirklich gelöscht werden\?'\)/);
+  assert.doesNotMatch(tippspiel, /window\.confirm\('Soll der Termin/);
+  assert.match(tippspiel, /data-match-unschedule[\s\S]*openUnscheduleDialog\(unscheduleButton\)/);
+  assert.match(tippspiel, /data-unschedule-confirm[\s\S]*closeUnscheduleDialog\(\);[\s\S]*await handleUnscheduleMatch\(matchId, trigger\)/);
+  assert.match(indexSource, /<dialog class=\"auth-dialog\" id=\"unschedule-match-dialog\"[^>]*aria-describedby=\"unschedule-match-description\">/);
+  assert.match(indexSource, /Soll der Termin dieser Partie wirklich gelöscht werden\?/);
+  assert.match(indexSource, /data-unschedule-close>Abbrechen<\/button>[\s\S]*class=\"danger-button\"[^>]*data-unschedule-confirm>Termin löschen<\/button>/);
   assert.match(tippspiel, /state\.client\.rpc\('unschedule_match', \{ p_match_id: matchId \}\)/);
 });

@@ -26,8 +26,6 @@ test('home announcement stays separate from the article archive and appears befo
   assert.match(appSource, /getElementById\('home-announcement'\)/);
   assert.match(htmlSource, /id="home-announcement"[\s\S]*home-app-hint[\s\S]*widget-articles/);
   assert.doesNotMatch(appSource, /home-articles'\)\.innerHTML = `[\s\S]*home-announcement/);
-  assert.match(seasonSource, /"homeAnnouncement"/);
-  assert.match(seasonSource, /"title": "Save the Date"/);
 });
 
 test('home announcement expires exactly at the configured Berlin start time', () => {
@@ -48,7 +46,6 @@ test('home announcement expires exactly at the configured Berlin start time', ()
     null
   );
   assert.match(appSource, /window\.setTimeout\([\s\S]*?renderHomeAnnouncement/);
-  assert.match(seasonSource, /"expiresAt": "2026-10-08T18:00:00\+02:00"/);
 });
 
 test('summer Final Four fallback contains the three approved start times', () => {

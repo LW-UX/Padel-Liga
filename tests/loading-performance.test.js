@@ -81,7 +81,7 @@ test('profile cache coalesces requests, expires, invalidates, and retries failur
   });
   vm.runInContext(`
     const PLAYER_PROFILE_CACHE_TTL = 30000;
-    const playerProfileCache = new Map(), playerProfileSeasonPayloadCache = new Map();
+    const playerProfileCache = new Map(), playerProfileSeasonPayloadCache = new Map(), playerProfileCompareElos = new Map();
     ${fn(app, 'fetchPlayerProfile')}
     ${fn(app, 'invalidatePlayerProfileCache')}
   `, context);
@@ -252,7 +252,7 @@ test('public Padeltipp rankings render while account, matches and Elo are still 
   });
   vm.runInContext(tipping, context);
   const request = window.PadelTippspiel.init({ id: '2026-winter', matches: [] });
-  assert.deepEqual(calls, ['get_public_season', 'matches', 'get_prediction_leaderboard']);
+  assert.deepEqual(calls, ['get_public_season', 'matches', 'get_prediction_leaderboard', 'get_prediction_match_floors']);
   assert.equal(events.has('padel:auth-state-changed'), false);
   leaderboard.resolve({ data: [{ user_id: 'viewer', display_name: 'Tipper', points: 4 }] });
   await new Promise(resolve => setImmediate(resolve));

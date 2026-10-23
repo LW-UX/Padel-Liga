@@ -213,7 +213,7 @@ test('statistical upset starts at 45 percent',()=>{
  }
 });
 test('interactive player names use the accent color in the statistics dialog',()=>{
- assert.match(statisticsStyleSource,/#detail-view-dialog\[data-mode="statistics"\] \.player-profile-link:is\(:hover, :focus-visible, :active\) \{ color: var\(--accent\) !important; \}/);
+ assert.match(statisticsStyleSource,/#detail-view-dialog\[data-mode="statistics"\] \.player-profile-link:is\(:hover, :focus-visible, :active\) \{ color: var\(--accent\) !important; border-color: var\(--accent\); \}/);
 });
 test('the selected viewer is blue and bold throughout the statistics dialog',()=>{
  const html=render(fixture(),'agnes_k');
@@ -362,13 +362,13 @@ test('the auto-tip result panel stays absent while the Elo forecast path remains
  assert.doesNotMatch(statisticsStyleSource,/match-statistics-autotip/);
  assert.match(appSource,/window\.PadelEloForecast\.getAutoTipForecast/);
 });
-test('played Elo graphs keep solid 30 percent ranges behind the actual line',()=>{
+test('played Elo graphs keep solid 20 percent ranges behind the actual line',()=>{
  const html=render(fixture('analysis'));
  assert.equal((html.match(/match-statistics-projection-range win/g)||[]).length,4);
  assert.equal((html.match(/match-statistics-projection-range loss/g)||[]).length,4);
  assert.doesNotMatch(html,/match-statistics-projection-band-strip/);
  assert.doesNotMatch(html,/<linearGradient|<stop/);
- assert.match(statisticsStyleSource,/\.match-statistics-projection-range \{ stroke: none; fill-opacity: \.3; \}/);
+ assert.match(statisticsStyleSource,/\.match-statistics-projection-range \{ stroke: none; fill-opacity: \.2; \}/);
  const firstRange=html.indexOf('match-statistics-projection-range');
  const firstLine=html.indexOf('match-statistics-line');
  assert.ok(firstRange>=0&&firstRange<firstLine,'the actual Elo line must be painted above the possible ranges');

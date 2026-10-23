@@ -43,7 +43,7 @@ test('account behavior and styles stay independent from the optional prediction 
   assert.doesNotMatch(appScript, /PadelTippspiel/);
   assert.match(tippspielPage, /account\.css[^>]*>[\s\S]*js\/account\.js[^>]*>[\s\S]*js\/tipp-page\.js/);
   assert.doesNotMatch(tippspielPage, /<script[^>]+js\/tippspiel\.js/);
-  assert.match(tippPageScript, /await window\.PadelKonto\.init\(\);[\s\S]*loadScript\('\.\.\/js\/tippspiel\.js/);
+  assert.match(tippPageScript, /const accountReady = window\.PadelKonto\.init\(\);[\s\S]*loadScript\('\.\.\/js\/tippspiel\.js[\s\S]*PadelTippspiel\.init\(season, \{ accountReady \}\)/);
   assert.match(accountScript, /window\.PadelKonto = \{/);
   assert.match(accountScript, /function handleAuthSubmit/);
   assert.match(accountScript, /function renderResultTasks/);
