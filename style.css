@@ -905,10 +905,9 @@
     .player-profile-compare {
       --team-one: var(--accent2);
       --team-two: var(--text);
-      display: grid;
       margin-top: 2rem;
+      min-width: 360px;
     }
-    .player-profile-compare .training-picker { max-width: 260px; }
     .player-profile-compare-result { display: grid; gap: 12px; }
     .player-profile-compare-result:empty { display: none; }
     #player-profile-compare-menu { max-height: 200px; }
