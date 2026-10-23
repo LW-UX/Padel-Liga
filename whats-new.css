@@ -29,8 +29,8 @@
     .whats-new-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
     .whats-new-button-dot {
       position: absolute;
-      top: -2px;
-      right: -2px;
+      top: 0px;
+      right: 0px;
       display: none;
       width: 10px;
       height: 10px;
