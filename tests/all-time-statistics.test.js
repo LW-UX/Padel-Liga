@@ -84,9 +84,13 @@ test('all-time view ends with the points ranking and only counts regular league 
     rankingMarkup,
     /id="ranking-sort-toggle"|data-ranking-sort="(?:elo|draw-factor)"/
   );
-  assert.doesNotMatch(rankingMarkup, /col-form|col-winrate|col-draw-factor|Letzte 3|Sieg-%|Losfaktor/);
+  assert.match(rankingMarkup, /class="active" data-all-time-ranking-sort="points">Ω-Punkte<\/button>/);
+  assert.match(rankingMarkup, /data-all-time-ranking-sort="average">Ø-Punkte<\/button>/);
+  assert.match(rankingMarkup, /class="col-points">[\s\S]*?<\/th>\s*<th class="col-average-points">Ø-Pkt\.<\/th>/);
+  assert.doesNotMatch(rankingMarkup, /col-elo|col-form|col-winrate|col-draw-factor|Letzte 3|Sieg-%|Losfaktor/);
   const renderer = app.match(/function renderAllTimeRanking\(\)[\s\S]*?(?=\nfunction getRankedPlayers)/)?.[0] || '';
-  assert.doesNotMatch(renderer, /col-form|col-winrate|col-draw-factor|getPlayerRankingExtras/);
+  assert.doesNotMatch(renderer, /col-elo|col-form|col-winrate|col-draw-factor|getPlayerRankingExtras/);
+  assert.match(renderer, /animateRankingRows\(body, '\.ranking-row', previousPositions\)/);
   assert.match(style, /@media \(min-width: 769px\) \{\s*#all-time-ranking-view-toggle \{ display: none; \}\s*#all-time-ranking-table\.compact \.col-gv \{ display: table-cell; \}/);
   assert.match(app, /function getAllTimeLeagueMatches\(\)[\s\S]*countsForRanking\(match\)[\s\S]*getMatchStage\(match\) === 'league'/);
   assert.match(app, /right\.stats\.punkte - left\.stats\.punkte[\s\S]*right\.stats\.spielDiff - left\.stats\.spielDiff[\s\S]*right\.stats\.gewonneneSpiele - left\.stats\.gewonneneSpiele/);
@@ -178,6 +182,34 @@ test('all-time ranking scopes weight Final Four and training sets as half matche
   });
   assert.equal(result.training.f.partien, 0.5);
   assert.match(html, /class="active" data-all-time-ranking-scope="league"[^>]*>Ligaphase<\/button>/);
+});
+
+test('all-time average-points sort ranks by unrounded points per match and puts players without matches last', () => {
+  const source = app.match(
+    /function getAllTimeAveragePoints\(stats\) \{[\s\S]*?(?=\nfunction renderAllTimePointsRankReference)/
+  )?.[0];
+  assert.ok(source, 'average-points helpers should be present');
+  const context = {
+    players: [
+      { id: 'many', stats: { partien: 16.5, punkte: 38.5, spielDiff: 63, gewonneneSpiele: 176 } },
+      { id: 'none', stats: { partien: 0, punkte: 0, spielDiff: 0, gewonneneSpiele: 0 } },
+      { id: 'single', stats: { partien: 1, punkte: 3, spielDiff: 7, gewonneneSpiele: 12 } },
+      { id: 'few', stats: { partien: 7, punkte: 16, spielDiff: 38, gewonneneSpiele: 73 } }
+    ],
+    result: null
+  };
+  vm.createContext(context);
+  vm.runInContext(`${source}
+    result = {
+      average: [...players].sort(compareAllTimeRankingByAveragePoints).map(player => player.id),
+      points: [...players].sort(compareAllTimeRankingByPoints).map(player => player.id),
+      labels: players.map(player => formatAllTimeAveragePoints(player.stats))
+    };`, context);
+  const result = JSON.parse(JSON.stringify(context.result));
+
+  assert.deepEqual(result.average, ['single', 'many', 'few', 'none']);
+  assert.deepEqual(result.points, ['many', 'few', 'single', 'none']);
+  assert.deepEqual(result.labels, ['2,3', '—', '3,0', '2,3']);
 });
 
 test('all-time set dominance compares players per regular set', () => {

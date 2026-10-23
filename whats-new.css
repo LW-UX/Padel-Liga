@@ -137,7 +137,7 @@
       width: 5px;
       height: 5px;
       border-radius: 50%;
-      background: var(--accen2t);
+      background: var(--accent2);
     }
     .whats-new-confirm { width: 100%; min-height: 44px; margin-top: 1.35rem; font-size: 0.95rem; }
 

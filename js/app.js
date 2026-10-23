@@ -10,6 +10,7 @@ let rankingSortMode = 'points';
 let rankingViewMode = 'compact';
 let allTimeRankingViewMode = 'compact';
 let allTimeRankingScope = 'league';
+let allTimeRankingSortMode = 'points';
 let calculatorResults = new Map();
 let finalFourCalculatorResults = new Map();
 let activeCalculatorMatchId = null;
@@ -22,6 +23,8 @@ let playerProfileChart = null;
 let playerProfileData = null;
 let playerProfileExpanded = false;
 let playerProfileMatchScope = 'past';
+let playerProfileCompareId = null;
+const playerProfileCompareElos = new Map();
 let playerProfileRequestId = 0;
 let playerProfileSeasonPayloadCache = new Map();
 const PLAYER_PROFILE_CACHE_TTL = 30000;
@@ -971,6 +974,7 @@ function resetSeasonState() {
   rankingViewMode = 'compact';
   allTimeRankingViewMode = 'compact';
   allTimeRankingScope = 'league';
+  allTimeRankingSortMode = 'points';
   calculatorResults = new Map();
   finalFourCalculatorResults = new Map();
   activeCalculatorMatchId = null;
@@ -1272,6 +1276,7 @@ function updateViewerPicker() {
   const hasSelectedPlayer = isParticipantView();
   document.getElementById('viewer-label-full').textContent = selected.name;
   document.getElementById('viewer-label-short').textContent = selected.mobileLabel || selected.short;
+  document.getElementById('viewer-picker').classList.toggle('viewer-picker--empty', selected.id === 'sb');
   profileButton.disabled = !hasSelectedPlayer;
   profileButton.toggleAttribute('data-player-profile-id', hasSelectedPlayer);
   if (hasSelectedPlayer) profileButton.dataset.playerProfileId = selected.id;
@@ -1337,6 +1342,7 @@ window.addEventListener('padel:match-forecast-changed', event => {
 function invalidatePlayerProfileCache() {
   playerProfileCache.clear();
   playerProfileSeasonPayloadCache.clear();
+  playerProfileCompareElos.clear();
 }
 
 function isMissingPlayerProfileRpc(error) {
@@ -1925,15 +1931,6 @@ function renderPlayerProfileParticipations(participations = [], matches = []) {
         ${participation.isActive ? '<em class="player-profile-participation-status">Laufend</em>' : ''}
       </div>
       <div class="player-profile-participation-phases">
-        <section class="player-profile-participation-phase">
-          <div class="player-profile-participation-phase-content">
-            <div class="player-profile-participation-phase-heading">Ligaphase</div>
-            <div class="stat-meta-line">
-              ${renderPlayerProfileParticipationStats(participation, 'Punkte', participation.points)}
-            </div>
-          </div>
-          <strong class="player-profile-participation-phase-result player-profile-participation-placement ${leagueRankClass}">${leagueRank}</strong>
-        </section>
         ${finalRound ? `
           <section class="player-profile-participation-phase">
             <div class="player-profile-participation-phase-content">
@@ -1943,6 +1940,15 @@ function renderPlayerProfileParticipations(participations = [], matches = []) {
             <strong class="player-profile-participation-phase-result ${finalRound.placement ? `player-profile-participation-placement r${Math.min(finalRound.placement, 4)}` : ''}">${escapeHtml(finalRoundLabel)}</strong>
           </section>
         ` : ''}
+        <section class="player-profile-participation-phase">
+          <div class="player-profile-participation-phase-content">
+            <div class="player-profile-participation-phase-heading">Ligaphase</div>
+            <div class="stat-meta-line">
+              ${renderPlayerProfileParticipationStats(participation, 'Punkte', participation.points)}
+            </div>
+          </div>
+          <strong class="player-profile-participation-phase-result player-profile-participation-placement ${leagueRankClass}">${leagueRank}</strong>
+        </section>
       </div>
     </div>
   `;
@@ -2061,6 +2067,195 @@ function renderPlayerProfileRelationships(matches = []) {
       </div>
     </div>`).join('')}
   </div>`;
+}
+
+// Der Spielervergleich nutzt dieselbe gewichtete Historie wie die Beziehungen.
+function getPlayerProfileMatchWeight(match) {
+  const weight = Number(match?.matchWeight ?? 1);
+  return Number.isFinite(weight) && weight > 0 ? weight : 0;
+}
+
+function getPlayerProfileCompareOptions(profile) {
+  const ownName = profile?.identity?.displayName;
+  const playersByName = new Map((window.PADEL_PLAYERS || []).map(player => [player.name, player]));
+  const counts = new Map();
+  (profile?.matches || []).forEach(match => {
+    const weight = getPlayerProfileMatchWeight(match);
+    if (!weight) return;
+    new Set([...(match.partnerNames || []), ...(match.opponentNames || [])]).forEach(name => {
+      const player = playersByName.get(name);
+      if (!player || name === ownName) return;
+      counts.set(player.id, (counts.get(player.id) || 0) + weight);
+    });
+  });
+  return [...counts].map(([id, matches]) => ({
+    id,
+    name: (window.PADEL_PLAYERS || []).find(player => player.id === id).name,
+    matches
+  })).sort((left, right) => right.matches - left.matches || left.name.localeCompare(right.name, 'de'));
+}
+
+function getProfileSetTotals(resultDetails) {
+  const withoutSetTiebreaks = String(resultDetails || '').replace(/\([^)]*\)/g, '');
+  return [...withoutSetTiebreaks.matchAll(/(\d+)\s*:\s*(\d+)/g)]
+    .map(score => [Number(score[1]), Number(score[2])])
+    .reduce((totals, [teamOne, teamTwo]) => {
+      const classification = Math.max(teamOne, teamTwo) > 7
+        ? window.PadelScoreInput.classifyTiebreak(teamOne, teamTwo, 10)
+        : window.PadelScoreInput.classifyRegularSet(teamOne, teamTwo);
+      if (classification.state !== 'complete') return totals;
+      return teamOne > teamTwo ? [totals[0] + 1, totals[1]] : [totals[0], totals[1] + 1];
+    }, [0, 0]);
+}
+
+function getPlayerProfileComparison(matches, otherName) {
+  const comparison = { together: 0, against: 0, wins: [0, 0], sets: [0, 0], games: [0, 0] };
+  const orient = (totals, team) => Number(team) === 2 ? [totals[1], totals[0]] : totals;
+  matches.forEach(match => {
+    const weight = getPlayerProfileMatchWeight(match);
+    if (!weight) return;
+    if ((match.partnerNames || []).includes(otherName)) {
+      comparison.together += weight;
+      return;
+    }
+    if (!(match.opponentNames || []).includes(otherName)) return;
+    comparison.against += weight;
+    comparison.wins[0] += Number.isFinite(Number(match.winWeight))
+      ? Number(match.winWeight)
+      : match.outcome === 'win' ? weight : 0;
+    comparison.wins[1] += Number.isFinite(Number(match.lossWeight))
+      ? Number(match.lossWeight)
+      : match.outcome === 'loss' ? weight : 0;
+    const sets = orient(getProfileSetTotals(match.resultDetails), match.team);
+    const games = orient(getProfileRegularGameTotals(match.resultDetails), match.team);
+    comparison.sets = [comparison.sets[0] + sets[0], comparison.sets[1] + sets[1]];
+    comparison.games = [comparison.games[0] + games[0], comparison.games[1] + games[1]];
+  });
+  return comparison;
+}
+
+function renderPlayerProfileCompareRow(label, leftValue, rightValue, format = formatProfileMatchCount) {
+  const left = Math.max(0, Number(leftValue) || 0);
+  const right = Math.max(0, Number(rightValue) || 0);
+  const total = left + right;
+  const formatValue = value => value === null || value === undefined ? '—' : format(value);
+  return `<div class="match-forecast-result player-profile-compare-row" aria-label="${escapeHtml(`${label}: ${formatValue(leftValue)} zu ${formatValue(rightValue)}`)}">
+    <div class="match-forecast-percentages"><span>${formatValue(leftValue)}</span><span class="player-profile-compare-label">${escapeHtml(label)}</span><span>${formatValue(rightValue)}</span></div>
+    <div class="match-forecast-bar${total ? ' has-votes' : ''}${left && right ? ' has-both-team-colors' : ''}">
+      <span class="match-forecast-team-one" style="width:${total ? left / total * 50 : 0}%"></span>
+      <span class="match-forecast-team-two" style="width:${total ? right / total * 50 : 0}%"></span>
+    </div>
+  </div>`;
+}
+
+function renderPlayerProfileCompareResult() {
+  const target = document.getElementById('player-profile-compare-result');
+  if (!target) return;
+  const profile = playerProfileData;
+  const otherId = playerProfileCompareId;
+  const other = (window.PADEL_PLAYERS || []).find(player => player.id === otherId);
+  if (!profile || !other) {
+    target.innerHTML = '';
+    return;
+  }
+  if (!playerProfileCompareElos.has(otherId)) {
+    playerProfileCompareElos.set(otherId, undefined);
+    fetchPlayerProfile(otherId)
+      .then(otherProfile => playerProfileCompareElos.set(otherId, otherProfile?.summary?.currentElo ?? null))
+      .catch(error => {
+        playerProfileCompareElos.set(otherId, null);
+        console.error(error);
+      })
+      .finally(() => {
+        if (playerProfileData === profile && playerProfileCompareId === otherId) renderPlayerProfileCompareResult();
+      });
+  }
+  const comparison = getPlayerProfileComparison(profile.matches || [], other.name);
+  const ownElo = profile.summary?.currentElo ?? null;
+  const otherElo = playerProfileCompareElos.get(otherId) ?? null;
+  const sharedMatches = comparison.together + comparison.against;
+  target.innerHTML = `<div class="stat-meta-line">${escapeHtml([
+    `${formatProfileMatchCount(sharedMatches)} gemeinsame Partien`,
+    `${formatProfileMatchCount(comparison.together)} miteinander`,
+    `${formatProfileMatchCount(comparison.against)} gegeneinander`
+  ].join(' · '))}</div>
+    <div class="match-forecast-percentages player-profile-compare-names"><span>${escapeHtml(profile.identity?.displayName || '')}</span><span>${escapeHtml(other.name)}</span></div>
+    ${renderPlayerProfileCompareRow('Siege im Duell', comparison.wins[0], comparison.wins[1])}
+    ${renderPlayerProfileCompareRow('Sätze im Duell', comparison.sets[0], comparison.sets[1])}
+    ${renderPlayerProfileCompareRow('Spiele im Duell', comparison.games[0], comparison.games[1])}
+    ${renderPlayerProfileCompareRow('Aktuelles Elo', ownElo, otherElo, value => String(Math.round(Number(value))))}`;
+}
+
+function renderPlayerProfileCompare(profile) {
+  const target = document.getElementById('player-profile-compare');
+  if (!target) return;
+  const options = getPlayerProfileCompareOptions(profile);
+  const selected = options.find(option => option.id === playerProfileCompareId) || null;
+  if (!selected) playerProfileCompareId = null;
+  if (!options.length) {
+    target.innerHTML = '<div class="widget-label">Vergleich</div><div class="empty-state">Noch keine gemeinsamen Partien mit anderen Spielern.</div>';
+    return;
+  }
+  const label = selected?.name || 'Spieler wählen';
+  target.innerHTML = `<div class="widget-label">Vergleich</div>
+    <div class="training-picker" data-profile-compare-picker>
+      <div class="training-picker-search-control">
+        <button class="secondary-button secondary-button--dropdown training-picker-toggle" type="button" data-profile-compare-toggle aria-label="${escapeHtml(label)}" aria-haspopup="listbox" aria-expanded="false" aria-controls="player-profile-compare-menu">
+          <span class="training-picker-display"><span class="training-picker-display-line">${escapeHtml(label)}</span></span>
+        </button>
+        <input class="training-picker-search-input" type="search" data-profile-compare-search role="combobox" aria-label="Vergleichsspieler suchen" aria-controls="player-profile-compare-menu" aria-expanded="false" autocomplete="off" spellcheck="false" placeholder="Spieler suchen …" disabled>
+      </div>
+      <div class="viewer-menu training-picker-menu" id="player-profile-compare-menu" role="listbox" aria-label="Vergleichsspieler auswählen">
+        ${options.map(option => `<button
+          class="viewer-option training-picker-option${option.id === selected?.id ? ' active' : ''}"
+          type="button"
+          role="option"
+          aria-label="${escapeHtml(option.name)}"
+          aria-selected="${option.id === selected?.id}"
+          data-profile-compare-value="${escapeHtml(option.id)}"
+          data-profile-compare-search-text="${escapeHtml(option.name)}"
+        ><span class="training-picker-option-label"><span class="training-picker-display-line">${escapeHtml(option.name)}</span></span><span>${escapeHtml(`${formatProfileMatchCount(option.matches)} ${option.matches === 1 ? 'Partie' : 'Partien'}`)}</span></button>`).join('')}
+        <div class="picker-search-empty" data-profile-compare-search-empty hidden>Kein Spieler gefunden.</div>
+      </div>
+    </div>
+    <div class="player-profile-compare-result" id="player-profile-compare-result"></div>`;
+  renderPlayerProfileCompareResult();
+}
+
+function filterPlayerProfileCompareOptions(query = '') {
+  const picker = document.querySelector('[data-profile-compare-picker]');
+  if (!picker) return;
+  const normalizedQuery = normalizePlayerSearch(query);
+  let visibleOptions = 0;
+  picker.querySelectorAll('[data-profile-compare-value]').forEach(option => {
+    const matches = !normalizedQuery
+      || normalizePlayerSearch(option.dataset.profileCompareSearchText).includes(normalizedQuery);
+    option.hidden = !matches;
+    if (matches) visibleOptions += 1;
+  });
+  const emptyState = picker.querySelector('[data-profile-compare-search-empty]');
+  if (emptyState) emptyState.hidden = visibleOptions > 0;
+}
+
+function setPlayerProfileComparePickerOpen(open) {
+  const picker = document.querySelector('[data-profile-compare-picker]');
+  if (!picker) return;
+  picker.classList.toggle('open', open);
+  picker.querySelector('[data-profile-compare-toggle]')?.setAttribute('aria-expanded', String(open));
+  const searchInput = picker.querySelector('[data-profile-compare-search]');
+  if (!searchInput) return;
+  searchInput.setAttribute('aria-expanded', String(open));
+  searchInput.value = '';
+  filterPlayerProfileCompareOptions();
+  searchInput.disabled = !open;
+  if (open) searchInput.focus({ preventScroll: true });
+  else searchInput.blur();
+}
+
+function selectPlayerProfileCompare(playerId) {
+  playerProfileCompareId = playerId;
+  renderPlayerProfileCompare(playerProfileData);
+  document.querySelector('[data-profile-compare-toggle]')?.focus({ preventScroll: true });
 }
 
 function formatProfileDate(value) {
@@ -2357,6 +2552,7 @@ function renderPlayerProfile(profile) {
   playerProfileData = profile;
   playerProfileExpanded = false;
   playerProfileMatchScope = 'past';
+  playerProfileCompareId = null;
   document.getElementById('player-profile-name').textContent = identity.displayName || 'Spielerprofil';
   const profileCompany = identity.company || 'Padel-Liga';
   const profileCompanyElement = document.getElementById('player-profile-company');
@@ -2376,6 +2572,7 @@ function renderPlayerProfile(profile) {
   renderPlayerProfileStats(profile.summary || {}, profile.matches || []);
   renderPlayerProfileParticipations(profile.participations || [], profile.matches || []);
   renderPlayerProfileRelationships(profile.matches || []);
+  renderPlayerProfileCompare(profile);
   renderPlayerProfileHistory();
   document.getElementById('player-profile-state').hidden = true;
   document.getElementById('player-profile-content').hidden = false;
@@ -2427,7 +2624,8 @@ window.PadelLigaOpenPlayerProfile = openPlayerProfile;
 window.PadelLigaCapturePlayerProfile = () => ({
   data: playerProfileData,
   expanded: playerProfileExpanded,
-  matchScope: playerProfileMatchScope
+  matchScope: playerProfileMatchScope,
+  compareId: playerProfileCompareId
 });
 window.PadelLigaRestorePlayerProfile = snapshot => {
   const profile = document.getElementById('player-profile-dialog');
@@ -2437,6 +2635,8 @@ window.PadelLigaRestorePlayerProfile = snapshot => {
   renderPlayerProfile(snapshot.data);
   playerProfileExpanded = snapshot.expanded;
   playerProfileMatchScope = snapshot.matchScope === 'upcoming' ? 'upcoming' : 'past';
+  playerProfileCompareId = snapshot.compareId || null;
+  renderPlayerProfileCompare(snapshot.data);
   renderPlayerProfileHistory();
 };
 window.PadelLigaClosePlayerProfile = options => closePlayerProfile(options);
@@ -2487,6 +2687,21 @@ document.addEventListener('click', event => {
     return;
   }
   closePinnedHelpTooltips();
+
+  const profileComparePicker = document.querySelector('[data-profile-compare-picker].open');
+  if (profileComparePicker && !profileComparePicker.contains(event.target)) setPlayerProfileComparePickerOpen(false);
+
+  const profileCompareToggle = event.target.closest('[data-profile-compare-toggle]');
+  if (profileCompareToggle) {
+    setPlayerProfileComparePickerOpen(!profileCompareToggle.closest('[data-profile-compare-picker]').classList.contains('open'));
+    return;
+  }
+
+  const profileCompareOption = event.target.closest('[data-profile-compare-value]');
+  if (profileCompareOption) {
+    selectPlayerProfileCompare(profileCompareOption.dataset.profileCompareValue);
+    return;
+  }
 
   const detailViewBackControl = event.target.closest('[data-detail-view-back]');
   if (detailViewBackControl) {
@@ -2580,6 +2795,12 @@ document.addEventListener('click', event => {
   const rankingViewControl = event.target.closest('[data-ranking-view]');
   if (rankingViewControl) {
     setRankingView(rankingViewControl.dataset.rankingView);
+    return;
+  }
+
+  const allTimeRankingSortControl = event.target.closest('[data-all-time-ranking-sort]');
+  if (allTimeRankingSortControl) {
+    setAllTimeRankingSort(allTimeRankingSortControl.dataset.allTimeRankingSort);
     return;
   }
 
@@ -2736,6 +2957,12 @@ document.addEventListener('input', event => {
     return;
   }
 
+  const profileCompareSearch = event.target.closest('[data-profile-compare-search]');
+  if (profileCompareSearch) {
+    filterPlayerProfileCompareOptions(profileCompareSearch.value);
+    return;
+  }
+
   const calculatorScoreInput = event.target.closest('[data-calculator-score]');
   if (!calculatorScoreInput) return;
 
@@ -2793,6 +3020,28 @@ document.addEventListener('focusout', event => {
 });
 
 document.addEventListener('keydown', event => {
+  const profileCompareSearch = event.target.closest('[data-profile-compare-search]');
+  if (profileCompareSearch) {
+    const visibleOptions = [...document.querySelectorAll('[data-profile-compare-value]')]
+      .filter(option => !option.hidden);
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setPlayerProfileComparePickerOpen(false);
+      document.querySelector('[data-profile-compare-toggle]')?.focus({ preventScroll: true });
+      return;
+    }
+    if (event.key === 'ArrowDown' && visibleOptions.length) {
+      event.preventDefault();
+      visibleOptions[0].focus();
+      return;
+    }
+    if (event.key === 'Enter' && profileCompareSearch.value && visibleOptions.length) {
+      event.preventDefault();
+      selectPlayerProfileCompare(visibleOptions[0].dataset.profileCompareValue);
+      return;
+    }
+  }
+
   const viewerSearchInput = event.target.closest('[data-viewer-search]');
   if (viewerSearchInput) {
     if (event.key === 'Escape') {
@@ -2899,6 +3148,11 @@ function updateRankingViewToggle() {
 
 function setAllTimeRankingView(mode) {
   allTimeRankingViewMode = mode === 'expanded' ? 'expanded' : 'compact';
+  renderAllTimeRanking();
+}
+
+function setAllTimeRankingSort(mode) {
+  allTimeRankingSortMode = mode === 'average' ? 'average' : 'points';
   renderAllTimeRanking();
 }
 
@@ -3752,6 +4006,45 @@ function formatAllTimeRankingValue(value) {
     : value.toLocaleString('de-DE', { maximumFractionDigits: 1 });
 }
 
+function getAllTimeAveragePoints(stats) {
+  return stats.partien > 0 ? stats.punkte / stats.partien : null;
+}
+
+function formatAllTimeAveragePoints(stats) {
+  const average = getAllTimeAveragePoints(stats);
+  return average === null
+    ? '—'
+    : average.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+function compareAllTimeRankingByPoints(left, right) {
+  return right.stats.punkte - left.stats.punkte ||
+    right.stats.spielDiff - left.stats.spielDiff ||
+    right.stats.gewonneneSpiele - left.stats.gewonneneSpiele;
+}
+
+function compareAllTimeRankingByAveragePoints(left, right) {
+  return (getAllTimeAveragePoints(right.stats) ?? -Infinity) - (getAllTimeAveragePoints(left.stats) ?? -Infinity) ||
+    compareAllTimeRankingByPoints(left, right);
+}
+
+function renderAllTimePointsRankReference(currentRank, pointsRank) {
+  if (allTimeRankingSortMode === 'points' || !Number.isFinite(pointsRank)) return '';
+
+  const delta = pointsRank - currentRank;
+  const deltaLabel = formatSignedInteger(delta);
+  return `<span class="points-rank-ref" title="Punkte-Rang ${pointsRank}, Veränderung ${deltaLabel}">
+    <span class="points-rank-num">${pointsRank}</span>
+    <span class="points-rank-delta ${getDeltaClass(delta)}">${deltaLabel}</span>
+  </span>`;
+}
+
+function updateAllTimeRankingSortToggle() {
+  document.querySelectorAll('[data-all-time-ranking-sort]').forEach(button => {
+    button.classList.toggle('active', button.dataset.allTimeRankingSort === allTimeRankingSortMode);
+  });
+}
+
 function renderAllTimeRanking() {
   const table = document.getElementById('all-time-ranking-table');
   const tableWrap = document.getElementById('all-time-ranking-wrap');
@@ -3759,7 +4052,10 @@ function renderAllTimeRanking() {
   const meta = document.getElementById('all-time-ranking-meta');
   if (!table || !tableWrap || !body || !meta || !allTimeStatisticsData) return;
 
+  const previousPositions = getRankingRowPositions(body, '.ranking-row');
   updateAllTimeRankingViewToggle();
+  updateAllTimeRankingSortToggle();
+  table.dataset.rankingSort = allTimeRankingSortMode;
   tableWrap.dataset.rankingView = allTimeRankingViewMode;
   table.classList.toggle('expanded', allTimeRankingViewMode === 'expanded');
   table.classList.toggle('compact', allTimeRankingViewMode === 'compact');
@@ -3773,20 +4069,26 @@ function renderAllTimeRanking() {
     const halfMatchNote = allTimeRankingScope === 'training'
       ? 'Final-Four- und Trainingssätze zählen als halbe Partie, ein gewonnener Satz bringt 1,5 Punkte'
       : 'Final-Four-Sätze zählen als halbe Partie, ein gewonnener Satz bringt 1,5 Punkte';
-    note.textContent = isLeagueScope ? ALL_TIME_RANKING_SORT_NOTE : `${halfMatchNote}  |  ${ALL_TIME_RANKING_SORT_NOTE}`;
+    const sortNote = allTimeRankingSortMode === 'average'
+      ? 'Sortierung: Ø-Punkte pro Partie · Punkte · Spiel-Differenz · gewonnene Spiele'
+      : ALL_TIME_RANKING_SORT_NOTE;
+    note.textContent = isLeagueScope ? sortNote : `${halfMatchNote}  |  ${sortNote}`;
   }
 
   const matches = getAllTimeLeagueMatches();
   const players = isLeagueScope
     ? getAllTimeRankingPlayers(matches).map(player => ({ ...player, stats: getPlayerStats(player, matches) }))
     : getAllTimeScopedRankingPlayers(allTimeRankingScope);
-  const rankedPlayers = players
-    .sort((left, right) =>
-      right.stats.punkte - left.stats.punkte ||
-      right.stats.spielDiff - left.stats.spielDiff ||
-      right.stats.gewonneneSpiele - left.stats.gewonneneSpiele
-    );
+  const pointsRankMap = new Map([...players]
+    .sort(compareAllTimeRankingByPoints)
+    .map((player, index) => [player.id || player.name, index + 1]));
+  const rankedPlayers = players.sort(allTimeRankingSortMode === 'average'
+    ? compareAllTimeRankingByAveragePoints
+    : compareAllTimeRankingByPoints);
   const firmaShort = { Envidual: 'Env', Headsquare: 'Hsq', Hanako: 'Han' };
+  // Nur die aktuell sortierende Spalte wird blau und fett hervorgehoben.
+  const pointsScoreClass = allTimeRankingSortMode === 'points' ? 'rank-score' : '';
+  const averageScoreClass = allTimeRankingSortMode === 'average' ? 'rank-score' : '';
 
   meta.textContent = `${rankedPlayers.length} Spieler`;
   body.innerHTML = rankedPlayers.map((player, index) => {
@@ -3800,16 +4102,17 @@ function renderAllTimeRanking() {
       : player.name;
 
     return `<tr class="ranking-row r${Math.min(currentRank, 4)} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id || player.name)}">
-      <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span></span></td>
+      <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${renderAllTimePointsRankReference(currentRank, pointsRankMap.get(player.id || player.name))}</span></td>
       <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(player, 'pname', rankingPlayerLabel)}<span class="firma-badge firma-${player.firma}"><span class="firma-full">${player.firma}</span><span class="firma-short">${firmaShort[player.firma] || player.firma}</span></span></span></td>
       <td class="col-games">${isLeagueScope ? renderRankingMatchCount(player, matches) : formatAllTimeRankingValue(player.stats.partien)}</td>
       <td class="col-wins">${formatAllTimeRankingValue(player.stats.siege)}</td>
-      <td class="col-points rank-score">${formatAllTimeRankingValue(player.stats.punkte)}</td>
+      <td class="col-points ${pointsScoreClass}">${formatAllTimeRankingValue(player.stats.punkte)}</td>
+      <td class="col-average-points ${averageScoreClass}">${formatAllTimeAveragePoints(player.stats)}</td>
       <td class="col-gv">${player.stats.partien > 0 ? player.stats.spieleGV : '—'}</td>
       <td class="col-diff"><span class="${player.stats.partien > 0 ? spielDiffClass : 'neu'}">${spielDiffStr}</span></td>
-      <td class="col-elo">${getLatestPlayerElo(player)}</td>
     </tr>`;
   }).join('');
+  animateRankingRows(body, '.ranking-row', previousPositions);
 }
 
 function getRankedPlayers(matches = PADEL_DATA.matches, sortMode = 'points') {

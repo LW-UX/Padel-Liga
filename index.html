@@ -15,7 +15,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=2026-10-22-all-time-scope-toggle">
+  <link rel="stylesheet" href="style.css?v=2026-10-23-all-time-average-points">
   <link rel="stylesheet" href="account.css?v=2026-10-21-games-help">
   <link rel="stylesheet" href="whats-new.css?v=2026-10-22-release-notes">
   <script>
@@ -48,7 +48,7 @@
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/match-statistics.js?v=2026-10-22-concealed-tips"></script>
-  <script defer src="js/app.js?v=2026-10-22-all-time-scope-toggle"></script>
+  <script defer src="js/app.js?v=2026-10-23-all-time-sort-highlight"></script>
 </head>
 <body>
 
@@ -259,7 +259,7 @@
             <th class="col-draw-factor">
               <span class="th-help-wrap">Losfaktor
                 <span class="help-icon" tabindex="0" aria-label="Losfaktor erklären">?</span>
-                <span class="help-tooltip">Ø Platz Mitspieler / Ø Platz Gegenspieler / Differenz.<br>Positive Werte bedeuten: Die Gegner waren im Schnitt stärker platziert als die Mitspieler.</span>
+                <span class="help-tooltip">Ø Platz Mitspieler / Ø Platz Gegenspieler / Differenz.<br>Positive Werte bedeuten: Die Gegner waren im Schnitt stärker platziert als die Mitspieler.<br>Je mehr Partien gespielt wurden, desto aussagekräftiger wird dieser Wert.</span>
               </span>
             </th>
           </tr>
@@ -397,6 +397,10 @@
           <div class="sh-title">EWIGE RANGLISTE</div>
           <div class="sh-meta" id="all-time-ranking-meta"></div>
         </div>
+        <div class="match-scope-toggle ranking-sort-toggle" id="all-time-ranking-sort-toggle" aria-label="Ewige Rangliste sortieren">
+          <button type="button" class="active" data-all-time-ranking-sort="points">Ω-Punkte</button>
+          <button type="button" data-all-time-ranking-sort="average">Ø-Punkte</button>
+        </div>
         <div class="ranking-controls all-time-ranking-controls">
           <div class="match-scope-toggle" id="all-time-ranking-scope-toggle" aria-label="Gewertete Spiele der ewigen Rangliste">
             <button type="button" class="active" data-all-time-ranking-scope="league" title="Nur Spiele der Ligaphase">Ligaphase</button>
@@ -415,12 +419,12 @@
             <tr>
               <th class="col-rank">#</th>
               <th class="col-name">Spieler</th>
-              <th class="col-games">Partien</th>
+              <th class="col-games"><span class="th-label-full">Partien</span><span class="th-label-short">Part.</span></th>
               <th class="col-wins">Siege</th>
-              <th class="col-points">Punkte</th>
+              <th class="col-points"><span class="th-label-full">Punkte</span><span class="th-label-short">Pkt.</span></th>
+              <th class="col-average-points">Ø-Pkt.</th>
               <th class="col-gv">G:V</th>
               <th class="col-diff">Diff.</th>
-              <th class="col-elo">Elo</th>
             </tr>
           </thead>
           <tbody id="all-time-ranking-body"></tbody>
@@ -678,6 +682,7 @@
       <article class="widget player-profile-widget player-profile-relationships">
         <div class="player-profile-section-heading" id="player-profile-relationships-heading"><h3 class="widget-label">Mitspieler &amp; Gegner</h3></div>
         <div id="player-profile-relationships"></div>
+        <section class="player-profile-compare" id="player-profile-compare"></section>
       </article>
 
       <article class="widget player-profile-widget player-profile-history">
@@ -703,7 +708,7 @@
       <div>
         <div class="widget-label">Was ist neu</div>
         <h2 id="whats-new-title">PADEL<em>LIGA</em></h2>
-        <p class="whats-new-version">Version 2.0 · Oktober 2026</p>
+        <p class="whats-new-version">Version 2.2.0.9 · Okt 2026</p>
       </div>
     </header>
     <ul class="whats-new-features">
@@ -717,8 +722,8 @@
       <li class="whats-new-feature">
         <span class="whats-new-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4 19V5m0 14h16"/><path d="m7 15 4-4 3 3 5-6"/></svg></span>
         <div>
-          <h3>Spielvorschau &amp; Partierückschau</h3>
-          <p>Schaue dir die Fakten zur Partie oder die mögliche Elo-Entwicklung an und was sich verändern könnte. Zudem hast du die Möglichkeit, direkt auf die Partie zu tippen. Nach dem Spiel zeigt die Partierückschau dasselbe für das tatsächliche Ergebnis.</p>
+          <h3>Partievorschau &amp; Partierückschau</h3>
+          <p>Fakten zur Partie, mögliche Elo-Entwicklung und was sich verändern könnte. Gib hier direkt deinen Tipp ab! Die Partierückschau liefert dann Tatsachen.</p>
         </div>
       </li>
       <li class="whats-new-feature">
@@ -742,8 +747,7 @@
         <li>Erweiterte Statistiken</li>
         <li>Design-Update</li>
         <li>Mobile Navigation</li>
-        <li>Bugfixes</li>
-        <li>Performance-Verbesserungen</li>
+        <li>Bug-Fixes &amp; Performance-Verbesserungen</li>
       </ul>
     </section>
     <button class="primary-button whats-new-confirm" type="button" data-whats-new-close>Los geht’s</button>

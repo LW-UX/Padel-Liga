@@ -35,7 +35,7 @@ test('league-page ranking tables use one named class per column without colgroup
   assert.deepEqual(getColumnClasses(targetTables[0], 'th'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-points', 'col-gv', 'col-diff', 'col-elo', 'col-form', 'col-winrate', 'col-draw-factor']);
   assert.deepEqual(getColumnClasses(targetTables[1], 'th'), ['col-rank', 'col-company', 'col-participants', 'col-games', 'col-wins', 'col-points', 'col-diff', 'col-points-per-player']);
   assert.deepEqual(getColumnClasses(targetTables[2], 'th'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff', 'col-elo']);
-  assert.deepEqual(getColumnClasses(targetTables[3], 'th'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-points', 'col-gv', 'col-diff', 'col-elo']);
+  assert.deepEqual(getColumnClasses(targetTables[3], 'th'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-points', 'col-average-points', 'col-gv', 'col-diff']);
   assert.deepEqual(getColumnClasses(targetTables[4], 'th'), ['col-rank', 'col-name', 'col-games', 'col-points', 'col-diff']);
   assert.deepEqual(getColumnClasses(targetTables[5], 'th'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff']);
 });
@@ -55,7 +55,7 @@ test('ranking renderers use the same named column classes as their headers', () 
   assert.deepEqual(getColumnClasses(renderers[0], 'td'), ['col-rank', 'col-company', 'col-participants', 'col-games', 'col-wins', 'col-points', 'col-diff', 'col-points-per-player']);
   assert.deepEqual(getColumnClasses(renderers[1], 'td'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff', 'col-elo']);
   assert.deepEqual(getColumnClasses(renderers[2], 'td'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-points', 'col-gv', 'col-diff', 'col-elo', 'col-form', 'col-winrate', 'col-draw-factor']);
-  assert.deepEqual(getColumnClasses(renderers[3], 'td'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-points', 'col-gv', 'col-diff', 'col-elo']);
+  assert.deepEqual(getColumnClasses(renderers[3], 'td'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-points', 'col-average-points', 'col-gv', 'col-diff']);
   assert.deepEqual(getColumnClasses(renderers[4], 'td'), ['col-rank', 'col-name', 'col-games', 'col-points', 'col-diff']);
   assert.deepEqual(getColumnClasses(renderers[5], 'td'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff']);
   renderers.forEach(renderer => assert.match(renderer, /<td class="col-rank rank-position">/));
@@ -63,7 +63,10 @@ test('ranking renderers use the same named column classes as their headers', () 
   assert.doesNotMatch(renderers[0], /firma-badge/);
   assert.match(renderers[1], /<td class="col-wins rank-score">/);
   assert.match(renderers[2], /<td class="col-points rank-score">/);
-  assert.match(renderers[3], /<td class="col-points rank-score">/);
+  assert.match(renderers[3], /<td class="col-points \$\{pointsScoreClass\}">/);
+  assert.match(renderers[3], /<td class="col-average-points \$\{averageScoreClass\}">/);
+  assert.match(renderers[3], /pointsScoreClass = allTimeRankingSortMode === 'points' \? 'rank-score' : ''/);
+  assert.match(renderers[3], /averageScoreClass = allTimeRankingSortMode === 'average' \? 'rank-score' : ''/);
   assert.match(renderers[4], /<td class="col-points rank-score">/);
   assert.match(renderers[5], /<td class="col-wins rank-score">/);
 });
