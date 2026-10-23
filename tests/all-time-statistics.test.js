@@ -296,3 +296,31 @@ test('all-time Elo chart stays continuous and identifies each competition', () =
   assert.match(app, /isAllTimeStatistics\(\) \? \{ year: '2-digit' \} : \{\}/);
   assert.match(app, /chart\.\$players = players/);
 });
+
+test('draw factor ranks season players by smoothed all-time average points', () => {
+  const sources = [
+    app.match(/function countsForRanking\(match\) \{[\s\S]*?(?=\nfunction isCancelledMatch)/)?.[0],
+    app.match(/function getMatchStage\(match\) \{[\s\S]*?(?=\nfunction isCupSeason)/)?.[0],
+    app.match(/const ALL_TIME_RANKING_SCOPES = [\s\S]*?(?=\nfunction formatAllTimeRankingValue)/)?.[0],
+    app.match(/function compareAllTimeRankingByPoints\(left, right\) \{[\s\S]*?(?=\nfunction compareAllTimeRankingByAveragePoints)/)?.[0],
+    app.match(/const DRAW_FACTOR_PRIOR_MATCHES = [\s\S]*?(?=\nfunction getPlayerDrawFactor)/)?.[0]
+  ];
+  sources.forEach(source => assert.ok(source, 'draw-factor reference helpers should be present'));
+  const win = (id, winners, losers, matchAt) => ({
+    id, stage: 'league', countsForRanking: true, countsForElo: true, sieger: 1, saetze: '2:0', ergebnis: '6:2, 6:2',
+    matchAt, team1: { playerIds: winners }, team2: { playerIds: losers }
+  });
+  const matches = [
+    win('m1', ['a', 'x'], ['b', 'y'], '2026-05-01T18:00:00Z'),
+    ...[2, 3, 4, 5, 6].map(day => win(`m${day}`, ['b', 'x'], ['y', 'z'], `2026-05-0${day}T18:00:00Z`)),
+    win('after-completion', ['e', 'x'], ['y', 'z'], '2026-10-01T18:00:00Z')
+  ];
+  const players = ['a', 'b', 'c', 'd', 'e'].map(id => ({ id, name: id.toUpperCase() }));
+  const context = { allTimeStatisticsData: { matches }, data: { players, completedAt: '2026-09-01T00:00:00Z' }, result: null };
+  vm.createContext(context);
+  vm.runInContext(`${sources.join('\n')}\nresult = [...getDrawFactorReferenceRankMap(data)];`, context);
+
+  // A: 3 Punkte aus 1 Partie, B: 15 aus 6. Ohne Dämpfung läge A vorn.
+  // E hat nur nach Saisonabschluss gespielt und zählt wie C und D als Neuling.
+  assert.deepEqual(JSON.parse(JSON.stringify(context.result)), [['B', 1], ['A', 2], ['C', 4], ['D', 4], ['E', 4]]);
+});

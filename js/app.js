@@ -3707,7 +3707,52 @@ function formatSignedDecimal(value) {
   return rounded > 0 ? `+${rounded.toFixed(1)}` : rounded.toFixed(1);
 }
 
+// Losfaktor-Referenz: All-Time „Gewertet“ nach Ø-Punkten. Vier gedachte Partien zum
+// Ligaschnitt von 1,5 Punkten dämpfen Spieler mit wenigen Partien.
+const DRAW_FACTOR_PRIOR_MATCHES = 4;
+const DRAW_FACTOR_PRIOR_AVERAGE_POINTS = 1.5;
+let drawFactorReferencePromise = null;
+
+function requestDrawFactorReference() {
+  if (allTimeStatisticsData || drawFactorReferencePromise) return;
+
+  drawFactorReferencePromise = loadAllTimeStatisticsData()
+    .then(() => renderRanking())
+    .catch(error => console.error(error))
+    .finally(() => {
+      drawFactorReferencePromise = null;
+    });
+}
+
+function getDrawFactorReferenceRankMap(data = PADEL_DATA) {
+  if (!allTimeStatisticsData) return null;
+
+  // Abgeschlossene Saisons bleiben auf dem Stand ihres offiziellen Abschlusses eingefroren.
+  const frozenAt = data.completedAt ? Date.parse(data.completedAt) : null;
+  const matches = getAllTimeOfficialMatches()
+    .filter(match => frozenAt === null || Date.parse(match.matchAt) <= frozenAt);
+  const statsByPlayer = getAllTimeScopedStats(matches.map(getAllTimeMatchContribution));
+  const entries = data.players.map(player => {
+    const stats = statsByPlayer.get(player.id);
+    const average = stats?.partien > 0
+      ? (stats.punkte + DRAW_FACTOR_PRIOR_MATCHES * DRAW_FACTOR_PRIOR_AVERAGE_POINTS) / (stats.partien + DRAW_FACTOR_PRIOR_MATCHES)
+      : null;
+    return { name: player.name, stats, average };
+  });
+  const experienced = entries
+    .filter(entry => entry.average !== null)
+    .sort((left, right) => right.average - left.average || compareAllTimeRankingByPoints(left, right));
+  const newcomers = entries.filter(entry => entry.average === null);
+  const rankMap = new Map(experienced.map((entry, index) => [entry.name, index + 1]));
+  // Neulinge ohne gewertete Partie teilen sich die letzten Plätze.
+  const newcomerRank = experienced.length + (newcomers.length + 1) / 2;
+  newcomers.forEach(entry => rankMap.set(entry.name, newcomerRank));
+  return rankMap;
+}
+
 function getPlayerDrawFactor(player, rankMap, matches = PADEL_DATA.matches) {
+  if (!rankMap) return { partnerAverage: null, opponentAverage: null, diff: null };
+
   const partnerPlaces = [];
   const opponentPlaces = [];
 
@@ -3800,9 +3845,28 @@ function renderRankingMatchCount(player, matches = PADEL_DATA.matches) {
   </span>`;
 }
 
-function getDrawFactorAdjustedRank(player, rankMap) {
+// Gleichstand teilt sich den mittleren Platz, damit die Namensreihenfolge den
+// bereinigten Losfaktor-Rang nicht beeinflusst, etwa vor dem ersten Spieltag.
+function getSharedPointsRankMap(matches = PADEL_DATA.matches) {
+  const ranked = getRankedPlayers(matches, 'points');
+  const isTied = (left, right) =>
+    left.stats.punkte === right.stats.punkte &&
+    left.stats.spielDiff === right.stats.spielDiff &&
+    left.stats.gewonneneSpiele === right.stats.gewonneneSpiele;
+  const rankMap = new Map();
+  for (let start = 0; start < ranked.length;) {
+    let end = start;
+    while (end + 1 < ranked.length && isTied(ranked[start], ranked[end + 1])) end += 1;
+    const sharedRank = (start + end) / 2 + 1;
+    ranked.slice(start, end + 1).forEach(player => rankMap.set(player.name, sharedRank));
+    start = end + 1;
+  }
+  return rankMap;
+}
+
+function getDrawFactorAdjustedRank(player, rankMap, referenceRankMap) {
   const currentRank = rankMap.get(player.name);
-  const factor = getPlayerDrawFactor(player, rankMap);
+  const factor = getPlayerDrawFactor(player, referenceRankMap);
 
   if (!Number.isFinite(currentRank)) return Infinity;
   if (!Number.isFinite(factor.diff)) return currentRank;
@@ -3824,6 +3888,8 @@ function renderRanking() {
 
   const withStats = getRankedPlayers(PADEL_DATA.matches, rankingSortMode);
   const rankMap = getRankingPositionMap('points');
+  const drawFactorRankMap = getDrawFactorReferenceRankMap();
+  if (!drawFactorRankMap) requestDrawFactorReference();
   const firmaShort = { Envidual: 'Env', Headsquare: 'Hsq', Hanako: 'Han' };
   const maximumLeagueMatches = getMaximumLeagueMatches();
   const gamesNote = maximumLeagueMatches > 0 ? `Spiele: ${maximumLeagueMatches}` : '';
@@ -3848,7 +3914,7 @@ function renderRanking() {
   body.innerHTML = withStats.map((p, i) => {
     const currentRank = i + 1;
     const pointsRank = rankMap.get(p.name);
-    const extras = getPlayerRankingExtras(p, rankMap);
+    const extras = getPlayerRankingExtras(p, drawFactorRankMap);
     const spielDiffStr = p.stats.partien > 0 ? (p.stats.spielDiff >= 0 ? `+${p.stats.spielDiff}` : `${p.stats.spielDiff}`) : '—';
     const spielDiffClass = getStatDiffClass(p.stats.spielDiff);
     const isTopFourQualifier = getCompetitionConfig().qualificationPlaces > 0
@@ -4125,9 +4191,10 @@ function getRankedPlayers(matches = PADEL_DATA.matches, sortMode = 'points') {
       b.stats.gewonneneSpiele - a.stats.gewonneneSpiele
     );
   } else if (sortMode === 'draw-factor') {
-    const rankMap = getRankingPositionMap('points');
+    const rankMap = getSharedPointsRankMap(matches);
+    const referenceRankMap = getDrawFactorReferenceRankMap();
     withStats.sort((a, b) =>
-      getDrawFactorAdjustedRank(a, rankMap) - getDrawFactorAdjustedRank(b, rankMap) ||
+      getDrawFactorAdjustedRank(a, rankMap, referenceRankMap) - getDrawFactorAdjustedRank(b, rankMap, referenceRankMap) ||
       b.stats.punkte - a.stats.punkte ||
       b.stats.spielDiff - a.stats.spielDiff ||
       b.stats.gewonneneSpiele - a.stats.gewonneneSpiele
