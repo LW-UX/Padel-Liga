@@ -49,8 +49,6 @@
       align-items: center;
       gap: 1.1rem;
       padding-right: 2.5rem;
-      padding-bottom: 1.25rem;
-      border-bottom: 1px solid var(--border);
     }
     .whats-new-app-icon {
       display: block;
@@ -85,10 +83,10 @@
       place-items: center;
       width: 40px;
       height: 40px;
-      border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+      border: 1px solid color-mix(in srgb, var(--accent2) 30%, var(--border));
       border-radius: 12px;
-      background: color-mix(in srgb, var(--accent) 9%, var(--surface));
-      color: var(--accent);
+      background: color-mix(in srgb, var(--accent2) 9%, var(--surface));
+      color: var(--accent2);
     }
     .whats-new-feature-icon svg {
       width: 20px;
@@ -139,7 +137,7 @@
       width: 5px;
       height: 5px;
       border-radius: 50%;
-      background: var(--accent);
+      background: var(--accen2t);
     }
     .whats-new-confirm { width: 100%; min-height: 44px; margin-top: 1.35rem; font-size: 0.95rem; }
 
