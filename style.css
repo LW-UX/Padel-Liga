@@ -2271,7 +2271,7 @@
     table.rt tr:last-child td { border-bottom: none; }
     table.rt tbody tr { transition: background 0.1s; }
     table.rt tbody tr:nth-child(even) { background: var(--row-alt); }
-    table.rt tbody tr:hover { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+    table.rt tbody tr:hover { background: color-mix(in srgb, var(--dim) 20%, transparent); }
     table.rt tbody tr.top-four-highlight td:first-child {
       box-shadow: inset 3px 0 0 var(--dim);
     }
