@@ -2320,7 +2320,7 @@
       z-index: 4;
       background: var(--bg);
     }
-    .ranking-table.expanded .col-rank { left: var(--rank-col-left); }
+    .ranking-table.expanded .col-rank { left: var(--rank-col-left); z-index: 5;}
     .ranking-table.expanded .col-name {
       left: var(--name-col-left);
       box-shadow: 12px 0 18px rgba(0,0,0,0.22);
