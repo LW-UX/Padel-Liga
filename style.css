@@ -908,7 +908,7 @@
     }
     .player-profile-match {
       display: grid;
-      grid-template-columns: 60px 32px minmax(0, 1fr) 132px 84px;
+      grid-template-columns: 64px 32px minmax(0, 1fr) 132px 84px;
       align-items: center;
       gap: 16px;
       padding: 2px 0;
@@ -920,6 +920,7 @@
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
+    .player-profile-match-date { white-space: nowrap; }
     .player-profile-match-outcome {
       display: grid;
       width: 32px;
