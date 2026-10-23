@@ -324,3 +324,25 @@ test('draw factor ranks season players by smoothed all-time average points', () 
   // E hat nur nach Saisonabschluss gespielt und zählt wie C und D als Neuling.
   assert.deepEqual(JSON.parse(JSON.stringify(context.result)), [['B', 1], ['A', 2], ['C', 4], ['D', 4], ['E', 4]]);
 });
+
+test('draw factor compares the whole own team including the player with the opponent team', () => {
+  const sources = [
+    app.match(/function average\(values\) \{[\s\S]*?(?=\nfunction formatDecimal)/)?.[0],
+    app.match(/function getPlayerDrawFactor\(player, rankMap[\s\S]*?(?=\nfunction formatDrawFactor)/)?.[0]
+  ];
+  sources.forEach(source => assert.ok(source, 'draw-factor helpers should be present'));
+  const match = { team1: { spieler: ['Stark', 'Schwach'] }, team2: { spieler: ['Mitte 1', 'Mitte 2'] } };
+  const context = {
+    PADEL_DATA: { matches: [match] },
+    countsForRanking: () => true,
+    getPlayerMatches: () => [match],
+    getPlayerMatchTeamIndex: () => 1,
+    rankMap: new Map([['Stark', 1], ['Schwach', 20], ['Mitte 1', 10], ['Mitte 2', 11]]),
+    result: null
+  };
+  vm.createContext(context);
+  vm.runInContext(`${sources.join('\n')}\nresult = getPlayerDrawFactor({ name: 'Stark' }, rankMap);`, context);
+
+  // Ein ausgeglichenes Los darf für den stärksten Spieler kein Pech ergeben.
+  assert.deepEqual(JSON.parse(JSON.stringify(context.result)), { teamAverage: 10.5, opponentAverage: 10.5, diff: 0 });
+});

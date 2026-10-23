@@ -3750,10 +3750,11 @@ function getDrawFactorReferenceRankMap(data = PADEL_DATA) {
   return rankMap;
 }
 
+// Das eigene Team zählt einschließlich des Spielers, weil die Auslosung Team-Elo ausgleicht.
 function getPlayerDrawFactor(player, rankMap, matches = PADEL_DATA.matches) {
-  if (!rankMap) return { partnerAverage: null, opponentAverage: null, diff: null };
+  if (!rankMap) return { teamAverage: null, opponentAverage: null, diff: null };
 
-  const partnerPlaces = [];
+  const teamPlaces = [];
   const opponentPlaces = [];
 
   getPlayerMatches(player, matches).filter(countsForRanking).forEach(match => {
@@ -3762,29 +3763,27 @@ function getPlayerDrawFactor(player, rankMap, matches = PADEL_DATA.matches) {
 
     const team = teamIndex === 1 ? match.team1.spieler : match.team2.spieler;
     const opponents = teamIndex === 1 ? match.team2.spieler : match.team1.spieler;
-    const partnerAverage = average(team
-      .filter(name => name !== player.name)
-      .map(name => rankMap.get(name)));
+    const teamAverage = average(team.map(name => rankMap.get(name)));
     const opponentAverage = average(opponents.map(name => rankMap.get(name)));
 
-    if (partnerAverage !== null) partnerPlaces.push(partnerAverage);
+    if (teamAverage !== null) teamPlaces.push(teamAverage);
     if (opponentAverage !== null) opponentPlaces.push(opponentAverage);
   });
 
-  const partnerAverage = average(partnerPlaces);
+  const teamAverage = average(teamPlaces);
   const opponentAverage = average(opponentPlaces);
-  const diff = partnerAverage !== null && opponentAverage !== null
-    ? partnerAverage - opponentAverage
+  const diff = teamAverage !== null && opponentAverage !== null
+    ? teamAverage - opponentAverage
     : null;
 
-  return { partnerAverage, opponentAverage, diff };
+  return { teamAverage, opponentAverage, diff };
 }
 
 function formatDrawFactor(factor) {
   if (!factor || !Number.isFinite(factor.diff)) return '—';
 
   const diffClass = getDeltaClass(factor.diff);
-  return `<span class="draw-factor-muted">${formatDecimal(factor.partnerAverage)}</span><span class="draw-factor-muted"> / </span><span class="draw-factor-muted">${formatDecimal(factor.opponentAverage)}</span><span class="draw-factor-muted"> / </span><span class="${diffClass}">${formatSignedDecimal(factor.diff)}</span>`;
+  return `<span class="draw-factor-muted">${formatDecimal(factor.teamAverage)}</span><span class="draw-factor-muted"> / </span><span class="draw-factor-muted">${formatDecimal(factor.opponentAverage)}</span><span class="draw-factor-muted"> / </span><span class="${diffClass}">${formatSignedDecimal(factor.diff)}</span>`;
 }
 
 function getPlayerForm(player, matches = PADEL_DATA.matches) {
