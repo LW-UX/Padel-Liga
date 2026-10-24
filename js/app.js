@@ -2174,8 +2174,7 @@ function renderPlayerProfileCompareResult() {
   const ownElo = profile.summary?.currentElo ?? null;
   const otherElo = playerProfileCompareElos.get(otherId) ?? null;
   const sharedMatches = comparison.together + comparison.against;
-  target.innerHTML = `<div class="stat-meta-line">${escapeHtml([
-    `${formatProfileMatchCount(sharedMatches)} gemeinsame Partien`,
+  target.innerHTML = `<div class="stat-meta-line">${escapeHtml(`${formatProfileMatchCount(sharedMatches)} gemeinsame Partien`)}<br>${escapeHtml([
     `${formatProfileMatchCount(comparison.together)} miteinander`,
     `${formatProfileMatchCount(comparison.against)} gegeneinander`
   ].join(' · '))}</div>
