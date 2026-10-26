@@ -600,9 +600,13 @@
       padding: 0.9rem; 
       background-color: var(--surface); 
     }
-    .training-form > .secondary-button { width: max-content; }
+    .training-form > .secondary-button,
+    .training-result-fields > .secondary-button { width: max-content; }
     .training-form .primary-button { width: max-content; margin-left: auto; }
     .training-form[hidden] { display: none; }
+    .training-result-fields { display: grid; gap: 10px; }
+    .training-result-fields[hidden] { display: none; }
+    .training-form-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .training-alternative-form {
       border: 0;
       border-top: 1px solid var(--border);
@@ -805,6 +809,13 @@
     .training-round-remove:focus-visible { border-color: var(--accent); color: var(--accent); outline: none; }
     .training-round-summary { min-height: 1rem; }
     .training-task-rounds { display: grid; gap: 14px; }
+    .training-task-participants {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px 16px;
+      text-align: center;
+    }
+    .training-task-participants .account-task-player-name { min-width: 0; }
     .training-task-round { display: grid; gap: 14px; }
     .training-task-round + .training-task-round { border-top: 1px solid var(--border); padding-top: 14px; }
     .training-result-details { display: inline-flex; align-items: baseline; justify-content: flex-end; flex-wrap: wrap; gap: 0.2rem; }
@@ -850,7 +861,10 @@
       .live-ticker-text-actions .text-link,
       .match-schedule-actions .secondary-button,
       .training-form > .primary-button,
-      .training-form > .secondary-button
+      .training-form > .secondary-button,
+      .training-result-fields > .secondary-button,
+      .training-form-actions .primary-button,
+      .training-form-actions .secondary-button
       { font-size: var(--text-xs); }
 
       .result-proposal { align-items: flex-start; flex-direction: column; }
@@ -862,4 +876,7 @@
       .training-round-head .training-picker { width: 80%; }
       .training-form-meta label { display: grid; gap: 4px; }
       .training-picker-toggle { min-width: 0; }
+      .training-form-actions { align-items: stretch; flex-direction: column-reverse; }
+      .training-form-actions .primary-button,
+      .training-form-actions .secondary-button { width: 100%; margin: 0; }
     }

@@ -202,12 +202,13 @@ test('games are player-scoped for players and unfiltered for admins', () => {
   );
 });
 
-test('all pending trainings join the confirmation group and own proposals stay locked', () => {
+test('pending trainings join confirmation while scheduled trainings follow their time group', () => {
   assert.match(tippspielSource, /function isTrainingTaskVisible\(task\)[\s\S]*app_role === 'admin'/);
   assert.match(tippspielSource, /const visibleTrainingTasks = state\.trainingTasks\.filter\(isTrainingTaskVisible\)/);
-  assert.match(tippspielSource, /trainingTasks\.forEach\([\s\S]*kind: 'training'/);
+  assert.match(tippspielSource, /filter\(task => !isScheduledTrainingTask\(task\)\)[\s\S]*kind: 'training'/);
+  assert.match(tippspielSource, /isScheduledTrainingDue\(task\)[\s\S]*kind: 'training-scheduled'/);
   assert.match(tippspielSource, /task\.created_by_me[\s\S]*Auf Bestätigung warten/);
-  assert.doesNotMatch(tippspielSource, /data-training-delete|function deleteTraining/);
+  assert.doesNotMatch(tippspielSource, /data-training-delete[^\n]*renderTrainingTaskCard/);
   assert.match(tippspielSource, /data-training-confirm="\$\{task\.session_id\}"[\s\S]*Alternative eingeben/);
   assert.doesNotMatch(tippspielSource, /function renderTraining\(\)/);
 });
@@ -646,7 +647,7 @@ test('training validation is shown inside the training form before any RPC call'
   assert.match(beforeRpc, /setTrainingMessage\('Bitte vier verschiedene Spieler oder Gäste auswählen\.', 'error', form\);\n      return;/);
   assert.match(beforeRpc, /Bitte für jeden Gast einen Namen mit 2 bis 40 Zeichen eingeben/);
   assert.match(beforeRpc, /p_guest_names: guestNames/);
-  assert.match(beforeRpc, /setTrainingMessage\(error\.message, 'error', form\);\n      return;/);
+  assert.match(beforeRpc, /setTrainingMessage\(error\.message, 'error', form\);\n\s+return;/);
 
   assert.match(tippspielSource, /function handleTrainingInvalid\(event\)/);
   assert.match(tippspielSource, /document\.addEventListener\('invalid',[\s\S]*handleTrainingInvalid\(event\)/);
@@ -658,7 +659,7 @@ test('training messages reset across every form lifecycle transition', () => {
   assert.match(tippspielSource, /function editTraining\(sessionId\)[\s\S]*setTrainingMessage\('', '', form\);/);
   assert.match(tippspielSource, /if \(opening\) \{\n          setTrainingMessage\('', '', form\);[\s\S]*renderTrainingForm\(\);/);
   assert.match(tippspielSource, /function closeTrainingForm\(form =[\s\S]*formGroup\.hidden = true/);
-  assert.match(tippspielSource, /button\.disabled = false;\n    setTrainingMessage\('', '', form\);\n    form\.reset\(\);[\s\S]*setAuthMessage\(state\.profile\?\.app_role === 'admin' \? 'Training wurde direkt eingetragen\.' : 'Training wurde zur Bestätigung gesendet\.', 'success'\);/);
+  assert.match(tippspielSource, /button\.disabled = false;\n    setTrainingMessage\('', '', form\);\n    form\.reset\(\);[\s\S]*setAuthMessage\(schedulesFuture[\s\S]*'Training wurde zur Bestätigung gesendet\.', 'success'\);/);
 });
 
 test('training alternatives expand a populated editor inside the current card', () => {
@@ -673,7 +674,7 @@ test('training alternatives expand a populated editor inside the current card', 
   assert.doesNotMatch(editor, /document\.getElementById\('training-form'\)/);
   assert.doesNotMatch(editor, /scrollIntoView/);
   assert.match(tippspielSource, /const editingTrainingId = form\.dataset\.trainingAlternative \|\| null;/);
-  assert.match(tippspielSource, /const rpcName = editingTrainingId \? 'replace_pending_training_session' : 'create_training_session';/);
+  assert.match(tippspielSource, /editingTrainingId \? 'replace_pending_training_session' : 'create_training_session'/);
   ['index.html', 'tipp/index.html'].forEach(relativePath => {
     const source = fs.readFileSync(path.join(__dirname, '..', relativePath), 'utf8');
     assert.match(source, /<form class="training-form" id="training-form" hidden>/);

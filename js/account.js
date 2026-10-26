@@ -98,6 +98,14 @@
     return getMatchAtTimestamp(`${task?.played_on || '9999-12-31'}T${time}`, fallback);
   }
 
+  function isScheduledTrainingTask(task) {
+    return task?.status === 'scheduled';
+  }
+
+  function isScheduledTrainingDue(task, now = Date.now()) {
+    return isScheduledTrainingTask(task) && getTrainingTaskTimestamp(task) <= now;
+  }
+
   function getBerlinMatchAtParts(value) {
     const date = value ? new Date(value) : null;
     if (!date || Number.isNaN(date.getTime())) return { date: null, time: null };
@@ -250,7 +258,10 @@
     const isSettingPassword = isLoggedIn && ['invite', 'recovery', 'change'].includes(state.passwordFlow);
     const displayName = getProfileDisplayName();
     const taskCount = getActionableResultTasks().length
-      + state.trainingTasks.filter(task => !task.created_by_me && isTrainingTaskVisible(task)).length
+      + state.trainingTasks.filter(task => isTrainingTaskVisible(task) && (
+        isScheduledTrainingDue(task)
+        || (!isScheduledTrainingTask(task) && !task.created_by_me)
+      )).length
       + Number(window.PadelLiveTicker?.pendingTaskCount || 0);
     button.innerHTML = isLoggedIn
       ? `<svg class="auth-user-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -650,9 +661,23 @@
     const groupedItems = groups.map(group => {
       const items = group.tasks.map(task => ({ kind: 'league', task }));
       if (group.key === 'review') {
-        trainingTasks.forEach((task, index) => items.push({ kind: 'training', task, index }));
+        trainingTasks
+          .filter(task => !isScheduledTrainingTask(task))
+          .forEach((task, index) => items.push({ kind: 'training', task, index }));
+      }
+      if (group.key === 'past') {
+        trainingTasks
+          .filter(task => isScheduledTrainingDue(task))
+          .forEach((task, index) => items.push({ kind: 'training-scheduled', task, index }));
+      }
+      if (group.key === 'future') {
+        trainingTasks
+          .filter(task => isScheduledTrainingTask(task) && !isScheduledTrainingDue(task))
+          .forEach((task, index) => items.push({ kind: 'training-scheduled', task, index }));
+      }
+      if (group.key !== 'planned') {
         items.sort((first, second) => {
-          const getItemTimestamp = item => item.kind === 'training'
+          const getItemTimestamp = item => item.kind.startsWith('training')
             ? getTrainingTaskTimestamp(item.task)
             : getMatchAtTimestamp(item.task.match_at);
           return getItemTimestamp(first) - getItemTimestamp(second);
@@ -666,6 +691,8 @@
           ${group.items.length
             ? `<div class="account-task-list">${group.items.map(item => item.kind === 'training'
                 ? renderTrainingTaskCard(item.task, item.index)
+                : item.kind === 'training-scheduled'
+                  ? renderScheduledTrainingTaskCard(item.task, group.key)
                 : renderResultTaskCard(item.task, group.key)).join('')}</div>`
             : '<div class="account-empty">Derzeit keine Partie.</div>'}
         </section>`)
@@ -687,9 +714,23 @@
     const visibleTrainingTasks = state.trainingTasks.filter(isTrainingTaskVisible);
     renderResultTaskGroups(document.getElementById('result-task-list'), groups, visibleTrainingTasks);
     visibleTrainingTasks.forEach(task => {
-      if (task.created_by_me) return;
-      const form = document.querySelector(`[data-training-alternative="${CSS.escape(String(task.session_id))}"]`);
-      if (form) renderTrainingForm(task.player_ids, getTrainingRoundValues(task), form, task.guest_names);
+      if (isScheduledTrainingTask(task)) {
+        const form = document.querySelector(`[data-training-scheduled="${CSS.escape(String(task.session_id))}"]`);
+        if (form) {
+          renderTrainingPlayerFields(task.player_ids, task.guest_names, form);
+          if (isScheduledTrainingDue(task)) {
+            renderTrainingRounds([], form, 1);
+            form.querySelectorAll('[data-training-player-fields] button').forEach(button => { button.disabled = true; });
+            form.querySelectorAll('[data-training-guest-name]').forEach(input => { input.readOnly = true; });
+          }
+          syncTrainingFormMode(form);
+        }
+        return;
+      }
+      if (!task.created_by_me) {
+        const form = document.querySelector(`[data-training-alternative="${CSS.escape(String(task.session_id))}"]`);
+        if (form) renderTrainingForm(task.player_ids, getTrainingRoundValues(task), form, task.guest_names);
+      }
     });
     syncDateTimeHints(document.getElementById('result-task-list'));
   }
@@ -1029,6 +1070,39 @@
   function renderTrainingForm(playerIds = null, roundValues = [], form = document.getElementById('training-form'), guestNames = {}) {
     renderTrainingPlayerFields(playerIds, guestNames, form);
     renderTrainingRounds(roundValues, form, Math.max(1, roundValues.length || 1));
+    syncTrainingFormMode(form);
+  }
+
+  function getTrainingFormTimestamp(form) {
+    const dateValue = String(form?.querySelector('[name="playedOn"]')?.value || '');
+    const timeValue = String(form?.querySelector('[name="displayTime"]')?.value || '');
+    if (!dateValue || !timeValue) return NaN;
+    return getMatchAtTimestamp(`${dateValue}T${timeValue}:00`, NaN);
+  }
+
+  function syncTrainingFormMode(form) {
+    if (!form || form.dataset.trainingAlternative) return;
+    const timestamp = getTrainingFormTimestamp(form);
+    const hasCompleteTime = Number.isFinite(timestamp);
+    const schedulesFuture = hasCompleteTime && timestamp > Date.now();
+    const resultFields = form.querySelector('[data-training-result-fields]');
+    if (resultFields) resultFields.hidden = !hasCompleteTime || schedulesFuture;
+    if (hasCompleteTime && !schedulesFuture && !form.querySelector('[data-training-round]')) {
+      renderTrainingRounds([], form, 1);
+    }
+    if (form.dataset.trainingScheduled) {
+      form.querySelectorAll('[data-training-player-fields] button').forEach(button => {
+        button.disabled = !schedulesFuture;
+      });
+      form.querySelectorAll('[data-training-guest-name]').forEach(input => {
+        input.readOnly = !schedulesFuture;
+      });
+    }
+    form.dataset.trainingMode = schedulesFuture ? 'scheduled' : 'result';
+    const submit = form.querySelector('[type="submit"]');
+    if (!submit) return;
+    if (schedulesFuture) submit.textContent = form.dataset.trainingScheduled ? 'Termin speichern' : 'Training terminieren';
+    else submit.textContent = state.profile?.app_role === 'admin' ? 'Training eintragen' : 'Zur Bestätigung senden';
   }
 
   function closeTrainingPickerMenus(exceptPicker = null) {
@@ -1193,6 +1267,55 @@
       <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
       <button class="primary-button" type="submit">${state.profile?.app_role === 'admin' ? 'Training eintragen' : 'Alternative senden'}</button>
     </form>`;
+  }
+
+  function renderTrainingParticipants(task) {
+    return `<div class="training-task-participants">${task.player_ids.map(playerId => {
+      const name = getPlayerName(playerId, task.guest_names, task.player_ids);
+      const isAuthenticated = playerId === state.profile?.player_id;
+      const isGuest = isTrainingGuestKey(playerId);
+      return `<span class="account-task-player-name${isAuthenticated ? ' is-authenticated' : ''}${isGuest ? ' is-guest' : ''}">${escapeHtml(name)}</span>`;
+    }).join('')}</div>`;
+  }
+
+  function renderScheduledTrainingForm(task, due) {
+    const canManage = task.created_by_me || state.profile?.app_role === 'admin';
+    return `<form class="training-form training-alternative-form scheduled-training-form" data-training-scheduled="${escapeHtml(task.session_id)}" ${due ? '' : 'hidden'}>
+      <div class="training-form-meta">
+        <label><span>Datum</span><span class="datetime-input-shell" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required value="${escapeHtml(task.played_on)}"></span></label>
+        <label><span>Uhrzeit</span><span class="datetime-input-shell" data-datetime-field data-datetime-hint="--:--"><input type="time" name="displayTime" required value="${escapeHtml(String(task.display_time).slice(0, 5))}"></span></label>
+      </div>
+      <div class="training-player-fields" data-training-player-fields></div>
+      <div class="training-result-fields" data-training-result-fields ${due ? '' : 'hidden'}>
+        <div class="training-rounds" data-training-rounds></div>
+        <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
+      </div>
+      <div class="auth-message training-message" data-training-message role="status" aria-live="polite"></div>
+      <div class="training-form-actions">
+        ${canManage ? `<button class="secondary-button" type="button" data-training-delete="${escapeHtml(task.session_id)}">Training löschen</button>` : ''}
+        <button class="primary-button" type="submit">${due
+          ? state.profile?.app_role === 'admin' ? 'Ergebnis eintragen' : 'Zur Bestätigung senden'
+          : 'Termin speichern'}</button>
+      </div>
+    </form>`;
+  }
+
+  function renderScheduledTrainingTaskCard(task, groupKey) {
+    const due = groupKey === 'past';
+    const canManage = task.created_by_me || state.profile?.app_role === 'admin';
+    const hasAuthenticatedPlayer = Boolean(state.profile?.player_id && task.player_ids.includes(state.profile.player_id));
+    return `<article class="account-task-card training-task-card scheduled-training-card${hasAuthenticatedPlayer ? ' has-authenticated-player' : ''}${due ? ' is-actionable' : ''}">
+      <div class="account-task-meta">
+        <span class="mc-nr">Training · Partie ${escapeHtml(task.training_number || task.session_id)}</span>
+        <span class="account-task-status${due ? ' is-open' : ''}">${due ? 'Ergebnis eintragen' : 'Terminiert'}</span>
+      </div>
+      <div class="result-card-timing">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>
+      ${renderTrainingParticipants(task)}
+      ${!due && canManage ? `<div class="account-task-actions">
+        <button class="secondary-button" type="button" data-training-schedule-toggle="${escapeHtml(task.session_id)}">Termin ändern</button>
+      </div>` : ''}
+      ${renderScheduledTrainingForm(task, due)}
+    </article>`;
   }
 
   function renderTrainingTaskCard(task, index) {
@@ -2329,35 +2452,52 @@ Dein Hanako-Leben-Squad`;
       setTrainingMessage('Bitte für jeden Gast einen Namen mit 2 bis 40 Zeichen eingeben.', 'error', form);
       return;
     }
-    let rounds;
-    try {
-      rounds = [...form.querySelectorAll('[data-training-round]')].map(round => {
-        const [teamOne, teamTwo] = getTrainingPairing(playerIds, round.querySelector('[name="pairing"]').value);
-        const result = getTrainingResultData(round);
-        return {
-          team_one_ids: teamOne,
-          team_two_ids: teamTwo,
-          result_format: result.resultFormat,
-          result_details: result.resultDetails,
-          sets: result.sets,
-          match_tiebreak: result.matchTiebreak
-        };
-      });
-    } catch (error) {
-      setTrainingMessage(error.message, 'error', form);
-      return;
-    }
     const button = form.querySelector('[type="submit"]');
     const editingTrainingId = form.dataset.trainingAlternative || null;
-    const rpcName = editingTrainingId ? 'replace_pending_training_session' : 'create_training_session';
+    const scheduledTrainingId = form.dataset.trainingScheduled || null;
+    const trainingTimestamp = getTrainingFormTimestamp(form);
+    if (!Number.isFinite(trainingTimestamp)) {
+      setTrainingMessage('Bitte Datum und Uhrzeit vollständig eintragen.', 'error', form);
+      return;
+    }
+    const schedulesFuture = trainingTimestamp > Date.now();
+    if (editingTrainingId && schedulesFuture) {
+      setTrainingMessage('Ein Ergebnisvorschlag darf nicht in der Zukunft liegen.', 'error', form);
+      return;
+    }
+    let rounds = [];
+    if (!schedulesFuture) {
+      try {
+        rounds = [...form.querySelectorAll('[data-training-round]')].map(round => {
+          const [teamOne, teamTwo] = getTrainingPairing(playerIds, round.querySelector('[name="pairing"]').value);
+          const result = getTrainingResultData(round);
+          return {
+            team_one_ids: teamOne,
+            team_two_ids: teamTwo,
+            result_format: result.resultFormat,
+            result_details: result.resultDetails,
+            sets: result.sets,
+            match_tiebreak: result.matchTiebreak
+          };
+        });
+      } catch (error) {
+        setTrainingMessage(error.message, 'error', form);
+        return;
+      }
+    }
+    const rpcName = schedulesFuture
+      ? scheduledTrainingId ? 'update_scheduled_training' : 'schedule_training_session'
+      : scheduledTrainingId ? 'submit_scheduled_training_result'
+        : editingTrainingId ? 'replace_pending_training_session' : 'create_training_session';
     const payload = {
       p_played_on: String(data.get('playedOn')),
       p_display_time: String(data.get('displayTime')),
       p_player_ids: playerIds,
-      p_guest_names: guestNames,
-      p_rounds: rounds
+      p_guest_names: guestNames
     };
+    if (!schedulesFuture) payload.p_rounds = rounds;
     if (editingTrainingId) payload.p_session_id = Number(editingTrainingId);
+    if (scheduledTrainingId) payload.p_session_id = Number(scheduledTrainingId);
     const editedTraining = editingTrainingId
       ? state.trainingTasks.find(item => Number(item.session_id) === Number(editingTrainingId))
       : null;
@@ -2373,7 +2513,7 @@ Dein Hanako-Leben-Squad`;
       return;
     }
     button.disabled = true;
-    setTrainingMessage('Training wird gespeichert …', '', form);
+    setTrainingMessage(schedulesFuture ? 'Training wird terminiert …' : 'Training wird gespeichert …', '', form);
     try {
       const { error } = await state.client.rpc(rpcName, payload);
       if (error) throw error;
@@ -2389,8 +2529,11 @@ Dein Hanako-Leben-Squad`;
     form.hidden = true;
     const formGroup = form.closest('[data-training-form-group]');
     if (formGroup) formGroup.hidden = true;
-    setAuthMessage(state.profile?.app_role === 'admin' ? 'Training wurde direkt eingetragen.' : 'Training wurde zur Bestätigung gesendet.', 'success');
+    setAuthMessage(schedulesFuture
+      ? scheduledTrainingId ? 'Trainingstermin wurde geändert.' : 'Training wurde terminiert.'
+      : state.profile?.app_role === 'admin' ? 'Training wurde direkt eingetragen.' : 'Training wurde zur Bestätigung gesendet.', 'success');
     await refresh();
+    window.dispatchEvent(new CustomEvent('padel:training-data-changed'));
   }
 
   function editTraining(sessionId) {
@@ -2418,6 +2561,17 @@ Dein Hanako-Leben-Squad`;
     setAuthMessage('Training bestätigt.', 'success');
     await refresh();
     window.dispatchEvent(new CustomEvent('padel:profile-data-changed'));
+    window.dispatchEvent(new CustomEvent('padel:training-data-changed'));
+  }
+
+  async function deleteScheduledTraining(sessionId) {
+    if (!window.confirm('Soll dieser Trainingstermin wirklich gelöscht werden?')) return;
+    setAuthMessage('Trainingstermin wird gelöscht …');
+    const { error } = await state.client.rpc('delete_scheduled_training', { p_session_id: Number(sessionId) });
+    if (error) return setAuthMessage(getFriendlyAuthError(error), 'error');
+    setAuthMessage('Trainingstermin wurde gelöscht.', 'success');
+    await refresh();
+    window.dispatchEvent(new CustomEvent('padel:training-data-changed'));
   }
 
   function bindEvents() {
@@ -2605,12 +2759,21 @@ Dein Hanako-Leben-Squad`;
         if (formGroup) formGroup.hidden = !opening;
         if (opening) {
           setTrainingMessage('', '', form);
-          form.querySelector('[type="submit"]').textContent = state.profile?.app_role === 'admin'
-            ? 'Training eintragen'
-            : 'Training zur Bestätigung senden';
           renderTrainingForm();
+          syncTrainingFormMode(form);
         } else {
           closeTrainingForm(form);
+        }
+        return;
+      }
+      const trainingScheduleToggle = event.target.closest('[data-training-schedule-toggle]');
+      if (trainingScheduleToggle) {
+        const form = trainingScheduleToggle.closest('.training-task-card')
+          ?.querySelector('[data-training-scheduled]');
+        if (form) {
+          form.hidden = !form.hidden;
+          trainingScheduleToggle.textContent = form.hidden ? 'Termin ändern' : 'Termin schließen';
+          if (!form.hidden) syncTrainingFormMode(form);
         }
         return;
       }
@@ -2656,6 +2819,10 @@ Dein Hanako-Leben-Squad`;
         const form = removeRound.closest('.training-form');
         if (!form) return;
         if (removeIndex === 0) {
+          if (form.dataset.trainingScheduled) {
+            renderTrainingRounds([], form, 1);
+            return;
+          }
           closeTrainingForm(form);
           return;
         }
@@ -2667,6 +2834,11 @@ Dein Hanako-Leben-Squad`;
       const confirmTrainingButton = event.target.closest('[data-training-confirm]');
       if (confirmTrainingButton) {
         await confirmTraining(confirmTrainingButton.dataset.trainingConfirm);
+        return;
+      }
+      const deleteTrainingButton = event.target.closest('[data-training-delete]');
+      if (deleteTrainingButton) {
+        await deleteScheduledTraining(deleteTrainingButton.dataset.trainingDelete);
         return;
       }
       const editTrainingButton = event.target.closest('[data-training-edit]');
@@ -2689,6 +2861,10 @@ Dein Hanako-Leben-Squad`;
     }, true);
     document.addEventListener('input', event => {
       syncDateTimeHint(event.target);
+      if (event.target.matches('.training-form input:is([type="date"], [type="time"])')) {
+        syncTrainingFormMode(event.target.closest('.training-form'));
+        return;
+      }
       const trainingPickerSearch = event.target.closest('[data-training-picker-search]');
       if (trainingPickerSearch) {
         filterTrainingPlayerOptions(
@@ -2712,6 +2888,10 @@ Dein Hanako-Leben-Squad`;
     });
     document.addEventListener('change', event => {
       syncDateTimeHint(event.target);
+      if (event.target.matches('.training-form input:is([type="date"], [type="time"])')) {
+        syncTrainingFormMode(event.target.closest('.training-form'));
+        return;
+      }
       if (event.target.matches('[data-training-guest-name]')) {
         const form = event.target.closest('.training-form');
         if (!form) return;

@@ -837,7 +837,7 @@
                     <span class="account-games-help-block"><strong>Terminieren</strong>Bei einem geplanten Spiel Datum und Uhrzeit wählen und „Terminieren“ klicken. Über „Termin ändern“ oder „Termin löschen“ passt du ihn später an.</span>
                     <span class="account-games-help-block"><strong>Ergebnis eintragen</strong>Nach dem Spiel die Sätze eintragen, den tatsächlichen Spielzeitpunkt prüfen und „Zur Bestätigung senden“ klicken.</span>
                     <span class="account-games-help-block"><strong>Bestätigen</strong>Ergebnisse des anderen Teams stehen unter „Zu bestätigen“. Stimmt es, klickst du „Ergebnis bestätigen“, sonst „Alternative eingeben“. Ohne Reaktion gilt ein Vorschlag nach 48 Stunden als bestätigt.</span>
-                    <span class="account-games-help-block"><strong>Training</strong>Über „Training hinzufügen“ Datum, Uhrzeit und vier Spieler wählen (auch Gäste), Ergebnis eintragen und zur Bestätigung senden. Trainings zählen nicht für Rangliste und Elo.</span>
+                    <span class="account-games-help-block"><strong>Training</strong>Für einen zukünftigen Termin genügen Datum, Uhrzeit und vier Teilnehmer. Nach dem Termin ergänzt du Paarungen, Formate und Ergebnisse und sendest sie zur Bestätigung. Trainings zählen nicht für Rangliste und Elo.</span>
                   </span>
                 </span>
               </h3>
@@ -851,7 +851,7 @@
               <div class="spieltag-label">
                 <span class="th-help-wrap">Training
                   <span class="help-icon" tabindex="0" aria-label="Training eintragen erklären">?</span>
-                  <span class="help-tooltip">Wähle zuerst Datum, Uhrzeit und vier verschiedene Spieler aus. Lege danach Paarung und Ergebnisformat fest und trage das Ergebnis satzweise ein. Bei wechselnden Paarungen kannst du „Weiteres Spielergebnis“ hinzufügen. Sende das Training anschließend zur Bestätigung an die anderen Beteiligten.</span>
+                  <span class="help-tooltip">Wähle Datum, Uhrzeit und vier verschiedene Teilnehmer. Liegt der Termin in der Zukunft, wird das Training ohne Ergebnis terminiert. Nach dem Termin kannst du Paarungen, Ergebnisformate und Satzstände ergänzen.</span>
                 </span>
               </div>
               <form class="training-form" id="training-form" hidden>
@@ -860,10 +860,12 @@
                   <label><span>Uhrzeit</span><span class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="--:--"><input type="time" name="displayTime" required></span></label>
                 </div>
                 <div class="training-player-fields" id="training-player-fields" data-training-player-fields></div>
-                <div class="training-rounds" id="training-rounds" data-training-rounds></div>
+                <div class="training-result-fields" data-training-result-fields hidden>
+                  <div class="training-rounds" id="training-rounds" data-training-rounds></div>
+                  <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
+                </div>
                 <div class="auth-message training-message" data-training-message role="status" aria-live="polite"></div>
-                <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
-                <button class="primary-button" type="submit">Training zur Bestätigung senden</button>
+                <button class="primary-button" type="submit">Training speichern</button>
               </form>
             </div>
             <div class="account-task-list prediction-match-list" id="result-task-list"></div>

@@ -70,6 +70,8 @@ Diese Datei ist die kanonische Quelle für Terminierung, Ergebnisse, Bestätigun
 ## Trainingsspiele
 
 - Trainings sind saisonunabhängig und erscheinen nicht im regulären Spielplan. Sie beeinflussen weder Saisonrangliste noch Elo.
+- Ein Training kann für einen zukünftigen Zeitpunkt zunächst ausschließlich mit Datum, Uhrzeit und genau vier Teilnehmern terminiert werden. Paarungen, Ergebnisformate und Satzstände werden erst nach dem Termin erfasst; ein Ergebniszeitpunkt darf nicht in der Zukunft liegen. Ein vergangener Trainingstermin ohne bestätigtes Ergebnis zählt nicht für Profile oder Statistiken.
+- Terminierung und Ergebnisbestätigung sind getrennte Zustände. Die automatische Bestätigung nach 48 Stunden beginnt erst mit einem eingereichten Ergebnisvorschlag und gilt nicht für einen bloßen Trainingstermin. Der Ersteller beziehungsweise ein Admin darf einen offenen Trainingstermin ändern oder löschen; nach dem Termin darf jeder beteiligte Spieler das Ergebnis mit beliebig vielen Abschnitten und wechselnden Paarungen der vier feststehenden Teilnehmer vorschlagen.
 - Ein Training umfasst genau vier Teilnehmer und kann mehrere Abschnitte mit wechselnden Paarungen dieser vier Teilnehmer enthalten. Neben bestehenden Spielern sind dabei anonyme Gastteilnahmen mit einem nur für dieses Training gespeicherten Anzeigenamen zulässig.
 - Ein Gast besitzt kein Spielerprofil und keine dauerhafte Spieler-ID. Auch identische Gastnamen in verschiedenen Trainings werden nicht miteinander verknüpft; mehrere gleichnamige Gäste desselben Trainings werden in der Anzeige nummeriert unterschieden.
 - Beteiligte Spieler dürfen Trainings anlegen; Admins dürfen dies im administrativen Umfang. Bei einem von einem Spieler angelegten Training bestätigt ein anderer Beteiligter, macht eine Alternative oder lässt die automatische Bestätigung greifen. Von Admins angelegte Trainings und Admin-Alternativen gelten wie Admin-Ergebnisse unmittelbar als bestätigt.
@@ -79,6 +81,7 @@ Diese Datei ist die kanonische Quelle für Terminierung, Ergebnisse, Bestätigun
 - Die Trainingswertung wird ausschließlich den beteiligten Spielern mit Profil zugerechnet. Gäste bleiben in Paarung und Ergebnis sichtbar, erhalten aber selbst keine Statistik.
 - Ein vollständig entschiedenes Format mit Match-Tiebreak wird insgesamt als volle Partie mit eindeutigem Sieger gewertet. Match-Tiebreak-Punkte zählen nicht als Games.
 - Mehrere Abschnitte eines Trainings und die Sätze eines Final Four werden in Profilen als gemeinsame Gruppe dargestellt. Final-Four-Sätze bleiben offizielle Partien und zählen jeweils als halbe Partie.
+- Auf der Startseite erscheint ein zukünftiger Trainingstermin zwischen den kommenden Partien. Ein bestätigtes Training erscheint als genau ein Eintrag zwischen den letzten Partien, unabhängig von der Anzahl seiner Abschnitte. Trainingskarten zeigen Termin, vier Teilnehmer sowie bei vergangenen Trainings die Anzahl der Abschnitte und vollständig beendeten Sätze; sie besitzen keine Detailansicht, keinen Gesamtsieger und kein zusammengezogenes Gesamtergebnis. Registrierte Spielernamen führen ins jeweilige Profil, Gastnamen bleiben reiner Text.
 
 ## Rechner
 

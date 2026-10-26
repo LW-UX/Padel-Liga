@@ -17,6 +17,7 @@ let activeCalculatorMatchId = null;
 let calculatorAutoTip = false;
 let ownPredictionMatchIds = new Set();
 let ownPredictionRequest = 0;
+let publicTrainingFeed = { upcoming: [], recent: [] };
 let activeSeasonRefreshPromise = null;
 let seasonRefreshRequested = false;
 let playerProfileChart = null;
@@ -294,6 +295,44 @@ async function loadDatabaseMatchForecasts(seasonReference) {
     return [];
   }
   return Array.isArray(data) ? data : [];
+}
+
+async function loadDatabasePublicTrainingFeed() {
+  const client = getSupabaseClient();
+  if (!client) return { upcoming: [], recent: [] };
+  let response;
+  try {
+    response = await client.rpc('get_public_training_feed');
+  } catch (error) {
+    console.warn('Öffentliche Trainingstermine konnten nicht geladen werden:', error);
+    return { upcoming: [], recent: [] };
+  }
+  const { data, error } = response;
+  if (error) {
+    if (error.code === 'PGRST202' || /get_public_training_feed/i.test(String(error.message || ''))) {
+      return { upcoming: [], recent: [] };
+    }
+    console.warn('Öffentliche Trainingstermine konnten nicht geladen werden:', error);
+    return { upcoming: [], recent: [] };
+  }
+  const normalize = item => ({
+    ...item,
+    playedOn: String(item?.playedOn || ''),
+    displayTime: String(item?.displayTime || '').replace(':', '.'),
+    participants: Array.isArray(item?.participants) ? item.participants : [],
+    roundCount: Number(item?.roundCount) || 0,
+    completedSetCount: Number(item?.completedSetCount) || 0
+  });
+  return {
+    upcoming: Array.isArray(data?.upcoming) ? data.upcoming.map(normalize) : [],
+    recent: Array.isArray(data?.recent) ? data.recent.map(normalize) : []
+  };
+}
+
+async function refreshPublicTrainingFeed() {
+  publicTrainingFeed = await loadDatabasePublicTrainingFeed();
+  invalidateSections(['start']);
+  renderActiveSection();
 }
 
 async function loadDatabaseAllTimeStatisticsPayload() {
@@ -872,7 +911,10 @@ async function loadActiveSeason() {
   await loadDatabaseSeasonOptions();
   selectedSeason = getDefaultSeasonOption();
   if (!selectedSeason) throw new Error('Keine Saison in data/seasons.js gefunden.');
-  PADEL_DATA = await loadSeasonData(selectedSeason);
+  [PADEL_DATA, publicTrainingFeed] = await Promise.all([
+    loadSeasonData(selectedSeason),
+    loadDatabasePublicTrainingFeed()
+  ]);
 }
 
 function updateSeasonPhaseLayout(phase = getSeasonDisplayPhase()) {
@@ -4389,6 +4431,27 @@ function renderHomeMatchCard(match, options = {}) {
   </div>`;
 }
 
+function getHomeFeedTimestamp(dateValue, timeValue) {
+  const normalizedTime = String(timeValue || '').replace('.', ':');
+  const timestamp = new Date(`${dateValue}T${normalizedTime || '00:00'}:00`).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function renderHomeTrainingCard(training, { recent = false } = {}) {
+  const pseudoMatch = { datum: training.playedOn, uhrzeit: training.displayTime };
+  const participantLinks = training.participants.map(participant => renderPlayerProfileLink({
+    id: participant.isGuest ? null : participant.id,
+    name: participant.displayName
+  }, 'mini-training-player'));
+  const roundLabel = `${training.roundCount} ${training.roundCount === 1 ? 'Spielabschnitt' : 'Spielabschnitte'}`;
+  const setLabel = `${training.completedSetCount} ${training.completedSetCount === 1 ? 'vollständiger Satz' : 'vollständige Sätze'}`;
+  return `<div class="mini-match-row mini-training-row">
+    <div class="mini-match-meta">Training – ${escapeHtml(formatRelativeMatchDate(pseudoMatch))}</div>
+    <div class="mini-training-players">${participantLinks.join('')}</div>
+    <div class="mini-training-summary">${recent ? `${escapeHtml(roundLabel)} · ${escapeHtml(setLabel)}` : '4 Teilnehmer'}</div>
+  </div>`;
+}
+
 function getCurrentArticle() {
   const articles = PADEL_DATA.articles || [];
   const todayKey = toDateKey(new Date());
@@ -4633,9 +4696,13 @@ function renderHome() {
     .join('');
 
   const todayKey = toDateKey(new Date());
-  const nextMatches = PADEL_DATA.matches
+  const nextMatchEntries = PADEL_DATA.matches
     .filter(m => !isCancelledMatch(m) && m.sieger === null && m.uhrzeit && toDateKey(m.datum) >= todayKey)
-    .sort(compareMatchesByDateTime)
+    .map(match => ({ kind: 'match', match, timestamp: getHomeFeedTimestamp(toDateKey(match.datum), match.uhrzeit) }));
+  const nextTrainingEntries = publicTrainingFeed.upcoming
+    .map(training => ({ kind: 'training', training, timestamp: getHomeFeedTimestamp(training.playedOn, training.displayTime) }));
+  const nextEntries = [...nextMatchEntries, ...nextTrainingEntries]
+    .sort((left, right) => left.timestamp - right.timestamp)
     .slice(0, 3);
   const allMatchesPlayed = PADEL_DATA.matches.every(isCompletedSeasonMatch);
   const emptyNextMatchesText = PADEL_DATA.matches.length === 0
@@ -4644,21 +4711,29 @@ function renderHome() {
     ? 'Alle Partien sind gespielt.'
     : 'Keine weiteren Partien terminiert.';
 
-  document.getElementById('home-next-matches').innerHTML = nextMatches.length
-    ? nextMatches.map(match => renderHomeMatchCard(match)).join('')
+  document.getElementById('home-next-matches').innerHTML = nextEntries.length
+    ? nextEntries.map(entry => entry.kind === 'training'
+      ? renderHomeTrainingCard(entry.training)
+      : renderHomeMatchCard(entry.match)).join('')
     : `<div class="empty-state">${emptyNextMatchesText}</div>`;
 
   const playedMatches = PADEL_DATA.matches.filter(match => match.sieger !== null);
-  const recentMatches = playedMatches
+  const recentMatchEntries = playedMatches
     .filter(match => match.sieger !== null && match.ergebnis)
-    .sort(compareMatchesByDateTimeDesc)
+    .map(match => ({ kind: 'match', match, timestamp: getHomeFeedTimestamp(toDateKey(match.datum), match.uhrzeit) }));
+  const recentTrainingEntries = publicTrainingFeed.recent
+    .map(training => ({ kind: 'training', training, timestamp: getHomeFeedTimestamp(training.playedOn, training.displayTime) }));
+  const recentEntries = [...recentMatchEntries, ...recentTrainingEntries]
+    .sort((left, right) => right.timestamp - left.timestamp)
     .slice(0, 3);
-  const emptyRecentMatchesText = playedMatches.length === 0
+  const emptyRecentMatchesText = playedMatches.length === 0 && publicTrainingFeed.recent.length === 0
     ? 'Noch keine Partien gespielt.'
     : 'Noch keine Partien mit Ergebnis.';
 
-  document.getElementById('home-recent-matches').innerHTML = recentMatches.length
-    ? recentMatches.map(match => renderHomeMatchCard(match)).join('')
+  document.getElementById('home-recent-matches').innerHTML = recentEntries.length
+    ? recentEntries.map(entry => entry.kind === 'training'
+      ? renderHomeTrainingCard(entry.training, { recent: true })
+      : renderHomeMatchCard(entry.match)).join('')
     : `<div class="empty-state">${emptyRecentMatchesText}</div>`;
 }
 
@@ -7828,6 +7903,10 @@ async function initApp() {
     console.error(error);
     return;
   }
+
+  window.addEventListener('padel:training-data-changed', () => {
+    void refreshPublicTrainingFeed();
+  });
 
   finishInitialLoading();
   if (isDetailEmbed) initDetailEmbed();

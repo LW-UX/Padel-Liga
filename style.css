@@ -2132,6 +2132,24 @@
       font-family: var(--font-body);
       font-size: var(--text-sm);
     }
+    .mini-training-players {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 5px 14px;
+      text-align: center;
+    }
+    .mini-training-player {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .mini-training-summary {
+      margin-top: 0.55rem;
+      color: var(--dim);
+      font-size: var(--text-sm);
+      text-align: center;
+    }
     .empty-state { color: var(--dim); font-size: var(--text-sm); }
     .mini-match-row.viewer-match,
     .mc.viewer-match {
