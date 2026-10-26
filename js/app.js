@@ -55,6 +55,7 @@ const LEGACY_SEASON_IDS = Object.freeze({
   'cup-2027': '2027-cup',
   'test-2026': '2026-test'
 });
+const TEST_TRAINING_PLAYER_IDS = new Set(['ludi_gmail', 'ludi_gmx', 'ludi_ionos', 'test_net']);
 let playerProfileLastTrigger = null;
 const isDetailEmbed = document.documentElement.classList.contains('is-detail-embed');
 
@@ -297,12 +298,43 @@ async function loadDatabaseMatchForecasts(seasonReference) {
   return Array.isArray(data) ? data : [];
 }
 
+function isTestTrainingFeedItem(training) {
+  return (training?.participants || []).some(participant =>
+    !participant?.isGuest && TEST_TRAINING_PLAYER_IDS.has(String(participant?.id || ''))
+  );
+}
+
+function getSeasonTrainingCutoffDate(completedAt = PADEL_DATA?.completedAt || selectedSeason?.completedAt) {
+  return completedAt ? getBerlinDateTimeParts(completedAt).date : null;
+}
+
+function filterPublicTrainingFeedForSeason(
+  items,
+  seasonId = selectedSeason?.id,
+  completedAt = PADEL_DATA?.completedAt || selectedSeason?.completedAt
+) {
+  const testMode = normalizeSeasonId(seasonId) === '2026-test';
+  const cutoffDate = getSeasonTrainingCutoffDate(completedAt);
+  return (items || []).filter(training =>
+    (testMode || !isTestTrainingFeedItem(training))
+    && (!cutoffDate || String(training?.playedOn || '') <= cutoffDate)
+  );
+}
+
 async function loadDatabasePublicTrainingFeed() {
   const client = getSupabaseClient();
   if (!client) return { upcoming: [], recent: [] };
+  const testMode = normalizeSeasonId(selectedSeason?.id) === '2026-test';
+  const cutoffDate = getSeasonTrainingCutoffDate(selectedSeason?.completedAt);
   let response;
   try {
-    response = await client.rpc('get_public_training_feed');
+    response = await client.rpc('get_public_training_feed', { p_test_mode: testMode, p_until: cutoffDate });
+    if (response.error?.code === 'PGRST202') {
+      response = await client.rpc('get_public_training_feed', { p_test_mode: testMode });
+    }
+    if (response.error?.code === 'PGRST202') {
+      response = await client.rpc('get_public_training_feed');
+    }
   } catch (error) {
     console.warn('Öffentliche Trainingstermine konnten nicht geladen werden:', error);
     return { upcoming: [], recent: [] };
@@ -324,8 +356,8 @@ async function loadDatabasePublicTrainingFeed() {
     completedSetCount: Number(item?.completedSetCount) || 0
   });
   return {
-    upcoming: Array.isArray(data?.upcoming) ? data.upcoming.map(normalize) : [],
-    recent: Array.isArray(data?.recent) ? data.recent.map(normalize) : []
+    upcoming: filterPublicTrainingFeedForSeason(Array.isArray(data?.upcoming) ? data.upcoming.map(normalize) : []),
+    recent: filterPublicTrainingFeedForSeason(Array.isArray(data?.recent) ? data.recent.map(normalize) : [])
   };
 }
 
@@ -1045,7 +1077,10 @@ async function refreshActiveSeasonView() {
       const selectedSeasonId = selectedSeason.id;
       await loadDatabaseSeasonOptions();
       selectedSeason = getSeasonOptions().find(season => season.id === selectedSeasonId) || selectedSeason;
-      PADEL_DATA = await loadSeasonData(selectedSeason);
+      [PADEL_DATA, publicTrainingFeed] = await Promise.all([
+        loadSeasonData(selectedSeason),
+        loadDatabasePublicTrainingFeed()
+      ]);
 
       calculatorResults = new Map();
       finalFourCalculatorResults = new Map();
@@ -4443,7 +4478,7 @@ function renderHomeTrainingCard(training, { recent = false } = {}) {
     id: participant.isGuest ? null : participant.id,
     name: participant.displayName
   }, 'mini-training-player'));
-  const roundLabel = `${training.roundCount} ${training.roundCount === 1 ? 'Spielabschnitt' : 'Spielabschnitte'}`;
+  const roundLabel = `${training.roundCount} ${training.roundCount === 1 ? 'Paarung' : 'Paarungen'}`;
   const setLabel = `${training.completedSetCount} ${training.completedSetCount === 1 ? 'vollständiger Satz' : 'vollständige Sätze'}`;
   return `<div class="mini-match-row mini-training-row">
     <div class="mini-match-meta">Training – ${escapeHtml(formatRelativeMatchDate(pseudoMatch))}</div>

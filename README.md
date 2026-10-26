@@ -188,7 +188,7 @@ Der Konto-Dialog trennt „Spiele“ und „Einstellungen“. Unter „Spiele“
 
 ## Trainingsspiele
 
-Spieler können im Konto-Dialog ein saisonunabhängiges Training mit Datum, Uhrzeit und genau vier Spielern anlegen. Eine Trainingskarte kann mehrere Spielabschnitte mit wechselnden Paarungen derselben vier Spieler enthalten. Jeder Abschnitt enthält einen oder zwei tatsächlich gespielte Sätze; ein Stand von 1:1 ist zulässig. Ein anderer beteiligter Spieler muss das Training bestätigen. Trainings verändern kein Elo.
+Spieler können im Konto-Dialog ein saisonunabhängiges Training mit Datum, Uhrzeit und genau vier Spielern anlegen. Eine Trainingskarte kann mehrere Paarungen derselben vier Spieler enthalten. Jede Paarung enthält die tatsächlich gespielten Sätze entsprechend dem gewählten Ergebnisformat; Teilstände sind zulässig. Ein anderer beteiligter Spieler muss das Training bestätigen. Trainings verändern kein Elo.
 
 ## Firmenregistrierung und Spielereinladungen
 

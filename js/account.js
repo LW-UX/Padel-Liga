@@ -984,7 +984,7 @@
         <div class="training-round-head">
           ${renderTrainingPicker({ label: 'Paarung', name: 'pairing', value: value.pairing, options: pairingOptions, menuId: `${menuPrefix}-pairing-menu-${index}` })}
           ${renderTrainingPicker({ label: 'Ergebnisformat', name: 'resultFormat', value: value.resultFormat, options: formatOptions, menuId: `${menuPrefix}-format-menu-${index}` })}
-          <button class="training-round-remove" type="button" data-training-round-remove="${index}" aria-label="${index === 0 ? 'Trainingseingabe schließen' : `Spielergebnis ${index + 1} entfernen`}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
+          <button class="training-round-remove" type="button" data-training-round-remove="${index}" aria-label="${index === 0 ? 'Trainingseingabe schließen' : `Paarung ${index + 1} entfernen`}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
         </div>
         ${renderTrainingScoreCounters(value, value.resultFormat)}
         <div class="result-entry-summary training-round-summary" data-training-round-summary aria-live="polite">Satzergebnis wird automatisch berechnet.</div>
@@ -1264,7 +1264,7 @@
       <div class="training-player-fields" data-training-player-fields></div>
       <div class="training-rounds" data-training-rounds></div>
       <div class="auth-message training-message" data-training-message role="status" aria-live="polite"></div>
-      <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
+      <button class="secondary-button" type="button" data-training-round-add>Weitere Paarung</button>
       <button class="primary-button" type="submit">${state.profile?.app_role === 'admin' ? 'Training eintragen' : 'Alternative senden'}</button>
     </form>`;
   }
@@ -1288,7 +1288,7 @@
       <div class="training-player-fields" data-training-player-fields></div>
       <div class="training-result-fields" data-training-result-fields ${due ? '' : 'hidden'}>
         <div class="training-rounds" data-training-rounds></div>
-        <button class="secondary-button" type="button" data-training-round-add>Weiteres Spielergebnis</button>
+        <button class="secondary-button" type="button" data-training-round-add>Weitere Paarung</button>
       </div>
       <div class="auth-message training-message" data-training-message role="status" aria-live="polite"></div>
       <div class="training-form-actions">
