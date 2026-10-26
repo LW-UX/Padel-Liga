@@ -5004,10 +5004,10 @@
       .prediction-overview-leaders { order: 3; }
       .prediction-overview-latest { order: 4; }
       .prediction-overview-balance { order: 5; }
-      .prediction-overview-grid.is-guest .prediction-overview-community { order: 1; }
-      .prediction-overview-grid.is-guest .prediction-overview-leaders { order: 2; }
-      .prediction-overview-grid.is-guest .prediction-overview-stand { order: 3; }
-      .prediction-overview-grid.is-guest .prediction-overview-action { order: 4; }
+      .prediction-overview-grid.is-guest .prediction-overview-stand { order: 1; }
+      .prediction-overview-grid.is-guest .prediction-overview-action { order: 2; }
+      .prediction-overview-grid.is-guest .prediction-overview-community { order: 3; }
+      .prediction-overview-grid.is-guest .prediction-overview-leaders { order: 4; }
       .prediction-overview-personal-stand { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .prediction-overview-stand-copy { grid-column: 1 / -1; }
       .prediction-overview-scoreline { gap: 2.5rem; }
