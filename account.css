@@ -810,10 +810,9 @@
     .training-round-summary { min-height: 1rem; }
     .training-task-rounds { display: grid; gap: 14px; }
     .training-task-participants {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 6px 16px;
-      text-align: center;
+      display: flex;
+      gap: 8px;
+      justify-content: space-around;
     }
     .training-task-participants .account-task-player-name { min-width: 0; }
     .training-task-round { display: grid; gap: 14px; }
