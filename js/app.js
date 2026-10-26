@@ -2107,16 +2107,16 @@ function renderPlayerProfileRelationships(matches = []) {
   if (!target) return;
   const leaders = getPlayerProfileRelationshipLeaders(matches);
   const relationships = [
-    ['Erfolgspartner', leaders.favoritePartners, 'pos'],
-    ['Angstpartner', leaders.fearedPartners, 'neg'],
-    ['Lieblingsgegner', leaders.favoriteOpponents, 'pos'],
-    ['Angstgegner', leaders.fearedOpponents, 'neg']
+    ['Erfolgspartner', leaders.favoritePartners, 'pos', 'Ab 3 gemeinsamen Partien: höchste Siegquote als Team über 50 %. Trainings werden mitgezählt.'],
+    ['Angstpartner', leaders.fearedPartners, 'neg', 'Ab 3 gemeinsamen Partien: niedrigste Siegquote als Team unter 50 %. Trainings werden mitgezählt.'],
+    ['Lieblingsgegner', leaders.favoriteOpponents, 'pos', 'Ab 3 Partien gegeneinander: höchste Siegquote über 50 %. Trainings werden mitgezählt.'],
+    ['Angstgegner', leaders.fearedOpponents, 'neg', 'Ab 3 Partien gegeneinander: niedrigste Siegquote unter 50 %. Trainings werden mitgezählt.']
   ].filter(([, records]) => records.length);
 
   if (heading) heading.hidden = relationships.length > 0;
   target.classList.toggle('has-results', relationships.length > 0);
   if (!relationships.length) {
-    target.innerHTML = '<div class="empty-state">Noch keine Wertung – sie zählt ab 3 gemeinsamen Partien mit einer Quote über oder unter 50 %.</div>';
+    target.innerHTML = '<div class="empty-state">Noch keine Wertung – sie zählt ab 3 gemeinsamen Partien mit einer Quote über oder unter 50 %. Dabei zählen Trainings mit.</div>';
     return;
   }
 
@@ -2131,8 +2131,13 @@ function renderPlayerProfileRelationships(matches = []) {
   };
 
   target.innerHTML = `<div class="stat-shift-groups">
-    ${relationships.map(([label, records, valueClass]) => `<div class="stat-shift-group">
-      <div class="widget-label">${label}</div>
+    ${relationships.map(([label, records, valueClass, helpText], index) => {
+      const tooltipId = `player-profile-relationship-help-${index}`;
+      return `<div class="stat-shift-group">
+      <div class="widget-label"><span class="th-help-wrap">${escapeHtml(label)}
+        <span class="help-icon" tabindex="0" role="button" aria-label="${escapeHtml(label)} erklären" aria-describedby="${tooltipId}" aria-expanded="false" data-help-tooltip-anchor>?</span>
+        <span class="help-tooltip" id="${tooltipId}" role="tooltip">${escapeHtml(helpText)}</span>
+      </span></div>
       <div class="stat-shift-list">
         ${records.map(record => `<div class="stat-shift-item">
           <div class="stat-shift-head">
@@ -2142,7 +2147,8 @@ function renderPlayerProfileRelationships(matches = []) {
           <div class="stat-meta-line">${escapeHtml(formatRecord(record))}</div>
         </div>`).join('')}
       </div>
-    </div>`).join('')}
+    </div>`;
+    }).join('')}
   </div>`;
 }
 

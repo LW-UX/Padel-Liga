@@ -294,7 +294,9 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /\['Erfolgspartner', leaders\.favoritePartners/);
   assert.match(app, /\['Lieblingsgegner', leaders\.favoriteOpponents/);
   assert.match(app, /\['Angstgegner', leaders\.fearedOpponents/);
-  assert.match(app, /relationships\.map\(\(\[label, records, valueClass\]\)[\s\S]*records\.map\(record =>/);
+  assert.match(app, /relationships\.map\(\(\[label, records, valueClass, helpText\], index\)[\s\S]*data-help-tooltip-anchor>[?]<\/span>[\s\S]*escapeHtml\(helpText\)/);
+  assert.equal((app.match(/Trainings werden mitgezählt\./g) || []).length, 4);
+  assert.match(app, /records\.map\(record =>/);
   assert.match(html, /<dialog class="auth-dialog" id="auth-dialog"/);
   assert.doesNotMatch(html, /player-profile-cover|player-profile-cover-image/);
   assert.doesNotMatch(app, /cover\.webp|Coverbild von/);
