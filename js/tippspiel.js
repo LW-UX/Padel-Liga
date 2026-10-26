@@ -436,15 +436,17 @@
         : `Punktgleich mit Platz ${index}.`;
     }
     return `
-      <article class="widget prediction-overview-block prediction-overview-stand">
-        <div class="widget-label">Dein Stand</div>
-        <div class="prediction-overview-account">${escapeHtml(displayName)}</div>
+      <article class="widget prediction-overview-block prediction-overview-stand prediction-overview-personal-stand">
+        <div class="prediction-overview-stand-copy">
+          <div class="widget-label">Dein Stand</div>
+          <div class="prediction-overview-account">${escapeHtml(displayName)}</div>
+          <p>${escapeHtml(context)}</p>
+        </div>
         <div class="prediction-overview-scoreline">
           <div><div class="stat-main">${entry ? index + 1 : '–'}</div><div class="stat-copy">Platz</div></div>
           <div><div class="stat-main">${formatCount(entry?.points)}</div><div class="stat-copy">Punkte</div></div>
           <div><div class="stat-main">${formatCount(passivePoints)}</div><div class="stat-copy">Passive Punkte</div></div>
         </div>
-        <p>${escapeHtml(context)}</p>
       </article>
     `;
   }
