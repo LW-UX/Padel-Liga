@@ -577,10 +577,9 @@
       return;
     }
     const { entry, index } = getOwnLeaderboardPosition();
+    // Deklaration in mobiler Lesereihenfolge; Desktop setzt die Blöcke danach in zwei Spalten.
     const stand = state.session?.user ? renderPersonalStand(entry, index) : renderGuestStand();
     const action = renderPredictionAction();
-    const balance = state.session?.user ? renderSeasonBalance(entry) : '';
-    const latest = state.session?.user ? renderLatestEvaluation() : renderGuestCommunity();
     const leaders = `
       <article class="widget prediction-overview-block prediction-overview-leaders">
         <div class="widget-label">Spitzenfeld</div>
@@ -590,6 +589,8 @@
         </div>
       </article>
     `;
+    const latest = state.session?.user ? renderLatestEvaluation() : renderGuestCommunity();
+    const balance = state.session?.user ? renderSeasonBalance(entry) : '';
     const rightColumn = state.session?.user ? `${leaders}${latest}` : `${latest}${leaders}`;
     target.innerHTML = `
       <div class="prediction-overview-grid${state.session?.user ? '' : ' is-guest'}">

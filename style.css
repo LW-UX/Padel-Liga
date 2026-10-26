@@ -4999,11 +4999,10 @@
         gap: 4rem;
       }
       .prediction-overview-column { display: contents; }
-      .prediction-overview-leaders { order: 1; }
-      .prediction-overview-stand { order: 2; }
-      .prediction-overview-action { order: 3; }
-      .prediction-overview-latest,
-      .prediction-overview-community { order: 4; }
+      .prediction-overview-stand { order: 1; }
+      .prediction-overview-action { order: 2; }
+      .prediction-overview-leaders { order: 3; }
+      .prediction-overview-latest { order: 4; }
       .prediction-overview-balance { order: 5; }
       .prediction-overview-grid.is-guest .prediction-overview-community { order: 1; }
       .prediction-overview-grid.is-guest .prediction-overview-leaders { order: 2; }

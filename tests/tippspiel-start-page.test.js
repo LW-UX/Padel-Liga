@@ -82,7 +82,7 @@ test('dashboard uses independent left and right columns and keeps the start page
   assert.match(style, /\.prediction-overview-column \{[\s\S]*?display: grid;[\s\S]*?gap: 4rem;/);
   const overviewGridStyle = style.match(/\.prediction-overview-grid \{[^}]*\}/)?.[0] || '';
   assert.doesNotMatch(overviewGridStyle, /grid-template-areas:/);
-  assert.match(style, /\.prediction-overview-leaders \{ order: 1; \}[\s\S]*\.prediction-overview-action \{ order: 3; \}/);
+  assert.match(style, /\.prediction-overview-stand \{ order: 1; \}[\s\S]*\.prediction-overview-action \{ order: 2; \}[\s\S]*\.prediction-overview-leaders \{ order: 3; \}[\s\S]*\.prediction-overview-latest \{ order: 4; \}[\s\S]*\.prediction-overview-balance \{ order: 5; \}/);
   assert.match(style, /\.prediction-overview-grid\.is-guest \.prediction-overview-community \{ order: 1; \}[\s\S]*\.prediction-overview-grid\.is-guest \.prediction-overview-leaders \{ order: 2; \}/);
   const pageScript = fs.readFileSync(path.join(root, 'js', 'tipp-page.js'), 'utf8');
   assert.match(pageScript, /const sections = \[\s*'tippstart',/);
