@@ -1846,6 +1846,7 @@
       letter-spacing: 0.02em;
       margin-bottom: 0.75rem;
     }
+    #tippstart .stat-main { margin-bottom: 0; }
     .stat-copy {
       color: var(--dim);
       font-size: var(--text-sm);
