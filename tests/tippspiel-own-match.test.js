@@ -11,6 +11,10 @@ const migration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261020170000_prevent_own_match_predictions.sql'),
   'utf8'
 );
+const passiveCountMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261026170000_prediction_leaderboard_passive_count.sql'),
+  'utf8'
+);
 
 function fn(name) {
   const match = source.match(new RegExp(`  function ${name}\\([^]*?\\n  }`));
@@ -46,6 +50,16 @@ test('own-match protection and automatic floor scoring are part of the database 
   assert.match(migration, /where awarded_points is not null/);
   assert.match(migration, /join public\.match_players as member on member\.match_id = floor\.match_id/);
   assert.match(migration, /count\(entry\.match_id\) filter \(where entry\.is_prediction\)/);
+});
+
+test('ranking exposes passive own-match evaluations as a separate count', () => {
+  const page = fs.readFileSync(path.join(root, 'tipp', 'index.html'), 'utf8');
+
+  assert.match(passiveCountMigration, /false as is_passive/);
+  assert.match(passiveCountMigration, /true,\s+floor\.awarded_points/);
+  assert.match(passiveCountMigration, /count\(entry\.match_id\) filter \(where entry\.is_passive\) as passive_count/);
+  assert.match(page, /<th class="col-games">Tipps<\/th>\s*<th class="col-passive">Passiv<\/th>\s*<th class="col-wins">Exakt<\/th>/);
+  assert.match(source, /entry\.passive_count/);
 });
 
 test('database awards participants the lowest submitted score and ignores non-submitters', { skip: !process.env.PGLITE_MODULE }, async t => {
@@ -100,6 +114,7 @@ test('database awards participants the lowest submitted score and ignores non-su
     grant select, insert, update on public.predictions to authenticated;
   `);
   await db.exec(migration);
+  await db.exec(passiveCountMigration);
   await db.exec(`
     insert into players values ('a'),('b'),('c'),('d');
     insert into seasons values ('season',true);
@@ -135,6 +150,7 @@ test('database awards participants the lowest submitted score and ignores non-su
   assert.equal(Number(player.points), 4);
   assert.equal(Number(player.predictions_count), 0);
   assert.equal(Number(player.scored_count), 2);
+  assert.equal(Number(player.passive_count), 2);
   assert.equal(leaderboard.some(entry => entry.display_name === 'Ohne Tipp'), false);
 
   await db.query("select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',false)");

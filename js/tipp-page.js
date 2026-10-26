@@ -146,9 +146,12 @@
     window.PadelSwipeGesture?.attach(document.querySelector('main'), {
       enabled: () => mobileViewportQuery.matches,
       onSwipe: step => {
-        const sections = [...document.querySelectorAll('.tip-site-nav button[data-tip-nav]')]
-          .filter(button => !button.hidden)
-          .map(button => button.dataset.tipNav);
+        const sections = [
+          'tippstart',
+          ...[...document.querySelectorAll('.tip-site-nav button[data-tip-nav]')]
+            .filter(button => !button.hidden)
+            .map(button => button.dataset.tipNav)
+        ];
         const currentIndex = sections.indexOf(document.querySelector('main > .section.active')?.id);
         const targetId = currentIndex === -1 ? null : sections[currentIndex + step];
         if (!targetId) return;
@@ -240,7 +243,7 @@
       const accountReady = window.PadelKonto.init();
       await Promise.all([
         loadScript(`../${selected.file}`),
-        loadScript('../js/tippspiel.js?v=2026-10-22-detail-overlay')
+        loadScript('../js/tippspiel.js?v=2026-10-26-group-counts')
       ]);
       const season = hydrateSeason(window.PADEL_SEASON);
       document.querySelectorAll('[data-season-label]').forEach(node => { node.textContent = season.label; });

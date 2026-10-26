@@ -1112,6 +1112,81 @@
 
 
     /* ── TIPPSPIEL & AUTH ── */
+    .prediction-overview-loading {
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      color: var(--dim);
+      font-size: var(--text-sm);
+    }
+    .prediction-overview-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+      gap: 4rem;
+      align-items: start;
+    }
+    .prediction-overview-column {
+      display: grid;
+      gap: 4rem;
+      min-width: 0;
+      align-content: start;
+    }
+    .prediction-overview-block {
+      min-width: 0;
+    }
+    .prediction-overview-block p {
+      max-width: 54ch;
+      color: var(--dim);
+      font-size: var(--text-sm);
+      line-height: 1.5;
+    }
+    .prediction-overview-block .primary-button,
+    .prediction-overview-block .secondary-button { margin-top: 1rem; }
+    .prediction-overview-account {
+      overflow: hidden;
+      color: var(--text);
+      font-size: var(--text-base);
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .prediction-overview-scoreline {
+      display: flex;
+      align-items: flex-end;
+      gap: clamp(2rem, 7vw, 5rem);
+      margin: 1.35rem 0 1rem;
+    }
+    .prediction-overview-action {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    /*.prediction-overview-action p { margin-top: 0.7rem; }
+    .prediction-overview-action .primary-button,
+    .prediction-overview-action .secondary-button { margin-top: auto; padding-top: 0.55rem; }*/
+    .prediction-overview-ranks { display: grid; }
+    .prediction-overview-rank-separated { margin-top: 10px; border-top: 1px solid var(--border); }
+    .prediction-overview-empty { color: var(--dim); font-size: var(--text-sm); padding: 0.65rem 0; }
+    .prediction-overview-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 2rem;
+      margin-top: 0.9rem;
+    }
+    .prediction-overview-stats > div {
+      display: grid;
+      gap: 0.25rem;
+      min-width: 0;
+    }
+    .prediction-overview-stats strong {
+      color: var(--accent2);
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      font-weight: 400;
+      line-height: 1;
+    }
+    .prediction-overview-community .prediction-overview-scoreline { margin: 0; }
+
     .prediction-layout {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr);
@@ -1309,6 +1384,9 @@
       font-size: var(--text-base);
       font-weight: 600;
       line-height: 1.25;
+      text-wrap: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .prediction-team-2 { text-align: right; }
     .prediction-player { text-wrap: nowrap; }
@@ -1404,7 +1482,7 @@
         grid-column: 2;
         grid-row: 1;
         grid-template-columns: minmax(0, 1fr) minmax(62px, auto) minmax(0, 1fr);
-        gap: 6px;
+        gap: 8px;
       }
       .prediction-match-card:not(.is-single-set) .prediction-team { font-size: var(--text-base); }
       .prediction-match-card:not(.is-single-set) .prediction-options {
@@ -2312,6 +2390,7 @@
     table.rt td:is(
       .col-participants,
       .col-games,
+      .col-passive,
       .col-wins,
       .col-points,
       .col-gv,
@@ -2756,7 +2835,7 @@
     .mc-team.win .mc-players { font-weight: 600; color: var(--text); }
     .mc-team:not(.win) .mc-players { color: var(--muted); }
     .mc-players { font-size: 1.1rem; }
-    .mc-player-sep { margin: 0 0.3em; color: var(--muted); font-weight: 400; }
+    .mc-player-sep { margin: 0 0.15em; color: var(--muted); font-weight: 400; }
     .mc-score { 
       text-align: center; 
       position: relative; }
@@ -4384,6 +4463,7 @@
         table-layout: fixed;
       }
       .ranking-table.compact .col-games,
+      .prediction-ranking-table.compact .col-passive,
       .ranking-table.compact .col-points {
         width: 58px;
         min-width: 58px;
@@ -4421,6 +4501,7 @@
       .ranking-table .col-rank { width: var(--mobile-rank-col-width); }
       table.rt .col-name { width: auto; }
       table.rt .col-games,
+      table.rt .col-passive,
       table.rt .col-points,
       table.rt .col-elo,
       table.rt .col-winrate { min-width: 64px; }
@@ -4899,6 +4980,28 @@
         padding-right: 6px;
       }
       .prediction-layout { grid-template-columns: 1fr; gap: 12px; }
+      .tip-site-nav { gap: 4px; }
+      .tip-site-nav button { font-size: 0.72rem; }
+      .prediction-overview-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 4rem;
+      }
+      .prediction-overview-column { display: contents; }
+      .prediction-overview-leaders { order: 1; }
+      .prediction-overview-stand { order: 2; }
+      .prediction-overview-action { order: 3; }
+      .prediction-overview-latest,
+      .prediction-overview-community { order: 4; }
+      .prediction-overview-balance { order: 5; }
+      .prediction-overview-grid.is-guest .prediction-overview-community { order: 1; }
+      .prediction-overview-grid.is-guest .prediction-overview-leaders { order: 2; }
+      .prediction-overview-grid.is-guest .prediction-overview-stand { order: 3; }
+      .prediction-overview-grid.is-guest .prediction-overview-action { order: 4; }
+      .prediction-overview-scoreline { gap: 2.5rem; }
+      .prediction-overview-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 2rem;
+      }
       .prediction-info-layout { grid-template-columns: 1fr;}
       .prediction-rule-grid { grid-template-columns: 1fr; gap: 10px; }
       .prediction-rule-grid > div { grid-template-columns: 34px 1fr; }

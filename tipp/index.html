@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Padeltipp</title>
   <meta name="theme-color" content="#07080C">
-  <link rel="icon" href="../favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="../data/icon-32.png">
+  <link rel="icon" href="../favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/svg+xml" href="../data/favicon.svg?v=2026-10-26-rounded">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-  <link rel="stylesheet" href="../style.css?v=2026-10-22-detail-overlay">
+  <link rel="stylesheet" href="../style.css?v=2026-10-26-tipp-dashboard">
   <link rel="stylesheet" href="../account.css?v=2026-10-26-password-change">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -20,7 +20,7 @@
   <script defer src="../js/account.js?v=2026-10-26-robust-auth"></script>
   <script defer src="../js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="../js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
-  <script defer src="../js/tipp-page.js?v=2026-10-22-detail-overlay"></script>
+  <script defer src="../js/tipp-page.js?v=2026-10-26-group-counts"></script>
 </head>
 <body class="tip-page">
 <header class="site-header">
@@ -66,19 +66,25 @@
       </div>
     </div>
     <div class="hero-title-row">
-      <h1><button class="hero-home-button" type="button" data-tip-nav="tippuebersicht" aria-label="Zur Tipprangliste">PADEL<em>TIPP</em></button></h1>
+      <h1><button class="hero-home-button" type="button" data-tip-nav="tippstart" aria-label="Zur PadelTipp-Startseite">PADEL<em>TIPP</em></button></h1>
     </div>
   </div>
 </header>
 
 <nav class="site-nav tip-site-nav" aria-label="Tippspiel-Navigation">
-  <button class="active" data-tip-nav="tippuebersicht">Tipprangliste</button>
+  <button data-tip-nav="tippuebersicht">Tipprangliste</button>
   <button data-tip-nav="tippen">Tippabgabe</button>
   <button data-tip-nav="tippinfos">Infos</button>
 </nav>
 
 <main>
-  <section id="tippuebersicht" class="section active">
+  <section id="tippstart" class="section active">
+    <div id="prediction-overview" class="prediction-overview" aria-live="polite">
+      <div class="prediction-overview-loading">Deine Tippzentrale wird geladen …</div>
+    </div>
+  </section>
+
+  <section id="tippuebersicht" class="section">
     <div class="sh">
       <div class="sh-title">TIPPRANGLISTE</div>
       <div class="sh-meta">Teilnehmer mit Tippwertung</div>
@@ -90,6 +96,7 @@
             <th class="col-rank">#</th>
             <th class="col-name">Name</th>
             <th class="col-games">Tipps</th>
+            <th class="col-passive">Passiv</th>
             <th class="col-wins">Exakt</th>
             <th class="col-points">Punkte</th>
           </tr>
@@ -104,7 +111,6 @@
     <div class="sh sh-with-control">
       <div class="sh-heading">
         <div class="sh-title">TIPPABGABE</div>
-        <div class="sh-meta" id="prediction-meta">Saison <span data-season-label></span></div>
       </div>
       <div class="match-scope-toggle ranking-sort-toggle" id="prediction-sort-toggle" aria-label="Tippabgabe sortieren">
         <button type="button" class="active" data-prediction-sort="status" aria-pressed="true">Status</button>
@@ -195,7 +201,7 @@
       </div>
       <form id="auth-form" class="auth-form">
         <label><span>E-Mail</span><input type="email" name="email" autocomplete="email" required placeholder="vorname.nachname@firma.de"></label>
-        <label><span>Passwort</span><input type="password" name="password" autocomplete="current-password" minlength="8" required></label>
+        <label><span>Passwort</span><input type="password" name="password" autocomplete="current-password" minlength="8" required placeholder="Mindestens 8 Zeichen"></label>
         <button class="primary-button" id="auth-submit" type="submit">Einloggen</button>
         <button class="text-link auth-form-link" id="auth-password-reset" type="button" data-password-reset>Passwort vergessen?</button>
       </form>
