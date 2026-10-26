@@ -67,10 +67,25 @@ test('Winter 2026 fallback matches the confirmed roster migration', () => {
     path.join(repositoryRoot, 'supabase/migrations/20261021120000_winter_2026_participants.sql'),
     'utf8'
   );
+  const eloCorrection = fs.readFileSync(
+    path.join(repositoryRoot, 'supabase/migrations/20261026133000_set_winter_new_player_elos.sql'),
+    'utf8'
+  );
+  const correctedStartElos = new Map(
+    [...eloCorrection.matchAll(/\('([a-z_]+)', (\d+)\)/g)]
+      .map(([, playerId, startElo]) => [playerId, Number(startElo)])
+  );
   const migrationParticipants = [...migration.matchAll(/\('([a-z_]+)', (\d+)\)/g)]
-    .map(([, playerId, startElo]) => ({ playerId, startElo: Number(startElo) }));
+    .map(([, playerId, startElo]) => ({
+      playerId,
+      startElo: correctedStartElos.get(playerId) ?? Number(startElo)
+    }));
 
   assert.equal(PADEL_SEASON.participants.length, 20);
+  assert.deepEqual(
+    [...correctedStartElos.entries()],
+    [['christian_h', 550], ['lisa_s', 550], ['lukas_t', 550], ['yonatan_g', 550]]
+  );
   assert.deepEqual(JSON.parse(JSON.stringify(PADEL_SEASON.participants)), migrationParticipants);
 });
 

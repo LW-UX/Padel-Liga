@@ -11,6 +11,7 @@ Diese Datei ist die kanonische Quelle für Rollen, Registrierung, Einladungen, B
 - Ein Tipper-Konto kann später kontrolliert einem Spieler zugeordnet und zur Spielerrolle erweitert werden.
 - Nach dem Login wird das verbundene Spielerprofil nach Möglichkeit vorausgewählt. Die sichtbare Spielerauswahl bleibt frei bedienbar und ist keine Sicherheitsgrenze; Berechtigungen werden serverseitig aus Konto, Rolle und Spieler-ID bestimmt.
 - Die Systemmails von Supabase für Registrierungsbestätigung und Passwort-Zurücksetzen werden über ein eigenes Liga-Gmail-Konto als SMTP-Absender verschickt, da keine eigene Domain besteht. Die deutschen Vorlagen liegen kanonisch in `supabase/templates/` und werden im Supabase-Dashboard eingetragen. Sie bleiben bewusst so schlicht wie die Supabase-Standardvorlage (nur Text und ein einfacher Link), weil gestaltete Fassungen mit Knopf und dunklem Hintergrund vom Firmen-Mailfilter unsichtbar zurückgehalten wurden.
+- Einmal verwendbare Bestätigungs-, Einladungs- und Wiederherstellungslinks sind 48 Stunden gültig und führen zuerst auf eine neutrale Liga-Zwischenseite. Erst die bewusste Bestätigung dort öffnet den eigentlichen Supabase-Link, damit automatische Linkprüfungen von Mailprogrammen und Firmenfiltern ihn nicht vor dem Nutzer verbrauchen.
 - Am kontogebundenen PadelTipp einschließlich des Schnelltipps in der Partievorschau dürfen alle Konten mit bestätigter E-Mail teilnehmen. Tipper, Spieler und Admins besitzen dabei denselben einen Tipp je Partie; eine Spielerzuordnung ist nicht erforderlich.
 
 ## Spielereinladungen
@@ -23,6 +24,7 @@ Diese Datei ist die kanonische Quelle für Rollen, Registrierung, Einladungen, B
 ## Konto-Dialog und Aufgaben
 
 - Der private Konto-Dialog ist vom öffentlichen Spielerprofil getrennt. Bei verknüpften Spielern kann aus dem Konto direkt in das öffentliche Profil gewechselt werden.
+- Eingeloggte Nutzer können ihr Passwort direkt im privaten Konto-Dialog ändern; dafür müssen sie ihr aktuelles Passwort erneut bestätigen. Einladung und Passwort-Wiederherstellung verwenden dieselbe geprüfte Passwortmaske ohne diese erneute Bestätigung.
 - Öffentliche Seiteninhalte und Detailansichten sind unabhängig von privaten Kontoaufgaben nutzbar. Der Aufgabenzähler lädt nach dem Seitenaufbau im Hintergrund; beim Öffnen lädt die Spieleübersicht ihren aktuellen Stand und zeigt währenddessen einen Ladezustand mit Wiederholungsmöglichkeit bei Fehlern.
 - Mobil ist die ausgeloggte Login-Aktion wie der Desktop-Login gelb gefüllt und trägt dasselbe Benutzer-Icon wie der eingeloggte Konto-Button. Nach der Anmeldung erscheint sie neutral mit diesem Benutzer-Icon und der Beschriftung „Konto“; eine offene Kontoaufgabe markiert sie gelb und zeigt dort ihre Anzahl. Ein gleichzeitig laufendes öffentliches Livespiel hat am geschlossenen Schnellzugriff mit seinem roten Status Vorrang; nach dem Öffnen bleibt die Anzahl an der Kontoaktion sichtbar.
 - Spielaufgaben werden saison- und wettbewerbsübergreifend nach ihrem fachlichen Zustand gruppiert: zu bestätigen, Ergebnis eintragen, terminiert und geplant.

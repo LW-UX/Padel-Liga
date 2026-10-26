@@ -53,10 +53,10 @@ window.PADEL_SEASON = {
     { playerId: "martin_b", startElo: 566 },
     { playerId: "agnes_k", startElo: 564 },
     { playerId: "florian_z", startElo: 814 },
-    { playerId: "lisa_s", startElo: 800 },
-    { playerId: "christian_h", startElo: 800 },
-    { playerId: "lukas_t", startElo: 750 },
-    { playerId: "yonatan_g", startElo: 800 }
+    { playerId: "lisa_s", startElo: 550 },
+    { playerId: "christian_h", startElo: 550 },
+    { playerId: "lukas_t", startElo: 550 },
+    { playerId: "yonatan_g", startElo: 550 }
   ],
   matches: [
     {

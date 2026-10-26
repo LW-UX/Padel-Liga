@@ -17,6 +17,14 @@ const edgeFunction = fs.readFileSync(
   path.join(root, 'supabase', 'functions', 'invite-player', 'index.ts'),
   'utf8'
 );
+const signupTemplate = fs.readFileSync(
+  path.join(root, 'supabase', 'templates', 'confirm-signup.html'),
+  'utf8'
+);
+const passwordResetTemplate = fs.readFileSync(
+  path.join(root, 'supabase', 'templates', 'reset-password.html'),
+  'utf8'
+);
 const domainMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260909220000_company_signup_domains.sql'),
   'utf8'
@@ -42,7 +50,11 @@ test('company users can register while admins also get a player invitation dialo
   pages.forEach(source => {
     assert.match(source, /data-auth-mode="signup">Konto erstellen/);
     assert.match(source, /data-password-reset>Passwort vergessen\?/);
+    assert.match(source, /id="auth-confirmation-view"[\s\S]*data-auth-confirmation-continue/);
     assert.match(source, /id="auth-password-form"/);
+    assert.match(source, /data-current-password-field[^>]*hidden[\s\S]*name="currentPassword"/);
+    assert.match(source, /data-password-change>Passwort ändern/);
+    assert.match(source, /data-password-change-cancel[^>]*hidden>Abbrechen/);
     assert.match(source, /data-player-invite-open[^>]*hidden/);
     assert.match(source, /id="player-invite-dialog"/);
     assert.match(source, /id="player-invite-form"[\s\S]*name="playerId"[\s\S]*name="email"/);
@@ -56,6 +68,9 @@ test('company users can register while admins also get a player invitation dialo
   assert.match(client, /auth\.signInWithPassword\(/);
   assert.match(client, /auth\.resetPasswordForEmail\(/);
   assert.match(client, /auth\.updateUser\(\{ password \}\)/);
+  assert.match(client, /state\.passwordFlow = 'change'/);
+  assert.match(client, /state\.passwordFlow === 'change'[\s\S]*auth\.signInWithPassword\(/);
+  assert.match(client, /Das aktuelle Passwort stimmt nicht/);
   assert.match(client, /functions\.invoke\('invite-player'/);
 });
 
@@ -91,6 +106,9 @@ test('invitation link is generated only by the server-side function', () => {
   assert.match(edgeFunction, /accountStatus: preparation\?\.status === "linked" \? "active" : "pending"/);
   assert.doesNotMatch(edgeFunction, /if \(preparation\?\.status === "linked"\) return jsonResponse/);
   assert.match(edgeFunction, /linkData\?\.properties\?\.action_link/);
+  assert.match(edgeFunction, /confirmationPageUrl\.searchParams\.set\("auth", "confirm"\)/);
+  assert.match(edgeFunction, /confirmationPageUrl\.hash = actionLink/);
+  assert.match(edgeFunction, /actionLink: confirmationPageUrl\.href/);
   assert.doesNotMatch(edgeFunction, /inviteUserByEmail/);
   assert.doesNotMatch(client, /SUPABASE_SERVICE_ROLE_KEY|serviceRoleKey|generateLink/);
   assert.match(client, /Du bist zur Padel-Liga eingeladen/);
@@ -105,6 +123,11 @@ test('invitation link is generated only by the server-side function', () => {
   assert.match(client, /'text\/html': new Blob/);
   assert.match(client, /navigator\.clipboard\?\.writeText/);
   assert.doesNotMatch(client, /In Outlook öffnen|player-invite-open-outlook/);
+  assert.match(client, /confirmationUrl\.origin !== supabaseUrl\.origin/);
+  assert.match(client, /confirmationUrl\.pathname !== '\/auth\/v1\/verify'/);
+  assert.match(client, /window\.location\.assign\(confirmationUrl\.href\)/);
+  assert.match(signupTemplate, /\?auth=confirm&amp;purpose=signup#\{\{ \.ConfirmationURL \}\}/);
+  assert.match(passwordResetTemplate, /\?auth=confirm&amp;purpose=recovery#\{\{ \.ConfirmationURL \}\}/);
 });
 
 test('public self-registration is restricted while admin-assigned emails may use any domain', () => {

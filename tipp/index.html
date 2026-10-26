@@ -9,7 +9,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="../data/icon-32.png">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
   <link rel="stylesheet" href="../style.css?v=2026-10-22-detail-overlay">
-  <link rel="stylesheet" href="../account.css?v=2026-10-21-games-help">
+  <link rel="stylesheet" href="../account.css?v=2026-10-26-password-change">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="../data/players.js?v=2026-10-20-test-net-emoji"></script>
@@ -17,7 +17,7 @@
   <script defer src="../data/supabase-config.js"></script>
   <script defer src="../js/global-actions.js?v=2026-10-20-speed-dial-player"></script>
   <script defer src="../js/score-input.js?v=2026-09-22-unified-score-counters"></script>
-  <script defer src="../js/account.js?v=2026-10-21-recovery-link"></script>
+  <script defer src="../js/account.js?v=2026-10-26-robust-auth"></script>
   <script defer src="../js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="../js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="../js/tipp-page.js?v=2026-10-22-detail-overlay"></script>
@@ -200,14 +200,24 @@
         <button class="text-link auth-form-link" id="auth-password-reset" type="button" data-password-reset>Passwort vergessen?</button>
       </form>
     </div>
+    <div id="auth-confirmation-view" hidden>
+      <div class="widget-label">Geschützter Link</div>
+      <h2 id="auth-confirmation-title">Link bestätigen</h2>
+      <p class="auth-dialog-copy" id="auth-confirmation-copy">Öffne jetzt den geschützten Einmal-Link.</p>
+      <button class="primary-button" type="button" data-auth-confirmation-continue>Weiter</button>
+    </div>
     <div id="auth-password-view" hidden>
       <div class="widget-label">Dein Zugang</div>
       <h2 id="auth-password-title">Passwort festlegen</h2>
-      <p class="auth-dialog-copy">Lege ein persönliches Passwort mit mindestens 8 Zeichen fest.</p>
+      <p class="auth-dialog-copy" id="auth-password-copy">Lege ein persönliches Passwort mit mindestens 8 Zeichen fest.</p>
       <form id="auth-password-form" class="auth-form">
+        <label data-current-password-field hidden><span>Aktuelles Passwort</span><input type="password" name="currentPassword" autocomplete="current-password" minlength="8"></label>
         <label><span>Neues Passwort</span><input type="password" name="password" autocomplete="new-password" minlength="8" required></label>
         <label><span>Passwort wiederholen</span><input type="password" name="passwordConfirmation" autocomplete="new-password" minlength="8" required></label>
-        <button class="primary-button" type="submit">Passwort speichern</button>
+        <div class="auth-form-actions">
+          <button class="secondary-button" type="button" data-password-change-cancel hidden>Abbrechen</button>
+          <button class="primary-button" type="submit">Passwort speichern</button>
+        </div>
       </form>
     </div>
     <div id="auth-account-view" hidden>
@@ -221,6 +231,7 @@
         <div class="account-header-actions">
           <button class="secondary-button" id="player-invite-open" type="button" data-player-invite-open hidden>Spieler-E-Mails</button>
           <button class="secondary-button" type="button" data-account-player-profile hidden>Spielerprofil</button>
+          <button class="secondary-button" type="button" data-password-change>Passwort ändern</button>
           <button class="secondary-button" type="button" data-auth-logout>Ausloggen</button>
         </div>
       </div>

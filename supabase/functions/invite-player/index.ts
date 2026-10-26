@@ -60,9 +60,17 @@ Deno.serve(async (request) => {
     const actionLink = linkData?.properties?.action_link;
     if (!actionLink) return jsonResponse({ error: "Der Einladungslink konnte nicht erstellt werden." }, 500);
 
+    // Mailprogramme und Firmenfilter dürfen nur die neutrale Zwischenseite vorab öffnen.
+    // Der einmal verwendbare Supabase-Link wird erst nach einem bewussten Klick aufgerufen.
+    const confirmationPageUrl = new URL(siteUrl);
+    confirmationPageUrl.searchParams.set("auth", "confirm");
+    confirmationPageUrl.searchParams.set("purpose", "invite");
+    // Im Fragment wird der Einmal-Link weder an den Webserver übertragen noch in dessen Zugriffslog geschrieben.
+    confirmationPageUrl.hash = actionLink;
+
     return jsonResponse({
       status: "prepared",
-      actionLink,
+      actionLink: confirmationPageUrl.href,
       accountStatus: preparation?.status === "linked" ? "active" : "pending",
     });
   } catch (error) {

@@ -1,5 +1,28 @@
 (function () {
   const ACCOUNT_SUCCESS_MESSAGE_DURATION = 5000;
+  const initialSearch = String(window.location?.search || '');
+  const initialHash = String(window.location?.hash || '');
+  const readInitialUrlParam = (source, name) => {
+    const value = source.match(new RegExp(`(?:^[?#]|[&])${name}=([^&]*)`))?.[1];
+    if (value === undefined) return null;
+    try {
+      return decodeURIComponent(value.replaceAll('+', ' '));
+    } catch (_error) {
+      return null;
+    }
+  };
+  const requestedConfirmationUrl = readInitialUrlParam(initialSearch, 'auth') === 'confirm'
+    ? readInitialUrlParam(initialSearch, 'confirmation_url')
+      || (/^https?:\/\//i.test(String(window.location.hash || '').slice(1))
+        ? String(window.location.hash).slice(1)
+        : null)
+    : null;
+  const requestedConfirmationPurpose = readInitialUrlParam(initialSearch, 'purpose') || 'invite';
+  const initialAuthError = readInitialUrlParam(initialSearch, 'error_description')
+    || readInitialUrlParam(initialHash, 'error_description')
+    || (readInitialUrlParam(initialSearch, 'error') || readInitialUrlParam(initialHash, 'error')
+      ? 'Der Link ist ungültig oder abgelaufen.'
+      : null);
   // Supabase verwirft ?auth=…, wenn die Zieladresse nicht freigegeben ist; type=… im Hash kommt immer mit.
   const requestedAuthFlow = String(window.location?.search || '')
     .match(/(?:^|[?&])auth=(invite|recovery)(?:&|$)/)?.[1]
@@ -11,6 +34,8 @@
     profile: null,
     authMode: 'login',
     passwordFlow: requestedAuthFlow,
+    confirmationUrl: requestedConfirmationUrl,
+    confirmationPurpose: requestedConfirmationPurpose,
     resultTaskScope: 'relevant',
     resultTasks: [],
     trainingTasks: [],
@@ -217,10 +242,12 @@
     const guestView = document.getElementById('auth-guest-view');
     const accountView = document.getElementById('auth-account-view');
     const passwordView = document.getElementById('auth-password-view');
-    if (!button || !guestView || !accountView || !passwordView) return;
+    const confirmationView = document.getElementById('auth-confirmation-view');
+    if (!button || !guestView || !accountView || !passwordView || !confirmationView) return;
 
     const isLoggedIn = Boolean(state.session?.user);
-    const isSettingPassword = isLoggedIn && ['invite', 'recovery'].includes(state.passwordFlow);
+    const isConfirmingLink = Boolean(state.confirmationUrl);
+    const isSettingPassword = isLoggedIn && ['invite', 'recovery', 'change'].includes(state.passwordFlow);
     const displayName = getProfileDisplayName();
     const taskCount = getActionableResultTasks().length
       + state.trainingTasks.filter(task => !task.created_by_me && isTrainingTaskVisible(task)).length
@@ -237,12 +264,56 @@
     button.classList.toggle('secondary-button', isLoggedIn);
     button.setAttribute('aria-label', isLoggedIn ? `Spieleübersicht von ${displayName} öffnen` : 'Einloggen');
     button.title = isLoggedIn ? displayName : '';
-    guestView.hidden = isLoggedIn;
-    accountView.hidden = !isLoggedIn || isSettingPassword;
+    guestView.hidden = isLoggedIn || isConfirmingLink;
+    accountView.hidden = !isLoggedIn || isSettingPassword || isConfirmingLink;
     passwordView.hidden = !isSettingPassword;
+    confirmationView.hidden = !isConfirmingLink;
+
+    if (isConfirmingLink) {
+      const confirmationContent = {
+        signup: {
+          title: 'E-Mail-Adresse bestätigen',
+          copy: 'Bestätige jetzt deine E-Mail-Adresse. Der eigentliche Einmal-Link wird erst durch deinen Klick verwendet.',
+          button: 'E-Mail-Adresse bestätigen'
+        },
+        recovery: {
+          title: 'Passwort zurücksetzen',
+          copy: 'Öffne jetzt den geschützten Einmal-Link, um anschließend ein neues Passwort festzulegen.',
+          button: 'Weiter zum neuen Passwort'
+        },
+        invite: {
+          title: 'Spielerzugang einrichten',
+          copy: 'Bestätige jetzt deine Einladung. Der eigentliche Einmal-Link wird erst durch deinen Klick verwendet.',
+          button: 'Einladung bestätigen'
+        }
+      }[state.confirmationPurpose] || {
+        title: 'Link bestätigen',
+        copy: 'Öffne jetzt den geschützten Einmal-Link.',
+        button: 'Weiter'
+      };
+      document.getElementById('auth-confirmation-title').textContent = confirmationContent.title;
+      document.getElementById('auth-confirmation-copy').textContent = confirmationContent.copy;
+      document.querySelector('[data-auth-confirmation-continue]').textContent = confirmationContent.button;
+    }
+
+    if (isSettingPassword) {
+      const isChangingPassword = state.passwordFlow === 'change';
+      document.getElementById('auth-password-title').textContent = isChangingPassword ? 'Passwort ändern' : 'Passwort festlegen';
+      document.getElementById('auth-password-copy').textContent = isChangingPassword
+        ? 'Bestätige dein aktuelles Passwort und lege ein neues mit mindestens 8 Zeichen fest.'
+        : 'Lege ein persönliches Passwort mit mindestens 8 Zeichen fest.';
+      const currentPasswordField = document.querySelector('[data-current-password-field]');
+      const currentPasswordInput = currentPasswordField?.querySelector('input');
+      if (currentPasswordField) currentPasswordField.hidden = !isChangingPassword;
+      if (currentPasswordInput) currentPasswordInput.required = isChangingPassword;
+      const cancelButton = document.querySelector('[data-password-change-cancel]');
+      if (cancelButton) cancelButton.hidden = !isChangingPassword;
+    }
 
     const dialog = document.getElementById('auth-dialog');
-    dialog?.setAttribute('aria-labelledby', isSettingPassword ? 'auth-password-title' : isLoggedIn ? 'account-display-name' : 'auth-dialog-title');
+    dialog?.setAttribute('aria-labelledby', isConfirmingLink
+      ? 'auth-confirmation-title'
+      : isSettingPassword ? 'auth-password-title' : isLoggedIn ? 'account-display-name' : 'auth-dialog-title');
 
     if (isLoggedIn) {
       document.getElementById('account-display-name').textContent = displayName;
@@ -1334,7 +1405,8 @@
   function setAuthMessage(message, type = '') {
     clearAccountMessageTimer();
     const accountMessageIsVisible = Boolean(state.session?.user)
-      && !['invite', 'recovery'].includes(state.passwordFlow);
+      && !['invite', 'recovery', 'change'].includes(state.passwordFlow)
+      && !state.confirmationUrl;
     const authTarget = document.getElementById('auth-message');
     const accountTarget = document.getElementById('account-auth-message');
     const accountText = accountTarget?.querySelector('[data-account-auth-message-text]');
@@ -1431,6 +1503,44 @@
     return message;
   }
 
+  function getSafeConfirmationUrl() {
+    if (!state.confirmationUrl) return null;
+    try {
+      const confirmationUrl = new URL(state.confirmationUrl);
+      const supabaseUrl = new URL(window.PADEL_SUPABASE_CONFIG?.url || '');
+      if (confirmationUrl.protocol !== 'https:' || confirmationUrl.origin !== supabaseUrl.origin) return null;
+      if (confirmationUrl.pathname !== '/auth/v1/verify') return null;
+      if (!confirmationUrl.searchParams.get('token') || !confirmationUrl.searchParams.get('type')) return null;
+      return confirmationUrl;
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function continueAuthConfirmation() {
+    const confirmationUrl = getSafeConfirmationUrl();
+    if (!confirmationUrl) {
+      setAuthMessage('Dieser Bestätigungslink ist ungültig. Bitte fordere einen neuen Link an.', 'error');
+      return;
+    }
+    window.location.assign(confirmationUrl.href);
+  }
+
+  function openPasswordChange() {
+    if (!state.session?.user) return;
+    state.passwordFlow = 'change';
+    setAuthMessage('');
+    renderAuthState();
+  }
+
+  function cancelPasswordChange() {
+    if (state.passwordFlow !== 'change') return;
+    state.passwordFlow = null;
+    document.getElementById('auth-password-form')?.reset();
+    setAuthMessage('');
+    renderAuthState();
+  }
+
   function getAuthRedirectUrl(flow) {
     if (!['http:', 'https:'].includes(window.location.protocol)) return undefined;
     const redirectUrl = new URL(window.location.pathname, window.location.origin);
@@ -1467,6 +1577,7 @@
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const currentPassword = String(formData.get('currentPassword') || '');
     const password = String(formData.get('password') || '');
     const confirmation = String(formData.get('passwordConfirmation') || '');
     if (password !== confirmation) {
@@ -1477,6 +1588,19 @@
     const submit = form.querySelector('button[type="submit"]');
     submit.disabled = true;
     setAuthMessage('Passwort wird gespeichert …');
+    if (state.passwordFlow === 'change') {
+      const { error: signInError } = await state.client.auth.signInWithPassword({
+        email: state.session?.user?.email || '',
+        password: currentPassword
+      });
+      if (signInError) {
+        setAuthMessage(/invalid login credentials/i.test(String(signInError.message || ''))
+          ? 'Das aktuelle Passwort stimmt nicht.'
+          : getFriendlyAuthError(signInError), 'error');
+        submit.disabled = false;
+        return;
+      }
+    }
     const { error } = await state.client.auth.updateUser({ password });
     if (error) setAuthMessage(getFriendlyAuthError(error), 'error');
     else {
@@ -2335,6 +2459,18 @@ Dein Hanako-Leben-Squad`;
         await requestPasswordReset();
         return;
       }
+      if (event.target.closest('[data-auth-confirmation-continue]')) {
+        continueAuthConfirmation();
+        return;
+      }
+      if (event.target.closest('[data-password-change]')) {
+        openPasswordChange();
+        return;
+      }
+      if (event.target.closest('[data-password-change-cancel]')) {
+        cancelPasswordChange();
+        return;
+      }
       if (event.target.closest('[data-player-invite-open]')) {
         await openPlayerInviteDialog();
         return;
@@ -2687,10 +2823,15 @@ Dein Hanako-Leben-Squad`;
       }, 0);
     });
     await refresh({ includeTasks: false });
-    if (state.session && ['invite', 'recovery'].includes(state.passwordFlow)) openAuthDialog();
-    else if (!state.session && ['invite', 'recovery'].includes(state.passwordFlow)) {
+    if (state.confirmationUrl) {
       openAuthDialog();
-      setAuthMessage('Dieser Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.', 'error');
+      if (!getSafeConfirmationUrl()) {
+        setAuthMessage('Dieser Bestätigungslink ist ungültig. Bitte fordere einen neuen Link an.', 'error');
+      }
+    } else if (state.session && ['invite', 'recovery'].includes(state.passwordFlow)) openAuthDialog();
+    else if (!state.session && (['invite', 'recovery'].includes(state.passwordFlow) || initialAuthError)) {
+      openAuthDialog();
+      setAuthMessage(initialAuthError || 'Dieser Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.', 'error');
     }
   }
 

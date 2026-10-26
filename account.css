@@ -103,6 +103,7 @@
     }
     .auth-mode-toggle button.active { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent); }
     .auth-form { display: grid; gap: 12px; }
+    .auth-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
     .auth-form label[hidden] { display: none !important; }
     .auth-form label { display: grid; gap: 6px; color: var(--dim); font-size: var(--text-sm); font-weight: 600; }
     .auth-form input,
@@ -217,11 +218,11 @@
       align-items: center;
       justify-content: space-between;
       gap: 20px;
-      padding-right: 64px;
+      padding-right: 2rem;
       margin-bottom: 1.35rem;
     }
     .account-header > div { min-width: 0; }
-    .account-header-actions { display: flex; align-items: center; gap: 8px; }
+    .account-header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
     .account-header h2 { margin-bottom: 0.1rem; }
     .auth-account-email { color: var(--dim); font-size: 0.88rem; margin: 0; text-wrap: nowrap; }
     .account-games-empty {
@@ -816,6 +817,7 @@
       .auth-dialog-card { padding: 1.1rem 0.5rem; }
       .account-auth-message { bottom: max(8px, env(safe-area-inset-bottom)); max-width: calc(100% - 32px); }
       .account-header { flex-wrap: wrap; gap: 12px; padding-right: 64px; }
+      .account-header-actions { width: 100%; justify-content: flex-start; }
       .player-email-actions { align-items: stretch; flex-direction: column; }
       .account-header h2 { font-size: 1.65rem; }
       .account-section { min-width: 0; }
