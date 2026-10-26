@@ -63,6 +63,9 @@ test('personal and guest dashboard states remain distinct', () => {
   assert.match(style, /\.prediction-overview-personal-stand \{[\s\S]*?grid-template-columns: minmax\(0, 1\.6fr\) repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(style, /\.prediction-overview-personal-stand \.prediction-overview-scoreline \{ display: contents; \}/);
   assert.match(script, /Letzte Auswertung/);
+  assert.match(script, /class="prediction-overview-stats prediction-overview-latest-stats"/);
+  assert.match(script, /details\.push\(\{ value: `\$\{latest\.exact\}×`, label: 'exakt' \}\)/);
+  assert.match(script, /<strong>\$\{escapeHtml\(detail\.value\)\}<\/strong><span class="stat-copy">\$\{escapeHtml\(detail\.label\)\}<\/span>/);
   assert.match(script, /Spitzenfeld/);
   assert.match(script, /if \(ownIndex >= 3\) indexes\.push\(ownIndex\)/);
   assert.match(script, /class="mini-rank-row r\$\{index \+ 1\}/);

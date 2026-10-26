@@ -501,16 +501,19 @@
         </article>
       `;
     }
-    const details = [];
-    if (latest.exact) details.push(`${latest.exact}× exakt`);
-    if (latest.tendency) details.push(`${latest.tendency}× Sieger richtig`);
-    if (latest.wrong) details.push(`${latest.wrong}× ohne Punkte`);
-    if (latest.automatic) details.push(`${latest.automatic}× automatische Wertung`);
+    const details = [
+      { value: `+${formatCount(latest.points)}`, label: latest.points === 1 ? 'Punkt' : 'Punkte' }
+    ];
+    if (latest.exact) details.push({ value: `${latest.exact}×`, label: 'exakt' });
+    if (latest.tendency) details.push({ value: `${latest.tendency}×`, label: 'Sieger richtig' });
+    if (latest.wrong) details.push({ value: `${latest.wrong}×`, label: 'ohne Punkte' });
+    if (latest.automatic) details.push({ value: `${latest.automatic}×`, label: 'automatisch gewertet' });
     return `
       <article class="widget prediction-overview-block prediction-overview-latest">
         <div class="widget-label">Letzte Auswertung · ${escapeHtml(latest.label)}</div>
-        <h2>+${formatCount(latest.points)} ${latest.points === 1 ? 'Punkt' : 'Punkte'}</h2>
-        <p>${escapeHtml(details.join(' · ') || 'Deine Wertung wurde übernommen.')}</p>
+        <div class="prediction-overview-stats prediction-overview-latest-stats">
+          ${details.map(detail => `<div><strong>${escapeHtml(detail.value)}</strong><span class="stat-copy">${escapeHtml(detail.label)}</span></div>`).join('')}
+        </div>
       </article>
     `;
   }

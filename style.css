@@ -1165,7 +1165,7 @@
     .prediction-overview-stand-copy { min-width: 0; }
     .prediction-overview-stand-copy p { margin-top: 1rem; }
     .prediction-overview-personal-stand .prediction-overview-scoreline { display: contents; }
-    .prediction-overview-personal-stand .prediction-overview-scoreline > div { min-width: 0; }
+    .prediction-overview-personal-stand .prediction-overview-scoreline > div { min-width: 0; text-align: center; }
     .prediction-overview-action {
       display: flex;
       flex-direction: column;
@@ -1187,6 +1187,7 @@
       display: grid;
       gap: 0.25rem;
       min-width: 0;
+      text-align: center;
     }
     .prediction-overview-stats strong {
       color: var(--accent2);
