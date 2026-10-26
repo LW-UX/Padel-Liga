@@ -2063,6 +2063,7 @@
       border-radius: 12px;
       padding: 1rem;
       background: transparent;
+      max-width: 418.3px;
     }
     #home-next-matches,
     #home-recent-matches {
@@ -2137,6 +2138,7 @@
       text-align: center;
       justify-content: space-between;
       text-align: center;
+      gap: 8px;
     }
     .mini-training-player {
       min-width: 0;
@@ -2145,7 +2147,7 @@
       white-space: nowrap;
     }
     .mini-training-summary {
-      margin-top: 0.55rem;
+      margin-top: .35rem;
       color: var(--dim);
       font-size: var(--text-sm);
       text-align: center;
