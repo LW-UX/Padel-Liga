@@ -25,6 +25,14 @@ test('Elo history chart derives rounded bounds from its values and stays 620 pix
   assert.match(styleSource, /\.chart-wrap\s*\{[^}]*height:\s*620px;/);
 });
 
+test('Elo history lines and player chips share a forgiving hover state', () => {
+  assert.match(appSource, /const ELO_CHART_HOVER_LINE_WIDTH = 14;/);
+  assert.match(appSource, /meta\.dataset\.path\(ctx\);\s*return ctx\.isPointInStroke\(x, y\);/);
+  assert.match(appSource, /plugins:\s*\[eloFinalStraightSegmentPlugin, eloLineHoverPlugin\]/);
+  assert.match(appSource, /classList\.toggle\('is-chart-hovered',[\s\S]*hoveredEloChartPlayerNames\.has/);
+  assert.match(styleSource, /\.fb:hover,\s*\.fb\.is-chart-hovered\s*\{\s*opacity:\s*0\.7;/);
+});
+
 test('chart tooltips open toward the center of the viewport', () => {
   const placementSource = appSource.match(
     /function getChartTooltipHorizontalTransform\(chartInstance, tooltip\) \{[\s\S]*?\n\}/

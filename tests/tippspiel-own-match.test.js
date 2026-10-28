@@ -52,14 +52,22 @@ test('own-match protection and automatic floor scoring are part of the database 
   assert.match(migration, /count\(entry\.match_id\) filter \(where entry\.is_prediction\)/);
 });
 
-test('ranking exposes passive own-match evaluations as a separate count', () => {
+test('ranking exposes passive own-match points as a separate blue value', () => {
   const page = fs.readFileSync(path.join(root, 'tipp', 'index.html'), 'utf8');
 
   assert.match(passiveCountMigration, /false as is_passive/);
   assert.match(passiveCountMigration, /true,\s+floor\.awarded_points/);
   assert.match(passiveCountMigration, /count\(entry\.match_id\) filter \(where entry\.is_passive\) as passive_count/);
   assert.match(page, /<th class="col-games">Tipps<\/th>\s*<th class="col-passive">Passiv<\/th>\s*<th class="col-wins">Exakt<\/th>/);
-  assert.match(source, /entry\.passive_count/);
+  assert.doesNotMatch(page, /Teilnehmer mit Tippwertung/);
+  assert.match(style, /\.prediction-ranking-table\.compact \.col-passive \{ display: none; \}/);
+  assert.match(style, /\.prediction-ranking-table\.compact \.col-bonus \{ display: none; \}/);
+  assert.match(style, /\.prediction-ranking-table\.compact \.col-wins \{ display: table-cell; \}/);
+  assert.match(style, /table\.prediction-ranking-table tbody td\.col-passive \{[\s\S]*color: var\(--accent2\);/);
+  assert.match(source, /getLeaderboardPassivePoints\(entry\)/);
+  const context = vm.createContext({});
+  vm.runInContext(fn('getLeaderboardPassivePoints'), context);
+  assert.equal(context.getLeaderboardPassivePoints({ points: 16, bonus_points: 4, exact_count: 2, tendency_count: 1 }), 2);
 });
 
 test('database awards participants the lowest submitted score and ignores non-submitters', { skip: !process.env.PGLITE_MODULE }, async t => {

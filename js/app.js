@@ -1014,6 +1014,12 @@ function applySeasonMetadata() {
   const seasonMenu = document.getElementById('season-menu');
   const tippLink = document.getElementById('tipp-link');
   if (tippLink) tippLink.href = `tipp/?saison=${encodeURIComponent(selectedSeason.id)}`;
+  window.dispatchEvent(new CustomEvent('padel:season-ready', {
+    detail: {
+      predictionsEnabled: getCompetitionConfig().predictionsEnabled,
+      tippHref: tippLink?.href || 'tipp/'
+    }
+  }));
   if (seasonLabel && seasonMenu) {
     seasonLabel.textContent = selectedSeason.shortLabel || selectedSeason.label;
     seasonMenu.innerHTML = getSeasonOptions().map(season => `
@@ -1188,6 +1194,16 @@ function isSelectedViewerFirma(firma) {
 function isViewerMatch(match) {
   return isParticipantView() &&
     [...match.team1.spieler, ...match.team2.spieler].includes(getSelectedViewer().name);
+}
+
+function isSelectedTrainingParticipant(participant) {
+  return isParticipantView()
+    && !participant?.isGuest
+    && String(participant?.id || '') === String(selectedViewerId);
+}
+
+function isViewerTraining(training) {
+  return (training?.participants || []).some(isSelectedTrainingParticipant);
 }
 
 function normalizePlayerSearch(value) {
@@ -4483,10 +4499,10 @@ function renderHomeTrainingCard(training, { recent = false } = {}) {
   const participantLinks = training.participants.map(participant => renderPlayerProfileLink({
     id: participant.isGuest ? null : participant.id,
     name: participant.displayName
-  }, 'mini-training-player'));
+  }, `mini-training-player ${isSelectedTrainingParticipant(participant) ? 'viewer-player' : ''}`));
   const roundLabel = `${training.roundCount} ${training.roundCount === 1 ? 'Paarung' : 'Paarungen'}`;
   const setLabel = `${training.completedSetCount} ${training.completedSetCount === 1 ? 'vollständiger Satz' : 'vollständige Sätze'}`;
-  return `<div class="mini-match-row mini-training-row">
+  return `<div class="mini-match-row mini-training-row ${isViewerTraining(training) ? 'viewer-match' : ''}">
     <div class="mini-match-meta">Training – ${escapeHtml(formatRelativeMatchDate(pseudoMatch))}</div>
     <div class="mini-training-players">${participantLinks.join('')}</div>
     <div class="mini-training-summary">${recent ? `${escapeHtml(roundLabel)} · ${escapeHtml(setLabel)}` : '4 Teilnehmer'}</div>
@@ -6700,7 +6716,7 @@ function formatLongDayMonth(date) {
   return parsedDate.toLocaleDateString('de-DE', {
     day: 'numeric',
     month: 'long'
-  });
+  }).replace(' ', '\u00a0');
 }
 
 function formatMatchdayRange(matchday) {
@@ -6743,6 +6759,7 @@ const COLORS = [
 const GRAY = '#444444';
 const CHART_DIM_ALPHA = 'D6';
 const CHART_GRAY_MIX = 0.28;
+const ELO_CHART_HOVER_LINE_WIDTH = 14;
 
 let chart = null;
 let placementChart = null;
@@ -6863,6 +6880,9 @@ function updateEloChartFocus() {
     dataset.borderWidth = getEloChartLineWidth(player.name);
     dataset.pointRadius = getEloChartPointRadius(player.name);
     dataset.order = getEloChartOrder(player.name);
+  });
+  document.querySelectorAll('[data-player-toggle-name]').forEach(button => {
+    button.classList.toggle('is-chart-hovered', hoveredEloChartPlayerNames.has(button.dataset.playerToggleName));
   });
   chart.update();
 }
@@ -7624,6 +7644,40 @@ const eloFinalStraightSegmentPlugin = {
   }
 };
 
+function getHoveredEloChartPlayerName(chartInstance, x, y) {
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+
+  const { ctx } = chartInstance;
+  ctx.save();
+  ctx.lineWidth = ELO_CHART_HOVER_LINE_WIDTH;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const hoveredMeta = chartInstance.getSortedVisibleDatasetMetas().find(meta => {
+    if (typeof meta.dataset?.path !== 'function') return false;
+    ctx.beginPath();
+    meta.dataset.path(ctx);
+    return ctx.isPointInStroke(x, y);
+  });
+
+  ctx.restore();
+  return hoveredMeta ? chartInstance.data.datasets[hoveredMeta.index]?.label || null : null;
+}
+
+const eloLineHoverPlugin = {
+  id: 'eloLineHoverPlugin',
+  afterEvent(chartInstance, { event }) {
+    if (event.type === 'mouseout') {
+      setHoveredEloChartPlayers();
+      return;
+    }
+    if (event.type !== 'mousemove') return;
+
+    const playerName = getHoveredEloChartPlayerName(chartInstance, event.x, event.y);
+    setHoveredEloChartPlayers(playerName ? [playerName] : []);
+  }
+};
+
 function getStatisticsEloChartBounds(datasets = []) {
   const values = datasets
     .flatMap(dataset => dataset.data || [])
@@ -7705,7 +7759,7 @@ function initChart() {
       })),
       datasets
     },
-    plugins: [eloFinalStraightSegmentPlugin],
+    plugins: [eloFinalStraightSegmentPlugin, eloLineHoverPlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,

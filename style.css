@@ -1166,6 +1166,13 @@
     .prediction-overview-stand-copy p { margin-top: 1rem; }
     .prediction-overview-personal-stand .prediction-overview-scoreline { display: contents; }
     .prediction-overview-personal-stand .prediction-overview-scoreline > div { min-width: 0; text-align: center; }
+    .prediction-passive-points-value {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+    }
+    .prediction-passive-points-help { transform: translateY(-0.08em); }
     .prediction-overview-action {
       display: flex;
       flex-direction: column;
@@ -1412,6 +1419,14 @@
       color: var(--accent2);
       font-weight: 700;
     }
+    table.prediction-ranking-table tbody td.col-bonus {
+      color: var(--accent2);
+      font-weight: 400;
+    }
+    table.prediction-ranking-table tbody td.col-passive {
+      color: var(--accent2);
+      font-weight: 400;
+    }
     .prediction-match-center {
       color: var(--dim);
       font-size: var(--text-sm);
@@ -1479,7 +1494,7 @@
     }
     @media (min-width: 840px) {
       .prediction-match-card:not(.is-single-set) {
-        grid-template-columns: minmax(140px, 160px) minmax(240px, 2fr) minmax(168px, 1fr) 112px;
+        grid-template-columns: 130px minmax(240px, 2fr) minmax(168px, 1fr) 112px;
         align-items: center;
         gap: 1rem;
         min-height: 80px;
@@ -1511,6 +1526,99 @@
         grid-row: 1;
         align-self: center;
       }
+    }
+    .prediction-bonus-copy {
+      grid-column: 1;
+      grid-row: 1;
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      min-width: 0;
+      align-items: center;
+    }
+    @media (max-width: 768px) {
+    .prediction-bonus-copy {
+      flex-wrap: wrap;
+    }
+    }
+    .prediction-bonus-copy strong {
+      flex: 0 0 auto;
+      color: var(--text);
+      font-size: var(--text-base);
+      line-height: 1.25;
+    }
+    .prediction-bonus-copy span,
+    .prediction-bonus-result {
+      color: var(--dim);
+      font-size: var(--text-sm);
+      line-height: 1.35;
+    }
+    .prediction-bonus-copy span {
+      min-width: 0;
+      text-wrap: balance;
+    }
+    .prediction-bonus-options {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+    .prediction-bonus-selects {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 6px;
+    }
+    .prediction-bonus-picker,
+    .prediction-bonus-picker .viewer-split-button,
+    .prediction-bonus-picker .viewer-combobox { width: 100%; }
+    .prediction-bonus-picker .secondary-button {
+      justify-content: flex-start;
+      width: 100%;
+      min-height: 42px;
+      min-width: 0;
+      overflow: hidden;
+      text-align: left;
+      text-overflow: ellipsis;
+    }
+    .prediction-bonus-picker .secondary-button span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .viewer-picker.open.prediction-bonus-picker--no-search .viewer-combobox .secondary-button {
+      visibility: visible;
+    }
+    .prediction-bonus-picker-menu {
+      right: 0;
+      width: max(100%, 190px);
+    }
+    .prediction-bonus-picker .viewer-option:disabled {
+      cursor: not-allowed;
+      opacity: 0.35;
+    }
+    .prediction-bonus-result { color: var(--positiv); }
+    @media (min-width: 840px) {
+      .prediction-match-card.prediction-bonus-card {
+        grid-template-columns: minmax(280px, 2fr) minmax(260px, 1.4fr) 112px;
+        align-items: center;
+        gap: 1rem;
+        min-height: 80px;
+        padding: 0.8rem 1rem;
+      }
+      .prediction-match-card.prediction-bonus-card .prediction-bonus-copy {
+        grid-column: 1;
+        grid-row: 1;
+      }
+      .prediction-match-card.prediction-bonus-card .prediction-bonus-options {
+        grid-column: 2;
+        grid-row: 1;
+      }
+      .prediction-match-card.prediction-bonus-card .prediction-status {
+        grid-column: 3;
+        grid-row: 1;
+        align-self: center;
+      }
+      .prediction-bonus-picker .secondary-button { min-height: 38px; }
     }
     .prediction-error {
       display: grid;
@@ -2078,6 +2186,25 @@
     .article-body cite::before { content: "- "; }
     .article-readmore,
     .info-article-readmore { display: none; }
+    .prediction-overview-article .home-article-preview {
+      position: relative;
+      max-height: 320px;
+      overflow: hidden;
+    }
+    .prediction-overview-article .home-article-preview::after {
+      content: "";
+      position: absolute;
+      z-index: 2;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 96px;
+      background: linear-gradient(to bottom, rgba(7,8,12,0), var(--surface));
+      pointer-events: none;
+    }
+    .prediction-overview-article .home-article-preview.expanded { max-height: none; }
+    .prediction-overview-article .home-article-preview.expanded::after { display: none; }
+    .prediction-overview-article .article-readmore { display: inline-flex; }
     .mini-rank-row,
     .mini-match-row {
       border-bottom: 1px solid var(--border);
@@ -2234,6 +2361,10 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+    .mini-training-player.viewer-player {
+      color: var(--accent2);
+      font-weight: 700;
     }
     .mini-training-summary {
       margin-top: .35rem;
@@ -2403,6 +2534,7 @@
       .col-participants,
       .col-games,
       .col-passive,
+      .col-bonus,
       .col-wins,
       .col-points,
       .col-gv,
@@ -2691,7 +2823,8 @@
     }
     .fb.on { background: var(--player-color); color: #000; border-color: transparent; }
     @media (hover: hover) {
-      .fb:hover { opacity: 0.7; }
+      .fb:hover,
+      .fb.is-chart-hovered { opacity: 0.7; }
     }
     .fb-selected-icon { display: inline-flex; vertical-align: -2px; margin-left: 4px; }
     .fb-selected-icon svg {
@@ -2802,6 +2935,13 @@
       text-transform: uppercase;
       color: var(--dim); 
       margin-bottom: 18px; 
+    }
+    .spieltag-label span:first-child {
+      white-space: nowrap;
+    }
+    .spieltag-label span + span {
+      margin-left: auto;
+      text-align: right;
     }
     .matchday-break .spieltag-label { margin-bottom: 0; }
     .match-list { display: flex; flex-direction: column; gap: 12px; }
@@ -4476,6 +4616,7 @@
       }
       .ranking-table.compact .col-games,
       .prediction-ranking-table.compact .col-passive,
+      .prediction-ranking-table.compact .col-wins,
       .ranking-table.compact .col-points {
         width: 58px;
         min-width: 58px;
@@ -4503,6 +4644,9 @@
       .ranking-table.compact .col-elo {
         display: none;
       }
+      .prediction-ranking-table.compact .col-passive { display: none; }
+      .prediction-ranking-table.compact .col-bonus { display: none; }
+      .prediction-ranking-table.compact .col-wins { display: table-cell; }
       .ranking-table.expanded .firma-badge {
         display: none;
       }
@@ -4514,6 +4658,7 @@
       table.rt .col-name { width: auto; }
       table.rt .col-games,
       table.rt .col-passive,
+      table.rt .col-bonus,
       table.rt .col-points,
       table.rt .col-elo,
       table.rt .col-winrate { min-width: 64px; }
@@ -4999,15 +5144,17 @@
         gap: 4rem;
       }
       .prediction-overview-column { display: contents; }
-      .prediction-overview-stand { order: 1; }
-      .prediction-overview-action { order: 2; }
-      .prediction-overview-leaders { order: 3; }
-      .prediction-overview-latest { order: 4; }
-      .prediction-overview-balance { order: 5; }
+      .prediction-overview-action { order: 1; }
+      .prediction-overview-stand { order: 2; }
+      .prediction-overview-balance { order: 3; }
+      .prediction-overview-article { order: 4; }
+      .prediction-overview-leaders { order: 5; }
+      .prediction-overview-latest { order: 6; }
       .prediction-overview-grid.is-guest .prediction-overview-stand { order: 1; }
       .prediction-overview-grid.is-guest .prediction-overview-action { order: 2; }
       .prediction-overview-grid.is-guest .prediction-overview-community { order: 3; }
       .prediction-overview-grid.is-guest .prediction-overview-leaders { order: 4; }
+      .prediction-overview-grid.is-guest .prediction-overview-article { order: 5; }
       .prediction-overview-personal-stand { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .prediction-overview-stand-copy { grid-column: 1 / -1; }
       .prediction-overview-scoreline { gap: 2.5rem; }

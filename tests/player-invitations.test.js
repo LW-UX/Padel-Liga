@@ -127,7 +127,7 @@ test('invitation link is generated only by the server-side function', () => {
   assert.match(client, /confirmationUrl\.pathname !== '\/auth\/v1\/verify'/);
   assert.match(client, /window\.location\.assign\(confirmationUrl\.href\)/);
   assert.match(signupTemplate, /\?auth=confirm&amp;purpose=signup#\{\{ \.ConfirmationURL \}\}/);
-  assert.match(passwordResetTemplate, /\?auth=confirm&amp;purpose=recovery#\{\{ \.ConfirmationURL \}\}/);
+  assert.match(passwordResetTemplate, /\?auth=confirm&amp;purpose=recovery&amp;confirmation_url=\{\{ \.ConfirmationURL \}\}/);
 });
 
 test('public self-registration is restricted while admin-assigned emails may use any domain', () => {

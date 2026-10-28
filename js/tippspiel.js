@@ -17,18 +17,56 @@
     profile: null,
     databaseMatches: new Map(),
     playerElos: new Map(),
+    seasonParticipants: [],
     predictions: new Map(),
+    bonusQuestions: [],
+    bonusAnswers: new Map(),
     matchFloorPredictions: new Map(),
     leaderboard: [],
     leaderboardReady: false,
     leaderboardError: null,
     seasonCompleted: null,
     saving: new Set(),
+    bonusSaving: new Set(),
     ready: false,
     error: null,
     bound: false,
-    sortMode: 'status'
+    sortMode: 'status',
+    articleExpanded: false
   };
+
+  const BONUS_QUESTION_PRESENTATION = Object.freeze({
+    champion: {
+      order: 1,
+      title: 'Liga-Champion',
+      question: 'Wer gewinnt die Liga nach dem Final Four?'
+    },
+    final_four_players: {
+      order: 2,
+      title: 'Final Four',
+      question: 'Welche vier Spieler erreichen das Final Four?'
+    },
+    league_winner: {
+      order: 3,
+      title: 'Liga-Erster',
+      question: 'Wer belegt nach sechs Spieltagen Platz 1?'
+    },
+    league_game_difference: {
+      order: 4,
+      title: 'Spiel-Differenz',
+      question: 'Wer hat in der regulären Ligaphase die beste Spiel-Differenz?'
+    },
+    league_elo_gain: {
+      order: 5,
+      title: 'Elo-Zuwachs',
+      question: 'Wer hat in der regulären Ligaphase den größten Elo-Zuwachs?'
+    },
+    company_winner: {
+      order: 6,
+      title: 'Firma',
+      question: 'Welche Firma gewinnt nach Ø-Punkten je Teilnehmer?'
+    }
+  });
 
   function escapeHtml(value) {
     return String(value ?? '')
@@ -190,6 +228,195 @@
     }).join('');
   }
 
+  function isBonusQuestionOpen(question) {
+    const lockAt = question?.lock_at ? new Date(question.lock_at).getTime() : NaN;
+    return question?.is_open === true && Number.isFinite(lockAt) && lockAt > Date.now();
+  }
+
+  function getBonusAnswers(questionId) {
+    return [...(state.bonusAnswers.get(questionId) || [])];
+  }
+
+  function isBonusQuestionComplete(question) {
+    return getBonusAnswers(question.question_id).length >= Number(question.max_selections || 1);
+  }
+
+  function getBonusOptionLabel(value) {
+    return (window.PADEL_PLAYERS || []).find(player => player.id === value)?.name || value;
+  }
+
+  function getBonusOptionMeta(value) {
+    return (window.PADEL_PLAYERS || []).find(player => player.id === value)?.initials || '';
+  }
+
+  function getBonusQuestionOptions(question) {
+    if (question.question_type === 'company_winner') {
+      return (state.season?.organizations || []).map(company => ({ value: company, label: company }));
+    }
+    const participants = state.seasonParticipants.length
+      ? state.seasonParticipants
+      : Array.isArray(state.season?.participants) ? state.season.participants : [];
+    return participants.map(participant => ({
+      value: participant.playerId,
+      label: getBonusOptionLabel(participant.playerId),
+      meta: getBonusOptionMeta(participant.playerId)
+    })).sort((first, second) => first.label.localeCompare(second.label, 'de'));
+  }
+
+  function getBonusQuestionPresentation(question) {
+    return BONUS_QUESTION_PRESENTATION[question.question_type] || {
+      order: Number(question.sort_order) || Number.MAX_SAFE_INTEGER,
+      title: question.label,
+      question: question.explanation || ''
+    };
+  }
+
+  function compareBonusQuestions(first, second) {
+    return getBonusQuestionPresentation(first).order - getBonusQuestionPresentation(second).order;
+  }
+
+  function renderBonusPicker({
+    question,
+    options,
+    selected,
+    slot,
+    disabled,
+    label,
+    placeholder,
+    searchable
+  }) {
+    const menuId = `prediction-bonus-picker-${question.question_id}-${slot}`;
+    const selectedOption = options.find(option => option.value === selected);
+    const displayLabel = selectedOption?.label || placeholder;
+    return `
+      <div
+        class="viewer-picker prediction-bonus-picker${searchable ? '' : ' prediction-bonus-picker--no-search'}"
+        data-bonus-picker
+        data-bonus-question="${escapeHtml(question.question_id)}"
+        data-bonus-slot="${slot}"
+      >
+        <div class="viewer-split-button">
+          <div class="viewer-combobox">
+            <button
+              class="secondary-button secondary-button--dropdown"
+              type="button"
+              data-bonus-picker-toggle
+              aria-label="${escapeHtml(label)}${Number(question.max_selections) > 1 ? `, Auswahl ${slot + 1}` : ''}: ${escapeHtml(displayLabel)}"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              aria-controls="${escapeHtml(menuId)}"
+              ${disabled ? 'disabled' : ''}
+            ><span data-bonus-picker-label>${escapeHtml(displayLabel)}</span></button>
+            ${searchable ? `<input
+              class="viewer-search-input"
+              type="search"
+              data-bonus-picker-search
+              role="combobox"
+              aria-label="${escapeHtml(label)} suchen"
+              aria-controls="${escapeHtml(menuId)}"
+              aria-expanded="false"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Spieler suchen …"
+              disabled
+            >` : ''}
+          </div>
+        </div>
+        <div class="viewer-menu prediction-bonus-picker-menu" id="${escapeHtml(menuId)}" role="listbox" aria-label="${escapeHtml(label)} auswählen">
+          <button
+            class="viewer-option${selected ? '' : ' active'}"
+            type="button"
+            role="option"
+            aria-selected="${!selected}"
+            data-bonus-picker-value=""
+            ${searchable ? `data-bonus-picker-search-text="${escapeHtml(placeholder)}"` : ''}
+          ><span>${escapeHtml(placeholder)}</span></button>
+          ${options.map(option => {
+            const usedElsewhere = option.value !== selected && getBonusAnswers(question.question_id).includes(option.value);
+            return `<button
+              class="viewer-option${option.value === selected ? ' active' : ''}"
+              type="button"
+              role="option"
+              aria-selected="${option.value === selected}"
+              data-bonus-picker-value="${escapeHtml(option.value)}"
+              ${searchable ? `data-bonus-picker-search-text="${escapeHtml(option.label)} ${escapeHtml(option.meta || '')}"` : ''}
+              ${usedElsewhere ? 'disabled' : ''}
+            ><span>${escapeHtml(option.label)}</span>${option.meta ? `<span>${escapeHtml(option.meta)}</span>` : ''}</button>`;
+          }).join('')}
+          ${searchable ? '<div class="picker-search-empty" data-bonus-picker-search-empty hidden>Kein Spieler gefunden.</div>' : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function getBonusStatusChip(question) {
+    const answers = getBonusAnswers(question.question_id);
+    if (state.bonusSaving.has(question.question_id)) {
+      return { label: 'Speichert …', classes: 'is-open is-saving' };
+    }
+    if (question.resolved) {
+      const points = Number(question.points) || 0;
+      return {
+        label: `${points > 0 ? '+' : ''}${points} Punkte`,
+        classes: `is-locked ${points > 0 ? 'points-4' : 'points-0'}`
+      };
+    }
+    if (isBonusQuestionOpen(question)) {
+      return answers.length
+        ? { label: 'Gespeichert', classes: 'is-open' }
+        : { label: 'Offen', classes: 'is-open' };
+    }
+    return { label: 'Gesperrt', classes: 'is-locked' };
+  }
+
+  function renderBonusQuestion(question) {
+    const answers = getBonusAnswers(question.question_id);
+    const options = getBonusQuestionOptions(question);
+    const isOpen = isBonusQuestionOpen(question);
+    const disabled = !isOpen || state.bonusSaving.has(question.question_id);
+    const selectionCount = Number(question.max_selections) || 1;
+    const presentation = getBonusQuestionPresentation(question);
+    const selectedValues = [...answers, ...Array(Math.max(0, selectionCount - answers.length)).fill('')]
+      .slice(0, selectionCount);
+    const status = getBonusStatusChip(question);
+    const correctAnswers = Array.isArray(question.correct_answers) ? question.correct_answers : [];
+    const result = question.resolved && correctAnswers.length
+      ? `<div class="prediction-bonus-result">Richtig: ${correctAnswers.map(getBonusOptionLabel).map(escapeHtml).join(', ')}</div>`
+      : '';
+    const selects = selectedValues.map((selected, slot) => {
+      const isCompanyPicker = question.question_type === 'company_winner';
+      return renderBonusPicker({
+        question,
+        options,
+        selected,
+        slot,
+        disabled,
+        label: presentation.question || presentation.title,
+        placeholder: isCompanyPicker ? 'Firma auswählen' : 'Spieler auswählen',
+        searchable: !isCompanyPicker
+      });
+    }).join('');
+
+    return `
+      <article class="prediction-match-card prediction-bonus-card ${answers.length ? 'has-prediction' : ''} ${isOpen ? '' : 'is-locked'} ${question.resolved ? `points-${Number(question.points) || 0}` : ''}">
+        <div class="prediction-bonus-copy">
+          <strong>${escapeHtml(presentation.title)}</strong>
+          ${presentation.question ? `<span>${escapeHtml(presentation.question)}</span>` : ''}
+        </div>
+        <div class="prediction-bonus-options">
+          <div class="prediction-bonus-selects">${selects}</div>
+          ${result}
+        </div>
+        <span class="prediction-status ${status.classes}">${escapeHtml(status.label)}</span>
+      </article>
+    `;
+  }
+
+  function renderPredictionHtmlGroup(label, cards) {
+    if (!cards.length) return '';
+    return `<section class="prediction-match-group">${label}<div class="match-list">${cards.join('')}</div></section>`;
+  }
+
   function renderSortToggle() {
     document.querySelectorAll('[data-prediction-sort]').forEach(button => {
       const isActive = button.dataset.predictionSort === state.sortMode;
@@ -321,18 +548,140 @@
     return `${day} · ${time} Uhr`;
   }
 
+  function getTodayKey() {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(new Date()).map(part => [part.type, part.value]));
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  }
+
+  function getCurrentOverviewArticle() {
+    const articles = Array.isArray(state.season?.articles) ? state.season.articles : [];
+    const todayKey = getTodayKey();
+    const publishedArticles = articles.filter(article => Array.isArray(article.body) && article.body.length);
+    const current = publishedArticles.find(article => {
+      if (!article.startDate && !article.endDate) return false;
+      const start = article.startDate || '0000-01-01';
+      const end = article.endDate || '9999-12-31';
+      return start <= todayKey && todayKey <= end;
+    });
+    if (current) return current;
+    return publishedArticles.reduce((latest, article) => {
+      const articleStart = article.startDate || article.endDate;
+      if (articleStart && articleStart > todayKey) return latest;
+      if (!latest) return article;
+      const articleDate = article.endDate || article.startDate || '';
+      const latestDate = latest.endDate || latest.startDate || '';
+      return articleDate >= latestDate ? article : latest;
+    }, null) || publishedArticles[0] || null;
+  }
+
+  function formatArticleMeta(meta) {
+    return String(meta || '').replace(/\s*·\s*/g, ' | ');
+  }
+
+  function renderArticleMeta(meta) {
+    const [label, ...details] = formatArticleMeta(meta).split(/\s*\|\s*/);
+    return `<div class="article-meta">
+      <span>${escapeHtml(label)}</span>
+      ${details.length ? `<span>${escapeHtml(details.join(' | '))}</span>` : ''}
+    </div>`;
+  }
+
+  function renderArticleNewspaperHeader(article) {
+    return `<header class="article-newspaper-header">
+      <div class="article-newspaper-masthead" aria-label="PadelPost"><span>Padel</span><span>Post</span></div>
+      ${renderArticleMeta(article.meta || `Spieltag ${article.spieltag}`)}
+    </header>`;
+  }
+
+  function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function renderArticlePlayerLink(player, visibleName) {
+    if (!player?.id || !player?.name) return escapeHtml(visibleName || '');
+    return `<button type="button" class="player-profile-link article-player-link" data-player-profile-id="${escapeHtml(player.id)}" aria-label="Profil von ${escapeHtml(player.name)} öffnen">${escapeHtml(visibleName)}</button>`;
+  }
+
+  function linkArticlePlayerNames(html) {
+    const players = (window.PADEL_PLAYERS || []).filter(player => player?.id && player?.name);
+    if (!html || !players.length) return html || '';
+    const playersByKey = new Map(players.map(player => [player.name.replace(/\.$/, ''), player]));
+    const pattern = new RegExp(
+      `(^|[^\\p{L}])(${[...playersByKey.keys()].sort((a, b) => b.length - a.length).map(escapeRegExp).join('|')})\\.?(?![\\p{L}])`,
+      'gu'
+    );
+    return String(html).split(/(<[^>]*>)/).map(part => {
+      if (part.startsWith('<')) return part;
+      return part.replace(pattern, (match, prefix, key) => {
+        const visibleName = match.slice(prefix.length);
+        return `${prefix}${renderArticlePlayerLink(playersByKey.get(key), visibleName)}`;
+      });
+    }).join('');
+  }
+
+  function renderOverviewArticleBlock(block) {
+    if (block.type === 'h') return `<h4>${linkArticlePlayerNames(block.text)}</h4>`;
+    if (block.type === 'match') {
+      let matchup = block.text;
+      let result = block.result;
+      let resultLabel = block.resultLabel || 'Ergebnis';
+      if (!result) {
+        [matchup, result] = String(block.text || '').split(/\s*\|\s*Ergebnis:\s*/);
+        resultLabel = 'Ergebnis';
+      }
+      const match = block.matchId ? state.season?.matches?.find(item => item.id === block.matchId) : null;
+      return `<div class="article-match${match ? ' has-partie-detail' : ''}">
+        ${match ? `<button type="button" class="article-match-action" data-match-statistics="${escapeHtml(match.id)}" aria-label="Partiedetails öffnen"></button>` : ''}
+        <span>${linkArticlePlayerNames(matchup)}</span>
+        ${result ? `<span class="article-match-result">${escapeHtml(resultLabel)}: ${escapeHtml(result)}</span>` : ''}
+      </div>`;
+    }
+    if (block.type === 'quote') {
+      return `<blockquote><p>${block.text}</p><cite>${block.author}</cite></blockquote>`;
+    }
+    return `<p>${block.text}</p>`;
+  }
+
+  function renderOverviewArticleCard(article) {
+    return `<article class="article-card article-newspaper">
+      ${renderArticleNewspaperHeader(article)}
+      <h3>${article.title}</h3>
+      <div class="article-newspaper-publisher">United we Padel</div>
+      <div class="article-body">${article.body.map(renderOverviewArticleBlock).join('')}</div>
+    </article>`;
+  }
+
+  function renderOverviewArticle() {
+    const article = getCurrentOverviewArticle();
+    if (!article) return '';
+    return `<article class="widget widget-articles prediction-overview-block prediction-overview-article">
+      <div class="home-article-preview${state.articleExpanded ? ' expanded' : ''}" id="prediction-home-article-preview">
+        ${renderOverviewArticleCard(article)}
+      </div>
+      <button class="text-link article-readmore" type="button" data-expand-prediction-article${state.articleExpanded ? ' hidden' : ''}>Weiterlesen</button>
+    </article>`;
+  }
+
   function getOpenPredictionSummary() {
     const openMatches = getPredictionLocalMatches().filter(isPredictionOpen);
+    const openBonusQuestions = state.bonusQuestions.filter(isBonusQuestionOpen);
     const remainingMatches = state.session?.user
       ? openMatches.filter(match => !state.predictions.has(match.id))
       : openMatches;
-    const nextDeadline = remainingMatches
-      .map(match => state.databaseMatches.get(match.id)?.match_at)
+    const remainingBonusQuestions = state.session?.user
+      ? openBonusQuestions.filter(question => !isBonusQuestionComplete(question))
+      : openBonusQuestions;
+    const nextDeadline = [
+      ...remainingMatches.map(match => state.databaseMatches.get(match.id)?.match_at),
+      ...remainingBonusQuestions.map(question => question.lock_at)
+    ]
       .filter(Boolean)
       .map(value => new Date(value))
       .filter(date => !Number.isNaN(date.getTime()) && date.getTime() > Date.now())
       .sort((first, second) => first - second)[0] || null;
-    return { openMatches, remainingMatches, nextDeadline };
+    return { openMatches, openBonusQuestions, remainingMatches, remainingBonusQuestions, nextDeadline };
   }
 
   function getMatchdayTitle(match) {
@@ -445,7 +794,16 @@
         <div class="prediction-overview-scoreline">
           <div><div class="stat-main">${entry ? index + 1 : '–'}</div><div class="stat-copy">Platz</div></div>
           <div><div class="stat-main">${formatCount(entry?.points)}</div><div class="stat-copy">Punkte</div></div>
-          <div><div class="stat-main">${formatCount(passivePoints)}</div><div class="stat-copy">Passive Punkte</div></div>
+          <div>
+            <div class="stat-main prediction-passive-points-value">
+              <span>${formatCount(passivePoints)}</span>
+              <span class="th-help-wrap prediction-passive-points-help">
+                <span class="help-icon" tabindex="0" role="button" aria-label="Passive Punkte erklären" aria-describedby="prediction-passive-points-help" data-help-tooltip-anchor>?</span>
+                <span class="help-tooltip" id="prediction-passive-points-help" role="tooltip">Deine eigenen Partien kannst du nicht tippen. Sobald sie gewertet werden, erhältst du automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Tipp der anderen. Hat niemand getippt, gibt es keine automatische Gutschrift.</span>
+              </span>
+            </div>
+            <div class="stat-copy">Passive Punkte</div>
+          </div>
         </div>
       </article>
     `;
@@ -458,33 +816,35 @@
   }
 
   function renderPredictionAction() {
-    const { openMatches, remainingMatches, nextDeadline } = getOpenPredictionSummary();
+    const {
+      openMatches, openBonusQuestions, remainingMatches, remainingBonusQuestions, nextDeadline
+    } = getOpenPredictionSummary();
+    const openCount = openMatches.length + openBonusQuestions.length;
+    const remainingCount = remainingMatches.length + remainingBonusQuestions.length;
     const noDeadlineCopy = 'Du kannst deine Prognosen bis zum Spielbeginn ändern - genug Zeit für Elo-Studium, Bauchgefühl und die Frage: klares 2:0 oder doch 2:1?';
     if (!state.session?.user) {
-      const count = openMatches.length;
       return `
         <article class="widget prediction-overview-block prediction-overview-action">
-          <h2>${count ? formatOpenPredictionTitle(count) : 'Gerade nichts offen'}</h2>
-          <p>${nextDeadline ? `Nächster Tippschluss: ${escapeHtml(formatDeadline(nextDeadline))}.` : count ? noDeadlineCopy : 'Neue Tippmöglichkeiten erscheinen automatisch näher am Spieltag.'}</p>
+          <h2>${openCount ? formatOpenPredictionTitle(openCount) : 'Gerade nichts offen'}</h2>
+          <p>${nextDeadline ? `Nächster Tippschluss: ${escapeHtml(formatDeadline(nextDeadline))}.` : openCount ? noDeadlineCopy : 'Neue Tippmöglichkeiten erscheinen automatisch näher am Spieltag.'}</p>
           <button class="primary-button" type="button" data-auth-open>Login / Konto erstellen</button>
         </article>
       `;
     }
-    if (remainingMatches.length) {
-      const count = remainingMatches.length;
+    if (remainingCount) {
       return `
         <article class="widget prediction-overview-block prediction-overview-action has-open-tips">
-          <h2>${formatOpenPredictionTitle(count)}</h2>
+          <h2>${formatOpenPredictionTitle(remainingCount)}</h2>
           <p>${nextDeadline ? `Nächster Tippschluss: ${escapeHtml(formatDeadline(nextDeadline))}.` : noDeadlineCopy}</p>
           <button class="primary-button" type="button" data-tip-nav="tippen">Jetzt tippen</button>
         </article>
       `;
     }
-    const allDone = openMatches.length > 0;
+    const allDone = openCount > 0;
     return `
       <article class="widget prediction-overview-block prediction-overview-action${allDone ? ' is-complete' : ''}">
         <h2>${allDone ? 'Alles getippt ✓' : 'Gerade nichts zu tun'}</h2>
-        <p>${allDone ? `Deine ${openMatches.length === 1 ? 'offene Prognose ist' : `${openMatches.length} offenen Prognosen sind`} gespeichert.` : state.seasonCompleted ? 'Die Tippabgabe dieser Saison ist abgeschlossen.' : 'Neue Tippmöglichkeiten erscheinen automatisch näher am Spieltag.'}</p>
+        <p>${allDone ? `Deine ${openCount === 1 ? 'offene Prognose ist' : `${openCount} offenen Prognosen sind`} gespeichert.` : state.seasonCompleted ? 'Die Tippabgabe dieser Saison ist abgeschlossen.' : 'Neue Tippmöglichkeiten erscheinen automatisch näher am Spieltag.'}</p>
         <button class="secondary-button" type="button" data-tip-nav="tippen">Tippabgabe ansehen</button>
       </article>
     `;
@@ -523,7 +883,8 @@
     const scored = Number(entry?.scored_count) || 0;
     const exact = Number(entry?.exact_count) || 0;
     const correctWinners = exact + (Number(entry?.tendency_count) || 0);
-    const average = scored ? (Number(entry?.points || 0) / scored).toLocaleString('de-DE', { maximumFractionDigits: 1 }) : '–';
+    const matchPoints = (Number(entry?.points) || 0) - (Number(entry?.bonus_points) || 0);
+    const average = scored ? (matchPoints / scored).toLocaleString('de-DE', { maximumFractionDigits: 1 }) : '–';
     const scoredPredictions = getPersonalContributions().filter(item => !item.automatic).length;
     const exactRate = scoredPredictions ? `${Math.round((exact / scoredPredictions) * 100)} %` : '–';
     return `
@@ -532,10 +893,10 @@
         <div class="prediction-overview-stats">
           <div><strong>${formatCount(predictions)}</strong><span class="stat-copy">Tipps</span></div>
           <div><strong>${formatCount(scored)}</strong><span class="stat-copy">Wertungen</span></div>
+          <div><strong>${average}</strong><span class="stat-copy">Ø Punkte</span></div>
+          <div><strong>${formatCount(correctWinners)}</strong><span class="stat-copy">Sieger richtig</span></div>
           <div><strong>${formatCount(exact)}</strong><span class="stat-copy">Exakt</span></div>
           <div><strong>${exactRate}</strong><span class="stat-copy">Exaktquote</span></div>
-          <div><strong>${formatCount(correctWinners)}</strong><span class="stat-copy">Sieger richtig</span></div>
-          <div><strong>${average}</strong><span class="stat-copy">Ø Punkte</span></div>
         </div>
       </article>
     `;
@@ -577,7 +938,7 @@
       return;
     }
     const { entry, index } = getOwnLeaderboardPosition();
-    // Deklaration in mobiler Lesereihenfolge; Desktop setzt die Blöcke danach in zwei Spalten.
+    // Desktop verteilt die Blöcke auf zwei Spalten; mobil ordnet CSS sie in einer Lesereihenfolge an.
     const stand = state.session?.user ? renderPersonalStand(entry, index) : renderGuestStand();
     const action = renderPredictionAction();
     const leaders = `
@@ -591,10 +952,12 @@
     `;
     const latest = state.session?.user ? renderLatestEvaluation() : renderGuestCommunity();
     const balance = state.session?.user ? renderSeasonBalance(entry) : '';
+    const article = renderOverviewArticle();
+    const leftColumn = state.session?.user ? `${action}${stand}${balance}${article}` : `${stand}${action}${article}`;
     const rightColumn = state.session?.user ? `${leaders}${latest}` : `${latest}${leaders}`;
     target.innerHTML = `
       <div class="prediction-overview-grid${state.session?.user ? '' : ' is-guest'}">
-        <div class="prediction-overview-column prediction-overview-column--left">${stand}${action}${balance}</div>
+        <div class="prediction-overview-column prediction-overview-column--left">${leftColumn}</div>
         <div class="prediction-overview-column prediction-overview-column--right">${rightColumn}</div>
       </div>
     `;
@@ -610,11 +973,12 @@
     }
 
     if (!state.ready) {
-      target.innerHTML = '<div class="empty-state">Offene Spiele werden geladen …</div>';
+      target.innerHTML = '<div class="empty-state">Offene Tipps werden geladen …</div>';
       return;
     }
 
     const matches = getPredictionLocalMatches();
+    const bonusQuestions = [...state.bonusQuestions].sort(compareBonusQuestions);
     const openMatches = matches
       .filter(isPredictionOpen)
       .sort(compareMatchesByNumber);
@@ -624,7 +988,11 @@
     const lockedMatches = matches
       .filter(match => !isPredictionOpen(match) && !isPredictionUpcoming(match))
       .sort((first, second) => compareMatchesByNumber(second, first));
-    if (!matches.length) {
+    const openBonusQuestions = bonusQuestions.filter(isBonusQuestionOpen);
+    const incompleteBonusQuestions = openBonusQuestions.filter(question => !isBonusQuestionComplete(question));
+    const completeBonusQuestions = openBonusQuestions.filter(isBonusQuestionComplete);
+    const lockedBonusQuestions = bonusQuestions.filter(question => !isBonusQuestionOpen(question));
+    if (!matches.length && !bonusQuestions.length) {
       target.innerHTML = '<div class="widget empty-state">Für diese Saison sind noch keine Spiele im Tippspiel hinterlegt.</div>';
       return;
     }
@@ -679,13 +1047,31 @@
       `;
     };
 
-    target.innerHTML = state.sortMode === 'matchday'
-      ? renderMatchesByMatchday(matches, renderMatch)
-      : `
-        ${renderMatchGroup(`<div class="spieltag-label"><span>Offene Spiele (${openMatches.length})</span></div>`, openMatches, renderMatch)}
-        ${renderMatchGroup(`<div class="spieltag-label"><span>Demnächst tippbar (${upcomingMatches.length})</span></div>`, upcomingMatches, renderMatch)}
-        ${renderMatchGroup(`<div class="spieltag-label"><span>Gespielt &amp; gesperrt (${lockedMatches.length})</span></div>`, lockedMatches, renderMatch)}
-      `;
+    if (state.sortMode === 'matchday') {
+      const matchdayGroups = renderMatchesByMatchday(matches, renderMatch);
+      const bonusGroup = renderPredictionHtmlGroup(
+        `<div class="spieltag-label"><span>Bonustipps (${bonusQuestions.length})</span></div>`,
+        bonusQuestions.map(renderBonusQuestion)
+      );
+      target.innerHTML = `${matchdayGroups}${bonusGroup}`;
+      return;
+    }
+
+    const openCards = [
+      ...incompleteBonusQuestions.map(renderBonusQuestion),
+      ...openMatches.map(renderMatch),
+      ...completeBonusQuestions.map(renderBonusQuestion)
+    ];
+    const upcomingCards = upcomingMatches.map(renderMatch);
+    const lockedCards = [
+      ...lockedMatches.map(renderMatch),
+      ...lockedBonusQuestions.map(renderBonusQuestion)
+    ];
+    target.innerHTML = `
+      ${renderPredictionHtmlGroup(`<div class="spieltag-label"><span>Offene Tipps (${openCards.length})</span></div>`, openCards)}
+      ${renderPredictionHtmlGroup(`<div class="spieltag-label"><span>Demnächst tippbar (${upcomingCards.length})</span></div>`, upcomingCards)}
+      ${renderPredictionHtmlGroup(`<div class="spieltag-label"><span>Gesperrte Tipps (${lockedCards.length})</span></div>`, lockedCards)}
+    `;
   }
 
   function renderLeaderboard() {
@@ -698,8 +1084,9 @@
         <td class="col-rank rank-position">${index + 1}</td>
         <td class="col-name"><span class="pname">${escapeHtml(entry.display_name)}</span></td>
         <td class="col-games">${Number(entry.predictions_count) || 0}</td>
-        <td class="col-passive" title="Automatische Wertungen aus eigenen Partien">${Number(entry.passive_count) || 0}</td>
         <td class="col-wins">${Number(entry.exact_count) || 0}</td>
+        <td class="col-passive" title="Automatisch gutgeschriebene Punkte aus eigenen Partien">${getLeaderboardPassivePoints(entry)}</td>
+        <td class="col-bonus">${Number(entry.bonus_points) || 0}</td>
         <td class="col-points rank-score">${Number(entry.points) || 0}</td>
       </tr>
     `).join('');
@@ -713,6 +1100,14 @@
           : state.seasonCompleted
             ? 'In dieser Saison wurden keine Tipps abgegeben.'
             : 'Die Rangliste füllt sich, sobald der erste Tipp gespeichert wurde.';
+  }
+
+  function getLeaderboardPassivePoints(entry) {
+    const totalPoints = Number(entry?.points) || 0;
+    const bonusPoints = Number(entry?.bonus_points) || 0;
+    const activeTipPoints = ((Number(entry?.exact_count) || 0) * 4)
+      + ((Number(entry?.tendency_count) || 0) * 2);
+    return Math.max(0, totalPoints - bonusPoints - activeTipPoints);
   }
 
   async function loadPredictions({ accountReady } = {}) {
@@ -730,6 +1125,38 @@
     if (window.PadelKonto?.getSession?.()?.user?.id !== userId) return;
     if (error) throw error;
     (data || []).forEach(row => state.predictions.set(row.match_id, row.prediction));
+  }
+
+  async function loadBonusPredictions({ accountReady } = {}) {
+    if (accountReady) {
+      await accountReady;
+      state.session = window.PadelKonto?.getSession?.() || null;
+      state.profile = window.PadelKonto?.getProfile?.() || null;
+    }
+    const requestedUserId = state.session?.user?.id || null;
+    const seasonId = state.season?.databaseId || state.season?.id;
+    const legacySeasonId = LEGACY_DATABASE_SEASON_IDS[seasonId];
+    const seasonIds = legacySeasonId ? [seasonId, legacySeasonId] : [seasonId];
+    let questions = [];
+    for (const candidateId of seasonIds) {
+      const { data, error } = await state.client.rpc('get_prediction_bonus_state', { p_season_id: candidateId });
+      if (error) {
+        state.bonusQuestions = [];
+        state.bonusAnswers.clear();
+        console.warn('Bonustipps nicht verfügbar:', error.message);
+        return;
+      }
+      if (Array.isArray(data) && data.length) {
+        questions = data;
+        break;
+      }
+    }
+    if ((window.PadelKonto?.getSession?.()?.user?.id || null) !== requestedUserId) return;
+    state.bonusQuestions = questions;
+    state.bonusAnswers = new Map(questions.map(question => [
+      question.question_id,
+      Array.isArray(question.answers) ? question.answers : []
+    ]));
   }
 
   async function loadLeaderboard(seasonId, legacySeasonId) {
@@ -801,6 +1228,7 @@
     ]);
     if (matchesError) throw matchesError;
     state.databaseMatches = new Map((matches || []).map(match => [match.id, match]));
+    state.seasonParticipants = participants;
     applyPlayerElos(participants);
   }
 
@@ -833,6 +1261,127 @@
     render();
   }
 
+  async function saveBonusPrediction(questionId, slot, answer) {
+    if (!state.session?.user) {
+      window.PadelKonto?.openDialog?.();
+      renderMatches();
+      return;
+    }
+    const question = state.bonusQuestions.find(item => item.question_id === questionId);
+    if (!question || !isBonusQuestionOpen(question) || state.bonusSaving.has(questionId)) return;
+
+    const previous = getBonusAnswers(questionId);
+    const nextSlots = [...previous, ...Array(Math.max(0, Number(question.max_selections) - previous.length)).fill('')]
+      .slice(0, Number(question.max_selections));
+    nextSlots[slot] = answer;
+    const next = [...new Set(nextSlots.filter(Boolean))];
+    state.bonusAnswers.set(questionId, next);
+    state.bonusSaving.add(questionId);
+    renderMatches();
+
+    const { error } = await state.client.rpc('save_prediction_bonus_answers', {
+      p_question_id: questionId,
+      p_answers: next
+    });
+    state.bonusSaving.delete(questionId);
+    if (error) {
+      state.bonusAnswers.set(questionId, previous);
+      window.PadelKonto?.setMessage?.(error.message, 'error');
+    } else {
+      const seasonId = state.season?.databaseId || state.season?.id;
+      const legacySeasonId = LEGACY_DATABASE_SEASON_IDS[seasonId];
+      await Promise.all([
+        loadBonusPredictions(),
+        loadLeaderboard(seasonId, legacySeasonId)
+      ]);
+    }
+    render();
+  }
+
+  function normalizeBonusPlayerSearch(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLocaleLowerCase('de-DE');
+  }
+
+  function filterBonusPlayerOptions(picker, query = '') {
+    if (!picker) return;
+    const normalizedQuery = normalizeBonusPlayerSearch(query);
+    let visibleOptions = 0;
+    picker.querySelectorAll('[data-bonus-picker-value]').forEach(option => {
+      const matches = !normalizedQuery
+        || normalizeBonusPlayerSearch(option.dataset.bonusPickerSearchText).includes(normalizedQuery);
+      option.hidden = !matches;
+      if (matches) visibleOptions += 1;
+    });
+    const emptyState = picker.querySelector('[data-bonus-picker-search-empty]');
+    if (emptyState) emptyState.hidden = visibleOptions > 0;
+  }
+
+  function closeBonusPlayerPickers(exceptPicker = null) {
+    document.querySelectorAll('[data-bonus-picker].open').forEach(picker => {
+      if (picker === exceptPicker) return;
+      picker.classList.remove('open');
+      picker.querySelector('[data-bonus-picker-toggle]')?.setAttribute('aria-expanded', 'false');
+      const searchInput = picker.querySelector('[data-bonus-picker-search]');
+      if (!searchInput) return;
+      searchInput.value = '';
+      searchInput.setAttribute('aria-expanded', 'false');
+      searchInput.blur();
+      searchInput.disabled = true;
+      filterBonusPlayerOptions(picker);
+    });
+  }
+
+  function keepBonusPlayerSearchVisible(searchInput) {
+    if (!searchInput || !window.matchMedia('(max-width: 768px)').matches) return;
+    const alignInput = () => {
+      if (document.activeElement !== searchInput) return;
+      const viewportTop = window.visualViewport?.offsetTop || 0;
+      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      const targetOffset = Math.min(200, Math.max(80, viewportHeight * 0.4));
+      const scrollDelta = searchInput.getBoundingClientRect().top - viewportTop - targetOffset;
+      if (Math.abs(scrollDelta) < 8) return;
+      window.scrollBy({ top: scrollDelta, behavior: 'smooth' });
+    };
+    requestAnimationFrame(alignInput);
+    window.setTimeout(alignInput, 350);
+  }
+
+  function toggleBonusPlayerPicker(toggle) {
+    const picker = toggle.closest('[data-bonus-picker]');
+    if (!picker) return;
+    const shouldOpen = !picker.classList.contains('open');
+    closeBonusPlayerPickers(picker);
+    picker.classList.toggle('open', shouldOpen);
+    toggle.setAttribute('aria-expanded', String(shouldOpen));
+    const searchInput = picker.querySelector('[data-bonus-picker-search]');
+    if (!searchInput) return;
+    searchInput.setAttribute('aria-expanded', String(shouldOpen));
+    if (shouldOpen) {
+      searchInput.disabled = false;
+      searchInput.value = '';
+      filterBonusPlayerOptions(picker);
+      searchInput.focus({ preventScroll: true });
+      keepBonusPlayerSearchVisible(searchInput);
+    } else {
+      searchInput.blur();
+      searchInput.disabled = true;
+    }
+  }
+
+  function selectBonusPlayerOption(option) {
+    const picker = option.closest('[data-bonus-picker]');
+    if (!picker || option.disabled) return;
+    const questionId = picker.dataset.bonusQuestion;
+    const slot = Number(picker.dataset.bonusSlot);
+    const value = option.dataset.bonusPickerValue || '';
+    closeBonusPlayerPickers();
+    void saveBonusPrediction(questionId, slot, value);
+  }
+
   function render() {
     renderAuthHint();
     renderOverview();
@@ -846,7 +1395,11 @@
     state.profile = window.PadelKonto?.getProfile?.() || null;
     if (!state.client || !state.season) return;
     try {
-      await Promise.all([loadPublicData(), loadPredictions({ accountReady })]);
+      await Promise.all([
+        loadPublicData(),
+        loadPredictions({ accountReady }),
+        loadBonusPredictions({ accountReady })
+      ]);
       state.ready = true;
       state.error = null;
     } catch (error) {
@@ -858,6 +1411,24 @@
 
   function bindEvents() {
     document.addEventListener('click', event => {
+      const articleControl = event.target.closest('[data-expand-prediction-article]');
+      if (!articleControl) return;
+      state.articleExpanded = true;
+      document.getElementById('prediction-home-article-preview')?.classList.add('expanded');
+      articleControl.hidden = true;
+    });
+    document.addEventListener('click', event => {
+      if (!event.target.closest('[data-bonus-picker]')) closeBonusPlayerPickers();
+      const pickerToggle = event.target.closest('[data-bonus-picker-toggle]');
+      if (pickerToggle) {
+        toggleBonusPlayerPicker(pickerToggle);
+        return;
+      }
+      const pickerOption = event.target.closest('[data-bonus-picker-value]');
+      if (pickerOption) {
+        selectBonusPlayerOption(pickerOption);
+        return;
+      }
       const sortButton = event.target.closest('[data-prediction-sort]');
       if (!sortButton || sortButton.dataset.predictionSort === state.sortMode) return;
       state.sortMode = sortButton.dataset.predictionSort;
@@ -869,6 +1440,36 @@
       if (!prediction) return;
       savePrediction(prediction.dataset.predictionMatch, prediction.dataset.predictionValue);
     });
+    document.addEventListener('input', event => {
+      const searchInput = event.target.closest('[data-bonus-picker-search]');
+      if (!searchInput) return;
+      filterBonusPlayerOptions(searchInput.closest('[data-bonus-picker]'), searchInput.value);
+    });
+    document.addEventListener('keydown', event => {
+      const searchInput = event.target.closest('[data-bonus-picker-search]');
+      if (searchInput) {
+        const picker = searchInput.closest('[data-bonus-picker]');
+        const visibleOptions = [...picker.querySelectorAll('[data-bonus-picker-value]')]
+          .filter(option => !option.hidden && !option.disabled);
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          closeBonusPlayerPickers();
+          picker.querySelector('[data-bonus-picker-toggle]')?.focus({ preventScroll: true });
+          return;
+        }
+        if (event.key === 'ArrowDown' && visibleOptions.length) {
+          event.preventDefault();
+          visibleOptions[0].focus();
+          return;
+        }
+        if (event.key === 'Enter' && searchInput.value && visibleOptions.length) {
+          event.preventDefault();
+          selectBonusPlayerOption(visibleOptions[0]);
+          return;
+        }
+      }
+      if (event.key === 'Escape') closeBonusPlayerPickers();
+    });
     window.addEventListener('padel:auth-state-changed', event => {
       state.session = event.detail?.session || null;
       state.profile = event.detail?.profile || null;
@@ -879,6 +1480,7 @@
 
   async function init(season, { accountReady } = {}) {
     state.season = season;
+    state.seasonParticipants = Array.isArray(season?.participants) ? season.participants : [];
     applyPlayerElos(season?.participants || []);
     render();
     if (!window.PadelKonto?.init) {
@@ -907,6 +1509,7 @@
 
   function setSeasonData(season) {
     state.season = season;
+    state.seasonParticipants = Array.isArray(season?.participants) ? season.participants : [];
     applyPlayerElos(season?.participants || []);
     render();
   }

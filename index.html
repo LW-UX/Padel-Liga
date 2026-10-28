@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=2026-10-23-all-time-average-points">
+  <link rel="stylesheet" href="style.css?v=2026-10-28-bonus-layout">
   <link rel="stylesheet" href="account.css?v=2026-10-26-password-change">
   <link rel="stylesheet" href="whats-new.css?v=2026-10-22-release-notes">
   <script>
@@ -38,6 +38,7 @@
   <script defer src="data/info.js"></script>
   <script defer src="data/supabase-config.js"></script>
   <script defer src="js/global-actions.js?v=2026-10-20-speed-dial-player"></script>
+  <script defer src="js/tipp-invitation.js?v=2026-10-27-first-visit"></script>
   <script defer src="js/whats-new.js?v=2026-10-22-auto-hide"></script>
   <script defer src="js/elo-forecast.js?v=2026-10-14-shared-auto-tip"></script>
   <script defer src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
@@ -46,7 +47,7 @@
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/match-statistics.js?v=2026-10-22-concealed-tips"></script>
-  <script defer src="js/app.js?v=2026-10-23-all-time-sort-highlight"></script>
+  <script defer src="js/app.js?v=2026-10-27-matchday-nbsp"></script>
 </head>
 <body>
 
@@ -694,6 +695,25 @@
         <div class="player-profile-match-list" id="player-profile-match-list"></div>
         <button class="secondary-button player-profile-show-all" id="player-profile-show-all" type="button" data-player-profile-show-all hidden></button>
       </article>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="auth-dialog tipp-invitation-dialog" id="tipp-invitation-dialog" aria-labelledby="tipp-invitation-title" aria-describedby="tipp-invitation-copy">
+  <button class="modal-close-button auth-dialog-close" type="button" data-tipp-invitation-close aria-label="Tipp-Hinweis schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
+  <div class="auth-dialog-card tipp-invitation-card">
+    <span class="tipp-invitation-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" focusable="false">
+        <path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+    </span>
+    <div class="widget-label">PadelTipp</div>
+    <h2 id="tipp-invitation-title">Schon getippt?</h2>
+    <p class="auth-dialog-copy" id="tipp-invitation-copy">Tippe jetzt die nächsten Partien und sammle Punkte für die PadelTipp-Rangliste.</p>
+    <div class="player-email-actions">
+      <button class="secondary-button" type="button" data-tipp-invitation-close>Nicht jetzt</button>
+      <button class="primary-button" type="button" data-tipp-invitation-link>Jetzt tippen</button>
     </div>
   </div>
 </dialog>

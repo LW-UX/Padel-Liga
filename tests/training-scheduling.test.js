@@ -18,6 +18,7 @@ const seasonEndScopeMigration = fs.readFileSync(
 );
 const account = fs.readFileSync(path.join(root, 'js/account.js'), 'utf8');
 const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
+const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 
 test('scheduled trainings stay separate from result proposals', () => {
   assert.match(migration, /status in \('scheduled', 'pending', 'confirmed'\)/);
@@ -45,6 +46,10 @@ test('home feed shows one non-detail training card with profile links', () => {
   assert.match(app, /renderPlayerProfileLink/);
   assert.match(app, /roundCount/);
   assert.match(app, /completedSetCount/);
+  assert.match(app, /function isViewerTraining\(training\)/);
+  assert.match(app, /isSelectedTrainingParticipant\(participant\) \? 'viewer-player'/);
+  assert.match(app, /isViewerTraining\(training\) \? 'viewer-match'/);
+  assert.match(style, /\.mini-training-player\.viewer-player[\s\S]*?color: var\(--accent2\)/);
   assert.match(app, /nextMatchEntries, \.\.\.nextTrainingEntries/);
   assert.match(app, /recentMatchEntries, \.\.\.recentTrainingEntries/);
   const trainingCard = app.match(/function renderHomeTrainingCard[\s\S]*?(?=\nfunction getCurrentArticle)/)?.[0] || '';

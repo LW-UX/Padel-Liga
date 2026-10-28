@@ -135,6 +135,43 @@
       visibility: hidden;
     }
     .auth-dialog-copy { color: var(--dim); font-size: 0.88rem; line-height: 1.5; margin: -0.35rem 0 1rem; }
+    .tipp-invitation-dialog { width: min(calc(100vw - 24px), 460px); }
+    .tipp-invitation-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 2rem 2rem;
+      text-align: center;
+    }
+    .tipp-invitation-icon {
+      display: grid;
+      place-items: center;
+      width: 64px;
+      height: 64px;
+      border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+      color: var(--accent);
+      margin-bottom: 1.15rem;
+    }
+    .tipp-invitation-icon svg {
+      width: 32px;
+      height: 32px;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.7;
+    }
+    .tipp-invitation-dialog h2 {
+      margin: 0.3rem 0 0.85rem;
+      font-size: clamp(2.3rem, 9vw, 3.25rem);
+      line-height: 0.95;
+    }
+    .tipp-invitation-dialog .auth-dialog-copy {
+      max-width: 34ch;
+      font-size: var(--text-base);
+    }
     .player-email-privacy { color: var(--dim); font-size: 0.75rem; line-height: 1.45; }
     .player-email-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
     .player-invite-output {
@@ -825,10 +862,10 @@
       .auth-task-badge { position: unset; }
       .auth-dialog { max-height: 94vh; }
       .auth-dialog-card { padding: 1.1rem 0.5rem; }
+      .tipp-invitation-card { padding: 2.25rem 1.25rem 1.25rem; }
       .account-auth-message { bottom: max(8px, env(safe-area-inset-bottom)); max-width: calc(100% - 32px); }
       .account-header { flex-wrap: wrap; gap: 12px; padding-right: 64px; }
       .account-header-actions { width: 100%; justify-content: flex-start; }
-      .player-email-actions { align-items: stretch; flex-direction: column; }
       .account-header h2 { font-size: 1.65rem; }
       .account-section { min-width: 0; }
       .account-section-heading { min-width: 0; }

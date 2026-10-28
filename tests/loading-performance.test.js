@@ -137,11 +137,12 @@ test('closed tipping still loads existing rankings and personal tips', async () 
   let renders = 0;
   const context = vm.createContext({ state, window: {}, render: () => renders++,
     loadPublicData: async () => { calls.push('public'); state.leaderboard = [{ user_id: 'one' }]; },
-    loadPredictions: async () => { calls.push('private'); state.predictions = new Map([['past', '2:0']]); } });
+    loadPredictions: async () => { calls.push('private'); state.predictions = new Map([['past', '2:0']]); },
+    loadBonusPredictions: async () => { calls.push('bonus'); } });
   vm.runInContext(fn(tipping, 'refresh', '  '), context);
   await context.refresh();
   assert.equal(state.ready, true);
-  assert.deepEqual(calls, ['public', 'private']);
+  assert.deepEqual(calls, ['public', 'private', 'bonus']);
   assert.equal(state.predictions.get('past'), '2:0');
   assert.equal(state.leaderboard.length, 1);
   assert.equal(renders, 1);
