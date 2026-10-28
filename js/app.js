@@ -27,6 +27,7 @@ let homePredictionLeaderboard = [];
 let homePredictionLeaderboardReady = false;
 let homePredictionLeaderboardError = '';
 let homePredictionLeaderboardRequest = 0;
+let previousLeagueRankingAchievements = new Map();
 let publicTrainingFeed = { upcoming: [], recent: [] };
 let activeSeasonRefreshPromise = null;
 let seasonRefreshRequested = false;
@@ -322,6 +323,56 @@ async function loadDatabasePredictionLeaderboard(seasonReference) {
   const fallback = await client.rpc('get_prediction_leaderboard', { p_season_id: legacySeasonId });
   if (fallback.error) throw fallback.error;
   return Array.isArray(fallback.data) ? fallback.data : [];
+}
+
+function getPreviousCompletedLeagueSeason(seasonReference = selectedSeason) {
+  const currentId = normalizeSeasonId(seasonReference?.id);
+  const currentStart = String(seasonReference?.startDate || '');
+  return getSeasonOptions()
+    .filter(season =>
+      normalizeSeasonId(season.id) !== currentId
+      && season.completedAt
+      && season.visualTheme !== 'cup'
+      && (!currentStart || String(season.startDate || '') < currentStart)
+    )
+    .sort((left, right) =>
+      String(right.startDate || '').localeCompare(String(left.startDate || ''))
+      || String(right.completedAt || '').localeCompare(String(left.completedAt || ''))
+      || String(left.id).localeCompare(String(right.id))
+    )[0] || null;
+}
+
+async function loadPreviousLeagueRankingAchievements(seasonReference = selectedSeason) {
+  const client = getSupabaseClient();
+  const previousSeason = getPreviousCompletedLeagueSeason(seasonReference);
+  if (!client?.from || !previousSeason) return new Map();
+
+  try {
+    const seasonId = previousSeason.databaseId
+      || LEGACY_DATABASE_SEASON_IDS[previousSeason.id]
+      || previousSeason.id;
+    const { data, error } = await client
+      .from('player_achievements')
+      .select('player_id, kind')
+      .eq('season_id', seasonId)
+      .in('kind', ['winner', 'final_four']);
+    if (error) throw error;
+
+    const achievements = new Map();
+    (data || []).forEach(achievement => {
+      const current = achievements.get(achievement.player_id);
+      if (!current || achievement.kind === 'winner') {
+        achievements.set(achievement.player_id, {
+          kind: achievement.kind,
+          seasonLabel: previousSeason.label
+        });
+      }
+    });
+    return achievements;
+  } catch (error) {
+    console.warn('Auszeichnungen der vorherigen Ligasaison konnten nicht geladen werden:', error);
+    return new Map();
+  }
 }
 
 function isTestTrainingFeedItem(training) {
@@ -969,9 +1020,10 @@ async function loadActiveSeason() {
   await loadDatabaseSeasonOptions();
   selectedSeason = getDefaultSeasonOption();
   if (!selectedSeason) throw new Error('Keine Saison in data/seasons.js gefunden.');
-  [PADEL_DATA, publicTrainingFeed] = await Promise.all([
+  [PADEL_DATA, publicTrainingFeed, previousLeagueRankingAchievements] = await Promise.all([
     loadSeasonData(selectedSeason),
-    loadDatabasePublicTrainingFeed()
+    loadDatabasePublicTrainingFeed(),
+    loadPreviousLeagueRankingAchievements(selectedSeason)
   ]);
 }
 
@@ -1113,9 +1165,10 @@ async function refreshActiveSeasonView() {
       const selectedSeasonId = selectedSeason.id;
       await loadDatabaseSeasonOptions();
       selectedSeason = getSeasonOptions().find(season => season.id === selectedSeasonId) || selectedSeason;
-      [PADEL_DATA, publicTrainingFeed] = await Promise.all([
+      [PADEL_DATA, publicTrainingFeed, previousLeagueRankingAchievements] = await Promise.all([
         loadSeasonData(selectedSeason),
-        loadDatabasePublicTrainingFeed()
+        loadDatabasePublicTrainingFeed(),
+        loadPreviousLeagueRankingAchievements(selectedSeason)
       ]);
 
       calculatorResults = new Map();
@@ -4057,7 +4110,7 @@ function renderRanking() {
       : '';
     return `<tr class="ranking-row r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(p.id || p.name)}">
       <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${renderPointsRankReference(currentRank, pointsRank)}</span></td>
-      <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}${absenceMark}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span></span></td>
+      <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}${renderLeagueRankingAchievementIcon(p)}${absenceMark}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span></span></td>
       <td class="col-games">${renderRankingMatchCount(p)}</td>
       <td class="col-wins">${p.stats.siege}</td>
       <td class="col-points rank-score">${p.stats.punkte}</td>
@@ -4786,7 +4839,7 @@ function renderPredictionAccountTypeIcon(entry) {
   return `<span class="prediction-account-type-icon" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icon}</svg></span>`;
 }
 
-function renderPredictionAchievementIcon(entry) {
+function renderPredictionAchievementIcon(entry, additionalClass = '') {
   const kind = entry?.previous_league_achievement;
   if (kind !== 'winner' && kind !== 'final_four') return '';
   const seasonLabel = String(entry.previous_league_season_label || '').trim();
@@ -4794,7 +4847,17 @@ function renderPredictionAchievementIcon(entry) {
   const icon = kind === 'winner'
     ? '<svg viewBox="0 0 28 32" aria-hidden="true" focusable="false"><path d="M8 3h12v5c0 5-2.4 8.5-6 10-3.6-1.5-6-5-6-10V3Z"/><path d="M8 6H4v2c0 4 2 6 5.3 6.7M20 6h4v2c0 4-2 6-5.3 6.7"/><path d="M14 18v6M11 24h6v4M9 28h10"/></svg>'
     : '<span class="prediction-achievement-laurel" aria-hidden="true"></span>';
-  return `<span class="prediction-achievement-icon prediction-achievement-icon--${kind === 'winner' ? 'winner' : 'final-four'}" role="img" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">${icon}</span>`;
+  const extraClass = additionalClass ? ` ${escapeHtml(additionalClass)}` : '';
+  return `<span class="prediction-achievement-icon prediction-achievement-icon--${kind === 'winner' ? 'winner' : 'final-four'}${extraClass}" role="img" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">${icon}</span>`;
+}
+
+function renderLeagueRankingAchievementIcon(player) {
+  const achievement = previousLeagueRankingAchievements.get(player?.id);
+  if (!achievement) return '';
+  return renderPredictionAchievementIcon({
+    previous_league_achievement: achievement.kind,
+    previous_league_season_label: achievement.seasonLabel
+  }, 'ranking-player-achievement');
 }
 
 function renderHomePredictionLeaderboard() {

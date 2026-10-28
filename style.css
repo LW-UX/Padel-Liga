@@ -2405,6 +2405,7 @@
     }
     .prediction-achievement-icon--winner { color: var(--gold); }
     .prediction-achievement-icon--final-four { color: var(--silver); }
+    .ranking-player-achievement { margin-left: 2px; }
     .prediction-achievement-icon svg {
       display: block;
       width: 100%;
