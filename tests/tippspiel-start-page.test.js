@@ -82,12 +82,13 @@ test('prediction rankings show previous league champion and Final Four achieveme
   assert.match(achievementMigration, /season\.completed_at is not null/);
   assert.match(achievementMigration, /season\.counts_for_profile/);
   assert.match(achievementMigration, /season\.visual_theme <> 'cup'/);
+  assert.match(achievementMigration, /order by season\.starts_on desc nulls last, season\.completed_at desc, season\.id[\s\S]*limit 1/);
   assert.match(achievementMigration, /bool_or\(achievement\.kind = 'winner'\)[\s\S]*bool_or\(achievement\.kind = 'final_four'\)/);
   assert.match(script, /function renderPredictionAchievementIcon\(entry\)/);
   assert.match(script, /kind === 'winner' \? 'Champion' : 'Final Four'/);
-  assert.match(script, /renderPredictionAchievementIcon\(entry\)\}\$\{renderPredictionAccountTypeIcon\(entry\)/);
+  assert.match(script, /renderPredictionAccountTypeIcon\(entry\)\}\$\{renderPredictionAchievementIcon\(entry\)/);
   assert.match(ligaScript, /function renderPredictionAchievementIcon\(entry, additionalClass = ''\)/);
-  assert.match(ligaScript, /renderPredictionAchievementIcon\(entry\)\}\$\{renderPredictionAccountTypeIcon\(entry\)/);
+  assert.match(ligaScript, /renderPredictionAccountTypeIcon\(entry\)\}\$\{renderPredictionAchievementIcon\(entry\)/);
   assert.match(style, /\.prediction-achievement-icon--winner \{ color: var\(--gold\); \}/);
   assert.match(style, /\.prediction-achievement-icon--final-four \{ color: var\(--silver\); \}/);
   assert.match(style, /\.prediction-rank-account \{[\s\S]*gap: 2px;/);

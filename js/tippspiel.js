@@ -790,7 +790,7 @@
       return `
         <div class="mini-rank-row r${index + 1}${isOwn ? ' viewer-highlight' : ''}${separated}">
           <span class="rank-position">${index + 1}</span>
-          <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAchievementIcon(entry)}${renderPredictionAccountTypeIcon(entry)}</span></span>
+          <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionAchievementIcon(entry)}</span></span>
           <span class="rank-score">${formatCount(entry.points)} Pkt.</span>
         </div>
       `;
@@ -1112,7 +1112,7 @@
     body.innerHTML = state.leaderboard.map((entry, index) => `
       <tr class="ranking-row r${Math.min(index + 1, 4)} ${state.session?.user?.id === entry.user_id ? 'authenticated-player-highlight' : ''}">
         <td class="col-rank rank-position">${index + 1}</td>
-        <td class="col-name"><span class="prediction-rank-account"><span class="pname">${escapeHtml(entry.display_name)}</span>${renderPredictionAchievementIcon(entry)}${renderPredictionAccountTypeIcon(entry)}</span></td>
+        <td class="col-name"><span class="prediction-rank-account"><span class="pname">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionAchievementIcon(entry)}</span></td>
         <td class="col-games">${Number(entry.predictions_count) || 0}</td>
         <td class="col-wins">${Number(entry.exact_count) || 0}</td>
         <td class="col-passive" title="Automatisch gutgeschriebene Punkte aus eigenen Partien">${getLeaderboardPassivePoints(entry)}</td>

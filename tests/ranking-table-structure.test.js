@@ -121,6 +121,7 @@ test('the regular season ranking shows previous league achievements directly aft
   const ranking = getFunctionSource('renderRanking', 'getAllTimeLeagueMatches');
 
   assert.match(app, /function getPreviousCompletedLeagueSeason\(seasonReference = selectedSeason\)/);
+  assert.match(app, /\.sort\(\(left, right\) =>[\s\S]*right\.startDate[\s\S]*\)\[0\] \|\| null;/);
   assert.match(app, /\.from\('player_achievements'\)[^]*\.in\('kind', \['winner', 'final_four'\]\)/);
   assert.match(app, /achievement\.kind === 'winner'[^]*achievements\.set\(achievement\.player_id/);
   assert.match(app, /function renderLeagueRankingAchievementIcon\(player\)/);

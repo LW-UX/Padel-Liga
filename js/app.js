@@ -4878,7 +4878,7 @@ function renderHomePredictionLeaderboard() {
   target.innerHTML = homePredictionLeaderboard.slice(0, 4).map((entry, index) => `
     <div class="mini-rank-row r${index + 1}">
       <span class="rank-position">${index + 1}</span>
-      <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAchievementIcon(entry)}${renderPredictionAccountTypeIcon(entry)}</span></span>
+      <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionAchievementIcon(entry)}</span></span>
       <span class="rank-score">${Number(entry.points) || 0} Pkt.</span>
     </div>
   `).join('');
