@@ -12,10 +12,10 @@ padel-liga/
 ├── tipp/
 │   └── index.html                 Eigenständige Padeltipp-Seite
 ├── style.css                      Gemeinsame Seiten- und Tippspiel-Stile
-├── account.css                    Login-, Konto- und Spieleübersichts-Stile
+├── account.css                    Login-, Konto- und Partienübersichts-Stile
 ├── js/
 │   ├── app.js                    Navigation, Berechnungen und Darstellung
-│   ├── account.js                Login, Konto, Spielaufgaben und Einladungen
+│   ├── account.js                Login, Konto, Partieaufgaben und Einladungen
 │   └── tippspiel.js              Tipps und Tippspiel-Rangliste
 ├── data/
 │   ├── players.js                Globale Spieler-Stammdaten

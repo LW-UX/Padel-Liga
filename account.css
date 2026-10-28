@@ -1,4 +1,4 @@
-/* Konto-, Login- und Spieleübersichts-Stile. Das Modul bleibt unabhängig vom Tippspiel ladbar. */
+/* Konto-, Login- und Partienübersichts-Stile. Das Modul bleibt unabhängig vom Tippspiel ladbar. */
     .auth-button {
       position: relative;
       display: inline-flex;

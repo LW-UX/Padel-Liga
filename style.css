@@ -2361,7 +2361,40 @@
     .mini-rank-row .rank-position {
       padding-left: 8px;
     }
-    .mini-rank-name { font-weight: 500; }
+    .mini-rank-name { min-width: 0; font-weight: 500; }
+    .prediction-rank-account {
+      display: inline-flex;
+      max-width: 100%;
+      min-width: 0;
+      align-items: center;
+      gap: 6px;
+      vertical-align: middle;
+    }
+    .prediction-rank-account-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .prediction-account-type-icon {
+      display: inline-flex;
+      width: 15px;
+      height: 15px;
+      flex: 0 0 15px;
+      align-items: center;
+      justify-content: center;
+      color: var(--dim);
+    }
+    .prediction-account-type-icon svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.7;
+    }
     .mini-rank-values {
       display: grid;
       grid-template-columns: repeat(3, 3ch);

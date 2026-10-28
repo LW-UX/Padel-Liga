@@ -76,7 +76,7 @@ test('both account dialogs expose one four-group game overview', () => {
     assert.doesNotMatch(source, /id="admin-all-matches"/);
     assert.doesNotMatch(source, /id="training-history"/);
     assert.match(source, /id="open-results-section"[\s\S]*data-training-toggle/);
-    assert.match(source, /<h3 class="sh-title sh-title-with-help">Spieleübersicht[\s\S]*?id="account-games-help"[\s\S]*?<\/h3>/);
+    assert.match(source, /<h3 class="sh-title sh-title-with-help">Partienübersicht[\s\S]*?id="account-games-help"[\s\S]*?<\/h3>/);
     assert.match(source, /class="match-scope-toggle account-result-scope-toggle"[^>]*data-account-result-scope-toggle hidden/);
     assert.match(source, /data-account-result-scope="relevant"[^>]*>Relevant<\/button>/);
     assert.match(source, /data-account-result-scope="all"[^>]*>Alle<\/button>/);

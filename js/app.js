@@ -4777,6 +4777,15 @@ function renderTop8QualificationFlow() {
   </figure>`;
 }
 
+function renderPredictionAccountTypeIcon(entry) {
+  if (typeof entry?.is_player !== 'boolean') return '';
+  const label = entry.is_player ? 'Spieler' : 'Tipper';
+  const icon = entry.is_player
+    ? '<g transform="rotate(40 12 12)"><path d="M12 1.5c3.4 0 5.6 2.7 5.6 6.2 0 3.6-2.4 6.6-5.6 6.6s-5.6-3-5.6-6.6c0-3.5 2.2-6.2 5.6-6.2Z"/><path d="M9.6 13.6 11 16.6h2l1.4-3"/><rect x="10.8" y="16.6" width="2.4" height="5.6" rx="1.1"/><path d="M10 6h.01M14 6h.01M12 8h.01M10 10h.01M14 10h.01"/></g>'
+    : '<path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="m9 12 2 2 4-4"/>';
+  return `<span class="prediction-account-type-icon" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icon}</svg></span>`;
+}
+
 function renderHomePredictionLeaderboard() {
   const target = document.getElementById('home-prediction-ranking');
   if (!target || !homePredictionLeaderboardReady) return;
@@ -4795,7 +4804,7 @@ function renderHomePredictionLeaderboard() {
   target.innerHTML = homePredictionLeaderboard.slice(0, 4).map((entry, index) => `
     <div class="mini-rank-row r${index + 1}">
       <span class="rank-position">${index + 1}</span>
-      <span class="mini-rank-name">${escapeHtml(entry.display_name)}</span>
+      <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}</span></span>
       <span class="rank-score">${Number(entry.points) || 0} Pkt.</span>
     </div>
   `).join('');

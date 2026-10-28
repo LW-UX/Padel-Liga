@@ -46,7 +46,7 @@ test('unscheduled league matches retain their existing open betting behavior', (
 });
 
 test('all four groups render even when they are empty', () => {
-  ['Zu bestätigen', 'Ergebnis eintragen', 'Terminierte Spiele', 'Geplante Spiele'].forEach(label => {
+  ['Zu bestätigen', 'Ergebnis eintragen', 'Terminierte Partien', 'Geplante Partien'].forEach(label => {
     assert.match(account, new RegExp(`label: '${label}'`));
   });
   assert.match(account, /group\.items\.length[\s\S]*Derzeit keine Partie\./);

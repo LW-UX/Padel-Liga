@@ -23,6 +23,29 @@
     }
   }
 
+  function openFeatureTarget(target) {
+    if (target === 'matches') {
+      document.getElementById('partien-nav-button')?.click();
+      return;
+    }
+    if (target === 'account') {
+      document.getElementById('auth-button')?.click();
+      return;
+    }
+    if (target === 'tipping') {
+      window.location.assign(new URL('tipp/', document.baseURI));
+      return;
+    }
+    if (target === 'player-profile') {
+      const profileButton = document.getElementById('viewer-profile-button');
+      if (profileButton?.dataset.playerProfileId) {
+        profileButton.click();
+      } else {
+        document.querySelector('[data-viewer-toggle]')?.click();
+      }
+    }
+  }
+
   function init() {
     const button = document.getElementById('whats-new-button');
     const dialog = document.getElementById('whats-new-dialog');
@@ -36,6 +59,12 @@
       button.classList.remove('is-unseen');
     });
     dialog.addEventListener('click', event => {
+      const featureLink = event.target.closest('[data-whats-new-target]');
+      if (featureLink) {
+        dialog.close();
+        openFeatureTarget(featureLink.dataset.whatsNewTarget);
+        return;
+      }
       if (event.target === dialog || event.target.closest('[data-whats-new-close]')) dialog.close();
     });
   }

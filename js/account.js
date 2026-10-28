@@ -190,14 +190,14 @@
       },
       {
         key: 'future',
-        label: 'Terminierte Spiele',
+        label: 'Terminierte Partien',
         tasks: scheduledEntries
           .filter(task => getMatchAtTimestamp(task.match_at) > now)
           .sort(compareBySchedule)
       },
       {
         key: 'planned',
-        label: 'Geplante Spiele',
+        label: 'Geplante Partien',
         tasks: resultEntries
           .filter(task => !task.match_at)
           .sort((first, second) => Number(first.matchday) - Number(second.matchday)
@@ -273,7 +273,7 @@
     window.PadelGlobalActions?.setAccountTaskCount(taskCount);
     button.classList.toggle('is-authenticated', isLoggedIn);
     button.classList.toggle('secondary-button', isLoggedIn);
-    button.setAttribute('aria-label', isLoggedIn ? `Spieleübersicht von ${displayName} öffnen` : 'Einloggen');
+    button.setAttribute('aria-label', isLoggedIn ? `Partienübersicht von ${displayName} öffnen` : 'Einloggen');
     button.title = isLoggedIn ? displayName : '';
     guestView.hidden = isLoggedIn || isConfirmingLink;
     accountView.hidden = !isLoggedIn || isSettingPassword || isConfirmingLink;
@@ -704,8 +704,8 @@
     if (target && isPlayerAccount() && (state.playerToolsLoading || state.playerToolsError)) {
       target.setAttribute('aria-busy', String(state.playerToolsLoading));
       target.innerHTML = state.playerToolsLoading
-        ? '<div class="account-empty" role="status">Spiele werden geladen …</div>'
-        : '<div class="account-empty" role="status">Spiele konnten nicht geladen werden. <button class="text-link" type="button" data-account-tasks-retry>Erneut versuchen</button></div>';
+        ? '<div class="account-empty" role="status">Partien werden geladen …</div>'
+        : '<div class="account-empty" role="status">Partien konnten nicht geladen werden. <button class="text-link" type="button" data-account-tasks-retry>Erneut versuchen</button></div>';
       return;
     }
     target?.setAttribute('aria-busy', 'false');
@@ -830,7 +830,7 @@
 
   function renderTrainingTaskRound(task, round, roundIndex, roundCount) {
     const proposalLabel = task.created_by_me ? 'Dein Vorschlag' : 'Vorschlag des anderen Teams';
-    const roundLabel = roundCount > 1 ? ` · Spiel ${roundIndex + 1}` : '';
+    const roundLabel = roundCount > 1 ? ` · Partie ${roundIndex + 1}` : '';
     return `<div class="training-task-round">
       <div class="account-task-matchup">
         <strong>${renderTrainingTaskTeam(round.team_one_ids, task.guest_names, task.player_ids)}</strong>
@@ -1445,8 +1445,8 @@
       })
       .catch(error => {
         if (state.playerToolsVersion !== version) return;
-        state.playerToolsError = error.message || 'Spiele konnten nicht geladen werden.';
-        console.error('Spiele konnten nicht geladen werden:', error);
+        state.playerToolsError = error.message || 'Partien konnten nicht geladen werden.';
+        console.error('Partien konnten nicht geladen werden:', error);
       })
       .finally(() => {
         if (playerToolsPromise !== request) return;

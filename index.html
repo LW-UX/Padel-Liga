@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=2026-10-28-padeltipp-label">
+  <link rel="stylesheet" href="style.css?v=2026-10-28-prediction-account-icons">
   <link rel="stylesheet" href="account.css?v=2026-10-26-password-change">
-  <link rel="stylesheet" href="whats-new.css?v=2026-10-22-release-notes">
+  <link rel="stylesheet" href="whats-new.css?v=2026-10-28-feature-links">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -39,7 +39,7 @@
   <script defer src="data/supabase-config.js"></script>
   <script defer src="js/global-actions.js?v=2026-10-20-speed-dial-player"></script>
   <script defer src="js/tipp-invitation.js?v=2026-10-27-first-visit"></script>
-  <script defer src="js/whats-new.js?v=2026-10-22-auto-hide"></script>
+  <script defer src="js/whats-new.js?v=2026-10-28-feature-links"></script>
   <script defer src="js/elo-forecast.js?v=2026-10-14-shared-auto-tip"></script>
   <script defer src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
   <script defer src="js/live-ticker.js?v=2026-10-20-mobile-global-actions"></script>
@@ -47,7 +47,7 @@
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/match-statistics.js?v=2026-10-22-concealed-tips"></script>
-  <script defer src="js/app.js?v=2026-10-28-home-tip-ranking"></script>
+  <script defer src="js/app.js?v=2026-10-28-prediction-account-icons"></script>
 </head>
 <body>
 
@@ -743,32 +743,32 @@
     </header>
     <ul class="whats-new-features">
       <li class="whats-new-feature">
-        <span class="whats-new-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><g transform="rotate(40 12 12)"><path d="M12 1.5c3.4 0 5.6 2.7 5.6 6.2 0 3.6-2.4 6.6-5.6 6.6s-5.6-3-5.6-6.6c0-3.5 2.2-6.2 5.6-6.2Z"/><path d="M9.6 13.6 11 16.6h2l1.4-3"/><rect x="10.8" y="16.6" width="2.4" height="5.6" rx="1.1"/><path d="M10 6h.01M14 6h.01M12 8h.01M10 10h.01M14 10h.01"/></g></svg></span>
-        <div>
+        <button class="whats-new-feature-link" type="button" data-whats-new-target="player-profile">
+          <span class="whats-new-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><g transform="rotate(40 12 12)"><path d="M12 1.5c3.4 0 5.6 2.7 5.6 6.2 0 3.6-2.4 6.6-5.6 6.6s-5.6-3-5.6-6.6c0-3.5 2.2-6.2 5.6-6.2Z"/><path d="M9.6 13.6 11 16.6h2l1.4-3"/><rect x="10.8" y="16.6" width="2.4" height="5.6" rx="1.1"/><path d="M10 6h.01M14 6h.01M12 8h.01M10 10h.01M14 10h.01"/></g></svg></span>
           <h3>Spielerprofil</h3>
-          <p>Statistiken, Spiele, Saisonteilnahmen, Gegnerbeziehungen und Elo-Verläufe jedes Spielers auf einen Blick.</p>
-        </div>
+        </button>
+        <p>Statistiken, Spiele, Saisonteilnahmen, Gegnerbeziehungen und Elo-Verläufe jedes Spielers auf einen Blick.</p>
       </li>
       <li class="whats-new-feature">
-        <span class="whats-new-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4 19V5m0 14h16"/><path d="m7 15 4-4 3 3 5-6"/></svg></span>
-        <div>
+        <button class="whats-new-feature-link" type="button" data-whats-new-target="matches">
+          <span class="whats-new-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4 19V5m0 14h16"/><path d="m7 15 4-4 3 3 5-6"/></svg></span>
           <h3>Partievorschau &amp; Partierückschau</h3>
-          <p>Fakten zur Partie, mögliche Elo-Entwicklung und was sich verändern könnte. Gib hier direkt deinen Tipp ab! Die Partierückschau liefert dann Tatsachen.</p>
-        </div>
+        </button>
+        <p>Fakten zur Partie, mögliche Elo-Entwicklung und was sich verändern könnte. Gib hier direkt deinen Tipp ab! Die Partierückschau liefert dann Tatsachen.</p>
       </li>
       <li class="whats-new-feature">
-        <span class="whats-new-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/></svg></span>
-        <div>
+        <button class="whats-new-feature-link" type="button" data-whats-new-target="account">
+          <span class="whats-new-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/></svg></span>
           <h3>Konto</h3>
-          <p>Melde dich an und trage Trainings und Ergebnisse selbst ein.</p>
-        </div>
+        </button>
+        <p>Melde dich an und trage Trainings und Ergebnisse selbst ein.</p>
       </li>
       <li class="whats-new-feature">
-        <span class="whats-new-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="m9 12 2 2 4-4"/></svg></span>
-        <div>
+        <button class="whats-new-feature-link" type="button" data-whats-new-target="tipping">
+          <span class="whats-new-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="m9 12 2 2 4-4"/></svg></span>
           <h3>PadelTipp</h3>
-          <p>Tippe auf die Ergebnisse der Partien und miss dich mit den anderen in der Tipprangliste.</p>
-        </div>
+        </button>
+        <p>Tippe auf die Ergebnisse der Partien und miss dich mit den anderen in der Tipprangliste.</p>
       </li>
     </ul>
     <section class="whats-new-more" aria-labelledby="whats-new-more-title">
@@ -851,7 +851,7 @@
         </div>
       </div>
       <div id="account-games-panel">
-        <div class="account-games-empty" id="account-games-empty" hidden>Als Tipper hast du keine eigenen Liga- oder Trainingsspiele.</div>
+        <div class="account-games-empty" id="account-games-empty" hidden>Als Tipper hast du keine eigenen Liga- oder Trainingspartien.</div>
         <section class="account-section" id="live-account-section" hidden>
           <div class="account-section-heading"><h3 class="sh-title">Liveticker</h3></div>
           <div class="account-task-list" id="live-account-list"></div>
@@ -859,13 +859,13 @@
         <div class="account-player-area" id="account-player-area" hidden>
           <section class="account-section" id="open-results-section">
             <div class="account-section-heading">
-              <h3 class="sh-title sh-title-with-help">Spieleübersicht
+              <h3 class="sh-title sh-title-with-help">Partienübersicht
                 <span class="th-help-wrap account-games-help">
-                  <span class="help-icon" tabindex="0" role="button" aria-label="Spieleübersicht erklären" aria-describedby="account-games-help" aria-expanded="false" data-help-tooltip-anchor>?</span>
+                  <span class="help-icon" tabindex="0" role="button" aria-label="Partienübersicht erklären" aria-describedby="account-games-help" aria-expanded="false" data-help-tooltip-anchor>?</span>
                   <span class="help-tooltip" id="account-games-help" role="tooltip">
-                    <span class="account-games-help-block">Hier siehst du alle deine eigenen Liga- und Trainingsspiele, sortiert nach dem, was als Nächstes zu tun ist.</span>
-                    <span class="account-games-help-block"><strong>Terminieren</strong>Bei einem geplanten Spiel Datum und Uhrzeit wählen und „Terminieren“ klicken. Über „Termin ändern“ oder „Termin löschen“ passt du ihn später an.</span>
-                    <span class="account-games-help-block"><strong>Ergebnis eintragen</strong>Nach dem Spiel die Sätze eintragen, den tatsächlichen Spielzeitpunkt prüfen und „Zur Bestätigung senden“ klicken.</span>
+                    <span class="account-games-help-block">Hier siehst du alle deine eigenen Liga- und Trainingspartien, sortiert nach dem, was als Nächstes zu tun ist.</span>
+                    <span class="account-games-help-block"><strong>Terminieren</strong>Bei einer geplanten Partie Datum und Uhrzeit wählen und „Terminieren“ klicken. Über „Termin ändern“ oder „Termin löschen“ passt du ihn später an.</span>
+                    <span class="account-games-help-block"><strong>Ergebnis eintragen</strong>Nach der Partie die Sätze eintragen, den tatsächlichen Partiezeitpunkt prüfen und „Zur Bestätigung senden“ klicken.</span>
                     <span class="account-games-help-block"><strong>Bestätigen</strong>Ergebnisse des anderen Teams stehen unter „Zu bestätigen“. Stimmt es, klickst du „Ergebnis bestätigen“, sonst „Alternative eingeben“. Ohne Reaktion gilt ein Vorschlag nach 48 Stunden als bestätigt.</span>
                     <span class="account-games-help-block"><strong>Training</strong>Für einen zukünftigen Termin genügen Datum, Uhrzeit und vier Teilnehmer. Nach dem Termin ergänzt du Paarungen, Formate und Ergebnisse und sendest sie zur Bestätigung. Trainings zählen nicht für Rangliste und Elo.</span>
                   </span>
@@ -873,7 +873,7 @@
               </h3>
               <button class="secondary-button" type="button" data-training-toggle>Training hinzufügen</button>
             </div>
-            <div class="match-scope-toggle account-result-scope-toggle" aria-label="Spieleübersicht filtern" data-account-result-scope-toggle hidden>
+            <div class="match-scope-toggle account-result-scope-toggle" aria-label="Partienübersicht filtern" data-account-result-scope-toggle hidden>
               <button type="button" class="active" data-account-result-scope="relevant" aria-pressed="true">Relevant</button>
               <button type="button" data-account-result-scope="all" aria-pressed="false">Alle</button>
             </div>

@@ -11,6 +11,10 @@ const ligaPage = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const ligaScript = fs.readFileSync(path.join(root, 'js', 'app.js'), 'utf8');
 const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 const decisions = fs.readFileSync(path.join(root, 'docs', 'project-decisions', 'tipping.md'), 'utf8');
+const accountTypeMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261028170000_prediction_leaderboard_account_type.sql'),
+  'utf8'
+);
 
 test('PadelTipp opens on the start page without adding a start menu item', () => {
   assert.match(page, /data-tip-nav="tippstart" aria-label="Zur PadelTipp-Startseite"/);
@@ -47,6 +51,21 @@ test('league home shows a four-entry prediction ranking below recent matches', (
   assert.match(ligaScript, /tipp\/\?saison=\$\{encodeURIComponent\(selectedSeason\.id\)\}#tippuebersicht/);
   assert.match(pageScript, /\['tippstart', 'tippuebersicht', 'tippen', 'tippinfos'\]\.includes\(requestedSection\)/);
   assert.match(decisions, /direkt unter „Letzte Partien“ eine Top-4-Kurzrangliste/);
+});
+
+test('prediction rankings show the dim account type icon directly after each name', () => {
+  assert.match(accountTypeMigration, /is_player boolean/);
+  assert.match(accountTypeMigration, /profile\.player_id is not null/);
+  assert.doesNotMatch(accountTypeMigration.match(/returns table \([\s\S]*?\)/)?.[0] || '', /player_id|app_role/);
+  assert.match(script, /function renderPredictionAccountTypeIcon\(entry\)/);
+  assert.match(script, /entry\.is_player \? 'Spieler' : 'Tipper'/);
+  assert.match(script, /rotate\(40 12 12\)/);
+  assert.match(script, /M2 9a3 3 0 0 1 0 6/);
+  assert.match(script, /prediction-rank-account-name[^\n]*renderPredictionAccountTypeIcon\(entry\)/);
+  assert.match(ligaScript, /function renderPredictionAccountTypeIcon\(entry\)/);
+  assert.match(ligaScript, /homePredictionLeaderboard\.slice\(0, 4\)[\s\S]*renderPredictionAccountTypeIcon\(entry\)/);
+  assert.match(style, /\.prediction-account-type-icon \{[\s\S]*color: var\(--dim\);/);
+  assert.match(decisions, /„Was ist neu\?“-Dialog verwendeten Padel-Schläger/);
 });
 
 test('the current PadelPost article reuses the collapsible league-home structure', () => {

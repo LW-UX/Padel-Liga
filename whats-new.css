@@ -73,12 +73,35 @@
       padding: 0;
     }
     .whats-new-feature {
-      display: grid;
-      grid-template-columns: 40px minmax(0, 1fr);
-      align-items: start;
-      gap: 0.9rem;
+      position: relative;
+      min-height: 40px;
+      padding-left: calc(40px + 0.9rem);
     }
+    .whats-new-feature-link {
+      display: inline-block;
+      max-width: 100%;
+      margin: 0;
+      border: 0;
+      border-radius: 12px;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+      padding: 0;
+      text-align: left;
+    }
+    .whats-new-feature-link:hover h3,
+    .whats-new-feature-link:focus-visible h3 { color: var(--accent2); }
+    .whats-new-feature-link:hover .whats-new-feature-icon,
+    .whats-new-feature-link:focus-visible .whats-new-feature-icon {
+      border-color: color-mix(in srgb, var(--accent2) 65%, var(--border));
+      background: color-mix(in srgb, var(--accent2) 15%, var(--surface));
+    }
+    .whats-new-feature-link:focus-visible { outline: 2px solid var(--accent2); outline-offset: 4px; }
     .whats-new-feature-icon {
+      position: absolute;
+      top: 0;
+      left: 0;
       display: grid;
       place-items: center;
       width: 40px;
