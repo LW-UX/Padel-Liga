@@ -56,7 +56,8 @@ test('league home shows a four-entry prediction ranking below recent matches', (
   assert.match(ligaScript, /homePredictionLeaderboard\.slice\(0, 4\)/);
   assert.match(ligaScript, /entry\.display_name/);
   assert.match(ligaScript, /Number\(entry\.points\) \|\| 0/);
-  assert.match(ligaScript, /tipp\/\?saison=\$\{encodeURIComponent\(selectedSeason\.id\)\}#tippuebersicht/);
+  assert.match(ligaScript, /PadelSeasonRouting\.getSeasonUrl\(selectedSeason\.id, 'tipp'\)/);
+  assert.match(ligaScript, /predictionRankingUrl\.hash = 'tippuebersicht'/);
   assert.match(pageScript, /\['tippstart', 'tippuebersicht', 'tippen', 'tippinfos'\]\.includes\(requestedSection\)/);
   assert.match(decisions, /direkt unter „Letzte Partien“ eine Top-4-Kurzrangliste/);
 });

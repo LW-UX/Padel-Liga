@@ -24,7 +24,7 @@ test('release-note feature icons and headings link to their corresponding target
 
   assert.match(script, /target === 'matches'[\s\S]*getElementById\('partien-nav-button'\)\?\.click\(\)/);
   assert.match(script, /target === 'account'[\s\S]*getElementById\('auth-button'\)\?\.click\(\)/);
-  assert.match(script, /target === 'tipping'[\s\S]*window\.location\.assign\(new URL\('tipp\/', document\.baseURI\)\)/);
+  assert.match(script, /target === 'tipping'[\s\S]*PadelSeasonRouting\?\.getSeasonUrl\(seasonId, 'tipp'\)/);
   assert.match(script, /target === 'player-profile'[\s\S]*profileButton\.click\(\)[\s\S]*data-viewer-toggle/);
   assert.match(style, /\.whats-new-feature-link:focus-visible/);
 });

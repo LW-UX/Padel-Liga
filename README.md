@@ -156,7 +156,8 @@ Die beiden Flags müssen bei Trainingsspielen immer `false` sein. Die Anwendung 
 Alte Saisondateien bleiben erhalten. Dadurch können frühere Saisonstände weiterhin über die URL geladen und später in saisonübergreifenden Ansichten zusammengeführt werden:
 
 ```text
-index.html?saison=2026-sommer
+so26/
+wi26/partie/7/
 ```
 
 ## Tippspiel und Benutzerkonten

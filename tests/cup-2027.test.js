@@ -38,6 +38,7 @@ test('Cup 2027 is selectable without replacing Winter 2026 as default', () => {
     id: '2027-cup',
     label: 'Cup 2027',
     shortLabel: 'Cup27',
+    route: 'cup27',
     visualTheme: 'cup',
     qualificationPlaces: 0,
     file: 'data/data-2027-cup.js',

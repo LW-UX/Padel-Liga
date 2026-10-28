@@ -7,6 +7,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
 const tipPage = fs.readFileSync(path.join(root, 'js/tipp-page.js'), 'utf8');
+const routing = fs.readFileSync(path.join(root, 'js/season-routing.js'), 'utf8');
 const migration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20261012120000_normalize_season_ids.sql'),
   'utf8'
@@ -27,8 +28,11 @@ test('season IDs and filenames use the sortable year-type schema', () => {
 
   assert.equal(summer.label, 'Sommer 2026');
   assert.equal(summer.shortLabel, 'So26');
+  assert.equal(summer.route, 'so26');
   assert.equal(winter.shortLabel, 'Wi26');
+  assert.equal(winter.route, 'wi26');
   assert.equal(testSeason.shortLabel, 'Test');
+  assert.equal(testSeason.route, 'test');
   assert.match(summer.file, /^data\/data-2026-sommer\.js/);
   assert.equal(winter.default, true);
   assert.equal(PADEL_SEASON.id, '2026-sommer');
@@ -41,13 +45,20 @@ test('season IDs and filenames use the sortable year-type schema', () => {
 });
 
 test('old season links are normalized to the year-type schema', () => {
-  for (const source of [app, tipPage]) {
-    assert.match(source, /'2026': '2026-sommer'/);
-    assert.match(source, /'winter-2026': '2026-winter'/);
-    assert.match(source, /'cup-2027': '2027-cup'/);
-    assert.match(source, /'test-2026': '2026-test'/);
-    assert.match(source, /url\.searchParams\.set\('saison', normalized\)/);
-  }
+  assert.match(routing, /'2026': '2026-sommer'/);
+  assert.match(routing, /'winter-2026': '2026-winter'/);
+  assert.match(routing, /'cup-2027': '2027-cup'/);
+  assert.match(routing, /'test-2026': '2026-test'/);
+  assert.match(routing, /url\.searchParams\.delete\('saison'\)/);
+  assert.match(app, /PadelSeasonRouting\.normalizeCurrentUrl\('league'\)/);
+  assert.match(tipPage, /PadelSeasonRouting\.normalizeCurrentUrl\('tipp'\)/);
+});
+
+test('season changes and cross-page links use the shared short-path routing', () => {
+  assert.match(app, /PadelSeasonRouting\.getSeasonUrl\(id, 'league'/);
+  assert.match(app, /PadelSeasonRouting\.getSeasonUrl\(selectedSeason\.id, 'tipp'\)/);
+  assert.match(tipPage, /PadelSeasonRouting\.getSeasonUrl\(option\.dataset\.seasonId, 'tipp'/);
+  assert.match(tipPage, /PadelSeasonRouting\.getSeasonUrl\(selected\.id, 'league'\)/);
 });
 
 test('season buttons use short labels while their menus retain full labels', () => {

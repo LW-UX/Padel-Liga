@@ -25,6 +25,7 @@
   function isDirectDetailView() {
     const params = new URLSearchParams(window.location.search);
     return document.documentElement.classList.contains('is-detail-embed')
+      || /\/partie\/[^/]+\/?$/.test(window.location.pathname)
       || ['partie', 'live', 'spielerprofil'].some(parameter => params.has(parameter));
   }
 

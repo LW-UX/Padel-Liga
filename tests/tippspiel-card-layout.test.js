@@ -46,7 +46,13 @@ test('the card center links probability and result to preview or analysis withou
   };
   const context = vm.createContext({
     state,
-    window: { PadelPreviewWindow: { availability: match => match.distant ? 'basic' : 'preview' } },
+    window: {
+      PadelPreviewWindow: { availability: match => match.distant ? 'basic' : 'preview' },
+      PadelSeasonRouting: {
+        getMatchUrl: (_seasonId, match) => new URL(`https://example.test/Padel-Liga/test/partie/${match.id.match(/\d+$/)[0]}/`)
+      }
+    },
+    URL,
     Math,
     Number,
     encodeURIComponent,
@@ -68,7 +74,7 @@ test('the card center links probability and result to preview or analysis withou
 
   const preview = context.renderMatchCenter(match, null, false);
   assert.match(preview, /50 % : 50 %/);
-  assert.match(preview, /\.\.\/\?saison=2026-test&amp;partie=test-2026-partie-7|\.\.\/\?saison=2026-test&partie=test-2026-partie-7/);
+  assert.match(preview, /\/Padel-Liga\/test\/partie\/7\//);
   assert.match(preview, /Partievorschau öffnen/);
 
   const distant = context.renderMatchCenter({ ...match, distant: true }, null, false);

@@ -307,7 +307,8 @@ test('completed rankings align historical movement in a dedicated column',()=>{
 test('alternating between match and profile reuses one browser history entry',()=>{
  assert.match(source,/prepareProfileOpen[\s\S]*?history\.replaceState\(\{ \.\.\.window\.history\.state, statisticsProfile: playerId/);
  assert.doesNotMatch(source,/prepareProfileOpen[\s\S]*?history\.pushState\(\{ \.\.\.window\.history\.state, statisticsProfile: playerId/);
- assert.match(source,/const replacing = url\.searchParams\.has\('partie'\) \|\| Boolean\(currentRoute\)/);
+ assert.match(source,/const replacing = Boolean\(getRequestedMatchId\(\)\) \|\| Boolean\(currentRoute\)/);
+ assert.match(source,/PadelSeasonRouting\?\.getMatchUrl\(season\?\.id, seasonMatch \|\| matchId/);
 });
 test('homepage match cards link only their center values without a details icon',()=>{
  const renderer=appSource.match(/function renderHomeMatchCard\(match, options = \{\}\) \{[\s\S]*?(?=\nfunction getCurrentArticle)/)?.[0]||'';

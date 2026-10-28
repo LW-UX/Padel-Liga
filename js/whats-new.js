@@ -33,7 +33,8 @@
       return;
     }
     if (target === 'tipping') {
-      window.location.assign(new URL('tipp/', document.baseURI));
+      const seasonId = window.PadelSeasonRouting?.getRequestedSeasonId();
+      window.location.assign(window.PadelSeasonRouting?.getSeasonUrl(seasonId, 'tipp') || new URL('tipp/', document.baseURI));
       return;
     }
     if (target === 'player-profile') {

@@ -479,7 +479,7 @@
 
   function getMatchDetailHref(match) {
     const seasonId = state.season?.id || state.season?.databaseId || '';
-    return `../?saison=${encodeURIComponent(seasonId)}&partie=${encodeURIComponent(match.id)}`;
+    return window.PadelSeasonRouting.getMatchUrl(seasonId, match).href;
   }
 
   function renderMatchCenter(match, actualValue, isCancelled) {

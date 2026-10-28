@@ -654,6 +654,25 @@
     target.textContent = label;
     target.hidden = !label;
   }
+  function getSeasonBaseUrl() {
+    const season = window.PadelLigaGetSeasonData?.();
+    if (!season?.id || !window.PadelSeasonRouting) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('partie');
+      return url;
+    }
+    const url = window.PadelSeasonRouting.getSeasonUrl(season.id, 'league', {
+      preserveSearch: true,
+      preserveHash: true
+    });
+    url.searchParams.delete('partie');
+    return url;
+  }
+  function getRequestedMatchId() {
+    const season = window.PadelLigaGetSeasonData?.();
+    return window.PadelSeasonRouting?.getRequestedMatchId(season?.matches || [])
+      || new URL(window.location.href).searchParams.get('partie');
+  }
   function restore() {
     ++request; active = null; activeData = null; activeForecast = null; currentRoute = null;
     forecastSelectionOpen = false; forecastSubmitting = false; forecastMessage = '';
@@ -682,7 +701,7 @@
   function close() {
     if (!active) return;
     if (window.history.state?.matchStatistics) window.history.back();
-    else { const url = new URL(window.location.href); url.searchParams.delete('partie'); window.history.replaceState(window.history.state, '', url); restore(); }
+    else { window.history.replaceState(window.history.state, '', getSeasonBaseUrl()); restore(); }
   }
   function notice(message) {
     let target = document.getElementById('match-statistics-notice');
@@ -691,8 +710,7 @@
     setTimeout(() => target.remove(), 6000);
   }
   function rejectUnavailable(message) {
-    const url = new URL(window.location.href); url.searchParams.delete('partie');
-    window.history.replaceState({ ...window.history.state, matchStatistics: null }, '', url);
+    window.history.replaceState({ ...window.history.state, matchStatistics: null }, '', getSeasonBaseUrl());
     restore(); notice(message);
   }
   const previewPendingMessage = 'Die Partievorschau ist erst näher am Spieltag verfügbar.';
@@ -740,9 +758,13 @@
     else document.querySelector('[data-detail-view-back]').focus({ preventScroll: true });
     dialog().querySelector('.detail-view-shell').scrollTop = 0;
     if (updateUrl) {
-      const url = new URL(window.location.href);
-      const replacing = url.searchParams.has('partie') || Boolean(currentRoute);
-      url.searchParams.delete('live'); url.searchParams.delete('liveView'); url.searchParams.set('partie', matchId);
+      const replacing = Boolean(getRequestedMatchId()) || Boolean(currentRoute);
+      const url = window.PadelSeasonRouting?.getMatchUrl(season?.id, seasonMatch || matchId, {
+        preserveSearch: true,
+        preserveHash: true
+      }) || new URL(window.location.href);
+      url.searchParams.delete('live'); url.searchParams.delete('liveView');
+      if (!window.PadelSeasonRouting) url.searchParams.set('partie', matchId);
       currentRoute = replacing && currentRoute ? currentRoute : `statistics-${++routeNumber}`;
       routeContexts.set(currentRoute, returnState);
       window.history[replacing ? 'replaceState' : 'pushState']({ ...window.history.state, matchStatistics: matchId, statisticsRoute: currentRoute, statisticsProfile: null, statisticsTop: 'match' }, '', url);
@@ -759,7 +781,7 @@
       if (data.availability === 'basic') { rejectUnavailable(previewPendingMessage); return; }
       // Direct links get an in-page return destination only after successful validation.
       if (direct) {
-        const route = new URL(window.location.href), base = new URL(route); base.searchParams.delete('partie');
+        const route = new URL(window.location.href), base = getSeasonBaseUrl();
         window.history.replaceState({ ...window.history.state, matchStatistics: null }, '', base);
         currentRoute = `statistics-${++routeNumber}`;
         routeContexts.set(currentRoute, returnState);
@@ -889,7 +911,7 @@
     onSwipe: step
   });
   window.addEventListener('popstate', async () => {
-    const id = new URL(window.location.href).searchParams.get('partie');
+    const id = getRequestedMatchId();
     const route = window.history.state?.statisticsRoute;
     const profileId = window.history.state?.statisticsProfile;
     if (profileOnTop && !profileId) {

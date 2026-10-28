@@ -2643,7 +2643,8 @@ Dein Hanako-Leben-Squad`;
         if (typeof window.PadelLigaOpenPlayerProfile === 'function') {
           await window.PadelLigaOpenPlayerProfile(playerId, document.querySelector('[data-auth-open]'));
         } else {
-          const ligaUrl = new URL('../', window.location.href);
+          const seasonId = window.PadelSeasonRouting?.getRequestedSeasonId();
+          const ligaUrl = window.PadelSeasonRouting?.getSeasonUrl(seasonId, 'league') || new URL('../', window.location.href);
           ligaUrl.searchParams.set('spielerprofil', playerId);
           window.location.assign(ligaUrl);
         }

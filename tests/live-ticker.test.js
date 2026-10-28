@@ -194,7 +194,7 @@ test('the global live entry switches into the season of the active match', () =>
   assert.match(ticker, /PadelLigaOpenLiveTicker\?\.\(state\.activeMatch\.matchId, \{\s*seasonId: state\.activeMatch\.seasonId\s*\}\)/);
   const openTicker = app.match(/async function openLiveTicker\(matchId, options = \{\}\) \{[\s\S]*?(?=\n\}\n\nfunction closeLiveTicker)/)?.[0] || '';
   assert.match(openTicker, /targetSeasonId !== String\(selectedSeason\?\.id \|\| ''\)/);
-  assert.match(openTicker, /url\.searchParams\.set\('saison', targetSeasonId\)/);
+  assert.match(openTicker, /PadelSeasonRouting\.getSeasonUrl\(targetSeasonId, 'league'/);
   assert.match(openTicker, /url\.searchParams\.set\('live', matchId\)/);
   assert.match(openTicker, /window\.location\.assign\(url\)/);
 });

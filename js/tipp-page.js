@@ -1,15 +1,5 @@
 (function () {
-  const LEGACY_SEASON_IDS = Object.freeze({
-    '2026': '2026-sommer',
-    'sommer-2026': '2026-sommer',
-    'winter-2026': '2026-winter',
-    'cup-2027': '2027-cup',
-    'test-2026': '2026-test'
-  });
-
-  function normalizeSeasonId(id) {
-    return LEGACY_SEASON_IDS[id] || id;
-  }
+  let selectedSeasonData = null;
 
   function getAllSeasonOptions() {
     return Array.isArray(window.PADEL_SEASONS) ? window.PADEL_SEASONS : [];
@@ -21,20 +11,14 @@
 
   function getSelectedSeason() {
     const options = getSeasonOptions();
-    const requestedValue = new URLSearchParams(window.location.search).get('saison');
-    const requested = normalizeSeasonId(requestedValue);
+    const requested = window.PadelSeasonRouting.getRequestedSeasonId();
     return getAllSeasonOptions().find(option => option.id === requested)
       || options.find(option => option.default)
       || options[0];
   }
 
   function normalizeLegacySeasonUrl() {
-    const url = new URL(window.location.href);
-    const requested = url.searchParams.get('saison');
-    const normalized = normalizeSeasonId(requested);
-    if (!requested || requested === normalized) return;
-    url.searchParams.set('saison', normalized);
-    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    window.PadelSeasonRouting.normalizeCurrentUrl('tipp');
   }
 
   function loadScript(src) {
@@ -108,8 +92,7 @@
         toggle.setAttribute('aria-expanded', 'false');
         return;
       }
-      const url = new URL(window.location.href);
-      url.searchParams.set('saison', option.dataset.seasonId);
+      const url = window.PadelSeasonRouting.getSeasonUrl(option.dataset.seasonId, 'tipp', { preserveSearch: true, preserveHash: true });
       window.location.assign(url);
     });
     document.addEventListener('click', event => {
@@ -123,7 +106,7 @@
       toggle.setAttribute('aria-expanded', 'false');
     });
     const ligaLink = document.getElementById('liga-link');
-    ligaLink.href = `../?saison=${encodeURIComponent(selected.id)}`;
+    ligaLink.href = window.PadelSeasonRouting.getSeasonUrl(selected.id, 'league').href;
   }
 
   function showSection(id) {
@@ -179,11 +162,14 @@
       else ligaDetailFrame.pendingDetail = detail;
       return;
     }
-    const url = new URL('../', window.location.href);
-    url.searchParams.set('saison', getSelectedSeason()?.id || '');
+    const seasonId = getSelectedSeason()?.id || '';
+    const match = detail.matchId ? selectedSeasonData?.matches?.find(item => item.id === detail.matchId) : null;
+    const url = match
+      ? window.PadelSeasonRouting.getMatchUrl(seasonId, match)
+      : window.PadelSeasonRouting.getSeasonUrl(seasonId, 'league');
     url.searchParams.set('einbettung', 'detail');
     if (detail.playerId) url.searchParams.set('spielerprofil', detail.playerId);
-    else url.searchParams.set('partie', detail.matchId);
+    else if (!match) url.searchParams.set('partie', detail.matchId);
     const element = document.createElement('iframe');
     element.className = 'liga-detail-frame is-loading';
     element.title = detail.playerId ? 'Spielerprofil' : 'Partiedetails';
@@ -266,6 +252,7 @@
         loadScript('../js/tippspiel.js?v=2026-10-28-prediction-achievement-account-first')
       ]);
       const season = hydrateSeason(window.PADEL_SEASON);
+      selectedSeasonData = season;
       document.querySelectorAll('[data-season-label]').forEach(node => { node.textContent = season.label; });
       renderBonusSeasonInfo(season);
       if (!window.PadelTippspiel?.init) throw new Error('Das Tippspiel-Modul ist nicht verfügbar.');

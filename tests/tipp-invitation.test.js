@@ -11,7 +11,7 @@ const invitation = fs.readFileSync(path.join(root, 'js', 'tipp-invitation.js'), 
 const accountStyle = fs.readFileSync(path.join(root, 'account.css'), 'utf8');
 const decisions = fs.readFileSync(path.join(root, 'docs', 'project-decisions', 'tipping.md'), 'utf8');
 
-function runInvitation({ enabled = true, search = '', seen = false, embedded = false } = {}) {
+function runInvitation({ enabled = true, search = '', pathname = '/', seen = false, embedded = false } = {}) {
   const storage = new Map(seen ? [['padel-liga:tipp-invitation-seen', 'winter-2026']] : []);
   const listeners = new Map();
   const dialog = {
@@ -30,7 +30,7 @@ function runInvitation({ enabled = true, search = '', seen = false, embedded = f
     }
   };
   const window = {
-    location: { search, assign(href) { this.assignedHref = href; } },
+    location: { search, pathname, assign(href) { this.assignedHref = href; } },
     localStorage: {
       getItem: key => storage.get(key) || null,
       setItem: (key, value) => storage.set(key, value)
@@ -109,4 +109,8 @@ test('runtime behavior persists only after interaction and respects eligibility'
   const directDetail = runInvitation({ search: '?partie=season-2026-partie-1' });
   directDetail.fire();
   assert.equal(directDetail.dialog.showCount, 0);
+
+  const shortDetail = runInvitation({ pathname: '/Padel-Liga/wi26/partie/1/' });
+  shortDetail.fire();
+  assert.equal(shortDetail.dialog.showCount, 0);
 });

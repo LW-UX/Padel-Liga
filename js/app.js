@@ -130,17 +130,11 @@ function getSeasonOptions() {
 }
 
 function getRequestedSeasonId() {
-  const requested = new URLSearchParams(window.location.search).get('saison');
-  return normalizeSeasonId(requested);
+  return window.PadelSeasonRouting.getRequestedSeasonId();
 }
 
 function normalizeLegacySeasonUrl() {
-  const url = new URL(window.location.href);
-  const requested = url.searchParams.get('saison');
-  const normalized = normalizeSeasonId(requested);
-  if (!requested || requested === normalized) return;
-  url.searchParams.set('saison', normalized);
-  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  window.PadelSeasonRouting.normalizeCurrentUrl('league');
 }
 
 function getDefaultSeasonOption() {
@@ -1091,10 +1085,12 @@ function applySeasonMetadata() {
   const seasonLabel = document.getElementById('season-picker-label');
   const seasonMenu = document.getElementById('season-menu');
   const tippLink = document.getElementById('tipp-link');
-  if (tippLink) tippLink.href = `tipp/?saison=${encodeURIComponent(selectedSeason.id)}`;
+  if (tippLink) tippLink.href = window.PadelSeasonRouting.getSeasonUrl(selectedSeason.id, 'tipp').href;
   const homePredictionRankingLink = document.getElementById('home-prediction-ranking-link');
   if (homePredictionRankingLink) {
-    homePredictionRankingLink.href = `tipp/?saison=${encodeURIComponent(selectedSeason.id)}#tippuebersicht`;
+    const predictionRankingUrl = window.PadelSeasonRouting.getSeasonUrl(selectedSeason.id, 'tipp');
+    predictionRankingUrl.hash = 'tippuebersicht';
+    homePredictionRankingLink.href = predictionRankingUrl.href;
   }
   window.dispatchEvent(new CustomEvent('padel:season-ready', {
     detail: {
@@ -1396,8 +1392,7 @@ function selectSeason(id) {
     closeSeasonMenu();
     return;
   }
-  const url = new URL(window.location.href);
-  url.searchParams.set('saison', id);
+  const url = window.PadelSeasonRouting.getSeasonUrl(id, 'league', { preserveSearch: true, preserveHash: true });
   url.searchParams.delete('live');
   window.location.assign(url);
 }
@@ -3398,8 +3393,7 @@ async function openLiveTicker(matchId, options = {}) {
   if (window.PadelMatchStatistics?.active) window.PadelMatchStatistics.restore();
   const targetSeasonId = String(normalizeSeasonId(options.seasonId) || '');
   if (targetSeasonId && targetSeasonId !== String(selectedSeason?.id || '')) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('saison', targetSeasonId);
+    const url = window.PadelSeasonRouting.getSeasonUrl(targetSeasonId, 'league', { preserveSearch: true, preserveHash: true });
     url.searchParams.set('live', matchId);
     if (options.view === 'overview') url.searchParams.set('liveView', 'overview');
     else url.searchParams.delete('liveView');
@@ -8156,6 +8150,7 @@ async function initApp() {
   try {
     normalizeLegacySeasonUrl();
     await loadActiveSeason();
+    window.PadelSeasonRouting.normalizeCurrentMatchUrl(selectedSeason.id, PADEL_DATA.matches);
     applySeasonMetadata();
     resetSeasonState();
     updateViewerPicker();
@@ -8178,7 +8173,7 @@ async function initApp() {
   if (isDetailEmbed) initDetailEmbed();
 
   const url = new URL(window.location.href);
-  const requestedStatistics = url.searchParams.get('partie');
+  const requestedStatistics = window.PadelSeasonRouting.getRequestedMatchId(PADEL_DATA.matches);
   const requestedLiveMatch = requestedStatistics ? null : url.searchParams.get('live');
   const requestedPlayerProfile = url.searchParams.get('spielerprofil');
   let liveTickerInitialized = false;
