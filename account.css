@@ -650,6 +650,10 @@
       border-radius: 0;
       padding: 12px 0 0;
     }
+    .scheduled-training-form.is-result-entry {
+      border-top: 0;
+      padding-top: 0;
+    }
     .training-form-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
     .training-player-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .training-picker-label { color: var(--dim); font-size: var(--text-sm); font-weight: 600; }
@@ -865,7 +869,7 @@
       .tipp-invitation-card { padding: 2.25rem 1.25rem 1.25rem; }
       .account-auth-message { bottom: max(8px, env(safe-area-inset-bottom)); max-width: calc(100% - 32px); }
       .account-header { flex-wrap: wrap; gap: 12px; padding-right: 64px; }
-      .account-header-actions { width: 100%; justify-content: flex-start; }
+      .account-header-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
       .account-header h2 { font-size: 1.65rem; }
       .account-section { min-width: 0; }
       .account-section-heading { min-width: 0; }

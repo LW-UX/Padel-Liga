@@ -49,7 +49,10 @@ test('due training results allow the actual participants to replace scheduled pl
   assert.match(participantEditMigration, /select public\.create_training_session\([\s\S]*p_player_ids/);
 
   const taskRenderer = account.match(/function renderScheduledTrainingTaskCard\(task, groupKey\) \{[\s\S]*?\n  \}/)?.[0] || '';
+  assert.match(taskRenderer, /\$\{due \? '' : `<div class="result-card-timing">/);
   assert.match(taskRenderer, /\$\{due \? '' : renderTrainingParticipants\(task\)\}/);
+  assert.match(account, /scheduled-training-form\$\{due \? ' is-result-entry' : ''\}/);
+  assert.match(style, /\.scheduled-training-form\.is-result-entry \{[\s\S]*?border-top: 0;[\s\S]*?padding-top: 0;/);
 
   const formMode = account.match(/function syncTrainingFormMode\(form\) \{[\s\S]*?\n  \}/)?.[0] || '';
   assert.doesNotMatch(formMode, /button\.disabled|input\.readOnly/);

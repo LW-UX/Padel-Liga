@@ -1270,7 +1270,7 @@
 
   function renderScheduledTrainingForm(task, due) {
     const canManage = task.created_by_me || state.profile?.app_role === 'admin';
-    return `<form class="training-form training-alternative-form scheduled-training-form" data-training-scheduled="${escapeHtml(task.session_id)}" ${due ? '' : 'hidden'}>
+    return `<form class="training-form training-alternative-form scheduled-training-form${due ? ' is-result-entry' : ''}" data-training-scheduled="${escapeHtml(task.session_id)}" ${due ? '' : 'hidden'}>
       <div class="training-form-meta">
         <label><span>Datum</span><span class="datetime-input-shell" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required value="${escapeHtml(task.played_on)}"></span></label>
         <label><span>Uhrzeit</span><span class="datetime-input-shell" data-datetime-field data-datetime-hint="--:--"><input type="time" name="displayTime" required value="${escapeHtml(String(task.display_time).slice(0, 5))}"></span></label>
@@ -1299,7 +1299,7 @@
         <span class="mc-nr">Training · Partie ${escapeHtml(task.training_number || task.session_id)}</span>
         <span class="account-task-status${due ? ' is-open' : ''}">${due ? 'Ergebnis eintragen' : 'Terminiert'}</span>
       </div>
-      <div class="result-card-timing">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>
+      ${due ? '' : `<div class="result-card-timing">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>`}
       ${due ? '' : renderTrainingParticipants(task)}
       ${!due && canManage ? `<div class="account-task-actions">
         <button class="secondary-button" type="button" data-training-schedule-toggle="${escapeHtml(task.session_id)}">Termin ändern</button>
