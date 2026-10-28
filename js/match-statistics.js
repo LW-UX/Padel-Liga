@@ -33,9 +33,10 @@
     fearedOpponent: ['Angstgegner', 'Angstgegnerin']
   };
   function section(title, body, helpText = '') {
+    const helpId = title === 'Elo-Entwicklung' ? 'match-statistics-elo-help' : 'match-statistics-form-help';
     const help = !helpText ? '' : `<span class="th-help-wrap match-statistics-heading-help">
-      <span class="help-icon" tabindex="0" role="button" aria-label="${esc(title)} erklären" aria-describedby="match-statistics-elo-help" aria-expanded="false" data-help-tooltip-anchor>?</span>
-      <span class="help-tooltip" id="match-statistics-elo-help" role="tooltip">${esc(helpText)}</span>
+      <span class="help-icon" tabindex="0" role="button" aria-label="${esc(title)} erklären" aria-describedby="${helpId}" aria-expanded="false" data-help-tooltip-anchor>?</span>
+      <span class="help-tooltip" id="${helpId}" role="tooltip">${esc(helpText)}</span>
     </span>`;
     return body ? `<section class="match-statistics-section"><h2 class="widget-label"><span class="match-statistics-heading">${esc(title)}${help}</span></h2>${body}</section>` : '';
   }
@@ -307,6 +308,27 @@
       </div>
     </div>`;
   }
+  function renderForm(data, selectedPlayerId) {
+    const players = (data.players || []).map(player => {
+      const form = Array.isArray(player.form) ? player.form.slice(-3) : [];
+      const chips = form.length ? form.map((match, index) => {
+        const won = match.outcome === 'win';
+        const matchTiebreak = Boolean(match.decidedByMatchTiebreak);
+        const recency = Math.max(0, form.length - index - 1);
+        const outcome = won ? 'Sieg' : 'Niederlage';
+        const title = [match.label, `${outcome}${matchTiebreak ? ' im Match-Tie-Break' : ''}`, match.result]
+          .filter(Boolean).join(' · ');
+        return `<span class="form-chip form-recency-${recency} ${won ? 'form-win' : 'form-loss'}${matchTiebreak ? ' form-tiebreak' : ''}" tabindex="0" aria-label="${esc(title)}" title="${esc(title)}">${won ? 'S' : 'N'}</span>`;
+      }).join('') : '<span class="neu">—</span>';
+      const teamClass = Number(player.team) === 2 ? 'match-statistics-team-2' : 'match-statistics-team-1';
+      return `<div class="match-statistics-form-player ${teamClass}">
+        <span class="match-statistics-form-name${viewerClass(player, selectedPlayerId)}">${esc(player.displayName)}</span>
+        <span class="match-statistics-form-chips">${chips}</span>
+      </div>`;
+    }).join('');
+    return players ? section('Form der letzten 3 Partien', `<div class="match-statistics-form-row">${players}</div>`,
+      'S steht für Sieg, N für Niederlage. Orange markierte Kreise kennzeichnen Partien, die im Match-Tiebreak entschieden wurden. Links steht die älteste, rechts die jüngste Partie.') : '';
+  }
   function eloPathForecast(data) {
     if (data.probability == null) return null;
     return eloForecast?.getAutoTipForecast(
@@ -496,7 +518,7 @@
       ? renderMatchForecast(data, forecastOptions.forecast, forecastOptions)
       : '';
     return head + forecast
-      + renderContext(data, selectedPlayerId) + renderPlayersAndImpacts(data, groupImpacts(data), selectedPlayerId) + renderGraph(data, selectedPlayerId)
+      + renderContext(data, selectedPlayerId) + renderPlayersAndImpacts(data, groupImpacts(data), selectedPlayerId) + renderForm(data, selectedPlayerId) + renderGraph(data, selectedPlayerId)
       + (data.availability === 'preview' ? '<p class="match-statistics-note">Werte und Prognosen können sich durch weitere bestätigte Partien bis zum Spielbeginn verändern.</p>' : '');
   }
   function skeleton() {

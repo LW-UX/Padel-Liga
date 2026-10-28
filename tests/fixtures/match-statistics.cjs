@@ -8,6 +8,11 @@ module.exports = function fixture(mode = 'preview') {
     players: [['greta_p','Greta P.',1050,'👩'],['agnes_k','Agnes K.',1100,'👩'],['christoph_l','Christoph L.',1000,'👨'],['marco_m','Marco M.',950,'👨']].map(([id,name,elo,profileEmoji],i) => ({
       playerId:id,displayName:name,profileEmoji,team:i<2?1:2,elo:{before:elo,after:elo+(i<2?36:-36),delta:i<2?36:-36,winMin:elo+40,winMax:elo+85,lossMin:elo-85,lossMax:elo-40,peakBefore:elo+10},
       statistics:{rank:[1,3,6,7][i],tableSize:8,played:4,wins:3-i%2,points:8-i,gameDiff:12-i*6},streak:{outcome:i<2?'win':'loss',length:3},
+      form:[
+        {matchId:`old-${i}-1`,label:'Partie 1',result:'6:3, 6:4',outcome:i%2?'loss':'win',decidedByMatchTiebreak:false},
+        {matchId:`old-${i}-2`,label:'Partie 2',result:'6:4, 4:6, 10:8',outcome:i<2?'win':'loss',decidedByMatchTiebreak:true},
+        {matchId:`old-${i}-3`,label:'Partie 3',result:'6:2, 6:2',outcome:i<2?'win':'loss',decidedByMatchTiebreak:false}
+      ],
       relationships:i===0?[{kind:'successPartner',playerId:'agnes_k',name:'Agnes K.',matches:4,wins:3}]:[]
     })),
     ranking: [

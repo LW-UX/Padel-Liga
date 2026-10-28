@@ -15,6 +15,7 @@ const favoriteThresholdMigration = fs.readFileSync(path.join(root, 'supabase/mig
 const playedOrderMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261014235000_match_statistics_played_order.sql'), 'utf8');
 const previewWindowMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261021150000_test_season_preview_window.sql'), 'utf8');
 const rankingThresholdMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261022170000_match_statistics_ranking_threshold.sql'), 'utf8');
+const recentFormMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261028190000_match_statistics_recent_form.sql'), 'utf8');
 const migrations = fs.readdirSync(path.join(root, 'supabase/migrations')).sort().filter(f => f < '20261013100000');
 test('result impact migration uses inclusive 45 and 55 percent boundaries',()=>{
   assert.match(favoriteThresholdMigration,/value\s*<=\s*0\.45\b/);
@@ -62,6 +63,7 @@ async function setupMatchDetail(db) {
   await db.exec(analysisEloRangesMigration);
   await db.exec(favoriteThresholdMigration);
   await db.exec(playedOrderMigration);
+  await db.exec(recentFormMigration);
 }
 test('match detail SQL: historical isolation, eligibility, calculations and public permissions', { skip: !process.env.PGLITE_MODULE }, async t => {
   const { PGlite } = require(process.env.PGLITE_MODULE);
@@ -108,8 +110,13 @@ test('match detail SQL: historical isolation, eligibility, calculations and publ
   const later=await detail('played'); delete later.generatedAt; delete original.generatedAt; assert.deepEqual(later,original,'later games must not leak into old analysis');
   // Three official wins create a relationship and a streak; reversed side order still forms a rematch.
   for(let i=1;i<=3;i++) await addMatch(db,`earlier-${i}`,{at:`2026-01-0${i}T12:00Z`,winner:1});
+  await db.exec("update matches set actual_sets='2:1',result_details='6:4, 4:6, 10:8' where id='earlier-2'");
   d=await detail('played');
   assert.equal(d.leaguePlayedOrdinal,4);
+  assert.deepEqual(d.players[0].form.map(match=>match.matchId),['earlier-1','earlier-2','earlier-3']);
+  assert.deepEqual(d.players[0].form.map(match=>match.decidedByMatchTiebreak),[false,true,false]);
+  assert.ok(d.players.every(player=>player.form.length===3));
+  assert.ok(d.players.every(player=>!player.form.some(match=>match.matchId==='played')),'the viewed match is not part of its own pre-match form');
   assert.equal(d.players[0].streak.length,4); assert.ok(d.players[0].relationships.some(r=>r.kind==='successPartner'&&r.playerId==='b'));
   assert.equal(d.rematches.length,3); assert.equal(d.company.wins1,4);
   await db.exec("update matches set winner=2,actual_sets='0:2',result_details='2:6, 2:6' where id='earlier-3'");
@@ -163,6 +170,7 @@ test('match detail SQL: historical isolation, eligibility, calculations and publ
   t.diagnostic(`Local SQL, average of 5 warm reads: ${Math.round((performance.now()-started)/5)} ms`);
   await db.exec("set role anon"); assert.equal((await detail('played')).availability,'analysis');
   await assert.rejects(db.query("select private.match_detail_elo('a','season',now(),'x',false)"),/permission denied/);
+  await assert.rejects(db.query("select private.match_detail_recent_form('a','season','main',now(),'x')"),/permission denied/);
 });
 test('ranking impacts wait until ten league players have played twice', { skip: !process.env.PGLITE_MODULE }, async t => {
   const { PGlite } = require(process.env.PGLITE_MODULE);

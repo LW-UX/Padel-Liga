@@ -229,6 +229,36 @@ table.rt.match-statistics-ranking .col-rank {
 #detail-view-dialog[data-mode="statistics"] .viewer-player { color: var(--accent2); font-weight: 700; }
 #detail-view-dialog[data-mode="statistics"] .player-profile-link:is(:hover, :focus-visible, :active) { color: var(--accent) !important; border-color: var(--accent); }
 .match-statistics-empty-impact { color: var(--dim); }
+.match-statistics-form-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+.match-statistics-form-player {
+  display: grid;
+  gap: .65rem;
+  min-width: 0;
+  padding: .85rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--statistics-team-color) 65%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--statistics-team-color) 8%, var(--surface));
+  text-align: center;
+}
+.match-statistics-form-name {
+  overflow: hidden;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.match-statistics-form-chips {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  white-space: nowrap;
+}
+.match-statistics-form-chips .form-chip { flex: 0 0 auto; }
 .match-statistics-section:has(> .match-statistics-graph) > .widget-label { margin-bottom: 0; }
 .match-statistics-heading { display: flex; align-items: center; gap: 5px; width: fit-content; }
 .match-statistics-heading-help { justify-content: flex-start; }
@@ -294,6 +324,8 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
   .match-statistics-players { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
   .match-statistics-section { padding: 1rem .7rem; }
   .match-statistics-context { gap:.7rem; }
+  .match-statistics-form-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+  .match-statistics-form-player { padding: .75rem .5rem; }
   .match-statistics-ranking-layout { grid-template-columns: 1fr; gap: 1.5rem; }
   .match-statistics-ranking th,
   .match-statistics-ranking td {

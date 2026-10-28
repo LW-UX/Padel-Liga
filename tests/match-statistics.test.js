@@ -54,6 +54,14 @@ test('content order, exclusions, escaped data and empty sections',()=>{
  assert.doesNotMatch(html,/match-statistics-player-notes/);
  assert.doesNotMatch(html,/Vorgeschichte der Partie/);
  assert.ok(html.indexOf('match-statistics-context')<html.indexOf('Rangliste'));assert.ok(html.indexOf('Rangliste')<html.indexOf('Was sich verändern kann'));assert.ok(html.indexOf('Was sich verändern kann')<html.indexOf('Elo-Entwicklung'));
+ assert.ok(html.indexOf('Was sich verändern kann')<html.indexOf('Form der letzten 3 Partien'));assert.ok(html.indexOf('Form der letzten 3 Partien')<html.indexOf('Elo-Entwicklung'));
+ assert.equal((html.match(/match-statistics-form-player/g)||[]).length,4);
+ assert.equal((html.match(/class="form-chip/g)||[]).length,12);
+ assert.equal((html.match(/form-tiebreak/g)||[]).length,4);
+ assert.match(html,/Partie 2 · Sieg im Match-Tie-Break · 6:4, 4:6, 10:8/);
+ assert.equal((html.match(/id="match-statistics-form-help"/g)||[]).length,1);
+ assert.equal((html.match(/id="match-statistics-elo-help"/g)||[]).length,1);
+ assert.match(statisticsStyleSource,/\.match-statistics-form-row \{[\s\S]*?grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
  assert.ok(html.indexOf('Elo-Entwicklung')<html.indexOf('Werte und Prognosen können sich'));assert.doesNotMatch(html,/Stand:/);
  assert.doesNotMatch(html,/<title>|Dominanz|Auszeichnungen|Lieblingspartner/);
  assert.match(html,/<h2 class="widget-label"><span class="match-statistics-heading">Elo-Entwicklung<span class="th-help-wrap match-statistics-heading-help">/);
@@ -217,7 +225,7 @@ test('interactive player names use the accent color in the statistics dialog',()
 });
 test('the selected viewer is blue and bold throughout the statistics dialog',()=>{
  const html=render(fixture(),'agnes_k');
- assert.equal((html.match(/viewer-player/g)||[]).length,5);
+ assert.equal((html.match(/viewer-player/g)||[]).length,6);
  assert.match(html,/match-detail-player-name viewer-player">Agnes K\./);
  assert.match(html,/pname player-profile-link viewer-player" data-player-profile-id="agnes_k"/);
  assert.match(html,/match-statistics-impact-player-name player-profile-link viewer-player" data-player-profile-id="agnes_k"/);
@@ -263,7 +271,7 @@ test('match header and full ranking follow ticker and ranking conventions',()=>{
  assert.match(html,/match-statistics-ranking-layout/);
  assert.match(html,/match-statistics-section match-statistics-ranking-panel/);
  assert.match(html,/match-statistics-section match-statistics-impact-panel/);
- assert.equal((html.match(/<h2 class="widget-label">/g)||[]).length,3);
+ assert.equal((html.match(/<h2 class="widget-label">/g)||[]).length,4);
  assert.doesNotMatch(html,/<h2 class="spieltag-label">/);
  assert.doesNotMatch(html,/Siege in Folge|Niederlagen in Folge/);
  assert.match(statisticsStyleSource,/\.match-statistics-ranking tbody tr\.match-statistics-ranking-other td \{[\s\S]*?font-size: var\(--text-xs\);/);
