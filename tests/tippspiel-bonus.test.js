@@ -16,6 +16,14 @@ const summerMigration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20261028130000_summer_2026_prediction_bonus_questions.sql'),
   'utf8'
 );
+const bonusCountMigration = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20261028140000_count_bonus_questions_as_predictions.sql'),
+  'utf8'
+);
+const wordingMigration = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20261028150000_update_prediction_bonus_question_wording.sql'),
+  'utf8'
+);
 
 function functionSource(name) {
   const match = tipping.match(new RegExp('  function ' + name + '\\([^]*?\\n  }'));
@@ -128,6 +136,8 @@ test('bonus cards share the regular tipping lists and preserve the requested ord
   assert.match(tipping, /return \{ label: 'Gesperrt', classes: 'is-locked' \}/);
   assert.match(tipping, /champion: \{[\s\S]*?order: 1,[\s\S]*?final_four_players: \{[\s\S]*?order: 2,[\s\S]*?league_winner: \{[\s\S]*?order: 3,[\s\S]*?league_game_difference: \{[\s\S]*?order: 4,[\s\S]*?league_elo_gain: \{[\s\S]*?order: 5,[\s\S]*?company_winner: \{[\s\S]*?order: 6,/);
   assert.match(tipping, /question: 'Welche Firma gewinnt nach Ø-Punkten je Teilnehmer\?'/);
+  assert.match(tipping, /question: 'Wer wird der nächste Padel-Liga-Champion\?'/);
+  assert.match(tipping, /question: 'Wer belegt nach der Ligaphase Platz 1\?'/);
   assert.match(tipping, /sort\(compareBonusQuestions\)/);
   assert.doesNotMatch(tipping, /prediction-bonus-selection-count|von \$\{selectionCount\} gewählt/);
   assert.match(tipping, /class="viewer-picker prediction-bonus-picker\$\{searchable \? '' : ' prediction-bonus-picker--no-search'\}"/);
@@ -153,7 +163,7 @@ test('bonus cards share the regular tipping lists and preserve the requested ord
   assert.doesNotMatch(page, /data-tip-nav="bonustipp/);
 });
 
-test('leaderboard exposes bonus points without changing match-tip counters', () => {
+test('leaderboard exposes bonus points while exact and passive stay match-only', () => {
   assert.match(migration, /bonus_points bigint/);
   assert.match(migration, /coalesce\(match_totals\.points, 0\) \+ coalesce\(bonus_totals\.bonus_points, 0\)/);
   assert.match(page, /<th class="col-games">Tipps<\/th>[\s\S]*<th class="col-wins">Exakt<\/th>[\s\S]*<th class="col-passive">Passiv<\/th>[\s\S]*<th class="col-bonus">Bonus<\/th>[\s\S]*<th class="col-points">Punkte<\/th>/);
@@ -161,4 +171,19 @@ test('leaderboard exposes bonus points without changing match-tip counters', () 
   assert.match(page, /<th class="col-bonus">Bonus<\/th>/);
   assert.match(tipping, /<td class="col-bonus">\$\{Number\(entry\.bonus_points\) \|\| 0\}<\/td>/);
   assert.match(tipping, /const matchPoints = \(Number\(entry\?\.points\) \|\| 0\) - \(Number\(entry\?\.bonus_points\) \|\| 0\)/);
+});
+
+test('each answered bonus question counts as one leaderboard prediction', () => {
+  assert.match(bonusCountMigration, /count\(distinct selection\.question_id\)::bigint as predictions_count/);
+  assert.match(bonusCountMigration, /coalesce\(match_totals\.predictions_count, 0\) \+ coalesce\(bonus_totals\.predictions_count, 0\)/);
+  assert.match(bonusCountMigration, /coalesce\(match_totals\.scored_count, 0\),\s*coalesce\(match_totals\.exact_count, 0\)/);
+  assert.doesNotMatch(bonusCountMigration, /count\(selection\.answer\).*predictions_count/);
+  assert.match(page, /Jede beantwortete Bonusfrage zählt in der Tipprangliste als eine Tippabgabe\./);
+});
+
+test('champion and league winner wording is consistent across both bonus seasons', () => {
+  assert.match(wordingMigration, /when 'champion' then 'Wer wird der nächste Padel-Liga-Champion\?'/);
+  assert.match(wordingMigration, /when 'league_winner' then 'Wer belegt nach der Ligaphase Platz 1\?'/);
+  assert.match(wordingMigration, /question\.season_id in \('2026', 'winter-2026'\)/);
+  assert.match(wordingMigration, /updated_count <> 4/);
 });

@@ -259,7 +259,7 @@
       const accountReady = window.PadelKonto.init();
       await Promise.all([
         loadScript(`../${selected.file}`),
-        loadScript('../js/tippspiel.js?v=2026-10-28-no-bonus-tip-status')
+        loadScript('../js/tippspiel.js?v=2026-10-28-padel-liga-champion-wording')
       ]);
       const season = hydrateSeason(window.PADEL_SEASON);
       document.querySelectorAll('[data-season-label]').forEach(node => { node.textContent = season.label; });

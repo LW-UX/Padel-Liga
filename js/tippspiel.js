@@ -39,7 +39,7 @@
     champion: {
       order: 1,
       title: 'Liga-Champion',
-      question: 'Wer gewinnt die Liga nach dem Final Four?'
+      question: 'Wer wird der nächste Padel-Liga-Champion?'
     },
     final_four_players: {
       order: 2,
@@ -49,17 +49,17 @@
     league_winner: {
       order: 3,
       title: 'Liga-Erster',
-      question: 'Wer belegt nach sechs Spieltagen Platz 1?'
+      question: 'Wer belegt nach der Ligaphase Platz 1?'
     },
     league_game_difference: {
       order: 4,
       title: 'Spiel-Differenz',
-      question: 'Wer hat in der regulären Ligaphase die beste Spiel-Differenz?'
+      question: 'Wer hat nach der Ligaphase die beste Spiel-Differenz?'
     },
     league_elo_gain: {
       order: 5,
       title: 'Elo-Zuwachs',
-      question: 'Wer hat in der regulären Ligaphase den größten Elo-Zuwachs?'
+      question: 'Wer hat nach der Ligaphase den größten Elo-Zuwachs?'
     },
     company_winner: {
       order: 6,
