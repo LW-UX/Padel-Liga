@@ -4704,6 +4704,44 @@ function renderHomeSeasonPodium() {
   ` : '';
 }
 
+function renderTop8QualificationFlow() {
+  if (getCompetitionConfig().tournamentMode !== 'top8-semifinals') return '';
+
+  return `<figure
+    class="qualification-flow"
+    role="img"
+    aria-label="Die besten acht Spieler der Ligaphase spielen zwei Halbfinals. Platz 1 und 2 spielen gegen Platz 7 und 8. Platz 3 und 4 spielen gegen Platz 5 und 6. Die vier Spieler der beiden Siegerteams erreichen das Final Four."
+  >
+    <div class="qualification-flow-stage qualification-flow-league" aria-hidden="true">
+      <div class="qualification-flow-label">Ligaphase</div>
+      <div class="qualification-flow-ranks">
+        ${Array.from({ length: 8 }, (_, index) => `<span>${index + 1}</span>`).join('')}
+      </div>
+      <small>Top 8</small>
+    </div>
+    <span class="qualification-flow-arrow" aria-hidden="true"></span>
+    <div class="qualification-flow-stage qualification-flow-semifinals" aria-hidden="true">
+      <div class="qualification-flow-label">Halbfinale</div>
+      <div class="qualification-flow-match">
+        <span>1 + 2</span><b>vs.</b><span>7 + 8</span>
+      </div>
+      <div class="qualification-flow-match">
+        <span>3 + 4</span><b>vs.</b><span>5 + 6</span>
+      </div>
+      <small>2 Siegerteams</small>
+    </div>
+    <span class="qualification-flow-arrow" aria-hidden="true"></span>
+    <div class="qualification-flow-stage qualification-flow-final" aria-hidden="true">
+      <div class="qualification-flow-label">Final Four</div>
+      <div class="qualification-flow-final-players">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <strong>4 Spieler</strong>
+      <small>spielen um den Titel</small>
+    </div>
+  </figure>`;
+}
+
 function renderHome() {
   ['home-short-info', 'home-ranking', 'home-next-matches', 'home-recent-matches'].forEach(id => {
     const target = document.getElementById(id);
@@ -4714,6 +4752,12 @@ function renderHome() {
   document.getElementById('home-short-info').innerHTML = (PADEL_DATA.shortInfo || [])
     .map(item => `<li>${item}</li>`)
     .join('');
+
+  const qualificationFlow = document.getElementById('home-qualification-flow');
+  if (qualificationFlow) {
+    qualificationFlow.innerHTML = renderTop8QualificationFlow();
+    qualificationFlow.hidden = !qualificationFlow.innerHTML;
+  }
 
   renderHomeAnnouncement();
   renderHomeSeasonPodium();
@@ -5541,6 +5585,7 @@ function renderInfos() {
   const shortInfo = `<article class="info-card info-anchor" id="kurzinfo">
     <h2>Kurzinfo</h2>
     <ul class="clean-list">${(PADEL_DATA.shortInfo || []).map(item => `<li>${item}</li>`).join('')}</ul>
+    ${renderTop8QualificationFlow()}
   </article>`;
 
   const articleSection = `<section class="info-article-section info-anchor" id="artikel">
@@ -6759,7 +6804,6 @@ const COLORS = [
 const GRAY = '#444444';
 const CHART_DIM_ALPHA = 'D6';
 const CHART_GRAY_MIX = 0.28;
-const ELO_CHART_HOVER_LINE_WIDTH = 14;
 
 let chart = null;
 let placementChart = null;
@@ -6880,9 +6924,6 @@ function updateEloChartFocus() {
     dataset.borderWidth = getEloChartLineWidth(player.name);
     dataset.pointRadius = getEloChartPointRadius(player.name);
     dataset.order = getEloChartOrder(player.name);
-  });
-  document.querySelectorAll('[data-player-toggle-name]').forEach(button => {
-    button.classList.toggle('is-chart-hovered', hoveredEloChartPlayerNames.has(button.dataset.playerToggleName));
   });
   chart.update();
 }
@@ -7644,40 +7685,6 @@ const eloFinalStraightSegmentPlugin = {
   }
 };
 
-function getHoveredEloChartPlayerName(chartInstance, x, y) {
-  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
-
-  const { ctx } = chartInstance;
-  ctx.save();
-  ctx.lineWidth = ELO_CHART_HOVER_LINE_WIDTH;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
-  const hoveredMeta = chartInstance.getSortedVisibleDatasetMetas().find(meta => {
-    if (typeof meta.dataset?.path !== 'function') return false;
-    ctx.beginPath();
-    meta.dataset.path(ctx);
-    return ctx.isPointInStroke(x, y);
-  });
-
-  ctx.restore();
-  return hoveredMeta ? chartInstance.data.datasets[hoveredMeta.index]?.label || null : null;
-}
-
-const eloLineHoverPlugin = {
-  id: 'eloLineHoverPlugin',
-  afterEvent(chartInstance, { event }) {
-    if (event.type === 'mouseout') {
-      setHoveredEloChartPlayers();
-      return;
-    }
-    if (event.type !== 'mousemove') return;
-
-    const playerName = getHoveredEloChartPlayerName(chartInstance, event.x, event.y);
-    setHoveredEloChartPlayers(playerName ? [playerName] : []);
-  }
-};
-
 function getStatisticsEloChartBounds(datasets = []) {
   const values = datasets
     .flatMap(dataset => dataset.data || [])
@@ -7759,7 +7766,7 @@ function initChart() {
       })),
       datasets
     },
-    plugins: [eloFinalStraightSegmentPlugin, eloLineHoverPlugin],
+    plugins: [eloFinalStraightSegmentPlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,
