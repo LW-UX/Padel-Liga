@@ -128,6 +128,9 @@ test('invitation link is generated only by the server-side function', () => {
   assert.match(client, /window\.location\.assign\(confirmationUrl\.href\)/);
   assert.match(signupTemplate, /\?auth=confirm&amp;purpose=signup#\{\{ \.ConfirmationURL \}\}/);
   assert.match(passwordResetTemplate, /\?auth=confirm&amp;purpose=recovery&amp;confirmation_url=\{\{ \.ConfirmationURL \}\}/);
+  assert.match(passwordResetTemplate, /PADEL<span[^>]*>LIGA<\/span>/);
+  assert.match(passwordResetTemplate, /Der Link ist 48 Stunden gültig und kann nur einmal verwendet werden\./);
+  assert.match(passwordResetTemplate, /Passwort-Link im Browser öffnen/);
 });
 
 test('public self-registration is restricted while admin-assigned emails may use any domain', () => {

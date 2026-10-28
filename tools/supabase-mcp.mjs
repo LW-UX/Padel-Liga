@@ -14,7 +14,7 @@ const tokenFile = resolve(repositoryRoot, '.codex-secrets/supabase-access-token'
 const [command, argument] = process.argv.slice(2);
 
 if (!command) {
-  fail('Aufruf: supabase-mcp.mjs <list-tools|list-migrations|apply-migration|execute-sql|list-functions|get-function|deploy-function> [Datei oder Function]');
+  fail('Aufruf: supabase-mcp.mjs <list-tools|list-migrations|apply-migration|execute-sql|list-functions|get-function|deploy-function|get-auth-email-settings|update-recovery-template> [Datei oder Function]');
 }
 
 let accessToken;
@@ -74,6 +74,24 @@ function printToolResult(result) {
     .filter(Boolean)
     .join('\n');
   console.log(text || 'Supabase-Aktion erfolgreich abgeschlossen.');
+}
+
+async function managementRequest(path, options = {}) {
+  const response = await fetch(`https://api.supabase.com/v1/projects/${projectRef}${path}`, {
+    ...options,
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      ...(options.body ? { 'content-type': 'application/json' } : {}),
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    fail(`Supabase-Management-API fehlgeschlagen (HTTP ${response.status}): ${detail}`);
+  }
+
+  return response.json();
 }
 
 function requireFilePath(path, { migration = false } = {}) {
@@ -161,6 +179,33 @@ if (command === 'list-tools') {
       files
     }
   }));
+} else if (command === 'get-auth-email-settings') {
+  const config = await managementRequest('/config/auth');
+  console.log(JSON.stringify({
+    site_url: config.site_url,
+    uri_allow_list: config.uri_allow_list,
+    smtp_admin_email: config.smtp_admin_email,
+    smtp_sender_name: config.smtp_sender_name,
+    mailer_subjects_recovery: config.mailer_subjects_recovery,
+    mailer_templates_recovery_content: config.mailer_templates_recovery_content,
+  }, null, 2));
+} else if (command === 'update-recovery-template') {
+  const templatePath = requireFilePath(argument || 'supabase/templates/reset-password.html');
+  if (relative(resolve(repositoryRoot, 'supabase/templates'), templatePath).startsWith('..')) {
+    fail('Die Recovery-Vorlage muss aus supabase/templates stammen.');
+  }
+  const content = await readFile(templatePath, 'utf8');
+  const config = await managementRequest('/config/auth', {
+    method: 'PATCH',
+    body: JSON.stringify({
+      mailer_subjects_recovery: 'Padel-Liga: Neues Passwort festlegen',
+      mailer_templates_recovery_content: content,
+    }),
+  });
+  console.log(JSON.stringify({
+    mailer_subjects_recovery: config.mailer_subjects_recovery,
+    template_updated: config.mailer_templates_recovery_content === content,
+  }, null, 2));
 } else {
   fail(`Unbekannter Befehl: ${command}`);
 }
