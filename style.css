@@ -2405,7 +2405,6 @@
     }
     .prediction-achievement-icon--winner { color: var(--gold); }
     .prediction-achievement-icon--final-four { color: var(--silver); }
-    .ranking-player-achievement { margin-left: 2px; }
     .prediction-achievement-icon svg {
       display: block;
       width: 100%;
@@ -2770,6 +2769,12 @@
       display: inline-flex;
       align-items: center;
       white-space: nowrap;
+    }
+    .ranking-player-name {
+      display: inline-flex;
+      min-width: 0;
+      align-items: center;
+      gap: 2px;
     }
     .ranking-absence-mark {
       flex: 0 0 auto;

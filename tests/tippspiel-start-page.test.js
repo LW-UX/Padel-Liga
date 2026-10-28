@@ -86,7 +86,7 @@ test('prediction rankings show previous league champion and Final Four achieveme
   assert.match(script, /function renderPredictionAchievementIcon\(entry\)/);
   assert.match(script, /kind === 'winner' \? 'Champion' : 'Final Four'/);
   assert.match(script, /renderPredictionAchievementIcon\(entry\)\}\$\{renderPredictionAccountTypeIcon\(entry\)/);
-  assert.match(ligaScript, /function renderPredictionAchievementIcon\(entry\)/);
+  assert.match(ligaScript, /function renderPredictionAchievementIcon\(entry, additionalClass = ''\)/);
   assert.match(ligaScript, /renderPredictionAchievementIcon\(entry\)\}\$\{renderPredictionAccountTypeIcon\(entry\)/);
   assert.match(style, /\.prediction-achievement-icon--winner \{ color: var\(--gold\); \}/);
   assert.match(style, /\.prediction-achievement-icon--final-four \{ color: var\(--silver\); \}/);

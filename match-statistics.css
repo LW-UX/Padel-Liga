@@ -238,10 +238,6 @@ table.rt.match-statistics-ranking .col-rank {
   display: grid;
   gap: .65rem;
   min-width: 0;
-  padding: .85rem 1rem;
-  border: 1px solid color-mix(in srgb, var(--statistics-team-color) 65%, var(--border));
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--statistics-team-color) 8%, var(--surface));
   text-align: center;
 }
 .match-statistics-form-name {
@@ -325,7 +321,6 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
   .match-statistics-section { padding: 1rem .7rem; }
   .match-statistics-context { gap:.7rem; }
   .match-statistics-form-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
-  .match-statistics-form-player { padding: .75rem .5rem; }
   .match-statistics-ranking-layout { grid-template-columns: 1fr; gap: 1.5rem; }
   .match-statistics-ranking th,
   .match-statistics-ranking td {

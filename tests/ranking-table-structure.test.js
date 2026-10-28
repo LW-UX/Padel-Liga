@@ -124,6 +124,7 @@ test('the regular season ranking shows previous league achievements directly aft
   assert.match(app, /\.from\('player_achievements'\)[^]*\.in\('kind', \['winner', 'final_four'\]\)/);
   assert.match(app, /achievement\.kind === 'winner'[^]*achievements\.set\(achievement\.player_id/);
   assert.match(app, /function renderLeagueRankingAchievementIcon\(player\)/);
-  assert.match(ranking, /renderPlayerProfileLink\(p, 'pname', rankingPlayerLabel\)\}\$\{renderLeagueRankingAchievementIcon\(p\)\}/);
-  assert.match(style, /\.ranking-player-achievement \{ margin-left: 2px; \}/);
+  assert.match(ranking, /class="ranking-player-name">\$\{renderPlayerProfileLink\(p, 'pname', rankingPlayerLabel\)\}\$\{renderLeagueRankingAchievementIcon\(p\)\}/);
+  assert.match(app, /class="mini-rank-name"><span class="ranking-player-name">\$\{renderPlayerProfileLink\(p\)\}\$\{renderLeagueRankingAchievementIcon\(p\)\}/);
+  assert.match(style, /\.ranking-player-name \{[^}]*gap: 2px;/);
 });

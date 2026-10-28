@@ -159,6 +159,6 @@ test('only official result changes refresh the complete season view', () => {
   assert.match(tippspiel, /if \(resultIsOfficialImmediately\) publishOfficialResultChange\(form\.dataset\.resultSubmit\)/);
   assert.match(tippspiel, /confirmResult[\s\S]*publishOfficialResultChange\(\)/);
   assert.match(app, /addEventListener\('padel:official-result-changed'/);
-  assert.match(app, /PADEL_DATA = await loadSeasonData\(selectedSeason\)/);
+  assert.match(app, /\[PADEL_DATA, publicTrainingFeed, previousLeagueRankingAchievements\] = await Promise\.all\(\[\s*loadSeasonData\(selectedSeason\)/);
   assert.match(app, /addEventListener\('padel:official-result-changed', \(\) => \{[\s\S]*?refreshActiveSeasonView\(\)/);
 });

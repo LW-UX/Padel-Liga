@@ -4110,7 +4110,7 @@ function renderRanking() {
       : '';
     return `<tr class="ranking-row r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(p.id || p.name)}">
       <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${renderPointsRankReference(currentRank, pointsRank)}</span></td>
-      <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}${renderLeagueRankingAchievementIcon(p)}${absenceMark}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span></span></td>
+      <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}${renderLeagueRankingAchievementIcon(p)}</span>${absenceMark}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span></span></td>
       <td class="col-games">${renderRankingMatchCount(p)}</td>
       <td class="col-wins">${p.stats.siege}</td>
       <td class="col-points rank-score">${p.stats.punkte}</td>
@@ -4949,7 +4949,7 @@ function renderHome() {
 
       return `<div class="mini-rank-row r${i + 1} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}">
       <span class="rank-position">${i + 1}</span>
-      ${renderPlayerProfileLink(p, 'mini-rank-name')}
+      <span class="mini-rank-name"><span class="ranking-player-name">${renderPlayerProfileLink(p)}${renderLeagueRankingAchievementIcon(p)}</span></span>
       <span class="mini-rank-values">
         <span class="mini-rank-games">${p.stats.partien}</span>
         <span class="rank-score">${p.stats.punkte}</span>
