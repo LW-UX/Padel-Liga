@@ -1548,6 +1548,7 @@
       line-height: 1.25;
     }
     .prediction-bonus-copy span,
+    .prediction-bonus-answer,
     .prediction-bonus-result {
       color: var(--dim);
       font-size: var(--text-sm);

@@ -103,6 +103,13 @@ test('client locking is exact and a Final Four answer stays incomplete below fou
   vm.runInContext("Date.now = () => Date.parse('2026-11-15T23:00:00Z')", context);
   assert.equal(context.isBonusQuestionOpen(question), false);
   assert.equal(context.getBonusStatusChip(question).label, 'Gesperrt');
+
+  question.resolved = true;
+  question.points = 0;
+  assert.equal(context.getBonusStatusChip(question).label, '0 Punkte');
+
+  state.bonusAnswers.delete('final-four');
+  assert.equal(context.getBonusStatusChip(question).label, 'Kein Tipp');
 });
 
 test('the save RPC rejects duplicates, limits selections and validates season options', () => {
@@ -128,6 +135,10 @@ test('bonus cards share the regular tipping lists and preserve the requested ord
   assert.match(tipping, /data-bonus-picker-search[\s\S]*role="combobox"[\s\S]*placeholder="Spieler suchen …"/);
   assert.match(tipping, /placeholder: isCompanyPicker \? 'Firma auswählen' : 'Spieler auswählen'/);
   assert.match(tipping, /searchable: !isCompanyPicker/);
+  assert.match(tipping, /const selectedValues = question\.resolved\s*\? \[\]/);
+  assert.match(tipping, /const ownAnswer = question\.resolved && answers\.length[\s\S]*Dein Tipp: \$\{answers\.map\(getBonusOptionLabel\)\.map\(escapeHtml\)\.join\(', '\)\}/);
+  assert.match(tipping, /const selectionControls = selects\s*\? `<div class="prediction-bonus-selects">\$\{selects\}<\/div>`\s*: '';/);
+  assert.match(tipping, /<div class="prediction-bonus-options">\s*\$\{selectionControls\}\s*\$\{ownAnswer\}\s*\$\{result\}/);
   assert.doesNotMatch(tipping, /Zum Tippen einloggen/);
   assert.match(tipping, /function filterBonusPlayerOptions\([\s\S]*bonusPickerSearchText/);
   assert.doesNotMatch(tipping, /<select[\s\S]*data-bonus-question/);
@@ -137,6 +148,7 @@ test('bonus cards share the regular tipping lists and preserve the requested ord
   assert.doesNotMatch(style, /\.prediction-bonus-picker \.viewer-search-input \{/);
   assert.match(style, /\.prediction-bonus-copy \{[\s\S]*display: flex;[\s\S]*align-items: baseline;/);
   assert.match(style, /\.prediction-bonus-copy span \{[\s\S]*text-wrap: balance;/);
+  assert.match(style, /\.prediction-bonus-answer,[\s\S]*\.prediction-bonus-result \{/);
   assert.match(style, /\.prediction-bonus-options \{[\s\S]*grid-column: 1 \/ -1;[\s\S]*grid-row: 2;/);
   assert.doesNotMatch(page, /data-tip-nav="bonustipp/);
 });

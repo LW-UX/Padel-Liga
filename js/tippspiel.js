@@ -355,6 +355,7 @@
       return { label: 'Speichert …', classes: 'is-open is-saving' };
     }
     if (question.resolved) {
+      if (!answers.length) return { label: 'Kein Tipp', classes: 'is-locked' };
       const points = Number(question.points) || 0;
       return {
         label: `${points > 0 ? '+' : ''}${points} Punkte`,
@@ -376,10 +377,15 @@
     const disabled = !isOpen || state.bonusSaving.has(question.question_id);
     const selectionCount = Number(question.max_selections) || 1;
     const presentation = getBonusQuestionPresentation(question);
-    const selectedValues = [...answers, ...Array(Math.max(0, selectionCount - answers.length)).fill('')]
-      .slice(0, selectionCount);
+    const selectedValues = question.resolved
+      ? []
+      : [...answers, ...Array(Math.max(0, selectionCount - answers.length)).fill('')]
+        .slice(0, selectionCount);
     const status = getBonusStatusChip(question);
     const correctAnswers = Array.isArray(question.correct_answers) ? question.correct_answers : [];
+    const ownAnswer = question.resolved && answers.length
+      ? `<div class="prediction-bonus-answer">Dein Tipp: ${answers.map(getBonusOptionLabel).map(escapeHtml).join(', ')}</div>`
+      : '';
     const result = question.resolved && correctAnswers.length
       ? `<div class="prediction-bonus-result">Richtig: ${correctAnswers.map(getBonusOptionLabel).map(escapeHtml).join(', ')}</div>`
       : '';
@@ -396,6 +402,9 @@
         searchable: !isCompanyPicker
       });
     }).join('');
+    const selectionControls = selects
+      ? `<div class="prediction-bonus-selects">${selects}</div>`
+      : '';
 
     return `
       <article class="prediction-match-card prediction-bonus-card ${answers.length ? 'has-prediction' : ''} ${isOpen ? '' : 'is-locked'} ${question.resolved ? `points-${Number(question.points) || 0}` : ''}">
@@ -404,7 +413,8 @@
           ${presentation.question ? `<span>${escapeHtml(presentation.question)}</span>` : ''}
         </div>
         <div class="prediction-bonus-options">
-          <div class="prediction-bonus-selects">${selects}</div>
+          ${selectionControls}
+          ${ownAnswer}
           ${result}
         </div>
         <span class="prediction-status ${status.classes}">${escapeHtml(status.label)}</span>
