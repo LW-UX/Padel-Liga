@@ -820,11 +820,20 @@
       }
     }
     if (updateUrl) {
-      const url = new URL(window.location.href);
-      const replacesExistingLiveRoute = url.searchParams.has('live');
-      url.searchParams.set('live', matchId);
-      if (state.view === 'overview') url.searchParams.set('liveView', 'overview');
-      else url.searchParams.delete('liveView');
+      const season = window.PadelLigaGetSeasonData?.();
+      const match = season?.matches?.find(item => item.id === matchId);
+      const replacesExistingLiveRoute = Boolean(window.PadelSeasonRouting?.getRequestedLiveRoute(season?.matches || []));
+      const url = window.PadelSeasonRouting?.getLiveUrl(
+        season?.id,
+        match || matchId,
+        state.view,
+        { preserveSearch: true, preserveHash: true }
+      ) || new URL(window.location.href);
+      if (!window.PadelSeasonRouting) {
+        url.searchParams.set('live', matchId);
+        if (state.view === 'overview') url.searchParams.set('liveView', 'overview');
+        else url.searchParams.delete('liveView');
+      }
       const updateHistory = replacesExistingLiveRoute ? 'replaceState' : 'pushState';
       window.history[updateHistory]({ liveMatchId: matchId }, '', `${url.pathname}${url.search}${url.hash}`);
     }
@@ -1592,11 +1601,10 @@
       }
     });
     window.addEventListener('popstate', () => {
-      if (window.PadelMatchStatistics?.active || new URL(window.location.href).searchParams.has('partie')) return;
-      const url = new URL(window.location.href);
-      const matchId = url.searchParams.get('live');
-      const view = url.searchParams.get('liveView') === 'overview' ? 'overview' : 'match';
-      if (matchId) window.PadelLigaOpenLiveTicker?.(matchId, { updateUrl: false, view });
+      const season = window.PadelLigaGetSeasonData?.();
+      if (window.PadelMatchStatistics?.active || window.PadelSeasonRouting?.getRequestedMatchId(season?.matches || [])) return;
+      const route = window.PadelSeasonRouting?.getRequestedLiveRoute(season?.matches || []);
+      if (route?.matchId) window.PadelLigaOpenLiveTicker?.(route.matchId, { updateUrl: false, view: route.view });
       else window.PadelLigaCloseLiveTicker?.({ fromHistory: true });
     });
   }

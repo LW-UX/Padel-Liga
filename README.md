@@ -158,6 +158,7 @@ Alte Saisondateien bleiben erhalten. Dadurch können frühere Saisonstände weit
 ```text
 so26/
 wi26/partie/7/
+so26/live/
 ```
 
 ## Tippspiel und Benutzerkonten

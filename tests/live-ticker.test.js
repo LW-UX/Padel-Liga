@@ -194,8 +194,7 @@ test('the global live entry switches into the season of the active match', () =>
   assert.match(ticker, /PadelLigaOpenLiveTicker\?\.\(state\.activeMatch\.matchId, \{\s*seasonId: state\.activeMatch\.seasonId\s*\}\)/);
   const openTicker = app.match(/async function openLiveTicker\(matchId, options = \{\}\) \{[\s\S]*?(?=\n\}\n\nfunction closeLiveTicker)/)?.[0] || '';
   assert.match(openTicker, /targetSeasonId !== String\(selectedSeason\?\.id \|\| ''\)/);
-  assert.match(openTicker, /PadelSeasonRouting\.getSeasonUrl\(targetSeasonId, 'league'/);
-  assert.match(openTicker, /url\.searchParams\.set\('live', matchId\)/);
+  assert.match(openTicker, /PadelSeasonRouting\.getLiveUrl\(/);
   assert.match(openTicker, /window\.location\.assign\(url\)/);
 });
 
@@ -217,7 +216,8 @@ test('the ticker opens as a full-screen detail dialog and keeps tab changes in o
   assert.match(openTicker, /dialog\.showModal\(\)/);
   assert.doesNotMatch(openTicker, /nav\('liveticker'/);
   assert.match(style, /\.detail-view-dialog \{[\s\S]*width: 100vw;[\s\S]*height: 100dvh/);
-  assert.match(ticker, /const replacesExistingLiveRoute = url\.searchParams\.has\('live'\)/);
+  assert.match(ticker, /const replacesExistingLiveRoute = Boolean\(window\.PadelSeasonRouting\?\.getRequestedLiveRoute/);
+  assert.match(ticker, /PadelSeasonRouting\?\.getLiveUrl\(/);
   assert.match(ticker, /replacesExistingLiveRoute \? 'replaceState' : 'pushState'/);
   assert.match(app, /function closeLiveTicker\(options = \{\}\)[\s\S]*window\.history\.back\(\)/);
   assert.match(app, /detailViewDialog\?\.addEventListener\('cancel'[\s\S]*closeLiveTicker\(\)/);
@@ -242,7 +242,7 @@ test('the ticker starts with an overview tab for all three matches and the final
   assert.match(ticker, /score: '–:–'/);
   assert.match(ticker, /Stand nach abgeschlossenen Partien/);
   assert.match(ticker, /liveView', 'overview'/);
-  assert.match(app, /url\.searchParams\.get\('liveView'\) === 'overview'/);
+  assert.match(app, /view: requestedLive\.view/);
   assert.match(ticker, /if \(matchButton\.dataset\.liveView\) options\.view = matchButton\.dataset\.liveView/);
 });
 

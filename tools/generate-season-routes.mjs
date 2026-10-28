@@ -50,4 +50,21 @@ for (const season of context.window.PADEL_SEASONS || []) {
       '../../../'
     );
   }
+
+  const liveMatches = (context.window.PADEL_SEASON?.matches || [])
+    .map(match => ({ match, slug: context.window.PadelSeasonRouting.getLiveSlug(match) }))
+    .filter(item => item.slug);
+  if (liveMatches.length) {
+    writePage('index.html', path.join(outputRoot, season.route, 'live', 'index.html'), '../../');
+    const liveSlugs = new Set();
+    for (const { slug } of liveMatches) {
+      if (liveSlugs.has(slug)) throw new Error(`Doppelter Livepfad ${season.route}/live/${slug}/`);
+      liveSlugs.add(slug);
+      writePage(
+        'index.html',
+        path.join(outputRoot, season.route, 'live', slug, 'index.html'),
+        '../../../'
+      );
+    }
+  }
 }

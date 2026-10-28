@@ -234,6 +234,8 @@
 
   <!-- RANGLISTE -->
   <section id="rangliste" class="section">
+    <div class="ranking-profile-layout" id="ranking-profile-layout">
+      <div class="ranking-profile-main" id="ranking-profile-main">
     <div class="sh sh-with-control">
       <div class="sh-heading">
         <div class="sh-title">RANGLISTE</div>
@@ -327,6 +329,10 @@
       </div>
       <div class="sh-meta ranking-note table-note" id="ff-ranking-note">Spiele: 3  |  Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ligaplatzierung</div>
     </div>
+      </div>
+      <aside class="ranking-profile-host" id="ranking-profile-host" aria-label="Geöffnetes Spielerprofil"></aside>
+    </div>
+    <span class="sr-only" id="player-profile-panel-status" role="status" aria-live="polite" aria-atomic="true"></span>
   </section>
 
   <!-- STATISTIK -->
@@ -641,7 +647,8 @@
   </div>
 </dialog>
 
-<dialog class="player-profile-dialog" id="player-profile-dialog" aria-labelledby="player-profile-name">
+<div id="player-profile-modal-host">
+<dialog class="player-profile-dialog" id="player-profile-dialog" aria-labelledby="player-profile-name" data-presentation="modal">
   <svg class="achievement-symbols" aria-hidden="true">
     <symbol id="achievement-laurel-left" viewBox="0 0 627.96 1166.47">
       <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="9.33" d="M557.89 1161.81C222.45 1108.78 108.83 690.9 211.51 408.18c36.54-100.61 105.11-186.32 189.43-251.48"/>
@@ -711,6 +718,7 @@
     </div>
   </div>
 </dialog>
+</div>
 
 <dialog class="auth-dialog tipp-invitation-dialog" id="tipp-invitation-dialog" aria-labelledby="tipp-invitation-title" aria-describedby="tipp-invitation-copy">
   <button class="modal-close-button auth-dialog-close" type="button" data-tipp-invitation-close aria-label="Tipp-Hinweis schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>

@@ -52,6 +52,13 @@ let statisticsLoadError = '';
 let statisticsPlayerFilters = new Map();
 const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;
 const PLAYER_PROFILE_ACHIEVEMENT_LIMIT = 4;
+const PLAYER_PROFILE_PANEL_BREAKPOINT = 1280;
+const PLAYER_PROFILE_PANEL_RANKING_MIN_WIDTH = 732;
+const PLAYER_PROFILE_PANEL_MIN_WIDTH = 460;
+const PLAYER_PROFILE_PANEL_MAX_WIDTH = 560;
+const PLAYER_PROFILE_PANEL_GAP = 24;
+const PLAYER_PROFILE_PANEL_OUTER_GUTTER = 16;
+const PLAYER_PROFILE_PANEL_TRANSITION_MS = 220;
 const PROFILE_SEASON_COLORS = Object.freeze({
   summer: '#FF8A5B',
   winter: '#B794F6',
@@ -68,6 +75,10 @@ const LEGACY_SEASON_IDS = Object.freeze({
 });
 const TEST_TRAINING_PLAYER_IDS = new Set(['ludi_gmail', 'ludi_gmx', 'ludi_ionos', 'test_net']);
 let playerProfileLastTrigger = null;
+let playerProfilePresentation = 'modal';
+let playerProfileActiveId = null;
+let playerProfileForceModal = false;
+let playerProfileCloseTimer = null;
 const isDetailEmbed = document.documentElement.classList.contains('is-detail-embed');
 
 function getViewerStorageKey() {
@@ -1024,7 +1035,7 @@ async function loadActiveSeason() {
 function updateSeasonPhaseLayout(phase = getSeasonDisplayPhase()) {
   document.body.dataset.seasonPhase = phase;
 
-  const rankingSection = document.getElementById('rangliste');
+  const rankingSection = document.getElementById('ranking-profile-main');
   const finalFourRanking = document.getElementById('final-four-ranking-section');
   if (rankingSection && finalFourRanking) {
     const finalFourIsPrimary = ['final-four', 'completed'].includes(phase) && getFinalFourMatches().length === 3;
@@ -1391,6 +1402,9 @@ function selectSeason(id) {
   if (id === selectedSeason?.id) {
     closeSeasonMenu();
     return;
+  }
+  if (playerProfilePresentation === 'panel') {
+    closePlayerProfile({ immediate: true, restoreFocus: false });
   }
   const url = window.PadelSeasonRouting.getSeasonUrl(id, 'league', { preserveSearch: true, preserveHash: true });
   url.searchParams.delete('live');
@@ -2725,13 +2739,168 @@ async function renderPlayerProfileUpcomingMatches() {
     : '<div class="empty-state">Keine kommenden Partien.</div>';
 }
 
+function getPlayerProfilePanelWidth(viewportWidth = window.innerWidth) {
+  return Math.min(
+    PLAYER_PROFILE_PANEL_MAX_WIDTH,
+    Math.max(PLAYER_PROFILE_PANEL_MIN_WIDTH, viewportWidth * 0.36)
+  );
+}
+
+function isRankingSectionActive() {
+  const section = document.getElementById('rangliste');
+  return Boolean(section?.classList.contains('active') && !section.hidden);
+}
+
+function hasPlayerProfilePanelSpace() {
+  const layoutViewportWidth = document.documentElement.clientWidth || window.innerWidth;
+  const requiredWidth = PLAYER_PROFILE_PANEL_RANKING_MIN_WIDTH
+    + PLAYER_PROFILE_PANEL_GAP
+    + getPlayerProfilePanelWidth(window.innerWidth);
+  return window.innerWidth >= PLAYER_PROFILE_PANEL_BREAKPOINT
+    && layoutViewportWidth - PLAYER_PROFILE_PANEL_OUTER_GUTTER * 2 >= requiredWidth;
+}
+
+function shouldUsePlayerProfilePanel() {
+  return !playerProfileForceModal
+    && !isDetailEmbed
+    && isRankingSectionActive()
+    && hasPlayerProfilePanelSpace();
+}
+
+function updatePlayerProfilePanelMetrics() {
+  if (playerProfilePresentation !== 'panel') return;
+  const layoutViewportWidth = document.documentElement.clientWidth || window.innerWidth;
+  const panelWidth = getPlayerProfilePanelWidth(window.innerWidth);
+  const requiredWidth = PLAYER_PROFILE_PANEL_RANKING_MIN_WIDTH + PLAYER_PROFILE_PANEL_GAP + panelWidth;
+  const standardContentLeft = layoutViewportWidth > 1100
+    ? (layoutViewportWidth - 1100) / 2 + 16
+    : PLAYER_PROFILE_PANEL_OUTER_GUTTER;
+  const latestPossibleLeft = layoutViewportWidth - PLAYER_PROFILE_PANEL_OUTER_GUTTER - requiredWidth;
+  const splitLeft = Math.max(
+    PLAYER_PROFILE_PANEL_OUTER_GUTTER,
+    Math.min(standardContentLeft, latestPossibleLeft)
+  );
+  document.body.style.setProperty('--ranking-profile-split-left', `${splitLeft}px`);
+  document.body.style.setProperty('--player-profile-panel-width', `${panelWidth}px`);
+}
+
+function arrangePlayerProfileContent(presentation = playerProfilePresentation) {
+  const content = document.getElementById('player-profile-content');
+  if (!content) return;
+  const selectors = presentation === 'panel'
+    ? [
+        '.player-profile-hero-block',
+        '.player-profile-elo-panel',
+        '.player-profile-history',
+        '.player-profile-relationships',
+        '.player-profile-participations-panel'
+      ]
+    : [
+        '.player-profile-hero-block',
+        '.player-profile-elo-panel',
+        '.player-profile-participations-panel',
+        '.player-profile-relationships',
+        '.player-profile-history'
+      ];
+  selectors.forEach(selector => {
+    const element = content.querySelector(selector);
+    if (element) content.append(element);
+  });
+}
+
+function getPlayerProfileShellScrollTop() {
+  return document.querySelector('#player-profile-dialog .player-profile-shell')?.scrollTop || 0;
+}
+
+function updatePlayerProfileRankingHighlights() {
+  document.querySelectorAll('#rangliste [data-profile-player-id]').forEach(row => {
+    const active = Boolean(playerProfileActiveId) && row.dataset.profilePlayerId === playerProfileActiveId;
+    row.classList.toggle('profile-open-highlight', active);
+    row.querySelectorAll('[data-player-profile-id]').forEach(control => {
+      control.setAttribute('aria-expanded', String(active));
+      control.setAttribute('aria-controls', 'player-profile-dialog');
+    });
+  });
+  const globalProfileButton = document.getElementById('viewer-profile-button');
+  if (globalProfileButton) {
+    const active = Boolean(playerProfileActiveId)
+      && globalProfileButton.dataset.playerProfileId === playerProfileActiveId;
+    globalProfileButton.setAttribute('aria-expanded', String(active));
+    globalProfileButton.setAttribute('aria-controls', 'player-profile-dialog');
+  }
+}
+
+function announcePlayerProfilePanel(name) {
+  const status = document.getElementById('player-profile-panel-status');
+  if (status && playerProfilePresentation === 'panel') {
+    status.textContent = `Profil von ${name || 'Spieler'} geöffnet.`;
+  }
+}
+
+function movePlayerProfileDialog(presentation, { reopen = false, scrollTop = 0, restoreTriggerFocus = false } = {}) {
+  const dialog = document.getElementById('player-profile-dialog');
+  const host = document.getElementById(presentation === 'panel' ? 'ranking-profile-host' : 'player-profile-modal-host');
+  if (!dialog || !host) return false;
+
+  const wasOpen = dialog.open;
+  if (wasOpen) dialog.close();
+  playerProfilePresentation = presentation;
+  dialog.dataset.presentation = presentation;
+  dialog.classList.remove('is-closing');
+  if (presentation === 'panel') dialog.setAttribute('aria-modal', 'false');
+  else dialog.removeAttribute('aria-modal');
+  arrangePlayerProfileContent(presentation);
+  host.append(dialog);
+  document.body.classList.toggle('player-profile-panel-open', presentation === 'panel');
+  updatePlayerProfilePanelMetrics();
+
+  if (reopen || wasOpen) {
+    if (presentation === 'panel') dialog.show();
+    else dialog.showModal();
+    requestAnimationFrame(() => {
+      const shell = dialog.querySelector('.player-profile-shell');
+      if (shell) shell.scrollTop = scrollTop;
+      playerProfileChart?.resize?.();
+      if (presentation === 'panel' && restoreTriggerFocus && playerProfileLastTrigger?.isConnected) {
+        playerProfileLastTrigger.focus({ preventScroll: true });
+      }
+    });
+  }
+  return true;
+}
+
+function reconcilePlayerProfilePresentation() {
+  const dialog = document.getElementById('player-profile-dialog');
+  if (!dialog?.open) return;
+  const nextPresentation = shouldUsePlayerProfilePanel() ? 'panel' : 'modal';
+  if (nextPresentation === playerProfilePresentation) {
+    updatePlayerProfilePanelMetrics();
+    playerProfileChart?.resize?.();
+    return;
+  }
+  movePlayerProfileDialog(nextPresentation, {
+    reopen: true,
+    scrollTop: getPlayerProfileShellScrollTop(),
+    restoreTriggerFocus: nextPresentation === 'panel'
+  });
+}
+
+function cancelPlayerProfileCloseTransition() {
+  if (!playerProfileCloseTimer) return;
+  clearTimeout(playerProfileCloseTimer);
+  playerProfileCloseTimer = null;
+  document.getElementById('player-profile-dialog')?.classList.remove('is-closing');
+}
+
 function renderPlayerProfile(profile) {
   const identity = profile.identity || {};
   const knownPlayer = (window.PADEL_PLAYERS || []).find(player => player.id === identity.id);
   playerProfileData = profile;
+  playerProfileActiveId = identity.id || playerProfileActiveId;
   playerProfileExpanded = false;
   playerProfileMatchScope = 'past';
   playerProfileCompareId = null;
+  arrangePlayerProfileContent();
   document.getElementById('player-profile-name').textContent = identity.displayName || 'Spielerprofil';
   const profileCompany = identity.company || 'Padel-Liga';
   const profileCompanyElement = document.getElementById('player-profile-company');
@@ -2755,6 +2924,8 @@ function renderPlayerProfile(profile) {
   renderPlayerProfileHistory();
   document.getElementById('player-profile-state').hidden = true;
   document.getElementById('player-profile-content').hidden = false;
+  updatePlayerProfileRankingHighlights();
+  announcePlayerProfilePanel(identity.displayName || knownPlayer?.name);
   playerProfileChart?.destroy();
   playerProfileChart = null;
   const canvas = document.getElementById('player-profile-elo-chart');
@@ -2776,16 +2947,37 @@ function renderPlayerProfile(profile) {
 async function openPlayerProfile(playerId, trigger = null, options = {}) {
   const dialog = document.getElementById('player-profile-dialog');
   if (!dialog || !playerId) return;
+  cancelPlayerProfileCloseTransition();
   const aboveStatistics = window.PadelMatchStatistics?.prepareProfileOpen(trigger, playerId, options.fromHistory);
-  if (aboveStatistics && dialog.open) dialog.close();
+  const triggerDialog = trigger?.closest?.('dialog');
+  playerProfileForceModal = Boolean(
+    options.forceModal
+    || aboveStatistics
+    || (triggerDialog && triggerDialog !== dialog)
+    || (triggerDialog === dialog && playerProfilePresentation === 'modal')
+  );
   playerProfileLastTrigger = trigger || document.activeElement;
+  playerProfileActiveId = playerId;
+  updatePlayerProfileRankingHighlights();
   const knownPlayer = (PADEL_DATA?.allPlayers || PADEL_DATA?.players || [])
     .find(player => player.id === playerId)
     || (window.PADEL_PLAYERS || []).find(player => player.id === playerId);
   document.getElementById('player-profile-name').textContent = knownPlayer?.name || 'Spielerprofil';
   const requestId = ++playerProfileRequestId;
   setPlayerProfileState('Spielerprofil wird geladen …');
-  if (!dialog.open) dialog.showModal();
+  const nextPresentation = shouldUsePlayerProfilePanel() ? 'panel' : 'modal';
+  if (!dialog.open || nextPresentation !== playerProfilePresentation) {
+    movePlayerProfileDialog(nextPresentation, {
+      reopen: true,
+      restoreTriggerFocus: nextPresentation === 'panel'
+    });
+  } else {
+    const shell = dialog.querySelector('.player-profile-shell');
+    if (shell) shell.scrollTop = 0;
+    if (nextPresentation === 'panel' && playerProfileLastTrigger?.isConnected) {
+      playerProfileLastTrigger.focus({ preventScroll: true });
+    }
+  }
 
   try {
     const profile = await fetchPlayerProfile(playerId);
@@ -2804,35 +2996,80 @@ window.PadelLigaCapturePlayerProfile = () => ({
   data: playerProfileData,
   expanded: playerProfileExpanded,
   matchScope: playerProfileMatchScope,
-  compareId: playerProfileCompareId
+  compareId: playerProfileCompareId,
+  scrollTop: getPlayerProfileShellScrollTop(),
+  presentation: playerProfilePresentation,
+  activeId: playerProfileActiveId,
+  forceModal: playerProfileForceModal
 });
 window.PadelLigaRestorePlayerProfile = snapshot => {
   const profile = document.getElementById('player-profile-dialog');
   if (!snapshot?.data || !profile) return;
   ++playerProfileRequestId;
-  if (!profile.open) profile.showModal();
+  playerProfileActiveId = snapshot.activeId || snapshot.data.identity?.id || null;
+  playerProfileForceModal = Boolean(snapshot.forceModal);
+  playerProfileLastTrigger = playerProfileLastTrigger?.isConnected ? playerProfileLastTrigger : document.activeElement;
+  movePlayerProfileDialog(shouldUsePlayerProfilePanel() ? 'panel' : 'modal', {
+    reopen: true,
+    scrollTop: snapshot.scrollTop || 0,
+    restoreTriggerFocus: shouldUsePlayerProfilePanel()
+  });
   renderPlayerProfile(snapshot.data);
   playerProfileExpanded = snapshot.expanded;
   playerProfileMatchScope = snapshot.matchScope === 'upcoming' ? 'upcoming' : 'past';
   playerProfileCompareId = snapshot.compareId || null;
   renderPlayerProfileCompare(snapshot.data);
   renderPlayerProfileHistory();
+  requestAnimationFrame(() => {
+    const shell = profile.querySelector('.player-profile-shell');
+    if (shell) shell.scrollTop = snapshot.scrollTop || 0;
+  });
 };
 window.PadelLigaClosePlayerProfile = options => closePlayerProfile(options);
+
+function finalizePlayerProfileClose({ restoreFocus = true } = {}) {
+  const dialog = document.getElementById('player-profile-dialog');
+  if (dialog?.open) dialog.close();
+  dialog?.classList.remove('is-closing');
+  document.body.classList.remove('player-profile-panel-open');
+  document.body.style.removeProperty('--ranking-profile-split-left');
+  document.body.style.removeProperty('--player-profile-panel-width');
+  const modalHost = document.getElementById('player-profile-modal-host');
+  if (dialog && modalHost && dialog.parentElement !== modalHost) modalHost.append(dialog);
+  playerProfilePresentation = 'modal';
+  if (dialog) dialog.dataset.presentation = 'modal';
+  arrangePlayerProfileContent('modal');
+  playerProfileChart?.destroy();
+  playerProfileChart = null;
+  playerProfileData = null;
+  playerProfileActiveId = null;
+  playerProfileForceModal = false;
+  updatePlayerProfileRankingHighlights();
+  const status = document.getElementById('player-profile-panel-status');
+  if (status) status.textContent = '';
+  const profileReturnTarget = playerProfileLastTrigger?.closest?.('[inert]')
+    ? document.querySelector('[data-global-actions-toggle]')
+    : playerProfileLastTrigger;
+  if (restoreFocus) profileReturnTarget?.focus?.({ preventScroll: true });
+}
 
 function closePlayerProfile(options = {}) {
   if (!options.fromHistory && window.PadelMatchStatistics?.closeProfile()) return;
   const dialog = document.getElementById('player-profile-dialog');
   if (!dialog?.open) return;
+  if (playerProfileCloseTimer) return;
   ++playerProfileRequestId;
-  dialog.close();
-  playerProfileChart?.destroy();
-  playerProfileChart = null;
-  playerProfileData = null;
-  const profileReturnTarget = playerProfileLastTrigger?.closest?.('[inert]')
-    ? document.querySelector('[data-global-actions-toggle]')
-    : playerProfileLastTrigger;
-  profileReturnTarget?.focus?.();
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (playerProfilePresentation !== 'panel' || options.immediate || reduceMotion) {
+    finalizePlayerProfileClose({ restoreFocus: options.restoreFocus !== false });
+    return;
+  }
+  dialog.classList.add('is-closing');
+  document.body.classList.remove('player-profile-panel-open');
+  playerProfileCloseTimer = setTimeout(() => {
+    playerProfileCloseTimer = null;
+    finalizePlayerProfileClose({ restoreFocus: options.restoreFocus !== false });
+  }, PLAYER_PROFILE_PANEL_TRANSITION_MS);
 }
 
 document.addEventListener('pointerover', event => {
@@ -3379,6 +3616,9 @@ function renderActiveSection() {
 function nav(id, el) {
   // Vor dem Umschalten messen: Ein noch nicht gerenderter Bereich verkürzt die Seite kurzzeitig.
   const navigationPinned = isNavigationPinned();
+  if (id !== 'rangliste' && playerProfilePresentation === 'panel') {
+    closePlayerProfile({ immediate: true, restoreFocus: false });
+  }
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -3393,10 +3633,12 @@ async function openLiveTicker(matchId, options = {}) {
   if (window.PadelMatchStatistics?.active) window.PadelMatchStatistics.restore();
   const targetSeasonId = String(normalizeSeasonId(options.seasonId) || '');
   if (targetSeasonId && targetSeasonId !== String(selectedSeason?.id || '')) {
-    const url = window.PadelSeasonRouting.getSeasonUrl(targetSeasonId, 'league', { preserveSearch: true, preserveHash: true });
-    url.searchParams.set('live', matchId);
-    if (options.view === 'overview') url.searchParams.set('liveView', 'overview');
-    else url.searchParams.delete('liveView');
+    const url = window.PadelSeasonRouting.getLiveUrl(
+      targetSeasonId,
+      matchId,
+      options.view === 'overview' ? 'overview' : 'match',
+      { preserveSearch: true, preserveHash: true }
+    );
     window.location.assign(url);
     return;
   }
@@ -3424,8 +3666,8 @@ function closeLiveTicker(options = {}) {
     if (!options.fromHistory) window.PadelMatchStatistics.close();
     return;
   }
-  const url = new URL(window.location.href);
-  if (!options.fromHistory && url.searchParams.has('live')) {
+  const liveRoute = window.PadelSeasonRouting.getRequestedLiveRoute(PADEL_DATA?.matches || []);
+  if (!options.fromHistory && liveRoute) {
     window.history.back();
     return;
   }
@@ -3793,7 +4035,7 @@ function renderFinalFourRanking() {
       ? '<span class="ranking-absence-mark"><span aria-hidden="true">*</span><span class="sr-only">, nachgerückt für Marco M.</span></span>'
       : '';
 
-    return `<tr class="r${index + 1}">
+    return `<tr class="r${index + 1}" data-profile-player-id="${escapeHtml(eloPlayer?.id || getPlayerIdByName(player.name) || '')}">
       <td class="col-rank rank-position">${index + 1}</td>
       <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(player, 'pname')}${replacementMark}</span></td>
       <td class="col-wins rank-score">${player.siege}</td>
@@ -3802,6 +4044,7 @@ function renderFinalFourRanking() {
       <td class="col-elo">${eloPlayer ? getLatestPlayerElo(eloPlayer) : '—'}</td>
     </tr>`;
   }).join('');
+  updatePlayerProfileRankingHighlights();
 }
 
 function getRankingPositionMap(sortMode = 'points') {
@@ -4102,7 +4345,7 @@ function renderRanking() {
     const absenceMark = showMarcoAbsence && p.id === 'marco_m'
       ? '<span class="ranking-absence-mark"><span aria-hidden="true">*</span><span class="sr-only">Krankheitsbedingter Ausfall beim Final Four</span></span>'
       : '';
-    return `<tr class="ranking-row r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(p.id || p.name)}">
+    return `<tr class="ranking-row r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(p.id || p.name)}" data-profile-player-id="${escapeHtml(p.id || '')}">
       <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${renderPointsRankReference(currentRank, pointsRank)}</span></td>
       <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}${renderLeagueRankingAchievementIcon(p)}</span>${absenceMark}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span></span></td>
       <td class="col-games">${renderRankingMatchCount(p)}</td>
@@ -4119,6 +4362,7 @@ function renderRanking() {
   animateRankingRows(body, '.ranking-row', previousPositions);
   renderFirmenRanking();
   renderFinalFourRanking();
+  updatePlayerProfileRankingHighlights();
 }
 
 function getAllTimeLeagueMatches() {
@@ -8151,6 +8395,7 @@ async function initApp() {
     normalizeLegacySeasonUrl();
     await loadActiveSeason();
     window.PadelSeasonRouting.normalizeCurrentMatchUrl(selectedSeason.id, PADEL_DATA.matches);
+    window.PadelSeasonRouting.normalizeCurrentLiveUrl(selectedSeason.id, PADEL_DATA.matches);
     applySeasonMetadata();
     resetSeasonState();
     updateViewerPicker();
@@ -8174,7 +8419,8 @@ async function initApp() {
 
   const url = new URL(window.location.href);
   const requestedStatistics = window.PadelSeasonRouting.getRequestedMatchId(PADEL_DATA.matches);
-  const requestedLiveMatch = requestedStatistics ? null : url.searchParams.get('live');
+  const requestedLive = requestedStatistics ? null : window.PadelSeasonRouting.getRequestedLiveRoute(PADEL_DATA.matches);
+  const requestedLiveMatch = requestedLive?.matchId || null;
   const requestedPlayerProfile = url.searchParams.get('spielerprofil');
   let liveTickerInitialized = false;
 
@@ -8185,20 +8431,23 @@ async function initApp() {
       liveTickerInitialized = true;
       nav('partien', document.getElementById('partien-nav-button'));
       const liveUrl = new URL(url);
-      const baseUrl = new URL(url);
+      const baseUrl = window.PadelSeasonRouting.getSeasonUrl(selectedSeason.id, 'league', {
+        preserveSearch: true,
+        preserveHash: true
+      });
       baseUrl.searchParams.delete('live');
       baseUrl.searchParams.delete('liveView');
       window.history.replaceState({ liveBase: true }, '', `${baseUrl.pathname}${baseUrl.search}${baseUrl.hash}`);
       window.history.pushState({ liveMatchId: requestedLiveMatch }, '', `${liveUrl.pathname}${liveUrl.search}${liveUrl.hash}`);
       await openLiveTicker(requestedLiveMatch, {
         updateUrl: false,
-        view: url.searchParams.get('liveView') === 'overview' ? 'overview' : 'match'
+        view: requestedLive.view
       });
     }
     if (requestedPlayerProfile && !requestedStatistics) {
       url.searchParams.delete('spielerprofil');
       window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
-      await openPlayerProfile(requestedPlayerProfile);
+      await openPlayerProfile(requestedPlayerProfile, null, { forceModal: true });
     }
   } catch (error) {
     console.error('Die verlinkte Detailansicht konnte nicht initialisiert werden:', error);
@@ -8287,7 +8536,20 @@ playerProfileDialog?.addEventListener('cancel', event => {
   closePlayerProfile();
 });
 playerProfileDialog?.addEventListener('click', event => {
-  if (event.target === playerProfileDialog) closePlayerProfile();
+  if (event.target === playerProfileDialog && playerProfilePresentation === 'modal') closePlayerProfile();
+});
+
+let playerProfileResizeFrame = 0;
+window.addEventListener('resize', () => {
+  cancelAnimationFrame(playerProfileResizeFrame);
+  playerProfileResizeFrame = requestAnimationFrame(reconcilePlayerProfilePresentation);
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || playerProfilePresentation !== 'panel' || !playerProfileDialog?.open) return;
+  if (document.querySelector('dialog:modal')) return;
+  event.preventDefault();
+  closePlayerProfile();
 });
 
 const detailViewDialog = document.getElementById('detail-view-dialog');

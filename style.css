@@ -112,8 +112,8 @@
       scroll-behavior: auto !important;
     }
     body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; touch-action: manipulation; }
-    html:has(dialog[open]),
-    body:has(dialog[open]) {
+    html:has(dialog:modal),
+    body:has(dialog:modal) {
       overflow: hidden;
       overscroll-behavior: none;
     }

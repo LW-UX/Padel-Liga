@@ -104,6 +104,64 @@
     return true;
   }
 
+  function getLiveSlug(match) {
+    const record = typeof match === 'string' ? { id: match } : match;
+    const id = String(record?.id || '').toLowerCase();
+    const isFinalFour = record?.stage === 'final-four'
+      || (!record?.stage && record?.countsForRanking === false && record?.format === 'single-set');
+    if (!id || (typeof match !== 'string' && !isFinalFour)) return null;
+    const number = id.match(/(?:partie-|final-?)(\d+)$/)?.[1] || id.match(/(\d+)$/)?.[1];
+    return number ? String(Number(number)) : null;
+  }
+
+  function getLiveRouteFromPath(matches = [], pathname = window.location.pathname) {
+    const segments = String(pathname).split('/').filter(Boolean).map(segment => decodeURIComponent(segment).toLowerCase());
+    const liveIndex = segments.lastIndexOf('live');
+    if (liveIndex === -1) return null;
+    const slug = segments[liveIndex + 1] || null;
+    const finalFourMatches = matches.filter(match => getLiveSlug(match));
+    const match = slug
+      ? finalFourMatches.find(item => getLiveSlug(item) === slug)
+      : finalFourMatches[0];
+    return match ? { matchId: match.id, view: slug ? 'match' : 'overview' } : null;
+  }
+
+  function getRequestedLiveRoute(matches = []) {
+    const params = new URLSearchParams(window.location.search);
+    const matchId = params.get('live');
+    if (matchId) return { matchId, view: params.get('liveView') === 'overview' ? 'overview' : 'match' };
+    return getLiveRouteFromPath(matches);
+  }
+
+  function getLiveUrl(seasonId, match, view = 'match', options = {}) {
+    const seasonUrl = getSeasonUrl(seasonId, 'league', options);
+    const slug = getLiveSlug(match);
+    if (!slug) {
+      if (match?.id || typeof match === 'string') seasonUrl.searchParams.set('live', match?.id || match);
+      if (view === 'overview') seasonUrl.searchParams.set('liveView', 'overview');
+      return seasonUrl;
+    }
+    const suffix = view === 'overview' ? 'live/' : `live/${encodeURIComponent(slug)}/`;
+    const url = new URL(suffix, seasonUrl);
+    url.search = seasonUrl.search;
+    url.hash = seasonUrl.hash;
+    url.searchParams.delete('live');
+    url.searchParams.delete('liveView');
+    return url;
+  }
+
+  function normalizeCurrentLiveUrl(seasonId, matches = []) {
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get('live');
+    if (!requested || params.has('partie')) return false;
+    const match = matches.find(item => item.id === requested);
+    if (!match || !getLiveSlug(match)) return false;
+    const view = params.get('liveView') === 'overview' ? 'overview' : 'match';
+    const url = getLiveUrl(seasonId, match, view, { preserveSearch: true, preserveHash: true });
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    return true;
+  }
+
   function normalizeCurrentUrl(area = 'league') {
     const requested = new URLSearchParams(window.location.search).get('saison');
     if (!requested) return false;
@@ -119,9 +177,14 @@
     getMatchIdFromPath,
     getMatchSlug,
     getMatchUrl,
+    getLiveRouteFromPath,
+    getLiveSlug,
+    getLiveUrl,
+    getRequestedLiveRoute,
     getSeasonIdFromPath,
     getSeasonUrl,
     normalizeCurrentMatchUrl,
+    normalizeCurrentLiveUrl,
     normalizeCurrentUrl,
     normalizeSeasonId
   });

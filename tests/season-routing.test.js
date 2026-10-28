@@ -72,16 +72,49 @@ test('legacy match query links are normalized after the season matches are avail
   assert.equal(history.replaced, '/Padel-Liga/wi26/partie/7/');
 });
 
+test('live overview and individual Final Four routes use short paths', () => {
+  const { routing } = loadRouting(
+    'https://lw-ux.github.io/Padel-Liga/so26/live/',
+    'https://lw-ux.github.io/Padel-Liga/'
+  );
+  const matches = [
+    { id: 'season-2026-partie-28', stage: 'final-four', format: 'single-set' },
+    { id: 'season-2026-partie-29', stage: 'final-four', format: 'single-set' }
+  ];
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(routing.getRequestedLiveRoute(matches))),
+    { matchId: 'season-2026-partie-28', view: 'overview' }
+  );
+  assert.equal(routing.getLiveUrl('2026-sommer', matches[0], 'overview').href, 'https://lw-ux.github.io/Padel-Liga/so26/live/');
+  assert.equal(routing.getLiveUrl('2026-sommer', matches[0]).href, 'https://lw-ux.github.io/Padel-Liga/so26/live/28/');
+});
+
+test('legacy live overview queries normalize to the short live route', () => {
+  const { routing, history } = loadRouting(
+    'https://lw-ux.github.io/Padel-Liga/so26/?live=season-2026-partie-28&liveView=overview',
+    'https://lw-ux.github.io/Padel-Liga/'
+  );
+  const matches = [{ id: 'season-2026-partie-28', stage: 'final-four', format: 'single-set' }];
+  assert.equal(routing.normalizeCurrentLiveUrl('2026-sommer', matches), true);
+  assert.equal(history.replaced, '/Padel-Liga/so26/live/');
+});
+
 test('deployment generation creates direct entry pages with the correct base paths', () => {
   const output = fs.mkdtempSync(path.join(os.tmpdir(), 'padel-season-routes-'));
   execFileSync(process.execPath, [path.join(root, 'tools/generate-season-routes.mjs'), output], { cwd: root });
   const league = fs.readFileSync(path.join(output, 'wi26', 'index.html'), 'utf8');
   const match = fs.readFileSync(path.join(output, 'wi26', 'partie', '7', 'index.html'), 'utf8');
+  const liveOverview = fs.readFileSync(path.join(output, 'so26', 'live', 'index.html'), 'utf8');
+  const liveMatch = fs.readFileSync(path.join(output, 'so26', 'live', '28', 'index.html'), 'utf8');
   const tipping = fs.readFileSync(path.join(output, 'tipp', 'wi26', 'index.html'), 'utf8');
   assert.match(league, /<base href="\.\.\/">/);
   assert.match(tipping, /<base href="\.\.\/">/);
   assert.match(match, /<base href="\.\.\/\.\.\/\.\.\/">/);
+  assert.match(liveOverview, /<base href="\.\.\/\.\.\/">/);
+  assert.match(liveMatch, /<base href="\.\.\/\.\.\/\.\.\/">/);
   assert.match(league, /PADEL<em>LIGA<\/em>/);
   assert.match(match, /PADEL<em>LIGA<\/em>/);
+  assert.match(liveOverview, /PADEL<em>LIGA<\/em>/);
+  assert.match(liveMatch, /PADEL<em>LIGA<\/em>/);
   assert.match(tipping, /PADEL<em>TIPP<\/em>/);
 });

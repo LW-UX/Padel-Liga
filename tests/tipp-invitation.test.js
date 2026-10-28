@@ -113,4 +113,8 @@ test('runtime behavior persists only after interaction and respects eligibility'
   const shortDetail = runInvitation({ pathname: '/Padel-Liga/wi26/partie/1/' });
   shortDetail.fire();
   assert.equal(shortDetail.dialog.showCount, 0);
+
+  const shortLiveOverview = runInvitation({ pathname: '/Padel-Liga/so26/live/' });
+  shortLiveOverview.fire();
+  assert.equal(shortLiveOverview.dialog.showCount, 0);
 });
