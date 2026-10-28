@@ -8,6 +8,10 @@ const migration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20261026140000_schedule_training_sessions.sql'),
   'utf8'
 );
+const participantEditMigration = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20261028160000_edit_scheduled_training_participants_on_result.sql'),
+  'utf8'
+);
 const trainingScopeMigration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20261026150000_scope_training_feed_to_test_season.sql'),
   'utf8'
@@ -37,6 +41,18 @@ test('account workflow switches between scheduling and result entry by time', ()
   assert.match(account, /isScheduledTrainingDue\(task\)/);
   assert.match(account, /data-training-scheduled=/);
   assert.match(account, /data-training-result-fields/);
+});
+
+test('due training results allow the actual participants to replace scheduled players', () => {
+  assert.match(participantEditMigration, /create or replace function public\.submit_scheduled_training_result/);
+  assert.doesNotMatch(participantEditMigration, /Teilnehmer eines terminierten Trainings können beim Ergebnis nicht geändert werden/);
+  assert.match(participantEditMigration, /select public\.create_training_session\([\s\S]*p_player_ids/);
+
+  const taskRenderer = account.match(/function renderScheduledTrainingTaskCard\(task, groupKey\) \{[\s\S]*?\n  \}/)?.[0] || '';
+  assert.match(taskRenderer, /\$\{due \? '' : renderTrainingParticipants\(task\)\}/);
+
+  const formMode = account.match(/function syncTrainingFormMode\(form\) \{[\s\S]*?\n  \}/)?.[0] || '';
+  assert.doesNotMatch(formMode, /button\.disabled|input\.readOnly/);
 });
 
 test('home feed shows one non-detail training card with profile links', () => {

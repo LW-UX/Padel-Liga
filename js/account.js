@@ -720,8 +720,6 @@
           renderTrainingPlayerFields(task.player_ids, task.guest_names, form);
           if (isScheduledTrainingDue(task)) {
             renderTrainingRounds([], form, 1);
-            form.querySelectorAll('[data-training-player-fields] button').forEach(button => { button.disabled = true; });
-            form.querySelectorAll('[data-training-guest-name]').forEach(input => { input.readOnly = true; });
           }
           syncTrainingFormMode(form);
         }
@@ -1090,14 +1088,6 @@
     if (hasCompleteTime && !schedulesFuture && !form.querySelector('[data-training-round]')) {
       renderTrainingRounds([], form, 1);
     }
-    if (form.dataset.trainingScheduled) {
-      form.querySelectorAll('[data-training-player-fields] button').forEach(button => {
-        button.disabled = !schedulesFuture;
-      });
-      form.querySelectorAll('[data-training-guest-name]').forEach(input => {
-        input.readOnly = !schedulesFuture;
-      });
-    }
     form.dataset.trainingMode = schedulesFuture ? 'scheduled' : 'result';
     const submit = form.querySelector('[type="submit"]');
     if (!submit) return;
@@ -1310,7 +1300,7 @@
         <span class="account-task-status${due ? ' is-open' : ''}">${due ? 'Ergebnis eintragen' : 'Terminiert'}</span>
       </div>
       <div class="result-card-timing">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>
-      ${renderTrainingParticipants(task)}
+      ${due ? '' : renderTrainingParticipants(task)}
       ${!due && canManage ? `<div class="account-task-actions">
         <button class="secondary-button" type="button" data-training-schedule-toggle="${escapeHtml(task.session_id)}">Termin ändern</button>
       </div>` : ''}
