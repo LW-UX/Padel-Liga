@@ -1950,7 +1950,7 @@
     .clean-list li::before { content: ""; position: absolute; left: 0; top: 0.62em; width: 5px; height: 5px; border-radius: 50%; background: var(--accent2); }
     .qualification-flow {
       display: grid;
-      grid-template-columns: minmax(58px, 0.72fr) 22px minmax(112px, 1.35fr) 22px minmax(74px, 0.9fr);
+      grid-template-columns: minmax(58px, 0.72fr) 22px minmax(112px, 1.35fr) 22px minmax(90px, 0.9fr);
       align-items: center;
       gap: 8px;
       width: 100%;
@@ -2042,10 +2042,19 @@
     }
     .qualification-flow-final {
       justify-items: center;
+    }
+    .qualification-flow-final-card {
+      display: grid;
+      width: 100%;
+      min-height: 84px;
+      align-content: center;
+      justify-items: center;
+      gap: 6px;
       padding: 10px 6px;
       border: 1px solid var(--border);
       border-radius: 6px;
       background: color-mix(in srgb, var(--surface2) 72%, transparent);
+      box-sizing: border-box;
     }
     .qualification-flow-final-players {
       display: grid;
@@ -2059,7 +2068,7 @@
       border-radius: 50%;
       background: color-mix(in srgb, var(--muted) 22%, transparent);
     }
-    .qualification-flow-final strong {
+    .qualification-flow-final-card strong {
       color: var(--text);
       font-size: var(--text-xs);
       font-weight: 600;
@@ -4581,7 +4590,7 @@
       .stats-grid,
       .info-layout { grid-template-columns: 1fr; }
       .qualification-flow {
-        grid-template-columns: minmax(48px, 0.72fr) 16px minmax(96px, 1.35fr) 16px minmax(66px, 0.9fr);
+        grid-template-columns: minmax(48px, 0.72fr) 16px minmax(92px, 1.35fr) 16px minmax(82px, 0.9fr);
         gap: 5px;
       }
       .home-article-preview {

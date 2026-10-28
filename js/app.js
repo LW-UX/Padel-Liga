@@ -4733,11 +4733,13 @@ function renderTop8QualificationFlow() {
     <span class="qualification-flow-arrow" aria-hidden="true"></span>
     <div class="qualification-flow-stage qualification-flow-final" aria-hidden="true">
       <div class="qualification-flow-label">Final Four</div>
-      <div class="qualification-flow-final-players">
-        <span></span><span></span><span></span><span></span>
+      <div class="qualification-flow-final-card">
+        <div class="qualification-flow-final-players">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <strong>4 Spieler</strong>
       </div>
-      <strong>4 Spieler</strong>
-      <small>spielen um den Titel</small>
+      <small>spielen in 3 Partien um den Titel</small>
     </div>
   </figure>`;
 }
