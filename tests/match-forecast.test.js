@@ -55,9 +55,11 @@ test('detail forecast offers all four exact PadelTipp values at the existing tot
   assert.doesNotMatch(choice, /match-forecast-bar|Tipp ändern/);
 
   const result = renderMatchForecast(data, forecast({ userVote: 1, userPrediction: '2:1' }), { session: confirmedSession });
-  assert.match(result, /match-forecast-percentages"><span>75 %<\/span><span>25 %<\/span>/);
+  assert.match(result, /match-forecast-percentage--team-one">75 %<svg class="match-forecast-own-tip-icon"/);
+  assert.match(result, /match-forecast-percentage--team-two">25 %<\/span>/);
+  assert.match(result, /eigener Tipp: Team 1/);
   assert.match(result, /match-forecast-team-one" style="width:37\.5%/);
-  assert.doesNotMatch(result, /Dein Tipp|match-forecast-own/);
+  assert.doesNotMatch(result, /Dein Tipp|match-forecast-own(?:["\s])/);
   assert.match(result, /data-match-forecast-change>Tipp ändern/);
 
   const exactChange = renderMatchForecast(data, forecast({ userVote: 1, userPrediction: '2:1' }), {
@@ -65,7 +67,7 @@ test('detail forecast offers all four exact PadelTipp values at the existing tot
     selectionOpen: true
   });
   assert.match(exactChange, /match-forecast-choice active" data-match-forecast-prediction="2:1"/);
-  assert.doesNotMatch(exactChange, /Dein Tipp|match-forecast-own/);
+  assert.doesNotMatch(exactChange, /Dein Tipp|match-forecast-own(?:["\s])/);
   assert.doesNotMatch(exactChange, /data-match-forecast-change/);
 
   const quickChange = renderMatchForecast(data, forecast({ userVote: 1, userPrediction: '2:0' }), {
@@ -89,7 +91,9 @@ test('guests see a dimmed aggregate with login, while closed and historical resu
     session: confirmedSession
   });
   assert.match(closed, /match-forecast-bar/);
-  assert.doesNotMatch(closed, /Dein Tipp|match-forecast-own|Tipp ändern|match-forecast-choice/);
+  assert.match(closed, /match-forecast-percentage--team-two"><svg class="match-forecast-own-tip-icon"[\s\S]*25 %<\/span>/);
+  assert.match(closed, /eigener Tipp: Team 2/);
+  assert.doesNotMatch(closed, /Dein Tipp|match-forecast-own(?:["\s])|Tipp ändern|match-forecast-choice/);
 
   const analysis = renderMatchForecast(fixture('analysis'), forecast({ mode: 'analysis', open: false }), {});
   assert.match(analysis, /75 %/);
@@ -110,7 +114,8 @@ test('open forecasts stay concealed until the own tip, the tipping deadline or a
 
   const guest = renderMatchForecast(fixture(), forecast(), {});
   assert.match(guest, new RegExp(`match-forecast-team-one" style="width:${value / 2}%`));
-  assert.match(guest, new RegExp(`match-forecast-percentages"><span>${value} %</span><span>${100 - value} %</span>`));
+  assert.match(guest, new RegExp(`match-forecast-percentage--team-one">${value} %</span>[\\s\\S]*match-forecast-percentage--team-two">${100 - value} %</span>`));
+  assert.doesNotMatch(guest, /match-forecast-own-tip-icon|eigener Tipp:/);
 
   const line = app.match(/function renderMatchForecastLine\(match\) \{[\s\S]*?(?=\n\}\n\nfunction renderMatchRow)/)?.[0] || '';
   assert.match(line, /isForecastConcealed/);

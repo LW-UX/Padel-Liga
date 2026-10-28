@@ -95,6 +95,7 @@
     for (const char of String(matchId || '')) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
     return 20 + ((hash >>> 0) % 61);
   }
+  const forecastOwnTipIcon = '<svg class="match-forecast-own-tip-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/></svg>';
   function renderForecastResult(forecast, { lockedAction = '', concealed = false } = {}) {
     const totalVotes = concealed ? 1 : Math.max(0, Number(forecast?.totalVotes) || 0);
     const teamOnePercentage = concealed
@@ -104,12 +105,18 @@
       : 0;
     const teamTwoPercentage = totalVotes ? 100 - teamOnePercentage : 0;
     const hasBothTeamColors = teamOnePercentage > 0 && teamTwoPercentage > 0;
+    const ownTipTeam = ['2:0', '2:1'].includes(forecast?.userPrediction)
+      ? 1
+      : ['1:2', '0:2'].includes(forecast?.userPrediction) ? 2 : null;
     const label = concealed
       ? 'Tipps: Verteilung erst nach eigenem Tipp sichtbar'
-      : `Tipps: Team 1 ${teamOnePercentage} Prozent, Team 2 ${teamTwoPercentage} Prozent`;
+      : `Tipps: Team 1 ${teamOnePercentage} Prozent, Team 2 ${teamTwoPercentage} Prozent${ownTipTeam ? `; eigener Tipp: Team ${ownTipTeam}` : ''}`;
     return `<div class="match-forecast-result-wrap${lockedAction ? ' is-guest-locked' : ''}">
       <div class="match-forecast-result" aria-label="${label}">
-        <div class="match-forecast-percentages"><span>${teamOnePercentage} %</span><span>${teamTwoPercentage} %</span></div>
+        <div class="match-forecast-percentages">
+          <span class="match-forecast-percentage match-forecast-percentage--team-one">${teamOnePercentage} %${ownTipTeam === 1 ? forecastOwnTipIcon : ''}</span>
+          <span class="match-forecast-percentage match-forecast-percentage--team-two">${ownTipTeam === 2 ? forecastOwnTipIcon : ''}${teamTwoPercentage} %</span>
+        </div>
         <div class="match-forecast-bar${totalVotes ? ' has-votes' : ''}${hasBothTeamColors ? ' has-both-team-colors' : ''}">
           <span class="match-forecast-team-one" style="width:${teamOnePercentage / 2}%"></span>
           <span class="match-forecast-team-two" style="width:${teamTwoPercentage / 2}%"></span>

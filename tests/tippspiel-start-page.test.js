@@ -15,6 +15,14 @@ const accountTypeMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261028170000_prediction_leaderboard_account_type.sql'),
   'utf8'
 );
+const achievementMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261028180000_prediction_leaderboard_previous_achievements.sql'),
+  'utf8'
+);
+const achievementLaurel = fs.readFileSync(
+  path.join(root, 'assets', 'icons', 'achievement-laurel.svg'),
+  'utf8'
+);
 
 test('PadelTipp opens on the start page without adding a start menu item', () => {
   assert.match(page, /data-tip-nav="tippstart" aria-label="Zur PadelTipp-Startseite"/);
@@ -66,6 +74,28 @@ test('prediction rankings show the dim account type icon directly after each nam
   assert.match(ligaScript, /homePredictionLeaderboard\.slice\(0, 4\)[\s\S]*renderPredictionAccountTypeIcon\(entry\)/);
   assert.match(style, /\.prediction-account-type-icon \{[\s\S]*color: var\(--dim\);/);
   assert.match(decisions, /„Was ist neu\?“-Dialog verwendeten Padel-Schläger/);
+});
+
+test('prediction rankings show previous league champion and Final Four achievements', () => {
+  assert.match(achievementMigration, /previous_league_achievement text/);
+  assert.match(achievementMigration, /previous_league_season_label text/);
+  assert.match(achievementMigration, /season\.completed_at is not null/);
+  assert.match(achievementMigration, /season\.counts_for_profile/);
+  assert.match(achievementMigration, /season\.visual_theme <> 'cup'/);
+  assert.match(achievementMigration, /bool_or\(achievement\.kind = 'winner'\)[\s\S]*bool_or\(achievement\.kind = 'final_four'\)/);
+  assert.match(script, /function renderPredictionAchievementIcon\(entry\)/);
+  assert.match(script, /kind === 'winner' \? 'Champion' : 'Final Four'/);
+  assert.match(script, /renderPredictionAchievementIcon\(entry\)\}\$\{renderPredictionAccountTypeIcon\(entry\)/);
+  assert.match(ligaScript, /function renderPredictionAchievementIcon\(entry\)/);
+  assert.match(ligaScript, /renderPredictionAchievementIcon\(entry\)\}\$\{renderPredictionAccountTypeIcon\(entry\)/);
+  assert.match(style, /\.prediction-achievement-icon--winner \{ color: var\(--gold\); \}/);
+  assert.match(style, /\.prediction-achievement-icon--final-four \{ color: var\(--silver\); \}/);
+  assert.match(style, /\.prediction-rank-account \{[\s\S]*gap: 2px;/);
+  assert.match(style, /\.prediction-achievement-laurel \{[\s\S]*mask: url\('assets\/icons\/achievement-laurel\.svg'\)/);
+  assert.match(achievementLaurel, /viewBox="0 0 1255\.92 1166\.47"/);
+  assert.match(achievementLaurel, /M427\.94 1121\.56/);
+  assert.match(script, /class="prediction-achievement-laurel"/);
+  assert.match(decisions, /goldenen Pokal[\s\S]*silbernen Lorbeer/);
 });
 
 test('the current PadelPost article reuses the collapsible league-home structure', () => {

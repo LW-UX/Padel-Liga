@@ -86,6 +86,17 @@
     return `<span class="prediction-account-type-icon" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icon}</svg></span>`;
   }
 
+  function renderPredictionAchievementIcon(entry) {
+    const kind = entry?.previous_league_achievement;
+    if (kind !== 'winner' && kind !== 'final_four') return '';
+    const seasonLabel = String(entry.previous_league_season_label || '').trim();
+    const label = `${kind === 'winner' ? 'Champion' : 'Final Four'}${seasonLabel ? ` ${seasonLabel}` : ''}`;
+    const icon = kind === 'winner'
+      ? '<svg viewBox="0 0 28 32" aria-hidden="true" focusable="false"><path d="M8 3h12v5c0 5-2.4 8.5-6 10-3.6-1.5-6-5-6-10V3Z"/><path d="M8 6H4v2c0 4 2 6 5.3 6.7M20 6h4v2c0 4-2 6-5.3 6.7"/><path d="M14 18v6M11 24h6v4M9 28h10"/></svg>'
+      : '<span class="prediction-achievement-laurel" aria-hidden="true"></span>';
+    return `<span class="prediction-achievement-icon prediction-achievement-icon--${kind === 'winner' ? 'winner' : 'final-four'}" role="img" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">${icon}</span>`;
+  }
+
   function getPredictionLocalMatches() {
     if (!state.season) return [];
     return state.season.matches.filter(match =>
@@ -779,7 +790,7 @@
       return `
         <div class="mini-rank-row r${index + 1}${isOwn ? ' viewer-highlight' : ''}${separated}">
           <span class="rank-position">${index + 1}</span>
-          <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}</span></span>
+          <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAchievementIcon(entry)}${renderPredictionAccountTypeIcon(entry)}</span></span>
           <span class="rank-score">${formatCount(entry.points)} Pkt.</span>
         </div>
       `;
@@ -1101,7 +1112,7 @@
     body.innerHTML = state.leaderboard.map((entry, index) => `
       <tr class="ranking-row r${Math.min(index + 1, 4)} ${state.session?.user?.id === entry.user_id ? 'authenticated-player-highlight' : ''}">
         <td class="col-rank rank-position">${index + 1}</td>
-        <td class="col-name"><span class="prediction-rank-account"><span class="pname">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}</span></td>
+        <td class="col-name"><span class="prediction-rank-account"><span class="pname">${escapeHtml(entry.display_name)}</span>${renderPredictionAchievementIcon(entry)}${renderPredictionAccountTypeIcon(entry)}</span></td>
         <td class="col-games">${Number(entry.predictions_count) || 0}</td>
         <td class="col-wins">${Number(entry.exact_count) || 0}</td>
         <td class="col-passive" title="Automatisch gutgeschriebene Punkte aus eigenen Partien">${getLeaderboardPassivePoints(entry)}</td>
