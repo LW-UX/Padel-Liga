@@ -231,7 +231,7 @@ function evaluateAchievementHighlights(achievements) {
 }
 
 test('public player profile is a separate accessible dialog', () => {
-  assert.match(html, /<dialog class="player-profile-dialog" id="player-profile-dialog" aria-labelledby="player-profile-name">/);
+  assert.match(html, /<dialog class="player-profile-dialog" id="player-profile-dialog" aria-labelledby="player-profile-name" data-presentation="modal">/);
   assert.match(html, /<button class="modal-close-button player-profile-close"[^>]*data-player-profile-close/);
   assert.equal((html.match(/<article class="widget player-profile-widget/g) || []).length, 5);
   assert.match(html, /<article class="widget player-profile-widget player-profile-stats-widget">[\s\S]*id="player-profile-stats"/);
@@ -301,6 +301,52 @@ test('public player profile is a separate accessible dialog', () => {
   assert.doesNotMatch(html, /player-profile-cover|player-profile-cover-image/);
   assert.doesNotMatch(app, /cover\.webp|Coverbild von/);
   assert.match(html, /<\/svg>\s*<button class="modal-close-button player-profile-close"[\s\S]*<div class="player-profile-shell">/);
+});
+
+test('wide ranking views host the same player profile as a non-modal side panel', () => {
+  assert.match(html, /class="ranking-profile-layout" id="ranking-profile-layout"/);
+  assert.match(html, /class="ranking-profile-main" id="ranking-profile-main"/);
+  assert.match(html, /class="ranking-profile-host" id="ranking-profile-host"/);
+  assert.match(html, /id="player-profile-modal-host"/);
+  assert.match(html, /id="player-profile-panel-status" role="status" aria-live="polite"/);
+  assert.match(app, /const PLAYER_PROFILE_PANEL_BREAKPOINT = 1280;/);
+  assert.match(app, /const PLAYER_PROFILE_PANEL_RANKING_MIN_WIDTH = 732;/);
+  assert.match(app, /const PLAYER_PROFILE_PANEL_MIN_WIDTH = 460;/);
+  assert.match(app, /const PLAYER_PROFILE_PANEL_MAX_WIDTH = 560;/);
+  assert.match(app, /function hasPlayerProfilePanelSpace\(\)[\s\S]*?layoutViewportWidth - PLAYER_PROFILE_PANEL_OUTER_GUTTER \* 2 >= requiredWidth/);
+  assert.match(app, /dialog\.show\(\)/);
+  assert.match(app, /dialog\.showModal\(\)/);
+  assert.match(app, /presentation === 'panel'[\s\S]*?'\.player-profile-history'[\s\S]*?'\.player-profile-relationships'[\s\S]*?'\.player-profile-participations-panel'/);
+  assert.match(app, /scrollTop: getPlayerProfileShellScrollTop\(\)/);
+  assert.match(app, /function cancelPlayerProfileCloseTransition[\s\S]*?document\.body\.classList\.add\('player-profile-panel-open'\)/);
+  assert.match(app, /id !== 'rangliste' && playerProfilePresentation === 'panel'/);
+  assert.match(app, /closePlayerProfile\(\{ immediate: true, restoreFocus: false \}\)/);
+  assert.match(style, /body\.player-profile-panel-open \.ranking-profile-layout \{[\s\S]*?grid-template-columns: minmax\(732px, 1fr\) var\(--player-profile-panel-width, 460px\);[\s\S]*?gap: 24px;/);
+  assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \.player-profile-stats \{[\s\S]*?repeat\(4, minmax\(0, 1fr\)\)/);
+  assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \.player-profile-match \{[\s\S]*?grid-template-columns: 30px minmax\(0, 1fr\) auto;/);
+  assert.match(style, /tr\.profile-open-highlight td \{[\s\S]*?var\(--accent\)/);
+  assert.match(style, /html\.is-detail-embed body > :not\(dialog\):not\(#player-profile-modal-host\)/);
+});
+
+test('player profile panel requires both the desktop breakpoint and the real split width', () => {
+  const constants = app.match(/const PLAYER_PROFILE_PANEL_BREAKPOINT = 1280;[\s\S]*?const PLAYER_PROFILE_PANEL_OUTER_GUTTER = 16;/)?.[0] || '';
+  const widthFunction = app.match(/function getPlayerProfilePanelWidth[\s\S]*?(?=\nfunction isRankingSectionActive)/)?.[0] || '';
+  const spaceFunction = app.match(/function hasPlayerProfilePanelSpace[\s\S]*?(?=\nfunction shouldUsePlayerProfilePanel)/)?.[0] || '';
+  const context = {
+    window: { innerWidth: 1279 },
+    document: { documentElement: { clientWidth: 1279 } },
+    result: null
+  };
+  vm.createContext(context);
+  vm.runInContext(`${constants}\n${widthFunction}\n${spaceFunction}`, context);
+
+  context.result = vm.runInContext('hasPlayerProfilePanelSpace()', context);
+  assert.equal(context.result, false);
+  context.window.innerWidth = 1280;
+  context.document.documentElement.clientWidth = 1280;
+  assert.equal(vm.runInContext('hasPlayerProfilePanelSpace()', context), true);
+  context.document.documentElement.clientWidth = 1240;
+  assert.equal(vm.runInContext('hasPlayerProfilePanelSpace()', context), false);
 });
 
 test('player profiles sort achievements by value and recency and show at most four badges', () => {
@@ -490,7 +536,7 @@ test('all player names in statistic facts open the public profile', () => {
 
 test('profile relationship leaders require three matches and use win rate', () => {
   assert.match(app, /const parts = \[\s*`\$\{formatProfileMatchCount\(record\.matches\)\} Partien`,\s*`\$\{formatProfileMatchCount\(record\.wins\)\}/);
-  assert.match(app, /\['Angstpartner', leaders\.fearedPartners, 'neg'\]/);
+  assert.match(app, /\['Angstpartner', leaders\.fearedPartners, 'neg'/);
   const leaders = evaluateRelationshipLeaders([
     { outcome: 'win', partnerNames: ['Partner A', 'Partner A'], opponentNames: ['Gegner X'] },
     { outcome: 'win', partnerNames: ['Partner A'], opponentNames: ['Gegner X'] },

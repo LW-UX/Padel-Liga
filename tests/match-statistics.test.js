@@ -307,6 +307,8 @@ test('completed rankings align historical movement in a dedicated column',()=>{
 test('alternating between match and profile reuses one browser history entry',()=>{
  assert.match(source,/prepareProfileOpen[\s\S]*?history\.replaceState\(\{ \.\.\.window\.history\.state, statisticsProfile: playerId/);
  assert.doesNotMatch(source,/prepareProfileOpen[\s\S]*?history\.pushState\(\{ \.\.\.window\.history\.state, statisticsProfile: playerId/);
+ assert.match(source,/profile\?\.querySelector\('\.player-profile-shell'\)\?\.scrollTop \|\| 0/);
+ assert.match(source,/const profileShell = document\.querySelector\('#player-profile-dialog \.player-profile-shell'\)/);
  assert.match(source,/const replacing = Boolean\(getRequestedMatchId\(\)\) \|\| Boolean\(currentRoute\)/);
  assert.match(source,/PadelSeasonRouting\?\.getMatchUrl\(season\?\.id, seasonMatch \|\| matchId/);
 });

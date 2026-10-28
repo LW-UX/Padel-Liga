@@ -1490,6 +1490,7 @@ function updateViewerPicker() {
       <span>${option.short}</span>
     </button>
   `).join('') + '<div class="picker-search-empty" data-viewer-search-empty hidden>Kein Spieler gefunden.</div>';
+  updatePlayerProfileRankingHighlights();
 }
 
 function setAuthenticatedPlayer(playerId = null) {
@@ -2890,6 +2891,10 @@ function cancelPlayerProfileCloseTransition() {
   clearTimeout(playerProfileCloseTimer);
   playerProfileCloseTimer = null;
   document.getElementById('player-profile-dialog')?.classList.remove('is-closing');
+  if (playerProfilePresentation === 'panel') {
+    document.body.classList.add('player-profile-panel-open');
+    updatePlayerProfilePanelMetrics();
+  }
 }
 
 function renderPlayerProfile(profile) {
@@ -3060,7 +3065,7 @@ function closePlayerProfile(options = {}) {
   if (playerProfileCloseTimer) return;
   ++playerProfileRequestId;
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (playerProfilePresentation !== 'panel' || options.immediate || reduceMotion) {
+  if (playerProfilePresentation !== 'panel' || options.immediate || options.fromHistory || reduceMotion) {
     finalizePlayerProfileClose({ restoreFocus: options.restoreFocus !== false });
     return;
   }

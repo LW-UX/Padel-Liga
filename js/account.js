@@ -1675,7 +1675,7 @@
       redirectTo: getAuthRedirectUrl('recovery')
     });
     if (error) setAuthMessage(getFriendlyAuthError(error), 'error');
-    else setAuthMessage('Du erhältst gleich eine E-Mail zum Zurücksetzen deines Passworts. Schau bitte auch in deinem Spam-Ordner nach.', 'success');
+    else setAuthMessage('Du erhältst eine E-Mail zum Zurücksetzen deines Passworts. Durch den Firmen-Mailfilter kann die Zustellung ein paar Minuten dauern. Schau bitte auch in deinem Spam-Ordner nach.', 'success');
   }
 
   function finishPasswordFlow() {

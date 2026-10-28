@@ -95,7 +95,7 @@ test('ranking sort changes reuse the calculator row movement animation', () => {
   const renderer = getFunctionSource('renderRanking', 'getAllTimeLeagueMatches');
 
   assert.match(renderer, /getRankingRowPositions\(body, '\.ranking-row'\)/);
-  assert.match(renderer, /class="ranking-row [^\"]*" data-ranking-entry="\$\{escapeHtml\(p\.id \|\| p\.name\)\}"/);
+  assert.match(renderer, /class="ranking-row [^\"]*" data-ranking-entry="\$\{escapeHtml\(p\.id \|\| p\.name\)\}" data-profile-player-id="\$\{escapeHtml\(p\.id \|\| ''\)\}"/);
   assert.match(renderer, /animateRankingRows\(body, '\.ranking-row', previousPositions\)/);
   assert.match(app, /function animateRankingRows\([^]*prefers-reduced-motion: reduce[^]*translateY\(\$\{deltaY\}px\)[^]*520ms cubic-bezier/);
   assert.match(style, /\.ranking-row \{ transform-origin: center; \}/);
@@ -112,6 +112,7 @@ test('league and final-four notes show the maximum games before sorting', () => 
   assert.match(ranking, /Top \$\{getCompetitionConfig\(\)\.qualificationPlaces\}: Qualifikationsplätze`[^]*gamesNote[^]*'Sortierung:/);
   assert.match(finalFour, /`Spiele: \$\{matches\.length\}  \|  Sortierung: Siege/);
   assert.match(finalFour, /eloPlayer\?\.id === 'ludwig_w'/);
+  assert.match(finalFour, /data-profile-player-id="\$\{escapeHtml\(eloPlayer\?\.id \|\| getPlayerIdByName\(player\.name\) \|\| ''\)\}"/);
   assert.match(finalFour, /ranking-absence-mark[^]*nachgerückt für Marco M\./);
   assert.match(finalFour, /replacementNote\.textContent = '\*Ludwig W\. ist für Marco M\. nachgerückt\.'/);
   assert.match(page, /id="ff-ranking-note">Spiele: 3  \|  Sortierung: Siege/);

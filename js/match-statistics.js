@@ -690,7 +690,8 @@
       window.scrollTo({ top: returnState.scroll, behavior: 'instant' });
       if (returnState.profileOpen) {
         if (!document.getElementById('player-profile-dialog').open || window.PadelLigaCapturePlayerProfile?.().data !== returnState.profileSnapshot?.data) window.PadelLigaRestorePlayerProfile?.(returnState.profileSnapshot);
-        document.getElementById('player-profile-dialog').scrollTop = returnState.profileScroll;
+        const profileShell = document.querySelector('#player-profile-dialog .player-profile-shell');
+        if (profileShell) profileShell.scrollTop = returnState.profileScroll;
       }
       const trigger = returnState.trigger?.isConnected ? returnState.trigger : returnState.triggerMatch
         ? document.querySelector(`#player-profile-dialog [data-match-statistics="${CSS.escape(returnState.triggerMatch)}"]`) : null;
@@ -730,7 +731,7 @@
     }
     if (!active) {
       const profile = document.getElementById('player-profile-dialog');
-      returnState = returnContext || { trigger: trigger || document.activeElement, triggerMatch: (trigger || document.activeElement)?.dataset.matchStatistics, scroll: window.scrollY, profileOpen: profile?.open, profileScroll: profile?.scrollTop, profileSnapshot: window.PadelLigaCapturePlayerProfile?.() };
+      returnState = returnContext || { trigger: trigger || document.activeElement, triggerMatch: (trigger || document.activeElement)?.dataset.matchStatistics, scroll: window.scrollY, profileOpen: profile?.open, profileScroll: profile?.querySelector('.player-profile-shell')?.scrollTop || 0, profileSnapshot: window.PadelLigaCapturePlayerProfile?.() };
       if (returnContext?.profileOpen && (!profile?.open || window.PadelLigaCapturePlayerProfile?.().data !== returnContext.profileSnapshot?.data)) window.PadelLigaRestorePlayerProfile?.(returnContext.profileSnapshot);
     }
     if (!keepSequence) {
