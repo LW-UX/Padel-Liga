@@ -310,18 +310,19 @@ test('wide ranking views host the same player profile as a non-modal side panel'
   assert.match(html, /id="player-profile-modal-host"/);
   assert.match(html, /id="player-profile-panel-status" role="status" aria-live="polite"/);
   assert.match(app, /const PLAYER_PROFILE_PANEL_BREAKPOINT = 1280;/);
-  assert.match(app, /const PLAYER_PROFILE_PANEL_RANKING_MIN_WIDTH = 732;/);
+  assert.match(app, /const PLAYER_PROFILE_PANEL_RANKING_MIN_WIDTH = 600;/);
   assert.match(app, /const PLAYER_PROFILE_PANEL_MIN_WIDTH = 460;/);
   assert.match(app, /const PLAYER_PROFILE_PANEL_MAX_WIDTH = 560;/);
   assert.match(app, /function hasPlayerProfilePanelSpace\(\)[\s\S]*?layoutViewportWidth - PLAYER_PROFILE_PANEL_OUTER_GUTTER \* 2 >= requiredWidth/);
   assert.match(app, /dialog\.show\(\)/);
   assert.match(app, /dialog\.showModal\(\)/);
-  assert.match(app, /presentation === 'panel'[\s\S]*?'\.player-profile-history'[\s\S]*?'\.player-profile-relationships'[\s\S]*?'\.player-profile-participations-panel'/);
+  assert.match(app, /presentation === 'panel'[\s\S]*?'\.player-profile-elo-panel'[\s\S]*?'\.player-profile-participations-panel'[\s\S]*?'\.player-profile-history'[\s\S]*?'\.player-profile-relationships'/);
   assert.match(app, /scrollTop: getPlayerProfileShellScrollTop\(\)/);
   assert.match(app, /function cancelPlayerProfileCloseTransition[\s\S]*?document\.body\.classList\.add\('player-profile-panel-open'\)/);
   assert.match(app, /id !== 'rangliste' && playerProfilePresentation === 'panel'/);
   assert.match(app, /closePlayerProfile\(\{ immediate: true, restoreFocus: false \}\)/);
-  assert.match(style, /body\.player-profile-panel-open \.ranking-profile-layout \{[\s\S]*?grid-template-columns: minmax\(732px, 1fr\) var\(--player-profile-panel-width, 460px\);[\s\S]*?gap: 24px;/);
+  assert.match(style, /body\.player-profile-panel-open \.ranking-profile-layout \{[\s\S]*?grid-template-columns: minmax\(600px, 1fr\) var\(--player-profile-panel-width, 460px\);[\s\S]*?gap: 24px;/);
+  assert.match(style, /body\.player-profile-panel-open #ranking-profile-main table\.rt th,[\s\S]*?padding-left: 8px;[\s\S]*?padding-right: 8px;/);
   assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \.player-profile-stats \{[\s\S]*?repeat\(4, minmax\(0, 1fr\)\)/);
   assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \.player-profile-match \{[\s\S]*?grid-template-columns: 30px minmax\(0, 1fr\) auto;/);
   assert.match(style, /tr\.profile-open-highlight td \{[\s\S]*?var\(--accent\)/);
@@ -345,7 +346,7 @@ test('player profile panel requires both the desktop breakpoint and the real spl
   context.window.innerWidth = 1280;
   context.document.documentElement.clientWidth = 1280;
   assert.equal(vm.runInContext('hasPlayerProfilePanelSpace()', context), true);
-  context.document.documentElement.clientWidth = 1240;
+  context.document.documentElement.clientWidth = 1116;
   assert.equal(vm.runInContext('hasPlayerProfilePanelSpace()', context), false);
 });
 

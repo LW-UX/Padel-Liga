@@ -35,7 +35,11 @@
 
   function getAreaBaseUrl(area) {
     const base = new URL(document.baseURI);
-    const isTipBase = /\/tipp\/$/.test(base.pathname);
+    const isTipBase = /\/tipp\/(?:index\.html)?$/.test(base.pathname);
+    if (base.protocol === 'file:') {
+      if (area === 'tipp') return isTipBase ? base : new URL('tipp/index.html', base);
+      return isTipBase ? new URL('../index.html', base) : base;
+    }
     if (area === 'tipp') return isTipBase ? base : new URL('tipp/', base);
     return isTipBase ? new URL('../', base) : base;
   }
@@ -43,14 +47,15 @@
   function getSeasonUrl(seasonId, area = 'league', options = {}) {
     const season = getSeasonById(seasonId);
     const base = getAreaBaseUrl(area);
-    const url = season?.route
+    const localFile = base.protocol === 'file:';
+    const url = !localFile && season?.route
       ? new URL(`${season.route}/`, base)
       : new URL(base);
 
     if (options.preserveSearch) url.search = new URL(window.location.href).search;
     if (options.preserveHash) url.hash = new URL(window.location.href).hash;
     url.searchParams.delete('saison');
-    if (!season?.route && seasonId) url.searchParams.set('saison', normalizeSeasonId(seasonId));
+    if ((localFile || !season?.route) && seasonId) url.searchParams.set('saison', normalizeSeasonId(seasonId));
     return url;
   }
 
@@ -84,7 +89,7 @@
   function getMatchUrl(seasonId, match, options = {}) {
     const seasonUrl = getSeasonUrl(seasonId, 'league', options);
     const slug = getMatchSlug(match);
-    if (!slug) {
+    if (seasonUrl.protocol === 'file:' || !slug) {
       if (match?.id || typeof match === 'string') seasonUrl.searchParams.set('partie', match?.id || match);
       return seasonUrl;
     }
@@ -136,7 +141,7 @@
   function getLiveUrl(seasonId, match, view = 'match', options = {}) {
     const seasonUrl = getSeasonUrl(seasonId, 'league', options);
     const slug = getLiveSlug(match);
-    if (!slug) {
+    if (seasonUrl.protocol === 'file:' || !slug) {
       if (match?.id || typeof match === 'string') seasonUrl.searchParams.set('live', match?.id || match);
       if (view === 'overview') seasonUrl.searchParams.set('liveView', 'overview');
       return seasonUrl;

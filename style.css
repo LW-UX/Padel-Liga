@@ -1773,7 +1773,7 @@
       padding-left: 0;
     }
     body.player-profile-panel-open .ranking-profile-layout {
-      grid-template-columns: minmax(732px, 1fr) var(--player-profile-panel-width, 460px);
+      grid-template-columns: minmax(600px, 1fr) var(--player-profile-panel-width, 460px);
       gap: 24px;
     }
     body.player-profile-panel-open .ranking-profile-host,
@@ -2846,6 +2846,11 @@
     table.ranking-table td {
       padding-left: 20px;
       padding-right: 20px;
+    }
+    body.player-profile-panel-open #ranking-profile-main table.rt th,
+    body.player-profile-panel-open #ranking-profile-main table.rt td {
+      padding-left: 8px;
+      padding-right: 8px;
     }
     table.rt th.col-rank {padding-left: 20px;}
     table.rt tr:last-child td { border-bottom: none; }

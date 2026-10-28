@@ -35,6 +35,42 @@ test('short paths select their season and produce league and tipping URLs', () =
   assert.equal(routing.getSeasonUrl('2027-cup', 'tipp').href, 'https://lw-ux.github.io/Padel-Liga/tipp/cup27/');
 });
 
+test('local file navigation keeps using real index files with query parameters', () => {
+  const { routing } = loadRouting(
+    'file:///Users/example/Padel-Liga/index.html',
+    'file:///Users/example/Padel-Liga/index.html'
+  );
+  const match = { id: 'winter-2026-partie-7', stage: 'league' };
+  const liveMatch = { id: 'season-2026-partie-28', stage: 'final-four', format: 'single-set' };
+  assert.equal(
+    routing.getSeasonUrl('2026-winter', 'league').href,
+    'file:///Users/example/Padel-Liga/index.html?saison=2026-winter'
+  );
+  assert.equal(
+    routing.getSeasonUrl('2026-winter', 'tipp').href,
+    'file:///Users/example/Padel-Liga/tipp/index.html?saison=2026-winter'
+  );
+  assert.equal(
+    routing.getMatchUrl('2026-winter', match).href,
+    'file:///Users/example/Padel-Liga/index.html?saison=2026-winter&partie=winter-2026-partie-7'
+  );
+  assert.equal(
+    routing.getLiveUrl('2026-sommer', liveMatch, 'overview').href,
+    'file:///Users/example/Padel-Liga/index.html?saison=2026-sommer&live=season-2026-partie-28&liveView=overview'
+  );
+});
+
+test('local PadelTipp links return to the root index file', () => {
+  const { routing } = loadRouting(
+    'file:///Users/example/Padel-Liga/tipp/index.html?saison=2026-winter',
+    'file:///Users/example/Padel-Liga/tipp/index.html'
+  );
+  assert.equal(
+    routing.getSeasonUrl('2026-sommer', 'league').href,
+    'file:///Users/example/Padel-Liga/index.html?saison=2026-sommer'
+  );
+});
+
 test('short match paths resolve the season and the underlying stable match id', () => {
   const { routing } = loadRouting(
     'https://lw-ux.github.io/Padel-Liga/wi26/partie/7/',

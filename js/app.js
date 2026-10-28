@@ -53,7 +53,7 @@ let statisticsPlayerFilters = new Map();
 const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;
 const PLAYER_PROFILE_ACHIEVEMENT_LIMIT = 4;
 const PLAYER_PROFILE_PANEL_BREAKPOINT = 1280;
-const PLAYER_PROFILE_PANEL_RANKING_MIN_WIDTH = 732;
+const PLAYER_PROFILE_PANEL_RANKING_MIN_WIDTH = 600;
 const PLAYER_PROFILE_PANEL_MIN_WIDTH = 460;
 const PLAYER_PROFILE_PANEL_MAX_WIDTH = 560;
 const PLAYER_PROFILE_PANEL_GAP = 24;
@@ -2792,9 +2792,9 @@ function arrangePlayerProfileContent(presentation = playerProfilePresentation) {
     ? [
         '.player-profile-hero-block',
         '.player-profile-elo-panel',
+        '.player-profile-participations-panel',
         '.player-profile-history',
-        '.player-profile-relationships',
-        '.player-profile-participations-panel'
+        '.player-profile-relationships'
       ]
     : [
         '.player-profile-hero-block',
