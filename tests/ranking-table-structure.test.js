@@ -116,3 +116,14 @@ test('league and final-four notes show the maximum games before sorting', () => 
   assert.match(finalFour, /replacementNote\.textContent = '\*Ludwig W\. ist für Marco M\. nachgerückt\.'/);
   assert.match(page, /id="ff-ranking-note">Spiele: 3  \|  Sortierung: Siege/);
 });
+
+test('the regular season ranking shows previous league achievements directly after player names', () => {
+  const ranking = getFunctionSource('renderRanking', 'getAllTimeLeagueMatches');
+
+  assert.match(app, /function getPreviousCompletedLeagueSeason\(seasonReference = selectedSeason\)/);
+  assert.match(app, /\.from\('player_achievements'\)[^]*\.in\('kind', \['winner', 'final_four'\]\)/);
+  assert.match(app, /achievement\.kind === 'winner'[^]*achievements\.set\(achievement\.player_id/);
+  assert.match(app, /function renderLeagueRankingAchievementIcon\(player\)/);
+  assert.match(ranking, /renderPlayerProfileLink\(p, 'pname', rankingPlayerLabel\)\}\$\{renderLeagueRankingAchievementIcon\(p\)\}/);
+  assert.match(style, /\.ranking-player-achievement \{ margin-left: 2px; \}/);
+});
