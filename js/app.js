@@ -1,6 +1,12 @@
 // ── VIEWER ────────────────────────────────────────────────────────
 const VIEWER_STORAGE_KEY_PREFIX = 'padel-liga-viewer';
 const APP_HINT_DISMISSED_SESSION_KEY = 'padel-liga-app-hint-dismissed';
+const LEGACY_DATABASE_SEASON_IDS = Object.freeze({
+  '2026-sommer': '2026',
+  '2026-winter': 'winter-2026',
+  '2027-cup': 'cup-2027',
+  '2026-test': 'test-2026'
+});
 let PADEL_DATA = null;
 let selectedSeason = null;
 let selectedViewerId = 'sb';
@@ -17,6 +23,10 @@ let activeCalculatorMatchId = null;
 let calculatorAutoTip = false;
 let ownPredictionMatchIds = new Set();
 let ownPredictionRequest = 0;
+let homePredictionLeaderboard = [];
+let homePredictionLeaderboardReady = false;
+let homePredictionLeaderboardError = '';
+let homePredictionLeaderboardRequest = 0;
 let publicTrainingFeed = { upcoming: [], recent: [] };
 let activeSeasonRefreshPromise = null;
 let seasonRefreshRequested = false;
@@ -296,6 +306,22 @@ async function loadDatabaseMatchForecasts(seasonReference) {
     return [];
   }
   return Array.isArray(data) ? data : [];
+}
+
+async function loadDatabasePredictionLeaderboard(seasonReference) {
+  const client = getSupabaseClient();
+  if (!client) throw new Error('Supabase ist nicht konfiguriert.');
+  const seasonId = seasonReference?.databaseId || seasonReference?.id;
+  if (!seasonId) return [];
+  const { data, error } = await client.rpc('get_prediction_leaderboard', { p_season_id: seasonId });
+  if (error) throw error;
+  if (Array.isArray(data) && data.length) return data;
+
+  const legacySeasonId = LEGACY_DATABASE_SEASON_IDS[seasonId];
+  if (!legacySeasonId) return [];
+  const fallback = await client.rpc('get_prediction_leaderboard', { p_season_id: legacySeasonId });
+  if (fallback.error) throw fallback.error;
+  return Array.isArray(fallback.data) ? fallback.data : [];
 }
 
 function isTestTrainingFeedItem(training) {
@@ -1014,6 +1040,10 @@ function applySeasonMetadata() {
   const seasonMenu = document.getElementById('season-menu');
   const tippLink = document.getElementById('tipp-link');
   if (tippLink) tippLink.href = `tipp/?saison=${encodeURIComponent(selectedSeason.id)}`;
+  const homePredictionRankingLink = document.getElementById('home-prediction-ranking-link');
+  if (homePredictionRankingLink) {
+    homePredictionRankingLink.href = `tipp/?saison=${encodeURIComponent(selectedSeason.id)}#tippuebersicht`;
+  }
   window.dispatchEvent(new CustomEvent('padel:season-ready', {
     detail: {
       predictionsEnabled: getCompetitionConfig().predictionsEnabled,
@@ -1116,7 +1146,10 @@ async function refreshActiveSeasonView() {
       updateViewerPicker();
       invalidateSections();
       renderActiveSection();
-      await loadActiveSeasonForecasts();
+      await Promise.all([
+        loadActiveSeasonForecasts(),
+        refreshHomePredictionLeaderboard()
+      ]);
     }
   })().catch(error => {
     console.error('Die Saisonansicht konnte nach dem Ergebnis nicht aktualisiert werden:', error);
@@ -4744,6 +4777,51 @@ function renderTop8QualificationFlow() {
   </figure>`;
 }
 
+function renderHomePredictionLeaderboard() {
+  const target = document.getElementById('home-prediction-ranking');
+  if (!target || !homePredictionLeaderboardReady) return;
+  target.classList.remove('loading-skeleton', 'skeleton-ranking');
+  target.removeAttribute('aria-hidden');
+  if (homePredictionLeaderboardError) {
+    target.innerHTML = '<div class="empty-state">Die Tipprangliste kann gerade nicht geladen werden.</div>';
+    return;
+  }
+  if (!homePredictionLeaderboard.length) {
+    target.innerHTML = `<div class="empty-state">${PADEL_DATA?.completedAt
+      ? 'In dieser Saison wurden keine Tipps abgegeben.'
+      : 'Noch keine Tippwertung vorhanden.'}</div>`;
+    return;
+  }
+  target.innerHTML = homePredictionLeaderboard.slice(0, 4).map((entry, index) => `
+    <div class="mini-rank-row r${index + 1}">
+      <span class="rank-position">${index + 1}</span>
+      <span class="mini-rank-name">${escapeHtml(entry.display_name)}</span>
+      <span class="rank-score">${Number(entry.points) || 0} Pkt.</span>
+    </div>
+  `).join('');
+}
+
+async function refreshHomePredictionLeaderboard() {
+  if (!selectedSeason?.id || isCupSeason()) return;
+  const requestId = ++homePredictionLeaderboardRequest;
+  const requestedSeasonId = selectedSeason.id;
+  try {
+    const leaderboard = await loadDatabasePredictionLeaderboard(selectedSeason);
+    if (requestId !== homePredictionLeaderboardRequest || selectedSeason?.id !== requestedSeasonId) return;
+    homePredictionLeaderboard = leaderboard;
+    homePredictionLeaderboardError = '';
+  } catch (error) {
+    if (requestId !== homePredictionLeaderboardRequest || selectedSeason?.id !== requestedSeasonId) return;
+    homePredictionLeaderboard = [];
+    homePredictionLeaderboardError = error.message || 'Unbekannter Fehler';
+    console.warn('Tipprangliste für die Startseite konnte nicht geladen werden:', error);
+  } finally {
+    if (requestId !== homePredictionLeaderboardRequest || selectedSeason?.id !== requestedSeasonId) return;
+    homePredictionLeaderboardReady = true;
+    renderHomePredictionLeaderboard();
+  }
+}
+
 function renderHome() {
   ['home-short-info', 'home-ranking', 'home-next-matches', 'home-recent-matches'].forEach(id => {
     const target = document.getElementById(id);
@@ -8013,6 +8091,7 @@ async function initApp() {
   });
 
   finishInitialLoading();
+  void refreshHomePredictionLeaderboard();
   if (isDetailEmbed) initDetailEmbed();
 
   const url = new URL(window.location.href);

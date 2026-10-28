@@ -255,11 +255,15 @@
       if (!selected) throw new Error('Keine Saison vorhanden.');
       renderSeasonPicker(selected);
       bindNavigation();
+      const requestedSection = window.location.hash.slice(1);
+      if (['tippstart', 'tippuebersicht', 'tippen', 'tippinfos'].includes(requestedSection)) {
+        showSection(requestedSection);
+      }
       window.PADEL_SEASON = null;
       const accountReady = window.PadelKonto.init();
       await Promise.all([
         loadScript(`../${selected.file}`),
-        loadScript('../js/tippspiel.js?v=2026-10-28-padel-liga-champion-wording')
+        loadScript('../js/tippspiel.js?v=2026-10-28-tip-home-columns')
       ]);
       const season = hydrateSeason(window.PADEL_SEASON);
       document.querySelectorAll('[data-season-label]').forEach(node => { node.textContent = season.label; });

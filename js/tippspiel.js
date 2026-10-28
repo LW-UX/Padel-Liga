@@ -963,8 +963,8 @@
     const latest = state.session?.user ? renderLatestEvaluation() : renderGuestCommunity();
     const balance = state.session?.user ? renderSeasonBalance(entry) : '';
     const article = renderOverviewArticle();
-    const leftColumn = state.session?.user ? `${action}${stand}${balance}${article}` : `${stand}${action}${article}`;
-    const rightColumn = state.session?.user ? `${leaders}${latest}` : `${latest}${leaders}`;
+    const leftColumn = state.session?.user ? `${action}${stand}${article}` : `${stand}${action}${article}`;
+    const rightColumn = state.session?.user ? `${latest}${balance}${leaders}` : `${latest}${leaders}`;
     target.innerHTML = `
       <div class="prediction-overview-grid${state.session?.user ? '' : ' is-guest'}">
         <div class="prediction-overview-column prediction-overview-column--left">${leftColumn}</div>

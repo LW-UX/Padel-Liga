@@ -1173,6 +1173,10 @@
       gap: 7px;
     }
     .prediction-passive-points-help { transform: translateY(-0.08em); }
+    .prediction-ranking-passive-help { justify-content: flex-end; }
+    @media (min-width: 769px) {
+      .tip-page #tippuebersicht .ranking-wrap { overflow: visible; }
+    }
     .prediction-overview-action {
       display: flex;
       flex-direction: column;
@@ -5276,10 +5280,10 @@
       .prediction-overview-column { display: contents; }
       .prediction-overview-action { order: 1; }
       .prediction-overview-stand { order: 2; }
-      .prediction-overview-balance { order: 3; }
-      .prediction-overview-article { order: 4; }
-      .prediction-overview-leaders { order: 5; }
-      .prediction-overview-latest { order: 6; }
+      .prediction-overview-article { order: 3; }
+      .prediction-overview-latest { order: 4; }
+      .prediction-overview-balance { order: 5; }
+      .prediction-overview-leaders { order: 6; }
       .prediction-overview-grid.is-guest .prediction-overview-stand { order: 1; }
       .prediction-overview-grid.is-guest .prediction-overview-action { order: 2; }
       .prediction-overview-grid.is-guest .prediction-overview-community { order: 3; }
@@ -5344,6 +5348,19 @@
     .global-action--mobile-only { display: none; }
     .global-action-label,
     .auth-button.is-authenticated .auth-button-label { display: none; }
+    @media (min-width: 769px) {
+      .header-icon-link#tipp-link {
+        gap: 8px;
+        width: auto;
+        border-radius: 999px;
+        padding: 0 0.85rem;
+        font-family: var(--font-body);
+        font-size: var(--text-sm);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .header-icon-link#tipp-link .global-action-label { display: inline; }
+    }
 
     @media (max-width: 768px) {
       main { padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }

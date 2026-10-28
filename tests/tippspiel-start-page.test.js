@@ -6,6 +6,9 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const page = fs.readFileSync(path.join(root, 'tipp', 'index.html'), 'utf8');
 const script = fs.readFileSync(path.join(root, 'js', 'tippspiel.js'), 'utf8');
+const pageScript = fs.readFileSync(path.join(root, 'js', 'tipp-page.js'), 'utf8');
+const ligaPage = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const ligaScript = fs.readFileSync(path.join(root, 'js', 'app.js'), 'utf8');
 const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 const decisions = fs.readFileSync(path.join(root, 'docs', 'project-decisions', 'tipping.md'), 'utf8');
 
@@ -32,6 +35,18 @@ test('the start page stays a summary instead of duplicating match cards', () => 
   assert.match(overviewSource, /renderOverviewArticle/);
   assert.match(overviewSource, /renderOverviewRankRows/);
   assert.doesNotMatch(overviewSource, /prediction-match-card|renderMatch\(/);
+});
+
+test('league home shows a four-entry prediction ranking below recent matches', () => {
+  assert.match(ligaPage, /Letzte Partien[\s\S]*Top 4 · Tipprangliste[\s\S]*id="home-prediction-ranking"/);
+  assert.match(ligaPage, /id="home-prediction-ranking-link"[^>]*href="tipp\/#tippuebersicht"[^>]*>Zur Tipprangliste<\/a>/);
+  assert.match(ligaScript, /get_prediction_leaderboard/);
+  assert.match(ligaScript, /homePredictionLeaderboard\.slice\(0, 4\)/);
+  assert.match(ligaScript, /entry\.display_name/);
+  assert.match(ligaScript, /Number\(entry\.points\) \|\| 0/);
+  assert.match(ligaScript, /tipp\/\?saison=\$\{encodeURIComponent\(selectedSeason\.id\)\}#tippuebersicht/);
+  assert.match(pageScript, /\['tippstart', 'tippuebersicht', 'tippen', 'tippinfos'\]\.includes\(requestedSection\)/);
+  assert.match(decisions, /direkt unter „Letzte Partien“ eine Top-4-Kurzrangliste/);
 });
 
 test('the current PadelPost article reuses the collapsible league-home structure', () => {
@@ -98,16 +113,15 @@ test('personal and guest dashboard states remain distinct', () => {
 });
 
 test('dashboard uses independent left and right columns and keeps the start page in swipe order', () => {
-  assert.match(script, /const leftColumn = state\.session\?\.user \? `\$\{action\}\$\{stand\}\$\{balance\}\$\{article\}` : `\$\{stand\}\$\{action\}\$\{article\}`/);
+  assert.match(script, /const leftColumn = state\.session\?\.user \? `\$\{action\}\$\{stand\}\$\{article\}` : `\$\{stand\}\$\{action\}\$\{article\}`/);
   assert.match(script, /prediction-overview-column prediction-overview-column--left">\$\{leftColumn\}/);
-  assert.match(script, /const rightColumn = state\.session\?\.user \? `\$\{leaders\}\$\{latest\}` : `\$\{latest\}\$\{leaders\}`/);
+  assert.match(script, /const rightColumn = state\.session\?\.user \? `\$\{latest\}\$\{balance\}\$\{leaders\}` : `\$\{latest\}\$\{leaders\}`/);
   assert.match(script, /prediction-overview-column prediction-overview-column--right">\$\{rightColumn\}/);
   assert.match(style, /\.prediction-overview-column \{[\s\S]*?display: grid;[\s\S]*?gap: 4rem;/);
   const overviewGridStyle = style.match(/\.prediction-overview-grid \{[^}]*\}/)?.[0] || '';
   assert.doesNotMatch(overviewGridStyle, /grid-template-areas:/);
-  assert.match(style, /\.prediction-overview-action \{ order: 1; \}[\s\S]*\.prediction-overview-stand \{ order: 2; \}[\s\S]*\.prediction-overview-balance \{ order: 3; \}[\s\S]*\.prediction-overview-article \{ order: 4; \}[\s\S]*\.prediction-overview-leaders \{ order: 5; \}[\s\S]*\.prediction-overview-latest \{ order: 6; \}/);
+  assert.match(style, /\.prediction-overview-action \{ order: 1; \}[\s\S]*\.prediction-overview-stand \{ order: 2; \}[\s\S]*\.prediction-overview-article \{ order: 3; \}[\s\S]*\.prediction-overview-latest \{ order: 4; \}[\s\S]*\.prediction-overview-balance \{ order: 5; \}[\s\S]*\.prediction-overview-leaders \{ order: 6; \}/);
   assert.match(style, /\.prediction-overview-grid\.is-guest \.prediction-overview-stand \{ order: 1; \}[\s\S]*\.prediction-overview-grid\.is-guest \.prediction-overview-action \{ order: 2; \}[\s\S]*\.prediction-overview-grid\.is-guest \.prediction-overview-community \{ order: 3; \}[\s\S]*\.prediction-overview-grid\.is-guest \.prediction-overview-leaders \{ order: 4; \}[\s\S]*\.prediction-overview-grid\.is-guest \.prediction-overview-article \{ order: 5; \}/);
-  const pageScript = fs.readFileSync(path.join(root, 'js', 'tipp-page.js'), 'utf8');
   assert.match(pageScript, /const sections = \[\s*'tippstart',/);
   assert.match(decisions, /Startseite steht als nicht eigens beschrifteter erster Bereich davor/);
   assert.match(decisions, /aktuelle veröffentlichte PadelPost-Artikel[\s\S]*„Weiterlesen“ klappt ihn direkt auf der Tippseite vollständig aus/);

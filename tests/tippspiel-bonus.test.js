@@ -166,7 +166,7 @@ test('bonus cards share the regular tipping lists and preserve the requested ord
 test('leaderboard exposes bonus points while exact and passive stay match-only', () => {
   assert.match(migration, /bonus_points bigint/);
   assert.match(migration, /coalesce\(match_totals\.points, 0\) \+ coalesce\(bonus_totals\.bonus_points, 0\)/);
-  assert.match(page, /<th class="col-games">Tipps<\/th>[\s\S]*<th class="col-wins">Exakt<\/th>[\s\S]*<th class="col-passive">Passiv<\/th>[\s\S]*<th class="col-bonus">Bonus<\/th>[\s\S]*<th class="col-points">Punkte<\/th>/);
+  assert.match(page, /<th class="col-games">Tipps<\/th>[\s\S]*<th class="col-wins">Exakt<\/th>[\s\S]*<th class="col-passive">[\s\S]*Passiv[\s\S]*<th class="col-bonus">Bonus<\/th>[\s\S]*<th class="col-points">Gesamt<\/th>/);
   assert.match(tipping, /<td class="col-games">[\s\S]*<td class="col-wins">[\s\S]*<td class="col-passive"[\s\S]*<td class="col-bonus">[\s\S]*<td class="col-points rank-score">/);
   assert.match(page, /<th class="col-bonus">Bonus<\/th>/);
   assert.match(tipping, /<td class="col-bonus">\$\{Number\(entry\.bonus_points\) \|\| 0\}<\/td>/);
