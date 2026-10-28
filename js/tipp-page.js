@@ -232,6 +232,22 @@
     });
   }
 
+  function renderBonusSeasonInfo(season) {
+    const info = document.getElementById('prediction-bonus-season-info');
+    if (!info) return;
+    if (season.id === '2026-sommer') {
+      info.hidden = false;
+      info.textContent = 'Für Sommer 2026 werden die sechs Bonustipps rückblickend anhand der offiziellen Ergebnisse angezeigt. Nachträgliche Abgaben sind nicht möglich.';
+      return;
+    }
+    if (season.id === '2026-winter') {
+      info.hidden = false;
+      info.textContent = 'Die sechs Bonustipps für Winter 2026 können bis Montag, 16. November 2026, 00:00 Uhr abgegeben und geändert werden.';
+      return;
+    }
+    info.hidden = true;
+  }
+
   async function init() {
     try {
       normalizeLegacySeasonUrl();
@@ -247,6 +263,7 @@
       ]);
       const season = hydrateSeason(window.PADEL_SEASON);
       document.querySelectorAll('[data-season-label]').forEach(node => { node.textContent = season.label; });
+      renderBonusSeasonInfo(season);
       if (!window.PadelTippspiel?.init) throw new Error('Das Tippspiel-Modul ist nicht verfügbar.');
       await window.PadelTippspiel.init(season, { accountReady });
     } catch (error) {

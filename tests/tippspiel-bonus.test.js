@@ -12,6 +12,10 @@ const migration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20261027120000_prediction_bonus_questions.sql'),
   'utf8'
 );
+const summerMigration = fs.readFileSync(
+  path.join(root, 'supabase/migrations/20261028130000_summer_2026_prediction_bonus_questions.sql'),
+  'utf8'
+);
 
 function functionSource(name) {
   const match = tipping.match(new RegExp('  function ' + name + '\\([^]*?\\n  }'));
@@ -45,6 +49,16 @@ test('bonus scoring uses the six agreed questions and league-only Elo changes', 
   assert.doesNotMatch(migration, /from public\.player_achievements as achievement/);
   assert.match(migration, /count\(\*\)::integer \* question\.points_per_correct/);
   assert.match(migration, /max_selections, points_per_correct[\s\S]*4::smallint/);
+});
+
+test('summer 2026 exposes completed bonus results without retroactive points', () => {
+  assert.match(summerMigration, /where season\.id = '2026'/);
+  assert.match(summerMigration, /'2026-05-24T22:00:00Z'::timestamptz/);
+  assert.match(summerMigration, /achievement\.kind in \('winner', 'final_four'\)/);
+  assert.match(summerMigration, /semifinal_status\.match_count > 0/);
+  assert.doesNotMatch(summerMigration, /insert into public\.prediction_bonus_selections/);
+  assert.match(page, /id="prediction-bonus-season-info"/);
+  assert.match(fs.readFileSync(path.join(root, 'js/tipp-page.js'), 'utf8'), /Für Sommer 2026 werden die sechs Bonustipps rückblickend/);
 });
 
 test('partial Final Four answers score every hit and the total maximum is 36 points', () => {

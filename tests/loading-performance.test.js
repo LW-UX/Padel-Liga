@@ -181,6 +181,7 @@ test('Padeltipp starts season, module and account together without blocking on a
   const context = vm.createContext({
     window,
     document: {
+      getElementById() { return null; },
       querySelectorAll() { return []; },
       querySelector() { return { innerHTML: '' }; }
     },
@@ -205,7 +206,10 @@ test('Padeltipp starts season, module and account together without blocking on a
       }
     }
   });
-  vm.runInContext(fn(tippingPage, 'init', '  '), context);
+  vm.runInContext([
+    fn(tippingPage, 'renderBonusSeasonInfo', '  '),
+    fn(tippingPage, 'init', '  ')
+  ].join('\n'), context);
   const request = context.init();
   assert.deepEqual(calls, ['account', 'season', 'tippspiel-module']);
   moduleReady.resolve();

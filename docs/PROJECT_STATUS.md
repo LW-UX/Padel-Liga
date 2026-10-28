@@ -34,7 +34,7 @@ Diese Datei enthält nur betriebsrelevanten Gegenwartsstand. Dauerhafte Regeln s
 
 ## Noch ausstehend
 
-- Die sechs saisonweiten Bonustipps für Winter 2026 sind datenbankseitig mit der Migration `20261027120000_prediction_bonus_questions.sql` produktiv aktiviert und anhand der sechs Fragen sowie des Tippschlusses am 16. November 2026 um 00:00 Uhr Europe/Berlin geprüft. Die lokale Oberfläche mit regulären Tippkarten und Bonusspalte muss noch vom Nutzer veröffentlicht werden.
+- Die sechs saisonweiten Bonustipps sind für Winter 2026 und rückblickend für Sommer 2026 produktiv aktiviert. Sommer 2026 wertet den direkten Top-4-Modus über die ursprünglichen Qualifikationsauszeichnungen aus; alle sechs Fragen wurden als gesperrt und aufgelöst zurückgelesen, während mangels historischer Abgaben Auswahlzahl und Bonuspunkte bei null bleiben. Der Firmen-Fragetext lautet in beiden Saisons „Welche Firma gewinnt nach Ø-Punkten je Teilnehmer?“. Die lokale Oberfläche mit regulären Tippkarten, saisonabhängigen Bonustipp-Infos und Bonusspalte muss noch vom Nutzer veröffentlicht werden.
 - Die Saisondatei von Winter 2026 enthält lokal die 20 bestätigten Teilnehmer als Fallback; ihre Veröffentlichung benötigt noch den GitHub-Push des Nutzers.
 - Das interne Spieler-Testkonto „Test Net“ ist lokal mit derselben geschützten Trainingssichtbarkeit wie die bestehenden Testkonten ergänzt. Die Datenbankmigration `20261020190000_add_test_net_account.sql` ist bereits produktiv angewendet; die statische Oberfläche benötigt noch den GitHub-Push des Nutzers.
 - Der Rückweg von PadelTipp zur Liga heißt lokal auf Desktop und Mobil „Zurück zur Liga“; im mobilen FAB steht zusätzlich ein Pfeil nach links davor. Die Veröffentlichung benötigt noch den GitHub-Push des Nutzers.
