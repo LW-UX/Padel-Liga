@@ -1955,7 +1955,7 @@
       gap: clamp(0.35rem, 1.4vw, 0.8rem);
       width: 100%;
       color: var(--muted);
-      font-size: clamp(0.5rem, 1.8vw, var(--text-xs));
+      font-size: var(--text-xs);
       line-height: 1;
       text-align: center;
       white-space: nowrap;
@@ -5537,6 +5537,14 @@
         width: 58px;
         min-width: 58px;
       }
+      #ranking-table.compact .col-games {
+        width: 50px;
+        min-width: 50px;
+      }
+      #ranking-table.compact .col-points {
+        width: 46px;
+        min-width: 46px;
+      }
       #all-time-ranking-table.compact .col-games,
       #all-time-ranking-table.compact .col-points,
       #all-time-ranking-table.compact .col-average-points {
@@ -5544,12 +5552,12 @@
         min-width: 46px;
       }
       #all-time-ranking-table.compact .firma-badge { display: none; }
-      #all-time-ranking-table.compact .th-label-full { display: none; }
-      #all-time-ranking-table.compact .th-label-short { display: inline; }
+      :is(#ranking-table, #all-time-ranking-table).compact .th-label-full { display: none; }
+      :is(#ranking-table, #all-time-ranking-table).compact .th-label-short { display: inline; }
       #all-time-ranking-table.compact th { white-space: nowrap; }
-      .ranking-table.compact .col-diff {
-        width: 40px;
-        min-width: 40px;
+      #ranking-table.compact .col-diff {
+        width: 48px;
+        min-width: 48px;
       }
       .ranking-table.expanded {
         width: max-content;
@@ -6150,6 +6158,16 @@
 
     @media (max-width: 768px) {
       main { padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
+      .site-footer-line {
+        flex-wrap: wrap;
+        row-gap: 0.45rem;
+      }
+      .site-footer-service {
+        flex: 0 0 100%;
+        justify-content: center;
+        border-left: 0;
+        padding-left: 0;
+      }
       .hero-actions:not(:has(.viewer-picker:not([hidden]))) { display: none; }
 
       .context-actions.global-actions {
