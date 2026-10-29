@@ -12,7 +12,7 @@
   }).format(new Date(value)) : '';
   const headerMeta = data => [data?.seasonLabel, headerDate(data?.matchAt)].filter(Boolean).join(' · ');
   const playedOrderLabel = data => Number.isInteger(Number(data?.leaguePlayedOrdinal)) && Number(data.leaguePlayedOrdinal) > 0
-    ? `Als ${Number(data.leaguePlayedOrdinal)}. Partie gespielt`
+    ? `Gespielt als ${Number(data.leaguePlayedOrdinal)}. Partie`
     : '';
   const icon = '<span class="mc-score-details-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4 6h9M4 11h6M4 16h5"></path><circle cx="15.5" cy="14.5" r="3.5"></circle><path d="m18 17 3 3"></path></svg></span>';
   const availability = (match, season, now) => previewWindow.availability(match, season, now);
@@ -535,13 +535,184 @@
   let activeData = null, activeForecast = null, forecastSelectionOpen = false, forecastSubmitting = false, forecastMessage = '';
   let forecastRefreshPromise = null;
   let sequence = [];
+  let presentation = 'modal', presentationPreference = null, panelContextActive = false, embeddedPanelAvailable = false;
+  let lastTrigger = null;
   const routeContexts = new Map();
   // Vorgeladene Nachbarpartien gelten nur, solange die Detailansicht geöffnet bleibt.
   const prefetched = new Map();
   const PREFETCH_MAX_AGE = 2 * 60 * 1000;
   const PREFETCH_DELAY = 300;
+  const PANEL_BREAKPOINT = 1100;
+  const PANEL_LIST_WIDTH = 420;
+  const PANEL_MIN_WIDTH = 600;
+  const PANEL_GAP = 24;
+  const PANEL_OUTER_GUTTER = 16;
+  const MATCH_STATISTICS_PRESENTATION_STORAGE_KEY = 'padel-liga-match-statistics-presentation';
+  const MATCH_STATISTICS_PRESENTATION_STORAGE_TTL = 30 * 24 * 60 * 60 * 1000;
+  const isDetailEmbed = document.documentElement.classList.contains('is-detail-embed');
   const dialog = () => document.getElementById('detail-view-dialog');
   const content = () => document.getElementById('detail-view-body');
+  const panelHost = () => document.getElementById('match-statistics-panel-host');
+  const modalHost = () => document.getElementById('detail-view-modal-host');
+  function postEmbedMessage(message) {
+    if (!isDetailEmbed || window.parent === window) return;
+    const targetOrigin = window.location.protocol === 'file:' ? '*' : window.location.origin;
+    window.parent.postMessage(message, targetOrigin);
+  }
+  function hasNativePanelSpace() {
+    const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+    const requiredWidth = PANEL_LIST_WIDTH + PANEL_GAP + PANEL_MIN_WIDTH;
+    return window.innerWidth >= PANEL_BREAKPOINT
+      && viewportWidth - (PANEL_OUTER_GUTTER * 2) >= requiredWidth;
+  }
+  function canUsePanel() {
+    if (!panelContextActive) return false;
+    if (isDetailEmbed) return embeddedPanelAvailable;
+    const section = document.getElementById('partien');
+    return Boolean(section?.classList.contains('active') && panelHost() && hasNativePanelSpace());
+  }
+  function getStoredMatchStatisticsPresentation() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(MATCH_STATISTICS_PRESENTATION_STORAGE_KEY) || 'null');
+      if (!['panel', 'modal'].includes(stored?.presentation)
+        || !Number.isFinite(stored?.expiresAt)
+        || stored.expiresAt <= Date.now()) {
+        localStorage.removeItem(MATCH_STATISTICS_PRESENTATION_STORAGE_KEY);
+        return null;
+      }
+      return stored.presentation;
+    } catch (error) {
+      try {
+        localStorage.removeItem(MATCH_STATISTICS_PRESENTATION_STORAGE_KEY);
+      } catch (storageError) {
+        // Ignore inaccessible browser storage.
+      }
+      return null;
+    }
+  }
+  function storeMatchStatisticsPresentation(nextPresentation) {
+    if (!['panel', 'modal'].includes(nextPresentation)) return;
+    try {
+      localStorage.setItem(MATCH_STATISTICS_PRESENTATION_STORAGE_KEY, JSON.stringify({
+        presentation: nextPresentation,
+        expiresAt: Date.now() + MATCH_STATISTICS_PRESENTATION_STORAGE_TTL
+      }));
+    } catch (error) {
+      // The toggle still works for the current detail view if browser storage is blocked.
+    }
+  }
+  function shouldUsePanel() {
+    return presentationPreference === 'panel' && canUsePanel();
+  }
+  function updatePanelMetrics() {
+    if (isDetailEmbed || presentation !== 'panel') return;
+    const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+    const requiredWidth = PANEL_LIST_WIDTH + PANEL_GAP + PANEL_MIN_WIDTH;
+    const standardContentLeft = viewportWidth > 1100
+      ? (viewportWidth - 1100) / 2 + PANEL_OUTER_GUTTER
+      : PANEL_OUTER_GUTTER;
+    const latestPossibleLeft = viewportWidth - PANEL_OUTER_GUTTER - requiredWidth;
+    const splitLeft = Math.max(0, Math.min(standardContentLeft, latestPossibleLeft));
+    document.body.style.setProperty('--match-statistics-split-left', `${splitLeft}px`);
+  }
+  function updatePresentationControls() {
+    const toggle = document.getElementById('match-statistics-presentation-toggle');
+    const backControl = document.querySelector('[data-detail-view-back]');
+    const panelAvailable = panelContextActive && canUsePanel();
+    if (toggle) {
+      const target = presentation === 'panel' ? 'modal' : 'panel';
+      const label = target === 'panel'
+        ? 'Partiestatistik als Seitenpanel öffnen'
+        : 'Partiestatistik als Vollbild öffnen';
+      toggle.hidden = !active || !panelAvailable;
+      toggle.dataset.targetPresentation = target;
+      toggle.setAttribute('aria-label', label);
+      toggle.title = label;
+    }
+    if (backControl) backControl.hidden = false;
+  }
+  function updateActiveMatchHighlights() {
+    document.querySelectorAll('#partien [data-match-statistics]').forEach(control => {
+      const selected = Boolean(active) && control.dataset.matchStatistics === active;
+      control.setAttribute('aria-expanded', String(selected && presentation === 'panel'));
+      control.setAttribute('aria-controls', 'detail-view-dialog');
+      control.closest('.mc, .cup-match-card')?.classList.toggle('match-statistics-open-highlight', selected && presentation === 'panel');
+    });
+  }
+  function announcePanel() {
+    const status = document.getElementById('match-statistics-panel-status');
+    if (!status) return;
+    status.textContent = presentation === 'panel' && active
+      ? 'Partievorschau oder Partierückschau als Seitenpanel geöffnet.'
+      : '';
+  }
+  function setPresentation(nextPresentation, { preserveScroll = true, focusToggle = false } = {}) {
+    const target = nextPresentation === 'panel' && canUsePanel() ? 'panel' : 'modal';
+    const targetDialog = dialog();
+    if (!targetDialog) return;
+    const shell = targetDialog.querySelector('.detail-view-shell');
+    const scrollTop = preserveScroll ? shell?.scrollTop || 0 : 0;
+    const wasOpen = targetDialog.open;
+
+    if (!isDetailEmbed && (target !== presentation || !wasOpen)) {
+      if (wasOpen) targetDialog.close();
+      const host = target === 'panel' ? panelHost() : modalHost();
+      if (host && targetDialog.parentElement !== host) host.append(targetDialog);
+    }
+
+    presentation = target;
+    targetDialog.dataset.presentation = target;
+    if (target === 'panel') targetDialog.setAttribute('aria-modal', 'false');
+    else targetDialog.removeAttribute('aria-modal');
+    document.body.classList.toggle('match-statistics-panel-open', target === 'panel' && !isDetailEmbed);
+    if (target === 'panel' && !isDetailEmbed) updatePanelMetrics();
+    else if (!isDetailEmbed) document.body.style.removeProperty('--match-statistics-split-left');
+
+    if (!wasOpen || (!isDetailEmbed && targetDialog.parentElement)) {
+      if (!targetDialog.open) {
+        if (target === 'panel' && !isDetailEmbed) targetDialog.show();
+        else targetDialog.showModal();
+      }
+    }
+    updatePresentationControls();
+    updatePager();
+    updateActiveMatchHighlights();
+    announcePanel();
+    postEmbedMessage({ type: 'padel:detail-presentation', presentation: target, matchId: active });
+    requestAnimationFrame(() => {
+      if (shell) shell.scrollTop = scrollTop;
+      if (focusToggle) document.getElementById('match-statistics-presentation-toggle')?.focus({ preventScroll: true });
+      else if (target === 'panel' && lastTrigger?.isConnected) lastTrigger.focus({ preventScroll: true });
+    });
+  }
+  function reconcilePresentation() {
+    if (!active || dialog()?.dataset.mode !== 'statistics') return;
+    const target = shouldUsePanel() ? 'panel' : 'modal';
+    if (target === presentation) {
+      updatePanelMetrics();
+      updatePresentationControls();
+      updateActiveMatchHighlights();
+      return;
+    }
+    setPresentation(target);
+  }
+  function togglePresentation() {
+    if (!active || !panelContextActive || !canUsePanel()) return;
+    const target = presentation === 'panel' ? 'modal' : 'panel';
+    presentationPreference = target;
+    storeMatchStatisticsPresentation(target);
+    setPresentation(target, { focusToggle: true });
+  }
+  function setEmbeddedPanelAvailability(available) {
+    if (!isDetailEmbed) return;
+    embeddedPanelAvailable = Boolean(available);
+    reconcilePresentation();
+  }
+  function setSequence(nextSequence) {
+    if (!Array.isArray(nextSequence)) return;
+    sequence = [...new Set(nextSequence.filter(Boolean))];
+    updatePager();
+  }
   const getClient = () => {
     const config = window.PADEL_SUPABASE_CONFIG;
     return window.PadelKonto?.getClient?.()
@@ -611,7 +782,7 @@
     if (!pager) return;
     const index = active ? sequence.indexOf(active) : -1;
     const focused = pager.contains(document.activeElement) ? document.activeElement : null;
-    pager.hidden = index === -1 || sequence.length < 2;
+    pager.hidden = presentation === 'panel' || index === -1 || sequence.length < 2;
     pager.querySelector('[data-statistics-step="-1"]').disabled = index <= 0;
     pager.querySelector('[data-statistics-step="1"]').disabled = index === -1 || index >= sequence.length - 1;
     // Am Listenende bleibt der Fokus im Dialog statt mit dem deaktivierten Pfeil zu verschwinden.
@@ -674,6 +845,7 @@
       || new URL(window.location.href).searchParams.get('partie');
   }
   function restore() {
+    const closingReturnState = returnState;
     ++request; active = null; activeData = null; activeForecast = null; currentRoute = null;
     forecastSelectionOpen = false; forecastSubmitting = false; forecastMessage = '';
     sequence = []; prefetched.clear(); updatePager();
@@ -682,20 +854,38 @@
     if (profile?.open) window.PadelLigaClosePlayerProfile?.({ fromHistory: true });
     profileOnTop = false;
     dialog().close(); delete dialog().dataset.mode;
+    const detailModalHost = modalHost();
+    if (!isDetailEmbed && detailModalHost && dialog().parentElement !== detailModalHost) detailModalHost.append(dialog());
+    presentation = 'modal';
+    presentationPreference = null;
+    panelContextActive = false;
+    embeddedPanelAvailable = false;
+    lastTrigger = null;
+    dialog().dataset.presentation = 'modal';
+    dialog().removeAttribute('aria-modal');
+    document.body.classList.remove('match-statistics-panel-open');
+    document.body.style.removeProperty('--match-statistics-split-left');
+    updatePresentationControls();
+    updateActiveMatchHighlights();
+    announcePanel();
     document.getElementById('final-four-view-switcher').hidden = false;
-    document.querySelector('[data-detail-view-back]').setAttribute('aria-label', 'Final Four schließen');
+    const closeControl = document.querySelector('[data-detail-view-back]');
+    closeControl?.setAttribute('aria-label', 'Final Four schließen');
+    if (closeControl) closeControl.title = 'Final Four schließen';
     document.getElementById('detail-view-title').textContent = 'FINAL FOUR';
     setPlayedOrder();
-    if (returnState) {
-      window.scrollTo({ top: returnState.scroll, behavior: 'instant' });
-      if (returnState.profileOpen) {
-        if (!document.getElementById('player-profile-dialog').open || window.PadelLigaCapturePlayerProfile?.().data !== returnState.profileSnapshot?.data) window.PadelLigaRestorePlayerProfile?.(returnState.profileSnapshot);
+    if (closingReturnState) {
+      window.scrollTo({ top: closingReturnState.scroll, behavior: 'instant' });
+      if (closingReturnState.profileOpen) {
+        if (!document.getElementById('player-profile-dialog').open || window.PadelLigaCapturePlayerProfile?.().data !== closingReturnState.profileSnapshot?.data) window.PadelLigaRestorePlayerProfile?.(closingReturnState.profileSnapshot);
         const profileShell = document.querySelector('#player-profile-dialog .player-profile-shell');
-        if (profileShell) profileShell.scrollTop = returnState.profileScroll;
+        if (profileShell) profileShell.scrollTop = closingReturnState.profileScroll;
       }
-      const trigger = returnState.trigger?.isConnected ? returnState.trigger : returnState.triggerMatch
-        ? document.querySelector(`#player-profile-dialog [data-match-statistics="${CSS.escape(returnState.triggerMatch)}"]`) : null;
-      trigger?.focus({ preventScroll: true });
+      const trigger = closingReturnState.trigger?.isConnected ? closingReturnState.trigger : closingReturnState.triggerMatch
+        ? document.querySelector(`#partien [data-match-statistics="${CSS.escape(closingReturnState.triggerMatch)}"], #player-profile-dialog [data-match-statistics="${CSS.escape(closingReturnState.triggerMatch)}"]`) : null;
+      const focusTarget = trigger
+        || document.querySelector('#match-scope-toggle .active, #match-sort-toggle .active, nav [data-section="partien"]');
+      focusTarget?.focus({ preventScroll: true });
       returnState = null;
     }
   }
@@ -715,12 +905,24 @@
     restore(); notice(message);
   }
   const previewPendingMessage = 'Die Partievorschau ist erst näher am Spieltag verfügbar.';
-  async function open(matchId, { updateUrl = true, direct = false, trigger = null, returnContext = null, keepSequence = false, step: stepDirection = 0 } = {}) {
+  async function open(matchId, { updateUrl = true, direct = false, trigger = null, returnContext = null, keepSequence = false, step: stepDirection = 0, sequence: suppliedSequence = null, panelAvailable = null } = {}) {
     if (!matchId) return;
     // Manuell geänderte Partie-Links öffnen keine Vorschau außerhalb ihres Fensters.
     const season = window.PadelLigaGetSeasonData?.();
     const seasonMatch = season?.matches?.find(match => match.id === matchId);
     if (seasonMatch && availability(seasonMatch, season) === 'basic') { rejectUnavailable(previewPendingMessage); return; }
+    const openingFresh = !active;
+    if (openingFresh) {
+      presentationPreference = getStoredMatchStatisticsPresentation();
+      panelContextActive = isDetailEmbed
+        ? Boolean(panelAvailable)
+        : Boolean(!direct && trigger?.closest('#partien') && document.getElementById('partien')?.classList.contains('active'));
+      embeddedPanelAvailable = isDetailEmbed && Boolean(panelAvailable);
+    } else if (isDetailEmbed && panelAvailable !== null) {
+      panelContextActive = true;
+      embeddedPanelAvailable = Boolean(panelAvailable);
+    }
+    lastTrigger = trigger || lastTrigger;
     window.PadelLiveTicker?.close();
     const fromProfileAbove = profileOnTop && trigger?.closest('#player-profile-dialog');
     if (fromProfileAbove) {
@@ -735,7 +937,9 @@
       if (returnContext?.profileOpen && (!profile?.open || window.PadelLigaCapturePlayerProfile?.().data !== returnContext.profileSnapshot?.data)) window.PadelLigaRestorePlayerProfile?.(returnContext.profileSnapshot);
     }
     if (!keepSequence) {
-      sequence = (!active && returnContext?.sequence) || window.PadelLigaGetMatchStatisticsSequence?.(trigger, matchId) || [];
+      sequence = Array.isArray(suppliedSequence)
+        ? [...new Set(suppliedSequence.filter(Boolean))]
+        : (!active && returnContext?.sequence) || window.PadelLigaGetMatchStatisticsSequence?.(trigger, matchId) || [];
       if (returnState) returnState.sequence = sequence;
     }
     active = matchId;
@@ -746,7 +950,9 @@
     forecastMessage = '';
     const token = ++request;
     dialog().dataset.mode = 'statistics';
-    document.querySelector('[data-detail-view-back]').setAttribute('aria-label', 'Partiestatistik schließen');
+    const closeControl = document.querySelector('[data-detail-view-back]');
+    closeControl?.setAttribute('aria-label', 'Partiestatistik schließen');
+    if (closeControl) closeControl.title = 'Partiestatistik schließen';
     document.getElementById('detail-view-title').textContent = 'PARTIESTATISTIK';
     document.getElementById('detail-view-context').textContent = '';
     setPlayedOrder();
@@ -754,10 +960,12 @@
     updatePager();
     const cached = takePrefetched(matchId);
     content().innerHTML = skeleton(); content().setAttribute('aria-busy', 'true');
-    if (!dialog().open) dialog().showModal();
+    setPresentation(shouldUsePanel() ? 'panel' : 'modal', { preserveScroll: false });
     if (stepDirection) window.PadelSwipeGesture?.animateIn(content(), stepDirection);
-    else document.querySelector('[data-detail-view-back]').focus({ preventScroll: true });
+    else if (presentation === 'modal') document.querySelector('[data-detail-view-back]')?.focus({ preventScroll: true });
     dialog().querySelector('.detail-view-shell').scrollTop = 0;
+    updateActiveMatchHighlights();
+    postEmbedMessage({ type: 'padel:detail-active-match', matchId: active });
     if (updateUrl) {
       const replacing = Boolean(getRequestedMatchId()) || Boolean(currentRoute);
       const url = window.PadelSeasonRouting?.getMatchUrl(season?.id, seasonMatch || matchId, {
@@ -855,10 +1063,25 @@
       detail: { forecast: data }
     }));
   }
-  Object.assign(api, { open, close, restore, prepareProfileOpen, closeProfile, refreshForecast: refreshActiveForecast });
+  Object.assign(api, {
+    open,
+    close,
+    restore,
+    prepareProfileOpen,
+    closeProfile,
+    refreshForecast: refreshActiveForecast,
+    reconcilePresentation,
+    setEmbeddedPanelAvailability,
+    setSequence
+  });
   Object.defineProperty(api, 'active', { get: () => active });
+  Object.defineProperty(api, 'presentation', { get: () => presentation });
   window.PadelMatchStatistics = api;
   document.addEventListener('click', event => {
+    if (event.target.closest('[data-match-statistics-presentation-toggle]')) {
+      togglePresentation();
+      return;
+    }
     const forecastChoice = event.target.closest('[data-match-forecast-prediction]');
     if (forecastChoice) {
       void submitQuickPrediction(forecastChoice.dataset.matchForecastPrediction);
@@ -898,9 +1121,15 @@
     if (active && activeData) void refreshActiveForecast();
   });
   document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && active && presentation === 'panel' && !profileOnTop) {
+      if ([...document.querySelectorAll('dialog:modal')].some(other => other !== dialog())) return;
+      event.preventDefault();
+      close();
+      return;
+    }
     if (!active || profileOnTop || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-    if (!dialog()?.open || dialog().dataset.mode !== 'statistics') return;
+    if (!dialog()?.open || dialog().dataset.mode !== 'statistics' || presentation !== 'modal') return;
     // Andere Dialoge oberhalb der Partiestatistik behalten ihre Pfeiltasten.
     if ([...document.querySelectorAll('dialog[open]')].some(other => other !== dialog() && other.id !== 'player-profile-dialog')) return;
     if (event.target.closest?.('input, select, textarea, [contenteditable]')) return;
@@ -908,8 +1137,13 @@
     step(event.key === 'ArrowRight' ? 1 : -1);
   });
   window.PadelSwipeGesture?.attach(dialog()?.querySelector('.detail-view-shell'), {
-    enabled: () => Boolean(active) && !profileOnTop && dialog()?.dataset.mode === 'statistics',
+    enabled: () => Boolean(active) && !profileOnTop && presentation === 'modal' && dialog()?.dataset.mode === 'statistics',
     onSwipe: step
+  });
+  let resizeFrame = 0;
+  window.addEventListener('resize', () => {
+    cancelAnimationFrame(resizeFrame);
+    resizeFrame = requestAnimationFrame(reconcilePresentation);
   });
   window.addEventListener('popstate', async () => {
     const id = getRequestedMatchId();

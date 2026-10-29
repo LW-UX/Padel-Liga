@@ -18,8 +18,23 @@
           <p class="auth-account-email">ludwig.wagner@mail.de</p>
           <div class="auth-message account-auth-message success">Dein Passwort wurde gespeichert.</div>
         </div>
-        <button class="secondary-button" type="button">Ausloggen</button>
+        <div class="account-header-actions">
+          <button class="secondary-button" type="button">Spielerprofil</button>
+          <button class="secondary-button account-settings-button" type="button" aria-expanded="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.86 2.86-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21H9.55v-.09A1.7 1.7 0 0 0 8.5 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.86-2.86.06-.06A1.7 1.7 0 0 0 4.1 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H2V9.55h.09A1.7 1.7 0 0 0 3.7 8.5a1.7 1.7 0 0 0-.34-1.88l-.06-.06L6.16 3.7l.06.06A1.7 1.7 0 0 0 8.1 4.1a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V2h4.05v.09A1.7 1.7 0 0 0 14.6 3.7a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.86 2.86-.06.06A1.7 1.7 0 0 0 19 8.1a1.7 1.7 0 0 0 .6 1 1.7 1.7 0 0 0 1.1.4h.3v4.05h-.09A1.7 1.7 0 0 0 19.4 15Z"/></svg>
+            <span>Einstellungen</span>
+          </button>
+        </div>
       </div>
+      <section class="account-settings">
+        <div class="account-settings-heading"><div><div class="widget-label">Einstellungen</div><h3>E-Mail-Benachrichtigungen</h3></div><p>Du kannst jede automatische Mail einzeln ausschalten.</p></div>
+        <div class="account-setting-list">
+          <label class="account-setting-row"><span><strong>Ergebnis eintragen</strong><small>Erinnerung 5 Stunden nach Spielbeginn, solange noch kein Ergebnis eingetragen wurde.</small></span><input type="checkbox" role="switch" checked></label>
+          <label class="account-setting-row"><span><strong>Ergebnis bestätigen</strong><small>Erinnerung 4 Stunden nach einem offenen Ergebnisvorschlag des anderen Teams.</small></span><input type="checkbox" role="switch" checked></label>
+          <label class="account-setting-row"><span><strong>Tipp abgeben</strong><small>Erinnerung 24 Stunden vor einer tippbaren Partie, wenn dein Tipp noch fehlt.</small></span><input type="checkbox" role="switch" checked></label>
+        </div>
+        <div class="account-settings-actions"><button class="secondary-button" type="button">Passwort ändern</button><button class="secondary-button" type="button">Ausloggen</button></div>
+      </section>
       <div class="account-player-area">
         <section class="account-section">
           <div class="account-section-heading">

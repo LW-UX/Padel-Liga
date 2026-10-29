@@ -260,8 +260,93 @@
     }
     .account-header > div { min-width: 0; }
     .account-header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+    .account-settings-button { display: inline-flex; align-items: center; gap: 0.45rem; }
+    .account-settings-button svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.55;
+    }
     .account-header h2 { margin-bottom: 0.1rem; }
     .auth-account-email { color: var(--dim); font-size: 0.88rem; margin: 0; text-wrap: nowrap; }
+    .account-settings {
+      display: grid;
+      gap: 18px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      margin-bottom: 1.35rem;
+      padding: 1rem;
+    }
+    .account-settings[hidden] { display: none; }
+    .account-settings-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .account-settings-heading h3 {
+      margin: 0.2rem 0 0;
+      font-family: var(--font-heading);
+      font-size: 1.35rem;
+      font-weight: 400;
+      letter-spacing: 0.03em;
+    }
+    .account-settings-heading p {
+      max-width: 28ch;
+      margin: 0;
+      color: var(--dim);
+      font-size: var(--text-xs);
+      line-height: 1.45;
+      text-align: right;
+    }
+    .account-setting-list { display: grid; }
+    .account-setting-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      border-top: 1px solid var(--border);
+      cursor: pointer;
+      padding: 0.85rem 0;
+    }
+    .account-setting-row:last-child { border-bottom: 1px solid var(--border); }
+    .account-setting-row > span { display: grid; gap: 3px; min-width: 0; }
+    .account-setting-row strong { color: var(--text); font-size: var(--text-sm); }
+    .account-setting-row small { color: var(--dim); font-size: var(--text-xs); line-height: 1.4; }
+    .account-setting-row input {
+      appearance: none;
+      position: relative;
+      width: 42px;
+      height: 24px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface2);
+      cursor: pointer;
+      outline: none;
+      transition: border-color 160ms ease, background 160ms ease;
+    }
+    .account-setting-row input::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--dim);
+      transition: background 160ms ease, transform 160ms ease;
+    }
+    .account-setting-row input:checked { border-color: var(--accent); background: var(--accent); }
+    .account-setting-row input:checked::after { background: #07080c; transform: translateX(18px); }
+    .account-setting-row input:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+    .account-setting-row input:disabled { cursor: wait; opacity: 0.55; }
+    .account-settings-message { min-height: 0; margin: -6px 0 0; }
+    .account-settings-message:empty { display: none; }
+    .account-settings-actions { display: flex; justify-content: flex-end; gap: 8px; }
     .account-games-empty {
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -871,6 +956,10 @@
       .account-header { flex-wrap: wrap; gap: 12px; padding-right: 64px; }
       .account-header-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
       .account-header h2 { font-size: 1.65rem; }
+      .account-settings-heading { align-items: start; flex-direction: column; gap: 6px; }
+      .account-settings-heading p { max-width: none; text-align: left; }
+      .account-settings-actions { justify-content: stretch; }
+      .account-settings-actions .secondary-button { flex: 1 1 0; }
       .account-section { min-width: 0; }
       .account-section-heading { min-width: 0; }
       .account-section-heading .sh-title { font-size: 1.65rem; }

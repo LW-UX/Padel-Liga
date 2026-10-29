@@ -306,6 +306,78 @@ table.rt.match-statistics-ranking .col-rank {
 [data-match-statistics]:focus-visible, .match-statistics-graph:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0; background: transparent; }
 
+#detail-view-dialog[data-presentation="panel"] .match-forecast {
+  grid-template-columns: minmax(0, 1fr);
+  gap: .7rem;
+  margin-top: -1rem;
+  padding: .85rem .35rem;
+}
+#detail-view-dialog[data-presentation="panel"] .match-forecast-question { text-align: center; }
+#detail-view-dialog[data-presentation="panel"] .match-forecast-action {
+  align-items: center;
+  justify-self: center;
+}
+#detail-view-dialog[data-presentation="panel"] .match-forecast-message { grid-column: 1; }
+#detail-view-dialog[data-presentation="panel"] .match-statistics-players {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+#detail-view-dialog[data-presentation="panel"] .match-statistics-section { padding: 1rem .7rem; }
+#detail-view-dialog[data-presentation="panel"] .match-statistics-form-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+}
+#detail-view-dialog[data-presentation="panel"] .match-statistics-ranking-layout {
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+#detail-view-dialog[data-presentation="panel"] .match-statistics-ranking th,
+#detail-view-dialog[data-presentation="panel"] .match-statistics-ranking td {
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+}
+#detail-view-dialog[data-presentation="panel"] .match-statistics-ranking .col-rank { width: 38px; }
+#detail-view-dialog[data-presentation="panel"] .match-statistics-ranking.has-rank-change .col-rank {
+  width: 34px;
+  padding-left: 4px !important;
+  padding-right: 0 !important;
+}
+#detail-view-dialog[data-presentation="panel"] .match-statistics-ranking .col-rank-change {
+  width: 22px;
+  padding-right: 2px !important;
+}
+#detail-view-dialog[data-presentation="panel"] .match-statistics-ranking .col-games,
+#detail-view-dialog[data-presentation="panel"] .match-statistics-ranking .col-points { width: 58px !important; }
+#detail-view-dialog[data-presentation="panel"] .match-statistics-ranking .col-diff { width: 48px !important; }
+#detail-view-dialog[data-presentation="panel"] .match-statistics-ranking .col-wins { display: none; }
+#detail-view-dialog[data-presentation="panel"] .match-statistics-graph-picker {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  margin: 1rem 0 0;
+}
+#detail-view-dialog[data-presentation="panel"] .match-statistics-graph-picker button {
+  min-width: 0;
+  overflow: hidden;
+  padding: .35rem .3rem;
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#detail-view-dialog[data-presentation="panel"] .match-statistics-graph {
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+}
+#detail-view-dialog[data-presentation="panel"] .match-statistics-player-graph {
+  opacity: .15;
+  transform: translateX(var(--statistics-lane-offset));
+  transition: opacity .18s ease;
+}
+#detail-view-dialog[data-presentation="panel"] .match-statistics-player-graph.is-selected { opacity: 1; }
+#detail-view-dialog[data-presentation="panel"] .match-statistics-player-graph:not(.is-selected) .match-statistics-value,
+#detail-view-dialog[data-presentation="panel"] .match-statistics-player-graph:not(.is-selected) .match-statistics-peak-star,
+#detail-view-dialog[data-presentation="panel"] .match-statistics-player-label { display: none; }
+
 @media (max-width: 768px) {
   .match-forecast {
     grid-template-columns: minmax(0, 1fr);

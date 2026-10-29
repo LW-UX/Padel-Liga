@@ -584,7 +584,8 @@
       outline-offset: 3px;
     }
     .player-profile-dialog {
-      width: min(calc(100vw - 28px), 1200px);
+      --player-profile-max-width: 1200px;
+      width: min(calc(100vw - 28px), var(--player-profile-max-width));
       height: min(calc(100vh - 64px), 900px);
       max-width: none;
       max-height: min(calc(100vh - 64px), 900px);
@@ -603,7 +604,7 @@
     }
     html.is-detail-embed,
     html.is-detail-embed body { background: transparent; }
-    html.is-detail-embed body > :not(dialog):not(#player-profile-modal-host) { display: none !important; }
+    html.is-detail-embed body > :not(dialog):not(#player-profile-modal-host):not(#detail-view-modal-host) { display: none !important; }
     .liga-detail-frame {
       position: fixed;
       inset: 0;
@@ -615,7 +616,18 @@
       color-scheme: normal;
     }
     .liga-detail-frame.is-loading { background: rgba(3,4,8,0.7); }
-    html:has(.liga-detail-frame:not([hidden])) { overflow: hidden; }
+    html:has(.liga-detail-frame[data-presentation="modal"]:not([hidden])) { overflow: hidden; }
+    .liga-detail-frame[data-presentation="panel"] {
+      position: relative;
+      inset: auto;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      border-radius: 20px;
+      background: var(--bg);
+      box-shadow: 0 24px 72px rgba(0,0,0,0.56);
+      animation: match-statistics-panel-in 220ms ease-out;
+    }
     .player-profile-shell {
       box-sizing: border-box;
       height: 100%;
@@ -1116,13 +1128,13 @@
       .player-profile-chart-wrap { height: 210px; }
     }
 
-    /* Das Panel folgt im Grundraster dem mobilen Profil; breite Partiezeilen wechseln unten zurück auf Desktop. */
+    /* Das Panel folgt bis zur breiten Desktop-Stufe dem mobilen Profil. */
     .player-profile-dialog[data-presentation="panel"] {
       position: relative;
       inset: auto;
       width: 100%;
       height: 100%;
-      max-width: none;
+      max-width: var(--player-profile-max-width);
       max-height: none;
       margin: 0;
       border-radius: 20px;
@@ -1218,6 +1230,11 @@
       grid-row: 1;
     }
     @container player-profile-panel (min-width: 600px) {
+      .player-profile-dialog[data-presentation="panel"] .player-profile-responsive-grid.has-multiple-items {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+        gap: 2rem;
+      }
       .player-profile-dialog[data-presentation="panel"] .player-profile-match-teams {
         align-items: baseline;
         flex-direction: row;
@@ -1229,10 +1246,6 @@
       }
     }
     @container player-profile-panel (min-width: 760px) {
-      .player-profile-dialog[data-presentation="panel"] .player-profile-responsive-grid.has-multiple-items {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 2rem 4rem;
-      }
       .player-profile-dialog[data-presentation="panel"] .player-profile-match {
         grid-template-columns: 64px 32px minmax(0, 1fr) 132px 84px;
         gap: 16px;
@@ -1256,10 +1269,98 @@
         text-align: left;
       }
     }
-    @container player-profile-panel (min-width: 1631px) {
+    @media (min-width: 1631px) {
       .player-profile-dialog[data-presentation="panel"] .player-profile-responsive-grid.prefers-three-columns {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
+    }
+    /* Ab 100 px unter der Maximalbreite nutzt auch das angedockte Panel das normale Modal-Layout. */
+    @container player-profile-panel (min-width: 1100px) {
+      .player-profile-dialog[data-presentation="panel"] .player-profile-shell { padding: 2rem; }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-content {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 4rem;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-content > .player-profile-widget {
+        grid-column: auto;
+        grid-row: auto;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-hero-block {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        margin: 0;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-elo-panel {
+        grid-column: 1 / 3;
+        grid-row: 2;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-participations-panel {
+        grid-column: 3;
+        grid-row: 2;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-relationships {
+        grid-column: 1;
+        grid-row: 3;
+        align-self: start;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-history {
+        grid-column: 2 / 4;
+        grid-row: 3;
+      }
+      .player-profile-dialog[data-presentation="panel"] .modal-close-button {
+        top: 12px;
+        right: 24px;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-presentation-toggle { right: 68px; }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-identity-row {
+        grid-template-columns: 168px minmax(240px, 1fr) minmax(50px, 420px);
+        gap: 32px;
+        min-height: auto;
+        padding: 0;
+        margin-bottom: 2rem;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-avatar {
+        width: 168px;
+        border-radius: 12px;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-avatar-placeholder {
+        font-size: clamp(4.5rem, 8vw, 6.5rem);
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-achievements {
+        grid-column: auto;
+        gap: 12px;
+        min-width: auto;
+        width: auto;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-achievement-laurel {
+        width: 28px;
+        height: 52px;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-achievement-title {
+        font-size: var(--text-heading);
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-achievement-subtitle {
+        letter-spacing: normal;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-stats {
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-stat {
+        border-right: 1px solid var(--border);
+        border-bottom: 0;
+        padding: 0 2px;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-stat:nth-child(4n) {
+        border-right: 1px solid var(--border);
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-stat:last-child { border-right: 0; }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-chart-wrap { height: 270px; }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-responsive-grid {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-participations { gap: 18px; }
+      .player-profile-dialog[data-presentation="panel"] .stat-shift-groups { gap: 2rem; }
     }
     @keyframes player-profile-panel-in {
       from { opacity: 0; transform: translateX(calc(100% + 24px)); }
@@ -1788,6 +1889,45 @@
       }
       .prediction-bonus-picker .secondary-button { min-height: 38px; }
     }
+    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-match-card:not(.is-single-set),
+    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-match-card.prediction-bonus-card {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: stretch;
+      gap: 14px;
+      min-height: 0;
+      padding: 1rem;
+    }
+    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-match-card:not(.is-single-set) .prediction-match-meta {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-match-card:not(.is-single-set) .prediction-teams {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      grid-template-columns: minmax(0, 1fr) minmax(66px, auto) minmax(0, 1fr);
+      gap: 8px;
+    }
+    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-match-card:not(.is-single-set) .prediction-options {
+      grid-column: 1 / -1;
+      grid-row: 3;
+      gap: 7px;
+      margin-left: 0;
+    }
+    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-match-card:not(.is-single-set) .prediction-status,
+    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-match-card.prediction-bonus-card .prediction-status {
+      grid-column: 2;
+      grid-row: 1;
+      align-self: start;
+    }
+    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-match-card.prediction-bonus-card .prediction-bonus-copy {
+      grid-column: 1;
+      grid-row: 1;
+      flex-wrap: wrap;
+    }
+    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-match-card.prediction-bonus-card .prediction-bonus-options {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
     .prediction-error {
       display: grid;
       gap: 4px;
@@ -1807,12 +1947,14 @@
     }
     .site-footer-line {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       justify-content: center;
       gap: clamp(0.35rem, 1.4vw, 0.8rem);
+      width: 100%;
       color: var(--muted);
       font-size: clamp(0.5rem, 1.8vw, var(--text-xs));
       line-height: 1;
+      text-align: center;
       white-space: nowrap;
     }
     .site-footer-brand {
@@ -1827,7 +1969,12 @@
       align-items: baseline;
       gap: 0.3rem;
     }
-    .site-footer-credit { color: var(--muted); }
+    .site-footer-credit {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.3rem;
+      color: var(--muted);
+    }
     .site-footer-credit > span { color: var(--muted); }
     .site-footer-credit strong {
       color: var(--dim);
@@ -1846,6 +1993,64 @@
       align-items: start;
       gap: 0;
       transition: grid-template-columns 220ms ease, gap 220ms ease;
+    }
+    .match-statistics-split-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 0fr);
+      align-items: start;
+      gap: 0;
+      transition: grid-template-columns 220ms ease, gap 220ms ease;
+    }
+    .match-statistics-list-pane { min-width: 0; }
+    .match-statistics-panel-host {
+      position: sticky;
+      z-index: 90;
+      top: 78px;
+      width: 100%;
+      height: 0;
+      min-width: 0;
+      overflow: hidden;
+      container: match-statistics-panel / inline-size;
+    }
+    body.match-statistics-panel-open main {
+      width: auto;
+      max-width: none;
+      margin-right: 16px;
+      margin-left: var(--match-statistics-split-left, 16px);
+      padding-right: 0;
+      padding-left: 0;
+    }
+    body.match-statistics-panel-open .match-statistics-split-layout {
+      width: calc(100vw - var(--match-statistics-split-left, 16px) - 16px);
+      grid-template-columns: 420px minmax(600px, 1fr);
+      gap: 24px;
+    }
+    body.match-statistics-panel-open .match-statistics-panel-host {
+      height: calc(100dvh - 94px);
+      overflow: visible;
+    }
+    body.match-statistics-panel-open .match-statistics-list-pane > .sh-with-control {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.35rem 0.8rem;
+    }
+    body.match-statistics-panel-open .match-statistics-list-pane > .sh-with-control .sh-heading {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    body.match-statistics-panel-open #match-sort-toggle,
+    body.match-statistics-panel-open #prediction-sort-toggle {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-self: center;
+    }
+    body.match-statistics-panel-open #match-scope-toggle {
+      grid-column: 2;
+      grid-row: 1;
+      justify-self: end;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .match-statistics-split-layout { transition: none; }
+      .liga-detail-frame[data-presentation="panel"] { animation: none; }
     }
     .ranking-profile-main,
     .all-time-ranking-profile-main { min-width: 0; }
@@ -1904,8 +2109,8 @@
     }
     .sh-with-control { align-items: center; justify-content: space-between; }
     #ranking-profile-main > .sh-with-control,
-    #partien > .sh-with-control,
-    #tippen > .sh-with-control {
+    #match-statistics-list-pane > .sh-with-control,
+    #prediction-statistics-list-pane > .sh-with-control {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       align-items: center;
@@ -3490,6 +3695,39 @@
       gap: 24px;
       min-height: 84px;
     }
+    body.match-statistics-panel-open #partien .mc {
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      grid-template-areas:
+        "meta meta meta"
+        "team1 score team2";
+      gap: 8px 10px;
+      min-height: 0;
+      padding: 1rem 0.95rem;
+    }
+    body.match-statistics-panel-open #partien .mc-meta { grid-area: meta; justify-content: center; gap: 12px; }
+    body.match-statistics-panel-open #partien .mc-team-1 { grid-area: team1; min-width: 0; }
+    body.match-statistics-panel-open #partien .mc-score { grid-area: score; }
+    body.match-statistics-panel-open #partien .mc-team-2 { grid-area: team2; min-width: 0; }
+    body.match-statistics-panel-open #partien .mc-players {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+      font-size: 1rem;
+    }
+    body.match-statistics-panel-open #partien .mc-player-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    body.match-statistics-panel-open #partien .mc-players .mc-player-sep { display: none; }
+    body.match-statistics-panel-open #partien .mc-prob,
+    body.match-statistics-panel-open #partien .mc-result-prob { white-space: nowrap; }
+    .mc.match-statistics-open-highlight,
+    .cup-match-card.match-statistics-open-highlight,
+    .prediction-match-card.match-statistics-open-highlight {
+      border-color: var(--accent);
+    }
     :is(#spielplan, #final-four-spielplan) .mc.played .mc-score-detail,
     :is(#spielplan, #final-four-spielplan) .mc.played .mc-result-prob {
       opacity: 0;
@@ -3694,10 +3932,7 @@
       width: min(calc(100% - 2rem), 1100px);
       padding: 1.5rem 0 0.85rem;
     }
-    .detail-view-back { justify-self: start; }
     .detail-view-pager {
-      grid-column: 3;
-      justify-self: end;
       display: flex;
       gap: 0.4rem;
     }
@@ -3719,7 +3954,53 @@
       stroke-linejoin: round;
     }
     .detail-view-step:disabled { opacity: 0.3; cursor: default; }
-    .detail-view-swipe-hint { display: none; }
+    .detail-view-actions {
+      grid-column: 3;
+      justify-self: end;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .detail-view-presentation-toggle,
+    .detail-view-close {
+      display: inline-grid;
+      width: 40px;
+      min-height: 40px;
+      place-items: center;
+      padding: 0;
+    }
+    .detail-view-presentation-toggle[hidden],
+    .detail-view-close[hidden] { display: none; }
+    .detail-view-presentation-icon,
+    .detail-view-close svg {
+      width: 19px;
+      height: 19px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .detail-view-presentation-icon-modal { display: none; }
+    .detail-view-close {
+      width: 32px;
+      min-height: 32px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: rgba(7,8,12,0.86);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .detail-view-close svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 3.2;
+      pointer-events: none;
+    }
+    .detail-view-close:is(:hover, :focus-visible) {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
     .detail-view-heading {
       grid-column: 2;
       min-width: 0;
@@ -3752,6 +4033,63 @@
       display: grid;
       gap: 4rem;
       margin-top: 1rem;
+    }
+    .detail-view-dialog[data-presentation="panel"] {
+      position: relative;
+      inset: auto;
+      width: 100%;
+      height: 100%;
+      max-width: none;
+      max-height: none;
+      margin: 0;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--bg);
+      box-shadow: 0 24px 72px rgba(0,0,0,0.56);
+      animation: match-statistics-panel-in 220ms ease-out;
+    }
+    .detail-view-dialog[data-presentation="panel"] .detail-view-shell { height: 100%; }
+    .detail-view-dialog[data-presentation="panel"] .detail-view-header {
+      width: 100%;
+      min-height: 64px;
+      grid-template-columns: minmax(0, 1fr) auto;
+      margin: 0;
+      padding: 0.65rem 1rem;
+    }
+    .detail-view-dialog[data-presentation="panel"] .detail-view-heading {
+      grid-column: 1;
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem 0.85rem;
+      flex-wrap: wrap;
+      text-align: left;
+    }
+    .detail-view-dialog[data-presentation="panel"] .detail-view-heading .sh-meta,
+    .detail-view-dialog[data-presentation="panel"] .detail-view-played-order {
+      margin-top: 0;
+    }
+    .detail-view-dialog[data-presentation="panel"] .detail-view-played-order:not([hidden]) {
+      display: inline-flex;
+      white-space: nowrap;
+    }
+    .detail-view-dialog[data-presentation="panel"] .detail-view-actions { grid-column: 2; }
+    .detail-view-dialog[data-presentation="panel"] .detail-view-pager { display: none; }
+    .detail-view-dialog[data-presentation="panel"] .detail-view-presentation-icon-panel { display: none; }
+    .detail-view-dialog[data-presentation="panel"] .detail-view-presentation-icon-modal { display: block; }
+    .detail-view-dialog[data-presentation="panel"] .detail-view-content {
+      width: 100%;
+      padding: 0 1rem 3rem;
+    }
+    .detail-view-dialog[data-presentation="panel"] #detail-view-body {
+      gap: 2rem;
+      margin-top: 0.5rem;
+    }
+    @keyframes match-statistics-panel-in {
+      from { opacity: 0; transform: translateX(calc(100% + 24px)); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .detail-view-dialog[data-presentation="panel"] { animation: none; }
     }
     .live-overview {
       display: grid;
@@ -4248,6 +4586,34 @@
       font-size: var(--text-sm);
       text-align: center;
     }
+    .detail-view-dialog[data-presentation="panel"] .match-detail-matchup {
+      grid-template-columns: minmax(0, 1fr) 112px minmax(0, 1fr);
+      gap: 0.5rem;
+    }
+    .detail-view-dialog[data-presentation="panel"] .match-detail-team {
+      grid-template-columns: 1fr;
+      gap: 0.65rem;
+    }
+    .detail-view-dialog[data-presentation="panel"] .match-detail-player {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      gap: 0.25rem;
+      padding: 0.5rem 0.25rem;
+      text-align: center;
+    }
+    .detail-view-dialog[data-presentation="panel"] .match-detail-player-photo {
+      width: 50px;
+      height: 50px;
+      grid-row: auto;
+    }
+    .detail-view-dialog[data-presentation="panel"] .match-detail-player-image {
+      width: 46px;
+      height: 46px;
+    }
+    .detail-view-dialog[data-presentation="panel"] .match-detail-player-emoji { font-size: 1.7rem; }
+    .detail-view-dialog[data-presentation="panel"] .match-detail-player-name { font-size: var(--text-sm); }
+    .detail-view-dialog[data-presentation="panel"] .match-detail-player-elo { font-size: var(--text-xs); }
+    .detail-view-dialog[data-presentation="panel"] .match-detail-score { font-size: 3rem; }
     .live-ticker-actions {
       display: flex;
       align-items: center;
@@ -4840,48 +5206,11 @@
         padding: 1.5rem 0 0.65rem;
         width: calc(100% - 1.5rem);
       }
-      .detail-view-back {
-        min-height: 36px;
-        padding: 0.4rem 0.65rem;
+      .detail-view-close {
+        width: 32px;
+        min-height: 32px;
       }
-      .detail-view-pager {
-        position: relative;
-        gap: 0.3rem;
-      }
-      .detail-view-step {
-        width: 36px;
-        min-height: 36px;
-      }
-      /* Mobil zeigen die Pfeile nur an, dass gewischt werden kann; der Hinweis überlagert sie. */
-      .detail-view-pager .detail-view-step {
-        opacity: 0.25;
-        pointer-events: none;
-      }
-      .detail-view-swipe-hint {
-        position: absolute;
-        inset: 0;
-        display: grid;
-        place-items: center;
-        pointer-events: none;
-        color: var(--text);
-      }
-      .detail-view-swipe-hint svg {
-        width: 34px;
-        height: 26px;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1.8;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        animation: detail-view-swipe-nudge 1.6s ease-in-out 0.4s 2;
-      }
-      @keyframes detail-view-swipe-nudge {
-        25% { transform: translateX(-5px); }
-        75% { transform: translateX(5px); }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .detail-view-swipe-hint svg { animation: none; }
-      }
+      .detail-view-pager { display: none !important; }
       .detail-view-content {
         width: calc(100% - 1.5rem);
       }
@@ -4936,8 +5265,8 @@
         gap: 0.8rem;
       }
       #ranking-profile-main > .sh-with-control,
-      #partien > .sh-with-control,
-      #tippen > .sh-with-control {
+      #match-statistics-list-pane > .sh-with-control,
+      #prediction-statistics-list-pane > .sh-with-control {
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
         gap: 0.35rem 0.8rem;

@@ -114,6 +114,7 @@
     // Wie auf der Ligaseite bleibt eine bereits oben angeheftete Navigation stehen.
     const navigation = document.querySelector('.tip-site-nav');
     const navigationPinned = Boolean(navigation) && navigation.getBoundingClientRect().top <= 1;
+    if (id !== 'tippen' && ligaDetailFrame.element) closeLigaDetail();
     document.querySelectorAll('main > .section').forEach(section => section.classList.toggle('active', section.id === id));
     document.querySelectorAll('.tip-site-nav button').forEach(button => button.classList.toggle('active', button.dataset.tipNav === id));
     if (navigationPinned) window.scrollTo({ top: document.querySelector('.site-header')?.offsetHeight || 0, behavior: 'instant' });
@@ -146,23 +147,150 @@
   }
 
   // Spielerprofile und Partiedetails erscheinen über der Tippseite; dafür wird die Liga im Detailmodus eingebettet.
-  const ligaDetailFrame = { element: null, ready: false, pendingDetail: null, returnFocus: null, forecastChanged: false };
+  const DETAIL_PANEL_BREAKPOINT = 1100;
+  const DETAIL_PANEL_LIST_WIDTH = 420;
+  const DETAIL_PANEL_MIN_WIDTH = 600;
+  const DETAIL_PANEL_GAP = 24;
+  const DETAIL_PANEL_OUTER_GUTTER = 16;
+  const ligaDetailFrame = {
+    element: null,
+    ready: false,
+    pendingDetail: null,
+    returnFocus: null,
+    forecastChanged: false,
+    panelEligible: false,
+    activeMatchId: null
+  };
   const detailMessageTargetOrigin = () => window.location.protocol === 'file:' ? '*' : window.location.origin;
   const acceptsDetailMessageOrigin = event => window.location.protocol === 'file:'
     ? event.origin === 'null'
     : event.origin === window.location.origin;
 
+  function hasDetailPanelSpace() {
+    const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+    const requiredWidth = DETAIL_PANEL_LIST_WIDTH + DETAIL_PANEL_GAP + DETAIL_PANEL_MIN_WIDTH;
+    return window.innerWidth >= DETAIL_PANEL_BREAKPOINT
+      && viewportWidth - (DETAIL_PANEL_OUTER_GUTTER * 2) >= requiredWidth;
+  }
+
+  function canUseDetailPanel() {
+    return ligaDetailFrame.panelEligible
+      && document.getElementById('tippen')?.classList.contains('active')
+      && hasDetailPanelSpace();
+  }
+
+  function getPredictionMatchSequence() {
+    return [...new Set([...document.querySelectorAll('#prediction-matches [data-match-statistics]')]
+      .map(control => control.dataset.matchStatistics)
+      .filter(Boolean))];
+  }
+
+  function updatePredictionDetailHighlights() {
+    document.querySelectorAll('#prediction-matches [data-match-statistics]').forEach(control => {
+      const selected = control.dataset.matchStatistics === ligaDetailFrame.activeMatchId
+        && ligaDetailFrame.element?.dataset.presentation === 'panel';
+      control.setAttribute('aria-expanded', String(selected));
+      control.setAttribute('aria-controls', 'prediction-statistics-panel-host');
+      control.closest('.prediction-match-card')?.classList.toggle('match-statistics-open-highlight', selected);
+    });
+  }
+
+  function applyLigaDetailFramePresentation(nextPresentation) {
+    const frame = ligaDetailFrame.element;
+    if (!frame) return;
+    const presentation = nextPresentation === 'panel' && canUseDetailPanel() ? 'panel' : 'modal';
+    const host = document.getElementById('prediction-statistics-panel-host');
+    const target = presentation === 'panel' ? host : document.body;
+    if (target && frame.parentElement !== target) target.append(frame);
+    frame.dataset.presentation = presentation;
+    document.body.classList.toggle('match-statistics-panel-open', presentation === 'panel');
+    if (presentation === 'panel') {
+      const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+      const requiredWidth = DETAIL_PANEL_LIST_WIDTH + DETAIL_PANEL_GAP + DETAIL_PANEL_MIN_WIDTH;
+      const standardContentLeft = viewportWidth > 1100
+        ? (viewportWidth - 1100) / 2 + DETAIL_PANEL_OUTER_GUTTER
+        : DETAIL_PANEL_OUTER_GUTTER;
+      const latestPossibleLeft = viewportWidth - DETAIL_PANEL_OUTER_GUTTER - requiredWidth;
+      const splitLeft = Math.max(0, Math.min(standardContentLeft, latestPossibleLeft));
+      document.body.style.setProperty('--match-statistics-split-left', `${splitLeft}px`);
+    } else {
+      document.body.style.removeProperty('--match-statistics-split-left');
+    }
+    updatePredictionDetailHighlights();
+    const status = document.getElementById('prediction-statistics-panel-status');
+    if (status) status.textContent = presentation === 'panel'
+      ? 'Partievorschau oder Partierückschau als Seitenpanel geöffnet.'
+      : '';
+  }
+
+  function disposeLigaDetailFrame() {
+    const frame = ligaDetailFrame.element;
+    if (!frame) return;
+    const returnFocus = ligaDetailFrame.returnFocus;
+    const activeMatchId = ligaDetailFrame.activeMatchId;
+    const forecastChanged = ligaDetailFrame.forecastChanged;
+    frame.remove();
+    document.body.classList.remove('match-statistics-panel-open');
+    document.body.style.removeProperty('--match-statistics-split-left');
+    ligaDetailFrame.element = null;
+    ligaDetailFrame.ready = false;
+    ligaDetailFrame.pendingDetail = null;
+    ligaDetailFrame.returnFocus = null;
+    ligaDetailFrame.forecastChanged = false;
+    ligaDetailFrame.panelEligible = false;
+    ligaDetailFrame.activeMatchId = null;
+    updatePredictionDetailHighlights();
+    const status = document.getElementById('prediction-statistics-panel-status');
+    if (status) status.textContent = '';
+    const focusTarget = returnFocus?.isConnected
+      ? returnFocus
+      : (activeMatchId
+          ? document.querySelector(`#prediction-matches [data-match-statistics="${CSS.escape(activeMatchId)}"]`)
+          : null)
+        || document.querySelector('#prediction-sort-toggle .active, [data-tip-nav="tippen"]');
+    focusTarget?.focus?.({ preventScroll: true });
+    if (forecastChanged) void window.PadelTippspiel?.refresh();
+  }
+
+  function closeLigaDetail() {
+    const frame = ligaDetailFrame.element;
+    if (!frame) return;
+    if (!ligaDetailFrame.ready) {
+      disposeLigaDetailFrame();
+      return;
+    }
+    frame.contentWindow.postMessage({ type: 'padel:close-detail' }, detailMessageTargetOrigin());
+  }
+
   function postLigaDetail(detail) {
     const frame = ligaDetailFrame.element;
     frame.hidden = false;
     frame.classList.add('is-loading');
-    frame.contentWindow.postMessage({ type: 'padel:open-detail', ...detail }, detailMessageTargetOrigin());
+    frame.contentWindow.postMessage({
+      type: 'padel:open-detail',
+      ...detail,
+      sequence: detail.matchId ? getPredictionMatchSequence() : undefined,
+      panelAvailable: detail.matchId ? canUseDetailPanel() : false
+    }, detailMessageTargetOrigin());
   }
 
   function openLigaDetail(detail, trigger = null) {
     if (!detail.playerId && !detail.matchId) return;
     ligaDetailFrame.returnFocus = trigger || document.activeElement;
+    ligaDetailFrame.panelEligible = Boolean(
+      detail.matchId
+      && trigger?.closest('#prediction-matches')
+      && document.getElementById('tippen')?.classList.contains('active')
+    );
+    if (detail.matchId) ligaDetailFrame.activeMatchId = detail.matchId;
+    detail = {
+      ...detail,
+      sequence: detail.matchId ? getPredictionMatchSequence() : undefined,
+      panelAvailable: detail.matchId ? canUseDetailPanel() : false
+    };
     if (ligaDetailFrame.element) {
+      const currentPresentation = ligaDetailFrame.element.dataset.presentation;
+      applyLigaDetailFramePresentation(currentPresentation === 'panel' && detail.panelAvailable ? 'panel' : 'modal');
       if (ligaDetailFrame.ready) postLigaDetail(detail);
       else ligaDetailFrame.pendingDetail = detail;
       return;
@@ -180,7 +308,9 @@
     element.title = detail.playerId ? 'Spielerprofil' : 'Partiedetails';
     element.src = url.href;
     ligaDetailFrame.element = element;
-    document.body.append(element);
+    ligaDetailFrame.pendingDetail = detail;
+    applyLigaDetailFramePresentation('modal');
+    updatePredictionDetailHighlights();
   }
 
   function bindLigaDetails() {
@@ -199,6 +329,16 @@
       if (!frame || !acceptsDetailMessageOrigin(event) || event.source !== frame.contentWindow) return;
       const type = event.data?.type;
       if (type === 'padel:match-forecast-changed') ligaDetailFrame.forecastChanged = true;
+      if (type === 'padel:detail-active-match') {
+        ligaDetailFrame.activeMatchId = event.data.matchId || null;
+        updatePredictionDetailHighlights();
+        return;
+      }
+      if (type === 'padel:detail-presentation') {
+        if (ligaDetailFrame.pendingDetail) return;
+        applyLigaDetailFramePresentation(event.data.presentation);
+        return;
+      }
       if (type !== 'padel:detail-opened' && type !== 'padel:detail-closed') return;
       ligaDetailFrame.ready = true;
       const pendingDetail = ligaDetailFrame.pendingDetail;
@@ -209,21 +349,34 @@
       }
       if (type === 'padel:detail-opened') {
         frame.classList.remove('is-loading');
-        frame.focus();
+        if (frame.dataset.presentation === 'modal') frame.focus();
         return;
       }
-      const returnFocus = ligaDetailFrame.returnFocus;
-      const forecastChanged = ligaDetailFrame.forecastChanged;
-      frame.remove();
-      ligaDetailFrame.element = null;
-      ligaDetailFrame.ready = false;
-      ligaDetailFrame.pendingDetail = null;
-      ligaDetailFrame.returnFocus = null;
-      ligaDetailFrame.forecastChanged = false;
-      returnFocus?.focus?.();
-      if (forecastChanged) {
-        void window.PadelTippspiel?.refresh();
-      }
+      disposeLigaDetailFrame();
+    });
+    const predictionMatches = document.getElementById('prediction-matches');
+    let sequenceUpdateFrame = 0;
+    new MutationObserver(() => {
+      cancelAnimationFrame(sequenceUpdateFrame);
+      sequenceUpdateFrame = requestAnimationFrame(() => {
+        updatePredictionDetailHighlights();
+      });
+    }).observe(predictionMatches, { childList: true, subtree: true });
+    let detailResizeFrame = 0;
+    window.addEventListener('resize', () => {
+      cancelAnimationFrame(detailResizeFrame);
+      detailResizeFrame = requestAnimationFrame(() => {
+        const frame = ligaDetailFrame.element;
+        if (!frame || !ligaDetailFrame.panelEligible) return;
+        const available = canUseDetailPanel();
+        if (!available && frame.dataset.presentation === 'panel') applyLigaDetailFramePresentation('modal');
+        if (ligaDetailFrame.ready) {
+          frame.contentWindow.postMessage({
+            type: 'padel:detail-panel-availability',
+            available
+          }, detailMessageTargetOrigin());
+        }
+      });
     });
   }
 

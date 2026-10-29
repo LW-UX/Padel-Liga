@@ -23,6 +23,7 @@
     || (readInitialUrlParam(initialSearch, 'error') || readInitialUrlParam(initialHash, 'error')
       ? 'Der Link ist ungültig oder abgelaufen.'
       : null);
+  const requestedAccountOpen = readInitialUrlParam(initialSearch, 'konto') === '1';
   // Supabase verwirft ?auth=…, wenn die Zieladresse nicht freigegeben ist; type=… im Hash kommt immer mit.
   const requestedAuthFlow = String(window.location?.search || '')
     .match(/(?:^|[?&])auth=(invite|recovery)(?:&|$)/)?.[1]
@@ -36,6 +37,14 @@
     passwordFlow: requestedAuthFlow,
     confirmationUrl: requestedConfirmationUrl,
     confirmationPurpose: requestedConfirmationPurpose,
+    settingsOpen: false,
+    notificationPreferences: {
+      resultEntry: true,
+      resultConfirmation: true,
+      predictionReminder: true
+    },
+    notificationPreferencesReady: false,
+    notificationPreferencesAvailable: true,
     resultTaskScope: 'relevant',
     resultTasks: [],
     trainingTasks: [],
@@ -57,6 +66,7 @@
   let unscheduleTrigger = null;
   let unrateTrigger = null;
   let accountMessageTimer = null;
+  let shouldOpenAccountFromLink = requestedAccountOpen;
   const TRAINING_GUEST_OPTION = '__guest__';
   const TRAINING_GUEST_KEY_PATTERN = /^guest:([1-4])$/;
 
@@ -351,6 +361,20 @@
         playerProfileButton.hidden = !isPlayerAccount();
         if (state.profile?.player_id) playerProfileButton.dataset.playerId = state.profile.player_id;
         else delete playerProfileButton.dataset.playerId;
+      }
+      const settingsButton = document.querySelector('[data-account-settings]');
+      const settingsPanel = document.querySelector('[data-account-settings-panel]');
+      if (settingsButton) settingsButton.setAttribute('aria-expanded', String(state.settingsOpen));
+      if (settingsPanel) settingsPanel.hidden = !state.settingsOpen;
+      document.querySelectorAll('[data-email-notification]').forEach(input => {
+        const key = input.dataset.emailNotification;
+        input.checked = Boolean(state.notificationPreferences[key]);
+        input.disabled = !state.notificationPreferencesReady || !state.notificationPreferencesAvailable;
+      });
+      const settingsMessage = document.querySelector('[data-account-settings-message]');
+      if (settingsMessage && !state.notificationPreferencesAvailable) {
+        settingsMessage.textContent = 'Die E-Mail-Einstellungen sind gerade nicht verfügbar.';
+        settingsMessage.className = 'auth-message account-settings-message error';
       }
     }
   }
@@ -1368,6 +1392,24 @@
     publishAuthenticatedPlayer();
   }
 
+  async function loadNotificationPreferences() {
+    state.notificationPreferencesReady = false;
+    state.notificationPreferencesAvailable = true;
+    if (!state.session?.user) return;
+    const { data, error } = await state.client.rpc('get_my_email_notification_preferences');
+    if (error) {
+      state.notificationPreferencesAvailable = false;
+      console.error('E-Mail-Einstellungen konnten nicht geladen werden:', error);
+      return;
+    }
+    state.notificationPreferences = {
+      resultEntry: data?.resultEntry !== false,
+      resultConfirmation: data?.resultConfirmation !== false,
+      predictionReminder: data?.predictionReminder !== false
+    };
+    state.notificationPreferencesReady = true;
+  }
+
   function hasCompleteMatchLineup(match) {
     const players = match?.match_players || [];
     return players.length === 4
@@ -1485,6 +1527,8 @@
     try {
       await loadProfile();
       if (state.session?.user?.id !== userId) return;
+      await loadNotificationPreferences();
+      if (state.session?.user?.id !== userId) return;
       publishAuthState();
       if (includeTasks) await refreshPlayerTools({ force: true });
       else schedulePlayerTools();
@@ -1569,6 +1613,14 @@
 
   function closeAuthDialog() {
     document.getElementById('auth-dialog')?.close();
+  }
+
+  function consumeRequestedAccountOpen() {
+    if (!shouldOpenAccountFromLink || !state.session?.user) return;
+    shouldOpenAccountFromLink = false;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('konto');
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
   }
 
   async function handleAuthSubmit(event) {
@@ -1676,6 +1728,45 @@
     });
     if (error) setAuthMessage(getFriendlyAuthError(error), 'error');
     else setAuthMessage('Du erhältst eine E-Mail zum Zurücksetzen deines Passworts. Durch den Firmen-Mailfilter kann die Zustellung ein paar Minuten dauern. Schau bitte auch in deinem Spam-Ordner nach.', 'success');
+  }
+
+  function setAccountSettingsMessage(message, type = '') {
+    const target = document.querySelector('[data-account-settings-message]');
+    if (!target) return;
+    target.textContent = message || '';
+    target.className = `auth-message account-settings-message${type ? ` ${type}` : ''}`;
+  }
+
+  async function saveNotificationPreferences(changedInput) {
+    if (!state.session?.user || !state.notificationPreferencesReady) return;
+    const key = changedInput?.dataset?.emailNotification;
+    if (!Object.hasOwn(state.notificationPreferences, key)) return;
+    const previous = { ...state.notificationPreferences };
+    state.notificationPreferences[key] = Boolean(changedInput.checked);
+    state.notificationPreferencesReady = false;
+    setAccountSettingsMessage('Einstellung wird gespeichert …');
+    renderAuthState();
+
+    const { data, error } = await state.client.rpc('update_my_email_notification_preferences', {
+      p_result_entry: state.notificationPreferences.resultEntry,
+      p_result_confirmation: state.notificationPreferences.resultConfirmation,
+      p_prediction_reminder: state.notificationPreferences.predictionReminder
+    });
+    if (error) {
+      state.notificationPreferences = previous;
+      state.notificationPreferencesReady = true;
+      renderAuthState();
+      setAccountSettingsMessage(getFriendlyAuthError(error), 'error');
+      return;
+    }
+    state.notificationPreferences = {
+      resultEntry: data?.resultEntry !== false,
+      resultConfirmation: data?.resultConfirmation !== false,
+      predictionReminder: data?.predictionReminder !== false
+    };
+    state.notificationPreferencesReady = true;
+    renderAuthState();
+    setAccountSettingsMessage('E-Mail-Einstellung gespeichert.', 'success');
   }
 
   function finishPasswordFlow() {
@@ -2611,6 +2702,12 @@ Dein Hanako-Leben-Squad`;
         openPasswordChange();
         return;
       }
+      if (event.target.closest('[data-account-settings]')) {
+        state.settingsOpen = !state.settingsOpen;
+        setAccountSettingsMessage('');
+        renderAuthState();
+        return;
+      }
       if (event.target.closest('[data-password-change-cancel]')) {
         cancelPasswordChange();
         return;
@@ -2652,6 +2749,7 @@ Dein Hanako-Leben-Squad`;
       }
       if (event.target.closest('[data-auth-logout]')) {
         await state.client.auth.signOut();
+        state.settingsOpen = false;
         closeAuthDialog();
         return;
       }
@@ -2879,6 +2977,10 @@ Dein Hanako-Leben-Squad`;
     });
     document.addEventListener('change', event => {
       syncDateTimeHint(event.target);
+      if (event.target.matches('[data-email-notification]')) {
+        void saveNotificationPreferences(event.target);
+        return;
+      }
       if (event.target.matches('.training-form input:is([type="date"], [type="time"])')) {
         syncTrainingFormMode(event.target.closest('.training-form'));
         return;
@@ -2991,6 +3093,10 @@ Dein Hanako-Leben-Squad`;
       window.setTimeout(async () => {
         await refresh();
         if (nextSession && ['invite', 'recovery'].includes(state.passwordFlow)) openAuthDialog();
+        else if (nextSession && shouldOpenAccountFromLink) {
+          consumeRequestedAccountOpen();
+          openAuthDialog();
+        }
       }, 0);
     });
     await refresh({ includeTasks: false });
@@ -3003,6 +3109,9 @@ Dein Hanako-Leben-Squad`;
     else if (!state.session && (['invite', 'recovery'].includes(state.passwordFlow) || initialAuthError)) {
       openAuthDialog();
       setAuthMessage(initialAuthError || 'Dieser Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.', 'error');
+    } else if (shouldOpenAccountFromLink) {
+      consumeRequestedAccountOpen();
+      openAuthDialog();
     }
   }
 

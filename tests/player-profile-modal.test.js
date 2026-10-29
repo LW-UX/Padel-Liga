@@ -322,8 +322,11 @@ test('wide ranking views host the same player profile as a non-modal side panel'
   assert.match(app, /dialog\.show\(\)/);
   assert.match(app, /dialog\.showModal\(\)/);
   assert.match(app, /let playerProfilePresentationPreference = null;/);
+  assert.match(app, /const PLAYER_PROFILE_PRESENTATION_STORAGE_TTL = 30 \* 24 \* 60 \* 60 \* 1000;/);
+  assert.match(app, /function shouldUsePlayerProfilePanel\(\)[\s\S]*?playerProfilePresentationPreference === 'panel'/);
+  assert.match(app, /if \(!profileWasOpen\) playerProfilePresentationPreference = getStoredPlayerProfilePresentation\(\);/);
   assert.match(app, /function updatePlayerProfilePresentationToggle\(\)[\s\S]*?Profil als Seitenpanel öffnen[\s\S]*?Profil als Modal öffnen[\s\S]*?toggle\.hidden = !canToggle;/);
-  assert.match(app, /function togglePlayerProfilePresentation\(\)[\s\S]*?playerProfilePresentation === 'panel' \? 'modal' : 'panel'[\s\S]*?playerProfilePresentationPreference = nextPresentation;[\s\S]*?movePlayerProfileDialog\(nextPresentation/);
+  assert.match(app, /function togglePlayerProfilePresentation\(\)[\s\S]*?playerProfilePresentation === 'panel' \? 'modal' : 'panel'[\s\S]*?playerProfilePresentationPreference = nextPresentation;[\s\S]*?storePlayerProfilePresentation\(nextPresentation\);[\s\S]*?movePlayerProfileDialog\(nextPresentation/);
   assert.match(app, /presentationPreference: playerProfilePresentationPreference/);
   assert.match(app, /playerProfilePresentationPreference = \['panel', 'modal'\]\.includes\(snapshot\.presentationPreference\)/);
   assert.match(app, /presentation === 'panel'[\s\S]*?'\.player-profile-elo-panel'[\s\S]*?'\.player-profile-participations-panel'[\s\S]*?'\.player-profile-history'[\s\S]*?'\.player-profile-relationships'/);
@@ -347,9 +350,13 @@ test('wide ranking views host the same player profile as a non-modal side panel'
   assert.match(style, /body\.player-profile-panel-open :is\(#ranking-profile-main, #all-time-ranking-profile-main\) table\.rt th\.col-rank,[\s\S]*?padding-left: 12px;[\s\S]*?padding-right: 4px;/);
   assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \.player-profile-stats \{[\s\S]*?repeat\(4, minmax\(0, 1fr\)\)/);
   assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \.player-profile-match \{[\s\S]*?grid-template-columns: 30px minmax\(0, 1fr\) auto;/);
-  assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \{[\s\S]*?container: player-profile-panel \/ inline-size;/);
+  assert.match(style, /\.player-profile-dialog \{[\s\S]*?--player-profile-max-width: 1200px;[\s\S]*?width: min\(calc\(100vw - 28px\), var\(--player-profile-max-width\)\);/);
+  assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \{[\s\S]*?max-width: var\(--player-profile-max-width\);[\s\S]*?container: player-profile-panel \/ inline-size;/);
   assert.match(style, /@container player-profile-panel \(min-width: 600px\) \{[\s\S]*?\.player-profile-match-teams \{[\s\S]*?flex-direction: row;[\s\S]*?\.player-profile-match-score \{[\s\S]*?min-height: 0;/);
   assert.match(style, /@container player-profile-panel \(min-width: 760px\) \{[\s\S]*?grid-template-columns: 64px 32px minmax\(0, 1fr\) 132px 84px;[\s\S]*?flex-direction: row;/);
+  assert.match(style, /@container player-profile-panel \(min-width: 1100px\) \{[\s\S]*?\.player-profile-content \{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/);
+  assert.match(style, /@container player-profile-panel \(min-width: 1100px\) \{[\s\S]*?\.player-profile-relationships \{[\s\S]*?grid-column: 1;[\s\S]*?\.player-profile-history \{[\s\S]*?grid-column: 2 \/ 4;/);
+  assert.match(style, /@container player-profile-panel \(min-width: 1100px\) \{[\s\S]*?\.player-profile-stats \{[\s\S]*?grid-template-columns: repeat\(8, minmax\(0, 1fr\)\);/);
   assert.match(style, /tr\.profile-open-highlight td \{[\s\S]*?var\(--accent\)/);
   assert.match(style, /#rangliste table\.rt tbody tr\[data-profile-player-id\],[\s\S]*?#all-time-ranking-table tbody tr\[data-profile-player-id\] \{ cursor: pointer; \}/);
   assert.match(style, /\.player-profile-presentation-toggle \{ right: 68px; \}/);
@@ -375,6 +382,43 @@ test('player profile panel requires both the desktop breakpoint and the real spl
   assert.equal(vm.runInContext('hasPlayerProfilePanelSpace()', context), true);
   context.document.documentElement.clientWidth = 1039;
   assert.equal(vm.runInContext('hasPlayerProfilePanelSpace()', context), false);
+});
+
+test('player profile presentation preference is stored for 30 days and then expires', () => {
+  const constants = app.match(
+    /const PLAYER_PROFILE_PRESENTATION_STORAGE_KEY[\s\S]*?const PLAYER_PROFILE_PRESENTATION_STORAGE_TTL = 30 \* 24 \* 60 \* 60 \* 1000;/
+  )?.[0] || '';
+  const helpers = app.match(
+    /function getStoredPlayerProfilePresentation[\s\S]*?(?=\nfunction shouldUsePlayerProfilePanel)/
+  )?.[0] || '';
+  const values = new Map();
+  let now = 1_800_000_000_000;
+  const context = {
+    Date: { now: () => now },
+    localStorage: {
+      getItem: key => values.get(key) ?? null,
+      setItem: (key, value) => values.set(key, value),
+      removeItem: key => values.delete(key)
+    }
+  };
+  vm.createContext(context);
+  vm.runInContext(`${constants}\n${helpers}`, context);
+
+  assert.equal(vm.runInContext('getStoredPlayerProfilePresentation()', context), null);
+  vm.runInContext("storePlayerProfilePresentation('panel')", context);
+  assert.equal(vm.runInContext('getStoredPlayerProfilePresentation()', context), 'panel');
+  assert.equal(
+    JSON.parse(values.get('padel-liga-player-profile-presentation')).expiresAt,
+    now + 30 * 24 * 60 * 60 * 1000
+  );
+
+  now += 30 * 24 * 60 * 60 * 1000 + 1;
+  assert.equal(vm.runInContext('getStoredPlayerProfilePresentation()', context), null);
+  assert.equal(values.has('padel-liga-player-profile-presentation'), false);
+
+  values.set('padel-liga-player-profile-presentation', '{broken');
+  assert.equal(vm.runInContext('getStoredPlayerProfilePresentation()', context), null);
+  assert.equal(values.has('padel-liga-player-profile-presentation'), false);
 });
 
 test('player profiles sort achievements by value and recency and show at most four badges', () => {

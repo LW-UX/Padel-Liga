@@ -243,7 +243,7 @@ test('match header and full ranking follow ticker and ranking conventions',()=>{
  const html=render(d);
  const analysisHtml=render({...d,availability:'analysis'});
  assert.equal(headerMeta(d),'Sommer 2026 · 20.10.2026');
- assert.equal(playedOrderLabel({...d,availability:'analysis',leaguePlayedOrdinal:18}),'Als 18. Partie gespielt');
+ assert.equal(playedOrderLabel({...d,availability:'analysis',leaguePlayedOrdinal:18}),'Gespielt als 18. Partie');
  assert.equal(playedOrderLabel(d),'');
  assert.doesNotMatch(html,/Partievorschau|Partieanalyse/);
  assert.match(html,/<div class="match-detail-meta"><span class="match-detail-status">Offen<\/span><\/div>/);

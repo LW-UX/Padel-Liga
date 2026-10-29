@@ -16,7 +16,7 @@ const ligaPage = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const tippspielPage = fs.readFileSync(path.join(root, 'tipp', 'index.html'), 'utf8');
 const pages = [ligaPage, tippspielPage];
 
-test('pages keep their intended context links and account dialogs place logout in the header', () => {
+test('pages keep their intended context links and account dialogs group private actions in settings', () => {
   assert.match(ligaPage, /class="context-actions global-actions"[\s\S]*data-season-toggle[\s\S]*data-auth-open/);
   assert.doesNotMatch(ligaPage, /id="tippspiel-link"/);
   assert.match(tippspielPage, /class="context-actions global-actions"[\s\S]*id="liga-link"[\s\S]*data-season-toggle[\s\S]*data-auth-open/);
@@ -24,9 +24,9 @@ test('pages keep their intended context links and account dialogs place logout i
   pages.forEach(source => {
     assert.doesNotMatch(source, /<span>Saison<\/span>/);
     assert.doesNotMatch(source, /class="account-tabs"/);
-    assert.doesNotMatch(source, /account-settings-panel/);
     assert.doesNotMatch(source, /name="displayName"/);
-    assert.match(source, /class="account-header"[\s\S]*data-account-player-profile[\s\S]*data-auth-logout/);
+    assert.match(source, /class="account-header"[\s\S]*data-account-player-profile[\s\S]*data-account-settings/);
+    assert.match(source, /data-account-settings-panel hidden[\s\S]*data-password-change[\s\S]*data-auth-logout/);
     assert.match(source, /<dialog class="auth-dialog"[^>]*>\s*<button class="modal-close-button auth-dialog-close"/);
   });
   assert.match(style, /\.modal-close-button \{[\s\S]*position: absolute;[\s\S]*top: \d+px;[\s\S]*right: \d+px;/);
@@ -82,10 +82,13 @@ test('both account dialogs expose one four-group game overview', () => {
     assert.match(source, /data-account-result-scope="all"[^>]*>Alle<\/button>/);
     assert.doesNotMatch(source, /<h3 class="sh-title">Trainingsspiele<\/h3>/);
     assert.doesNotMatch(source, /id="training-task-list"/);
-    assert.match(source, /<button class="secondary-button"[^>]*data-auth-logout/);
+    assert.match(source, /<button class="secondary-button account-settings-button"[^>]*data-account-settings/);
     assert.match(source, /<button class="secondary-button"[^>]*data-account-player-profile hidden>Spielerprofil<\/button>/);
     assert.match(source, /<button class="secondary-button"[^>]*data-training-toggle/);
     assert.match(source, /data-auth-logout>Ausloggen<\/button>/);
+    assert.match(source, /data-email-notification="resultEntry"/);
+    assert.match(source, /data-email-notification="resultConfirmation"/);
+    assert.match(source, /data-email-notification="predictionReminder"/);
     assert.match(source, /data-training-toggle>Training hinzufügen<\/button>/);
     assert.match(source, /<div data-training-form-group hidden>[\s\S]*?<div class="spieltag-label">[\s\S]*?Training[\s\S]*?<form class="training-form" id="training-form" hidden>/);
     assert.doesNotMatch(source, /picker-toggle-chevron/);
@@ -120,6 +123,8 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.doesNotMatch(style, /\.auth-logout-button|\.compact-button|\.account-task-count|\.account-task-league/);
   assert.doesNotMatch(style, /\.picker-toggle-chevron/);
   assert.match(accountScript, /playerProfileButton\.hidden = !isPlayerAccount\(\)/);
+  assert.match(accountScript, /get_my_email_notification_preferences/);
+  assert.match(accountScript, /update_my_email_notification_preferences/);
   assert.match(accountScript, /resultScopeToggle\.hidden = state\.profile\?\.app_role !== 'admin'/);
   assert.match(accountScript, /state\.resultTaskScope = resultScopeButton\.dataset\.accountResultScope === 'all' \? 'all' : 'relevant'/);
   assert.match(accountScript, /form\.closest\('\[data-training-form-group\]'\)[\s\S]*formGroup\.hidden = !opening/);
