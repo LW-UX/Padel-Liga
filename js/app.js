@@ -2104,6 +2104,15 @@ function renderPlayerProfileParticipationStats(participation, middleLabel, middl
   return `Partien: ${matches} · ${middleLabel}: ${middle} · Diff.: ${formatProfileSignedValue(participation.gameDiff)}`;
 }
 
+function configurePlayerProfileResponsiveGrid(target, itemCount) {
+  if (!target) return;
+  const count = Math.max(0, Number(itemCount) || 0);
+  target.classList.add('player-profile-responsive-grid');
+  target.classList.toggle('has-multiple-items', count > 1);
+  target.classList.toggle('prefers-three-columns', count === 3 || count >= 5);
+  target.dataset.gridItemCount = String(count);
+}
+
 function renderPlayerProfileParticipations(participations = [], matches = []) {
   const target = document.getElementById('player-profile-participations');
   if (!target) return;
@@ -2153,6 +2162,10 @@ function renderPlayerProfileParticipations(participations = [], matches = []) {
       <div class="stat-meta-line">${renderPlayerProfileParticipationStats(training, 'Siege', training.wins)}</div>
     </div>` : '';
   target.innerHTML = seasonRows + trainingRow;
+  configurePlayerProfileResponsiveGrid(
+    target,
+    orderedParticipations.length + (training.matches > 0 ? 1 : 0)
+  );
 }
 
 function getPlayerProfileRelationshipLeaders(matches = []) {
@@ -2263,6 +2276,7 @@ function renderPlayerProfileRelationships(matches = []) {
     </div>`;
     }).join('')}
   </div>`;
+  configurePlayerProfileResponsiveGrid(target.querySelector('.stat-shift-groups'), relationships.length);
 }
 
 // Der Spielervergleich nutzt dieselbe gewichtete Historie wie die Beziehungen.
@@ -3765,7 +3779,10 @@ async function openLiveTicker(matchId, options = {}) {
 
 function closeLiveTicker(options = {}) {
   if (window.PadelMatchStatistics?.active) {
-    if (!options.fromHistory) window.PadelMatchStatistics.close();
+    if (!options.fromHistory) {
+      if (isDetailEmbed) postToDetailEmbedParent({ type: 'padel:detail-closed' });
+      window.PadelMatchStatistics.close();
+    }
     return;
   }
   const liveRoute = window.PadelSeasonRouting.getRequestedLiveRoute(PADEL_DATA?.matches || []);
@@ -8666,7 +8683,8 @@ async function initApp() {
 
 // Eingebettet zeigt die Liga nur ihre Detailansichten wie Spielerprofil und Partie über der Tippseite an.
 function postToDetailEmbedParent(message) {
-  window.parent.postMessage(message, window.location.origin);
+  const targetOrigin = window.location.protocol === 'file:' ? '*' : window.location.origin;
+  window.parent.postMessage(message, targetOrigin);
 }
 
 function reportDetailEmbedState() {
@@ -8676,7 +8694,10 @@ function reportDetailEmbedState() {
 
 function initDetailEmbed() {
   window.addEventListener('message', event => {
-    if (event.origin !== window.location.origin || event.source !== window.parent) return;
+    const validOrigin = window.location.protocol === 'file:'
+      ? event.origin === 'null'
+      : event.origin === window.location.origin;
+    if (!validOrigin || event.source !== window.parent) return;
     if (event.data?.type !== 'padel:open-detail') return;
     const opening = event.data.playerId
       ? openPlayerProfile(event.data.playerId)
@@ -8686,7 +8707,10 @@ function initDetailEmbed() {
   });
   window.addEventListener('padel:match-forecast-changed', () => postToDetailEmbedParent({ type: 'padel:match-forecast-changed' }));
   const observer = new MutationObserver(() => setTimeout(reportDetailEmbedState));
-  document.querySelectorAll('dialog').forEach(dialog => observer.observe(dialog, { attributes: true, attributeFilter: ['open'] }));
+  document.querySelectorAll('dialog').forEach(dialog => {
+    observer.observe(dialog, { attributes: true, attributeFilter: ['open'] });
+    dialog.addEventListener('close', reportDetailEmbedState);
+  });
 }
 
 const mobileViewportQuery = window.matchMedia('(max-width: 768px)');

@@ -147,12 +147,16 @@
 
   // Spielerprofile und Partiedetails erscheinen über der Tippseite; dafür wird die Liga im Detailmodus eingebettet.
   const ligaDetailFrame = { element: null, ready: false, pendingDetail: null, returnFocus: null, forecastChanged: false };
+  const detailMessageTargetOrigin = () => window.location.protocol === 'file:' ? '*' : window.location.origin;
+  const acceptsDetailMessageOrigin = event => window.location.protocol === 'file:'
+    ? event.origin === 'null'
+    : event.origin === window.location.origin;
 
   function postLigaDetail(detail) {
     const frame = ligaDetailFrame.element;
     frame.hidden = false;
     frame.classList.add('is-loading');
-    frame.contentWindow.postMessage({ type: 'padel:open-detail', ...detail }, window.location.origin);
+    frame.contentWindow.postMessage({ type: 'padel:open-detail', ...detail }, detailMessageTargetOrigin());
   }
 
   function openLigaDetail(detail, trigger = null) {
@@ -192,7 +196,7 @@
     });
     window.addEventListener('message', event => {
       const frame = ligaDetailFrame.element;
-      if (!frame || event.origin !== window.location.origin || event.source !== frame.contentWindow) return;
+      if (!frame || !acceptsDetailMessageOrigin(event) || event.source !== frame.contentWindow) return;
       const type = event.data?.type;
       if (type === 'padel:match-forecast-changed') ligaDetailFrame.forecastChanged = true;
       if (type !== 'padel:detail-opened' && type !== 'padel:detail-closed') return;
@@ -208,12 +212,16 @@
         frame.focus();
         return;
       }
-      if (frame.hidden) return;
-      frame.hidden = true;
-      frame.classList.remove('is-loading');
-      ligaDetailFrame.returnFocus?.focus?.();
-      if (ligaDetailFrame.forecastChanged) {
-        ligaDetailFrame.forecastChanged = false;
+      const returnFocus = ligaDetailFrame.returnFocus;
+      const forecastChanged = ligaDetailFrame.forecastChanged;
+      frame.remove();
+      ligaDetailFrame.element = null;
+      ligaDetailFrame.ready = false;
+      ligaDetailFrame.pendingDetail = null;
+      ligaDetailFrame.returnFocus = null;
+      ligaDetailFrame.forecastChanged = false;
+      returnFocus?.focus?.();
+      if (forecastChanged) {
         void window.PadelTippspiel?.refresh();
       }
     });

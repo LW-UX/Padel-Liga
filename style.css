@@ -1229,6 +1229,10 @@
       }
     }
     @container player-profile-panel (min-width: 760px) {
+      .player-profile-dialog[data-presentation="panel"] .player-profile-responsive-grid.has-multiple-items {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 2rem 4rem;
+      }
       .player-profile-dialog[data-presentation="panel"] .player-profile-match {
         grid-template-columns: 64px 32px minmax(0, 1fr) 132px 84px;
         gap: 16px;
@@ -1250,6 +1254,11 @@
         display: block;
         min-height: 0;
         text-align: left;
+      }
+    }
+    @container player-profile-panel (min-width: 1631px) {
+      .player-profile-dialog[data-presentation="panel"] .player-profile-responsive-grid.prefers-three-columns {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
     @keyframes player-profile-panel-in {

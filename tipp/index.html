@@ -22,7 +22,7 @@
   <script defer src="../js/account.js?v=2026-10-28-brand-names"></script>
   <script defer src="../js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="../js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
-  <script defer src="../js/tipp-page.js?v=2026-10-28-ranking-column-sorting-2"></script>
+  <script defer src="../js/tipp-page.js?v=2026-10-29-detail-frame-file-origin"></script>
 </head>
 <body class="tip-page">
 <header class="site-header">
@@ -118,16 +118,22 @@
   </section>
 
   <section id="tippen" class="section">
-    <div class="sh sh-with-control">
-      <div class="sh-heading">
-        <div class="sh-title">TIPPABGABE</div>
+    <div class="match-statistics-split-layout prediction-statistics-split-layout" id="prediction-statistics-split-layout">
+      <div class="match-statistics-list-pane prediction-statistics-list-pane" id="prediction-statistics-list-pane">
+        <div class="sh sh-with-control">
+          <div class="sh-heading">
+            <div class="sh-title">TIPPABGABE</div>
+          </div>
+          <div class="match-scope-toggle ranking-sort-toggle" id="prediction-sort-toggle" aria-label="Tippabgabe sortieren">
+            <button type="button" class="active" data-prediction-sort="status" aria-pressed="true">Status</button>
+            <button type="button" data-prediction-sort="matchday" aria-pressed="false">Spieltage</button>
+          </div>
+        </div>
+        <div id="prediction-matches" class="prediction-match-list"></div>
       </div>
-      <div class="match-scope-toggle ranking-sort-toggle" id="prediction-sort-toggle" aria-label="Tippabgabe sortieren">
-        <button type="button" class="active" data-prediction-sort="status" aria-pressed="true">Status</button>
-        <button type="button" data-prediction-sort="matchday" aria-pressed="false">Spieltage</button>
-      </div>
+      <aside class="match-statistics-panel-host prediction-statistics-panel-host" id="prediction-statistics-panel-host" aria-label="Geöffnete Partievorschau oder Partierückschau"></aside>
     </div>
-    <div id="prediction-matches" class="prediction-match-list"></div>
+    <span class="sr-only" id="prediction-statistics-panel-status" role="status" aria-live="polite" aria-atomic="true"></span>
   </section>
 
   <section id="tippinfos" class="section">
