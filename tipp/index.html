@@ -8,9 +8,9 @@
   <link rel="icon" href="../favicon.ico" sizes="32x32">
   <link rel="icon" type="image/svg+xml" href="../data/favicon.svg?v=2026-10-26-rounded">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-  <link rel="stylesheet" href="../style.css?v=2026-10-29-profile-svg-chart">
-  <link rel="stylesheet" href="../match-statistics.css?v=2026-10-29-panel-container-breakpoints">
-  <link rel="stylesheet" href="../account.css?v=2026-10-29-backdrop-tokens">
+  <link rel="stylesheet" href="../style.css?v=2026-10-30-radius-sm">
+  <link rel="stylesheet" href="../match-statistics.css?v=2026-10-30-radius-sm">
+  <link rel="stylesheet" href="../account.css?v=2026-10-30-radius-sm">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="../data/players.js?v=2026-10-20-test-net-emoji"></script>
@@ -23,7 +23,7 @@
   <script defer src="../js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="../js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="../js/panel-layout.js?v=2026-10-29-shared-panel-layout"></script>
-  <script defer src="../js/tipp-page.js?v=2026-10-29-shared-panel-layout"></script>
+  <script defer src="../js/tipp-page.js?v=2026-10-30-prediction-table"></script>
 </head>
 <body class="tip-page">
 <header class="site-header">
@@ -76,6 +76,7 @@
 
 <nav class="site-nav tip-site-nav" aria-label="Tippspiel-Navigation">
   <button data-tip-nav="tippuebersicht">Tipprangliste</button>
+  <button data-tip-nav="tipptabelle">Tippübersicht</button>
   <button data-tip-nav="tippen">Tippabgabe</button>
   <button data-tip-nav="tippinfos">Infos</button>
 </nav>
@@ -116,6 +117,22 @@
       </table>
     </div>
     <div id="prediction-ranking-empty" class="empty-state">Rangliste wird geladen …</div>
+  </section>
+
+  <section id="tipptabelle" class="section">
+    <div class="sh sh-with-control">
+      <div class="sh-heading">
+        <div class="sh-title">TIPPÜBERSICHT</div>
+      </div>
+      <div class="match-scope-toggle" id="prediction-table-view-toggle" aria-label="Tippübersicht umschalten">
+        <button type="button" class="active" data-prediction-table-view="matches" aria-pressed="true">Partien</button>
+        <button type="button" data-prediction-table-view="bonus" aria-pressed="false">Bonustipps</button>
+      </div>
+    </div>
+    <div class="prediction-table-wrap" id="prediction-table-wrap">
+      <table class="rt prediction-table" id="prediction-table"></table>
+    </div>
+    <div id="prediction-table-empty" class="empty-state">Tippübersicht wird geladen …</div>
   </section>
 
   <section id="tippen" class="section">

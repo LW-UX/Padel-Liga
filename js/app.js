@@ -55,7 +55,7 @@ const PLAYER_PROFILE_ACHIEVEMENT_LIMIT = 4;
 const PLAYER_PROFILE_PANEL_TRANSITION_MS = 220;
 const panelLayout = window.PadelLigaPanelLayout;
 const playerProfilePresentationStore = panelLayout.createPresentationPreference('padel-liga-player-profile-presentation');
-const PLAYER_PROFILE_ROW_SELECTOR = '#rangliste tr[data-player-profile-id], #all-time-ranking-table tr[data-player-profile-id], .calculator-ranking-table tr[data-player-profile-id]';
+const PLAYER_PROFILE_ROW_SELECTOR = '#rangliste tr[data-player-profile-id], #all-time-ranking-table tr[data-player-profile-id], .calculator-ranking-table tr[data-player-profile-id], #home-ranking .mini-rank-row[data-player-profile-id]';
 const PROFILE_SEASON_COLOR_VARIABLES = Object.freeze({
   summer: '--season-summer',
   winter: '--season-winter',
@@ -5747,7 +5747,7 @@ function renderHome() {
       const spielDiffStr = p.stats.partien > 0 ? formatStatDiff(p.stats.spielDiff) : '—';
       const spielDiffClass = getStatDiffClass(p.stats.spielDiff);
 
-      return `<div class="mini-rank-row r${rank}${isSelectedPlayer(p.name) ? ' viewer-highlight' : ''}${separated ? ' home-ranking-selected-row' : ''}">
+      return `<div class="mini-rank-row r${rank}${isSelectedPlayer(p.name) ? ' viewer-highlight' : ''}${separated ? ' home-ranking-selected-row' : ''}"${renderPlayerProfileRowAttributes(p)}>
       <span class="rank-position">${rank}</span>
       <span class="mini-rank-name"><span class="ranking-player-name">${renderPlayerProfileLink(p)}${renderLeagueRankingAchievementIcon(p)}</span></span>
       <span class="mini-rank-values">

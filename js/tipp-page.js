@@ -123,6 +123,7 @@
     document.querySelectorAll('main > .section').forEach(section => section.classList.toggle('active', section.id === id));
     document.querySelectorAll('.tip-site-nav button').forEach(button => button.classList.toggle('active', button.dataset.tipNav === id));
     if (navigationPinned) window.scrollTo({ top: document.querySelector('.site-header')?.offsetHeight || 0, behavior: 'instant' });
+    window.PadelTippspiel?.onSectionShown?.(id);
   }
 
   function bindNavigation() {
@@ -406,14 +407,14 @@
       renderSeasonPicker(selected);
       bindNavigation();
       const requestedSection = window.location.hash.slice(1);
-      if (['tippstart', 'tippuebersicht', 'tippen', 'tippinfos'].includes(requestedSection)) {
+      if (['tippstart', 'tippuebersicht', 'tipptabelle', 'tippen', 'tippinfos'].includes(requestedSection)) {
         showSection(requestedSection);
       }
       window.PADEL_SEASON = null;
       const accountReady = window.PadelKonto.init();
       await Promise.all([
         loadScript(`../${selected.file}`),
-        loadScript('../js/tippspiel.js?v=2026-10-28-ranking-column-sorting-2')
+        loadScript('../js/tippspiel.js?v=2026-10-30-prediction-table-bonus-head')
       ]);
       const season = hydrateSeason(window.PADEL_SEASON);
       selectedSeasonData = season;

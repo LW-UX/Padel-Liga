@@ -68,7 +68,7 @@
   height: 8px;
   overflow: hidden;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: transparent;
 }
 .match-forecast-bar::before,
@@ -297,7 +297,7 @@ table.rt.match-statistics-ranking .col-rank {
 .match-statistics-graph-picker.match-scope-toggle button {
   min-width: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--menu-radius);
   background: transparent;
   color: var(--dim);
   font-size: var(--text-sm);
@@ -355,7 +355,7 @@ table.rt.match-statistics-ranking .col-rank {
 .match-statistics-skeleton-meta { height: 48px; }
 .match-statistics-skeleton-history { height: 100px; }
 .match-statistics-skeleton-graph { height: 430px; }
-.match-statistics-notice { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); z-index: 5000; max-width: calc(100% - 2rem); padding: 1rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; }
+.match-statistics-notice { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); z-index: 5000; max-width: calc(100% - 2rem); padding: 1rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); }
 .article-match.has-partie-detail { position: relative; }
 .article-match-action { position: absolute; inset: 0; width: 100%; border: 0; border-radius: inherit; background: transparent; cursor: pointer; }
 .article-match-action:is(:hover, :focus-visible) ~ .article-match-result { color: var(--accent); }

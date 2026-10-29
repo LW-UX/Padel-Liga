@@ -35,9 +35,9 @@ test('selection uses the live team-button pattern and is replaced by a proportio
   assert.match(style, /\.live-overview-poll-segments \{[\s\S]*display: grid;[\s\S]*gap: clamp\(3px, 0\.6vw, 6px\);/);
   assert.match(style, /grid-template-rows: minmax\(1\.5rem, auto\) 30px/);
   assert.match(style, /border: 1px solid var\(--accent\);[\s\S]*border-radius: 0;[\s\S]*background: color-mix\(in srgb, var\(--accent\) 5%, var\(--surface\)\);/);
-  assert.match(style, /first-child \.live-overview-poll-bar \{[\s\S]*border-radius: 8px 0 0 8px;/);
-  assert.match(style, /last-child \.live-overview-poll-bar \{[\s\S]*border-radius: 0 8px 8px 0;/);
-  assert.match(style, /only-child \.live-overview-poll-bar \{[\s\S]*border-radius: 8px;/);
+  assert.match(style, /first-child \.live-overview-poll-bar \{[\s\S]*border-radius: var\(--radius-sm\) 0 0 var\(--radius-sm\);/);
+  assert.match(style, /last-child \.live-overview-poll-bar \{[\s\S]*border-radius: 0 var\(--radius-sm\) var\(--radius-sm\) 0;/);
+  assert.match(style, /only-child \.live-overview-poll-bar \{[\s\S]*border-radius: var\(--radius-sm\);/);
   assert.match(style, /color: var\(--text\);/);
   assert.match(style, /live-overview-poll-slide-in/);
 });

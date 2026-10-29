@@ -39,7 +39,12 @@
     bound: false,
     sortMode: 'status',
     leaderboardSortMode: 'points',
-    articleExpanded: false
+    articleExpanded: false,
+    tableView: 'matches',
+    tableEntries: new Map(),
+    tableRequested: false,
+    tableReady: false,
+    tableError: null
   };
 
   const BONUS_QUESTION_PRESENTATION = Object.freeze({
@@ -84,11 +89,13 @@
       .replaceAll("'", '&#039;');
   }
 
+  const RACKET_ICON_SVG = '<g transform="rotate(40 12 12)"><path d="M12 1.5c3.4 0 5.6 2.7 5.6 6.2 0 3.6-2.4 6.6-5.6 6.6s-5.6-3-5.6-6.6c0-3.5 2.2-6.2 5.6-6.2Z"/><path d="M9.6 13.6 11 16.6h2l1.4-3"/><rect x="10.8" y="16.6" width="2.4" height="5.6" rx="1.1"/><path d="M10 6h.01M14 6h.01M12 8h.01M10 10h.01M14 10h.01"/></g>';
+
   function renderPredictionAccountTypeIcon(entry) {
     if (typeof entry?.is_player !== 'boolean') return '';
     const label = entry.is_player ? 'Spieler' : 'Tipper';
     const icon = entry.is_player
-      ? '<g transform="rotate(40 12 12)"><path d="M12 1.5c3.4 0 5.6 2.7 5.6 6.2 0 3.6-2.4 6.6-5.6 6.6s-5.6-3-5.6-6.6c0-3.5 2.2-6.2 5.6-6.2Z"/><path d="M9.6 13.6 11 16.6h2l1.4-3"/><rect x="10.8" y="16.6" width="2.4" height="5.6" rx="1.1"/><path d="M10 6h.01M14 6h.01M12 8h.01M10 10h.01M14 10h.01"/></g>'
+      ? RACKET_ICON_SVG
       : '<path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="m9 12 2 2 4-4"/>';
     return `<span class="prediction-account-type-icon" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icon}</svg></span>`;
   }
@@ -1239,6 +1246,320 @@
     return Math.max(0, totalPoints - bonusPoints - activeTipPoints);
   }
 
+  function isPredictionTableVisible() {
+    return Boolean(document.getElementById('tipptabelle')?.classList.contains('active'));
+  }
+
+  function getPredictionTableMatches() {
+    return [...(state.season?.matches || [])].sort((first, second) =>
+      Number(first.spieltag ?? Infinity) - Number(second.spieltag ?? Infinity)
+      || compareMatchesByNumber(first, second));
+  }
+
+  function getPredictionTableEntry(userId, type, itemId) {
+    return state.tableEntries.get(userId)?.get(`${type}:${itemId}`) || null;
+  }
+
+  function getPlayerShortLabel(playerId) {
+    return (window.PADEL_PLAYERS || []).find(player => player.id === playerId)?.initials || playerId;
+  }
+
+  function getPredictionTableTeamLabel(team) {
+    const playerIds = team?.playerIds || [];
+    return playerIds.length ? playerIds.map(getPlayerShortLabel).join('/') : 'offen';
+  }
+
+  // Der Fokus liegt auf dem zuletzt gespielten bestätigten Ergebnis.
+  function getLastConfirmedMatchId(matches) {
+    const confirmed = matches.filter(match => getActualSets(match) && !isCancelledMatch(match));
+    const getTime = match => new Date(state.databaseMatches.get(match.id)?.match_at || 0).getTime() || 0;
+    return confirmed.sort((first, second) => getTime(second) - getTime(first) || compareMatchesByNumber(second, first))[0]?.id || null;
+  }
+
+  function renderPredictionTableCellContent(value, points, extraSuffix = '', isPassive = false) {
+    const tone = isPassive ? 'is-passive' : points >= 4 ? 'points-4' : 'points-2';
+    const pointsHtml = Number.isFinite(points) && points > 0 ? `<span class="prediction-table-points ${tone}">${points}</span>` : '';
+    return `<span class="prediction-table-value">${escapeHtml(value)}${extraSuffix}${pointsHtml}</span>`;
+  }
+
+  function renderPredictionTableHiddenCell(isOwnRow) {
+    return isOwnRow
+      ? '<td class="prediction-table-cell is-hidden" title="Getippt – sichtbar ab Tippschluss" aria-label="Getippt">✓</td>'
+      : '<td class="prediction-table-cell is-hidden"></td>';
+  }
+
+  function renderPredictionTableMatchCell(entry, match, isOwnRow = false) {
+    const isCancelled = isCancelledMatch(match);
+    // Die eigene, nicht tippbare Partie erhält bis zur automatischen Gutschrift einen Strich.
+    if (isOwnRow && !entry?.is_passive && isOwnMatch(match)) {
+      return '<td class="prediction-table-cell is-own-match" title="Eigene Partie – kein Tipp möglich" aria-label="Eigene Partie">–</td>';
+    }
+    if (!entry) return '<td class="prediction-table-cell is-empty" aria-label="Kein Tipp"></td>';
+    if (entry.is_passive) {
+      const points = Number(entry.points) || 0;
+      const icon = `<span class="prediction-table-racket" role="img" aria-label="Eigene Partie"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${RACKET_ICON_SVG}</svg></span>`;
+      return `<td class="prediction-table-cell is-passive" title="Eigene Partie: automatisch ${points} Punkte">${renderPredictionTableCellContent('', points, icon, true)}</td>`;
+    }
+    if (entry.prediction === null || entry.prediction === undefined) return renderPredictionTableHiddenCell(isOwnRow);
+    if (isCancelled) {
+      return `<td class="prediction-table-cell is-cancelled" title="Nicht gewertet">${renderPredictionTableCellContent(entry.prediction, null)}</td>`;
+    }
+    const points = entry.points === null || entry.points === undefined ? null : Number(entry.points);
+    const classes = ['prediction-table-cell', 'is-visible'];
+    if (points === 0) classes.push('is-zero');
+    if (points === 4) classes.push('is-exact');
+    return `<td class="${classes.join(' ')}">${renderPredictionTableCellContent(entry.prediction, points)}</td>`;
+  }
+
+  // Mobil zeigt die Tabelle Kürzel: das Spielerkürzel, sonst die Anfangsbuchstaben von Vor- und Nachname.
+  function getPredictionAccountShortLabel(entry) {
+    const normalize = value => String(value || '').replace(/[.\s]+/g, ' ').trim().toLocaleLowerCase('de');
+    const displayName = normalize(entry?.display_name);
+    const player = entry?.is_player && displayName
+      ? (window.PADEL_PLAYERS || []).find(candidate => normalize(candidate.name) === displayName)
+      : null;
+    if (player?.initials) return player.initials;
+    const words = String(entry?.display_name || '').split(/[\s._-]+/).filter(Boolean);
+    if (words.length >= 2) return `${words[0][0]}${words[words.length - 1][0]}`.toLocaleUpperCase('de');
+    return (words[0] || '?').slice(0, 2).toLocaleUpperCase('de');
+  }
+
+  function renderPredictionTableAccountCell(entry, index) {
+    return `<th scope="row" class="prediction-table-account r${Math.min(index + 1, 4)}"><span class="prediction-table-account-inner"><span class="prediction-table-rank rank-position">${index + 1}</span><span class="prediction-rank-account"><span class="pname">${escapeHtml(entry.display_name)}</span><span class="pname-short" title="${escapeHtml(entry.display_name)}">${escapeHtml(getPredictionAccountShortLabel(entry))}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionCompanyBadge(entry)}${renderPreviousPredictionWinnerIcon(entry)}</span></span></th>`;
+  }
+
+  function renderPredictionTableTotals(entry) {
+    return `<td class="prediction-table-bonus-total">${Number(entry.bonus_points) || 0}</td><td class="prediction-table-total">${Number(entry.points) || 0}</td>`;
+  }
+
+  // Gespielte, begonnene und aktuell tippbare Partien gelten als aktiv; eigene Partien zählen wie für alle anderen.
+  function isPredictionTableMatchActive(match) {
+    const databaseMatch = state.databaseMatches.get(match.id);
+    if (getActualSets(match) || isCancelledMatch(match)) return true;
+    if (databaseMatch?.match_at && new Date(databaseMatch.match_at).getTime() <= Date.now()) return true;
+    if (!databaseMatch || databaseMatch.betting_open !== true || state.season?.competition?.predictionsEnabled === false) return false;
+    return databaseMatch.match_at ? true : match.sieger === null && !isOutsidePreviewWindow(match);
+  }
+
+  function renderPredictionTableMatchHeader(match, isFocus) {
+    const actualValue = getActualPredictionValue(match);
+    const isCancelled = isCancelledMatch(match);
+    const result = isCancelled ? 'o.W.' : actualValue || formatMatchDate(match);
+    const number = match.id.match(/\d+$/)?.[0] || '';
+    const hasTeams = match.team1.playerIds.length > 0 && match.team2.playerIds.length > 0;
+    const title = hasTeams
+      ? `Partie ${number}: ${match.team1.spieler.join(' & ')} vs. ${match.team2.spieler.join(' & ')}`
+      : `Partie ${number}: Teilnehmer stehen noch nicht fest`;
+    const content = `<span class="prediction-table-team">${escapeHtml(getPredictionTableTeamLabel(match.team1))}</span><span class="prediction-table-team">${escapeHtml(getPredictionTableTeamLabel(match.team2))}</span><span class="prediction-table-result${actualValue && !isCancelled ? ' has-result' : ''}">${escapeHtml(result)}</span>`;
+    // Noch nicht geöffnete Partien haben keine Vorschau und bleiben deshalb unverlinkt.
+    const isActive = isPredictionTableMatchActive(match);
+    const inner = hasTeams && isActive
+      ? `<a class="prediction-table-match-link" href="${getMatchDetailHref(match)}" data-match-statistics="${escapeHtml(match.id)}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">${content}</a>`
+      : `<span class="prediction-table-match-link" title="${escapeHtml(title)}">${content}</span>`;
+    const stateClass = isActive ? '' : ' is-not-open';
+    return `<th scope="col" class="prediction-table-match${stateClass}${isFocus ? ' is-focus' : ''}"${isFocus ? ' data-prediction-table-focus' : ''}>${inner}</th>`;
+  }
+
+  function renderPredictionMatchTable(entries) {
+    const matches = getPredictionTableMatches();
+    // Eine Gruppensumme ist aktiv, sobald eine ihrer Partien aktiv ist, etwa durch eine Vorterminierung.
+    const groups = [...new Set(matches.map(match => match.spieltag))].map(spieltag => {
+      const groupMatches = matches.filter(match => match.spieltag === spieltag);
+      return {
+        spieltag,
+        matches: groupMatches,
+        totalClass: groupMatches.some(isPredictionTableMatchActive) ? 'prediction-table-group-total' : 'prediction-table-group-total is-not-open'
+      };
+    });
+    const focusMatchId = getLastConfirmedMatchId(matches);
+    const getGroupLabel = spieltag => (state.season?.matchdays || []).find(day => day.spieltag === spieltag)?.title
+      || (spieltag === null || spieltag === undefined ? 'Weitere' : `Spieltag ${spieltag}`);
+    const head = `<thead>
+      <tr class="prediction-table-groups">
+        <th scope="col" rowspan="2" class="prediction-table-account">Name</th>
+        ${groups.map(group => `<th scope="colgroup" colspan="${group.matches.length + 1}" class="prediction-table-group">${escapeHtml(getGroupLabel(group.spieltag))}</th>`).join('')}
+        <th scope="col" rowspan="2" class="prediction-table-bonus-total">Bonus</th>
+        <th scope="col" rowspan="2" class="prediction-table-total" aria-label="Gesamt"><span class="prediction-table-label-full">Gesamt</span><span class="prediction-table-label-short" aria-hidden="true">Ω</span></th>
+      </tr>
+      <tr class="prediction-table-matches">
+        ${groups.map(group => `${group.matches.map(match => renderPredictionTableMatchHeader(match, match.id === focusMatchId)).join('')}<th scope="col" class="${group.totalClass}" title="Punkte ${escapeHtml(getGroupLabel(group.spieltag))}">Σ</th>`).join('')}
+      </tr>
+    </thead>`;
+    const body = entries.map((entry, index) => {
+      const isOwnRow = state.session?.user?.id === entry.user_id;
+      const cells = groups.map(group => {
+        let groupPoints = 0;
+        const matchCells = group.matches.map(match => {
+          const tableEntry = getPredictionTableEntry(entry.user_id, 'match', match.id);
+          if (Number.isFinite(Number(tableEntry?.points))) groupPoints += Number(tableEntry.points);
+          return renderPredictionTableMatchCell(tableEntry, match, isOwnRow);
+        }).join('');
+        return `${matchCells}<td class="${group.totalClass}">${groupPoints}</td>`;
+      }).join('');
+      return `<tr class="${isOwnRow ? 'authenticated-player-highlight' : ''}">${renderPredictionTableAccountCell(entry, index)}${cells}${renderPredictionTableTotals(entry)}</tr>`;
+    }).join('');
+    return `${head}<tbody>${body}</tbody>`;
+  }
+
+  function getBonusAnswerShortLabel(question, answer) {
+    if (question.question_type === 'company_winner') return COMPANY_SHORT_LABELS[answer] || String(answer).slice(0, 3).toUpperCase();
+    return getPlayerShortLabel(answer);
+  }
+
+  function renderPredictionTableBonusCell(entry, question, isOwnRow = false) {
+    if (!entry) return '<td class="prediction-table-cell is-empty" aria-label="Kein Tipp"></td>';
+    if (!Array.isArray(entry.answers)) return renderPredictionTableHiddenCell(isOwnRow);
+    const points = entry.points === null || entry.points === undefined ? null : Number(entry.points);
+    const fullLabel = entry.answers.map(answer => question.question_type === 'company_winner' ? answer : getBonusOptionLabel(answer)).join(', ');
+    let value = entry.answers.map(answer => getBonusAnswerShortLabel(question, answer)).join('/');
+    if (question.question_type === 'final_four_players') {
+      const correct = new Set(question.correct_answers || []);
+      value = question.resolved
+        ? `${entry.answers.filter(answer => correct.has(answer)).length}/${entry.answers.length}`
+        : `${entry.answers.length} Sp.`;
+    }
+    const classes = ['prediction-table-cell', 'is-visible'];
+    if (points === 0) classes.push('is-zero');
+    return `<td class="${classes.join(' ')}" title="${escapeHtml(fullLabel)}">${renderPredictionTableCellContent(value, points)}</td>`;
+  }
+
+  // Der Bonuskopf folgt dem Partienkopf: Gruppentitel, weißer Fragentitel und Status in der Datumszeile.
+  function renderPredictionBonusTable(entries) {
+    const questions = [...state.bonusQuestions].sort(compareBonusQuestions);
+    const head = `<thead>
+      <tr class="prediction-table-groups">
+        <th scope="col" rowspan="2" class="prediction-table-account">Name</th>
+        <th scope="colgroup" colspan="${questions.length}" class="prediction-table-group">Bonus</th>
+        <th scope="col" rowspan="2" class="prediction-table-bonus-total">Bonus</th>
+        <th scope="col" rowspan="2" class="prediction-table-total" aria-label="Gesamt"><span class="prediction-table-label-full">Gesamt</span><span class="prediction-table-label-short" aria-hidden="true">Ω</span></th>
+      </tr>
+      <tr class="prediction-table-matches">
+        ${questions.map(question => {
+          const presentation = getBonusQuestionPresentation(question);
+          const status = question.resolved
+            ? (question.correct_answers || []).map(answer => getBonusAnswerShortLabel(question, answer)).join('/')
+            : isBonusQuestionOpen(question) ? 'offen' : 'gesperrt';
+          return `<th scope="col" class="prediction-table-question" title="${escapeHtml(presentation.question)}"><span class="prediction-table-match-link"><span class="prediction-table-question-title">${escapeHtml(presentation.title)}</span><span class="prediction-table-result">${escapeHtml(status)}</span></span></th>`;
+        }).join('')}
+      </tr>
+    </thead>`;
+    const body = entries.map((entry, index) => `<tr class="${state.session?.user?.id === entry.user_id ? 'authenticated-player-highlight' : ''}">${renderPredictionTableAccountCell(entry, index)}${questions.map(question => renderPredictionTableBonusCell(getPredictionTableEntry(entry.user_id, 'bonus', question.question_id), question, state.session?.user?.id === entry.user_id)).join('')}${renderPredictionTableTotals(entry)}</tr>`).join('');
+    return `${head}<tbody>${body}</tbody>`;
+  }
+
+  // Die Spalte des letzten bestätigten Ergebnisses steht rechts vor den festen Summenspalten.
+  function focusPredictionTable() {
+    const wrap = document.getElementById('prediction-table-wrap');
+    if (!wrap || !isPredictionTableVisible()) return;
+    const focus = wrap.querySelector('[data-prediction-table-focus]');
+    if (!focus) {
+      wrap.scrollLeft = 0;
+      return;
+    }
+    const stickyRight = [...wrap.querySelectorAll('thead .prediction-table-total')]
+      .reduce((width, cell) => Math.max(width, cell.getBoundingClientRect().width), 0);
+    const delta = focus.getBoundingClientRect().right - (wrap.getBoundingClientRect().right - stickyRight);
+    wrap.scrollLeft = Math.max(0, wrap.scrollLeft + delta);
+  }
+
+  function renderPredictionTableViewToggle() {
+    document.querySelectorAll('[data-prediction-table-view]').forEach(button => {
+      const active = button.dataset.predictionTableView === state.tableView;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+  }
+
+  // Ordnet einer Körperspalte den untersten Kopf zu; Gruppenköpfe überspannen mehrere Spalten.
+  function getPredictionTableHeaderCell(table, columnIndex) {
+    const occupied = [];
+    let headerCell = null;
+    [...(table.tHead?.rows || [])].forEach((row, rowIndex) => {
+      let column = 0;
+      [...row.cells].forEach(cell => {
+        while (occupied[rowIndex]?.[column]) column += 1;
+        for (let rowOffset = 0; rowOffset < cell.rowSpan; rowOffset += 1) {
+          for (let columnOffset = 0; columnOffset < cell.colSpan; columnOffset += 1) {
+            (occupied[rowIndex + rowOffset] ||= [])[column + columnOffset] = true;
+          }
+        }
+        if (cell.colSpan === 1 && column === columnIndex) headerCell = cell;
+        column += cell.colSpan;
+      });
+    });
+    return headerCell;
+  }
+
+  function highlightPredictionTableColumn(cell) {
+    const table = document.getElementById('prediction-table');
+    if (!table) return;
+    table.querySelectorAll('.is-column-hover').forEach(node => node.classList.remove('is-column-hover'));
+    if (!cell || cell.classList.contains('prediction-table-account')) return;
+    const columnIndex = cell.cellIndex;
+    [...(table.tBodies[0]?.rows || [])].forEach(row => row.cells[columnIndex]?.classList.add('is-column-hover'));
+    getPredictionTableHeaderCell(table, columnIndex)?.classList.add('is-column-hover');
+  }
+
+  function renderPredictionTable() {
+    const table = document.getElementById('prediction-table');
+    const empty = document.getElementById('prediction-table-empty');
+    if (!table || !empty) return;
+    renderPredictionTableViewToggle();
+    const entries = state.leaderboard;
+    const showTable = state.tableReady && entries.length > 0
+      && (state.tableView === 'matches' || state.bonusQuestions.length > 0);
+    table.dataset.view = state.tableView;
+    table.innerHTML = showTable
+      ? state.tableView === 'bonus' ? renderPredictionBonusTable(entries) : renderPredictionMatchTable(entries)
+      : '';
+    table.hidden = !showTable;
+    empty.textContent = state.tableError
+      ? 'Die Tippübersicht kann gerade nicht geladen werden.'
+      : !state.tableReady || !state.leaderboardReady
+        ? 'Tippübersicht wird geladen …'
+        : !entries.length
+          ? state.seasonCompleted ? 'In dieser Saison wurden keine Tipps abgegeben.' : 'Die Tippübersicht füllt sich, sobald der erste Tipp gespeichert wurde.'
+          : !showTable ? 'In dieser Saison gibt es keine Bonustipps.' : '';
+    if (showTable && state.tableView === 'matches') requestAnimationFrame(focusPredictionTable);
+  }
+
+  async function loadPredictionTable() {
+    const seasonId = state.season?.databaseId || state.season?.id;
+    const legacySeasonId = LEGACY_DATABASE_SEASON_IDS[seasonId];
+    try {
+      let rows = [];
+      for (const candidateId of legacySeasonId ? [seasonId, legacySeasonId] : [seasonId]) {
+        const { data, error } = await state.client.rpc('get_prediction_overview', { p_season_id: candidateId });
+        if (error) throw error;
+        rows = data || [];
+        if (rows.length) break;
+      }
+      const entries = new Map();
+      rows.forEach(row => {
+        if (!entries.has(row.user_id)) entries.set(row.user_id, new Map());
+        entries.get(row.user_id).set(`${row.item_type}:${row.item_id}`, row);
+      });
+      state.tableEntries = entries;
+      state.tableReady = true;
+      state.tableError = null;
+    } catch (error) {
+      state.tableError = error.message || 'Unbekannter Fehler';
+      console.warn('Tippübersicht nicht verfügbar:', state.tableError);
+    }
+  }
+
+  function onSectionShown(sectionId) {
+    if (sectionId !== 'tipptabelle') return;
+    if (state.tableRequested) {
+      renderPredictionTable();
+      return;
+    }
+    state.tableRequested = true;
+    renderPredictionTable();
+    if (!state.client || !state.season) return;
+    loadPredictionTable().then(renderPredictionTable);
+  }
+
   async function loadPredictions({ accountReady } = {}) {
     if (accountReady) {
       await accountReady;
@@ -1516,6 +1837,7 @@
     renderOverview();
     renderMatches();
     renderLeaderboard();
+    renderPredictionTable();
   }
 
   async function refresh({ accountReady } = {}) {
@@ -1527,7 +1849,8 @@
       await Promise.all([
         loadPublicData(),
         loadPredictions({ accountReady }),
-        loadBonusPredictions({ accountReady })
+        loadBonusPredictions({ accountReady }),
+        state.tableRequested ? loadPredictionTable() : null
       ]);
       state.ready = true;
       state.error = null;
@@ -1566,6 +1889,13 @@
         selectBonusPlayerOption(pickerOption);
         return;
       }
+      const tableViewButton = event.target.closest('[data-prediction-table-view]');
+      if (tableViewButton) {
+        if (tableViewButton.dataset.predictionTableView === state.tableView) return;
+        state.tableView = tableViewButton.dataset.predictionTableView;
+        renderPredictionTable();
+        return;
+      }
       const sortButton = event.target.closest('[data-prediction-sort]');
       if (!sortButton || sortButton.dataset.predictionSort === state.sortMode) return;
       state.sortMode = sortButton.dataset.predictionSort;
@@ -1577,6 +1907,11 @@
       if (!prediction) return;
       savePrediction(prediction.dataset.predictionMatch, prediction.dataset.predictionValue);
     });
+    const predictionTable = document.getElementById('prediction-table');
+    predictionTable?.addEventListener('mouseover', event => {
+      highlightPredictionTableColumn(event.target.closest('tbody :is(td, th)'));
+    });
+    predictionTable?.addEventListener('mouseleave', () => highlightPredictionTableColumn(null));
     document.addEventListener('input', event => {
       const searchInput = event.target.closest('[data-bonus-picker-search]');
       if (!searchInput) return;
@@ -1617,6 +1952,7 @@
 
   async function init(season, { accountReady } = {}) {
     state.season = season;
+    state.tableRequested = isPredictionTableVisible();
     state.leaderboardSortMode = 'points';
     state.seasonParticipants = Array.isArray(season?.participants) ? season.participants : [];
     applyPlayerElos(season?.participants || []);
@@ -1653,5 +1989,5 @@
     render();
   }
 
-  window.PadelTippspiel = { init, refresh, render, setSeasonData };
+  window.PadelTippspiel = { init, refresh, render, setSeasonData, onSectionShown };
 })();
