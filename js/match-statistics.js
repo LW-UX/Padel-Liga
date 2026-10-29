@@ -309,25 +309,41 @@
     </div>`;
   }
   function renderForm(data, selectedPlayerId) {
-    const players = (data.players || []).map(player => {
-      const form = Array.isArray(player.form) ? player.form.slice(-3) : [];
-      const chips = form.length ? form.map((match, index) => {
-        const won = match.outcome === 'win';
-        const matchTiebreak = Boolean(match.decidedByMatchTiebreak);
-        const recency = Math.max(0, form.length - index - 1);
-        const outcome = won ? 'Sieg' : 'Niederlage';
-        const title = [match.label, `${outcome}${matchTiebreak ? ' im Match-Tie-Break' : ''}`, match.result]
-          .filter(Boolean).join(' · ');
-        return `<span class="form-chip form-recency-${recency} ${won ? 'form-win' : 'form-loss'}${matchTiebreak ? ' form-tiebreak' : ''}" tabindex="0" aria-label="${esc(title)}" title="${esc(title)}">${won ? 'S' : 'N'}</span>`;
+    const renderPlayer = player => {
+      const form = Array.isArray(player.form) ? player.form.slice(-5) : [];
+      const groups = form.map(item => Array.isArray(item?.matches)
+        ? item
+        : { groupId: item?.matchId, kind: item?.kind || 'official', date: item?.date, competition: item?.competition, matches: [item] });
+      const chips = groups.length ? groups.map((group, index) => {
+        const matches = (group.matches || []).filter(Boolean);
+        const recency = Math.max(0, groups.length - index - 1);
+        const groupClass = matches.length > 1 ? ' is-multi-match' : '';
+        const groupLabel = group.kind === 'training' ? `Training mit ${matches.length} Paarungen` : matches[0]?.label || 'Partie';
+        return `<span class="match-statistics-form-group${groupClass}" aria-label="${esc(groupLabel)}">${matches.map(match => {
+          const won = match.outcome === 'win';
+          const matchTiebreak = Boolean(match.decidedByMatchTiebreak);
+          const outcome = won ? 'Sieg' : 'Niederlage';
+          const competition = match.competition || group.competition || (group.kind === 'training' ? 'Training' : '');
+          const matchDate = match.date || group.date || '';
+          const partnerNames = Array.isArray(match.partnerNames) ? match.partnerNames.join(' & ') : match.partnerNames || '';
+          const opponentNames = Array.isArray(match.opponentNames) ? match.opponentNames.join(' & ') : match.opponentNames || '';
+          const title = [match.label, `${outcome}${matchTiebreak ? ' im Match-Tie-Break' : ''}`, match.result]
+            .filter(Boolean).join(' · ');
+          return `<span class="form-chip form-recency-${recency} ${won ? 'form-win' : 'form-loss'}${group.kind === 'training' ? ' form-training' : ''}${matchTiebreak ? ' form-tiebreak' : ''}" tabindex="0" aria-label="${esc(title)}" data-form-player="${esc(player.displayName)}" data-form-match-id="${esc(match.matchId)}" data-form-date="${esc(matchDate ? date(matchDate) : '')}" data-form-competition="${esc(competition)}" data-form-partner="${esc(partnerNames)}" data-form-opponents="${esc(opponentNames)}" data-form-result="${esc(match.result || '')}">${won ? 'S' : 'N'}</span>`;
+        }).join('')}</span>`;
       }).join('') : '<span class="neu">—</span>';
       const teamClass = Number(player.team) === 2 ? 'match-statistics-team-2' : 'match-statistics-team-1';
       return `<div class="match-statistics-form-player ${teamClass}">
         <span class="match-statistics-form-name${viewerClass(player, selectedPlayerId)}">${esc(player.displayName)}</span>
         <span class="match-statistics-form-chips">${chips}</span>
       </div>`;
+    };
+    const teams = [1, 2].map(team => {
+      const players = (data.players || []).filter(player => Number(player.team) === team).map(renderPlayer).join('');
+      return players ? `<div class="match-statistics-form-team match-statistics-team-${team}" data-form-team="${team}">${players}</div>` : '';
     }).join('');
-    return players ? section('Form der letzten 3 Partien', `<div class="match-statistics-form-row">${players}</div>`,
-      'S steht für Sieg, N für Niederlage. Orange markierte Kreise kennzeichnen Partien, die im Match-Tiebreak entschieden wurden. Links steht die älteste, rechts die jüngste Partie.') : '';
+    return teams ? section('Form der letzten 5 Partien', `<div class="match-statistics-form-scroll"><div class="match-statistics-form-row">${teams}</div></div>`,
+      'S steht für Sieg, N für Niederlage. Trainings erscheinen mit Kontur; mehrere überlappende Kreise gehören zu demselben Training und zählen gemeinsam als eine Partie. Orange markierte Kreise kennzeichnen Entscheidungen im Match-Tiebreak. Links steht die älteste, rechts die jüngste Partie.') : '';
   }
   function eloPathForecast(data) {
     if (data.probability == null) return null;
@@ -415,20 +431,26 @@
     if (!data.countsForElo) return '';
     const analysis = data.availability === 'analysis';
     const g = graphGeometry(data.players, analysis);
+    const initialTeam = 1;
     const lanes = data.players.map((p, i) => {
+      const team = Number(p.team) === 2 ? 2 : 1;
+      const teamPlayers = data.players.filter(player => Number(player.team) === team);
+      const teamPlayerIndex = Math.max(0, teamPlayers.findIndex(player => player.playerId === p.playerId));
       const e = p.elo || {}, x = 60 + i * 235;
-      const teamClass = Number(p.team) === 2 ? 'match-statistics-team-2' : 'match-statistics-team-1';
+      const lineStartX = x + 30, lineEndX = x + 195;
+      const teamClass = team === 2 ? 'match-statistics-team-2' : 'match-statistics-team-1';
+      const playerClass = `match-statistics-team-player-${teamPlayerIndex + 1}`;
       const available = e.before != null && (!analysis || e.after != null);
       const analysisRanges = !analysis || !available ? ''
         : [['lossMin', 'lossMax', 'loss'], ['winMin', 'winMax', 'win']].map(([a, b, cls]) => e[a] == null || e[b] == null ? ''
-          : projectionRange(x + 30, g.y(e.before), x + 195, e[a], e[b], g, cls)).join('');
+          : projectionRange(lineStartX, g.y(e.before), lineEndX, e[a], e[b], g, cls)).join('');
       const forecast = analysis || !available ? null : forecastProjection(data, p);
       const forecastLine = !forecast ? ''
-        : `<path d="${smoothLinePath(x + 30, g.y(e.before), x + 195, g.y(forecast.value))}" class="match-statistics-forecast-line ${forecast.outcome}"/><circle cx="${x + 195}" cy="${g.y(forecast.value)}" r="4" class="match-statistics-forecast-dot ${forecast.outcome}"/>`;
+        : `<path d="${smoothLinePath(lineStartX, g.y(e.before), lineEndX, g.y(forecast.value))}" class="match-statistics-forecast-line ${forecast.outcome}"/><circle cx="${lineEndX}" cy="${g.y(forecast.value)}" r="4" class="match-statistics-forecast-dot ${forecast.outcome}"/>`;
       const shape = !available ? '' : analysis
-        ? `${analysisRanges}<path d="${smoothLinePath(x + 30, g.y(e.before), x + 195, g.y(e.after))}" class="match-statistics-line"/><circle cx="${x + 195}" cy="${g.y(e.after)}" r="5" class="match-statistics-dot"/>`
+        ? `${analysisRanges}<path d="${smoothLinePath(lineStartX, g.y(e.before), lineEndX, g.y(e.after))}" class="match-statistics-line"/><circle cx="${lineEndX}" cy="${g.y(e.after)}" r="5" class="match-statistics-dot"/>`
         : [['lossMin', 'lossMax', 'loss'], ['winMin', 'winMax', 'win']].map(([a, b, cls]) => e[a] == null || e[b] == null ? ''
-          : projectionBand(x + 30, g.y(e.before), x + 195, e[a], e[b], g, cls)).join('') + forecastLine;
+          : projectionBand(lineStartX, g.y(e.before), lineEndX, e[a], e[b], g, cls)).join('') + forecastLine;
       const startValue = available ? `<text x="${x + 22}" y="${g.y(e.before) + 24}" text-anchor="end" class="match-statistics-value match-statistics-start-value">${number(e.before)}</text>` : '';
       const resultY = analysis && available ? analysisResultY(g, e.before, e.after) : null;
       const resultLabel = analysis && available ? number(e.after) : '';
@@ -438,37 +460,50 @@
       const resultDeltaClass = resultDelta > 0 ? 'pos' : resultDelta < 0 ? 'neg' : 'neu';
       const peakReached = analysis && e.peakBefore != null && e.after != null && e.after > e.peakBefore;
       const resultValues = !available ? '' : analysis
-        ? `${peakReached ? peakStarIcon(x + 195, resultY, resultLabel, 'achieved') : ''}<text x="${x + 195}" y="${resultY}" text-anchor="end" class="match-statistics-value match-statistics-result-value">${resultLabel}</text><text x="${x + 195}" y="${resultY + 15}" text-anchor="end" class="match-statistics-value match-statistics-delta-value ${resultDeltaClass}">${signed(resultDelta)}</text>`
+        ? `${peakReached ? peakStarIcon(lineEndX, resultY, resultLabel, 'achieved') : ''}<text x="${lineEndX}" y="${resultY}" text-anchor="end" class="match-statistics-value match-statistics-result-value">${resultLabel}</text><text x="${lineEndX}" y="${resultY + 15}" text-anchor="end" class="match-statistics-value match-statistics-delta-value ${resultDeltaClass}">${signed(resultDelta)}</text>`
         : `${projectionValueLabel(
-            x + 195,
+            lineEndX,
             Math.max(g.plotTop + 14, Math.min(g.y(e.winMin), g.y(e.winMax)) - 27),
             e.winMin,
             e.winMax,
             'match-statistics-win-value',
             e.peakBefore
           )}${projectionValueLabel(
-            x + 195,
+            lineEndX,
             Math.min(g.nameY - 51, Math.max(g.y(e.lossMin), g.y(e.lossMax)) + 24),
             e.lossMin,
             e.lossMax,
             'match-statistics-loss-value',
             e.peakBefore
           )}`;
-      return `<g class="match-statistics-player-graph ${teamClass}${i === 0 ? ' is-selected' : ''}" data-statistics-graph-player="${esc(p.playerId)}" style="--statistics-lane-offset:${-i * 235}px">
+      const panelOffset = teamPlayerIndex * 470 - i * 235;
+      return { team, playerId: p.playerId, markup: `<g class="match-statistics-player-graph ${teamClass} ${playerClass}${i === 0 ? ' is-player-selected' : ''}${team === initialTeam ? ' is-team-selected' : ''}" data-statistics-graph-player="${esc(p.playerId)}" data-statistics-graph-team="${team}" style="--statistics-mobile-offset:${-i * 235}px;--statistics-panel-offset:${panelOffset}px">
         <clipPath id="statistics-lane-${i}"><rect x="${x}" y="${g.plotTop}" width="225" height="${g.plotBottom - g.plotTop + 1}"/></clipPath>
-        <g clip-path="url(#statistics-lane-${i})">${shape}${available ? `<circle cx="${x + 30}" cy="${g.y(e.before)}" r="5" class="match-statistics-dot"/>` : ''}</g>
+        <g clip-path="url(#statistics-lane-${i})">${shape}${available ? `<circle cx="${lineStartX}" cy="${g.y(e.before)}" r="5" class="match-statistics-dot"/>` : ''}</g>
         ${startValue}${resultValues}
         <text x="${x + 115}" y="${g.nameY}" text-anchor="middle" class="match-statistics-player-label${viewerClass(p, selectedPlayerId)}">${esc(p.displayName)}</text>
-      </g>`;
+      </g>` };
     });
-    const selectedLaneLast = [...lanes.slice(1), lanes[0]].join('');
-    const playerSelect = `<div class="match-statistics-graph-picker match-scope-toggle" role="group" aria-label="Spieler für Elo-Entwicklung auswählen">
-      ${data.players.map((player, index) => `<button type="button" class="${index === 0 ? 'active' : ''}" data-statistics-graph-select="${esc(player.playerId)}" aria-pressed="${index === 0 ? 'true' : 'false'}">${esc(player.displayName)}</button>`).join('')}
+    const initialPlayerId = data.players[0]?.playerId;
+    const selectedTeamLast = [
+      ...lanes.filter(lane => lane.team !== initialTeam),
+      ...lanes.filter(lane => lane.team === initialTeam && lane.playerId !== initialPlayerId),
+      ...lanes.filter(lane => lane.playerId === initialPlayerId)
+    ]
+      .map(lane => lane.markup).join('');
+    const playerSelect = `<div class="match-statistics-graph-picker match-statistics-player-picker match-scope-toggle" role="group" aria-label="Spieler für Elo-Entwicklung auswählen">
+      ${data.players.map((player, index) => `<button type="button"${index === 0 ? ' class="active"' : ''} data-statistics-graph-select="${esc(player.playerId)}" aria-pressed="${index === 0 ? 'true' : 'false'}">${esc(player.displayName)}</button>`).join('')}
     </div>`;
-    return section('Elo-Entwicklung', `${playerSelect}<div class="match-statistics-graph" tabindex="0" role="region" aria-label="Elo-Diagramm der vier Spieler">
+    const teamSelect = `<div class="match-statistics-graph-picker match-statistics-team-picker match-scope-toggle" role="group" aria-label="Team für Elo-Entwicklung auswählen">
+      ${[1, 2].map(team => {
+        const active = team === initialTeam;
+        return `<button type="button"${active ? ' class="active"' : ''} data-statistics-graph-team-select="${team}" aria-pressed="${active ? 'true' : 'false'}">Team ${team}</button>`;
+      }).join('')}
+    </div>`;
+    return section('Elo-Entwicklung', `${playerSelect}${teamSelect}<div class="match-statistics-graph" tabindex="0" role="region" aria-label="Elo-Diagramm der vier Spieler">
       <svg viewBox="0 0 1000 590" width="1000" height="590" aria-hidden="true" class="match-statistics-svg">
         <defs><symbol id="statistics-peak-star-icon" viewBox="0 0 24 24"><path d="M12 2.5 14.94 8.46 21.52 9.42 16.76 14.06 17.88 20.61 12 17.52 6.12 20.61 7.24 14.06 2.48 9.42 9.06 8.46 12 2.5Z"/></symbol></defs>
-        ${g.ticks.map(t => `<path d="M60 ${g.y(t)} H995" class="match-statistics-grid"/>`).join('')}${selectedLaneLast}
+        ${g.ticks.map(t => `<path d="M60 ${g.y(t)} H995" class="match-statistics-grid"/>`).join('')}${selectedTeamLast}
       </svg><div class="match-statistics-axis" aria-hidden="true">${g.ticks.map(t => `<span style="top:${g.y(t)}px">${number(Math.round(t))}</span>`).join('')}</div></div>`,
       analysis
         ? 'Die Flächen zeigen, welche Elo-Werte bei dieser Partie möglich waren: grün bei einem Sieg und rot bei einer Niederlage. Die durchgezogene Linie zeigt die tatsächliche Elo-Entwicklung. Am Endwert steht die Veränderung durch diese Partie.'
@@ -518,7 +553,7 @@
       ? renderMatchForecast(data, forecastOptions.forecast, forecastOptions)
       : '';
     return head + forecast
-      + renderContext(data, selectedPlayerId) + renderPlayersAndImpacts(data, groupImpacts(data), selectedPlayerId) + renderForm(data, selectedPlayerId) + renderGraph(data, selectedPlayerId)
+      + renderContext(data, selectedPlayerId) + renderForm(data, selectedPlayerId) + renderPlayersAndImpacts(data, groupImpacts(data), selectedPlayerId) + renderGraph(data, selectedPlayerId)
       + (data.availability === 'preview' ? '<p class="match-statistics-note">Werte und Prognosen können sich durch weitere bestätigte Partien bis zum Spielbeginn verändern.</p>' : '');
   }
   function skeleton() {
@@ -1108,8 +1143,24 @@
         button.classList.toggle('active', isActive);
         button.setAttribute('aria-pressed', String(isActive));
       });
-      players.forEach(player => player.classList.toggle('is-selected', player === selected));
+      players.forEach(player => player.classList.toggle('is-player-selected', player === selected));
       if (selected) selected.parentElement.append(selected);
+      return;
+    }
+    const graphTeamButton = event.target.closest('[data-statistics-graph-team-select]');
+    if (graphTeamButton) {
+      const picker = graphTeamButton.closest('.match-statistics-graph-picker');
+      const graph = picker?.closest('.match-statistics-section')?.querySelector('.match-statistics-svg');
+      const players = [...(graph?.querySelectorAll('[data-statistics-graph-player]') || [])];
+      const selectedTeam = graphTeamButton.dataset.statisticsGraphTeamSelect;
+      picker.querySelectorAll('[data-statistics-graph-team-select]').forEach(button => {
+        const isActive = button === graphTeamButton;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-pressed', String(isActive));
+      });
+      const selectedPlayers = players.filter(player => player.dataset.statisticsGraphTeam === selectedTeam);
+      players.forEach(player => player.classList.toggle('is-team-selected', selectedPlayers.includes(player)));
+      selectedPlayers.forEach(player => player.parentElement.append(player));
       return;
     }
     const button = event.target.closest('[data-match-statistics]');

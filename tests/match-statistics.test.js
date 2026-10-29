@@ -53,15 +53,27 @@ test('content order, exclusions, escaped data and empty sections',()=>{
  assert.match(html,/class="match-statistics-context"[\s\S]*?Firmenduell[\s\S]*?<strong>Rematch #1<\/strong>[\s\S]*?6:2, 6:3[\s\S]*?spielt mit ihrer aktuellen Erfolgspartnerin[\s\S]*?\(3 von 4\)/);
  assert.doesNotMatch(html,/match-statistics-player-notes/);
  assert.doesNotMatch(html,/Vorgeschichte der Partie/);
- assert.ok(html.indexOf('match-statistics-context')<html.indexOf('Rangliste'));assert.ok(html.indexOf('Rangliste')<html.indexOf('Was sich verändern kann'));assert.ok(html.indexOf('Was sich verändern kann')<html.indexOf('Elo-Entwicklung'));
- assert.ok(html.indexOf('Was sich verändern kann')<html.indexOf('Form der letzten 3 Partien'));assert.ok(html.indexOf('Form der letzten 3 Partien')<html.indexOf('Elo-Entwicklung'));
+ assert.ok(html.indexOf('match-statistics-context')<html.indexOf('Form der letzten 5 Partien'));assert.ok(html.indexOf('Form der letzten 5 Partien')<html.indexOf('Rangliste'));
+ assert.ok(html.indexOf('Rangliste')<html.indexOf('Was sich verändern kann'));assert.ok(html.indexOf('Was sich verändern kann')<html.indexOf('Elo-Entwicklung'));
  assert.equal((html.match(/match-statistics-form-player/g)||[]).length,4);
- assert.equal((html.match(/class="form-chip/g)||[]).length,12);
- assert.equal((html.match(/form-tiebreak/g)||[]).length,4);
+ assert.equal((html.match(/match-statistics-form-team/g)||[]).length,2);
+ assert.match(html,/class="match-statistics-form-team match-statistics-team-1" data-form-team="1">[\s\S]*?match-statistics-form-player match-statistics-team-1[\s\S]*?match-statistics-form-player match-statistics-team-1/);
+ assert.match(html,/class="match-statistics-form-team match-statistics-team-2" data-form-team="2">[\s\S]*?match-statistics-form-player match-statistics-team-2[\s\S]*?match-statistics-form-player match-statistics-team-2/);
+ assert.equal((html.match(/class="form-chip/g)||[]).length,20);
+ assert.equal((html.match(/data-form-player=/g)||[]).length,20);
+ assert.equal((html.match(/data-form-match-id=/g)||[]).length,20);
+ assert.equal((html.match(/data-form-competition=/g)||[]).length,20);
+ assert.equal((html.match(/form-tiebreak/g)||[]).length,8);
+ assert.match(appSource,/function getOrCreateFormTooltip\(anchor\)[\s\S]*?closest\('dialog\[open\]:not\(\[data-presentation="panel"\]\)'\)[\s\S]*?host\.appendChild\(tooltip\)/);
+ assert.match(appSource,/const tooltipEl = getOrCreateFormTooltip\(anchor\);/);
  assert.match(html,/Partie 2 · Sieg im Match-Tie-Break · 6:4, 4:6, 10:8/);
+ assert.match(html,/data-form-player="Agnes K\." data-form-match-id="old-1-2"/);
  assert.equal((html.match(/id="match-statistics-form-help"/g)||[]).length,1);
  assert.equal((html.match(/id="match-statistics-elo-help"/g)||[]).length,1);
- assert.match(statisticsStyleSource,/\.match-statistics-form-row \{[\s\S]*?grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
+ assert.match(statisticsStyleSource,/\.match-statistics-form-row \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
+ assert.match(statisticsStyleSource,/\.match-statistics-form-team \{[\s\S]*?display: grid;[\s\S]*?gap: 1\.5rem;/);
+ assert.match(statisticsStyleSource,/\.match-statistics-form-chips \.form-chip \{[\s\S]*?opacity: 1;/);
+ assert.match(statisticsStyleSource,/@media \(max-width: 768px\) \{[\s\S]*?\.match-statistics-form-row \{ grid-template-columns: minmax\(0, 1fr\);/);
  assert.ok(html.indexOf('Elo-Entwicklung')<html.indexOf('Werte und Prognosen können sich'));assert.doesNotMatch(html,/Stand:/);
  assert.doesNotMatch(html,/<title>|Dominanz|Auszeichnungen|Lieblingspartner/);
  assert.match(html,/<h2 class="widget-label"><span class="match-statistics-heading">Elo-Entwicklung<span class="th-help-wrap match-statistics-heading-help">/);
@@ -71,6 +83,21 @@ test('content order, exclusions, escaped data and empty sections',()=>{
  assert.doesNotMatch(empty,/match-statistics-context|Vorgeschichte|Elo-Entwicklung/);assert.match(empty,/Keine bedeutenden Auswirkungen/);
  assert.match(render({...d,availability:'basic'}),/ausführliche Vorschau folgt/);
  assert.doesNotMatch(render({...d,availability:'basic'}),/Rangliste/);
+});
+test('multiple pairings of one training overlap but occupy one of five form groups',()=>{
+ const d=fixture();
+ d.players[0].form[2]={groupId:'training-7',kind:'training',date:'2026-07-01T16:00:00Z',competition:'Training',matches:[
+  {matchId:'training-7-1',label:'Training · Paarung 1',result:'6:3',outcome:'win',partnerNames:['Agnes K.'],opponentNames:['Christoph L.','Marco M.']},
+  {matchId:'training-7-2',label:'Training · Paarung 2',result:'4:6',outcome:'loss',partnerNames:['Marco M.'],opponentNames:['Agnes K.','Christoph L.']},
+  {matchId:'training-7-3',label:'Training · Paarung 3',result:'6:4',outcome:'win',partnerNames:['Christoph L.'],opponentNames:['Agnes K.','Marco M.']}
+ ]};
+ const html=render(d);
+ const player=html.match(/<div class="match-statistics-form-player match-statistics-team-1">[\s\S]*?<\/div>/)?.[0]||'';
+ assert.equal((player.match(/match-statistics-form-group/g)||[]).length,5);
+ assert.equal((player.match(/data-form-match-id=/g)||[]).length,7);
+ assert.match(player,/match-statistics-form-group is-multi-match/);
+ assert.match(player,/data-form-competition="Training"[\s\S]*?data-form-partner="Agnes K\."[\s\S]*?data-form-opponents="Christoph L\. &amp; Marco M\."/);
+ assert.match(statisticsStyleSource,/\.match-statistics-form-group\.is-multi-match \.form-chip \+ \.form-chip \{ margin-left: -7\.33px; \}/);
 });
 test('relationship facts combine each player\'s statements in one centered sentence',()=>{
  const d=fixture();
@@ -129,7 +156,7 @@ test('possible Elo peaks use an outline icon and achieved peaks use a filled ico
  assert.match(analysis,/class="match-statistics-value match-statistics-delta-value pos">\+36<\/text>/);
  assert.match(analysis,/class="match-statistics-value match-statistics-delta-value neg">-36<\/text>/);
  assert.match(statisticsStyleSource,/\.match-statistics-peak-star\.possible \{ fill: none; stroke: var\(--positiv\); \}/);
- assert.match(statisticsStyleSource,/\.match-statistics-peak-star\.achieved \{ fill: var\(--statistics-team-color, var\(--accent\)\);/);
+ assert.match(statisticsStyleSource,/\.match-statistics-peak-star\.achieved \{ fill: var\(--statistics-player-color, var\(--statistics-team-color, var\(--accent\)\)\);/);
  assert.match(statisticsStyleSource,/\.match-statistics-svg \.match-statistics-delta-value\.pos \{ fill: var\(--positiv\); \}/);
  assert.match(statisticsStyleSource,/\.match-statistics-svg \.match-statistics-delta-value\.neg \{ fill: var\(--negativ\); \}/);
 });
@@ -384,19 +411,31 @@ test('played Elo graphs keep solid 20 percent ranges behind the actual line',()=
  const firstLine=html.indexOf('match-statistics-line');
  assert.ok(firstRange>=0&&firstRange<firstLine,'the actual Elo line must be painted above the possible ranges');
 });
-test('mobile Elo graph overlays all players and selects the active trace',()=>{
+test('Elo graph keeps four mobile player choices and groups only the panel by team',()=>{
  const html=render(fixture());
- assert.match(html,/match-statistics-graph-picker match-scope-toggle" role="group" aria-label="Spieler für Elo-Entwicklung auswählen"/);
- assert.match(html,/<button type="button" class="active" data-statistics-graph-select="greta_p" aria-pressed="true">Greta P\.<\/button>/);
+ assert.match(html,/match-statistics-graph-picker match-statistics-player-picker match-scope-toggle" role="group" aria-label="Spieler für Elo-Entwicklung auswählen"/);
  assert.equal((html.match(/data-statistics-graph-select=/g)||[]).length,4);
+ assert.match(html,/<button type="button" class="active" data-statistics-graph-select="greta_p" aria-pressed="true">Greta P\.<\/button>/);
+ assert.match(html,/match-statistics-graph-picker match-statistics-team-picker match-scope-toggle" role="group" aria-label="Team für Elo-Entwicklung auswählen"/);
+ assert.equal((html.match(/data-statistics-graph-team-select=/g)||[]).length,2);
+ assert.match(html,/<button type="button" class="active" data-statistics-graph-team-select="1" aria-pressed="true">Team 1<\/button>/);
+ assert.match(html,/<button type="button" data-statistics-graph-team-select="2" aria-pressed="false">Team 2<\/button>/);
+ assert.doesNotMatch(html,/match-statistics-graph-team-(?:label|players|player)/);
  assert.equal((html.match(/data-statistics-graph-player=/g)||[]).length,4);
- assert.match(html,/data-statistics-graph-player="greta_p" style="--statistics-lane-offset:0px"/);
- assert.match(html,/data-statistics-graph-player="marco_m" style="--statistics-lane-offset:-705px"/);
- assert.ok(html.lastIndexOf('data-statistics-graph-player="greta_p"')>html.lastIndexOf('data-statistics-graph-player="marco_m"'));
- assert.match(source,/graphPlayerButton = event\.target\.closest\('\[data-statistics-graph-select\]'\)[\s\S]*?button\.classList\.toggle\('active', isActive\)[\s\S]*?classList\.toggle\('is-selected', player === selected\)[\s\S]*?selected\.parentElement\.append\(selected\)/);
- assert.match(statisticsStyleSource,/@media \(max-width: 768px\)[\s\S]*?\.match-statistics-graph \{[\s\S]*?overflow-x: hidden;/);
- assert.match(statisticsStyleSource,/\.match-statistics-graph-picker \{[\s\S]*?display: grid;[\s\S]*?grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
- assert.match(statisticsStyleSource,/\.match-statistics-player-graph \{[\s\S]*?opacity: \.15;[\s\S]*?translateX\(var\(--statistics-lane-offset\)\)/);
- assert.match(statisticsStyleSource,/\.match-statistics-player-graph\.is-selected \{ opacity: 1; \}/);
- assert.match(statisticsStyleSource,/\.match-statistics-player-graph:not\(\.is-selected\) \.match-statistics-value,[\s\S]*?\.match-statistics-player-label \{ display: none; \}/);
+ assert.equal((html.match(/data-statistics-graph-team="1"/g)||[]).length,2);
+ assert.equal((html.match(/data-statistics-graph-team="2"/g)||[]).length,2);
+ assert.equal((html.match(/match-statistics-player-graph[^\"]*is-player-selected/g)||[]).length,1);
+ assert.equal((html.match(/match-statistics-player-graph[^\"]*is-team-selected/g)||[]).length,2);
+ assert.ok(html.lastIndexOf('data-statistics-graph-team="1"')>html.lastIndexOf('data-statistics-graph-team="2"'));
+ assert.match(html,/data-statistics-graph-player="marco_m"[^>]*--statistics-mobile-offset:-705px;--statistics-panel-offset:-235px/);
+ assert.match(source,/graphPlayerButton = event\.target\.closest\('\[data-statistics-graph-select\]'\)[\s\S]*?classList\.toggle\('is-player-selected', player === selected\)[\s\S]*?selected\.parentElement\.append\(selected\)/);
+ assert.match(source,/graphTeamButton = event\.target\.closest\('\[data-statistics-graph-team-select\]'\)[\s\S]*?selectedPlayers = players\.filter\([\s\S]*?classList\.toggle\('is-team-selected', selectedPlayers\.includes\(player\)\)[\s\S]*?selectedPlayers\.forEach\(player => player\.parentElement\.append\(player\)\)/);
+ assert.match(statisticsStyleSource,/\.match-statistics-graph-picker \{\s*margin: 1rem 0 0;\s*\}/);
+ assert.doesNotMatch(statisticsStyleSource,/\.match-statistics-graph-team-(?:button|label|players|player)/);
+ assert.match(statisticsStyleSource,/@media \(max-width: 768px\) \{[\s\S]*?#detail-view-dialog:not\(\[data-presentation="panel"\]\) \.match-statistics-player-picker \{[\s\S]*?grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
+ assert.match(statisticsStyleSource,/#detail-view-dialog:not\(\[data-presentation="panel"\]\) \.match-statistics-player-graph\.is-player-selected \{ opacity: 1; \}/);
+ assert.match(statisticsStyleSource,/#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-team-picker \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
+ assert.match(statisticsStyleSource,/#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-player-graph\.is-team-selected \{ opacity: 1; \}/);
+ assert.match(statisticsStyleSource,/\.match-statistics-graph \{[^}]*container-type: inline-size;/);
+ assert.match(statisticsStyleSource,/#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-player-graph\.match-statistics-team-player-2 \{\s*transform: translateX\(calc\(var\(--statistics-panel-offset\) \+ min\(0px, calc\(50cqw - 500px\)\)\)\);/);
 });

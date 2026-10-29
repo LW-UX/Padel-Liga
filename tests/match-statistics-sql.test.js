@@ -16,6 +16,7 @@ const playedOrderMigration = fs.readFileSync(path.join(root, 'supabase/migration
 const previewWindowMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261021150000_test_season_preview_window.sql'), 'utf8');
 const rankingThresholdMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261022170000_match_statistics_ranking_threshold.sql'), 'utf8');
 const recentFormMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261028190000_match_statistics_recent_form.sql'), 'utf8');
+const fiveEventFormMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261029150000_match_statistics_five_event_form.sql'), 'utf8');
 const migrations = fs.readdirSync(path.join(root, 'supabase/migrations')).sort().filter(f => f < '20261013100000');
 test('result impact migration uses inclusive 45 and 55 percent boundaries',()=>{
   assert.match(favoriteThresholdMigration,/value\s*<=\s*0\.45\b/);
@@ -41,8 +42,10 @@ create table public.match_players(match_id text, player_id text, team integer,po
 create table public.season_players(season_id text, player_id text,league_id text default 'main',start_elo integer);
 create table public.season_matchdays(season_id text,matchday integer,starts_on date,ends_on date);
 create table public.match_elo_changes(match_id text,player_id text,old_elo integer,new_elo integer);
-create table public.training_sessions(id bigint,played_on date,display_time time,player_ids text[],status text);
+create table public.training_sessions(id bigint,played_on date,display_time time,player_ids text[],status text,guest_names jsonb default '{}'::jsonb);
 create table public.training_rounds(session_id bigint,round_number integer,team_one_ids text[],team_two_ids text[],result_details text,is_complete boolean);
+create function private.training_session_at(date,time) returns timestamptz language sql immutable set search_path='' as $$ select ($1 + coalesce($2,time '00:00')) at time zone 'Europe/Berlin' $$;
+create function private.training_participant_display_name(text,jsonb) returns text language sql stable set search_path='' as $$ select coalesce((select display_name from public.players where id=$1),$2->>$1) $$;
 `;
 async function addMatch(db,id,{ season='season', at=null,winner=null,stage='league',day=1,elo=true,ranking=true }={}) {
   await db.query('insert into matches(id,season_id,match_at,winner,actual_sets,result_details,competition_stage,matchday,counts_for_elo,counts_for_ranking) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',[id,season,at,winner,winner===1?'2:0':winner===2?'0:2':null,winner===1?'6:2, 6:2':winner===2?'2:6, 2:6':null,stage,day,elo,ranking]);
@@ -64,6 +67,7 @@ async function setupMatchDetail(db) {
   await db.exec(favoriteThresholdMigration);
   await db.exec(playedOrderMigration);
   await db.exec(recentFormMigration);
+  await db.exec(fiveEventFormMigration);
 }
 test('match detail SQL: historical isolation, eligibility, calculations and public permissions', { skip: !process.env.PGLITE_MODULE }, async t => {
   const { PGlite } = require(process.env.PGLITE_MODULE);
@@ -113,8 +117,8 @@ test('match detail SQL: historical isolation, eligibility, calculations and publ
   await db.exec("update matches set actual_sets='2:1',result_details='6:4, 4:6, 10:8' where id='earlier-2'");
   d=await detail('played');
   assert.equal(d.leaguePlayedOrdinal,4);
-  assert.deepEqual(d.players[0].form.map(match=>match.matchId),['earlier-1','earlier-2','earlier-3']);
-  assert.deepEqual(d.players[0].form.map(match=>match.decidedByMatchTiebreak),[false,true,false]);
+  assert.deepEqual(d.players[0].form.map(group=>group.matches[0].matchId),['earlier-1','earlier-2','earlier-3']);
+  assert.deepEqual(d.players[0].form.map(group=>group.matches[0].decidedByMatchTiebreak),[false,true,false]);
   assert.ok(d.players.every(player=>player.form.length===3));
   assert.ok(d.players.every(player=>!player.form.some(match=>match.matchId==='played')),'the viewed match is not part of its own pre-match form');
   assert.equal(d.players[0].streak.length,4); assert.ok(d.players[0].relationships.some(r=>r.kind==='successPartner'&&r.playerId==='b'));
@@ -171,6 +175,54 @@ test('match detail SQL: historical isolation, eligibility, calculations and publ
   await db.exec("set role anon"); assert.equal((await detail('played')).availability,'analysis');
   await assert.rejects(db.query("select private.match_detail_elo('a','season',now(),'x',false)"),/permission denied/);
   await assert.rejects(db.query("select private.match_detail_recent_form('a','season','main',now(),'x')"),/permission denied/);
+});
+test('match form uses five cross-season events and groups rated training pairings', { skip: !process.env.PGLITE_MODULE }, async t => {
+  const { PGlite } = require(process.env.PGLITE_MODULE);
+  const db = new PGlite();
+  t.after(() => db.close());
+  await setupMatchDetail(db);
+  await db.exec(`insert into players values
+      ('a','Anna','One',800),('b','Ben','One',800),('c','Chris','Two',800),('d','Dana','Two',800),('test_net','Test Net',null,800);
+    insert into seasons(id,label,counts_for_profile) values
+      ('season','Winter 2026',true),('archive','Sommer 2026',true),('2026-test','Test-Saison',false);
+    insert into season_players select 'season',id,'main',1100 from players where id in ('a','b','c','d');
+    insert into season_players select 'archive',id,'main',1050 from players where id in ('a','b','c','d');
+    insert into season_players select '2026-test',id,'main',900 from players where id in ('a','b','c','d');
+    insert into season_matchdays values ('season',1,current_date-14,current_date+14),('2026-test',1,current_date-14,current_date+14);`);
+  await addMatch(db,'too-old',{season:'archive',at:'2026-01-01T12:00Z',winner:1});
+  await addMatch(db,'archive-league',{season:'archive',at:'2026-01-02T12:00Z',winner:1});
+  await addMatch(db,'archive-cup',{season:'archive',at:'2026-01-03T12:00Z',winner:2,stage:'quarterfinal',ranking:false});
+  await addMatch(db,'archive-final-four',{season:'archive',at:'2026-01-04T12:00Z',winner:1,stage:'final_four',ranking:false});
+  await addMatch(db,'current-league',{at:'2026-01-05T12:00Z',winner:1});
+  await addMatch(db,'unrated-league',{at:'2026-01-06T12:00Z',winner:1,ranking:false});
+  await addMatch(db,'cancelled-league',{at:'2026-01-07T12:00Z',winner:1});
+  await db.exec("update matches set cancelled_at=now() where id='cancelled-league'");
+  await db.exec(`insert into training_sessions(id,played_on,display_time,player_ids,status) values
+      (1,'2026-01-08','10:00',array['a','b','c','d'],'confirmed'),
+      (2,'2026-01-08','11:00',array['a','b','c','test_net'],'confirmed');
+    insert into training_rounds values
+      (1,1,array['a','b'],array['c','d'],'6:2',true),
+      (1,2,array['a','c'],array['b','d'],'2:6',true),
+      (1,3,array['a','d'],array['b','c'],'3:1',false),
+      (2,1,array['a','test_net'],array['b','c'],'6:4',true);`);
+  await addMatch(db,'viewed',{at:'2026-01-10T12:00Z'});
+  const detail = async id => (await db.query('select public.get_public_match_detail($1) d',[id])).rows[0].d;
+  const publicForm = (await detail('viewed')).players.find(player=>player.playerId==='a').form;
+  assert.deepEqual(publicForm.map(group=>group.groupId),[
+    'archive-league','archive-cup','archive-final-four','current-league','training-1'
+  ]);
+  assert.equal(publicForm.at(-1).matches.length,2,'all rated rounds share one training event');
+  assert.deepEqual(publicForm.at(-1).matches.map(match=>match.outcome),['win','loss']);
+  assert.ok(publicForm.every(group=>group.groupId!=='unrated-league'));
+  assert.ok(publicForm.every(group=>group.groupId!=='training-2'),'test training stays out of public form');
+  assert.deepEqual(publicForm.at(-1).matches[0].partnerNames,['Ben']);
+  assert.deepEqual(publicForm.at(-1).matches[0].opponentNames,['Chris','Dana']);
+
+  await addMatch(db,'test-history',{season:'2026-test',at:'2026-01-05T12:00Z',winner:2});
+  await addMatch(db,'test-2026-partie-6',{season:'2026-test'});
+  const testForm = (await detail('test-2026-partie-6')).players.find(player=>player.playerId==='a').form;
+  assert.deepEqual(testForm.map(group=>group.groupId),['test-history','training-2']);
+  assert.ok(testForm.every(group=>!group.groupId.startsWith('archive-') && group.groupId!=='training-1'));
 });
 test('ranking impacts wait until ten league players have played twice', { skip: !process.env.PGLITE_MODULE }, async t => {
   const { PGlite } = require(process.env.PGLITE_MODULE);

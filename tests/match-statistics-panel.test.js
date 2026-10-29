@@ -12,18 +12,31 @@ const app = fs.readFileSync(path.join(root, 'js', 'app.js'), 'utf8');
 const tippPage = fs.readFileSync(path.join(root, 'js', 'tipp-page.js'), 'utf8');
 const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 const statisticsStyle = fs.readFileSync(path.join(root, 'match-statistics.css'), 'utf8');
+const panelLayout = require(path.join(root, 'js', 'panel-layout.js'));
 
-test('league matches use the approved 420/24/600 split and a dedicated detail host', () => {
+test('league matches use the approved capped 420/24/600 split and a dedicated detail host', () => {
   assert.match(index, /class="match-statistics-split-layout" id="match-statistics-split-layout"/);
   assert.match(index, /id="match-statistics-panel-host"/);
-  assert.match(style, /body\.match-statistics-panel-open \.match-statistics-split-layout \{[\s\S]*?grid-template-columns: 420px minmax\(600px, 1fr\);[\s\S]*?gap: 24px;/);
+  assert.match(style, /body\.match-statistics-panel-open \.match-statistics-split-layout \{[\s\S]*?grid-template-columns: 420px minmax\(600px, 1200px\);[\s\S]*?gap: 24px;/);
   assert.match(statistics, /const PANEL_BREAKPOINT = 1100;/);
   assert.match(statistics, /const PANEL_LIST_WIDTH = 420;/);
   assert.match(statistics, /const PANEL_MIN_WIDTH = 600;/);
 });
 
+test('all side panels end at the viewport and grow until they reach the sticky navigation', () => {
+  assert.match(index, /js\/panel-layout\.js\?v=2026-10-29-dynamic-height/);
+  assert.match(tippIndex, /js\/panel-layout\.js\?v=2026-10-29-dynamic-height/);
+  assert.match(style, /body\.match-statistics-panel-open \.match-statistics-panel-host \{[\s\S]*?height: var\(--panel-host-height, calc\(100dvh - 94px\)\);/);
+  assert.match(style, /body\.player-profile-panel-open \.ranking-profile-host,[\s\S]*?height: var\(--panel-host-height, calc\(100dvh - 94px\)\);/);
+  assert.equal(panelLayout.getPanelHostHeight(900, 390), 494);
+  assert.equal(panelLayout.getPanelHostHeight(900, 178), 706);
+  assert.equal(panelLayout.getPanelHostHeight(900, 78), 806);
+  assert.equal(panelLayout.getPanelHostHeight(900, 40), 806);
+});
+
 test('statistics header switches presentation and hides paging in panel mode', () => {
   assert.match(index, /data-match-statistics-presentation-toggle/);
+  assert.doesNotMatch(index, /class="secondary-button detail-view-presentation-toggle"/);
   assert.match(index, /class="detail-view-close"[^>]*data-detail-view-back/);
   assert.doesNotMatch(index, /detail-view-swipe-hint/);
   assert.match(statistics, /function togglePresentation\(\)/);
@@ -32,7 +45,7 @@ test('statistics header switches presentation and hides paging in panel mode', (
   assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \.detail-view-pager \{ display: none; \}/);
   assert.match(style, /@media \(max-width: 768px\)[\s\S]*?\.detail-view-pager \{ display: none !important; \}/);
   assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \.detail-view-presentation-icon-modal \{ display: block; \}/);
-  assert.match(style, /\.detail-view-close \{[\s\S]*?width: 32px;[\s\S]*?border: 1px solid var\(--border\);[\s\S]*?background: rgba\(7,8,12,0\.86\);/);
+  assert.match(style, /\.detail-view-presentation-toggle,[\s\S]*?width: 32px;[\s\S]*?border: 1px solid var\(--border\);[\s\S]*?border-radius: 50%;[\s\S]*?background: rgba\(7,8,12,0\.86\);/);
   assert.match(style, /\.detail-view-close svg \{[\s\S]*?stroke-width: 3\.2;/);
 });
 
@@ -93,13 +106,24 @@ test('the entry sequence stays stable while filters rerender the list', () => {
 });
 
 test('panel content uses compact match, prediction and statistics layouts', () => {
+  assert.match(style, /body\.match-statistics-panel-open #match-statistics-list-pane > \.sh-with-control \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto;/);
   assert.match(style, /body\.match-statistics-panel-open #match-sort-toggle,[\s\S]*?grid-column: 1 \/ -1;[\s\S]*?grid-row: 2;[\s\S]*?justify-self: center;/);
   assert.match(style, /body\.match-statistics-panel-open #match-scope-toggle \{[\s\S]*?grid-column: 2;[\s\S]*?grid-row: 1;[\s\S]*?justify-self: end;/);
   assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \.detail-view-heading \{[\s\S]*?display: flex;[\s\S]*?align-items: baseline;/);
   assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \.detail-view-header \{[\s\S]*?min-height: 64px;/);
   assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \.detail-view-played-order:not\(\[hidden\]\) \{[\s\S]*?display: inline-flex;/);
   assert.match(style, /body\.match-statistics-panel-open #partien \.mc \{[\s\S]*?grid-template-areas:[\s\S]*?"team1 score team2"/);
+  assert.match(style, /body\.match-statistics-panel-open #partien \.mc-players \{[\s\S]*?overflow: visible;/);
+  assert.match(style, /body\.match-statistics-panel-open #partien \.mc-player-name \{[\s\S]*?overflow: hidden;[\s\S]*?text-overflow: ellipsis;/);
   assert.match(style, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-match-card:not\(\.is-single-set\)/);
   assert.match(statisticsStyle, /#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-ranking-layout \{\s*grid-template-columns: 1fr;/);
-  assert.match(statisticsStyle, /#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-graph-picker \{[\s\S]*?display: grid;/);
+  assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \{[\s\S]*?max-width: var\(--match-detail-panel-max-width\);[\s\S]*?container: match-detail-panel \/ inline-size;/);
+  assert.match(style, /@container match-detail-panel \(min-width: 1100px\) \{[\s\S]*?detail-view-dialog\[data-presentation="panel"\] \.detail-view-content \{[\s\S]*?width: min\(calc\(100% - 2rem\), 1100px\);/);
+  assert.match(statisticsStyle, /@media \(min-width: 1631px\) \{[\s\S]*?#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-ranking-layout \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
+  assert.match(statisticsStyle, /\.match-statistics-form-row \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
+  assert.match(statisticsStyle, /\.match-statistics-form-team \{[\s\S]*?display: grid;[\s\S]*?gap: 1\.5rem;/);
+  assert.match(statisticsStyle, /#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-team-picker \{[\s\S]*?display: grid;[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
+  assert.match(statisticsStyle, /#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-player-picker \{ display: none; \}/);
+  assert.match(statisticsStyle, /\.match-statistics-graph \{[^}]*container-type: inline-size;/);
+  assert.match(statisticsStyle, /\.match-statistics-player-graph\.match-statistics-team-player-2 \{[\s\S]*?50cqw - 500px/);
 });

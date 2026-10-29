@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest?v=2026-10-28-brand-names">
-  <link rel="stylesheet" href="style.css?v=2026-10-29-panel-list-header">
+  <link rel="stylesheet" href="style.css?v=2026-10-29-dynamic-panel-height">
   <link rel="stylesheet" href="account.css?v=2026-10-29-email-settings">
   <link rel="stylesheet" href="whats-new.css?v=2026-10-28-feature-links">
   <script>
@@ -29,12 +29,12 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="match-statistics.css?v=2026-10-29-side-panel">
+  <link rel="stylesheet" href="match-statistics.css?v=2026-10-29-elo-nav-tabs">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="data/players.js?v=2026-10-20-test-net-emoji"></script>
   <script defer src="data/seasons.js?v=2026-10-21-test-windows"></script>
-  <script defer src="js/season-routing.js?v=2026-10-29-local-dev-fallback"></script>
+  <script defer src="js/season-routing.js?v=2026-10-29-season-detail-reset"></script>
   <script defer src="data/training-matches.js"></script>
   <script defer src="data/info.js"></script>
   <script defer src="data/supabase-config.js"></script>
@@ -47,8 +47,9 @@
   <script defer src="js/account.js?v=2026-10-29-email-settings"></script>
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
-  <script defer src="js/match-statistics.js?v=2026-10-29-compact-panel-header"></script>
-  <script defer src="js/app.js?v=2026-10-29-match-statistics-panel"></script>
+  <script defer src="js/panel-layout.js?v=2026-10-29-dynamic-height"></script>
+  <script defer src="js/match-statistics.js?v=2026-10-29-panel-team-elo"></script>
+  <script defer src="js/app.js?v=2026-10-29-five-event-form"></script>
 </head>
 <body>
 
@@ -617,7 +618,7 @@
           <button class="secondary-button detail-view-step" type="button" data-statistics-step="-1" aria-label="Vorherige Partie"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 18-6-6 6-6"></path></svg></button>
           <button class="secondary-button detail-view-step" type="button" data-statistics-step="1" aria-label="Nächste Partie"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"></path></svg></button>
         </div>
-        <button class="secondary-button detail-view-presentation-toggle" id="match-statistics-presentation-toggle" type="button" data-match-statistics-presentation-toggle aria-label="Partiestatistik als Seitenpanel öffnen" title="Partiestatistik als Seitenpanel öffnen" hidden>
+        <button class="detail-view-presentation-toggle" id="match-statistics-presentation-toggle" type="button" data-match-statistics-presentation-toggle aria-label="Partiestatistik als Seitenpanel öffnen" title="Partiestatistik als Seitenpanel öffnen" hidden>
           <svg class="detail-view-presentation-icon detail-view-presentation-icon-panel" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></svg>
           <svg class="detail-view-presentation-icon detail-view-presentation-icon-modal" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="6" width="14" height="12" rx="2"/></svg>
         </button>

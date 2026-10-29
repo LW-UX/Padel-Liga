@@ -62,6 +62,9 @@
     if (options.preserveHash) url.hash = new URL(window.location.href).hash;
     url.searchParams.delete('saison');
     if ((queryRoutes || !season?.route) && seasonId) url.searchParams.set('saison', normalizeSeasonId(seasonId));
+    if (options.clearDetails) {
+      ['partie', 'live', 'liveView', 'spielerprofil'].forEach(parameter => url.searchParams.delete(parameter));
+    }
     return url;
   }
 

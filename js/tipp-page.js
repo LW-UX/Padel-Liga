@@ -92,7 +92,12 @@
         toggle.setAttribute('aria-expanded', 'false');
         return;
       }
-      const url = window.PadelSeasonRouting.getSeasonUrl(option.dataset.seasonId, 'tipp', { preserveSearch: true, preserveHash: true });
+      disposeLigaDetailFrame();
+      const url = window.PadelSeasonRouting.getSeasonUrl(option.dataset.seasonId, 'tipp', {
+        preserveSearch: true,
+        preserveHash: true,
+        clearDetails: true
+      });
       window.location.assign(url);
     });
     document.addEventListener('click', event => {

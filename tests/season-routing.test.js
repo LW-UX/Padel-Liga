@@ -92,6 +92,21 @@ test('local development servers use query routes that exist without deploy gener
   );
 });
 
+test('season changes discard detail routes from the previous season', () => {
+  const { routing } = loadRouting(
+    'http://localhost:4173/?saison=2026-sommer&partie=season-2026-partie-3&live=season-2026-partie-28&liveView=overview&spielerprofil=spieler-a&ref=wechsel',
+    'http://localhost:4173/'
+  );
+  assert.equal(
+    routing.getSeasonUrl('2026-winter', 'league', {
+      preserveSearch: true,
+      preserveHash: true,
+      clearDetails: true
+    }).href,
+    'http://localhost:4173/?ref=wechsel&saison=2026-winter'
+  );
+});
+
 test('short match paths resolve the season and the underlying stable match id', () => {
   const { routing } = loadRouting(
     'https://lw-ux.github.io/Padel-Liga/wi26/partie/7/',

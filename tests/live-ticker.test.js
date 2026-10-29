@@ -25,6 +25,14 @@ const prematchHistoryMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261014220000_final_four_prematch_league_history.sql'),
   'utf8'
 );
+const prematchMatchTiebreakMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261029130000_final_four_prematch_match_tiebreak_colors.sql'),
+  'utf8'
+);
+const replacementMatchTiebreakMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261029140000_final_four_replacement_match_tiebreak_colors.sql'),
+  'utf8'
+);
 const longestStreakMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261016130000_final_four_longest_official_streak.sql'),
   'utf8'
@@ -349,6 +357,11 @@ test('the Prematch RPC validates, freezes and rounds the four-player forecast to
   assert.match(prematchHistoryMigration, /'leagueHistory', private\.final_four_prematch_league_history/);
   assert.match(prematchHistoryMigration, /player\.value - 'form'/);
   assert.match(prematchHistoryMigration, /update public\.final_four_prematch_snapshots as snapshot/);
+  assert.match(prematchMatchTiebreakMigration, /'decidedByMatchTiebreak', league_match\.actual_sets in \('2:1', '1:2'\)/);
+  assert.match(prematchMatchTiebreakMigration, /update public\.final_four_prematch_snapshots as snapshot/);
+  assert.match(prematchMatchTiebreakMigration, /update public\.final_four_replacements as replacement/);
+  assert.match(replacementMatchTiebreakMigration, /replacement\.original_prematch_facts -> 'leagueHistory'/);
+  assert.match(replacementMatchTiebreakMigration, /'decidedByMatchTiebreak'/);
   assert.match(longestStreakMigration, /create or replace function private\.final_four_prematch_longest_streak/);
   assert.match(longestStreakMigration, /match_history\.kind <> 'training'/);
   assert.match(longestStreakMigration, /group by history\.outcome, history\.streak_group/);
@@ -359,6 +372,14 @@ test('the Prematch RPC validates, freezes and rounds the four-player forecast to
   assert.match(longestWinStreakMigration, /where history\.outcome = 'win'/);
   assert.match(longestWinStreakMigration, /update public\.final_four_prematch_snapshots as snapshot/);
   assert.match(longestWinStreakMigration, /update public\.final_four_replacements as replacement/);
+});
+
+test('Final Four Prematch history marks match-tiebreak results with the shared special colors', () => {
+  const renderHistory = ticker.match(/function renderPrematchHistoryResults\(items\) \{[\s\S]*?(?=\n  function renderPrematchLeagueHistory)/)?.[0] || '';
+  assert.match(renderHistory, /item\.decidedByMatchTiebreak \? ' form-tiebreak' : ''/);
+  assert.match(renderHistory, /matchTiebreakLabel = item\.decidedByMatchTiebreak \? ' im Match-Tie-Break' : ''/);
+  assert.match(style, /\.live-overview-prematch-history-result\.win\.form-tiebreak \{ background: color-mix\(in srgb, var\(--positiv\) 35%, orange\); \}/);
+  assert.match(style, /\.live-overview-prematch-history-result\.loss\.form-tiebreak \{ background: color-mix\(in srgb, var\(--negativ\) 35%, orange\); color: #000; \}/);
 });
 
 test('only Final Four detail views use the split probability score', () => {
@@ -383,6 +404,7 @@ test('the public match list always leads with sets and keeps games and history b
   const matchRow = app.match(/function renderMatchRow\(m\) \{[\s\S]*?(?=\n\}\n\nfunction renderMatchdayGroup)/)?.[0] || '';
   assert.match(matchRow, /const scoreMain = String\(m\.saetze \|\| '—'\)/);
   assert.match(matchRow, /class="mc-score-detail"[\s\S]*m\.ergebnis[\s\S]*liveHistoryIcon/);
+  assert.match(matchRow, /hasLiveHistory && getMatchStage\(m\) !== 'final-four'/);
   assert.doesNotMatch(matchRow, /isSingleSetMatch\(m\) \? \(m\.ergebnis/);
   assert.match(matchRow, /class="mc-score-main">0:0<\/div>/);
   assert.match(matchRow, /class="mc-score-detail mc-score-live">\$\{Number\(activeLive\.teamOneGames\)/);

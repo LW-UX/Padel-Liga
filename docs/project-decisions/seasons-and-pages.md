@@ -19,6 +19,7 @@ Diese Datei ist die kanonische Quelle für Saisonidentitäten, Datenquellen, Sai
 ## Saisonwechsel und Seitenphasen
 
 - Eine aktive Standardsaison bleibt bis zu ihrem offiziellen Abschluss die Voreinstellung. Eine vorbereitete Nachfolgesaison kann bereits auswählbar sein, ohne automatisch Standard zu werden.
+- Beim bewussten Saisonwechsel werden geöffnete saisonbezogene Detailansichten verworfen. Partiepanel, Partiemodal, Partiedetailseite, Liveticker und Spielerprofil der bisherigen Saison werden weder in die neue Saison übernommen noch dort erneut geöffnet.
 - Der globale LIVE-Einstieg wechselt vor dem Öffnen des bildschirmfüllenden Livetickers in die Saison der laufenden Partie. Unter der Detailansicht liegt die Partienübersicht dieser Saison; Schließen führt dorthin, ein weiterer Browser-Zurück-Schritt führt in den zuvor betrachteten Saisonkontext.
 - Rangliste, Partien und Rechner folgen der erreichten Wettbewerbsphase. Frühere abgeschlossene Phasen bleiben unterhalb der jeweils aktuellen Phase sichtbar.
 - Sobald das Final Four die aktuelle Phase ist, steht sein gesamter Partienbereich oberhalb der Überschrift „Partien“ samt Sortierung und Filtern. Diese Anordnung bleibt nach Saisonabschluss erhalten; Sortierung und Filter gelten weiterhin auch für die Final-Four-Partien.

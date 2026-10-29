@@ -359,10 +359,12 @@
     const outcomeLabels = { win: ['S', 'Sieg'], loss: ['N', 'Niederlage'], draw: ['U', 'Unentschieden'] };
     return `<div class="live-overview-prematch-history">${results.map(item => {
       const [shortLabel, outcomeLabel] = outcomeLabels[item.outcome] || ['–', 'Ohne Wertung'];
+      const matchTiebreakLabel = item.decidedByMatchTiebreak ? ' im Match-Tie-Break' : '';
       const context = [item.label || 'Ligapartie', formatPrematchDate(item.date)]
         .filter(Boolean)
         .join(' · ');
-      return `<span class="player-profile-match-outcome live-overview-prematch-history-result ${escapeHtml(item.outcome || 'unfinished')}" aria-label="${escapeHtml(`${outcomeLabel}${context ? ` · ${context}` : ''}`)}" title="${escapeHtml(context)}">${shortLabel}</span>`;
+      const description = `${outcomeLabel}${matchTiebreakLabel}${context ? ` · ${context}` : ''}`;
+      return `<span class="player-profile-match-outcome live-overview-prematch-history-result ${escapeHtml(item.outcome || 'unfinished')}${item.decidedByMatchTiebreak ? ' form-tiebreak' : ''}" aria-label="${escapeHtml(description)}" title="${escapeHtml(description)}">${shortLabel}</span>`;
     }).join('')}</div>`;
   }
 

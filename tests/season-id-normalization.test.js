@@ -56,8 +56,11 @@ test('old season links are normalized to the year-type schema', () => {
 
 test('season changes and cross-page links use the shared short-path routing', () => {
   assert.match(app, /PadelSeasonRouting\.getSeasonUrl\(id, 'league'/);
+  assert.match(app, /function closeSeasonDetailViews\(\)[\s\S]*?PadelMatchStatistics\.restore\(\);[\s\S]*?PadelLiveTicker\?\.close\(\);[\s\S]*?closePlayerProfile\(\{ immediate: true, restoreFocus: false, fromHistory: true \}\);/);
+  assert.match(app, /PadelSeasonRouting\.getSeasonUrl\(id, 'league', \{[\s\S]*?clearDetails: true/);
   assert.match(app, /PadelSeasonRouting\.getSeasonUrl\(selectedSeason\.id, 'tipp'\)/);
   assert.match(tipPage, /PadelSeasonRouting\.getSeasonUrl\(option\.dataset\.seasonId, 'tipp'/);
+  assert.match(tipPage, /disposeLigaDetailFrame\(\);[\s\S]*?PadelSeasonRouting\.getSeasonUrl\(option\.dataset\.seasonId, 'tipp', \{[\s\S]*?clearDetails: true/);
   assert.match(tipPage, /PadelSeasonRouting\.getSeasonUrl\(selected\.id, 'league'\)/);
 });
 

@@ -52,8 +52,9 @@ test('chart tooltips open toward the center of the viewport', () => {
   assert.match(styleSource, /\.player-profile-chart-tooltip\s*\{[^}]*width:\s*auto;[^}]*min-width:\s*210px;/);
 });
 
-test('ranking and calculator help tooltips open toward the viewport center', () => {
-  assert.match(appSource, /function positionHelpTooltip\(anchor\) \{[\s\S]*anchorViewportX <= window\.innerWidth \/ 2/);
+test('ranking and calculator help tooltips open into the available unclipped area', () => {
+  assert.match(appSource, /function positionHelpTooltip\(anchor\) \{[\s\S]*anchor\.closest\('\.ranking-wrap'\)/);
+  assert.match(appSource, /availableRight >= requiredSpace[\s\S]*availableLeft < requiredSpace/);
   assert.match(appSource, /help-tooltip-opens-right/);
   assert.match(appSource, /help-tooltip-opens-left/);
   assert.match(appSource, /if \(helpIcon\) positionHelpTooltip\(helpIcon\)/);

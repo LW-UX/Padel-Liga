@@ -1147,11 +1147,14 @@
       transform: translateX(calc(100% + 24px));
       transition: opacity 220ms ease, transform 220ms ease;
     }
-    .player-profile-dialog[data-presentation="panel"] .player-profile-shell { padding: 1rem; }
+    .player-profile-dialog[data-presentation="panel"] .player-profile-shell {
+      min-height: 0;
+      padding: 1rem;
+    }
     .player-profile-dialog[data-presentation="panel"] .player-profile-content {
       grid-template-columns: 1fr;
     }
-    .player-profile-dialog[data-presentation="panel"] .player-profile-content > .player-profile-widget {
+    .player-profile-dialog[data-presentation="panel"] .player-profile-content > :where(.player-profile-widget) {
       grid-column: 1;
     }
     .player-profile-dialog[data-presentation="panel"] .player-profile-hero-block {
@@ -1230,7 +1233,7 @@
       grid-row: 1;
     }
     @container player-profile-panel (min-width: 600px) {
-      .player-profile-dialog[data-presentation="panel"] .player-profile-responsive-grid.has-multiple-items {
+      .player-profile-dialog[data-presentation="panel"] :where(.player-profile-responsive-grid.has-multiple-items) {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         align-items: start;
         gap: 2rem;
@@ -1270,7 +1273,7 @@
       }
     }
     @media (min-width: 1631px) {
-      .player-profile-dialog[data-presentation="panel"] .player-profile-responsive-grid.prefers-three-columns {
+      .player-profile-dialog[data-presentation="panel"] :where(.player-profile-responsive-grid.prefers-three-columns) {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
@@ -1281,7 +1284,7 @@
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 4rem;
       }
-      .player-profile-dialog[data-presentation="panel"] .player-profile-content > .player-profile-widget {
+      .player-profile-dialog[data-presentation="panel"] .player-profile-content > :where(.player-profile-widget) {
         grid-column: auto;
         grid-row: auto;
       }
@@ -2022,14 +2025,14 @@
     }
     body.match-statistics-panel-open .match-statistics-split-layout {
       width: calc(100vw - var(--match-statistics-split-left, 16px) - 16px);
-      grid-template-columns: 420px minmax(600px, 1fr);
+      grid-template-columns: 420px minmax(600px, 1200px);
       gap: 24px;
     }
     body.match-statistics-panel-open .match-statistics-panel-host {
-      height: calc(100dvh - 94px);
+      height: var(--panel-host-height, calc(100dvh - 94px));
       overflow: visible;
     }
-    body.match-statistics-panel-open .match-statistics-list-pane > .sh-with-control {
+    body.match-statistics-panel-open #match-statistics-list-pane > .sh-with-control {
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 0.35rem 0.8rem;
     }
@@ -2077,12 +2080,12 @@
     }
     body.player-profile-panel-open[data-player-profile-panel-context="all-time-ranking"] .all-time-ranking-profile-layout {
       width: calc(100vw - var(--ranking-profile-split-left, 16px) - 16px);
-      grid-template-columns: 540px minmax(460px, 1fr);
+      grid-template-columns: 720px minmax(460px, 1fr);
       gap: 24px;
     }
     body.player-profile-panel-open .ranking-profile-host,
     .ranking-profile-host:has(.player-profile-dialog.is-closing) {
-      height: calc(100dvh - 94px);
+      height: var(--panel-host-height, calc(100dvh - 94px));
       overflow: visible;
     }
     @media (prefers-reduced-motion: reduce) {
@@ -3486,6 +3489,8 @@
     .form-loss { background: var(--negativ); color: var(--text); }
     .form-win.form-tiebreak { background: color-mix(in srgb, var(--positiv) 35%, orange); }
     .form-loss.form-tiebreak { background: color-mix(in srgb, var(--negativ) 35%, orange); color: #000; }
+    .live-overview-prematch-history-result.win.form-tiebreak { background: color-mix(in srgb, var(--positiv) 35%, orange); }
+    .live-overview-prematch-history-result.loss.form-tiebreak { background: color-mix(in srgb, var(--negativ) 35%, orange); color: #000; }
     .form-recency-0 { opacity: 1; }
     .form-recency-1 { opacity: 0.68; }
     .form-recency-2 { opacity: 0.42; }
@@ -3712,7 +3717,7 @@
       display: flex;
       flex-direction: column;
       gap: 2px;
-      overflow: hidden;
+      overflow: visible;
       font-size: 1rem;
     }
     body.match-statistics-panel-open #partien .mc-player-name {
@@ -3964,9 +3969,14 @@
     .detail-view-presentation-toggle,
     .detail-view-close {
       display: inline-grid;
-      width: 40px;
-      min-height: 40px;
+      width: 32px;
+      min-height: 32px;
       place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: rgba(7,8,12,0.86);
+      color: var(--text);
+      cursor: pointer;
       padding: 0;
     }
     .detail-view-presentation-toggle[hidden],
@@ -3985,11 +3995,6 @@
     .detail-view-close {
       width: 32px;
       min-height: 32px;
-      border: 1px solid var(--border);
-      border-radius: 50%;
-      background: rgba(7,8,12,0.86);
-      color: var(--text);
-      cursor: pointer;
     }
     .detail-view-close svg {
       width: 18px;
@@ -3997,6 +4002,7 @@
       stroke-width: 3.2;
       pointer-events: none;
     }
+    .detail-view-presentation-toggle:is(:hover, :focus-visible),
     .detail-view-close:is(:hover, :focus-visible) {
       border-color: var(--accent);
       color: var(--accent);
@@ -4035,11 +4041,12 @@
       margin-top: 1rem;
     }
     .detail-view-dialog[data-presentation="panel"] {
+      --match-detail-panel-max-width: 1200px;
       position: relative;
       inset: auto;
       width: 100%;
       height: 100%;
-      max-width: none;
+      max-width: var(--match-detail-panel-max-width);
       max-height: none;
       margin: 0;
       border: 1px solid var(--border);
@@ -4047,6 +4054,7 @@
       background: var(--bg);
       box-shadow: 0 24px 72px rgba(0,0,0,0.56);
       animation: match-statistics-panel-in 220ms ease-out;
+      container: match-detail-panel / inline-size;
     }
     .detail-view-dialog[data-presentation="panel"] .detail-view-shell { height: 100%; }
     .detail-view-dialog[data-presentation="panel"] .detail-view-header {
@@ -4591,7 +4599,7 @@
       gap: 0.5rem;
     }
     .detail-view-dialog[data-presentation="panel"] .match-detail-team {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.65rem;
     }
     .detail-view-dialog[data-presentation="panel"] .match-detail-player {
@@ -4614,6 +4622,53 @@
     .detail-view-dialog[data-presentation="panel"] .match-detail-player-name { font-size: var(--text-sm); }
     .detail-view-dialog[data-presentation="panel"] .match-detail-player-elo { font-size: var(--text-xs); }
     .detail-view-dialog[data-presentation="panel"] .match-detail-score { font-size: 3rem; }
+    /* Wie beim Spielerprofil gilt ab 1100 px Panelbreite das reguläre Detailseiten-Layout. */
+    @container match-detail-panel (min-width: 1100px) {
+      .detail-view-dialog[data-presentation="panel"] .detail-view-header {
+        width: min(calc(100% - 2rem), 1100px);
+        min-height: 97px;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        margin: 2rem auto 0;
+        padding: 1.5rem 0 0.85rem;
+      }
+      .detail-view-dialog[data-presentation="panel"] .detail-view-heading {
+        display: block;
+        grid-column: 2;
+        text-align: center;
+      }
+      .detail-view-dialog[data-presentation="panel"] .detail-view-heading .sh-meta { margin-top: 0.15rem; }
+      .detail-view-dialog[data-presentation="panel"] .detail-view-played-order { margin-top: 0.1rem; }
+      .detail-view-dialog[data-presentation="panel"] .detail-view-actions { grid-column: 3; }
+      .detail-view-dialog[data-presentation="panel"] .detail-view-content {
+        width: min(calc(100% - 2rem), 1100px);
+        padding: 0 0 5rem;
+      }
+      .detail-view-dialog[data-presentation="panel"] #detail-view-body {
+        gap: 4rem;
+        margin-top: 1rem;
+      }
+      .detail-view-dialog[data-presentation="panel"] .match-detail-matchup {
+        grid-template-columns: minmax(0, 1fr) minmax(150px, 220px) minmax(0, 1fr);
+        gap: 1.5rem;
+      }
+      .detail-view-dialog[data-presentation="panel"] .match-detail-team { gap: 0.9rem; }
+      .detail-view-dialog[data-presentation="panel"] .match-detail-player {
+        gap: 0.45rem;
+        padding: 0.9rem 0.5rem 0.75rem;
+      }
+      .detail-view-dialog[data-presentation="panel"] .match-detail-player-photo {
+        width: 68px;
+        height: 68px;
+      }
+      .detail-view-dialog[data-presentation="panel"] .match-detail-player-image {
+        width: 64px;
+        height: 64px;
+      }
+      .detail-view-dialog[data-presentation="panel"] .match-detail-player-emoji { font-size: var(--text-heading); }
+      .detail-view-dialog[data-presentation="panel"] .match-detail-player-name { font-size: var(--text-base); }
+      .detail-view-dialog[data-presentation="panel"] .match-detail-player-elo { font-size: var(--text-sm); }
+      .detail-view-dialog[data-presentation="panel"] .match-detail-score { font-size: clamp(3.6rem, 8vw, 4.8rem); }
+    }
     .live-ticker-actions {
       display: flex;
       align-items: center;

@@ -9,9 +9,11 @@ module.exports = function fixture(mode = 'preview') {
       playerId:id,displayName:name,profileEmoji,team:i<2?1:2,elo:{before:elo,after:elo+(i<2?36:-36),delta:i<2?36:-36,winMin:elo+40,winMax:elo+85,lossMin:elo-85,lossMax:elo-40,peakBefore:elo+10},
       statistics:{rank:[1,3,6,7][i],tableSize:8,played:4,wins:3-i%2,points:8-i,gameDiff:12-i*6},streak:{outcome:i<2?'win':'loss',length:3},
       form:[
-        {matchId:`old-${i}-1`,label:'Partie 1',result:'6:3, 6:4',outcome:i%2?'loss':'win',decidedByMatchTiebreak:false},
-        {matchId:`old-${i}-2`,label:'Partie 2',result:'6:4, 4:6, 10:8',outcome:i<2?'win':'loss',decidedByMatchTiebreak:true},
-        {matchId:`old-${i}-3`,label:'Partie 3',result:'6:2, 6:2',outcome:i<2?'win':'loss',decidedByMatchTiebreak:false}
+        {matchId:`old-${i}-1`,label:'Partie 1',date:'2026-05-01T16:00:00Z',competition:'Winter 2025',partnerNames:['Partner A.'],opponentNames:['Gegner A.','Gegner B.'],result:'6:3, 6:4',outcome:i%2?'loss':'win',decidedByMatchTiebreak:false},
+        {matchId:`old-${i}-2`,label:'Partie 2',date:'2026-06-01T16:00:00Z',competition:'Sommer 2026',partnerNames:['Partner A.'],opponentNames:['Gegner A.','Gegner B.'],result:'6:4, 4:6, 10:8',outcome:i<2?'win':'loss',decidedByMatchTiebreak:true},
+        {matchId:`old-${i}-3`,label:'Partie 3',date:'2026-07-01T16:00:00Z',competition:'Sommer 2026',partnerNames:['Partner A.'],opponentNames:['Gegner A.','Gegner B.'],result:'6:2, 6:2',outcome:i<2?'win':'loss',decidedByMatchTiebreak:false},
+        {matchId:`old-${i}-4`,label:'Viertelfinale',date:'2026-08-01T16:00:00Z',competition:'Sommer-Cup 2026',partnerNames:['Partner B.'],opponentNames:['Gegner C.','Gegner D.'],result:'7:5, 6:4',outcome:i<2?'win':'loss',decidedByMatchTiebreak:false},
+        {matchId:`old-${i}-5`,label:'Final Four 1',date:'2026-09-01T16:00:00Z',competition:'Sommer 2026',partnerNames:['Partner B.'],opponentNames:['Gegner C.','Gegner D.'],result:'4:6, 6:4, 10:7',outcome:i<2?'win':'loss',decidedByMatchTiebreak:true}
       ],
       relationships:i===0?[{kind:'successPartner',playerId:'agnes_k',name:'Agnes K.',matches:4,wins:3}]:[]
     })),

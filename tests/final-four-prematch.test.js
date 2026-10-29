@@ -15,6 +15,12 @@ const pairingCorrectionMigration = fs.readFileSync(path.join(
 const leagueHistoryMigration = fs.readFileSync(path.join(
   root, 'supabase', 'migrations', '20261014220000_final_four_prematch_league_history.sql'
 ), 'utf8');
+const matchTiebreakHistoryMigration = fs.readFileSync(path.join(
+  root, 'supabase', 'migrations', '20261029130000_final_four_prematch_match_tiebreak_colors.sql'
+), 'utf8');
+const replacementMatchTiebreakMigration = fs.readFileSync(path.join(
+  root, 'supabase', 'migrations', '20261029140000_final_four_replacement_match_tiebreak_colors.sql'
+), 'utf8');
 const titleForecastDivisorMigration = fs.readFileSync(path.join(
   root, 'supabase', 'migrations', '20261014234000_final_four_title_forecast_divisor.sql'
 ), 'utf8');
@@ -168,6 +174,7 @@ test('Final Four Prematch SQL validates participants, composes facts and freezes
     ]) await db.exec(existingFunction(name));
     await db.exec(migration);
     await db.exec(leagueHistoryMigration);
+    await db.exec(matchTiebreakHistoryMigration);
     await db.exec(titleForecastDivisorMigration);
 
     await db.exec(`
@@ -194,6 +201,7 @@ test('Final Four Prematch SQL validates participants, composes facts and freezes
         at: `2026-09-0${index}T12:00:00Z`, winner: currentSeasonWinners[index - 1]
       });
     }
+    await db.exec("update public.matches set actual_sets='1:2',result_details='6:4, 4:6 – 8:10' where id='history-2'");
     await db.exec(`
       insert into public.training_sessions values
         (1,'2026-09-10','10:00',array['a','b','c','d'],'confirmed');
@@ -220,6 +228,9 @@ test('Final Four Prematch SQL validates participants, composes facts and freezes
     assert.equal(Object.hasOwn(value.players[0], 'form'), false);
     assert.deepEqual(value.players[0].leagueHistory.map(match => match.id), [
       'history-1', 'history-2', 'history-3', 'history-4', 'history-5', 'history-6'
+    ]);
+    assert.deepEqual(value.players[0].leagueHistory.map(match => match.decidedByMatchTiebreak), [
+      false, true, false, false, false, false
     ]);
     assert.equal(value.players[0].streak, null,
       'the former calculation sees only the current two-win run');
@@ -285,6 +296,7 @@ test('hidden test season fixture adds ranked finalists and backfills the histori
     ]) await db.exec(existingFunction(name));
     await db.exec(migration);
     await db.exec(leagueHistoryMigration);
+    await db.exec(matchTiebreakHistoryMigration);
     await db.exec(titleForecastDivisorMigration);
     await db.exec(longestStreakMigration);
     await db.exec(longestWinStreakMigration);
@@ -365,4 +377,40 @@ test('hidden test season fixture adds ranked finalists and backfills the histori
     assert.equal((await db.query(
       "select count(*)::integer as count from public.final_four_prematch_snapshots"
     )).rows[0].count, 1, 'reapplying the fixture remains idempotent');
+  });
+
+test('withdrawn finalist facts receive match-tiebreak markers without changing the frozen history',
+  { skip: !process.env.PGLITE_MODULE }, async t => {
+    const { PGlite } = require(process.env.PGLITE_MODULE);
+    const db = new PGlite();
+    t.after(() => db.close());
+    await db.exec(schema);
+    await db.exec(`
+      insert into public.players values
+        ('original','Original',1000),('replacement','Replacement',1000),
+        ('b','B',1000),('c','C',1000),('d','D',1000);
+      insert into public.seasons values('season','Saison',true);
+      insert into public.matches(
+        id,season_id,match_at,competition_stage,winner,actual_sets,result_details
+      ) values
+        ('regular','season','2026-09-01T12:00:00Z','league',1,'2:0','6:2, 6:3'),
+        ('match-tiebreak','season','2026-09-02T12:00:00Z','league',2,'1:2','6:4, 4:6 – 8:10');
+      insert into public.final_four_replacements(
+        season_id,original_player_id,replacement_player_id,original_prematch_facts
+      ) values (
+        'season','original','replacement',
+        '{"playerId":"original","leagueHistory":[{"id":"regular","outcome":"win"},{"id":"match-tiebreak","outcome":"loss"}]}'::jsonb
+      );
+    `);
+
+    await db.exec(replacementMatchTiebreakMigration);
+    const facts = (await db.query(`
+      select original_prematch_facts as value
+      from public.final_four_replacements
+      where season_id = 'season'
+    `)).rows[0].value;
+
+    assert.equal(facts.playerId, 'original');
+    assert.deepEqual(facts.leagueHistory.map(match => match.id), ['regular', 'match-tiebreak']);
+    assert.deepEqual(facts.leagueHistory.map(match => match.decidedByMatchTiebreak), [false, true]);
   });

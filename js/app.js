@@ -54,6 +54,7 @@ const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;
 const PLAYER_PROFILE_ACHIEVEMENT_LIMIT = 4;
 const PLAYER_PROFILE_PANEL_BREAKPOINT = 1100;
 const PLAYER_PROFILE_PANEL_RANKING_WIDTH = 540;
+const PLAYER_PROFILE_PANEL_ALL_TIME_RANKING_WIDTH = 720;
 const PLAYER_PROFILE_PANEL_MIN_WIDTH = 460;
 const PLAYER_PROFILE_PANEL_GAP = 24;
 const PLAYER_PROFILE_PANEL_OUTER_GUTTER = 16;
@@ -1401,17 +1402,27 @@ function closeSeasonMenu() {
   picker.querySelector('[data-season-toggle]')?.setAttribute('aria-expanded', 'false');
 }
 
+function closeSeasonDetailViews() {
+  if (window.PadelMatchStatistics?.active) window.PadelMatchStatistics.restore();
+  window.PadelLiveTicker?.close();
+  const detailDialog = document.getElementById('detail-view-dialog');
+  if (detailDialog?.open) detailDialog.close();
+  if (document.getElementById('player-profile-dialog')?.open) {
+    closePlayerProfile({ immediate: true, restoreFocus: false, fromHistory: true });
+  }
+}
+
 function selectSeason(id) {
   if (id === selectedSeason?.id) {
     closeSeasonMenu();
     return;
   }
-  if (playerProfilePresentation === 'panel') {
-    closePlayerProfile({ immediate: true, restoreFocus: false });
-  }
-  if (window.PadelMatchStatistics?.active) window.PadelMatchStatistics.restore();
-  const url = window.PadelSeasonRouting.getSeasonUrl(id, 'league', { preserveSearch: true, preserveHash: true });
-  url.searchParams.delete('live');
+  closeSeasonDetailViews();
+  const url = window.PadelSeasonRouting.getSeasonUrl(id, 'league', {
+    preserveSearch: true,
+    preserveHash: true,
+    clearDetails: true
+  });
   window.location.assign(url);
 }
 
@@ -2785,13 +2796,27 @@ function getPlayerProfilePanelContext() {
   return null;
 }
 
+function getPlayerProfilePanelRankingWidth(panelContext = getPlayerProfilePanelContext()) {
+  return panelContext?.id === 'all-time-ranking'
+    ? PLAYER_PROFILE_PANEL_ALL_TIME_RANKING_WIDTH
+    : PLAYER_PROFILE_PANEL_RANKING_WIDTH;
+}
+
 function hasPlayerProfilePanelSpace() {
+  const panelContext = getPlayerProfilePanelContext();
   const layoutViewportWidth = document.documentElement.clientWidth || window.innerWidth;
-  const requiredWidth = PLAYER_PROFILE_PANEL_RANKING_WIDTH
+  const rankingWidth = getPlayerProfilePanelRankingWidth(panelContext);
+  const requiredWidth = rankingWidth
     + PLAYER_PROFILE_PANEL_GAP
     + PLAYER_PROFILE_PANEL_MIN_WIDTH;
+  const allTimeLayoutLeft = panelContext?.id === 'all-time-ranking'
+    ? document.getElementById('all-time-ranking-profile-layout')?.getBoundingClientRect().left
+    : null;
+  const availableWidth = layoutViewportWidth
+    - (Number.isFinite(allTimeLayoutLeft) ? allTimeLayoutLeft : PLAYER_PROFILE_PANEL_OUTER_GUTTER)
+    - PLAYER_PROFILE_PANEL_OUTER_GUTTER;
   return window.innerWidth >= PLAYER_PROFILE_PANEL_BREAKPOINT
-    && layoutViewportWidth - PLAYER_PROFILE_PANEL_OUTER_GUTTER >= requiredWidth;
+    && availableWidth >= requiredWidth;
 }
 
 function canPlayerProfileUsePanel() {
@@ -2834,7 +2859,7 @@ function storePlayerProfilePresentation(presentation) {
 
 function shouldUsePlayerProfilePanel() {
   return !playerProfileForceModal
-    && playerProfilePresentationPreference === 'panel'
+    && playerProfilePresentationPreference !== 'modal'
     && canPlayerProfileUsePanel();
 }
 
@@ -2854,8 +2879,9 @@ function updatePlayerProfilePresentationToggle() {
 
 function updatePlayerProfilePanelMetrics() {
   if (playerProfilePresentation !== 'panel') return;
+  const panelContext = getPlayerProfilePanelContext();
   const layoutViewportWidth = document.documentElement.clientWidth || window.innerWidth;
-  const requiredWidth = PLAYER_PROFILE_PANEL_RANKING_WIDTH
+  const requiredWidth = getPlayerProfilePanelRankingWidth(panelContext)
     + PLAYER_PROFILE_PANEL_GAP
     + PLAYER_PROFILE_PANEL_MIN_WIDTH;
   const standardContentLeft = layoutViewportWidth > 1100
@@ -6338,7 +6364,7 @@ function renderMatchRow(m) {
 
   const t1w = m.sieger === 1, t2w = m.sieger === 2;
   const hasLiveHistory = Boolean(window.PadelLiveTicker?.hasHistory(m.id));
-  const liveHistoryIcon = statistics?.icon || (hasLiveHistory ? `<span class="mc-score-details-icon" aria-hidden="true">
+  const liveHistoryIcon = statistics?.icon || (hasLiveHistory && getMatchStage(m) !== 'final-four' ? `<span class="mc-score-details-icon" aria-hidden="true">
     <svg viewBox="0 0 24 24" focusable="false">
       <path d="M4 6h9M4 11h6M4 16h5"></path>
       <circle cx="15.5" cy="14.5" r="3.5"></circle>
@@ -7877,14 +7903,16 @@ function getOrCreateChartTooltip(chartInstance, variantClass = '') {
   return tooltip;
 }
 
-function getOrCreateFormTooltip() {
+function getOrCreateFormTooltip(anchor) {
+  const modalHost = anchor?.closest('dialog[open]:not([data-presentation="panel"])');
+  const host = modalHost || document.body;
   let tooltip = document.querySelector('.form-custom-tooltip');
 
   if (!tooltip) {
     tooltip = document.createElement('div');
     tooltip.className = 'chart-custom-tooltip form-custom-tooltip';
-    document.body.appendChild(tooltip);
   }
+  if (tooltip.parentElement !== host) host.appendChild(tooltip);
 
   return tooltip;
 }
@@ -7926,7 +7954,18 @@ function positionHelpTooltip(anchor) {
   const anchorViewportX = anchorRect.left + anchorRect.width / 2;
   const anchorOffsetX = anchorViewportX - wrapperRect.left;
   const anchorOffsetY = anchorRect.top - wrapperRect.top;
-  const opensRight = anchorViewportX <= window.innerWidth / 2;
+  const tooltip = wrapper.querySelector('.help-tooltip');
+  const tooltipGap = 10;
+  const tooltipWidth = tooltip?.offsetWidth || 260;
+  const clippingContainer = anchor.closest('.ranking-wrap');
+  const clippingRect = clippingContainer?.getBoundingClientRect();
+  const boundaryLeft = Math.max(0, clippingRect?.left ?? 0);
+  const boundaryRight = Math.min(window.innerWidth, clippingRect?.right ?? window.innerWidth);
+  const availableLeft = anchorRect.left - boundaryLeft;
+  const availableRight = boundaryRight - anchorRect.right;
+  const requiredSpace = tooltipWidth + tooltipGap;
+  const opensRight = availableRight >= requiredSpace
+    || (availableLeft < requiredSpace && availableRight >= availableLeft);
 
   wrapper.style.setProperty('--help-tooltip-anchor-x', `${anchorOffsetX}px`);
   wrapper.style.setProperty('--help-tooltip-anchor-y', `${anchorOffsetY}px`);
@@ -7934,7 +7973,6 @@ function positionHelpTooltip(anchor) {
   wrapper.classList.toggle('help-tooltip-opens-left', !opensRight);
 
   if (wrapper.classList.contains('ranking-unrated-wrap')) {
-    const tooltip = wrapper.querySelector('.help-tooltip');
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
     const viewportPadding = 16;
     const tooltipWidth = Math.min(isMobile ? 190 : 260, window.innerWidth - viewportPadding * 2);
@@ -8034,10 +8072,26 @@ function positionFormTooltip(anchor, tooltipEl) {
 }
 
 function showFormTooltip(anchor) {
-  const match = getMatchById(anchor.dataset.formMatchId);
   const playerName = anchor.dataset.formPlayer;
+  const tooltipEl = getOrCreateFormTooltip(anchor);
+  const hasEmbeddedContext = anchor.hasAttribute('data-form-competition');
+
+  if (hasEmbeddedContext) {
+    const matchContext = {
+      result: anchor.dataset.formResult || '—',
+      partner: anchor.dataset.formPartner || '—',
+      opponents: anchor.dataset.formOpponents || '—'
+    };
+    tooltipEl.innerHTML = `
+      <div class="elo-tooltip-title">${escapeHtml([anchor.dataset.formDate, anchor.dataset.formCompetition].filter(Boolean).join(' · '))}</div>
+      ${renderEloStyleTooltipItem({ playerName, matchContext, showElo: false })}
+    `;
+    positionFormTooltip(anchor, tooltipEl);
+    return;
+  }
+
+  const match = getMatchById(anchor.dataset.formMatchId);
   const matchContext = getPlayerMatchContext(playerName, match);
-  const tooltipEl = getOrCreateFormTooltip();
 
   if (!match || !matchContext) {
     tooltipEl.style.opacity = 0;
