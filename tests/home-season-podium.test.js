@@ -101,3 +101,24 @@ test('homepage podium steps open the Final Four overview', () => {
   assert.match(podiumSteps, /<div class="home-season-podium-step" aria-hidden="true">/);
   assert.match(style, /button\.home-season-podium-step:hover/);
 });
+
+test('homepage top four appends a selected player from lower in the ranking', () => {
+  const helper = source.match(/function getHomeRankingEntries\([^]*?\n\}/)?.[0] || '';
+  assert.ok(helper);
+  const context = vm.createContext({});
+  vm.runInContext(`${helper}\nthis.getEntries = getHomeRankingEntries;`, context);
+  const players = Array.from({ length: 7 }, (_, index) => ({ id: `p${index + 1}` }));
+
+  const outsideTopFour = JSON.parse(JSON.stringify(context.getEntries(players, 'p6', 4)));
+  assert.deepEqual(outsideTopFour.map(entry => [entry.player.id, entry.rank, entry.separated]), [
+    ['p1', 1, false],
+    ['p2', 2, false],
+    ['p3', 3, false],
+    ['p4', 4, false],
+    ['p6', 6, true]
+  ]);
+
+  const insideTopFour = JSON.parse(JSON.stringify(context.getEntries(players, 'p2', 4)));
+  assert.deepEqual(insideTopFour.map(entry => entry.player.id), ['p1', 'p2', 'p3', 'p4']);
+  assert.match(style, /\.home-ranking-selected-row \{ margin-top: 10px; border-top: 1px solid var\(--border\); \}/);
+});

@@ -260,16 +260,6 @@
     }
     .account-header > div { min-width: 0; }
     .account-header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
-    .account-settings-button { display: inline-flex; align-items: center; gap: 0.45rem; }
-    .account-settings-button svg {
-      width: 16px;
-      height: 16px;
-      fill: none;
-      stroke: currentColor;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      stroke-width: 1.55;
-    }
     .account-header h2 { margin-bottom: 0.1rem; }
     .auth-account-email { color: var(--dim); font-size: 0.88rem; margin: 0; text-wrap: nowrap; }
     .account-settings {

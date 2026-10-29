@@ -1453,7 +1453,8 @@
     .prediction-overview-action .primary-button,
     .prediction-overview-action .secondary-button { margin-top: auto; padding-top: 0.55rem; }*/
     .prediction-overview-ranks { display: grid; }
-    .prediction-overview-rank-separated { margin-top: 10px; border-top: 1px solid var(--border); }
+    .prediction-overview-rank-separated,
+    .home-ranking-selected-row { margin-top: 10px; border-top: 1px solid var(--border); }
     .prediction-overview-empty { color: var(--dim); font-size: var(--text-sm); padding: 0.65rem 0; }
     .prediction-overview-stats {
       display: grid;

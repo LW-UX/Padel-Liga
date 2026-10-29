@@ -50,17 +50,39 @@ test('the start page stays a summary instead of duplicating match cards', () => 
   assert.doesNotMatch(overviewSource, /prediction-match-card|renderMatch\(/);
 });
 
-test('league home shows a four-entry prediction ranking below recent matches', () => {
+test('league home shows a Top 4 prediction ranking below recent matches', () => {
   assert.match(ligaPage, /Letzte Partien[\s\S]*Top 4 · Tipprangliste[\s\S]*id="home-prediction-ranking"/);
   assert.match(ligaPage, /id="home-prediction-ranking-link"[^>]*href="tipp\/#tippuebersicht"[^>]*>Zur Tipprangliste<\/a>/);
   assert.match(ligaScript, /get_prediction_leaderboard/);
-  assert.match(ligaScript, /homePredictionLeaderboard\.slice\(0, 4\)/);
+  assert.match(ligaScript, /getHomePredictionRankingEntries\(homePredictionLeaderboard, authenticatedUserId\)/);
   assert.match(ligaScript, /entry\.display_name/);
   assert.match(ligaScript, /Number\(entry\.points\) \|\| 0/);
   assert.match(ligaScript, /PadelSeasonRouting\.getSeasonUrl\(selectedSeason\.id, 'tipp'\)/);
   assert.match(ligaScript, /predictionRankingUrl\.hash = 'tippuebersicht'/);
   assert.match(pageScript, /\['tippstart', 'tippuebersicht', 'tippen', 'tippinfos'\]\.includes\(requestedSection\)/);
-  assert.match(decisions, /direkt unter „Letzte Partien“ eine Top-4-Kurzrangliste/);
+  assert.match(decisions, /direkt unter „Letzte Partien“ eine Top-4-Kurzrangliste[\s\S]*angemeldete Konto außerhalb der Top 4/);
+});
+
+test('league-home prediction Top 4 appends the signed-in account from lower ranks', () => {
+  const helper = ligaScript.match(/function getHomePredictionRankingEntries\([^]*?\n\}/)?.[0] || '';
+  assert.ok(helper);
+  const context = vm.createContext({});
+  vm.runInContext(`${helper}\nthis.getEntries = getHomePredictionRankingEntries;`, context);
+  const leaderboard = Array.from({ length: 7 }, (_, index) => ({ user_id: `u${index + 1}` }));
+
+  const outsideTopFour = JSON.parse(JSON.stringify(context.getEntries(leaderboard, 'u6', 4)));
+  assert.deepEqual(outsideTopFour.map(item => [item.entry.user_id, item.rank, item.separated]), [
+    ['u1', 1, false],
+    ['u2', 2, false],
+    ['u3', 3, false],
+    ['u4', 4, false],
+    ['u6', 6, true]
+  ]);
+
+  const insideTopFour = JSON.parse(JSON.stringify(context.getEntries(leaderboard, 'u2', 4)));
+  assert.deepEqual(insideTopFour.map(item => item.entry.user_id), ['u1', 'u2', 'u3', 'u4']);
+  assert.match(ligaScript, /entry\.user_id === authenticatedUserId \? ' viewer-highlight'/);
+  assert.match(ligaScript, /renderHomePredictionLeaderboard\(\);/);
 });
 
 test('prediction rankings show the dim account type icon directly after each name', () => {
@@ -73,7 +95,7 @@ test('prediction rankings show the dim account type icon directly after each nam
   assert.match(script, /M2 9a3 3 0 0 1 0 6/);
   assert.match(script, /prediction-rank-account-name[^\n]*renderPredictionAccountTypeIcon\(entry\)/);
   assert.match(ligaScript, /function renderPredictionAccountTypeIcon\(entry\)/);
-  assert.match(ligaScript, /homePredictionLeaderboard\.slice\(0, 4\)[\s\S]*renderPredictionAccountTypeIcon\(entry\)/);
+  assert.match(ligaScript, /getHomePredictionRankingEntries\(homePredictionLeaderboard, authenticatedUserId\)[\s\S]*renderPredictionAccountTypeIcon\(entry\)/);
   assert.match(style, /\.prediction-account-type-icon \{[\s\S]*color: var\(--dim\);/);
   assert.match(decisions, /„Was ist neu\?“-Dialog verwendeten Padel-Schläger/);
 });

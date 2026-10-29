@@ -26,6 +26,9 @@ test('pages keep their intended context links and account dialogs group private 
     assert.doesNotMatch(source, /class="account-tabs"/);
     assert.doesNotMatch(source, /name="displayName"/);
     assert.match(source, /class="account-header"[\s\S]*data-account-player-profile[\s\S]*data-account-settings/);
+    const settingsButton = source.match(/<button class="secondary-button account-settings-button"[^>]*>[\s\S]*?<\/button>/)?.[0] || '';
+    assert.doesNotMatch(settingsButton, /<svg\b/);
+    assert.match(settingsButton, /<span>Einstellungen<\/span>/);
     assert.match(source, /data-account-settings-panel hidden[\s\S]*data-password-change[\s\S]*data-auth-logout/);
     assert.match(source, /<dialog class="auth-dialog"[^>]*>\s*<button class="modal-close-button auth-dialog-close"/);
   });

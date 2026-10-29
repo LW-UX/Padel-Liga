@@ -5391,13 +5391,55 @@ function renderHomePredictionLeaderboard() {
       : 'Noch keine Tippwertung vorhanden.'}</div>`;
     return;
   }
-  target.innerHTML = homePredictionLeaderboard.slice(0, 4).map((entry, index) => `
-    <div class="mini-rank-row r${index + 1}">
-      <span class="rank-position">${index + 1}</span>
+  const authenticatedUserId = window.PadelKonto?.getSession?.()?.user?.id || null;
+  const leaderboardEntries = getHomePredictionRankingEntries(homePredictionLeaderboard, authenticatedUserId);
+  target.innerHTML = leaderboardEntries.map(({ entry, rank, separated }) => `
+    <div class="mini-rank-row r${rank}${entry.user_id === authenticatedUserId ? ' viewer-highlight' : ''}${separated ? ' home-ranking-selected-row' : ''}">
+      <span class="rank-position">${rank}</span>
       <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionCompanyBadge(entry)}${renderPreviousPredictionWinnerIcon(entry)}</span></span>
       <span class="rank-score">${Number(entry.points) || 0} Pkt.</span>
     </div>
   `).join('');
+}
+
+function getHomePredictionRankingEntries(leaderboard, authenticatedUserId, limit = 4) {
+  const topCount = Math.max(0, Number(limit) || 4);
+  const entries = leaderboard.slice(0, topCount).map((entry, index) => ({
+    entry,
+    rank: index + 1,
+    separated: false
+  }));
+  if (!authenticatedUserId) return entries;
+
+  const ownIndex = leaderboard.findIndex(entry => entry.user_id === authenticatedUserId);
+  if (ownIndex >= topCount) {
+    entries.push({
+      entry: leaderboard[ownIndex],
+      rank: ownIndex + 1,
+      separated: true
+    });
+  }
+  return entries;
+}
+
+function getHomeRankingEntries(rankedPlayers, selectedPlayerId, limit = 4) {
+  const topCount = Math.max(0, Number(limit) || 4);
+  const entries = rankedPlayers.slice(0, topCount).map((player, index) => ({
+    player,
+    rank: index + 1,
+    separated: false
+  }));
+  if (!selectedPlayerId) return entries;
+
+  const selectedIndex = rankedPlayers.findIndex(player => player.id === selectedPlayerId);
+  if (selectedIndex >= topCount) {
+    entries.push({
+      player: rankedPlayers[selectedIndex],
+      rank: selectedIndex + 1,
+      separated: true
+    });
+  }
+  return entries;
 }
 
 async function refreshHomePredictionLeaderboard() {
@@ -5457,14 +5499,18 @@ function renderHome() {
     <button class="text-link article-readmore" id="article-readmore" data-expand-home-article>Weiterlesen</button>
   `;
 
-  document.getElementById('home-ranking').innerHTML = getRankedPlayers()
-    .slice(0, getCompetitionConfig().homeRankingLimit)
-    .map((p, i) => {
+  const homeRankingEntries = getHomeRankingEntries(
+    getRankedPlayers(),
+    isParticipantView() ? selectedViewerId : null,
+    getCompetitionConfig().homeRankingLimit
+  );
+  document.getElementById('home-ranking').innerHTML = homeRankingEntries
+    .map(({ player: p, rank, separated }) => {
       const spielDiffStr = p.stats.partien > 0 ? formatStatDiff(p.stats.spielDiff) : '—';
       const spielDiffClass = getStatDiffClass(p.stats.spielDiff);
 
-      return `<div class="mini-rank-row r${i + 1} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}">
-      <span class="rank-position">${i + 1}</span>
+      return `<div class="mini-rank-row r${rank}${isSelectedPlayer(p.name) ? ' viewer-highlight' : ''}${separated ? ' home-ranking-selected-row' : ''}">
+      <span class="rank-position">${rank}</span>
       <span class="mini-rank-name"><span class="ranking-player-name">${renderPlayerProfileLink(p)}${renderLeagueRankingAchievementIcon(p)}</span></span>
       <span class="mini-rank-values">
         <span class="mini-rank-games">${p.stats.partien}</span>
@@ -5474,6 +5520,7 @@ function renderHome() {
     </div>`;
     })
     .join('');
+  renderHomePredictionLeaderboard();
 
   const todayKey = toDateKey(new Date());
   const nextMatchEntries = PADEL_DATA.matches
