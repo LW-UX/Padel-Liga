@@ -64,7 +64,7 @@ test('content order, exclusions, escaped data and empty sections',()=>{
  assert.equal((html.match(/data-form-match-id=/g)||[]).length,20);
  assert.equal((html.match(/data-form-competition=/g)||[]).length,20);
  assert.equal((html.match(/form-tiebreak/g)||[]).length,8);
- assert.match(appSource,/function getOrCreateFormTooltip\(anchor\)[\s\S]*?closest\('dialog\[open\]:not\(\[data-presentation="panel"\]\)'\)[\s\S]*?host\.appendChild\(tooltip\)/);
+ assert.match(appSource,/function getOrCreateFormTooltip\(anchor\)[\s\S]*?document\.documentElement\.classList\.contains\('is-detail-embed'\)[\s\S]*?isEmbeddedDetail\s*\? 'dialog\[open\]'\s*:\s*'dialog\[open\]:not\(\[data-presentation="panel"\]\)'[\s\S]*?modalHost \|\| document\.body[\s\S]*?host\.appendChild\(tooltip\)/);
  assert.match(appSource,/const tooltipEl = getOrCreateFormTooltip\(anchor\);/);
  assert.match(html,/Partie 2 · Sieg im Match-Tie-Break · 6:4, 4:6, 10:8/);
  assert.match(html,/data-form-player="Agnes K\." data-form-match-id="old-1-2"/);
@@ -334,10 +334,21 @@ test('completed rankings align historical movement in a dedicated column',()=>{
 test('alternating between match and profile reuses one browser history entry',()=>{
  assert.match(source,/prepareProfileOpen[\s\S]*?history\.replaceState\(\{ \.\.\.window\.history\.state, statisticsProfile: playerId/);
  assert.doesNotMatch(source,/prepareProfileOpen[\s\S]*?history\.pushState\(\{ \.\.\.window\.history\.state, statisticsProfile: playerId/);
+ assert.match(source,/profileReplacesDetail = sharedDetailFlow;[\s\S]*?dialog\(\)\?\.open\) dialog\(\)\.close\(\)/);
+ assert.match(source,/function syncProfilePresentation[\s\S]*?type: 'padel:detail-presentation'[\s\S]*?view: 'profile'/);
+ assert.match(source,/if \(profileReplacesDetail\) \{\s*close\(\);\s*return true;/);
+ assert.match(source,/if \(replacedDetail\) \{[\s\S]*?PadelLigaClosePlayerProfile\?\.\(\{ fromHistory: true, restoreFocus: false \}\)/);
  assert.match(source,/profile\?\.querySelector\('\.player-profile-shell'\)\?\.scrollTop \|\| 0/);
  assert.match(source,/const profileShell = document\.querySelector\('#player-profile-dialog \.player-profile-shell'\)/);
- assert.match(source,/const replacing = Boolean\(getRequestedMatchId\(\)\) \|\| Boolean\(currentRoute\)/);
+ assert.match(source,/const replacing = isDetailEmbed \|\| Boolean\(getRequestedMatchId\(\)\) \|\| Boolean\(currentRoute\)/);
  assert.match(source,/PadelSeasonRouting\?\.getMatchUrl\(season\?\.id, seasonMatch \|\| matchId/);
+ assert.match(source,/detail-view-title'\)\.textContent = retainedActiveData\?\.label \|\| 'PARTIE'/);
+ assert.match(source,/detail-view-context'\)\.textContent = retainedActiveData[\s\S]*?headerMeta\(retainedActiveData\)/);
+ assert.match(source,/setPlayedOrder\(retainedActiveData\)/);
+});
+test('embedded detail view closes without leaving the tipp page through shared history',()=>{
+ assert.match(source,/function close\(\) \{\s*if \(!active\) return;[\s\S]*?if \(!isDetailEmbed && window\.history\.state\?\.matchStatistics\) window\.history\.back\(\);/);
+ assert.match(source,/if \(direct && !isDetailEmbed\) \{[\s\S]*?history\.pushState/);
 });
 test('homepage match cards link only their center values without a details icon',()=>{
  const renderer=appSource.match(/function renderHomeMatchCard\(match, options = \{\}\) \{[\s\S]*?(?=\nfunction getCurrentArticle)/)?.[0]||'';

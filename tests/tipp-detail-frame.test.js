@@ -19,3 +19,11 @@ test('file URLs exchange detail messages through their opaque origin', () => {
   assert.match(app, /const targetOrigin = window\.location\.protocol === 'file:' \? '\*' : window\.location\.origin;/);
   assert.match(app, /const validOrigin = window\.location\.protocol === 'file:'[\s\S]*event\.origin === 'null'/);
 });
+
+test('an embedded profile replaces the match and synchronizes panel or full-screen presentation', () => {
+  assert.match(tipPage, /activeView: null/);
+  assert.match(tipPage, /type === 'padel:detail-active-view'[\s\S]*?activeView = event\.data\.view === 'profile'/);
+  assert.match(tipPage, /type === 'padel:detail-presentation'[\s\S]*?event\.data\.view[\s\S]*?applyLigaDetailFramePresentation/);
+  assert.match(tipPage, /activeView === 'profile'[\s\S]*?Spielerprofil als Seitenpanel geöffnet/);
+  assert.match(app, /window\.PadelMatchStatistics\?\.syncProfilePresentation\?\.\(presentation/);
+});

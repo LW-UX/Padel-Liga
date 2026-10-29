@@ -69,6 +69,12 @@
   let shouldOpenAccountFromLink = requestedAccountOpen;
   const TRAINING_GUEST_OPTION = '__guest__';
   const TRAINING_GUEST_KEY_PATTERN = /^guest:([1-4])$/;
+  const RACKET_CHECK_DELAY_MS = 450;
+  const RACKET_AUTO_SYNC_LIMIT = 10;
+  const racketCheckTimers = new WeakMap();
+  const racketStatusCache = new Map();
+  const racketSyncAttempted = new Set();
+  let racketStatusRun = Promise.resolve();
 
   const browserUserAgent = String(window.navigator?.userAgent || '');
   const browserPlatform = String(window.navigator?.platform || '');
@@ -129,6 +135,142 @@
 
   function buildMatchAtValue(dateValue, timeValue) {
     return `${dateValue}T${timeValue}:00`;
+  }
+
+  async function invokeRacketBooking(body) {
+    if (!state.client?.functions) return { state: 'unavailable' };
+    try {
+      const { data, error } = await state.client.functions.invoke('racket-booking', { body });
+      if (error) throw error;
+      return data?.state ? data : { state: 'unavailable' };
+    } catch (error) {
+      console.warn('Schläger-Status nicht prüfbar:', error);
+      return { state: 'unavailable' };
+    }
+  }
+
+  function describeRacketCheck(result) {
+    const slot = result?.from && result?.until ? ` · ${result.from}–${result.until}` : '';
+    switch (result?.state) {
+      case 'checking': return { text: 'Schläger werden geprüft …', tone: 'is-pending' };
+      case 'free': return { text: `✓ Schläger frei${slot}`, tone: 'is-free' };
+      case 'partial': return { text: `✓ Schläger frei, wegen der Bürozeiten nur ${result.from}–${result.until}`, tone: 'is-free' };
+      case 'busy': return { text: `⚠ Schläger ${result.busyFrom}–${result.busyUntil} schon belegt. Der Termin lässt sich trotzdem speichern.`, tone: 'is-busy' };
+      case 'outside_hours': return {
+        text: result.openFrom
+          ? `⚠ Schläger nur zu Bürozeiten (${result.openFrom}–${result.openUntil}) buchbar.`
+          : '⚠ Schläger sind an diesem Tag nicht buchbar.',
+        tone: 'is-busy'
+      };
+      case 'unavailable': return { text: 'Schläger-Status gerade nicht prüfbar.', tone: 'is-pending' };
+      default: return null;
+    }
+  }
+
+  function describeRacketBooking(result) {
+    switch (result?.state) {
+      case 'booked': return { text: `✓ Schläger reserviert · ${result.from}–${result.until}`, tone: 'is-free' };
+      case 'partial': return { text: `✓ Schläger reserviert · ${result.from}–${result.until} (Bürozeiten)`, tone: 'is-free' };
+      case 'busy': return { text: `⚠ Keine Schläger reserviert – ${result.busyFrom}–${result.busyUntil} schon belegt`, tone: 'is-busy' };
+      case 'outside_hours': return { text: '⚠ Keine Schläger reserviert – außerhalb der Bürozeiten', tone: 'is-busy' };
+      case 'failed': return { text: '⚠ Schlägerbuchung fehlgeschlagen', tone: 'is-busy' };
+      default: return null;
+    }
+  }
+
+  function renderRacketNote(target, description) {
+    if (!target) return;
+    target.hidden = !description;
+    target.textContent = description?.text || '';
+    target.className = `${target.dataset.racketCheck !== undefined ? 'racket-check' : 'racket-status'}${description ? ` ${description.tone}` : ''}`;
+  }
+
+  function getRacketFormContext(form) {
+    if (form?.matches('.match-schedule-form')) {
+      return {
+        subjectType: 'match',
+        subjectId: form.dataset.matchSchedule,
+        date: String(form.querySelector('[name="scheduledDate"]')?.value || ''),
+        time: String(form.querySelector('[name="scheduledTime"]')?.value || '')
+      };
+    }
+    if (form?.matches('.training-form') && !form.dataset.trainingAlternative) {
+      return {
+        subjectType: form.dataset.trainingScheduled ? 'training' : null,
+        subjectId: form.dataset.trainingScheduled || null,
+        date: String(form.querySelector('[name="playedOn"]')?.value || ''),
+        time: String(form.querySelector('[name="displayTime"]')?.value || '')
+      };
+    }
+    return null;
+  }
+
+  function scheduleRacketCheck(form) {
+    const target = form?.querySelector('[data-racket-check]');
+    if (!target) return;
+    window.clearTimeout(racketCheckTimers.get(form));
+    const context = getRacketFormContext(form);
+    const timestamp = context?.date && context?.time
+      ? getMatchAtTimestamp(buildMatchAtValue(context.date, context.time), NaN)
+      : NaN;
+    if (form.closest('[hidden]') || !Number.isFinite(timestamp) || timestamp <= Date.now()) {
+      delete target.dataset.racketRequest;
+      renderRacketNote(target, null);
+      return;
+    }
+    const requestKey = `${context.date} ${context.time}`;
+    if (target.dataset.racketRequest === requestKey) return;
+    target.dataset.racketRequest = requestKey;
+    renderRacketNote(target, describeRacketCheck({ state: 'checking' }));
+    racketCheckTimers.set(form, window.setTimeout(async () => {
+      const result = await invokeRacketBooking({ action: 'check', ...context });
+      if (target.dataset.racketRequest === requestKey) renderRacketNote(target, describeRacketCheck(result));
+    }, RACKET_CHECK_DELAY_MS));
+  }
+
+  async function syncRacketBooking(subjectType, subjectId) {
+    const key = `${subjectType}:${subjectId}`;
+    racketSyncAttempted.add(key);
+    const result = await invokeRacketBooking({ action: 'sync', subjectType, subjectId: String(subjectId) });
+    if (result.state !== 'unavailable') racketStatusCache.set(key, result);
+    return result;
+  }
+
+  function withRacketNote(message, result) {
+    const note = describeRacketBooking(result)?.text.replace(/^[✓⚠]\s*/, '');
+    return note ? `${message} ${note}.` : message;
+  }
+
+  function applyRacketStatuses(root = document) {
+    root.querySelectorAll('[data-racket-status]').forEach(target => {
+      renderRacketNote(target, describeRacketBooking(racketStatusCache.get(target.dataset.racketStatus)));
+    });
+  }
+
+  // Läufe werden nacheinander ausgeführt, damit derselbe Termin nie doppelt nachgebucht wird.
+  function loadRacketStatuses() {
+    racketStatusRun = racketStatusRun.then(runRacketStatusLoad, runRacketStatusLoad);
+    return racketStatusRun;
+  }
+
+  async function runRacketStatusLoad() {
+    const keys = [...document.querySelectorAll('#result-task-list [data-racket-status]')]
+      .map(target => target.dataset.racketStatus);
+    applyRacketStatuses();
+    const missing = keys.filter(key => !racketStatusCache.has(key));
+    if (!missing.length) return;
+    const ids = type => missing.filter(key => key.startsWith(`${type}:`)).map(key => key.slice(type.length + 1));
+    const response = await invokeRacketBooking({ action: 'status', matchIds: ids('match'), trainingIds: ids('training') });
+    (response?.bookings || []).forEach(row => racketStatusCache.set(`${row.subjectType}:${row.subjectId}`, row));
+    applyRacketStatuses();
+    // Termine ohne oder mit fehlgeschlagener Buchung werden einmal je Seitenaufruf nachgebucht.
+    const pending = keys.filter(key => !racketSyncAttempted.has(key)
+      && (!racketStatusCache.has(key) || racketStatusCache.get(key)?.state === 'failed'));
+    for (const key of pending.slice(0, RACKET_AUTO_SYNC_LIMIT)) {
+      const [type, ...idParts] = key.split(':');
+      await syncRacketBooking(type, idParts.join(':'));
+      applyRacketStatuses();
+    }
   }
 
   function getProfileDisplayName() {
@@ -588,6 +730,7 @@
           <span class="datetime-input-shell" data-datetime-field data-datetime-hint="--:--"><input type="time" name="scheduledTime" required value="${escapeHtml(matchTime.time || '')}"></span>
         </label>
       </div>
+      <div class="racket-check" data-racket-check role="status" aria-live="polite" hidden></div>
       <div class="match-schedule-actions">
         ${allowCancel ? renderCancelMatchButton(task) : ''}
         <button class="secondary-button" type="submit">${task.match_at ? 'Termin speichern' : 'Terminieren'}</button>
@@ -672,7 +815,8 @@
           <span class="mc-nr">${escapeHtml(getTaskLeagueLabel(task))} · ${escapeHtml(getTaskMatchLabel(task))}</span>
           ${renderResultTaskStatus(task)}
         </div>
-        ${groupKey === 'future' ? `<div class="result-card-timing">${escapeHtml(formatMatchAt(task.proposed_match_at || task.match_at))}</div>` : ''}
+        ${groupKey === 'future' ? `<div class="result-card-timing">${escapeHtml(formatMatchAt(task.proposed_match_at || task.match_at))}</div>
+          <div class="racket-status" data-racket-status="match:${escapeHtml(task.match_id)}" hidden></div>` : ''}
         ${renderTaskMatchup(task)}
         ${renderResultTaskBody(task, groupKey)}
         ${typeof window !== 'undefined' ? window.PadelLiveTicker?.renderGameAssignment(task.match_id) || '' : ''}
@@ -755,6 +899,7 @@
       }
     });
     syncDateTimeHints(document.getElementById('result-task-list'));
+    void loadRacketStatuses();
   }
 
   function isTrainingGuestKey(value) {
@@ -1113,6 +1258,7 @@
       renderTrainingRounds([], form, 1);
     }
     form.dataset.trainingMode = schedulesFuture ? 'scheduled' : 'result';
+    scheduleRacketCheck(form);
     const submit = form.querySelector('[type="submit"]');
     if (!submit) return;
     if (schedulesFuture) submit.textContent = form.dataset.trainingScheduled ? 'Termin speichern' : 'Training terminieren';
@@ -1299,6 +1445,7 @@
         <label><span>Datum</span><span class="datetime-input-shell" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required value="${escapeHtml(task.played_on)}"></span></label>
         <label><span>Uhrzeit</span><span class="datetime-input-shell" data-datetime-field data-datetime-hint="--:--"><input type="time" name="displayTime" required value="${escapeHtml(String(task.display_time).slice(0, 5))}"></span></label>
       </div>
+      <div class="racket-check" data-racket-check role="status" aria-live="polite" hidden></div>
       <div class="training-player-fields" data-training-player-fields></div>
       <div class="training-result-fields" data-training-result-fields ${due ? '' : 'hidden'}>
         <div class="training-rounds" data-training-rounds></div>
@@ -1323,7 +1470,8 @@
         <span class="mc-nr">Training · Partie ${escapeHtml(task.training_number || task.session_id)}</span>
         <span class="account-task-status${due ? ' is-open' : ''}">${due ? 'Ergebnis eintragen' : 'Terminiert'}</span>
       </div>
-      ${due ? '' : `<div class="result-card-timing">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>`}
+      ${due ? '' : `<div class="result-card-timing">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>
+      <div class="racket-status" data-racket-status="training:${escapeHtml(task.session_id)}" hidden></div>`}
       ${due ? '' : renderTrainingParticipants(task)}
       ${!due && canManage ? `<div class="account-task-actions">
         <button class="secondary-button" type="button" data-training-schedule-toggle="${escapeHtml(task.session_id)}">Termin ändern</button>
@@ -2182,7 +2330,9 @@ Dein Hanako-Leben-Squad`;
         )
       });
       if (error) throw error;
-      setAuthMessage('Partie wurde terminiert.', 'success');
+      setAuthMessage('Partie wurde terminiert. Schläger werden gebucht …');
+      const racket = await syncRacketBooking('match', form.dataset.matchSchedule);
+      setAuthMessage(withRacketNote('Partie wurde terminiert.', racket), 'success');
       await refresh();
     } catch (error) {
       setAuthMessage(error.message || 'Die Partie konnte nicht terminiert werden.', 'error');
@@ -2223,6 +2373,7 @@ Dein Hanako-Leben-Squad`;
     try {
       const { error } = await state.client.rpc('unschedule_match', { p_match_id: matchId });
       if (error) throw error;
+      await syncRacketBooking('match', matchId);
       setAuthMessage('Termin wurde gelöscht.', 'success');
       await refresh();
     } catch (error) {
@@ -2238,6 +2389,7 @@ Dein Hanako-Leben-Squad`;
     try {
       const { error } = await state.client.rpc('cancel_match', { p_match_id: matchId });
       if (error) throw error;
+      await syncRacketBooking('match', matchId);
       setAuthMessage('Partie wurde als „ohne Wertung“ markiert.', 'success');
       await refresh();
       publishOfficialResultChange(matchId);
@@ -2595,14 +2747,19 @@ Dein Hanako-Leben-Squad`;
     }
     button.disabled = true;
     setTrainingMessage(schedulesFuture ? 'Training wird terminiert …' : 'Training wird gespeichert …', '', form);
+    let savedTrainingId = null;
     try {
-      const { error } = await state.client.rpc(rpcName, payload);
+      const { data: savedId, error } = await state.client.rpc(rpcName, payload);
       if (error) throw error;
+      savedTrainingId = scheduledTrainingId || savedId;
     } catch (error) {
       setTrainingMessage(getFriendlyAuthError(error), 'error', form);
       button.disabled = false;
       return;
     }
+    const racket = schedulesFuture && savedTrainingId
+      ? await syncRacketBooking('training', savedTrainingId)
+      : null;
     button.disabled = false;
     setTrainingMessage('', '', form);
     form.reset();
@@ -2611,7 +2768,7 @@ Dein Hanako-Leben-Squad`;
     const formGroup = form.closest('[data-training-form-group]');
     if (formGroup) formGroup.hidden = true;
     setAuthMessage(schedulesFuture
-      ? scheduledTrainingId ? 'Trainingstermin wurde geändert.' : 'Training wurde terminiert.'
+      ? withRacketNote(scheduledTrainingId ? 'Trainingstermin wurde geändert.' : 'Training wurde terminiert.', racket)
       : state.profile?.app_role === 'admin' ? 'Training wurde direkt eingetragen.' : 'Training wurde zur Bestätigung gesendet.', 'success');
     await refresh();
     window.dispatchEvent(new CustomEvent('padel:training-data-changed'));
@@ -2650,6 +2807,7 @@ Dein Hanako-Leben-Squad`;
     setAuthMessage('Trainingstermin wird gelöscht …');
     const { error } = await state.client.rpc('delete_scheduled_training', { p_session_id: Number(sessionId) });
     if (error) return setAuthMessage(getFriendlyAuthError(error), 'error');
+    await syncRacketBooking('training', sessionId);
     setAuthMessage('Trainingstermin wurde gelöscht.', 'success');
     await refresh();
     window.dispatchEvent(new CustomEvent('padel:training-data-changed'));
@@ -2787,6 +2945,7 @@ Dein Hanako-Leben-Squad`;
         if (form) {
           form.hidden = !form.hidden;
           scheduleToggle.textContent = form.hidden ? 'Termin ändern' : 'Termin schließen';
+          scheduleRacketCheck(form);
         }
         return;
       }
@@ -2950,6 +3109,10 @@ Dein Hanako-Leben-Squad`;
     }, true);
     document.addEventListener('input', event => {
       syncDateTimeHint(event.target);
+      if (event.target.matches('.match-schedule-form input:is([type="date"], [type="time"])')) {
+        scheduleRacketCheck(event.target.closest('.match-schedule-form'));
+        return;
+      }
       if (event.target.matches('.training-form input:is([type="date"], [type="time"])')) {
         syncTrainingFormMode(event.target.closest('.training-form'));
         return;
@@ -2979,6 +3142,10 @@ Dein Hanako-Leben-Squad`;
       syncDateTimeHint(event.target);
       if (event.target.matches('[data-email-notification]')) {
         void saveNotificationPreferences(event.target);
+        return;
+      }
+      if (event.target.matches('.match-schedule-form input:is([type="date"], [type="time"])')) {
+        scheduleRacketCheck(event.target.closest('.match-schedule-form'));
         return;
       }
       if (event.target.matches('.training-form input:is([type="date"], [type="time"])')) {

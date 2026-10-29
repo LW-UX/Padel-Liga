@@ -152,11 +152,8 @@
   }
 
   // Spielerprofile und Partiedetails erscheinen über der Tippseite; dafür wird die Liga im Detailmodus eingebettet.
-  const DETAIL_PANEL_BREAKPOINT = 1100;
-  const DETAIL_PANEL_LIST_WIDTH = 420;
-  const DETAIL_PANEL_MIN_WIDTH = 600;
-  const DETAIL_PANEL_GAP = 24;
-  const DETAIL_PANEL_OUTER_GUTTER = 16;
+  // Die Tippliste nutzt dieselbe Aufteilung wie die Partienliste der Liga.
+  const panelLayout = window.PadelLigaPanelLayout;
   const ligaDetailFrame = {
     element: null,
     ready: false,
@@ -164,24 +161,18 @@
     returnFocus: null,
     forecastChanged: false,
     panelEligible: false,
-    activeMatchId: null
+    activeMatchId: null,
+    activeView: null
   };
   const detailMessageTargetOrigin = () => window.location.protocol === 'file:' ? '*' : window.location.origin;
   const acceptsDetailMessageOrigin = event => window.location.protocol === 'file:'
     ? event.origin === 'null'
     : event.origin === window.location.origin;
 
-  function hasDetailPanelSpace() {
-    const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
-    const requiredWidth = DETAIL_PANEL_LIST_WIDTH + DETAIL_PANEL_GAP + DETAIL_PANEL_MIN_WIDTH;
-    return window.innerWidth >= DETAIL_PANEL_BREAKPOINT
-      && viewportWidth - (DETAIL_PANEL_OUTER_GUTTER * 2) >= requiredWidth;
-  }
-
   function canUseDetailPanel() {
     return ligaDetailFrame.panelEligible
       && document.getElementById('tippen')?.classList.contains('active')
-      && hasDetailPanelSpace();
+      && panelLayout.hasPanelSpace(panelLayout.layouts.matchList);
   }
 
   function getPredictionMatchSequence() {
@@ -193,6 +184,7 @@
   function updatePredictionDetailHighlights() {
     document.querySelectorAll('#prediction-matches [data-match-statistics]').forEach(control => {
       const selected = control.dataset.matchStatistics === ligaDetailFrame.activeMatchId
+        && ligaDetailFrame.activeView === 'match'
         && ligaDetailFrame.element?.dataset.presentation === 'panel';
       control.setAttribute('aria-expanded', String(selected));
       control.setAttribute('aria-controls', 'prediction-statistics-panel-host');
@@ -210,21 +202,16 @@
     frame.dataset.presentation = presentation;
     document.body.classList.toggle('match-statistics-panel-open', presentation === 'panel');
     if (presentation === 'panel') {
-      const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
-      const requiredWidth = DETAIL_PANEL_LIST_WIDTH + DETAIL_PANEL_GAP + DETAIL_PANEL_MIN_WIDTH;
-      const standardContentLeft = viewportWidth > 1100
-        ? (viewportWidth - 1100) / 2 + DETAIL_PANEL_OUTER_GUTTER
-        : DETAIL_PANEL_OUTER_GUTTER;
-      const latestPossibleLeft = viewportWidth - DETAIL_PANEL_OUTER_GUTTER - requiredWidth;
-      const splitLeft = Math.max(0, Math.min(standardContentLeft, latestPossibleLeft));
-      document.body.style.setProperty('--match-statistics-split-left', `${splitLeft}px`);
+      panelLayout.applySplitLeft(panelLayout.layouts.matchList, '--match-statistics-split-left');
     } else {
       document.body.style.removeProperty('--match-statistics-split-left');
     }
     updatePredictionDetailHighlights();
     const status = document.getElementById('prediction-statistics-panel-status');
     if (status) status.textContent = presentation === 'panel'
-      ? 'Partievorschau oder Partierückschau als Seitenpanel geöffnet.'
+      ? ligaDetailFrame.activeView === 'profile'
+        ? 'Spielerprofil als Seitenpanel geöffnet.'
+        : 'Partievorschau oder Partierückschau als Seitenpanel geöffnet.'
       : '';
   }
 
@@ -244,6 +231,7 @@
     ligaDetailFrame.forecastChanged = false;
     ligaDetailFrame.panelEligible = false;
     ligaDetailFrame.activeMatchId = null;
+    ligaDetailFrame.activeView = null;
     updatePredictionDetailHighlights();
     const status = document.getElementById('prediction-statistics-panel-status');
     if (status) status.textContent = '';
@@ -270,20 +258,21 @@
   function postLigaDetail(detail) {
     const frame = ligaDetailFrame.element;
     frame.hidden = false;
-    frame.classList.add('is-loading');
+    if (!ligaDetailFrame.ready) frame.classList.add('is-loading');
     frame.contentWindow.postMessage({
       type: 'padel:open-detail',
       ...detail,
       sequence: detail.matchId ? getPredictionMatchSequence() : undefined,
-      panelAvailable: detail.matchId ? canUseDetailPanel() : false
+      panelAvailable: canUseDetailPanel()
     }, detailMessageTargetOrigin());
   }
 
   function openLigaDetail(detail, trigger = null) {
     if (!detail.playerId && !detail.matchId) return;
     ligaDetailFrame.returnFocus = trigger || document.activeElement;
+    ligaDetailFrame.activeView = detail.matchId ? 'match' : 'profile';
     ligaDetailFrame.panelEligible = Boolean(
-      detail.matchId
+      (detail.matchId || detail.playerId)
       && trigger?.closest('#prediction-matches')
       && document.getElementById('tippen')?.classList.contains('active')
     );
@@ -291,7 +280,7 @@
     detail = {
       ...detail,
       sequence: detail.matchId ? getPredictionMatchSequence() : undefined,
-      panelAvailable: detail.matchId ? canUseDetailPanel() : false
+      panelAvailable: canUseDetailPanel()
     };
     if (ligaDetailFrame.element) {
       const currentPresentation = ligaDetailFrame.element.dataset.presentation;
@@ -314,7 +303,7 @@
     element.src = url.href;
     ligaDetailFrame.element = element;
     ligaDetailFrame.pendingDetail = detail;
-    applyLigaDetailFramePresentation('modal');
+    applyLigaDetailFramePresentation(detail.panelAvailable ? 'panel' : 'modal');
     updatePredictionDetailHighlights();
   }
 
@@ -336,11 +325,19 @@
       if (type === 'padel:match-forecast-changed') ligaDetailFrame.forecastChanged = true;
       if (type === 'padel:detail-active-match') {
         ligaDetailFrame.activeMatchId = event.data.matchId || null;
+        ligaDetailFrame.activeView = 'match';
+        updatePredictionDetailHighlights();
+        return;
+      }
+      if (type === 'padel:detail-active-view') {
+        ligaDetailFrame.activeView = event.data.view === 'profile' ? 'profile' : 'match';
+        if (frame) frame.title = ligaDetailFrame.activeView === 'profile' ? 'Spielerprofil' : 'Partiedetails';
         updatePredictionDetailHighlights();
         return;
       }
       if (type === 'padel:detail-presentation') {
         if (ligaDetailFrame.pendingDetail) return;
+        if (event.data.view) ligaDetailFrame.activeView = event.data.view;
         applyLigaDetailFramePresentation(event.data.presentation);
         return;
       }

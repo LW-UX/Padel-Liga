@@ -1249,6 +1249,9 @@
       }
     }
     @container player-profile-panel (min-width: 760px) {
+      .player-profile-dialog[data-presentation="panel"] :where(.player-profile-responsive-grid.prefers-three-columns) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
       .player-profile-dialog[data-presentation="panel"] .player-profile-match {
         grid-template-columns: 64px 32px minmax(0, 1fr) 132px 84px;
         gap: 16px;
@@ -1270,11 +1273,6 @@
         display: block;
         min-height: 0;
         text-align: left;
-      }
-    }
-    @media (min-width: 1631px) {
-      .player-profile-dialog[data-presentation="panel"] :where(.player-profile-responsive-grid.prefers-three-columns) {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
     /* Ab 100 px unter der Maximalbreite nutzt auch das angedockte Panel das normale Modal-Layout. */
@@ -1911,6 +1909,19 @@
       grid-template-columns: minmax(0, 1fr) minmax(66px, auto) minmax(0, 1fr);
       gap: 8px;
     }
+    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-team {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      overflow: visible;
+    }
+    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-player {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-team .mc-player-sep { display: none; }
     body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-match-card:not(.is-single-set) .prediction-options {
       grid-column: 1 / -1;
       grid-row: 3;
@@ -4097,8 +4108,22 @@
       from { opacity: 0; transform: translateX(calc(100% + 24px)); }
       to { opacity: 1; transform: translateX(0); }
     }
+    body.detail-panel-switching .detail-view-dialog[data-presentation="panel"],
+    body.detail-panel-switching .player-profile-dialog[data-presentation="panel"],
+    .detail-view-dialog[data-presentation="panel"].is-detail-panel-swap,
+    .player-profile-dialog[data-presentation="panel"].is-detail-panel-swap {
+      animation: detail-panel-swap-in 90ms ease-out;
+    }
+    @keyframes detail-panel-swap-in {
+      from { opacity: 0.72; }
+      to { opacity: 1; }
+    }
     @media (prefers-reduced-motion: reduce) {
-      .detail-view-dialog[data-presentation="panel"] { animation: none; }
+      .detail-view-dialog[data-presentation="panel"],
+      .detail-view-dialog[data-presentation="panel"].is-detail-panel-swap,
+      .player-profile-dialog[data-presentation="panel"].is-detail-panel-swap {
+        animation: none;
+      }
     }
     .live-overview {
       display: grid;

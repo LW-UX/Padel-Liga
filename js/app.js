@@ -52,15 +52,9 @@ let statisticsLoadError = '';
 let statisticsPlayerFilters = new Map();
 const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;
 const PLAYER_PROFILE_ACHIEVEMENT_LIMIT = 4;
-const PLAYER_PROFILE_PANEL_BREAKPOINT = 1100;
-const PLAYER_PROFILE_PANEL_RANKING_WIDTH = 540;
-const PLAYER_PROFILE_PANEL_ALL_TIME_RANKING_WIDTH = 720;
-const PLAYER_PROFILE_PANEL_MIN_WIDTH = 460;
-const PLAYER_PROFILE_PANEL_GAP = 24;
-const PLAYER_PROFILE_PANEL_OUTER_GUTTER = 16;
 const PLAYER_PROFILE_PANEL_TRANSITION_MS = 220;
-const PLAYER_PROFILE_PRESENTATION_STORAGE_KEY = 'padel-liga-player-profile-presentation';
-const PLAYER_PROFILE_PRESENTATION_STORAGE_TTL = 30 * 24 * 60 * 60 * 1000;
+const panelLayout = window.PadelLigaPanelLayout;
+const playerProfilePresentationStore = panelLayout.createPresentationPreference('padel-liga-player-profile-presentation');
 const PLAYER_PROFILE_ROW_SELECTOR = '#rangliste tr[data-player-profile-id], #all-time-ranking-table tr[data-player-profile-id]';
 const PROFILE_SEASON_COLORS = Object.freeze({
   summer: '#FF8A5B',
@@ -83,7 +77,24 @@ let playerProfilePresentationPreference = null;
 let playerProfileActiveId = null;
 let playerProfileForceModal = false;
 let playerProfileCloseTimer = null;
+let playerProfilePanelOrigin = null;
+let playerProfileReturnContext = null;
+let playerProfileEmbeddedPanelAvailable = false;
+let detailPanelSwitchFrame = 0;
 const isDetailEmbed = document.documentElement.classList.contains('is-detail-embed');
+
+function beginDetailPanelSwitch() {
+  document.body.classList.add('detail-panel-switching');
+  cancelAnimationFrame(detailPanelSwitchFrame);
+  detailPanelSwitchFrame = requestAnimationFrame(() => {
+    detailPanelSwitchFrame = requestAnimationFrame(() => {
+      document.body.classList.remove('detail-panel-switching');
+      detailPanelSwitchFrame = 0;
+    });
+  });
+}
+
+window.PadelLigaBeginDetailPanelSwitch = beginDetailPanelSwitch;
 
 function getViewerStorageKey() {
   return `${VIEWER_STORAGE_KEY_PREFIX}:${selectedSeason?.id || 'default'}`;
@@ -1798,12 +1809,23 @@ function fetchPlayerProfile(playerId) {
   const cached = playerProfileCache.get(playerId);
   if (cached && cached.expiresAt > Date.now()) return cached.promise;
   const entry = { expiresAt: Date.now() + PLAYER_PROFILE_CACHE_TTL };
-  entry.promise = loadPlayerProfile(playerId).catch(error => {
-    if (playerProfileCache.get(playerId) === entry) playerProfileCache.delete(playerId);
-    throw error;
-  });
+  entry.promise = loadPlayerProfile(playerId)
+    .then(data => {
+      entry.data = data;
+      return data;
+    })
+    .catch(error => {
+      if (playerProfileCache.get(playerId) === entry) playerProfileCache.delete(playerId);
+      throw error;
+    });
   playerProfileCache.set(playerId, entry);
   return entry.promise;
+}
+
+function getCachedPlayerProfile(playerId) {
+  const cached = playerProfileCache.get(playerId);
+  if (!cached || cached.expiresAt <= Date.now()) return null;
+  return cached.data || null;
 }
 
 async function loadPlayerProfile(playerId) {
@@ -2787,6 +2809,27 @@ function isAllTimeRankingSectionActive() {
 }
 
 function getPlayerProfilePanelContext() {
+  const statisticsContext = window.PadelMatchStatistics?.profileContext;
+  if (statisticsContext?.active) {
+    return {
+      id: 'match-statistics',
+      hostId: 'match-statistics-panel-host',
+      panelAvailable: statisticsContext.panelAvailable
+    };
+  }
+  if (playerProfilePanelOrigin === 'match-list') {
+    return {
+      id: 'match-list',
+      hostId: 'match-statistics-panel-host'
+    };
+  }
+  if (playerProfilePanelOrigin === 'embedded-match-list') {
+    return {
+      id: 'match-statistics',
+      hostId: 'match-statistics-panel-host',
+      panelAvailable: playerProfileEmbeddedPanelAvailable
+    };
+  }
   if (isRankingSectionActive()) {
     return { id: 'ranking', hostId: 'ranking-profile-host' };
   }
@@ -2796,65 +2839,41 @@ function getPlayerProfilePanelContext() {
   return null;
 }
 
-function getPlayerProfilePanelRankingWidth(panelContext = getPlayerProfilePanelContext()) {
+function getPlayerProfilePanelLayout(panelContext = getPlayerProfilePanelContext()) {
+  if (panelContext?.id === 'match-list') return panelLayout.layouts.matchList;
   return panelContext?.id === 'all-time-ranking'
-    ? PLAYER_PROFILE_PANEL_ALL_TIME_RANKING_WIDTH
-    : PLAYER_PROFILE_PANEL_RANKING_WIDTH;
+    ? panelLayout.layouts.allTimeRanking
+    : panelLayout.layouts.ranking;
 }
 
 function hasPlayerProfilePanelSpace() {
   const panelContext = getPlayerProfilePanelContext();
-  const layoutViewportWidth = document.documentElement.clientWidth || window.innerWidth;
-  const rankingWidth = getPlayerProfilePanelRankingWidth(panelContext);
-  const requiredWidth = rankingWidth
-    + PLAYER_PROFILE_PANEL_GAP
-    + PLAYER_PROFILE_PANEL_MIN_WIDTH;
+  if (panelContext?.id === 'match-statistics') return Boolean(panelContext.panelAvailable);
+  if (panelContext?.id === 'match-list') {
+    const section = document.getElementById('partien');
+    return Boolean(
+      !isDetailEmbed
+      && section?.classList.contains('active')
+      && document.getElementById('match-statistics-panel-host')
+      && panelLayout.hasPanelSpace(panelLayout.layouts.matchList)
+    );
+  }
+  // Die Gesamtrangliste beginnt nicht am Seitenrand, sondern an ihrer tatsächlichen Position.
   const allTimeLayoutLeft = panelContext?.id === 'all-time-ranking'
     ? document.getElementById('all-time-ranking-profile-layout')?.getBoundingClientRect().left
     : null;
-  const availableWidth = layoutViewportWidth
-    - (Number.isFinite(allTimeLayoutLeft) ? allTimeLayoutLeft : PLAYER_PROFILE_PANEL_OUTER_GUTTER)
-    - PLAYER_PROFILE_PANEL_OUTER_GUTTER;
-  return window.innerWidth >= PLAYER_PROFILE_PANEL_BREAKPOINT
-    && availableWidth >= requiredWidth;
+  return panelLayout.hasPanelSpace(
+    getPlayerProfilePanelLayout(panelContext),
+    Number.isFinite(allTimeLayoutLeft) ? { listLeft: allTimeLayoutLeft } : undefined
+  );
 }
 
 function canPlayerProfileUsePanel() {
-  return !isDetailEmbed
-    && Boolean(getPlayerProfilePanelContext())
-    && hasPlayerProfilePanelSpace();
-}
-
-function getStoredPlayerProfilePresentation() {
-  try {
-    const stored = JSON.parse(localStorage.getItem(PLAYER_PROFILE_PRESENTATION_STORAGE_KEY) || 'null');
-    if (!['panel', 'modal'].includes(stored?.presentation)
-      || !Number.isFinite(stored?.expiresAt)
-      || stored.expiresAt <= Date.now()) {
-      localStorage.removeItem(PLAYER_PROFILE_PRESENTATION_STORAGE_KEY);
-      return null;
-    }
-    return stored.presentation;
-  } catch (error) {
-    try {
-      localStorage.removeItem(PLAYER_PROFILE_PRESENTATION_STORAGE_KEY);
-    } catch (storageError) {
-      // Ignore inaccessible browser storage.
-    }
-    return null;
+  const panelContext = getPlayerProfilePanelContext();
+  if (panelContext?.id === 'match-statistics' || panelContext?.id === 'match-list') {
+    return hasPlayerProfilePanelSpace();
   }
-}
-
-function storePlayerProfilePresentation(presentation) {
-  if (!['panel', 'modal'].includes(presentation)) return;
-  try {
-    localStorage.setItem(PLAYER_PROFILE_PRESENTATION_STORAGE_KEY, JSON.stringify({
-      presentation,
-      expiresAt: Date.now() + PLAYER_PROFILE_PRESENTATION_STORAGE_TTL
-    }));
-  } catch (error) {
-    // The toggle still works for the current profile if browser storage is blocked.
-  }
+  return !isDetailEmbed && Boolean(panelContext) && hasPlayerProfilePanelSpace();
 }
 
 function shouldUsePlayerProfilePanel() {
@@ -2880,19 +2899,11 @@ function updatePlayerProfilePresentationToggle() {
 function updatePlayerProfilePanelMetrics() {
   if (playerProfilePresentation !== 'panel') return;
   const panelContext = getPlayerProfilePanelContext();
-  const layoutViewportWidth = document.documentElement.clientWidth || window.innerWidth;
-  const requiredWidth = getPlayerProfilePanelRankingWidth(panelContext)
-    + PLAYER_PROFILE_PANEL_GAP
-    + PLAYER_PROFILE_PANEL_MIN_WIDTH;
-  const standardContentLeft = layoutViewportWidth > 1100
-    ? (layoutViewportWidth - 1100) / 2 + 16
-    : PLAYER_PROFILE_PANEL_OUTER_GUTTER;
-  const latestPossibleLeft = layoutViewportWidth - PLAYER_PROFILE_PANEL_OUTER_GUTTER - requiredWidth;
-  const splitLeft = Math.max(
-    0,
-    Math.min(standardContentLeft, latestPossibleLeft)
+  if (panelContext?.id === 'match-statistics') return;
+  panelLayout.applySplitLeft(
+    getPlayerProfilePanelLayout(panelContext),
+    panelContext?.id === 'match-list' ? '--match-statistics-split-left' : '--ranking-profile-split-left'
   );
-  document.body.style.setProperty('--ranking-profile-split-left', `${splitLeft}px`);
 }
 
 function arrangePlayerProfileContent(presentation = playerProfilePresentation) {
@@ -2948,10 +2959,13 @@ function announcePlayerProfilePanel(name) {
   }
 }
 
-function movePlayerProfileDialog(presentation, { reopen = false, scrollTop = 0, restoreTriggerFocus = false } = {}) {
+function movePlayerProfileDialog(presentation, { reopen = false, scrollTop = 0, restoreTriggerFocus = false, persistDetailPreference = false } = {}) {
   const dialog = document.getElementById('player-profile-dialog');
   const panelContext = presentation === 'panel' ? getPlayerProfilePanelContext() : null;
-  const host = document.getElementById(panelContext?.hostId || 'player-profile-modal-host');
+  const hostId = isDetailEmbed && panelContext?.id === 'match-statistics'
+    ? 'player-profile-modal-host'
+    : panelContext?.hostId || 'player-profile-modal-host';
+  const host = document.getElementById(hostId);
   if (!dialog || !host) return false;
 
   const wasOpen = dialog.open;
@@ -2959,24 +2973,47 @@ function movePlayerProfileDialog(presentation, { reopen = false, scrollTop = 0, 
   playerProfilePresentation = presentation;
   dialog.dataset.presentation = presentation;
   dialog.classList.remove('is-closing');
+  dialog.classList.toggle(
+    'is-detail-panel-swap',
+    presentation === 'panel' && document.body.classList.contains('detail-panel-switching')
+  );
   if (presentation === 'panel') dialog.setAttribute('aria-modal', 'false');
   else dialog.removeAttribute('aria-modal');
   arrangePlayerProfileContent(presentation);
   host.append(dialog);
   document.body.classList.toggle('player-profile-panel-open', presentation === 'panel');
+  if (panelContext?.id === 'match-list') {
+    document.body.classList.toggle('match-statistics-panel-open', presentation === 'panel');
+    if (presentation !== 'panel') document.body.style.removeProperty('--match-statistics-split-left');
+  } else if (playerProfilePanelOrigin === 'match-list' && presentation !== 'panel') {
+    document.body.classList.remove('match-statistics-panel-open');
+    document.body.style.removeProperty('--match-statistics-split-left');
+  }
   if (panelContext) document.body.dataset.playerProfilePanelContext = panelContext.id;
   else delete document.body.dataset.playerProfilePanelContext;
   updatePlayerProfilePanelMetrics();
   updatePlayerProfilePresentationToggle();
+  window.PadelMatchStatistics?.syncProfilePresentation?.(presentation, {
+    persistPreference: persistDetailPreference
+  });
+  if (isDetailEmbed && playerProfilePanelOrigin === 'embedded-match-list') {
+    postToDetailEmbedParent({
+      type: 'padel:detail-presentation',
+      presentation,
+      view: 'profile'
+    });
+  }
 
   if (reopen || wasOpen) {
-    if (presentation === 'panel') dialog.show();
+    if (presentation === 'panel' && !isDetailEmbed) dialog.show();
     else dialog.showModal();
     requestAnimationFrame(() => {
       const shell = dialog.querySelector('.player-profile-shell');
       if (shell) shell.scrollTop = scrollTop;
       playerProfileChart?.resize?.();
-      if (presentation === 'panel' && restoreTriggerFocus && playerProfileLastTrigger?.isConnected) {
+      if (presentation === 'panel' && panelContext?.id === 'match-statistics') {
+        dialog.querySelector('[data-player-profile-close]')?.focus({ preventScroll: true });
+      } else if (presentation === 'panel' && restoreTriggerFocus && playerProfileLastTrigger?.isConnected) {
         playerProfileLastTrigger.focus({ preventScroll: true });
       }
     });
@@ -3007,10 +3044,11 @@ function togglePlayerProfilePresentation() {
   if (!dialog?.open || !toggle || playerProfileForceModal || !canPlayerProfileUsePanel()) return;
   const nextPresentation = playerProfilePresentation === 'panel' ? 'modal' : 'panel';
   playerProfilePresentationPreference = nextPresentation;
-  storePlayerProfilePresentation(nextPresentation);
+  playerProfilePresentationStore.set(nextPresentation);
   movePlayerProfileDialog(nextPresentation, {
     reopen: true,
-    scrollTop: getPlayerProfileShellScrollTop()
+    scrollTop: getPlayerProfileShellScrollTop(),
+    persistDetailPreference: true
   });
   requestAnimationFrame(() => toggle.focus({ preventScroll: true }));
 }
@@ -3083,19 +3121,57 @@ async function openPlayerProfile(playerId, trigger = null, options = {}) {
   if (!dialog || !playerId) return;
   const profileWasOpen = dialog.open;
   cancelPlayerProfileCloseTransition();
-  if (!profileWasOpen) playerProfilePresentationPreference = getStoredPlayerProfilePresentation();
-  const aboveStatistics = window.PadelMatchStatistics?.prepareProfileOpen(trigger, playerId, options.fromHistory);
+  if (!profileWasOpen) playerProfilePresentationPreference = playerProfilePresentationStore.get();
+  const statisticsTransition = window.PadelMatchStatistics?.prepareProfileOpen(
+    trigger,
+    playerId,
+    options.fromHistory,
+    options.sharedDetail
+  );
+  const replacesStatistics = Boolean(statisticsTransition?.replacesDetail);
+  if (replacesStatistics) {
+    playerProfilePresentationPreference = statisticsTransition.presentationPreference
+      || statisticsTransition.presentation;
+  }
   const triggerDialog = trigger?.closest?.('dialog');
+  const opensFromMatchList = Boolean(
+    !replacesStatistics
+    && !triggerDialog
+    && trigger?.closest?.('#partien')
+    && document.getElementById('partien')?.classList.contains('active')
+  );
+  const opensFromEmbeddedMatchList = Boolean(
+    isDetailEmbed
+    && Object.prototype.hasOwnProperty.call(options, 'panelAvailable')
+  );
+  if (!profileWasOpen || opensFromEmbeddedMatchList) {
+    if (opensFromEmbeddedMatchList) {
+      playerProfileEmbeddedPanelAvailable = Boolean(options.panelAvailable);
+    }
+    playerProfilePanelOrigin = opensFromEmbeddedMatchList
+      ? 'embedded-match-list'
+      : opensFromMatchList ? 'match-list' : null;
+    playerProfileReturnContext = (opensFromMatchList || opensFromEmbeddedMatchList)
+      ? {
+          trigger: trigger || document.activeElement,
+          triggerMatch: null,
+          scroll: window.scrollY,
+          profileOpen: false
+        }
+      : null;
+  }
   const panelContext = getPlayerProfilePanelContext();
   const opensFromAllTimeRanking = Boolean(trigger?.closest?.('#all-time-ranking-profile-main'));
   playerProfileForceModal = Boolean(
     options.forceModal
-    || aboveStatistics
-    || (triggerDialog && triggerDialog !== dialog)
+    || (statisticsTransition && !replacesStatistics)
+    || (!replacesStatistics && triggerDialog && triggerDialog !== dialog)
     || (triggerDialog === dialog && playerProfileForceModal)
     || (panelContext?.id === 'all-time-ranking' && !profileWasOpen && !opensFromAllTimeRanking)
   );
-  playerProfileLastTrigger = trigger || document.activeElement;
+  if (!(profileWasOpen && playerProfilePanelOrigin === 'match-list')) {
+    playerProfileLastTrigger = trigger || document.activeElement;
+  }
   playerProfileActiveId = playerId;
   updatePlayerProfileRankingHighlights();
   const knownPlayer = (PADEL_DATA?.allPlayers || PADEL_DATA?.players || [])
@@ -3103,7 +3179,8 @@ async function openPlayerProfile(playerId, trigger = null, options = {}) {
     || (window.PADEL_PLAYERS || []).find(player => player.id === playerId);
   document.getElementById('player-profile-name').textContent = knownPlayer?.name || 'Spielerprofil';
   const requestId = ++playerProfileRequestId;
-  setPlayerProfileState('Spielerprofil wird geladen …');
+  const cachedProfile = getCachedPlayerProfile(playerId);
+  if (!cachedProfile) setPlayerProfileState('Spielerprofil wird geladen …');
   const nextPresentation = shouldUsePlayerProfilePanel() ? 'panel' : 'modal';
   if (!dialog.open || nextPresentation !== playerProfilePresentation) {
     movePlayerProfileDialog(nextPresentation, {
@@ -3113,11 +3190,18 @@ async function openPlayerProfile(playerId, trigger = null, options = {}) {
   } else {
     const shell = dialog.querySelector('.player-profile-shell');
     if (shell) shell.scrollTop = 0;
-    if (nextPresentation === 'panel' && playerProfileLastTrigger?.isConnected) {
+    if (nextPresentation === 'panel' && panelContext?.id === 'match-statistics') {
+      dialog.querySelector('[data-player-profile-close]')?.focus({ preventScroll: true });
+    } else if (nextPresentation === 'panel' && playerProfileLastTrigger?.isConnected) {
       playerProfileLastTrigger.focus({ preventScroll: true });
     }
   }
   updatePlayerProfilePresentationToggle();
+
+  if (cachedProfile) {
+    renderPlayerProfile(cachedProfile);
+    return;
+  }
 
   try {
     const profile = await fetchPlayerProfile(playerId);
@@ -3143,6 +3227,20 @@ window.PadelLigaCapturePlayerProfile = () => ({
   activeId: playerProfileActiveId,
   forceModal: playerProfileForceModal
 });
+window.PadelLigaGetPlayerProfileDetailContext = () => {
+  const profile = document.getElementById('player-profile-dialog');
+  if (!profile?.open || !['match-list', 'embedded-match-list'].includes(playerProfilePanelOrigin)) return null;
+  return {
+    active: true,
+    origin: playerProfilePanelOrigin,
+    presentation: playerProfilePresentation,
+    presentationPreference: playerProfilePresentationPreference || playerProfilePresentation,
+    panelAvailable: playerProfilePanelOrigin === 'embedded-match-list'
+      ? playerProfileEmbeddedPanelAvailable
+      : hasPlayerProfilePanelSpace(),
+    returnContext: playerProfileReturnContext
+  };
+};
 window.PadelLigaRestorePlayerProfile = snapshot => {
   const profile = document.getElementById('player-profile-dialog');
   if (!snapshot?.data || !profile) return;
@@ -3170,14 +3268,25 @@ window.PadelLigaRestorePlayerProfile = snapshot => {
   });
 };
 window.PadelLigaClosePlayerProfile = options => closePlayerProfile(options);
+window.PadelLigaReconcilePlayerProfile = reconcilePlayerProfilePresentation;
+window.PadelLigaSetEmbeddedPlayerProfilePanelAvailability = available => {
+  if (playerProfilePanelOrigin !== 'embedded-match-list') return;
+  playerProfileEmbeddedPanelAvailable = Boolean(available);
+  reconcilePlayerProfilePresentation();
+};
 
 function finalizePlayerProfileClose({ restoreFocus = true } = {}) {
   const dialog = document.getElementById('player-profile-dialog');
+  const closesMatchListPanel = playerProfilePanelOrigin === 'match-list';
   if (dialog?.open) dialog.close();
-  dialog?.classList.remove('is-closing');
+  dialog?.classList.remove('is-closing', 'is-detail-panel-swap');
   document.body.classList.remove('player-profile-panel-open');
   delete document.body.dataset.playerProfilePanelContext;
   document.body.style.removeProperty('--ranking-profile-split-left');
+  if (closesMatchListPanel) {
+    document.body.classList.remove('match-statistics-panel-open');
+    document.body.style.removeProperty('--match-statistics-split-left');
+  }
   const modalHost = document.getElementById('player-profile-modal-host');
   if (dialog && modalHost && dialog.parentElement !== modalHost) modalHost.append(dialog);
   playerProfilePresentation = 'modal';
@@ -3189,6 +3298,9 @@ function finalizePlayerProfileClose({ restoreFocus = true } = {}) {
   playerProfileData = null;
   playerProfileActiveId = null;
   playerProfileForceModal = false;
+  playerProfilePanelOrigin = null;
+  playerProfileReturnContext = null;
+  playerProfileEmbeddedPanelAvailable = false;
   updatePlayerProfilePresentationToggle();
   updatePlayerProfileRankingHighlights();
   const status = document.getElementById('player-profile-panel-status');
@@ -3212,6 +3324,9 @@ function closePlayerProfile(options = {}) {
   }
   dialog.classList.add('is-closing');
   document.body.classList.remove('player-profile-panel-open');
+  if (playerProfilePanelOrigin === 'match-list') {
+    document.body.classList.remove('match-statistics-panel-open');
+  }
   playerProfileCloseTimer = setTimeout(() => {
     playerProfileCloseTimer = null;
     finalizePlayerProfileClose({ restoreFocus: options.restoreFocus !== false });
@@ -3794,7 +3909,8 @@ function nav(id, el) {
   const panelContext = getPlayerProfilePanelContext()?.id;
   const keepsPanelContext = (panelContext === 'ranking' && id === 'rangliste')
     || (panelContext === 'all-time-ranking' && id === 'verlauf');
-  if (!keepsPanelContext && playerProfilePresentation === 'panel') {
+  const profileBelongsToMatchDetail = panelContext === 'match-statistics' && window.PadelMatchStatistics?.active;
+  if (!keepsPanelContext && !profileBelongsToMatchDetail && playerProfilePresentation === 'panel') {
     closePlayerProfile({ immediate: true, restoreFocus: false });
   }
   if (id !== 'partien' && window.PadelMatchStatistics?.active) {
@@ -7951,7 +8067,10 @@ function getOrCreateChartTooltip(chartInstance, variantClass = '') {
 }
 
 function getOrCreateFormTooltip(anchor) {
-  const modalHost = anchor?.closest('dialog[open]:not([data-presentation="panel"])');
+  const isEmbeddedDetail = document.documentElement.classList.contains('is-detail-embed');
+  const modalHost = anchor?.closest(isEmbeddedDetail
+    ? 'dialog[open]'
+    : 'dialog[open]:not([data-presentation="panel"])');
   const host = modalHost || document.body;
   let tooltip = document.querySelector('.form-custom-tooltip');
 
@@ -8841,6 +8960,7 @@ function initDetailEmbed() {
     if (!validOrigin || event.source !== window.parent) return;
     if (event.data?.type === 'padel:detail-panel-availability') {
       window.PadelMatchStatistics?.setEmbeddedPanelAvailability?.(event.data.available);
+      window.PadelLigaSetEmbeddedPlayerProfilePanelAvailability?.(event.data.available);
       return;
     }
     if (event.data?.type === 'padel:detail-sequence') {
@@ -8855,7 +8975,10 @@ function initDetailEmbed() {
     }
     if (event.data?.type !== 'padel:open-detail') return;
     const opening = event.data.playerId
-      ? openPlayerProfile(event.data.playerId)
+      ? openPlayerProfile(event.data.playerId, null, {
+          panelAvailable: event.data.panelAvailable,
+          sharedDetail: Boolean(window.PadelMatchStatistics?.active && event.data.panelAvailable)
+        })
       : window.PadelMatchStatistics?.open(event.data.matchId, {
           sequence: event.data.sequence,
           panelAvailable: event.data.panelAvailable

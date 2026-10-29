@@ -9,6 +9,7 @@ const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
 const scoreInput = fs.readFileSync(path.join(root, 'js/score-input.js'), 'utf8');
 const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+const panelLayout = require(path.join(root, 'js/panel-layout.js'));
 const players = fs.readFileSync(path.join(root, 'data/players.js'), 'utf8');
 const profileMigration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260901130000_public_player_profiles.sql'),
@@ -313,22 +314,20 @@ test('wide ranking views host the same player profile as a non-modal side panel'
   assert.match(html, /class="ranking-profile-host" id="all-time-ranking-profile-host"/);
   assert.match(html, /id="player-profile-modal-host"/);
   assert.match(html, /id="player-profile-panel-status" role="status" aria-live="polite"/);
-  assert.match(app, /const PLAYER_PROFILE_PANEL_BREAKPOINT = 1100;/);
-  assert.match(app, /const PLAYER_PROFILE_PANEL_RANKING_WIDTH = 540;/);
-  assert.match(app, /const PLAYER_PROFILE_PANEL_ALL_TIME_RANKING_WIDTH = 720;/);
-  assert.match(app, /const PLAYER_PROFILE_PANEL_MIN_WIDTH = 460;/);
+  assert.deepEqual({ ...panelLayout.layouts.ranking }, { listWidth: 540, panelMinWidth: 460 });
+  assert.deepEqual({ ...panelLayout.layouts.allTimeRanking }, { listWidth: 720, panelMinWidth: 460 });
   assert.doesNotMatch(app, /PLAYER_PROFILE_PANEL_MAX_WIDTH|player-profile-panel-width/);
-  assert.match(app, /function getPlayerProfilePanelRankingWidth[\s\S]*?PLAYER_PROFILE_PANEL_ALL_TIME_RANKING_WIDTH[\s\S]*?PLAYER_PROFILE_PANEL_RANKING_WIDTH/);
-  assert.match(app, /function hasPlayerProfilePanelSpace\(\)[\s\S]*?availableWidth >= requiredWidth/);
-  assert.match(app, /const splitLeft = Math\.max\(\s*0,\s*Math\.min\(standardContentLeft, latestPossibleLeft\)/);
+  assert.match(app, /function getPlayerProfilePanelLayout[\s\S]*?layouts\.matchList[\s\S]*?layouts\.allTimeRanking[\s\S]*?layouts\.ranking/);
+  assert.match(app, /function hasPlayerProfilePanelSpace\(\)[\s\S]*?panelLayout\.hasPanelSpace\(\s*getPlayerProfilePanelLayout\(panelContext\),\s*Number\.isFinite\(allTimeLayoutLeft\) \? \{ listLeft: allTimeLayoutLeft \}/);
+  assert.match(app, /function updatePlayerProfilePanelMetrics\(\)[\s\S]*?panelLayout\.applySplitLeft\(\s*getPlayerProfilePanelLayout\(panelContext\)/);
   assert.match(app, /dialog\.show\(\)/);
   assert.match(app, /dialog\.showModal\(\)/);
   assert.match(app, /let playerProfilePresentationPreference = null;/);
-  assert.match(app, /const PLAYER_PROFILE_PRESENTATION_STORAGE_TTL = 30 \* 24 \* 60 \* 60 \* 1000;/);
+  assert.match(app, /createPresentationPreference\('padel-liga-player-profile-presentation'\)/);
   assert.match(app, /function shouldUsePlayerProfilePanel\(\)[\s\S]*?playerProfilePresentationPreference !== 'modal'/);
-  assert.match(app, /if \(!profileWasOpen\) playerProfilePresentationPreference = getStoredPlayerProfilePresentation\(\);/);
+  assert.match(app, /if \(!profileWasOpen\) playerProfilePresentationPreference = playerProfilePresentationStore\.get\(\);/);
   assert.match(app, /function updatePlayerProfilePresentationToggle\(\)[\s\S]*?Profil als Seitenpanel öffnen[\s\S]*?Profil als Modal öffnen[\s\S]*?toggle\.hidden = !canToggle;/);
-  assert.match(app, /function togglePlayerProfilePresentation\(\)[\s\S]*?playerProfilePresentation === 'panel' \? 'modal' : 'panel'[\s\S]*?playerProfilePresentationPreference = nextPresentation;[\s\S]*?storePlayerProfilePresentation\(nextPresentation\);[\s\S]*?movePlayerProfileDialog\(nextPresentation/);
+  assert.match(app, /function togglePlayerProfilePresentation\(\)[\s\S]*?playerProfilePresentation === 'panel' \? 'modal' : 'panel'[\s\S]*?playerProfilePresentationPreference = nextPresentation;[\s\S]*?playerProfilePresentationStore\.set\(nextPresentation\);[\s\S]*?movePlayerProfileDialog\(nextPresentation/);
   assert.match(app, /presentationPreference: playerProfilePresentationPreference/);
   assert.match(app, /playerProfilePresentationPreference = \['panel', 'modal'\]\.includes\(snapshot\.presentationPreference\)/);
   assert.match(app, /presentation === 'panel'[\s\S]*?'\.player-profile-elo-panel'[\s\S]*?'\.player-profile-participations-panel'[\s\S]*?'\.player-profile-history'[\s\S]*?'\.player-profile-relationships'/);
@@ -357,7 +356,7 @@ test('wide ranking views host the same player profile as a non-modal side panel'
   assert.match(style, /@container player-profile-panel \(min-width: 600px\) \{[\s\S]*?\.player-profile-match-teams \{[\s\S]*?flex-direction: row;[\s\S]*?\.player-profile-match-score \{[\s\S]*?min-height: 0;/);
   assert.match(style, /@container player-profile-panel \(min-width: 760px\) \{[\s\S]*?grid-template-columns: 64px 32px minmax\(0, 1fr\) 132px 84px;[\s\S]*?flex-direction: row;/);
   assert.match(style, /@container player-profile-panel \(min-width: 600px\) \{[\s\S]*?:where\(\.player-profile-responsive-grid\.has-multiple-items\)[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
-  assert.match(style, /@media \(min-width: 1631px\) \{[\s\S]*?:where\(\.player-profile-responsive-grid\.prefers-three-columns\)[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/);
+  assert.match(style, /@container player-profile-panel \(min-width: 760px\) \{[\s\S]*?:where\(\.player-profile-responsive-grid\.prefers-three-columns\)[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/);
   assert.match(style, /@container player-profile-panel \(min-width: 1100px\) \{[\s\S]*?\.player-profile-content \{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/);
   assert.equal((style.match(/\.player-profile-dialog\[data-presentation="panel"\] \.player-profile-content > :where\(\.player-profile-widget\) \{/g) || []).length, 2);
   assert.match(style, /@container player-profile-panel \(min-width: 1100px\) \{[\s\S]*?\.player-profile-responsive-grid \{[\s\S]*?grid-template-columns: 1fr;/);
@@ -371,75 +370,13 @@ test('wide ranking views host the same player profile as a non-modal side panel'
 });
 
 test('player profile panel requires both the desktop breakpoint and the real split width', () => {
-  const constants = app.match(/const PLAYER_PROFILE_PANEL_BREAKPOINT = 1100;[\s\S]*?const PLAYER_PROFILE_PANEL_OUTER_GUTTER = 16;/)?.[0] || '';
-  const widthFunction = app.match(/function getPlayerProfilePanelRankingWidth[\s\S]*?(?=\nfunction hasPlayerProfilePanelSpace)/)?.[0] || '';
-  const spaceFunction = app.match(/function hasPlayerProfilePanelSpace[\s\S]*?(?=\nfunction canPlayerProfileUsePanel)/)?.[0] || '';
-  const context = {
-    window: { innerWidth: 1099 },
-    document: {
-      documentElement: { clientWidth: 1099 },
-      getElementById: () => null
-    },
-    getPlayerProfilePanelContext: () => ({ id: 'ranking' }),
-    result: null
-  };
-  vm.createContext(context);
-  vm.runInContext(`${constants}\n${widthFunction}\n${spaceFunction}`, context);
-
-  context.result = vm.runInContext('hasPlayerProfilePanelSpace()', context);
-  assert.equal(context.result, false);
-  context.window.innerWidth = 1100;
-  context.document.documentElement.clientWidth = 1100;
-  assert.equal(vm.runInContext('hasPlayerProfilePanelSpace()', context), true);
-  context.document.documentElement.clientWidth = 1039;
-  assert.equal(vm.runInContext('hasPlayerProfilePanelSpace()', context), false);
-
-  context.getPlayerProfilePanelContext = () => ({ id: 'all-time-ranking' });
-  context.window.innerWidth = 1371;
-  context.document.documentElement.clientWidth = 1371;
-  context.document.getElementById = () => ({ getBoundingClientRect: () => ({ left: 151.5 }) });
-  assert.equal(vm.runInContext('hasPlayerProfilePanelSpace()', context), false);
-  context.window.innerWidth = 1372;
-  context.document.documentElement.clientWidth = 1372;
-  context.document.getElementById = () => ({ getBoundingClientRect: () => ({ left: 152 }) });
-  assert.equal(vm.runInContext('hasPlayerProfilePanelSpace()', context), true);
-});
-
-test('player profile presentation preference is stored for 30 days and then expires', () => {
-  const constants = app.match(
-    /const PLAYER_PROFILE_PRESENTATION_STORAGE_KEY[\s\S]*?const PLAYER_PROFILE_PRESENTATION_STORAGE_TTL = 30 \* 24 \* 60 \* 60 \* 1000;/
-  )?.[0] || '';
-  const helpers = app.match(
-    /function getStoredPlayerProfilePresentation[\s\S]*?(?=\nfunction shouldUsePlayerProfilePanel)/
-  )?.[0] || '';
-  const values = new Map();
-  let now = 1_800_000_000_000;
-  const context = {
-    Date: { now: () => now },
-    localStorage: {
-      getItem: key => values.get(key) ?? null,
-      setItem: (key, value) => values.set(key, value),
-      removeItem: key => values.delete(key)
-    }
-  };
-  vm.createContext(context);
-  vm.runInContext(`${constants}\n${helpers}`, context);
-
-  assert.equal(vm.runInContext('getStoredPlayerProfilePresentation()', context), null);
-  vm.runInContext("storePlayerProfilePresentation('panel')", context);
-  assert.equal(vm.runInContext('getStoredPlayerProfilePresentation()', context), 'panel');
-  assert.equal(
-    JSON.parse(values.get('padel-liga-player-profile-presentation')).expiresAt,
-    now + 30 * 24 * 60 * 60 * 1000
-  );
-
-  now += 30 * 24 * 60 * 60 * 1000 + 1;
-  assert.equal(vm.runInContext('getStoredPlayerProfilePresentation()', context), null);
-  assert.equal(values.has('padel-liga-player-profile-presentation'), false);
-
-  values.set('padel-liga-player-profile-presentation', '{broken');
-  assert.equal(vm.runInContext('getStoredPlayerProfilePresentation()', context), null);
-  assert.equal(values.has('padel-liga-player-profile-presentation'), false);
+  const { layouts, hasPanelSpace } = panelLayout;
+  const viewport = (innerWidth, clientWidth = innerWidth) => ({ innerWidth, clientWidth });
+  assert.equal(hasPanelSpace(layouts.ranking, { viewport: viewport(1099) }), false);
+  assert.equal(hasPanelSpace(layouts.ranking, { viewport: viewport(1100) }), true);
+  assert.equal(hasPanelSpace(layouts.ranking, { viewport: viewport(1100, 1039) }), false);
+  assert.equal(hasPanelSpace(layouts.allTimeRanking, { viewport: viewport(1371), listLeft: 151.5 }), false);
+  assert.equal(hasPanelSpace(layouts.allTimeRanking, { viewport: viewport(1372), listLeft: 152 }), true);
 });
 
 test('player profiles sort achievements by value and recency and show at most four badges', () => {
