@@ -87,6 +87,14 @@ Diese Datei ist die kanonische Quelle für Terminierung, Ergebnisse, Bestätigun
 - Auf der Startseite erscheint ein zukünftiger Trainingstermin zwischen den kommenden Partien. Ein bestätigtes Training erscheint als genau ein Eintrag zwischen den letzten Partien, unabhängig von der Anzahl seiner Paarungen. Trainingskarten zeigen Termin, vier Teilnehmer sowie bei vergangenen Trainings die Anzahl der Paarungen und vollständig beendeten Sätze; sie besitzen keine Detailansicht, keinen Gesamtsieger und kein zusammengezogenes Gesamtergebnis. Registrierte Spielernamen führen ins jeweilige Profil, Gastnamen bleiben reiner Text. Nimmt der aktuell ausgewählte Spieler teil, erhält die Trainingskarte wie eine reguläre Partienkarte einen blauen Rand und sein Name wird blau hervorgehoben.
 - Enthält ein Training mindestens eines der vier internen Testprofile, gehört es für die Startseitenanzeige vollständig zur nicht öffentlichen Test-Saison und erscheint in keiner normalen Saison. Trainings ohne Testprofil bleiben saisonunabhängig und erscheinen deshalb auch in der Test-Saison.
 
+## Kalendereinladungen
+
+- Sobald eine Liga-, Cup- oder Final-Four-Partie mit vollständiger Besetzung einen zukünftigen Termin erhält, bekommt jeder beteiligte Spieler mit bestätigtem Konto automatisch eine Kalendereinladung per Mail. Jeder Spieler erhält eine eigene Einladung, in der nur er selbst als Teilnehmer steht; Absender und Organisator ist das Liga-Postfach, eine Zu- oder Absage wird nicht erwartet.
+- Die Einladung trägt die Partie als einstündigen Termin am Ort „Lucky Star Padel“ ein, mit Erinnerung eine Stunde vor Spielbeginn und Verfügbarkeit „Gebucht“.
+- Wird der Termin verschoben, ersetzt eine aktualisierte Einladung den bisherigen Kalendereintrag. Wird der Termin gelöscht, die Partie ohne Wertung geführt oder ein Spieler aus der Besetzung genommen, erhält der Betroffene eine Absage, die den Eintrag entfernt. Mehrere Änderungen vor dem nächsten Versand werden zusammengefasst; kehrt ein Termin zum zuletzt versandten Zeitpunkt zurück, entfällt die Mail.
+- Nur zukünftige Termine lösen Kalendermails aus. Liegt ein Ergebnis vor, folgen keine Kalendermails mehr, auch wenn früher als geplant gespielt wurde. Trainings erhalten keine Kalendereinladungen.
+- Die Kalendereinladung ist eine eigene, standardmäßig aktive E-Mail-Einstellung. Bei deaktivierter Einstellung entfallen weitere Einladungen, Aktualisierungen und Absagen; ein bereits eingetragener Termin bleibt dann unverändert im Kalender.
+
 ## Schlägerbuchung in Clearooms
 
 - Terminierte Partien und geplante Trainings reservieren automatisch den Schläger-Platz in Clearooms für eine Stunde ab Terminbeginn. Wird der Termin geändert, folgt die Buchung; wird er gelöscht, die Partie ohne Wertung geführt oder das Training gelöscht, entfällt sie. Vergangene, abgeschlossene und auf Bestätigung wartende Termine verändern ihre Buchung nicht mehr.

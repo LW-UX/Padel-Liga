@@ -8,6 +8,10 @@ const migration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261029120000_account_email_notifications.sql'),
   'utf8'
 );
+const calendarMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261029190000_match_calendar_invitations.sql'),
+  'utf8'
+);
 const edgeFunction = fs.readFileSync(
   path.join(root, 'supabase', 'functions', 'send-match-notifications', 'index.ts'),
   'utf8'
@@ -48,6 +52,7 @@ test('account settings expose and persist every notification separately', () => 
     assert.match(source, /data-email-notification="resultEntry" checked/);
     assert.match(source, /data-email-notification="resultConfirmation" checked/);
     assert.match(source, /data-email-notification="predictionReminder" checked/);
+    assert.match(source, /data-email-notification="calendarInvitation" checked/);
     assert.match(source, /data-account-settings-panel hidden[\s\S]*data-password-change[\s\S]*data-auth-logout/);
   });
   assert.match(accountScript, /state\.notificationPreferences\[key\] = Boolean\(changedInput\.checked\)/);
@@ -55,4 +60,20 @@ test('account settings expose and persist every notification separately', () => 
   assert.match(accountScript, /p_result_confirmation: state\.notificationPreferences\.resultConfirmation/);
   assert.match(accountScript, /p_prediction_reminder: state\.notificationPreferences\.predictionReminder/);
   assert.match(accountScript, /readInitialUrlParam\(initialSearch, 'konto'\) === '1'/);
+});
+
+test('calendar invitations follow schedule changes and keep one Outlook appointment per participant', () => {
+  assert.match(calendarMigration, /match\.match_at > now\(\)/);
+  assert.match(calendarMigration, /match\.cancelled_at is null/);
+  assert.match(calendarMigration, /queue\.status in \('processing', 'sent', 'failed'\)/);
+  assert.match(calendarMigration, /Durch eine neuere Terminänderung ersetzt\./);
+  assert.match(calendarMigration, /coalesce\(max\(queue\.calendar_sequence\), -1\) \+ 1/);
+  assert.match(calendarMigration, /elsif not pair\.has_result/);
+  assert.match(calendarMigration, /rename to queue_due_reminder_notifications/);
+  assert.match(edgeFunction, /METHOD:\$\{cancelled \? "CANCEL" : "REQUEST"\}/);
+  assert.match(edgeFunction, /SEQUENCE:\$\{calendar\.calendar_sequence\}/);
+  assert.match(edgeFunction, /const CALENDAR_LOCATION = "Lucky Star Padel";/);
+  assert.match(edgeFunction, /"TRIGGER:-PT1H"/);
+  assert.match(edgeFunction, /"X-MICROSOFT-CDO-BUSYSTATUS:BUSY"/);
+  assert.match(edgeFunction, /content_type: `text\/calendar; charset=utf-8; method=\$\{invitation\.method\}`/);
 });

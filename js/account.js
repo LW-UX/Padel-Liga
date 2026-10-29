@@ -41,7 +41,8 @@
     notificationPreferences: {
       resultEntry: true,
       resultConfirmation: true,
-      predictionReminder: true
+      predictionReminder: true,
+      calendarInvitation: true
     },
     notificationPreferencesReady: false,
     notificationPreferencesAvailable: true,
@@ -1591,7 +1592,8 @@
     state.notificationPreferences = {
       resultEntry: data?.resultEntry !== false,
       resultConfirmation: data?.resultConfirmation !== false,
-      predictionReminder: data?.predictionReminder !== false
+      predictionReminder: data?.predictionReminder !== false,
+      calendarInvitation: data?.calendarInvitation !== false
     };
     state.notificationPreferencesReady = true;
   }
@@ -1936,7 +1938,8 @@
     const { data, error } = await state.client.rpc('update_my_email_notification_preferences', {
       p_result_entry: state.notificationPreferences.resultEntry,
       p_result_confirmation: state.notificationPreferences.resultConfirmation,
-      p_prediction_reminder: state.notificationPreferences.predictionReminder
+      p_prediction_reminder: state.notificationPreferences.predictionReminder,
+      p_calendar_invitation: state.notificationPreferences.calendarInvitation
     });
     if (error) {
       state.notificationPreferences = previous;
@@ -1948,7 +1951,8 @@
     state.notificationPreferences = {
       resultEntry: data?.resultEntry !== false,
       resultConfirmation: data?.resultConfirmation !== false,
-      predictionReminder: data?.predictionReminder !== false
+      predictionReminder: data?.predictionReminder !== false,
+      calendarInvitation: data?.calendarInvitation !== false
     };
     state.notificationPreferencesReady = true;
     renderAuthState();

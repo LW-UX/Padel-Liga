@@ -1,6 +1,11 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-type NotificationType = "result_entry" | "result_confirmation" | "prediction_reminder";
+type NotificationType =
+  | "result_entry"
+  | "result_confirmation"
+  | "prediction_reminder"
+  | "calendar_invitation"
+  | "calendar_cancellation";
 
 type NotificationJob = {
   job_id: number;
@@ -18,6 +23,16 @@ type NotificationJob = {
   result_details: string | null;
   idempotency_key: string;
 };
+
+type CalendarDetails = {
+  job_id: number;
+  calendar_uid: string;
+  calendar_sequence: number;
+  event_start: string;
+};
+
+const CALENDAR_LOCATION = "Lucky Star Padel";
+const CALENDAR_DURATION_MINUTES = 60;
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
@@ -53,6 +68,103 @@ function formatMatchAt(value: string) {
   }).format(date).replace(",", " ·") + " Uhr";
 }
 
+function isCalendarJob(job: NotificationJob) {
+  return job.notification_type === "calendar_invitation" || job.notification_type === "calendar_cancellation";
+}
+
+function formatIcsDate(date: Date) {
+  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+}
+
+function escapeIcsText(value: unknown) {
+  return String(value ?? "")
+    .replaceAll("\\", "\\\\")
+    .replaceAll(";", "\\;")
+    .replaceAll(",", "\\,")
+    .replace(/\r?\n/g, "\\n");
+}
+
+// RFC 5545 limits content lines to 75 octets; longer lines continue after
+// CRLF and a single space without splitting a UTF-8 character.
+function foldIcsLine(line: string) {
+  const encoder = new TextEncoder();
+  const parts: string[] = [];
+  let current = "";
+  let currentBytes = 0;
+  for (const character of line) {
+    const characterBytes = encoder.encode(character).length;
+    const limit = parts.length === 0 ? 75 : 74;
+    if (currentBytes + characterBytes > limit) {
+      parts.push(current);
+      current = "";
+      currentBytes = 0;
+    }
+    current += character;
+    currentBytes += characterBytes;
+  }
+  parts.push(current);
+  return parts.join("\r\n ");
+}
+
+function extractMailAddress(sender: string) {
+  return sender.match(/<([^>]+)>/)?.[1]?.trim() || sender.trim();
+}
+
+function buildCalendar(job: NotificationJob, calendar: CalendarDetails, organizer: string, destination: string) {
+  const cancelled = job.notification_type === "calendar_cancellation";
+  const start = new Date(calendar.event_start);
+  const end = new Date(start.getTime() + CALENDAR_DURATION_MINUTES * 60 * 1000);
+  const description = [
+    `${job.season_label} · ${job.match_label}`,
+    `${job.team_one_label} vs. ${job.team_two_label}`,
+    "",
+    `PadelLiga: ${destination}`,
+  ].join("\n");
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "PRODID:-//PadelLiga//Partietermine//DE",
+    "VERSION:2.0",
+    "CALSCALE:GREGORIAN",
+    `METHOD:${cancelled ? "CANCEL" : "REQUEST"}`,
+    "BEGIN:VEVENT",
+    `UID:${calendar.calendar_uid}`,
+    `SEQUENCE:${calendar.calendar_sequence}`,
+    `DTSTAMP:${formatIcsDate(new Date())}`,
+    `DTSTART:${formatIcsDate(start)}`,
+    `DTEND:${formatIcsDate(end)}`,
+    `SUMMARY:${escapeIcsText(`PadelLiga: ${job.team_one_label} vs. ${job.team_two_label}`)}`,
+    `DESCRIPTION:${escapeIcsText(description)}`,
+    `LOCATION:${escapeIcsText(CALENDAR_LOCATION)}`,
+    `ORGANIZER;CN=PadelLiga:mailto:${organizer}`,
+    `ATTENDEE;CN="${String(job.recipient_name || job.recipient_email).replace(/["\r\n]/g, "")}";ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=FALSE:mailto:${job.recipient_email}`,
+    `STATUS:${cancelled ? "CANCELLED" : "CONFIRMED"}`,
+    "TRANSP:OPAQUE",
+    "X-MICROSOFT-CDO-BUSYSTATUS:BUSY",
+    "X-MICROSOFT-CDO-INTENDEDSTATUS:BUSY",
+  ];
+  if (!cancelled) {
+    lines.push(
+      "BEGIN:VALARM",
+      "ACTION:DISPLAY",
+      `DESCRIPTION:${escapeIcsText(`PadelLiga: ${job.match_label}`)}`,
+      "TRIGGER:-PT1H",
+      "END:VALARM",
+    );
+  }
+  lines.push("END:VEVENT", "END:VCALENDAR");
+  return {
+    method: cancelled ? "CANCEL" : "REQUEST",
+    content: lines.map(foldIcsLine).join("\r\n") + "\r\n",
+  };
+}
+
+function encodeBase64(value: string) {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
 function buildDestination(job: NotificationJob, siteUrl: URL) {
   if (job.notification_type === "prediction_reminder") {
     const url = new URL("tipp/", siteUrl);
@@ -65,8 +177,29 @@ function buildDestination(job: NotificationJob, siteUrl: URL) {
   return url.href;
 }
 
-function getMailContent(job: NotificationJob) {
+function getMailContent(job: NotificationJob, calendar?: CalendarDetails) {
   const matchName = `${job.season_label} · ${job.match_label}`;
+  if (job.notification_type === "calendar_invitation") {
+    const moved = (calendar?.calendar_sequence ?? 0) > 0;
+    return {
+      subject: `PadelLiga: ${moved ? "Neuer Termin" : "Termin"} für ${job.match_label}`,
+      intro: moved ? "Eure Partie wurde verschoben." : "Eure Partie ist terminiert.",
+      body: moved
+        ? "Die Kalendereinladung im Anhang ersetzt den bisherigen Termin in deinem Kalender."
+        : "Die Kalendereinladung im Anhang trägt den Termin in deinen Kalender ein. Wird er verschoben oder abgesagt, bekommst du automatisch eine Aktualisierung.",
+      action: "Partie ansehen",
+      matchName,
+    };
+  }
+  if (job.notification_type === "calendar_cancellation") {
+    return {
+      subject: `PadelLiga: Termin für ${job.match_label} entfällt`,
+      intro: "Der Termin eurer Partie entfällt.",
+      body: "Die Absage im Anhang entfernt den Termin aus deinem Kalender. Sobald ein neuer Termin feststeht, bekommst du eine neue Einladung.",
+      action: "Partie ansehen",
+      matchName,
+    };
+  }
   if (job.notification_type === "result_entry") {
     return {
       subject: `PadelLiga: Ergebnis für ${job.match_label} eintragen`,
@@ -97,10 +230,10 @@ function getMailContent(job: NotificationJob) {
   };
 }
 
-function renderMail(job: NotificationJob, destination: string) {
-  const content = getMailContent(job);
+function renderMail(job: NotificationJob, destination: string, calendar?: CalendarDetails) {
+  const content = getMailContent(job, calendar);
   const greeting = job.recipient_name ? `Hallo ${job.recipient_name},` : "Hallo,";
-  const matchAt = formatMatchAt(job.match_at);
+  const matchAt = formatMatchAt(calendar?.event_start ?? job.match_at);
   const html = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#07080C;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;">
   <tr>
     <td align="center">
@@ -165,7 +298,7 @@ Deno.serve(async (request) => {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
   const sender = Deno.env.get("NOTIFICATION_FROM") || "PadelLiga <noreply@padelliga.envidual.com>";
-  const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://lw-ux.github.io/Padel-Liga/";
+  const publicSiteUrl = Deno.env.get("PUBLIC_SITE_URL") || "https://padelliga.envidual.com/";
   const authorization = request.headers.get("Authorization") || "";
 
   if (!supabaseUrl || !serviceRoleKey || !resendApiKey) {
@@ -188,17 +321,39 @@ Deno.serve(async (request) => {
 
   const jobs = (data || []) as NotificationJob[];
   const siteUrl = normalizeSiteUrl(publicSiteUrl);
+  const calendarDetails = new Map<number, CalendarDetails>();
+  if (jobs.some(isCalendarJob)) {
+    const { data: calendarRows, error: calendarError } = await serviceClient.rpc(
+      "get_claimed_calendar_notifications",
+      { p_claim_token: claimToken },
+    );
+    if (calendarError) {
+      console.error("Kalenderdaten konnten nicht geladen werden:", calendarError.message);
+    }
+    for (const row of (calendarRows || []) as CalendarDetails[]) calendarDetails.set(row.job_id, row);
+  }
   let sent = 0;
   let failed = 0;
 
   for (const job of jobs) {
     const destination = buildDestination(job, siteUrl);
-    const mail = renderMail(job, destination);
+    const calendar = calendarDetails.get(job.job_id);
+    const mail = renderMail(job, destination, calendar);
     let success = false;
     let providerMessageId: string | null = null;
     let failureMessage: string | null = null;
 
     try {
+      const attachments = [];
+      if (isCalendarJob(job)) {
+        if (!calendar) throw new Error("Kalenderdaten für den Versandauftrag fehlen.");
+        const invitation = buildCalendar(job, calendar, extractMailAddress(sender), destination);
+        attachments.push({
+          filename: invitation.method === "CANCEL" ? "padelliga-absage.ics" : "padelliga-termin.ics",
+          content: encodeBase64(invitation.content),
+          content_type: `text/calendar; charset=utf-8; method=${invitation.method}`,
+        });
+      }
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -212,6 +367,7 @@ Deno.serve(async (request) => {
           subject: mail.subject,
           html: mail.html,
           text: mail.text,
+          ...(attachments.length ? { attachments } : {}),
         }),
       });
       const result = await response.json().catch(() => ({}));
