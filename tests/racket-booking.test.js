@@ -7,6 +7,7 @@ const root = path.join(__dirname, '..');
 const slotModule = import(path.join(root, 'supabase', 'functions', 'racket-booking', 'slot.ts'));
 const migration = fs.readFileSync(path.join(root, 'supabase', 'migrations', '20261029160000_racket_bookings.sql'), 'utf8');
 const edgeFunction = fs.readFileSync(path.join(root, 'supabase', 'functions', 'racket-booking', 'index.ts'), 'utf8');
+const subjectMigration = fs.readFileSync(path.join(root, 'supabase', 'migrations', '20261029170000_racket_booking_subject.sql'), 'utf8');
 
 const officeHours = Array.from({ length: 7 }, (_, index) => ({ weekday: index + 1, from: '07:00', to: '20:00', all_day: false }));
 const desk = 'desk-1';
@@ -53,7 +54,7 @@ test('Gastname und Partiebezeichnung folgen der Liga-Benennung', async () => {
   const { matchLabel } = await slotModule;
   assert.equal(matchLabel({ id: 'winter-2026-partie-7', competition_stage: 'league' }), 'Partie 7');
   assert.equal(matchLabel({ id: 'winter-2026-final-1', display_label: 'Final Four 1', competition_stage: 'final_four' }), 'Final Four 1');
-  assert.match(edgeFunction, /`\$\{matchLabel\(match\)\} – PadelLiga`/);
+  assert.match(edgeFunction, /`\$\{matchLabel\(resolved\.match\)\} – PadelLiga`/);
   assert.match(edgeFunction, /"Training – PadelLiga"/);
 });
 
@@ -61,8 +62,17 @@ test('Buchungsspiegel und Clearooms-Schlüssel bleiben serverseitig', () => {
   assert.match(migration, /enable row level security/);
   assert.match(migration, /revoke all on table public\.racket_bookings from public, anon, authenticated/);
   assert.match(edgeFunction, /Deno\.env\.get\("CLEAROOMS_API_TOKEN"\)/);
-  assert.match(edgeFunction, /counts_for_profile === false/);
-  assert.match(edgeFunction, /TEST_PLAYER_IDS/);
+});
+
+test('die Edge Function liest Partien und Trainings nur über die abgesicherte Datenbankfunktion', () => {
+  const tables = [...edgeFunction.matchAll(/\.from\("([a-z_]+)"\)/g)].map(match => match[1]);
+  assert.deepEqual([...new Set(tables)], ['racket_bookings']);
+  assert.match(edgeFunction, /admin\.rpc\("get_racket_booking_subject"/);
+  assert.match(subjectMigration, /security definer/);
+  assert.match(subjectMigration, /revoke execute on function public\.get_racket_booking_subject\(text, text, uuid\) from public, anon, authenticated/);
+  assert.match(subjectMigration, /grant execute on function public\.get_racket_booking_subject\(text, text, uuid\) to service_role/);
+  assert.match(subjectMigration, /counts_for_profile is false/);
+  assert.match(subjectMigration, /array\['ludi_gmail', 'ludi_gmx', 'ludi_ionos', 'test_net'\]/);
 });
 
 test('doppelt gemeldete Datums- und Uhrzeitänderungen beenden die Live-Prüfung', async () => {

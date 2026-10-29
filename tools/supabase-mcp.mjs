@@ -5,7 +5,7 @@ import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const projectRef = 'ufpaeluwcqynzudhmrro';
-const resource = `https://mcp.supabase.com/mcp?project_ref=${projectRef}&features=database,functions`;
+const resource = `https://mcp.supabase.com/mcp?project_ref=${projectRef}&features=database,functions,debugging`;
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const migrationsDirectory = resolve(repositoryRoot, 'supabase/migrations');
 const functionsDirectory = resolve(repositoryRoot, 'supabase/functions');
@@ -14,7 +14,7 @@ const tokenFile = resolve(repositoryRoot, '.codex-secrets/supabase-access-token'
 const [command, argument] = process.argv.slice(2);
 
 if (!command) {
-  fail('Aufruf: supabase-mcp.mjs <list-tools|list-migrations|apply-migration|execute-sql|list-functions|get-function|deploy-function|get-auth-email-settings|update-recovery-template> [Datei oder Function]');
+  fail('Aufruf: supabase-mcp.mjs <list-tools|list-migrations|apply-migration|execute-sql|list-functions|get-function|deploy-function|get-logs|get-auth-email-settings|update-recovery-template> [Datei oder Function]');
 }
 
 let accessToken;
@@ -165,6 +165,11 @@ if (command === 'list-tools') {
   printToolResult(await rpc('tools/call', {
     name: 'get_edge_function',
     arguments: { function_slug: argument }
+  }));
+} else if (command === 'get-logs') {
+  printToolResult(await rpc('tools/call', {
+    name: 'get_logs',
+    arguments: { service: argument || 'edge-function' }
   }));
 } else if (command === 'deploy-function') {
   const functionPath = requireFunctionPath(argument);

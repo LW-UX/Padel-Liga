@@ -13,7 +13,6 @@ import {
 const CLEAROOMS_API = "https://api.clearooms.com/api/v1";
 const RACKET_DESK_ID = "0dc76a62-3077-44fd-bd29-8f808b1343f3";
 const RACKET_OFFICE_ID = "10cd1cd5-eb22-4793-94e9-e33a1af506f5";
-const TEST_PLAYER_IDS = new Set(["ludi_gmail", "ludi_gmx", "ludi_ionos", "test_net"]);
 const WORKING_HOURS_CACHE_MS = 10 * 60 * 1000;
 
 type SubjectType = "match" | "training";
@@ -156,68 +155,25 @@ async function writeRow(admin: SupabaseClient, subject: Subject, values: Partial
   return data as BookingRow;
 }
 
-async function loadProfile(admin: SupabaseClient, userId: string) {
-  const { data, error } = await admin.from("profiles").select("player_id, app_role").eq("id", userId).maybeSingle();
+// Die Datenbankfunktion prüft die Berechtigung und liefert den Sollzustand, ohne Tabellenzugriff freizugeben.
+async function resolveSubject(admin: SupabaseClient, subject: Subject, userId: string): Promise<Desired | "forbidden"> {
+  const { data, error } = await admin.rpc("get_racket_booking_subject", {
+    p_subject_type: subject.type,
+    p_subject_id: subject.id,
+    p_user_id: userId,
+  });
   if (error) throw error;
-  return data as { player_id: string | null; app_role: string | null } | null;
-}
-
-// Liefert den Sollzustand der Schlägerbuchung und prüft dabei, ob das Konto die Partie verwalten darf.
-async function resolveMatch(admin: SupabaseClient, matchId: string, userId: string): Promise<Desired | "forbidden"> {
-  const { data: match, error } = await admin.from("matches")
-    .select("id, season_id, display_label, competition_stage, match_at, cancelled_at, actual_sets, result_details")
-    .eq("id", matchId)
-    .maybeSingle();
-  if (error) throw error;
-  if (!match) return { kind: "none" };
-
-  const profile = await loadProfile(admin, userId);
-  if (profile?.app_role !== "admin") {
-    const { data: member } = await admin.from("match_players")
-      .select("player_id")
-      .eq("match_id", matchId)
-      .eq("player_id", profile?.player_id ?? "")
-      .maybeSingle();
-    if (!member) return "forbidden";
-  }
-
-  const { data: season } = await admin.from("seasons").select("counts_for_profile").eq("id", match.season_id).maybeSingle();
-  if (season?.counts_for_profile === false) return { kind: "none" };
-  if (match.actual_sets || match.result_details) return { kind: "frozen" };
-  const { count } = await admin.from("result_proposals")
-    .select("id", { count: "exact", head: true })
-    .eq("match_id", matchId)
-    .eq("status", "pending");
-  if (count) return { kind: "frozen" };
-  if (match.cancelled_at || !match.match_at) return { kind: "none" };
-  if (new Date(match.match_at).getTime() <= Date.now()) return { kind: "frozen" };
-  const { date, time } = berlinParts(match.match_at);
-  return { kind: "slot", date, time, guestName: `${matchLabel(match)} – PadelLiga` };
-}
-
-async function resolveTraining(admin: SupabaseClient, sessionId: string, userId: string): Promise<Desired | "forbidden"> {
-  if (!/^\d+$/.test(sessionId)) return { kind: "none" };
-  const { data: session, error } = await admin.from("training_sessions")
-    .select("id, played_on, display_time, player_ids, created_by, status")
-    .eq("id", Number(sessionId))
-    .maybeSingle();
-  if (error) throw error;
-  if (!session) return { kind: "none" };
-
-  const profile = await loadProfile(admin, userId);
-  const playerIds = (session.player_ids || []) as string[];
-  const mayManage = profile?.app_role === "admin"
-    || session.created_by === userId
-    || Boolean(profile?.player_id && playerIds.includes(profile.player_id));
-  if (!mayManage) return "forbidden";
-
-  if (playerIds.some((playerId) => TEST_PLAYER_IDS.has(playerId))) return { kind: "none" };
-  if (session.status !== "scheduled") return { kind: "frozen" };
-  const time = String(session.display_time).slice(0, 5);
-  if (!isDateValue(session.played_on) || !isTimeValue(time)) return { kind: "frozen" };
-  const now = berlinParts(new Date());
-  if (`${session.played_on} ${time}` <= `${now.date} ${now.time}`) return { kind: "frozen" };
-  return { kind: "slot", date: session.played_on, time, guestName: "Training – PadelLiga" };
+  const resolved = data as {
+    kind: "none" | "frozen" | "forbidden" | "slot";
+    date?: string;
+    time?: string;
+    match?: { id: string; display_label: string | null; competition_stage: string | null };
+  };
+  if (resolved?.kind === "forbidden") return "forbidden";
+  if (resolved?.kind !== "slot") return { kind: resolved?.kind === "frozen" ? "frozen" : "none" };
+  if (!isDateValue(resolved.date) || !isTimeValue(resolved.time)) return { kind: "frozen" };
+  const guestName = resolved.match ? `${matchLabel(resolved.match)} – PadelLiga` : "Training – PadelLiga";
+  return { kind: "slot", date: resolved.date, time: resolved.time, guestName };
 }
 
 async function reconcile(admin: SupabaseClient, subject: Subject, desired: Desired) {
@@ -343,9 +299,7 @@ Deno.serve(async (request) => {
     if (body.action === "sync") {
       const subject = readSubject(body);
       if (!subject) return jsonResponse({ error: "Partie oder Training fehlt." }, 400);
-      const desired = subject.type === "match"
-        ? await resolveMatch(admin, subject.id, userData.user.id)
-        : await resolveTraining(admin, subject.id, userData.user.id);
+      const desired = await resolveSubject(admin, subject, userData.user.id);
       if (desired === "forbidden") return jsonResponse({ error: "Keine Berechtigung für diese Schlägerbuchung." }, 403);
       return jsonResponse(await reconcile(admin, subject, desired));
     }
