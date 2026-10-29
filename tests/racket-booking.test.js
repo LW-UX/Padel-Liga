@@ -13,15 +13,18 @@ const officeHours = Array.from({ length: 7 }, (_, index) => ({ weekday: index + 
 const desk = 'desk-1';
 const booking = (id, from, until, extra = {}) => ({ id, desk_id: desk, date: `2026-11-04 ${from}:00`, end_date: `2026-11-04 ${until}:00`, ...extra });
 
-test('Schläger werden eine Stunde ab Terminbeginn auf halbe Stunden gerundet gebucht', async () => {
+test('Schläger werden genau eine Stunde ab der abgerundeten halben Stunde gebucht', async () => {
   const { planSlot } = await slotModule;
   assert.deepEqual(planSlot('2026-11-04', '18:00', officeHours), {
     state: 'free', date: '2026-11-04', from: '18:00', until: '19:00', openFrom: '07:00', openUntil: '20:00'
   });
-  const offGrid = planSlot('2026-11-04', '18:15', officeHours);
-  assert.equal(offGrid.state, 'free');
-  assert.equal(offGrid.from, '18:00');
-  assert.equal(offGrid.until, '19:30');
+  const quarterPast = planSlot('2026-11-04', '15:15', officeHours);
+  assert.equal(quarterPast.state, 'free');
+  assert.equal(quarterPast.from, '15:00');
+  assert.equal(quarterPast.until, '16:00');
+  const quarterTo = planSlot('2026-11-04', '15:45', officeHours);
+  assert.equal(quarterTo.from, '15:30');
+  assert.equal(quarterTo.until, '16:30');
 });
 
 test('Bürozeiten kürzen die Buchung oder verhindern sie', async () => {

@@ -44,7 +44,7 @@
   <script defer src="js/elo-forecast.js?v=2026-10-14-shared-auto-tip"></script>
   <script defer src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
   <script defer src="js/live-ticker.js?v=2026-10-29-detail-avatar-fallback"></script>
-  <script defer src="js/account.js?v=2026-10-29-racket-status-expiry"></script>
+  <script defer src="js/account.js?v=2026-10-29-quarter-hour"></script>
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/panel-layout.js?v=2026-10-29-shared-panel-layout"></script>
@@ -956,7 +956,7 @@
               <form class="training-form" id="training-form" hidden>
                 <div class="training-form-meta">
                   <label><span>Datum</span><span class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required></span></label>
-                  <label><span>Uhrzeit</span><span class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="--:--"><input type="time" name="displayTime" required></span></label>
+                  <label><span>Uhrzeit</span><span class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="--:--"><input type="time" name="displayTime" required step="900" data-quarter-hour></span></label>
                 </div>
                 <div class="racket-check" data-racket-check role="status" aria-live="polite" hidden></div>
                 <div class="training-player-fields" id="training-player-fields" data-training-player-fields></div>

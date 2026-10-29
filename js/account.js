@@ -105,6 +105,23 @@
       .forEach(syncDateTimeHint);
   }
 
+  // Termine liegen auf Viertelstunden; Browser ohne step-Unterstützung im Zeitwähler werden nachgezogen.
+  function toQuarterHour(value) {
+    const match = /^(\d{2}):(\d{2})/.exec(String(value || ''));
+    if (!match) return value;
+    const minutes = Math.min(Math.round((Number(match[1]) * 60 + Number(match[2])) / 15) * 15, 23 * 60 + 45);
+    return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+  }
+
+  function snapQuarterHourInput(input) {
+    if (!input?.matches?.('input[type="time"][data-quarter-hour]') || !input.value) return false;
+    const snapped = toQuarterHour(input.value);
+    if (snapped === input.value.slice(0, 5)) return false;
+    input.value = snapped;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+  }
+
   function getMatchAtTimestamp(value, fallback = Number.POSITIVE_INFINITY) {
     const timestamp = value ? new Date(value).getTime() : NaN;
     return Number.isNaN(timestamp) ? fallback : timestamp;
@@ -748,7 +765,7 @@
         </label>
         <label>
           <span>Uhrzeit</span>
-          <span class="datetime-input-shell" data-datetime-field data-datetime-hint="--:--"><input type="time" name="scheduledTime" required value="${escapeHtml(matchTime.time || '')}"></span>
+          <span class="datetime-input-shell" data-datetime-field data-datetime-hint="--:--"><input type="time" name="scheduledTime" required step="900" data-quarter-hour value="${escapeHtml(matchTime.time || '')}"></span>
         </label>
       </div>
       <div class="racket-check" data-racket-check role="status" aria-live="polite" hidden></div>
@@ -1464,7 +1481,7 @@
     return `<form class="training-form training-alternative-form scheduled-training-form${due ? ' is-result-entry' : ''}" data-training-scheduled="${escapeHtml(task.session_id)}" ${due ? '' : 'hidden'}>
       <div class="training-form-meta">
         <label><span>Datum</span><span class="datetime-input-shell" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required value="${escapeHtml(task.played_on)}"></span></label>
-        <label><span>Uhrzeit</span><span class="datetime-input-shell" data-datetime-field data-datetime-hint="--:--"><input type="time" name="displayTime" required value="${escapeHtml(String(task.display_time).slice(0, 5))}"></span></label>
+        <label><span>Uhrzeit</span><span class="datetime-input-shell" data-datetime-field data-datetime-hint="--:--"><input type="time" name="displayTime" required step="900" data-quarter-hour value="${escapeHtml(String(task.display_time).slice(0, 5))}"></span></label>
       </div>
       <div class="racket-check" data-racket-check role="status" aria-live="polite" hidden></div>
       <div class="training-player-fields" data-training-player-fields></div>
@@ -3126,8 +3143,15 @@ Dein Hanako-Leben-Squad`;
       else if (event.target.matches('.training-form')) handleTrainingSubmit(event);
     });
     document.addEventListener('invalid', event => {
+      if (event.target.validity?.stepMismatch && snapQuarterHourInput(event.target)) {
+        event.preventDefault();
+        const form = event.target.form;
+        if (form?.checkValidity()) form.requestSubmit();
+        return;
+      }
       if (event.target.closest('.training-form')) handleTrainingInvalid(event);
     }, true);
+    document.addEventListener('focusout', event => snapQuarterHourInput(event.target));
     document.addEventListener('input', event => {
       syncDateTimeHint(event.target);
       if (event.target.matches('.match-schedule-form input:is([type="date"], [type="time"])')) {

@@ -42,9 +42,9 @@ export function isoWeekday(date: string) {
 }
 
 export function planSlot(date: string, time: string, workingHours: WorkingHour[]): SlotPlan {
-  const requestedStart = toMinutes(time);
-  const start = Math.floor(requestedStart / BOOKING_STEP_MINUTES) * BOOKING_STEP_MINUTES;
-  const end = Math.ceil((requestedStart + BOOKING_MINUTES) / BOOKING_STEP_MINUTES) * BOOKING_STEP_MINUTES;
+  // Clearooms bucht nur zur vollen oder halben Stunde; die Stunde beginnt deshalb am abgerundeten Raster.
+  const start = Math.floor(toMinutes(time) / BOOKING_STEP_MINUTES) * BOOKING_STEP_MINUTES;
+  const end = start + BOOKING_MINUTES;
   const day = workingHours.find((entry) => Number(entry.weekday) === isoWeekday(date));
   if (!day) return { state: "outside_hours", date, openFrom: null, openUntil: null };
   const open = day.all_day ? 0 : toMinutes(day.from);
