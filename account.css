@@ -410,7 +410,6 @@
     .account-task-status.is-complete { border-color: color-mix(in srgb, var(--positiv) 45%, var(--border)); color: var(--positiv); }
     .result-card-timing { color: var(--dim); font: var(--text-sm) var(--font-body); letter-spacing: 0.02rem; }
     .racket-check, .racket-status { color: var(--muted); font: var(--text-sm) var(--font-body); letter-spacing: 0.02rem; }
-    .racket-check { margin-top: 6px; }
     .racket-check.is-free, .racket-status.is-free { color: var(--positiv); }
     .racket-check.is-busy, .racket-status.is-busy { color: var(--negativ); }
     .account-task-matchup { 
