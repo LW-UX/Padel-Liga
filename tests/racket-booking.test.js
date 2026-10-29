@@ -64,3 +64,40 @@ test('Buchungsspiegel und Clearooms-Schlüssel bleiben serverseitig', () => {
   assert.match(edgeFunction, /counts_for_profile === false/);
   assert.match(edgeFunction, /TEST_PLAYER_IDS/);
 });
+
+test('doppelt gemeldete Datums- und Uhrzeitänderungen beenden die Live-Prüfung', async () => {
+  const vm = require('node:vm');
+  const account = fs.readFileSync(path.join(root, 'js', 'account.js'), 'utf8');
+  const source = account.match(/ {2}function scheduleRacketCheck\(form\) \{[\s\S]*?\n {2}\}\n/)?.[0];
+  assert.ok(source);
+  const timers = new Map();
+  let nextTimer = 0;
+  const target = { dataset: {}, notes: [] };
+  const form = {
+    querySelector: selector => selector === '[data-racket-check]' ? target : null,
+    closest: () => null
+  };
+  const context = vm.createContext({
+    window: {
+      setTimeout: (callback, delay) => { timers.set(++nextTimer, { callback, delay }); return nextTimer; },
+      clearTimeout: id => timers.delete(id)
+    },
+    Promise, Date,
+    racketCheckTimers: new Map(),
+    RACKET_CHECK_DELAY_MS: 450,
+    RACKET_CHECK_TIMEOUT_MS: 12000,
+    getRacketFormContext: () => ({ subjectType: 'match', subjectId: 'm1', date: '2099-11-04', time: '18:00' }),
+    getMatchAtTimestamp: value => new Date(value).getTime(),
+    buildMatchAtValue: (date, time) => `${date}T${time}:00`,
+    describeRacketCheck: result => ({ text: result.state }),
+    renderRacketNote: (_target, description) => target.notes.push(description?.text ?? null),
+    invokeRacketBooking: async () => ({ state: 'free' })
+  });
+  vm.runInContext(source, context);
+  context.scheduleRacketCheck(form);
+  context.scheduleRacketCheck(form);
+  const pending = [...timers.values()].filter(timer => timer.delay === 450);
+  assert.equal(pending.length, 1);
+  await pending[0].callback();
+  assert.deepEqual(target.notes, ['checking', 'free']);
+});

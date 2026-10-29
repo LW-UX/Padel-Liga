@@ -70,6 +70,7 @@
   const TRAINING_GUEST_OPTION = '__guest__';
   const TRAINING_GUEST_KEY_PATTERN = /^guest:([1-4])$/;
   const RACKET_CHECK_DELAY_MS = 450;
+  const RACKET_CHECK_TIMEOUT_MS = 12000;
   const RACKET_AUTO_SYNC_LIMIT = 10;
   const racketCheckTimers = new WeakMap();
   const racketStatusCache = new Map();
@@ -208,22 +209,27 @@
   function scheduleRacketCheck(form) {
     const target = form?.querySelector('[data-racket-check]');
     if (!target) return;
-    window.clearTimeout(racketCheckTimers.get(form));
     const context = getRacketFormContext(form);
     const timestamp = context?.date && context?.time
       ? getMatchAtTimestamp(buildMatchAtValue(context.date, context.time), NaN)
       : NaN;
     if (form.closest('[hidden]') || !Number.isFinite(timestamp) || timestamp <= Date.now()) {
+      window.clearTimeout(racketCheckTimers.get(form));
       delete target.dataset.racketRequest;
       renderRacketNote(target, null);
       return;
     }
+    // Datum und Uhrzeit melden eine Änderung oft doppelt; eine laufende Prüfung derselben Eingabe bleibt bestehen.
     const requestKey = `${context.date} ${context.time}`;
     if (target.dataset.racketRequest === requestKey) return;
+    window.clearTimeout(racketCheckTimers.get(form));
     target.dataset.racketRequest = requestKey;
     renderRacketNote(target, describeRacketCheck({ state: 'checking' }));
     racketCheckTimers.set(form, window.setTimeout(async () => {
-      const result = await invokeRacketBooking({ action: 'check', ...context });
+      const result = await Promise.race([
+        invokeRacketBooking({ action: 'check', ...context }),
+        new Promise(resolve => window.setTimeout(() => resolve({ state: 'unavailable' }), RACKET_CHECK_TIMEOUT_MS))
+      ]);
       if (target.dataset.racketRequest === requestKey) renderRacketNote(target, describeRacketCheck(result));
     }, RACKET_CHECK_DELAY_MS));
   }
