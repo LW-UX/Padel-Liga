@@ -94,7 +94,7 @@ Diese Datei ist die kanonische Quelle für Terminierung, Ergebnisse, Bestätigun
 - Die Buchung erfolgt über den hinterlegten Clearooms-Zugang als Gastbuchung mit dem Gastnamen `<Partiename> – PadelLiga`, etwa `Partie 7 – PadelLiga`, bei Trainings `Training – PadelLiga`. Spielernamen und Liga-Konten werden nicht an Clearooms übertragen.
 - Die nicht öffentliche Test-Saison und Trainings mit einem der internen Testprofile buchen keine Schläger.
 - Beim Eintragen von Datum und Uhrzeit prüft das Formular live, ob die Schläger frei sind. Die eigene Buchung derselben Partie zählt dabei nicht als Belegung. Bei einer fremden Belegung erscheint ein Hinweis mit dem belegten Zeitraum, aber ohne Namen; der Termin lässt sich trotzdem speichern und bleibt dann ohne Schlägerbuchung mit sichtbarem Hinweis.
-- Kommende Termine im Konto-Dialog zeigen ihren Schläger-Status. Fehlt für einen kommenden Termin eine Buchung oder ist sie fehlgeschlagen, wird sie beim Öffnen des Konto-Dialogs durch einen berechtigten Spieler oder Admin einmal nachgeholt.
+- Kommende Termine im Konto-Dialog zeigen ihren Schläger-Status bis zum Spielbeginn; ab Spielbeginn entfällt der Hinweis, auch bei weiterhin geöffneter Seite. Fehlt für einen kommenden Termin eine Buchung oder ist sie fehlgeschlagen, wird sie beim Öffnen des Konto-Dialogs durch einen berechtigten Spieler oder Admin einmal nachgeholt.
 - Ist Clearooms nicht erreichbar, bleibt das Terminieren uneingeschränkt möglich; die Oberfläche meldet den Schläger-Status neutral als nicht prüfbar.
 - Der Clearooms-Zugangsschlüssel liegt ausschließlich serverseitig in Supabase und erreicht nie den Browser.
 

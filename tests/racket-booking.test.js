@@ -111,3 +111,31 @@ test('doppelt gemeldete Datums- und Uhrzeitänderungen beenden die Live-Prüfung
   await pending[0].callback();
   assert.deepEqual(target.notes, ['checking', 'free']);
 });
+
+test('der Schläger-Hinweis verschwindet ab Spielbeginn', () => {
+  const vm = require('node:vm');
+  const account = fs.readFileSync(path.join(root, 'js', 'account.js'), 'utf8');
+  const source = ['isRacketStatusUpcoming', 'applyRacketStatuses']
+    .map(name => account.match(new RegExp(` {2}function ${name}\\([\\s\\S]*?\\n {2}\\}\\n`))?.[0])
+    .join('\n');
+  const now = Date.now();
+  const card = (key, startsAt) => ({ dataset: { racketStatus: key, racketStartsAt: String(startsAt) }, note: undefined });
+  const past = card('match:past', now - 60_000);
+  const upcoming = card('match:next', now + 60 * 60_000);
+  const timers = [];
+  const context = vm.createContext({
+    Date, Math, Number,
+    document: { querySelectorAll: () => [past, upcoming] },
+    window: { setTimeout: (callback, delay) => timers.push(delay), clearTimeout() {} },
+    racketStatusExpiryTimer: null,
+    racketStatusCache: new Map([['match:past', { state: 'booked' }], ['match:next', { state: 'booked' }]]),
+    describeRacketBooking: result => result ? { text: result.state } : null,
+    renderRacketNote: (target, description) => { target.note = description; }
+  });
+  vm.runInContext(source, context);
+  context.applyRacketStatuses();
+  assert.equal(past.note, null);
+  assert.deepEqual(upcoming.note, { text: 'booked' });
+  assert.equal(timers.length, 1);
+  assert.ok(timers[0] > 59 * 60_000 && timers[0] <= 61 * 60_000);
+});

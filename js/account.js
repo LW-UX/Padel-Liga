@@ -76,6 +76,7 @@
   const racketStatusCache = new Map();
   const racketSyncAttempted = new Set();
   let racketStatusRun = Promise.resolve();
+  let racketStatusExpiryTimer = null;
 
   const browserUserAgent = String(window.navigator?.userAgent || '');
   const browserPlatform = String(window.navigator?.platform || '');
@@ -247,10 +248,23 @@
     return note ? `${message} ${note}.` : message;
   }
 
+  function isRacketStatusUpcoming(target, now = Date.now()) {
+    return Number(target.dataset.racketStartsAt) > now;
+  }
+
+  // Ab Spielbeginn entfällt der Schläger-Hinweis, auch wenn die Liste bis dahin nicht neu aufgebaut wird.
   function applyRacketStatuses(root = document) {
+    const now = Date.now();
+    let nextStart = Number.POSITIVE_INFINITY;
     root.querySelectorAll('[data-racket-status]').forEach(target => {
-      renderRacketNote(target, describeRacketBooking(racketStatusCache.get(target.dataset.racketStatus)));
+      const upcoming = isRacketStatusUpcoming(target, now);
+      if (upcoming) nextStart = Math.min(nextStart, Number(target.dataset.racketStartsAt));
+      renderRacketNote(target, upcoming ? describeRacketBooking(racketStatusCache.get(target.dataset.racketStatus)) : null);
     });
+    window.clearTimeout?.(racketStatusExpiryTimer);
+    if (Number.isFinite(nextStart)) {
+      racketStatusExpiryTimer = window.setTimeout?.(() => applyRacketStatuses(), Math.min(nextStart - now + 1000, 2 ** 31 - 1));
+    }
   }
 
   // Läufe werden nacheinander ausgeführt, damit derselbe Termin nie doppelt nachgebucht wird.
@@ -261,6 +275,7 @@
 
   async function runRacketStatusLoad() {
     const keys = [...document.querySelectorAll('#result-task-list [data-racket-status]')]
+      .filter(target => isRacketStatusUpcoming(target))
       .map(target => target.dataset.racketStatus);
     applyRacketStatuses();
     const missing = keys.filter(key => !racketStatusCache.has(key));
@@ -822,7 +837,7 @@
           ${renderResultTaskStatus(task)}
         </div>
         ${groupKey === 'future' ? `<div class="result-card-timing">${escapeHtml(formatMatchAt(task.proposed_match_at || task.match_at))}</div>
-          <div class="racket-status" data-racket-status="match:${escapeHtml(task.match_id)}" hidden></div>` : ''}
+          <div class="racket-status" data-racket-status="match:${escapeHtml(task.match_id)}" data-racket-starts-at="${Date.parse(task.match_at) || 0}" hidden></div>` : ''}
         ${renderTaskMatchup(task)}
         ${renderResultTaskBody(task, groupKey)}
         ${typeof window !== 'undefined' ? window.PadelLiveTicker?.renderGameAssignment(task.match_id) || '' : ''}
@@ -1477,7 +1492,7 @@
         <span class="account-task-status${due ? ' is-open' : ''}">${due ? 'Ergebnis eintragen' : 'Terminiert'}</span>
       </div>
       ${due ? '' : `<div class="result-card-timing">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>
-      <div class="racket-status" data-racket-status="training:${escapeHtml(task.session_id)}" hidden></div>`}
+      <div class="racket-status" data-racket-status="training:${escapeHtml(task.session_id)}" data-racket-starts-at="${getTrainingTaskTimestamp(task, 0)}" hidden></div>`}
       ${due ? '' : renderTrainingParticipants(task)}
       ${!due && canManage ? `<div class="account-task-actions">
         <button class="secondary-button" type="button" data-training-schedule-toggle="${escapeHtml(task.session_id)}">Termin ändern</button>
