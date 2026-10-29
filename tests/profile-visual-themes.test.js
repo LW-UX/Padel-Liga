@@ -19,19 +19,29 @@ function loadSeasonOptions() {
 }
 
 function evaluateProfileTheme(seasonId, achievement, seasons) {
-  const colors = app.match(/const PROFILE_SEASON_COLORS = Object\.freeze\(\{[\s\S]*?\}\);/);
-  const fallback = app.match(/const DEFAULT_PROFILE_SEASON_COLOR = PROFILE_SEASON_COLORS\.neutral;/);
+  const colors = app.match(/const PROFILE_SEASON_COLOR_VARIABLES = Object\.freeze\(\{[\s\S]*?\}\);\nconst themeValueCache = new Map\(\);/);
+  const themeValue = app.match(/function getThemeValue\(variableName\) \{[\s\S]*?\n\}/);
+  const fallback = app.match(/function getDefaultProfileSeasonColor\(\) \{[\s\S]*?\n\}/);
   const legacyIds = app.match(/const LEGACY_SEASON_IDS = Object\.freeze\(\{[\s\S]*?\}\);/);
   const normalizeId = app.match(/function normalizeSeasonId\(id\) \{[\s\S]*?\n\}/);
   const theme = app.match(/function getSeasonVisualTheme\(seasonId, seasons = getSeasonOptions\(\)\) \{[\s\S]*?\n\}/);
   const seasonColor = app.match(/function getPlayerProfileSeasonColor\(seasonId, seasons = getSeasonOptions\(\)\) \{[\s\S]*?\n\}/);
   const achievementContext = app.match(/function getPlayerProfileAchievementContext\(achievement, seasons = getSeasonOptions\(\)\) \{[\s\S]*?\n\}/);
-  assert.ok(colors && fallback && legacyIds && normalizeId && theme && seasonColor && achievementContext);
+  assert.ok(colors && themeValue && fallback && legacyIds && normalizeId && theme && seasonColor && achievementContext);
 
-  const context = { seasonId, achievement, seasons, result: null };
+  const rootStyle = style.match(/:root \{[\s\S]*?\}/)[0];
+  const getPropertyValue = name => rootStyle.match(new RegExp(`${name}:\\s*([^;]+);`))?.[1] || '';
+  const context = {
+    seasonId,
+    achievement,
+    seasons,
+    result: null,
+    document: { documentElement: {} },
+    getComputedStyle: () => ({ getPropertyValue })
+  };
   vm.createContext(context);
   vm.runInContext(
-    `${colors[0]}\n${fallback[0]}\n${legacyIds[0]}\n${normalizeId[0]}\n${theme[0]}\n${seasonColor[0]}\n${achievementContext[0]}\n` +
+    `${colors[0]}\n${themeValue[0]}\n${fallback[0]}\n${legacyIds[0]}\n${normalizeId[0]}\n${theme[0]}\n${seasonColor[0]}\n${achievementContext[0]}\n` +
     `result = { color: getPlayerProfileSeasonColor(seasonId, seasons), context: getPlayerProfileAchievementContext(achievement, seasons) };`,
     context
   );

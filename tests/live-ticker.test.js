@@ -379,7 +379,7 @@ test('Final Four Prematch history marks match-tiebreak results with the shared s
   assert.match(renderHistory, /item\.decidedByMatchTiebreak \? ' form-tiebreak' : ''/);
   assert.match(renderHistory, /matchTiebreakLabel = item\.decidedByMatchTiebreak \? ' im Match-Tie-Break' : ''/);
   assert.match(style, /\.live-overview-prematch-history-result\.win\.form-tiebreak \{ background: color-mix\(in srgb, var\(--positiv\) 35%, orange\); \}/);
-  assert.match(style, /\.live-overview-prematch-history-result\.loss\.form-tiebreak \{ background: color-mix\(in srgb, var\(--negativ\) 35%, orange\); color: #000; \}/);
+  assert.match(style, /\.live-overview-prematch-history-result\.loss\.form-tiebreak \{ background: color-mix\(in srgb, var\(--negativ\) 35%, orange\); color: var\(--bg\); \}/);
 });
 
 test('only Final Four detail views use the split probability score', () => {

@@ -56,13 +56,13 @@ const PLAYER_PROFILE_PANEL_TRANSITION_MS = 220;
 const panelLayout = window.PadelLigaPanelLayout;
 const playerProfilePresentationStore = panelLayout.createPresentationPreference('padel-liga-player-profile-presentation');
 const PLAYER_PROFILE_ROW_SELECTOR = '#rangliste tr[data-player-profile-id], #all-time-ranking-table tr[data-player-profile-id], .calculator-ranking-table tr[data-player-profile-id]';
-const PROFILE_SEASON_COLORS = Object.freeze({
-  summer: '#FF8A5B',
-  winter: '#B794F6',
-  cup: '#50B7F5',
-  neutral: '#7E828B'
+const PROFILE_SEASON_COLOR_VARIABLES = Object.freeze({
+  summer: '--season-summer',
+  winter: '--season-winter',
+  cup: '--season-cup',
+  neutral: '--muted'
 });
-const DEFAULT_PROFILE_SEASON_COLOR = PROFILE_SEASON_COLORS.neutral;
+const themeValueCache = new Map();
 const LEGACY_SEASON_IDS = Object.freeze({
   '2026': '2026-sommer',
   'sommer-2026': '2026-sommer',
@@ -1951,8 +1951,20 @@ function getSeasonVisualTheme(seasonId, seasons = getSeasonOptions()) {
   return seasons.find(season => normalizeSeasonId(season.id) === normalizedId)?.visualTheme || 'neutral';
 }
 
+function getThemeValue(variableName) {
+  if (!themeValueCache.has(variableName)) {
+    themeValueCache.set(variableName, getComputedStyle(document.documentElement).getPropertyValue(variableName).trim());
+  }
+  return themeValueCache.get(variableName);
+}
+
+function getDefaultProfileSeasonColor() {
+  return getThemeValue(PROFILE_SEASON_COLOR_VARIABLES.neutral);
+}
+
 function getPlayerProfileSeasonColor(seasonId, seasons = getSeasonOptions()) {
-  return PROFILE_SEASON_COLORS[getSeasonVisualTheme(seasonId, seasons)] || DEFAULT_PROFILE_SEASON_COLOR;
+  const variableName = PROFILE_SEASON_COLOR_VARIABLES[getSeasonVisualTheme(seasonId, seasons)];
+  return variableName ? getThemeValue(variableName) : getDefaultProfileSeasonColor();
 }
 
 function getPlayerProfileAchievementContext(achievement, seasons = getSeasonOptions()) {
@@ -2016,34 +2028,126 @@ function renderPlayerProfileStats(summary = {}, matches = []) {
   `).join('');
 }
 
-function getPlayerProfileSegmentColor(context, pointColors = []) {
-  const startColor = pointColors[context.p0DataIndex] || DEFAULT_PROFILE_SEASON_COLOR;
-  const endColor = pointColors[context.p1DataIndex] || startColor;
-  if (startColor === endColor) return startColor;
+function getPlayerProfileEloTicks(min, max) {
+  const step = [50, 100, 200, 250, 500].find(candidate => (max - min) / candidate <= 8) || 1000;
+  const ticks = [];
+  for (let value = Math.ceil(min / step) * step; value <= max; value += step) ticks.push(value);
+  return ticks;
+}
 
-  const xScale = context.chart?.scales?.x;
-  const startX = xScale?.getPixelForValue(context.p0DataIndex);
-  const endX = xScale?.getPixelForValue(context.p1DataIndex);
-  if (!Number.isFinite(startX) || !Number.isFinite(endX) || startX === endX) return startColor;
+function getPlayerProfileDateTickIndexes(count, limit) {
+  const tickCount = Math.min(count, Math.max(2, limit));
+  if (tickCount <= 1) return [0];
+  return [...new Set(Array.from({ length: tickCount }, (_, index) => Math.round(index * (count - 1) / (tickCount - 1))))];
+}
 
-  const gradient = context.chart.ctx.createLinearGradient(startX, 0, endX, 0);
-  gradient.addColorStop(0, startColor);
-  gradient.addColorStop(1, endColor);
-  return gradient;
+function getPlayerProfileControlPoints(points, tension = 0.2) {
+  return points.map((point, index) => {
+    const previous = points[index - 1] || point;
+    const next = points[index + 1] || point;
+    const previousDistance = Math.hypot(point.x - previous.x, point.y - previous.y);
+    const nextDistance = Math.hypot(next.x - point.x, next.y - point.y);
+    const totalDistance = previousDistance + nextDistance || 1;
+    const previousFactor = tension * previousDistance / totalDistance;
+    const nextFactor = tension * nextDistance / totalDistance;
+    return {
+      previous: { x: point.x - previousFactor * (next.x - previous.x), y: point.y - previousFactor * (next.y - previous.y) },
+      next: { x: point.x + nextFactor * (next.x - previous.x), y: point.y + nextFactor * (next.y - previous.y) }
+    };
+  });
+}
+
+function renderPlayerProfileEloSegments(points, colors) {
+  const controls = getPlayerProfileControlPoints(points);
+  const gradients = [];
+  const paths = points.slice(1).map((end, index) => {
+    const start = points[index];
+    const startColor = colors[index] || getDefaultProfileSeasonColor();
+    const endColor = colors[index + 1] || startColor;
+    let stroke = startColor;
+    if (startColor !== endColor && start.x !== end.x) {
+      const gradientId = `player-profile-elo-gradient-${index}`;
+      gradients.push(`<linearGradient id="${gradientId}" gradientUnits="userSpaceOnUse" x1="${start.x}" y1="0" x2="${end.x}" y2="0"><stop offset="0" stop-color="${startColor}"/><stop offset="1" stop-color="${endColor}"/></linearGradient>`);
+      stroke = `url(#${gradientId})`;
+    }
+    const { next } = controls[index];
+    const { previous } = controls[index + 1];
+    return `<path class="player-profile-elo-line" stroke="${stroke}" d="M${start.x},${start.y} C${next.x},${next.y} ${previous.x},${previous.y} ${end.x},${end.y}"/>`;
+  });
+  return { defs: gradients.join(''), paths: paths.join('') };
+}
+
+function showPlayerProfileEloTooltip(svg, point) {
+  const chartHost = { canvas: svg };
+  const tooltipEl = getOrCreateChartTooltip(chartHost, 'player-profile-chart-tooltip');
+  tooltipEl.innerHTML = `
+    ${point.label ? `<div class="elo-tooltip-title">${escapeHtml(point.label)}</div>` : ''}
+    ${renderEloStyleTooltipItem({
+      playerName: point.seasonLabel,
+      elo: point.elo
+    })}
+  `;
+  positionChartTooltip(chartHost, { caretX: point.x, caretY: point.y }, tooltipEl);
+}
+
+function hidePlayerProfileEloTooltip(svg) {
+  const tooltipEl = svg?.parentNode?.querySelector('.chart-custom-tooltip.player-profile-chart-tooltip');
+  if (tooltipEl) tooltipEl.style.opacity = 0;
+}
+
+function drawPlayerProfileEloChart(svg, { labels, values, colors, seasonLabels }) {
+  const width = svg.parentNode?.clientWidth || 0;
+  const height = svg.parentNode?.clientHeight || 0;
+  if (!width || !height) return [];
+
+  const plot = { left: 44, right: width - 30, top: 10, bottom: height - 28 };
+  const minElo = Math.max(0, Math.floor((Math.min(...values) - 60) / 50) * 50);
+  const maxElo = Math.ceil((Math.max(...values) + 60) / 50) * 50;
+  const x = index => values.length === 1
+    ? (plot.left + plot.right) / 2
+    : plot.left + index * (plot.right - plot.left) / (values.length - 1);
+  const y = value => plot.top + (maxElo - value) * (plot.bottom - plot.top) / (maxElo - minElo);
+  const points = values.map((elo, index) => ({
+    x: Math.round(x(index) * 10) / 10,
+    y: Math.round(y(elo) * 10) / 10,
+    elo,
+    label: labels[index],
+    seasonLabel: seasonLabels[index]
+  }));
+
+  const yGrid = getPlayerProfileEloTicks(minElo, maxElo).map(value => `
+    <line class="player-profile-elo-grid" x1="${plot.left}" x2="${plot.right}" y1="${y(value)}" y2="${y(value)}"/>
+    <text class="player-profile-elo-axis-label" x="${plot.left - 8}" y="${y(value)}" text-anchor="end" dominant-baseline="middle">${value}</text>
+  `).join('');
+  const xGrid = getPlayerProfileDateTickIndexes(values.length, Math.floor((plot.right - plot.left) / 70)).map(index => `
+    <line class="player-profile-elo-grid" x1="${points[index].x}" x2="${points[index].x}" y1="${plot.top}" y2="${plot.bottom}"/>
+    <text class="player-profile-elo-axis-label" x="${points[index].x}" y="${plot.bottom + 18}" text-anchor="middle">${escapeHtml(labels[index])}</text>
+  `).join('');
+  const segments = renderPlayerProfileEloSegments(points, colors);
+  const dots = points.map((point, index) => `
+    <g class="player-profile-elo-point" data-elo-index="${index}">
+      <circle class="player-profile-elo-hit" cx="${point.x}" cy="${point.y}" r="10"/>
+      <circle class="player-profile-elo-dot" cx="${point.x}" cy="${point.y}" r="4" fill="${colors[index]}"/>
+    </g>
+  `).join('');
+
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.innerHTML = `<defs>${segments.defs}</defs>${yGrid}${xGrid}${segments.paths}${dots}`;
+  return points;
 }
 
 function renderPlayerProfileEloChart(eloSeries = []) {
-  const canvas = document.getElementById('player-profile-elo-chart');
+  const svg = document.getElementById('player-profile-elo-chart');
   const range = document.getElementById('player-profile-elo-range');
   const legend = document.getElementById('player-profile-chart-legend');
   playerProfileChart?.destroy();
   playerProfileChart = null;
-  if (!canvas || !range || !legend) return;
+  if (!svg || !range || !legend) return;
 
   const series = eloSeries
     .filter(item => ['initial', 'match', undefined].includes(item.eventType) && Number.isFinite(Number(item.elo)))
     .sort((a, b) => String(a.matchAt || a.date || '').localeCompare(String(b.matchAt || b.date || '')));
-  if (!series.length || !window.Chart) {
+  if (!series.length) {
     range.textContent = 'Keine Elo-Daten';
     legend.innerHTML = '';
     return;
@@ -2058,45 +2162,42 @@ function renderPlayerProfileEloChart(eloSeries = []) {
   `).join('');
 
   const seasonColors = new Map(seasons.map(([seasonId]) => [seasonId, getPlayerProfileSeasonColor(seasonId)]));
-  const pointColors = series.map(item => seasonColors.get(item.seasonId) || DEFAULT_PROFILE_SEASON_COLOR);
-  const datasets = [{
-    label: 'Elo',
-    data: values,
-    seasonLabels: series.map(item => item.seasonLabel || item.seasonId || 'Elo'),
-    borderColor: pointColors[0],
-    backgroundColor: 'transparent',
-    borderWidth: 3,
-    pointRadius: 4,
-    pointHoverRadius: 5,
-    pointBackgroundColor: pointColors,
-    pointBorderColor: pointColors,
-    tension: 0.2,
-    segment: {
-      borderColor: context => getPlayerProfileSegmentColor(context, pointColors)
+  const chartData = {
+    labels,
+    values,
+    colors: series.map(item => seasonColors.get(item.seasonId) || getDefaultProfileSeasonColor()),
+    seasonLabels: series.map(item => item.seasonLabel || item.seasonId || 'Elo')
+  };
+  let points = [];
+  const draw = () => {
+    hidePlayerProfileEloTooltip(svg);
+    points = drawPlayerProfileEloChart(svg, chartData);
+  };
+  const showPoint = event => {
+    const point = points[Number(event.target.closest?.('[data-elo-index]')?.dataset.eloIndex)];
+    if (point) showPlayerProfileEloTooltip(svg, point);
+    else hidePlayerProfileEloTooltip(svg);
+  };
+  const hidePoint = () => hidePlayerProfileEloTooltip(svg);
+  const resizeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(draw) : null;
+
+  svg.setAttribute('aria-label', `Elo-Verlauf von ${values[0]} auf ${values[values.length - 1]}`);
+  svg.addEventListener('pointerover', showPoint);
+  svg.addEventListener('pointerdown', showPoint);
+  svg.addEventListener('pointerleave', hidePoint);
+  resizeObserver?.observe(svg.parentNode);
+  draw();
+  playerProfileChart = {
+    resize: draw,
+    destroy() {
+      resizeObserver?.disconnect();
+      svg.removeEventListener('pointerover', showPoint);
+      svg.removeEventListener('pointerdown', showPoint);
+      svg.removeEventListener('pointerleave', hidePoint);
+      hidePlayerProfileEloTooltip(svg);
+      svg.replaceChildren();
     }
-  }];
-  const minElo = Math.max(0, Math.floor((Math.min(...values) - 60) / 50) * 50);
-  const maxElo = Math.ceil((Math.max(...values) + 60) / 50) * 50;
-  playerProfileChart = new Chart(canvas.getContext('2d'), {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'nearest', intersect: true },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          enabled: false,
-          external: externalPlayerProfileEloTooltip
-        }
-      },
-      scales: {
-        x: { grid: { color: '#252b38' }, ticks: { color: '#858895', maxTicksLimit: 6 } },
-        y: { min: minElo, max: maxElo, grid: { color: '#252b38' }, ticks: { color: '#858895' } }
-      }
-    }
-  });
+  };
 }
 
 function orderPlayerProfileParticipations(participations = [], seasons = getSeasonOptions()) {
@@ -3122,19 +3223,13 @@ function renderPlayerProfile(profile) {
   announcePlayerProfilePanel(identity.displayName || knownPlayer?.name);
   playerProfileChart?.destroy();
   playerProfileChart = null;
-  const canvas = document.getElementById('player-profile-elo-chart');
-  canvas?.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+  document.getElementById('player-profile-elo-chart')?.replaceChildren();
   document.getElementById('player-profile-chart-legend').innerHTML = '';
   document.getElementById('player-profile-elo-range').textContent = 'Diagramm wird geladen …';
   requestAnimationFrame(() => {
-    void ensureChartLibrary().then(() => {
-      if (playerProfileData === profile && document.getElementById('player-profile-dialog')?.open) {
-        renderPlayerProfileEloChart(profile.eloSeries || []);
-      }
-    }).catch(error => {
-      if (playerProfileData === profile) document.getElementById('player-profile-elo-range').textContent = 'Diagramm konnte nicht geladen werden.';
-      console.error(error);
-    });
+    if (playerProfileData === profile && document.getElementById('player-profile-dialog')?.open) {
+      renderPlayerProfileEloChart(profile.eloSeries || []);
+    }
   });
 }
 
@@ -8310,33 +8405,6 @@ function hideFormTooltip() {
   if (tooltipEl) tooltipEl.style.opacity = 0;
 }
 
-function externalPlayerProfileEloTooltip(context) {
-  const { chart: chartInstance, tooltip } = context;
-  const tooltipEl = getOrCreateChartTooltip(chartInstance, 'player-profile-chart-tooltip');
-
-  if (tooltip.opacity === 0) {
-    tooltipEl.style.opacity = 0;
-    return;
-  }
-
-  const item = tooltip.dataPoints?.[0];
-  if (!item) {
-    tooltipEl.style.opacity = 0;
-    return;
-  }
-
-  const seasonLabel = item.dataset.seasonLabels?.[item.dataIndex] || 'Elo';
-  tooltipEl.innerHTML = `
-    ${item.label ? `<div class="elo-tooltip-title">${escapeHtml(item.label)}</div>` : ''}
-    ${renderEloStyleTooltipItem({
-      playerName: seasonLabel,
-      elo: item.parsed.y
-    })}
-  `;
-
-  positionChartTooltip(chartInstance, tooltip, tooltipEl);
-}
-
 function externalEloTooltip(context) {
   const { chart: chartInstance, tooltip } = context;
   const tooltipEl = getOrCreateChartTooltip(chartInstance, 'elo-chart-tooltip');
@@ -8534,7 +8602,7 @@ const placementLabelPlugin = {
 
       const point = meta.data[meta.data.length - 1];
       const x = Math.min(point.x + 8, chartArea.right + 8);
-      ctx.font = `${getPlacementLabelWeight(dataset.label)} 11px DM Sans`;
+      ctx.font = `${getPlacementLabelWeight(dataset.label)} 11px ${getThemeValue('--font-body')}`;
       ctx.fillStyle = getPlacementLabelColor(dataset.label, dataset.baseColor || dataset.borderColor);
       ctx.fillText(dataset.label, x, point.y);
       chartInstance.$placementLabelBoxes.push({
@@ -8683,11 +8751,11 @@ function initChart() {
         }
       },
       scales: {
-        x: { grid: { color: '#222' }, ticks: { color: '#5a5a72', font: { family: 'DM Sans', size: 12 } } },
+        x: { grid: { color: getThemeValue('--border') }, ticks: { color: getThemeValue('--muted'), font: { family: getThemeValue('--font-body'), size: 12 } } },
         y: {
           min: eloBounds.min, max: eloBounds.max,
-          grid: { color: '#222' },
-          ticks: { color: '#5a5a72', font: { family: 'DM Sans', size: 12 } }
+          grid: { color: getThemeValue('--border') },
+          ticks: { color: getThemeValue('--muted'), font: { family: getThemeValue('--font-body'), size: 12 } }
         }
       }
     }
@@ -8777,20 +8845,20 @@ function initPlacementChart() {
       },
       scales: {
         x: {
-          title: { display: true, text: 'Spieltag', color: '#a2a2b7', font: { family: 'DM Sans', size: 14, weight: '600' } },
-          grid: { color: '#222' },
-          ticks: { color: '#5a5a72', font: { family: 'DM Sans', size: 12 } }
+          title: { display: true, text: 'Spieltag', color: getThemeValue('--dim'), font: { family: getThemeValue('--font-body'), size: 14, weight: '600' } },
+          grid: { color: getThemeValue('--border') },
+          ticks: { color: getThemeValue('--muted'), font: { family: getThemeValue('--font-body'), size: 12 } }
         },
         y: {
           reverse: true,
           min: 0.5,
           max: maxPlace + 0.5,
-          title: { display: true, text: 'Platz', color: '#a2a2b7', font: { family: 'DM Sans', size: 14, weight: '600' } },
-          grid: { color: '#222' },
+          title: { display: true, text: 'Platz', color: getThemeValue('--dim'), font: { family: getThemeValue('--font-body'), size: 14, weight: '600' } },
+          grid: { color: getThemeValue('--border') },
           ticks: {
             stepSize: 1,
-            color: '#5a5a72',
-            font: { family: 'DM Sans', size: 12 },
+            color: getThemeValue('--muted'),
+            font: { family: getThemeValue('--font-body'), size: 12 },
             callback: value => Number.isInteger(value) ? value : ''
           }
         }

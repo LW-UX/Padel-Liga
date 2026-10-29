@@ -50,7 +50,7 @@ test('the mobile speed dial stays separate from the local navigation', () => {
   assert.doesNotMatch(style, /\.global-actions[^{}]*\{[^}]*\border\s*:/);
   assert.match(style, /\.global-actions \.auth-button\.global-action/);
   assert.match(style, /\.auth-button\.global-action:not\(\.is-authenticated\)\s*\{[\s\S]*background: var\(--accent\);[\s\S]*color: var\(--bg\);/);
-  assert.match(style, /\.auth-button\.global-action\.is-authenticated\s*\{[\s\S]*background: rgba\(14,16,23,0\.98\);[\s\S]*color: var\(--text\);/);
+  assert.match(style, /\.auth-button\.global-action\.is-authenticated\s*\{[\s\S]*background: var\(--surface\);[\s\S]*color: var\(--text\);/);
   assert.match(account, /class="auth-user-icon"[\s\S]*d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"[\s\S]*auth-button-label">Login/);
   assert.doesNotMatch(`${liga}\n${tipp}\n${account}`, /auth-login-icon/);
   assert.doesNotMatch(liga, /<nav class="site-nav"[^>]*>[\s\S]*data-global-actions-toggle/);

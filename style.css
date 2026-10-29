@@ -97,6 +97,9 @@
       --cup-gold:   #C59600;
       --cup-silver: #7F98A8;
       --bronze:     #C97B2E;
+      --season-summer: #FF8A5B;
+      --season-winter: #B794F6;
+      --season-cup:    #50B7F5;
       --text:       #F3F4F1;
       --muted:      #7E828B;
       --dim:        #B9BBC2;
@@ -852,6 +855,13 @@
       letter-spacing: 0.12em;
     }
     .player-profile-chart-wrap { position: relative; height: 270px; margin-top: 18px; }
+    .player-profile-elo-chart { display: block; width: 100%; height: 100%; overflow: visible; }
+    .player-profile-elo-grid { stroke: var(--border); stroke-width: 1; }
+    .player-profile-elo-axis-label { fill: var(--muted); font-family: var(--font-body); font-size: 12px; }
+    .player-profile-elo-line { fill: none; stroke-width: 3; stroke-linecap: round; }
+    .player-profile-elo-hit { fill: transparent; pointer-events: all; }
+    .player-profile-elo-dot { pointer-events: none; transform-box: fill-box; transform-origin: center; transition: transform 0.12s ease; }
+    .player-profile-elo-point:hover .player-profile-elo-dot { transform: scale(1.25); }
     .player-profile-chart-legend {
       display: flex;
       flex-wrap: wrap;

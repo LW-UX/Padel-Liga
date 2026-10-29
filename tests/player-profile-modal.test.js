@@ -727,7 +727,7 @@ test('only training result circles use outcome-colored outlines', () => {
   assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome\.win \{ color: var\(--positiv\); \}/);
   assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome\.loss \{ color: var\(--negativ\); \}/);
   assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome\.draw,[\s\S]*\.player-profile-match-group\.training \.player-profile-match-outcome\.unfinished \{ color: var\(--dim\); \}/);
-  assert.match(style, /\.player-profile-match-outcome \{[\s\S]*background: var\(--positiv\);[\s\S]*color: #07100d;/);
+  assert.match(style, /\.player-profile-match-outcome \{[\s\S]*background: var\(--positiv\);[\s\S]*color: var\(--bg\);/);
 });
 
 test('historical trainings preserve sessions, match tiebreaks, and the unfinished round', () => {

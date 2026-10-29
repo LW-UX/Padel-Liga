@@ -38,7 +38,7 @@ test('selection uses the live team-button pattern and is replaced by a proportio
   assert.match(style, /first-child \.live-overview-poll-bar \{[\s\S]*border-radius: 8px 0 0 8px;/);
   assert.match(style, /last-child \.live-overview-poll-bar \{[\s\S]*border-radius: 0 8px 8px 0;/);
   assert.match(style, /only-child \.live-overview-poll-bar \{[\s\S]*border-radius: 8px;/);
-  assert.match(style, /color: #fff;/);
+  assert.match(style, /color: var\(--text\);/);
   assert.match(style, /live-overview-poll-slide-in/);
 });
 

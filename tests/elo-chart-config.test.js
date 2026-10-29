@@ -40,13 +40,12 @@ test('chart tooltips open toward the center of the viewport', () => {
   assert.equal(getTransform(chart, { caretX: 400 }), 'translate(12px, -50%)');
   assert.equal(getTransform(chart, { caretX: 700 }), 'translate(calc(-100% - 12px), -50%)');
   assert.match(appSource, /style\.transform = getChartTooltipHorizontalTransform\(chartInstance, tooltip\)/);
-  assert.match(appSource, /external:\s*externalPlayerProfileEloTooltip/);
   assert.match(appSource, /external:\s*externalEloTooltip/);
   assert.match(appSource, /external:\s*externalPlacementTooltip/);
   assert.match(styleSource, /\.player-profile-chart-wrap\s*\{[^}]*position:\s*relative;/);
   assert.match(appSource, /getOrCreateChartTooltip\(chartInstance, 'elo-chart-tooltip'\)/);
   assert.match(appSource, /getOrCreateChartTooltip\(chartInstance, 'placement-chart-tooltip'\)/);
-  assert.match(appSource, /getOrCreateChartTooltip\(chartInstance, 'player-profile-chart-tooltip'\)/);
+  assert.match(appSource, /getOrCreateChartTooltip\(chartHost, 'player-profile-chart-tooltip'\)/);
   assert.match(styleSource, /\.elo-chart-tooltip\s*\{\s*width:\s*260px;/);
   assert.match(styleSource, /\.placement-chart-tooltip\s*\{\s*width:\s*220px;/);
   assert.match(styleSource, /\.player-profile-chart-tooltip\s*\{[^}]*width:\s*auto;[^}]*min-width:\s*210px;/);
@@ -65,36 +64,22 @@ test('ranking and calculator help tooltips open into the available unclipped are
 });
 
 test('player profile Elo history connects seasons with a color transition', () => {
-  const segmentColorSource = appSource.match(
-    /function getPlayerProfileSegmentColor\(context, pointColors = \[\]\) \{[\s\S]*?(?=\nfunction renderPlayerProfileEloChart)/
+  const segmentSource = appSource.match(
+    /function getPlayerProfileControlPoints\(points, tension = 0\.2\) \{[\s\S]*?(?=\nfunction showPlayerProfileEloTooltip)/
   )?.[0] || '';
-  const getSegmentColor = vm.runInNewContext(`(${segmentColorSource.replace(
-    'function getPlayerProfileSegmentColor',
-    'function'
-  )})`);
-  const gradients = [];
-  const context = {
-    p0DataIndex: 0,
-    p1DataIndex: 1,
-    chart: {
-      scales: { x: { getPixelForValue: value => value * 100 } },
-      ctx: {
-        createLinearGradient(...coordinates) {
-          const gradient = {
-            coordinates,
-            stops: [],
-            addColorStop(offset, color) { this.stops.push([offset, color]); }
-          };
-          gradients.push(gradient);
-          return gradient;
-        }
-      }
-    }
-  };
+  const renderSegments = vm.runInNewContext(
+    `(() => { ${segmentSource}\nreturn renderPlayerProfileEloSegments; })()`,
+    { getDefaultProfileSeasonColor: () => '#777777' }
+  );
+  const points = [{ x: 0, y: 50 }, { x: 100, y: 20 }];
 
-  assert.equal(getSegmentColor(context, ['#111111', '#111111']), '#111111');
-  const transition = getSegmentColor(context, ['#111111', '#eeeeee']);
-  assert.deepEqual(transition.coordinates, [0, 0, 100, 0]);
-  assert.deepEqual(transition.stops, [[0, '#111111'], [1, '#eeeeee']]);
-  assert.match(appSource, /const datasets = \[\{[\s\S]*data: values,[\s\S]*pointBackgroundColor: pointColors,[\s\S]*segment:/);
+  const sameSeason = renderSegments(points, ['#111111', '#111111']);
+  assert.equal(sameSeason.defs, '');
+  assert.match(sameSeason.paths, /stroke="#111111"/);
+
+  const transition = renderSegments(points, ['#111111', '#eeeeee']);
+  assert.match(transition.defs, /<linearGradient id="player-profile-elo-gradient-0" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100" y2="0">/);
+  assert.match(transition.defs, /<stop offset="0" stop-color="#111111"\/><stop offset="1" stop-color="#eeeeee"\/>/);
+  assert.match(transition.paths, /stroke="url\(#player-profile-elo-gradient-0\)"/);
+  assert.match(transition.paths, /d="M0,50 C[\d.]+,[\d.]+ [\d.]+,[\d.]+ 100,20"/);
 });

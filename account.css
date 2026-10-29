@@ -275,7 +275,7 @@
     .auth-account-email { color: var(--dim); font-size: 0.88rem; margin: 0; text-wrap: nowrap; }
     .account-settings {
       display: grid;
-      gap: 18px;
+      gap: 2rem;
       border: 1px solid var(--border);
       border-radius: 12px;
       background: var(--surface);
@@ -283,38 +283,28 @@
       padding: 1rem;
     }
     .account-settings[hidden] { display: none; }
-    .account-settings-heading {
-      display: flex;
-      align-items: end;
-      justify-content: space-between;
-      gap: 20px;
+    .account-settings .widget-label { margin: 0; }
+    .account-settings-account {
+      display: grid;
+      gap: 12px;
+      padding-bottom: 18px;
     }
-    .account-settings-heading h3 {
-      margin: 0.2rem 0 0;
-      font-family: var(--font-heading);
-      font-size: 1.35rem;
-      font-weight: 400;
-      letter-spacing: 0.03em;
-    }
-    .account-settings-heading p {
-      max-width: 28ch;
-      margin: 0;
+    .account-settings-mail { display: grid; }
+    .account-settings-mail > p {
+      margin: 6px 0 12px;
       color: var(--dim);
       font-size: var(--text-xs);
       line-height: 1.45;
-      text-align: right;
     }
-    .account-setting-list { display: grid; }
     .account-setting-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
       gap: 16px;
-      border-top: 1px solid var(--border);
       cursor: pointer;
-      padding: 0.85rem 0;
+      padding: 0.75rem 0;
+      border-top: 1px solid var(--border);
     }
-    .account-setting-row:last-child { border-bottom: 1px solid var(--border); }
     .account-setting-row > span { display: grid; gap: 3px; min-width: 0; }
     .account-setting-row strong { color: var(--text); font-size: var(--text-sm); }
     .account-setting-row small { color: var(--dim); font-size: var(--text-xs); line-height: 1.4; }
@@ -347,7 +337,7 @@
     .account-setting-row input:disabled { cursor: wait; opacity: 0.55; }
     .account-settings-message { min-height: 0; margin: -6px 0 0; }
     .account-settings-message:empty { display: none; }
-    .account-settings-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .account-settings-actions { display: flex; gap: 8px; }
     .account-games-empty {
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -960,8 +950,6 @@
       .account-header { flex-wrap: wrap; gap: 12px; }
       .account-header-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
       .account-header h2 { font-size: 1.65rem; }
-      .account-settings-heading { align-items: start; flex-direction: column; gap: 6px; }
-      .account-settings-heading p { max-width: none; text-align: left; }
       .account-settings-actions { justify-content: stretch; }
       .account-settings-actions .secondary-button { flex: 1 1 0; }
       .account-section { min-width: 0; }
