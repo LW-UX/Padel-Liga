@@ -91,6 +91,7 @@ test('the status chip replaces the removed bottom row with the official score st
   const context = vm.createContext({});
   vm.runInContext(fn('getStatusChip'), context);
   assert.equal(context.getStatusChip({ isOpen: true }).label, 'Offen');
+  assert.equal(context.getStatusChip({ isOpen: true, selected: '2:0' }).label, 'Gespeichert');
   assert.equal(context.getStatusChip({ actualValue: '2:0', selected: '2:0', points: 4 }).label, 'Exakt · +4');
   assert.equal(context.getStatusChip({ actualValue: '2:1', selected: '2:0', points: 2 }).label, 'Sieger · +2');
   assert.equal(context.getStatusChip({ actualValue: '1:2', selected: '2:0', points: 0 }).label, 'Falsch · 0');

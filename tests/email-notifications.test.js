@@ -20,6 +20,10 @@ const testReminderMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261029210000_test_prediction_reminders_only_test_accounts.sql'),
   'utf8'
 );
+const calendarDelayMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261029220000_calendar_invitation_delay.sql'),
+  'utf8'
+);
 const edgeFunction = fs.readFileSync(
   path.join(root, 'supabase', 'functions', 'send-match-notifications', 'index.ts'),
   'utf8'
@@ -98,4 +102,11 @@ test('calendar invitations skip matches that were already scheduled at activatio
 test('prediction reminders for test matches only reach the internal test profiles', () => {
   assert.match(testReminderMigration, /create or replace function private\.queue_due_reminder_notifications\(\)/);
   assert.match(testReminderMigration, /season\.id not in \('2026-test', 'test-2026'\)\s+or profile\.player_id in \('ludi_gmail', 'ludi_gmx', 'ludi_ionos', 'test_net'\)/);
+});
+
+test('calendar mail waits 15 minutes unless the match starts within two hours', () => {
+  assert.match(calendarDelayMigration, /when needed_match_at <= now\(\) \+ interval '2 hours' then now\(\)\s+else now\(\) \+ interval '15 minutes'/);
+  assert.match(calendarDelayMigration, /from private\.calendar_invitation_baseline as baseline/);
+  assert.match(accountScript, /Kalendereinladungen werden in etwa 15 Minuten verschickt\./);
+  assert.match(accountScript, /startsIn <= 2 \* 60 \* 60 \* 1000/);
 });

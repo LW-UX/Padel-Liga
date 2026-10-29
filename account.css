@@ -275,7 +275,7 @@
     .auth-account-email { color: var(--dim); font-size: 0.88rem; margin: 0; text-wrap: nowrap; }
     .account-settings {
       display: grid;
-      gap: 2rem;
+      gap: 1rem;
       border: 1px solid var(--border);
       border-radius: 12px;
       background: var(--surface);
@@ -409,10 +409,10 @@
     }
     .account-task-status.is-open { border-color: var(--accent); background: transparent; color: var(--accent); }
     .account-task-status.is-complete { border-color: color-mix(in srgb, var(--positiv) 45%, var(--border)); color: var(--positiv); }
-    .result-card-timing { color: var(--dim); font: var(--text-sm) var(--font-body); letter-spacing: 0.02rem; }
+    .result-card-timing { letter-spacing: 0.02rem; }
     .racket-check, .racket-status { color: var(--muted); font: var(--text-sm) var(--font-body); letter-spacing: 0.02rem; }
-    .racket-check.is-free, .racket-status.is-free { color: var(--positiv); }
-    .racket-check.is-busy, .racket-status.is-busy { color: var(--negativ); }
+    .racket-check.is-free { color: var(--positiv); }
+    .racket-check.is-busy { color: var(--negativ); }
     .account-task-matchup { 
       display: grid; 
       grid-template-columns: 1fr auto 1fr; 

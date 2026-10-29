@@ -266,6 +266,15 @@
     return note ? `${message} ${note}.` : message;
   }
 
+  // Die Datenbank hält Kalendermails 15 Minuten zurück, außer die Partie beginnt innerhalb von zwei Stunden.
+  function withCalendarNote(message, matchAtValue) {
+    const startsIn = new Date(matchAtValue).getTime() - Date.now();
+    if (!(startsIn > 0)) return message;
+    return startsIn <= 2 * 60 * 60 * 1000
+      ? `${message} Kalendereinladungen werden gleich verschickt.`
+      : `${message} Kalendereinladungen werden in etwa 15 Minuten verschickt.`;
+  }
+
   function isRacketStatusUpcoming(target, now = Date.now()) {
     return Number(target.dataset.racketStartsAt) > now;
   }
@@ -2363,18 +2372,19 @@ Dein Hanako-Leben-Squad`;
     const button = form.querySelector('[type="submit"]');
     if (button) button.disabled = true;
     setAuthMessage('Partie wird terminiert …');
+    const matchAt = buildMatchAtValue(
+      String(data.get('scheduledDate') || ''),
+      String(data.get('scheduledTime') || '')
+    );
     try {
       const { error } = await state.client.rpc('schedule_match', {
         p_match_id: form.dataset.matchSchedule,
-        p_match_at: buildMatchAtValue(
-          String(data.get('scheduledDate') || ''),
-          String(data.get('scheduledTime') || '')
-        )
+        p_match_at: matchAt
       });
       if (error) throw error;
       setAuthMessage('Partie wurde terminiert. Schläger werden gebucht …');
       const racket = await syncRacketBooking('match', form.dataset.matchSchedule);
-      setAuthMessage(withRacketNote('Partie wurde terminiert.', racket), 'success');
+      setAuthMessage(withCalendarNote(withRacketNote('Partie wurde terminiert.', racket), matchAt), 'success');
       await refresh();
     } catch (error) {
       setAuthMessage(error.message || 'Die Partie konnte nicht terminiert werden.', 'error');

@@ -513,7 +513,7 @@
     if (isOwn) return { label: 'Eigene Partie', classes: 'is-locked is-own-match' };
     if (isUpcoming) return { label: 'Noch nicht offen', classes: 'is-upcoming' };
     if (isOpen) return {
-      label: isSaving ? 'Speichert …' : 'Offen',
+      label: isSaving ? 'Speichert …' : selected ? 'Gespeichert' : 'Offen',
       classes: `is-open${isSaving ? ' is-saving' : ''}`
     };
     if (actualValue && selected) {
