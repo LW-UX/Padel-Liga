@@ -12,6 +12,14 @@ const calendarMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261029190000_match_calendar_invitations.sql'),
   'utf8'
 );
+const calendarBaselineMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261029200000_calendar_invitations_skip_existing.sql'),
+  'utf8'
+);
+const testReminderMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261029210000_test_prediction_reminders_only_test_accounts.sql'),
+  'utf8'
+);
 const edgeFunction = fs.readFileSync(
   path.join(root, 'supabase', 'functions', 'send-match-notifications', 'index.ts'),
   'utf8'
@@ -72,8 +80,22 @@ test('calendar invitations follow schedule changes and keep one Outlook appointm
   assert.match(calendarMigration, /rename to queue_due_reminder_notifications/);
   assert.match(edgeFunction, /METHOD:\$\{cancelled \? "CANCEL" : "REQUEST"\}/);
   assert.match(edgeFunction, /SEQUENCE:\$\{calendar\.calendar_sequence\}/);
+  assert.match(edgeFunction, /const calendarSubject = `\$\{job\.match_label\} – PadelLiga \$\{job\.season_label\}`;/);
+  assert.match(edgeFunction, /subject: `Abgesagt: \$\{calendarSubject\}`/);
   assert.match(edgeFunction, /const CALENDAR_LOCATION = "Lucky Star Padel";/);
   assert.match(edgeFunction, /"TRIGGER:-PT1H"/);
   assert.match(edgeFunction, /"X-MICROSOFT-CDO-BUSYSTATUS:BUSY"/);
   assert.match(edgeFunction, /content_type: `text\/calendar; charset=utf-8; method=\$\{invitation\.method\}`/);
+});
+
+test('calendar invitations skip matches that were already scheduled at activation', () => {
+  assert.match(calendarBaselineMigration, /if not exists \(select 1 from private\.calendar_invitation_activation\)/);
+  assert.match(calendarBaselineMigration, /insert into private\.calendar_invitation_baseline[\s\S]*where match\.match_at > now\(\)/);
+  assert.match(calendarBaselineMigration, /match\.match_at is distinct from baseline\.match_at/);
+  assert.match(calendarBaselineMigration, /from private\.calendar_invitation_baseline as baseline\s+where baseline\.match_id = match\.id/);
+});
+
+test('prediction reminders for test matches only reach the internal test profiles', () => {
+  assert.match(testReminderMigration, /create or replace function private\.queue_due_reminder_notifications\(\)/);
+  assert.match(testReminderMigration, /season\.id not in \('2026-test', 'test-2026'\)\s+or profile\.player_id in \('ludi_gmail', 'ludi_gmx', 'ludi_ionos', 'test_net'\)/);
 });

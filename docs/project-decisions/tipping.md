@@ -57,6 +57,7 @@ Diese Datei ist die kanonische Quelle für Tippabgabe, Fristen, Wertung und die 
 - Sobald ein Termin feststeht, schließt `matches.match_at` die Tippabgabe zum Spielbeginn; ein vergangener Termin schließt sofort. Einen parallelen Sperrzeitpunkt gibt es nicht.
 - Bei einer Umterminierung bleiben bestehende Tipps erhalten. Der Tippschluss folgt dem neu eingetragenen Spielbeginn; bei weiterhin freigegebener Partie sind Tippabgabe und Änderungen bis dahin möglich.
 - Rund 24 Stunden vor einer terminierten, zu diesem Zeitpunkt tippbaren Partie erhält jedes Konto mit bestätigter E-Mail-Adresse einmalig eine Erinnerung, wenn es noch keinen Tipp für diese Partie gespeichert, die Partie nicht selbst spielt und die persönliche Mailart aktiviert hat. Wird eine Partie auf einen neuen Zeitpunkt verschoben, gehört der neue Spielbeginn zu einer neuen Erinnerungsfrist; bereits vorhandene Tipps verhindern weiterhin die Mail.
+- Tipp-Erinnerungen zu Partien der nicht öffentlichen Test-Saison erhalten ausschließlich die vier internen Testprofile; echte Konten bekommen keine Mails zu Testpartien.
 - Turnierpartien werden erst tippbar, wenn echte Teilnehmer und ein vollständiger Termin feststehen.
 - Ein Tipp kann bis zum Schließzeitpunkt abgegeben und geändert werden. Die Ergebniseingabe selbst ist nicht der Schließzeitpunkt.
 - Spieler dürfen Partien, an denen sie selbst teilnehmen, weder auf der Tippseite noch über den Schnelltipp in der Partievorschau tippen.

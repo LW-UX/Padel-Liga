@@ -179,10 +179,11 @@ function buildDestination(job: NotificationJob, siteUrl: URL) {
 
 function getMailContent(job: NotificationJob, calendar?: CalendarDetails) {
   const matchName = `${job.season_label} · ${job.match_label}`;
+  const calendarSubject = `${job.match_label} – PadelLiga ${job.season_label}`;
   if (job.notification_type === "calendar_invitation") {
     const moved = (calendar?.calendar_sequence ?? 0) > 0;
     return {
-      subject: `PadelLiga: ${moved ? "Neuer Termin" : "Termin"} für ${job.match_label}`,
+      subject: calendarSubject,
       intro: moved ? "Eure Partie wurde verschoben." : "Eure Partie ist terminiert.",
       body: moved
         ? "Die Kalendereinladung im Anhang ersetzt den bisherigen Termin in deinem Kalender."
@@ -193,7 +194,7 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails) {
   }
   if (job.notification_type === "calendar_cancellation") {
     return {
-      subject: `PadelLiga: Termin für ${job.match_label} entfällt`,
+      subject: `Abgesagt: ${calendarSubject}`,
       intro: "Der Termin eurer Partie entfällt.",
       body: "Die Absage im Anhang entfernt den Termin aus deinem Kalender. Sobald ein neuer Termin feststeht, bekommst du eine neue Einladung.",
       action: "Partie ansehen",

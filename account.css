@@ -10,7 +10,7 @@
       border: 1px solid var(--accent);
       border-radius: 999px;
       background: var(--accent);
-      color: #07080c;
+      color: var(--bg);
       cursor: pointer;
       font-family: var(--font-body);
       font-size: var(--text-sm);
@@ -56,7 +56,7 @@
       padding: 0 4px;
       border-radius: 999px;
       background: var(--accent);
-      color: #07080c;
+      color: var(--bg);
       box-shadow: 0 0 0 2px var(--bg);
       font-family: var(--font-mono);
       font-size: 0.66rem;
@@ -70,11 +70,11 @@
       border-radius: 20px;
       background: var(--bg);
       color: var(--text);
-      box-shadow: 0 34px 120px rgba(0,0,0,0.72);
+      box-shadow: 0 34px 120px var(--shadow);
       overflow: hidden;
       padding: 0;
     }
-    .auth-dialog::backdrop { background: rgba(3,4,8,0.7); backdrop-filter: blur(2px); }
+    .auth-dialog::backdrop { background: var(--black-shadow); backdrop-filter: blur(2px); }
     .auth-dialog-card {
       box-sizing: border-box;
       max-height: inherit;
@@ -223,7 +223,7 @@
       border: 1px solid var(--accent);
       border-radius: 12px;
       background: var(--surface);
-      box-shadow: 0 14px 40px rgba(0,0,0,0.48);
+      box-shadow: 0 14px 40px var(--shadow);
       color: var(--text);
       padding: 0.85rem;
       transform: translateX(-50%);
@@ -260,6 +260,17 @@
     }
     .account-header > div { min-width: 0; }
     .account-header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+    .account-action-button { display: inline-flex; align-items: center; gap: 0.45rem; }
+    .account-action-button svg {
+      width: 16px;
+      height: 16px;
+      flex: none;
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 1.55;
+    }
     .account-header h2 { margin-bottom: 0.1rem; }
     .auth-account-email { color: var(--dim); font-size: 0.88rem; margin: 0; text-wrap: nowrap; }
     .account-settings {
@@ -331,7 +342,7 @@
       transition: background 160ms ease, transform 160ms ease;
     }
     .account-setting-row input:checked { border-color: var(--accent); background: var(--accent); }
-    .account-setting-row input:checked::after { background: #07080c; transform: translateX(18px); }
+    .account-setting-row input:checked::after { background: var(--bg); transform: translateX(18px); }
     .account-setting-row input:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
     .account-setting-row input:disabled { cursor: wait; opacity: 0.55; }
     .account-settings-message { min-height: 0; margin: -6px 0 0; }
@@ -908,7 +919,7 @@
       height: 40px;
       border: 1px solid var(--border);
       border-radius: 50%;
-      background: rgba(7,8,12,0.86);
+      background: var(--surface);
       color: var(--text);
       cursor: pointer;
       padding: 0;
@@ -946,7 +957,7 @@
       .auth-dialog-card { padding: 1.1rem 0.5rem; }
       .tipp-invitation-card { padding: 2.25rem 1.25rem 1.25rem; }
       .account-auth-message { bottom: max(8px, env(safe-area-inset-bottom)); max-width: calc(100% - 32px); }
-      .account-header { flex-wrap: wrap; gap: 12px; padding-right: 64px; }
+      .account-header { flex-wrap: wrap; gap: 12px; }
       .account-header-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
       .account-header h2 { font-size: 1.65rem; }
       .account-settings-heading { align-items: start; flex-direction: column; gap: 6px; }
@@ -972,7 +983,7 @@
         justify-self: start;
       }
       .result-entry-timing label { min-width: 0; flex-direction: column; align-items: stretch; gap: 4px; }
-      .account-section-heading { align-items: center; }
+      .account-section-heading { align-items: center; flex-wrap: wrap; gap: 8px; }
       .account-task-matchup strong { display: flex; flex-wrap: wrap; }
       .account-task-matchup strong:last-child { justify-content: end; }
 

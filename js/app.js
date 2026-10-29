@@ -55,7 +55,7 @@ const PLAYER_PROFILE_ACHIEVEMENT_LIMIT = 4;
 const PLAYER_PROFILE_PANEL_TRANSITION_MS = 220;
 const panelLayout = window.PadelLigaPanelLayout;
 const playerProfilePresentationStore = panelLayout.createPresentationPreference('padel-liga-player-profile-presentation');
-const PLAYER_PROFILE_ROW_SELECTOR = '#rangliste tr[data-player-profile-id], #all-time-ranking-table tr[data-player-profile-id]';
+const PLAYER_PROFILE_ROW_SELECTOR = '#rangliste tr[data-player-profile-id], #all-time-ranking-table tr[data-player-profile-id], .calculator-ranking-table tr[data-player-profile-id]';
 const PROFILE_SEASON_COLORS = Object.freeze({
   summer: '#FF8A5B',
   winter: '#B794F6',
@@ -2911,6 +2911,7 @@ function arrangePlayerProfileContent(presentation = playerProfilePresentation) {
   if (!content) return;
   const selectors = presentation === 'panel'
     ? [
+        '.player-profile-hero',
         '.player-profile-hero-block',
         '.player-profile-elo-panel',
         '.player-profile-participations-panel',
@@ -2918,6 +2919,7 @@ function arrangePlayerProfileContent(presentation = playerProfilePresentation) {
         '.player-profile-relationships'
       ]
     : [
+        '.player-profile-hero',
         '.player-profile-hero-block',
         '.player-profile-elo-panel',
         '.player-profile-participations-panel',
@@ -2932,6 +2934,25 @@ function arrangePlayerProfileContent(presentation = playerProfilePresentation) {
 
 function getPlayerProfileShellScrollTop() {
   return document.querySelector('#player-profile-dialog .player-profile-shell')?.scrollTop || 0;
+}
+
+const PLAYER_PROFILE_HERO_CONDENSE_SCROLL = 48;
+const PLAYER_PROFILE_HERO_EXPAND_SCROLL = 8;
+
+function updatePlayerProfileHeroCondensed() {
+  const shell = document.querySelector('#player-profile-dialog .player-profile-shell');
+  const hero = document.getElementById('player-profile-hero');
+  if (!shell || !hero) return;
+  const scrollTop = shell.scrollTop;
+  if (hero.classList.contains('is-condensed')) {
+    if (scrollTop <= PLAYER_PROFILE_HERO_EXPAND_SCROLL) hero.classList.remove('is-condensed');
+    return;
+  }
+  // Nur verdichten, wenn danach genug Scrollweg bleibt; sonst springt der Kopf zwischen beiden Größen hin und her.
+  const remainingScroll = shell.scrollHeight - shell.clientHeight - hero.offsetHeight;
+  if (scrollTop > PLAYER_PROFILE_HERO_CONDENSE_SCROLL && remainingScroll > PLAYER_PROFILE_HERO_CONDENSE_SCROLL) {
+    hero.classList.add('is-condensed');
+  }
 }
 
 function updatePlayerProfileRankingHighlights() {
@@ -3096,6 +3117,7 @@ function renderPlayerProfile(profile) {
   renderPlayerProfileHistory();
   document.getElementById('player-profile-state').hidden = true;
   document.getElementById('player-profile-content').hidden = false;
+  updatePlayerProfileHeroCondensed();
   updatePlayerProfileRankingHighlights();
   announcePlayerProfilePanel(identity.displayName || knownPlayer?.name);
   playerProfileChart?.destroy();
@@ -5008,6 +5030,11 @@ function getPlayerIdByName(playerName) {
     .find(item => item.name === playerName);
   if (player?.id) return player.id;
   return (window.PADEL_PLAYERS || []).find(item => item.name === playerName)?.id || null;
+}
+
+function renderPlayerProfileRowAttributes(player) {
+  if (!player?.id || !player.name) return '';
+  return ` data-player-profile-id="${escapeHtml(player.id)}" tabindex="0" role="link" aria-label="Profil von ${escapeHtml(player.name)} öffnen"`;
 }
 
 function renderPlayerProfileLink(player, className = '', displayName = '') {
@@ -7425,7 +7452,7 @@ function renderCalculatorRanking() {
     const activeMatchClass = activePlayerIds.has(player.id) ? 'calculator-active-match-player' : '';
     const qualificationClass = index < qualificationPlaces ? 'top-four-highlight' : '';
 
-    return `<tr class="calculator-ranking-row r${Math.min(index + 1, 4)} ${qualificationClass} ${activeMatchClass} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id)}">
+    return `<tr class="calculator-ranking-row r${Math.min(index + 1, 4)} ${qualificationClass} ${activeMatchClass} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id)}"${renderPlayerProfileRowAttributes(player)}>
       <td class="col-rank rank-position">${index + 1}</td>
       <td class="col-name">${renderPlayerProfileLink(player, 'pname')}</td>
       <td class="col-games">${player.stats.partien}</td>
@@ -7542,7 +7569,7 @@ function renderFinalFourCalculatorRanking() {
   const previous = getRankingRowPositions(body, '.calculator-ranking-row');
   const previousMini = getRankingRowPositions(mini, '.calculator-mini-rank-row');
   const players = stats.map(stat => ({ ...PADEL_DATA.players.find(player => player.name === stat.name), ...stat }));
-  body.innerHTML = players.map((player, index) => `<tr class="calculator-ranking-row r${index + 1} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id || player.name)}">
+  body.innerHTML = players.map((player, index) => `<tr class="calculator-ranking-row r${index + 1} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id || player.name)}"${renderPlayerProfileRowAttributes(player)}>
     <td class="col-rank rank-position">${index + 1}</td>
     <td class="col-name">${renderPlayerProfileLink(player, 'pname')}</td>
     <td class="col-wins rank-score">${player.siege}</td>
@@ -9042,6 +9069,7 @@ playerProfileDialog?.addEventListener('cancel', event => {
 playerProfileDialog?.addEventListener('click', event => {
   if (event.target === playerProfileDialog && playerProfilePresentation === 'modal') closePlayerProfile();
 });
+playerProfileDialog?.querySelector('.player-profile-shell')?.addEventListener('scroll', updatePlayerProfileHeroCondensed, { passive: true });
 
 let playerProfileResizeFrame = 0;
 window.addEventListener('resize', () => {

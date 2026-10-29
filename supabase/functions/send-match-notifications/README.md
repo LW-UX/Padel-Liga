@@ -32,7 +32,8 @@ bis zu 25 Nachrichten. Fehlgeschlagene Aufträge werden mit Abstand erneut
 versucht; eindeutige Versandkennungen schützen vor Doppelzustellung.
 
 Vor der Aktivierung müssen die Migrationen
-`20261029120000_account_email_notifications.sql` und
-`20261029190000_match_calendar_invitations.sql`, die Function und der in Resend
+`20261029120000_account_email_notifications.sql`,
+`20261029190000_match_calendar_invitations.sql` und
+`20261029200000_calendar_invitations_skip_existing.sql`, die Function und der in Resend
 verifizierte Absender bereitstehen. Der Zeitplan wird zuletzt aktiviert, damit
 keine unvollständig konfigurierte Function aufgerufen wird.

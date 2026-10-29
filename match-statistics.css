@@ -420,7 +420,7 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
   width: 100%;
 }
 #detail-view-dialog[data-presentation="panel"] .match-statistics-player-graph {
-  opacity: 0;
+  opacity: .15;
   transform: translateX(var(--statistics-panel-offset));
 }
 #detail-view-dialog[data-presentation="panel"] .match-statistics-player-graph.match-statistics-team-player-2 {
@@ -429,11 +429,15 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
 #detail-view-dialog[data-presentation="panel"] .match-statistics-player-graph.is-team-selected { opacity: 1; }
 #detail-view-dialog[data-presentation="panel"] .match-statistics-player-graph:not(.is-team-selected) :is(.match-statistics-value, .match-statistics-peak-star, .match-statistics-player-label) { display: none; }
 
-@container match-detail-panel (min-width: 900px) {
+@container match-detail-panel (min-width: 760px) {
   #detail-view-dialog[data-presentation="panel"] .match-statistics-ranking-layout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4rem;
+    gap: 2rem;
   }
+}
+
+@container match-detail-panel (min-width: 900px) {
+  #detail-view-dialog[data-presentation="panel"] .match-statistics-ranking-layout { gap: 4rem; }
 }
 
 @container match-detail-panel (min-width: 1100px) {

@@ -333,7 +333,7 @@ test('wide ranking views host the same player profile as a non-modal side panel'
   assert.match(app, /presentation === 'panel'[\s\S]*?'\.player-profile-elo-panel'[\s\S]*?'\.player-profile-participations-panel'[\s\S]*?'\.player-profile-history'[\s\S]*?'\.player-profile-relationships'/);
   assert.match(app, /scrollTop: getPlayerProfileShellScrollTop\(\)/);
   assert.match(app, /function cancelPlayerProfileCloseTransition[\s\S]*?document\.body\.classList\.add\('player-profile-panel-open'\)/);
-  assert.match(app, /const PLAYER_PROFILE_ROW_SELECTOR = '#rangliste tr\[data-player-profile-id\], #all-time-ranking-table tr\[data-player-profile-id\]';/);
+  assert.match(app, /const PLAYER_PROFILE_ROW_SELECTOR = '#rangliste tr\[data-player-profile-id\], #all-time-ranking-table tr\[data-player-profile-id\], \.calculator-ranking-table tr\[data-player-profile-id\]';/);
   assert.match(app, /playerProfileOpenControl\.matches\(PLAYER_PROFILE_ROW_SELECTOR\)[\s\S]*?!playerProfileRow \|\| !rowClickHitsControl[\s\S]*?openPlayerProfile\(playerProfileOpenControl\.dataset\.playerProfileId, playerProfileOpenControl\)/);
   assert.match(app, /data-profile-player-id="\$\{escapeHtml\(p\.id \|\| ''\)\}" data-player-profile-id="\$\{escapeHtml\(p\.id \|\| ''\)\}" tabindex="0" role="link" aria-label="Profil von \$\{escapeHtml\(p\.name\)\} öffnen"/);
   assert.match(app, /data-profile-player-id="\$\{escapeHtml\(player\.id \|\| ''\)\}" data-player-profile-id="\$\{escapeHtml\(player\.id \|\| ''\)\}" tabindex="0" role="link" aria-label="Profil von \$\{escapeHtml\(player\.name\)\} öffnen"/);
