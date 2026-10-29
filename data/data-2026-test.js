@@ -1,7 +1,7 @@
 window.PADEL_SEASON = {
   id: "2026-test",
   label: "Test-Saison",
-  title: "Padel-Liga · Test-Saison",
+  title: "PadelLiga · Test-Saison",
   competition: {
     tournamentMode: "none",
     qualificationPlaces: 3,

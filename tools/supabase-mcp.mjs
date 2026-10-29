@@ -198,7 +198,7 @@ if (command === 'list-tools') {
   const config = await managementRequest('/config/auth', {
     method: 'PATCH',
     body: JSON.stringify({
-      mailer_subjects_recovery: 'Padel-Liga: Neues Passwort festlegen',
+      mailer_subjects_recovery: 'PadelLiga: Neues Passwort festlegen',
       mailer_templates_recovery_content: content,
     }),
   });

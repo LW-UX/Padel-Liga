@@ -71,6 +71,27 @@ test('local PadelTipp links return to the root index file', () => {
   );
 });
 
+test('local development servers use query routes that exist without deploy generation', () => {
+  const { routing } = loadRouting(
+    'http://localhost:4173/tipp/?saison=2026-winter',
+    'http://localhost:4173/tipp/'
+  );
+  const match = { id: 'winter-2026-partie-7', stage: 'league' };
+  const liveMatch = { id: 'season-2026-partie-28', stage: 'final-four', format: 'single-set' };
+  assert.equal(
+    routing.getSeasonUrl('2026-winter', 'league').href,
+    'http://localhost:4173/?saison=2026-winter'
+  );
+  assert.equal(
+    routing.getMatchUrl('2026-winter', match).href,
+    'http://localhost:4173/?saison=2026-winter&partie=winter-2026-partie-7'
+  );
+  assert.equal(
+    routing.getLiveUrl('2026-sommer', liveMatch, 'overview').href,
+    'http://localhost:4173/?saison=2026-sommer&live=season-2026-partie-28&liveView=overview'
+  );
+});
+
 test('short match paths resolve the season and the underlying stable match id', () => {
   const { routing } = loadRouting(
     'https://lw-ux.github.io/Padel-Liga/wi26/partie/7/',

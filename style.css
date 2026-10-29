@@ -111,7 +111,7 @@
     html.instant-scroll * {
       scroll-behavior: auto !important;
     }
-    body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; touch-action: manipulation; }
+    body { display: flex; flex-direction: column; background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; touch-action: manipulation; }
     html:has(dialog:modal),
     body:has(dialog:modal) {
       overflow: hidden;
@@ -376,6 +376,7 @@
       grid-auto-flow: column;
       grid-auto-columns: minmax(0, 1fr);
       gap: 8px;
+      width: 100%;
       max-width: 1100px;
       margin: 0 auto 2rem;
       padding: 10px 1rem 0.5rem;
@@ -669,6 +670,11 @@
       stroke-width: 3.2;
       pointer-events: none;
     }
+    .player-profile-presentation-toggle { right: 68px; }
+    .player-profile-presentation-toggle .player-profile-presentation-icon { stroke-width: 1.8; }
+    .player-profile-presentation-toggle .player-profile-presentation-icon-modal { display: none; }
+    .player-profile-dialog[data-presentation="panel"] .player-profile-presentation-icon-panel { display: none; }
+    .player-profile-dialog[data-presentation="panel"] .player-profile-presentation-icon-modal { display: block; }
     .modal-close-button:hover { color: var(--accent); border-color: var(--accent); }
     .player-profile-state {
       box-sizing: border-box;
@@ -1110,7 +1116,7 @@
       .player-profile-chart-wrap { height: 210px; }
     }
 
-    /* Die schmale Paneldarstellung folgt dem mobilen Profil, obwohl der Viewport breit ist. */
+    /* Das Panel folgt im Grundraster dem mobilen Profil; breite Partiezeilen wechseln unten zurück auf Desktop. */
     .player-profile-dialog[data-presentation="panel"] {
       position: relative;
       inset: auto;
@@ -1122,6 +1128,7 @@
       border-radius: 20px;
       box-shadow: 0 24px 72px rgba(0,0,0,0.56);
       animation: player-profile-panel-in 220ms ease-out;
+      container: player-profile-panel / inline-size;
     }
     .player-profile-dialog[data-presentation="panel"].is-closing {
       opacity: 0;
@@ -1145,15 +1152,17 @@
       width: 32px;
       height: 32px;
     }
+    .player-profile-dialog[data-presentation="panel"] .player-profile-presentation-toggle { right: 60px; }
     .player-profile-dialog[data-presentation="panel"] .player-profile-identity-row {
       grid-template-columns: 116px minmax(0, 1fr);
       gap: 20px;
       min-height: 0;
-      padding: 40px 12px 12px;
+      padding: 12px;
+      margin-bottom: 1rem;
     }
     .player-profile-dialog[data-presentation="panel"] .player-profile-avatar {
       width: 116px;
-      border-radius: 20px;
+      border-radius: 12px;
     }
     .player-profile-dialog[data-presentation="panel"] .player-profile-avatar-placeholder { font-size: 4.5rem; }
     .player-profile-dialog[data-presentation="panel"] .player-profile-achievements {
@@ -1207,6 +1216,41 @@
     .player-profile-dialog[data-presentation="panel"] .player-profile-match-season {
       grid-column: 3;
       grid-row: 1;
+    }
+    @container player-profile-panel (min-width: 600px) {
+      .player-profile-dialog[data-presentation="panel"] .player-profile-match-teams {
+        align-items: baseline;
+        flex-direction: row;
+        gap: 0.25rem;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-match-score {
+        display: block;
+        min-height: 0;
+      }
+    }
+    @container player-profile-panel (min-width: 760px) {
+      .player-profile-dialog[data-presentation="panel"] .player-profile-match {
+        grid-template-columns: 64px 32px minmax(0, 1fr) 132px 84px;
+        gap: 16px;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-match-date,
+      .player-profile-dialog[data-presentation="panel"] .player-profile-match-outcome,
+      .player-profile-dialog[data-presentation="panel"] .player-profile-match-teams,
+      .player-profile-dialog[data-presentation="panel"] .player-profile-match-score,
+      .player-profile-dialog[data-presentation="panel"] .player-profile-match-season {
+        grid-column: auto;
+        grid-row: auto;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-match-teams {
+        align-items: baseline;
+        flex-direction: row;
+        gap: 0.25rem;
+      }
+      .player-profile-dialog[data-presentation="panel"] .player-profile-match-score {
+        display: block;
+        min-height: 0;
+        text-align: left;
+      }
     }
     @keyframes player-profile-panel-in {
       from { opacity: 0; transform: translateX(calc(100% + 24px)); }
@@ -1746,15 +1790,56 @@
     .prediction-error small { color: var(--dim); }
 
     /* ── MAIN ── */
-    main { max-width: 1100px; margin: 0 auto; padding: 0 1rem 6rem; }
-    .ranking-profile-layout {
+    main { flex: 1; width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 1rem 6rem; }
+
+    /* ── FOOTER ── */
+    .site-footer {
+      padding: 0.85rem 1rem;
+    }
+    .site-footer-line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(0.35rem, 1.4vw, 0.8rem);
+      color: var(--muted);
+      font-size: clamp(0.5rem, 1.8vw, var(--text-xs));
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .site-footer-brand {
+      color: var(--text);
+      font-family: var(--font-heading);
+      font-size: clamp(1rem, 2.6vw, 1.3rem);
+      letter-spacing: 0.04em;
+    }
+    .site-footer-brand em { color: var(--accent); font-style: normal; }
+    .site-footer-partnership {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.3rem;
+    }
+    .site-footer-credit { color: var(--muted); }
+    .site-footer-credit > span { color: var(--muted); }
+    .site-footer-credit strong {
+      color: var(--dim);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .site-footer-service {
+      padding-left: clamp(0.35rem, 1.4vw, 0.8rem);
+      border-left: 1px solid var(--border);
+      color: var(--dim);
+    }
+    .ranking-profile-layout,
+    .all-time-ranking-profile-layout {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 0fr);
       align-items: start;
       gap: 0;
       transition: grid-template-columns 220ms ease, gap 220ms ease;
     }
-    .ranking-profile-main { min-width: 0; }
+    .ranking-profile-main,
+    .all-time-ranking-profile-main { min-width: 0; }
     .ranking-profile-host {
       position: sticky;
       z-index: 90;
@@ -1764,7 +1849,7 @@
       min-width: 0;
       overflow: hidden;
     }
-    body.player-profile-panel-open main {
+    body.player-profile-panel-open[data-player-profile-panel-context="ranking"] main {
       width: auto;
       max-width: none;
       margin-right: 16px;
@@ -1772,8 +1857,13 @@
       padding-right: 0;
       padding-left: 0;
     }
-    body.player-profile-panel-open .ranking-profile-layout {
-      grid-template-columns: minmax(600px, 1fr) var(--player-profile-panel-width, 460px);
+    body.player-profile-panel-open[data-player-profile-panel-context="ranking"] .ranking-profile-layout {
+      grid-template-columns: 540px minmax(460px, 1fr);
+      gap: 24px;
+    }
+    body.player-profile-panel-open[data-player-profile-panel-context="all-time-ranking"] .all-time-ranking-profile-layout {
+      width: calc(100vw - var(--ranking-profile-split-left, 16px) - 16px);
+      grid-template-columns: 540px minmax(460px, 1fr);
       gap: 24px;
     }
     body.player-profile-panel-open .ranking-profile-host,
@@ -1782,7 +1872,8 @@
       overflow: visible;
     }
     @media (prefers-reduced-motion: reduce) {
-      .ranking-profile-layout { transition: none; }
+      .ranking-profile-layout,
+      .all-time-ranking-profile-layout { transition: none; }
     }
     .section { display: none; }
     .section.active { display: block; }
@@ -1810,6 +1901,9 @@
       grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       align-items: center;
       gap: 18px;
+    }
+    #ranking-profile-main > .sh-with-control {
+      grid-template-columns: minmax(0, 1fr) auto;
     }
     .sh-heading { display: flex; align-items: baseline; gap: 12px; }
     .sh-title { font-family: var(--font-heading); font-size: var(--text-heading); font-weight: 400; letter-spacing: 0.05em; }
@@ -1888,7 +1982,7 @@
     }
     .all-time-ranking > .sh-with-control {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
       gap: 18px;
     }
@@ -2523,6 +2617,10 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .prediction-rank-account .prediction-company-badge {
+      flex: 0 0 auto;
+      margin-left: 4px;
+    }
     .prediction-account-type-icon {
       display: inline-flex;
       width: 15px;
@@ -2563,13 +2661,16 @@
       stroke-linejoin: round;
       stroke-width: 1.7;
     }
-    .prediction-achievement-laurel {
-      display: block;
-      width: 100%;
-      height: 100%;
-      background: currentColor;
-      -webkit-mask: url('assets/icons/achievement-laurel.svg') center / contain no-repeat;
-      mask: url('assets/icons/achievement-laurel.svg') center / contain no-repeat;
+    .prediction-achievement-icon .ranking-player-achievement-laurel-stems {
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 18.66;
+    }
+    .prediction-achievement-icon .ranking-player-achievement-laurel-leaves {
+      fill: currentColor;
+      stroke: none;
     }
     .mini-rank-values {
       display: grid;
@@ -2838,6 +2939,54 @@
       text-transform: uppercase; color: var(--dim); padding: 10px 16px;
       border-bottom: 1px solid var(--border);
     }
+    .ranking-sort-header {
+      appearance: none;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 5px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+      letter-spacing: inherit;
+      line-height: inherit;
+      text-transform: inherit;
+    }
+    .ranking-sort-header:hover,
+    .ranking-sort-header:focus-visible { color: var(--accent); }
+    .ranking-sort-header:focus-visible {
+      border-radius: 2px;
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+    .ranking-header-with-help {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 5px;
+    }
+    .ranking-sort-chevron {
+      display: none;
+      position: absolute;
+      top: 50%;
+      right: calc(100% + 5px);
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-right: 4px solid transparent;
+      border-left: 4px solid transparent;
+      border-top: 5px solid currentColor;
+    }
+    th[aria-sort] .ranking-sort-chevron { display: inline-block; }
+    th[aria-sort="ascending"] .ranking-sort-chevron {
+      border-top: 0;
+      border-bottom: 5px solid currentColor;
+    }
     table.rt td { padding: 10px 16px; border-bottom: 1px solid var(--border); text-align: right; }
     table.rt .col-rank,
     table.rt .col-name,
@@ -2847,14 +2996,26 @@
       padding-left: 20px;
       padding-right: 20px;
     }
-    body.player-profile-panel-open #ranking-profile-main table.rt th,
-    body.player-profile-panel-open #ranking-profile-main table.rt td {
+    body.player-profile-panel-open :is(#ranking-profile-main, #all-time-ranking-profile-main) table.rt th,
+    body.player-profile-panel-open :is(#ranking-profile-main, #all-time-ranking-profile-main) table.rt td {
       padding-left: 8px;
       padding-right: 8px;
+    }
+    body.player-profile-panel-open :is(#ranking-profile-main, #all-time-ranking-profile-main) .ranking-table .col-name {
+      width: 178px;
+    }
+    body.player-profile-panel-open :is(#ranking-profile-main, #all-time-ranking-profile-main) .firma-full { display: none; }
+    body.player-profile-panel-open :is(#ranking-profile-main, #all-time-ranking-profile-main) .firma-short { display: inline; }
+    body.player-profile-panel-open :is(#ranking-profile-main, #all-time-ranking-profile-main) table.rt th.col-rank,
+    body.player-profile-panel-open :is(#ranking-profile-main, #all-time-ranking-profile-main) table.rt td.col-rank {
+      padding-left: 12px;
+      padding-right: 4px;
     }
     table.rt th.col-rank {padding-left: 20px;}
     table.rt tr:last-child td { border-bottom: none; }
     table.rt tbody tr { transition: background 0.1s; }
+    #rangliste table.rt tbody tr[data-profile-player-id],
+    #all-time-ranking-table tbody tr[data-profile-player-id] { cursor: pointer; }
     table.rt tbody tr:nth-child(even) { background: var(--row-alt); }
     table.rt tbody tr:hover { background: color-mix(in srgb, var(--dim) 20%, transparent); }
     table.rt tbody tr.top-four-highlight td:first-child {
@@ -2938,6 +3099,7 @@
       align-items: center;
       gap: 2px;
     }
+    .ranking-player-achievement { margin-left: 6px; }
     .ranking-absence-mark {
       flex: 0 0 auto;
       align-self: flex-start;
@@ -3071,7 +3233,6 @@
       left: var(--ranking-tooltip-left);
       transform: none;
     }
-    table.ranking-table th:hover .help-tooltip,
     .th-help-wrap:hover .help-tooltip,
     .th-help-wrap:focus-within .help-tooltip,
     .th-help-wrap.is-open .help-tooltip {
@@ -3315,7 +3476,7 @@
       background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
       padding: .9rem 1.5rem;
       display: grid;
-      grid-template-columns: 300px 1fr 130px 1fr;
+      grid-template-columns: minmax(160px, 1fr) 1fr 130px 1fr;
       align-items: center; 
       gap: 24px;
       min-height: 84px;
@@ -4358,7 +4519,11 @@
     .calculator-mobile-mini-ranking {
       display: none;
     }
-    .calculator-autotip-bar {
+    .calculator-controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
       margin-bottom: 1rem;
     }
     .calculator-autotip-bar[hidden] { display: none; }
@@ -4780,7 +4945,6 @@
         grid-row: 1;
         justify-self: end;
       }
-      #ranking-sort-toggle,
       #match-sort-toggle,
       #prediction-sort-toggle {
         grid-column: 1 / -1;
@@ -4796,11 +4960,6 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 0.8rem;
-        justify-content: center;
-      }
-      #all-time-ranking-sort-toggle {
-        order: 3;
-        flex: 1 0 100%;
         justify-content: center;
       }
       .all-time-ranking > .sh-with-control .sh-heading {

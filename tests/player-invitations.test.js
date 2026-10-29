@@ -111,7 +111,7 @@ test('invitation link is generated only by the server-side function', () => {
   assert.match(edgeFunction, /actionLink: confirmationPageUrl\.href/);
   assert.doesNotMatch(edgeFunction, /inviteUserByEmail/);
   assert.doesNotMatch(client, /SUPABASE_SERVICE_ROLE_KEY|serviceRoleKey|generateLink/);
-  assert.match(client, /Du bist zur Padel-Liga eingeladen/);
+  assert.match(client, /Du bist zur PadelLiga eingeladen/);
   assert.match(client, /Hallo \$\{playerName\}, für dich wurde ein persönliches Spielerprofil vorbereitet/);
   assert.match(client, /const safePlayerName = escapeHtml\(playerName\)/);
   assert.match(client, /buildPlayerInviteCopy\(data\.actionLink, invitedPlayerName\)/);

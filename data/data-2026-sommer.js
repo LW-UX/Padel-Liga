@@ -2,7 +2,7 @@ window.PADEL_SEASON = {
   "id": "2026-sommer",
   "matchIdPrefix": "season-2026",
   "label": "Sommer 2026",
-  "title": "Padel-Liga Sommer 2026",
+  "title": "PadelLiga Sommer 2026",
   "resultsEntryEnabled": true,
   "competition": {
     "tournamentMode": "direct-final-four",
@@ -1389,12 +1389,12 @@ window.PADEL_SEASON = {
       "spieltag": 1,
       "startDate": "2026-05-11",
       "endDate": "2026-05-24",
-      "title": "Die Padel-Liga Sommer 2026 startet!",
+      "title": "Die PadelLiga Sommer 2026 startet!",
       "meta": "SPIELTAG 1  ·  11. MAI - 22. MAI 2026",
       "body": [
         {
           "type": "p",
-          "text": "Es ist so weit: Die Padel-Liga Sommer 2026 der Unternehmensgruppe Headsquare, Hanako und Envidual öffnet ihre Tore. Mit dem ersten Spieltag - ausgetragen im Zeitfenster vom 11. bis 22. Mai - fallen endlich die ersten Bälle. Die Spannung unter den 18 Teilnehmerinnen und Teilnehmern könnte kaum größer sein, die ersten Ergebnisse werden sehnlichst erwartet."
+          "text": "Es ist so weit: Die PadelLiga Sommer 2026 der Unternehmensgruppe Headsquare, Hanako und Envidual öffnet ihre Tore. Mit dem ersten Spieltag - ausgetragen im Zeitfenster vom 11. bis 22. Mai - fallen endlich die ersten Bälle. Die Spannung unter den 18 Teilnehmerinnen und Teilnehmern könnte kaum größer sein, die ersten Ergebnisse werden sehnlichst erwartet."
         },
         {
           "type": "h",
@@ -1511,7 +1511,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Lange haben alle auf diesen Moment gewartet: Mit Partie 5 betreten Lukas P und Andreas L endlich offiziell die Bühne der Padel-Liga. Und das Schicksal hat es gut gemeint - oder böse, je nach Perspektive. Denn die beiden aktivsten Tennisspieler der gesamten Liga stehen sich gleich in ihrer Premierenpartie gegenüber. Beide gelten intern als heiße Anwärter auf den Titel. Aber ob Tenniserfahrung auf dem Padelcourt hilft oder ein falsches Sicherheitsgefühl erzeugt, werden die Sätze zeigen."
+          "text": "Lange haben alle auf diesen Moment gewartet: Mit Partie 5 betreten Lukas P und Andreas L endlich offiziell die Bühne der PadelLiga. Und das Schicksal hat es gut gemeint - oder böse, je nach Perspektive. Denn die beiden aktivsten Tennisspieler der gesamten Liga stehen sich gleich in ihrer Premierenpartie gegenüber. Beide gelten intern als heiße Anwärter auf den Titel. Aber ob Tenniserfahrung auf dem Padelcourt hilft oder ein falsches Sicherheitsgefühl erzeugt, werden die Sätze zeigen."
         },
         {
           "type": "p",
@@ -1567,7 +1567,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Noch brisanter wird es durch zwei weitere Verbindungen: Raphael H und Marco M kennen sich gut vom Tenniscourt, wo sie regelmäßig gemeinsam spielen. Jetzt sind sie Gegner. Zudem spielen mit Marco und Marcel zwei Mayrs im selben Team. Ein Duell, das über die Padel-Liga hinaus eine neue Dimension bekommt. Vier Spieler, die sich alle kennen und alle gewinnen wollen. Partie 7 dürfte eines der persönlichsten des gesamten Turniers werden."
+          "text": "Noch brisanter wird es durch zwei weitere Verbindungen: Raphael H und Marco M kennen sich gut vom Tenniscourt, wo sie regelmäßig gemeinsam spielen. Jetzt sind sie Gegner. Zudem spielen mit Marco und Marcel zwei Mayrs im selben Team. Ein Duell, das über die PadelLiga hinaus eine neue Dimension bekommt. Vier Spieler, die sich alle kennen und alle gewinnen wollen. Partie 7 dürfte eines der persönlichsten des gesamten Turniers werden."
         },
         {
           "type": "h",
@@ -1777,11 +1777,11 @@ window.PADEL_SEASON = {
         },
         {
           "type": "h",
-          "text": "Neuer Auftritt: Die Padel-Liga hat jetzt eine eigene Webseite"
+          "text": "Neuer Auftritt: Die PadelLiga hat jetzt eine eigene Webseite"
         },
         {
           "type": "p",
-          "text": "Ab sofort hat die Padel-Liga Sommer 2026 hiermit ein digitales Zuhause. Eine Rangliste, ein Elo-Verlauf als interaktiver Graph, eine überarbeitete Spielübersicht mit Gewinnwahrscheinlichkeiten und vieles mehr. Wer wissen will, wie die eigenen Chancen stehen, bekommt hier die schonungslose Wahrheit in Prozentzahlen serviert. Die Liga wird transparenter, die Ausreden weniger."
+          "text": "Ab sofort hat die PadelLiga Sommer 2026 hiermit ein digitales Zuhause. Eine Rangliste, ein Elo-Verlauf als interaktiver Graph, eine überarbeitete Spielübersicht mit Gewinnwahrscheinlichkeiten und vieles mehr. Wer wissen will, wie die eigenen Chancen stehen, bekommt hier die schonungslose Wahrheit in Prozentzahlen serviert. Die Liga wird transparenter, die Ausreden weniger."
         },
         {
           "type": "h",
@@ -1918,7 +1918,7 @@ window.PADEL_SEASON = {
       "body": [
         {
           "type": "p",
-          "text": "Die Padel-Liga Sommer 2026 hat eine neue Nummer eins: Sie heißt Luca W. Mit drei Siegen aus drei Spielen, neun Punkten und einer Differenz von +22 hat sich der Envidual-Mann an die Tabellenspitze geschoben. Der Weg dorthin führte über niemand Geringeren als Marcel M. Der Spirit-König ist also verwundbar."
+          "text": "Die PadelLiga Sommer 2026 hat eine neue Nummer eins: Sie heißt Luca W. Mit drei Siegen aus drei Spielen, neun Punkten und einer Differenz von +22 hat sich der Envidual-Mann an die Tabellenspitze geschoben. Der Weg dorthin führte über niemand Geringeren als Marcel M. Der Spirit-König ist also verwundbar."
         },
         {
           "type": "p",
@@ -1934,7 +1934,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Die Ligaleitung hat das Finale enthüllt und es wird spektakulär: Die besten vier Spieler nach Abschluss aller sechs Spieltage qualifizieren sich für ein Final Four. Dort spielt jeder gegen jeden, ein Satz pro Konstellation. Wer hier gewinnt, wird erster Padel-Liga-Champion der Unternehmensgruppe."
+          "text": "Die Ligaleitung hat das Finale enthüllt und es wird spektakulär: Die besten vier Spieler nach Abschluss aller sechs Spieltage qualifizieren sich für ein Final Four. Dort spielt jeder gegen jeden, ein Satz pro Konstellation. Wer hier gewinnt, wird erster PadelLiga-Champion der Unternehmensgruppe."
         },
         {
           "type": "h",
@@ -2288,7 +2288,7 @@ window.PADEL_SEASON = {
       "body": [
         {
           "type": "p",
-          "text": "Das Final Four der Padel-Liga 2026 steht an. Drei Partien, wechselnde Partner, jeder spielt einmal mit jedem. Doch wer nimmt eigentlich teil? Hier sind die Kandidaten im Porträt."
+          "text": "Das Final Four der PadelLiga 2026 steht an. Drei Partien, wechselnde Partner, jeder spielt einmal mit jedem. Doch wer nimmt eigentlich teil? Hier sind die Kandidaten im Porträt."
         },
         {
           "type": "h",
@@ -2316,7 +2316,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Ohne ihn gäbe es diese Liga womöglich nicht. Gemeinsam mit Vale initiierte er einst das erste Padel-Match der HSQ-Gruppe und legte damit den Grundstein für die Padel-Liga. Spielerisch startete er mit Defiziten, entwickelte sich aber stetig weiter, und was noch fehlt, gleicht er mit Mindset aus. Mit dem neuen Profischläger ist nun auch das letzte Puzzlestück gefunden."
+          "text": "Ohne ihn gäbe es diese Liga womöglich nicht. Gemeinsam mit Vale initiierte er einst das erste Padel-Match der HSQ-Gruppe und legte damit den Grundstein für die PadelLiga. Spielerisch startete er mit Defiziten, entwickelte sich aber stetig weiter, und was noch fehlt, gleicht er mit Mindset aus. Mit dem neuen Profischläger ist nun auch das letzte Puzzlestück gefunden."
         },
         {
           "type": "p",
@@ -2389,7 +2389,7 @@ window.PADEL_SEASON = {
       "body": [
         {
           "type": "p",
-          "text": "Nach fünf Monaten, 25 Ligapartien und einem Final Four, das nach gut einer Stunde entschieden war, hat die Padel-Liga ihren ersten Champion: Luca W. Leicht gemacht hat es ihm das Finale nicht. Drei der vier Finalisten gewannen zwei Sätze, somit entschied am Ende der letzte Schlüssel der Final-Four-Rangliste."
+          "text": "Nach fünf Monaten, 25 Ligapartien und einem Final Four, das nach gut einer Stunde entschieden war, hat die PadelLiga ihren ersten Champion: Luca W. Leicht gemacht hat es ihm das Finale nicht. Drei der vier Finalisten gewannen zwei Sätze, somit entschied am Ende der letzte Schlüssel der Final-Four-Rangliste."
         },
         {
           "type": "p",
@@ -2474,7 +2474,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "quote",
-          "text": "Es ist mir eine riesige Ehre, als erster Padel-Liga Champion in die Geschichte einzugehen. Gerade nach der bitteren Marathon-Niederlage kommt dieser Titel genau zur richtigen Zeit und ist Balsam für die geschundene Sportlerseele. <br> Natürlich bin ich mir bewusst, dass ich heute nicht meinen besten Tag erwischt habe und über weite Strecken von meinen Teammates gecarried wurde. <br>Aber wie sagt man so schön: Glück gehört eben auch dazu. Und am Ende fragt sowieso keiner mehr, wie der Titel zustande gekommen ist.",
+          "text": "Es ist mir eine riesige Ehre, als erster PadelLiga Champion in die Geschichte einzugehen. Gerade nach der bitteren Marathon-Niederlage kommt dieser Titel genau zur richtigen Zeit und ist Balsam für die geschundene Sportlerseele. <br> Natürlich bin ich mir bewusst, dass ich heute nicht meinen besten Tag erwischt habe und über weite Strecken von meinen Teammates gecarried wurde. <br>Aber wie sagt man so schön: Glück gehört eben auch dazu. Und am Ende fragt sowieso keiner mehr, wie der Titel zustande gekommen ist.",
           "author": "Luca W."
         },
         {
@@ -2576,7 +2576,7 @@ window.PADEL_SEASON = {
         },
         {
           "type": "p",
-          "text": "Im Optimalfall geht es noch im Oktober bereits weiter. Die Winter-Saison soll so schnell wie möglich starten. Luca freut sich nach eigenen Worten schon darauf, seinen Titel zu verteidigen. Bis dahin bleibt er der erste Champion der Padel-Liga. Zum Abschluss hat der Champion selbst das Wort:"
+          "text": "Im Optimalfall geht es noch im Oktober bereits weiter. Die Winter-Saison soll so schnell wie möglich starten. Luca freut sich nach eigenen Worten schon darauf, seinen Titel zu verteidigen. Bis dahin bleibt er der erste Champion der PadelLiga. Zum Abschluss hat der Champion selbst das Wort:"
         },
         {
           "type": "quote",

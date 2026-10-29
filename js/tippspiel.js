@@ -10,6 +10,12 @@
     '2027-cup': 'cup-2027',
     '2026-test': 'test-2026'
   });
+  const COMPANY_SHORT_LABELS = Object.freeze({
+    Envidual: 'ENV',
+    Headsquare: 'HSQ',
+    Hanako: 'HAN',
+    Test: 'TEST'
+  });
   const state = {
     client: null,
     season: null,
@@ -32,6 +38,7 @@
     error: null,
     bound: false,
     sortMode: 'status',
+    leaderboardSortMode: 'points',
     articleExpanded: false
   };
 
@@ -39,7 +46,7 @@
     champion: {
       order: 1,
       title: 'Liga-Champion',
-      question: 'Wer wird der nächste Padel-Liga-Champion?'
+      question: 'Wer wird der nächste PadelLiga-Champion?'
     },
     final_four_players: {
       order: 2,
@@ -86,15 +93,18 @@
     return `<span class="prediction-account-type-icon" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icon}</svg></span>`;
   }
 
-  function renderPredictionAchievementIcon(entry) {
-    const kind = entry?.previous_league_achievement;
-    if (kind !== 'winner' && kind !== 'final_four') return '';
-    const seasonLabel = String(entry.previous_league_season_label || '').trim();
-    const label = `${kind === 'winner' ? 'Champion' : 'Final Four'}${seasonLabel ? ` ${seasonLabel}` : ''}`;
-    const icon = kind === 'winner'
-      ? '<svg viewBox="0 0 28 32" aria-hidden="true" focusable="false"><path d="M8 3h12v5c0 5-2.4 8.5-6 10-3.6-1.5-6-5-6-10V3Z"/><path d="M8 6H4v2c0 4 2 6 5.3 6.7M20 6h4v2c0 4-2 6-5.3 6.7"/><path d="M14 18v6M11 24h6v4M9 28h10"/></svg>'
-      : '<span class="prediction-achievement-laurel" aria-hidden="true"></span>';
-    return `<span class="prediction-achievement-icon prediction-achievement-icon--${kind === 'winner' ? 'winner' : 'final-four'}" role="img" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">${icon}</span>`;
+  function renderPredictionCompanyBadge(entry) {
+    const company = String(entry?.company || '').trim();
+    if (!company) return '';
+    const shortLabel = COMPANY_SHORT_LABELS[company] || company.slice(0, 3).toUpperCase();
+    return `<span class="firma-badge firma-${escapeHtml(company)} prediction-company-badge" aria-label="Firma ${escapeHtml(company)}" title="${escapeHtml(company)}">${escapeHtml(shortLabel)}</span>`;
+  }
+
+  function renderPreviousPredictionWinnerIcon(entry) {
+    if (entry?.previous_prediction_winner !== true) return '';
+    const seasonLabel = String(entry.previous_prediction_season_label || '').trim();
+    const label = `Tippsieger${seasonLabel ? ` ${seasonLabel}` : ''}`;
+    return `<span class="prediction-achievement-icon prediction-achievement-icon--winner" role="img" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}"><svg viewBox="0 0 28 32" aria-hidden="true" focusable="false"><path d="M8 3h12v5c0 5-2.4 8.5-6 10-3.6-1.5-6-5-6-10V3Z"/><path d="M8 6H4v2c0 4 2 6 5.3 6.7M20 6h4v2c0 4-2 6-5.3 6.7"/><path d="M14 18v6M11 24h6v4M9 28h10"/></svg></span>`;
   }
 
   function getPredictionLocalMatches() {
@@ -790,7 +800,7 @@
       return `
         <div class="mini-rank-row r${index + 1}${isOwn ? ' viewer-highlight' : ''}${separated}">
           <span class="rank-position">${index + 1}</span>
-          <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionAchievementIcon(entry)}</span></span>
+          <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionCompanyBadge(entry)}${renderPreviousPredictionWinnerIcon(entry)}</span></span>
           <span class="rank-score">${formatCount(entry.points)} Pkt.</span>
         </div>
       `;
@@ -935,7 +945,7 @@
   function renderGuestStand() {
     return `
       <article class="widget prediction-overview-block prediction-overview-stand prediction-overview-guest">
-        <div class="widget-label">Dein Padeltipp</div>
+        <div class="widget-label">Dein PadelTipp</div>
         <h2>Tippen, mitfiebern, Punkte sammeln.</h2>
         <p>Mit einem gemeinsamen Padel-Konto speicherst du deine Prognosen und siehst hier deinen persönlichen Saisonstand.</p>
       </article>
@@ -1104,15 +1114,103 @@
     `;
   }
 
+  function getPredictionLeaderboardSortValue(entry, sortMode) {
+    let value;
+    if (sortMode === 'predictions') value = entry.predictions_count;
+    else if (sortMode === 'exact') value = entry.exact_count;
+    else if (sortMode === 'passive') value = entry.points == null ? null : getLeaderboardPassivePoints(entry);
+    else if (sortMode === 'bonus') value = entry.bonus_points;
+    else value = entry.points;
+
+    if (value === null || value === undefined || value === '') return null;
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? numericValue : null;
+  }
+
+  function getSortedPredictionLeaderboard() {
+    return state.leaderboard
+      .map((entry, canonicalIndex) => ({ entry, canonicalRank: canonicalIndex + 1 }))
+      .sort((left, right) => {
+        const leftValue = getPredictionLeaderboardSortValue(left.entry, state.leaderboardSortMode);
+        const rightValue = getPredictionLeaderboardSortValue(right.entry, state.leaderboardSortMode);
+        const leftMissing = leftValue === null;
+        const rightMissing = rightValue === null;
+        if (leftMissing !== rightMissing) return leftMissing ? 1 : -1;
+        return (rightValue ?? 0) - (leftValue ?? 0) || left.canonicalRank - right.canonicalRank;
+      });
+  }
+
+  function formatPredictionRankDelta(value) {
+    if (value === 0) return '±0';
+    return value > 0 ? `+${value}` : String(value);
+  }
+
+  function renderPredictionRankReference(currentRank, canonicalRank) {
+    if (state.leaderboardSortMode === 'points') return '';
+    const delta = canonicalRank - currentRank;
+    const deltaClass = delta > 0 ? 'pos' : delta < 0 ? 'neg' : 'neu';
+    const deltaLabel = formatPredictionRankDelta(delta);
+    return `<span class="points-rank-ref" title="Gesamt-Rang ${canonicalRank}, Veränderung ${deltaLabel}">
+      <span class="points-rank-num">${canonicalRank}</span>
+      <span class="points-rank-delta ${deltaClass}">${deltaLabel}</span>
+    </span>`;
+  }
+
+  function updatePredictionRankingSortHeaders() {
+    if (!document.querySelectorAll) return;
+    document.querySelectorAll('[data-prediction-ranking-sort]').forEach(button => {
+      const header = button.closest('th');
+      if (!header) return;
+      if (button.dataset.predictionRankingSort === state.leaderboardSortMode) {
+        header.setAttribute('aria-sort', 'descending');
+      } else {
+        header.removeAttribute('aria-sort');
+      }
+    });
+  }
+
+  function getPredictionRankingRowPositions(body) {
+    if (!body?.querySelectorAll) return new Map();
+    return new Map([...body.querySelectorAll('.ranking-row[data-ranking-entry]')]
+      .map(row => [row.dataset.rankingEntry, row.getBoundingClientRect().top])
+      .filter(([entryId, top]) => entryId && Number.isFinite(top)));
+  }
+
+  function animatePredictionRankingRows(body, previousPositions) {
+    if (!body?.querySelectorAll || !previousPositions.size || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    body.querySelectorAll('.ranking-row[data-ranking-entry]').forEach(row => {
+      const previousTop = previousPositions.get(row.dataset.rankingEntry);
+      if (!Number.isFinite(previousTop)) return;
+      const deltaY = previousTop - row.getBoundingClientRect().top;
+      if (Math.abs(deltaY) < 1) return;
+      row.style.transition = 'none';
+      row.style.transform = `translateY(${deltaY}px)`;
+      row.getBoundingClientRect();
+      requestAnimationFrame(() => {
+        row.style.transition = 'transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1)';
+        row.style.transform = 'translateY(0)';
+        window.setTimeout(() => {
+          row.style.transition = '';
+          row.style.transform = '';
+        }, 540);
+      });
+    });
+  }
+
   function renderLeaderboard() {
     const body = document.getElementById('prediction-ranking-body');
     const empty = document.getElementById('prediction-ranking-empty');
     if (!body || !empty) return;
 
-    body.innerHTML = state.leaderboard.map((entry, index) => `
-      <tr class="ranking-row r${Math.min(index + 1, 4)} ${state.session?.user?.id === entry.user_id ? 'authenticated-player-highlight' : ''}">
-        <td class="col-rank rank-position">${index + 1}</td>
-        <td class="col-name"><span class="prediction-rank-account"><span class="pname">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionAchievementIcon(entry)}</span></td>
+    const previousPositions = getPredictionRankingRowPositions(body);
+    const sortedEntries = getSortedPredictionLeaderboard();
+    const table = document.getElementById('prediction-ranking-table');
+    if (table) table.dataset.rankingSort = state.leaderboardSortMode;
+    updatePredictionRankingSortHeaders();
+    body.innerHTML = sortedEntries.map(({ entry, canonicalRank }, index) => `
+      <tr class="ranking-row r${Math.min(index + 1, 4)} ${state.session?.user?.id === entry.user_id ? 'authenticated-player-highlight' : ''}" data-ranking-entry="${escapeHtml(entry.user_id)}">
+        <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${index + 1}</span>${renderPredictionRankReference(index + 1, canonicalRank)}</span></td>
+        <td class="col-name"><span class="prediction-rank-account"><span class="pname">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionCompanyBadge(entry)}${renderPreviousPredictionWinnerIcon(entry)}</span></td>
         <td class="col-games">${Number(entry.predictions_count) || 0}</td>
         <td class="col-wins">${Number(entry.exact_count) || 0}</td>
         <td class="col-passive" title="Automatisch gutgeschriebene Punkte aus eigenen Partien">${getLeaderboardPassivePoints(entry)}</td>
@@ -1120,6 +1218,7 @@
         <td class="col-points rank-score">${Number(entry.points) || 0}</td>
       </tr>
     `).join('');
+    animatePredictionRankingRows(body, previousPositions);
     empty.textContent = state.leaderboardError || (!state.leaderboardReady && state.error)
       ? 'Die Rangliste kann gerade nicht geladen werden.'
       : state.leaderboard.length
@@ -1449,6 +1548,14 @@
     });
     document.addEventListener('click', event => {
       if (!event.target.closest('[data-bonus-picker]')) closeBonusPlayerPickers();
+      const rankingSortButton = event.target.closest('[data-prediction-ranking-sort]');
+      if (rankingSortButton) {
+        const nextMode = rankingSortButton.dataset.predictionRankingSort;
+        if (nextMode === state.leaderboardSortMode) return;
+        state.leaderboardSortMode = nextMode;
+        renderLeaderboard();
+        return;
+      }
       const pickerToggle = event.target.closest('[data-bonus-picker-toggle]');
       if (pickerToggle) {
         toggleBonusPlayerPicker(pickerToggle);
@@ -1510,6 +1617,7 @@
 
   async function init(season, { accountReady } = {}) {
     state.season = season;
+    state.leaderboardSortMode = 'points';
     state.seasonParticipants = Array.isArray(season?.participants) ? season.participants : [];
     applyPlayerElos(season?.participants || []);
     render();
@@ -1539,6 +1647,7 @@
 
   function setSeasonData(season) {
     state.season = season;
+    state.leaderboardSortMode = 'points';
     state.seasonParticipants = Array.isArray(season?.participants) ? season.participants : [];
     applyPlayerElos(season?.participants || []);
     render();

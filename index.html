@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Padel-Liga</title>
+  <title>PadelLiga</title>
   <meta name="theme-color" content="#07080C">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Padel-Liga">
+  <meta name="apple-mobile-web-app-title" content="PadelLiga">
   <link rel="icon" href="favicon.ico" sizes="32x32">
   <link rel="icon" type="image/svg+xml" href="data/favicon.svg?v=2026-10-26-rounded">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=2026-10-28-player-profile-compact-ranking">
+  <link rel="manifest" href="manifest.webmanifest?v=2026-10-28-brand-names">
+  <link rel="stylesheet" href="style.css?v=2026-10-28-ranking-column-sorting-2-all-time-profile-panel">
   <link rel="stylesheet" href="account.css?v=2026-10-26-password-change">
   <link rel="stylesheet" href="whats-new.css?v=2026-10-28-feature-links">
   <script>
@@ -34,7 +34,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="data/players.js?v=2026-10-20-test-net-emoji"></script>
   <script defer src="data/seasons.js?v=2026-10-21-test-windows"></script>
-  <script defer src="js/season-routing.js?v=2026-10-28-local-file-fallback"></script>
+  <script defer src="js/season-routing.js?v=2026-10-29-local-dev-fallback"></script>
   <script defer src="data/training-matches.js"></script>
   <script defer src="data/info.js"></script>
   <script defer src="data/supabase-config.js"></script>
@@ -43,12 +43,12 @@
   <script defer src="js/whats-new.js?v=2026-10-28-feature-links"></script>
   <script defer src="js/elo-forecast.js?v=2026-10-14-shared-auto-tip"></script>
   <script defer src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
-  <script defer src="js/live-ticker.js?v=2026-10-20-mobile-global-actions"></script>
-  <script defer src="js/account.js?v=2026-10-26-robust-auth"></script>
+  <script defer src="js/live-ticker.js?v=2026-10-29-detail-avatar-fallback"></script>
+  <script defer src="js/account.js?v=2026-10-28-brand-names"></script>
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/match-statistics.js?v=2026-10-28-player-profile-side-panel"></script>
-  <script defer src="js/app.js?v=2026-10-28-player-profile-compact-ranking"></script>
+  <script defer src="js/app.js?v=2026-10-28-ranking-column-sorting-3-all-time-profile-panel"></script>
 </head>
 <body>
 
@@ -241,11 +241,6 @@
         <div class="sh-title">RANGLISTE</div>
         <div class="sh-meta" id="rl-meta"></div>
       </div>
-      <div class="match-scope-toggle ranking-sort-toggle" id="ranking-sort-toggle" aria-label="Rangliste sortieren">
-        <button type="button" class="active" data-ranking-sort="points">Punkte</button>
-        <button type="button" data-ranking-sort="elo">Elo</button>
-        <button type="button" data-ranking-sort="draw-factor">Losfaktor</button>
-      </div>
       <div class="match-scope-toggle ranking-view-toggle" id="ranking-view-toggle" aria-label="Ranglistenansicht">
         <button type="button" class="active" data-ranking-view="compact">Kompakt</button>
         <button type="button" data-ranking-view="expanded">Erweitert</button>
@@ -257,23 +252,29 @@
           <tr>
             <th class="col-rank">#</th>
             <th class="col-name">Spieler</th>
-            <th class="col-games">Partien</th>
-            <th class="col-wins">Siege</th>
-            <th class="col-points">Punkte</th>
+            <th class="col-games"><button type="button" class="ranking-sort-header" data-ranking-sort="games"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Partien</span></button></th>
+            <th class="col-wins"><button type="button" class="ranking-sort-header" data-ranking-sort="wins"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Siege</span></button></th>
+            <th class="col-points" aria-sort="descending"><button type="button" class="ranking-sort-header" data-ranking-sort="points"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Punkte</span></button></th>
             <th class="col-gv">G:V</th>
-            <th class="col-diff">Diff.</th>
-            <th class="col-elo">Elo</th>
-            <th class="col-form">Letzte 3</th>
+            <th class="col-diff"><button type="button" class="ranking-sort-header" data-ranking-sort="diff"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Diff.</span></button></th>
+            <th class="col-elo"><button type="button" class="ranking-sort-header" data-ranking-sort="elo"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Elo</span></button></th>
+            <th class="col-form"><button type="button" class="ranking-sort-header" data-ranking-sort="form"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Letzte 3</span></button></th>
             <th class="col-winrate">
-              <span class="th-help-wrap">Sieg-%
-                <span class="help-icon" tabindex="0" aria-label="Sieg-Prozent erklären">?</span>
-                <span class="help-tooltip">Ø Elo-Siegwahrscheinlichkeit der Teams eines Spielers über alle gewerteten Partien.<br>Bei gespielten Partien zählt die Prognose vor der Partie, bei offenen die aktuelle. Nicht die tatsächliche Siegquote.</span>
+              <span class="ranking-header-with-help">
+                <button type="button" class="ranking-sort-header" data-ranking-sort="winrate"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Sieg-%</span></button>
+                <span class="th-help-wrap">
+                  <span class="help-icon" tabindex="0" aria-label="Sieg-Prozent erklären">?</span>
+                  <span class="help-tooltip">Ø Elo-Siegwahrscheinlichkeit der Teams eines Spielers über alle gewerteten Partien.<br>Bei gespielten Partien zählt die Prognose vor der Partie, bei offenen die aktuelle. Nicht die tatsächliche Siegquote.</span>
+                </span>
               </span>
             </th>
             <th class="col-draw-factor">
-              <span class="th-help-wrap">Losfaktor
-                <span class="help-icon" tabindex="0" aria-label="Losfaktor erklären">?</span>
-                <span class="help-tooltip">Ø Platz eigenes Team (inkl. Spieler) /<br>Ø Platz Gegnerteam /<br>Differenz.<br>Der Platz stammt aus den All-Time-Ø-Punkten aller gewerteten Partien.<br>Positive Werte bedeuten: Die Gegner waren im Schnitt stärker platziert als das eigene Team.</span>
+              <span class="ranking-header-with-help">
+                <button type="button" class="ranking-sort-header" data-ranking-sort="draw-factor"><span class="ranking-sort-chevron ranking-sort-chevron--ascending" aria-hidden="true"></span><span>Losfaktor</span></button>
+                <span class="th-help-wrap">
+                  <span class="help-icon" tabindex="0" aria-label="Losfaktor erklären">?</span>
+                  <span class="help-tooltip">Ø Platz eigenes Team (inkl. Spieler) /<br>Ø Platz Gegnerteam /<br>Differenz.<br>Der Platz stammt aus den All-Time-Ø-Punkten aller gewerteten Partien.<br>Positive Werte bedeuten: Die Gegner waren im Schnitt stärker platziert als das eigene Team.</span>
+                </span>
               </span>
             </th>
           </tr>
@@ -294,10 +295,10 @@
             <th class="col-company">Firma</th>
             <th class="col-participants">TN</th>
             <th class="col-games">Partien</th>
+            <th class="col-points-per-player">Pkt/TN</th>
             <th class="col-wins">Siege</th>
             <th class="col-points">Punkte</th>
             <th class="col-diff">Diff.</th>
-            <th class="col-points-per-player">Pkt/TN</th>
           </tr>
         </thead>
         <tbody id="fr-body"></tbody>
@@ -409,15 +410,13 @@
       </div>
       <div class="chart-wrap"><canvas id="eloChart"></canvas></div>
     </div>
-    <div class="all-time-ranking" data-all-time-statistic hidden>
+    <div class="all-time-ranking-profile-layout" id="all-time-ranking-profile-layout" data-all-time-statistic hidden>
+      <div class="all-time-ranking-profile-main" id="all-time-ranking-profile-main">
+    <div class="all-time-ranking">
       <div class="sh sh-with-control section-subheading">
         <div class="sh-heading">
           <div class="sh-title">EWIGE RANGLISTE</div>
           <div class="sh-meta" id="all-time-ranking-meta"></div>
-        </div>
-        <div class="match-scope-toggle ranking-sort-toggle" id="all-time-ranking-sort-toggle" aria-label="Ewige Rangliste sortieren">
-          <button type="button" class="active" data-all-time-ranking-sort="points">Ω-Punkte</button>
-          <button type="button" data-all-time-ranking-sort="average">Ø-Punkte</button>
         </div>
         <div class="ranking-controls all-time-ranking-controls">
           <div class="match-scope-toggle" id="all-time-ranking-scope-toggle" aria-label="Gewertete Spiele der ewigen Rangliste">
@@ -437,18 +436,21 @@
             <tr>
               <th class="col-rank">#</th>
               <th class="col-name">Spieler</th>
-              <th class="col-games"><span class="th-label-full">Partien</span><span class="th-label-short">Part.</span></th>
-              <th class="col-wins">Siege</th>
-              <th class="col-points"><span class="th-label-full">Punkte</span><span class="th-label-short">Pkt.</span></th>
-              <th class="col-average-points">Ø-Pkt.</th>
+              <th class="col-games"><button type="button" class="ranking-sort-header" data-all-time-ranking-sort="games"><span class="ranking-sort-chevron" aria-hidden="true"></span><span class="th-label-full">Partien</span><span class="th-label-short">Part.</span></button></th>
+              <th class="col-wins"><button type="button" class="ranking-sort-header" data-all-time-ranking-sort="wins"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Siege</span></button></th>
+              <th class="col-points" aria-sort="descending"><button type="button" class="ranking-sort-header" data-all-time-ranking-sort="points"><span class="ranking-sort-chevron" aria-hidden="true"></span><span class="th-label-full">Punkte</span><span class="th-label-short">Pkt.</span></button></th>
+              <th class="col-average-points"><button type="button" class="ranking-sort-header" data-all-time-ranking-sort="average"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Ø-Pkt.</span></button></th>
               <th class="col-gv">G:V</th>
-              <th class="col-diff">Diff.</th>
+              <th class="col-diff"><button type="button" class="ranking-sort-header" data-all-time-ranking-sort="diff"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Diff.</span></button></th>
             </tr>
           </thead>
           <tbody id="all-time-ranking-body"></tbody>
         </table>
       </div>
       <div class="sh-meta ranking-note table-note" id="all-time-ranking-note">Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele</div>
+    </div>
+      </div>
+      <aside class="ranking-profile-host" id="all-time-ranking-profile-host" aria-label="Geöffnetes Spielerprofil"></aside>
     </div>
   </section>
 
@@ -476,7 +478,7 @@
   <!-- RECHNER -->
   <section id="rechner" class="section">
     <div id="league-calculator">
-      <div class="sh sh-with-control">
+      <div class="sh">
         <div class="sh-heading">
           <div class="sh-title sh-title-with-help">LIGARECHNER
             <span class="th-help-wrap">
@@ -485,16 +487,18 @@
             </span>
           </div>
         </div>
-        <button type="button" class="secondary-button" data-calculator-reset>Zurücksetzen</button>
       </div>
       <div class="calculator-layout">
         <div class="calculator-mobile-game-area">
           <div class="calculator-match-column">
-            <div class="calculator-autotip-bar" id="calculator-autotip-bar">
-              <button type="button" class="calculator-autotip-switch" data-calculator-autotip role="switch" aria-checked="false" aria-label="Auto-Tipp: alle Partien nach Siegwahrscheinlichkeit tippen">
-                <span class="calculator-autotip-track"><span class="calculator-autotip-knob"></span></span>
-                <span class="calculator-autotip-text">Auto-Tipp</span>
-              </button>
+            <div class="calculator-controls-row">
+              <div class="calculator-autotip-bar" id="calculator-autotip-bar">
+                <button type="button" class="calculator-autotip-switch" data-calculator-autotip role="switch" aria-checked="false" aria-label="Auto-Tipp: alle Partien nach Siegwahrscheinlichkeit tippen">
+                  <span class="calculator-autotip-track"><span class="calculator-autotip-knob"></span></span>
+                  <span class="calculator-autotip-text">Auto-Tipp</span>
+                </button>
+              </div>
+              <button type="button" class="secondary-button" data-calculator-reset>Zurücksetzen</button>
             </div>
             <div id="calculator-matches" class="calculator-match-list"></div>
           </div>
@@ -583,6 +587,16 @@
 
 </main>
 
+<footer class="site-footer">
+  <p class="site-footer-line">
+    <span class="site-footer-partnership">
+      <span class="site-footer-brand">PADEL<em>LIGA</em></span>
+      <span class="site-footer-credit"><span>sponsored by</span> <strong>HEADSQUARE GROUP</strong></span>
+    </span>
+    <span class="site-footer-service site-footer-credit"><span>Ein Service des</span> <strong>HANAKO-LEBEN-SQUADS</strong></span>
+  </p>
+</footer>
+
 <dialog class="detail-view-dialog" id="detail-view-dialog" aria-labelledby="detail-view-title">
   <div class="detail-view-shell">
     <header class="detail-view-header">
@@ -659,6 +673,10 @@
       <path fill="currentColor" d="M200.02 1121.56s-80.68-130 36.83-314.82c4.43 9.89 62.18 171.83-36.83 314.82ZM276.97 1068.8s147.88 39.26 290.4-127.04c-10.75-1.35-182.49-9.37-290.4 127.04ZM406.9 880.71s151.77-19.39 221.06-227.15c-10.46 2.8-172.56 60.13-221.06 227.15ZM455.75 672.06s137.49-67.14 136.34-286.15c-9.01 6.02-144.08 112.4-136.34 286.15ZM433.81 451.28s114.46-101.53 54.66-312.22c-7.07 8.21-108.69 146.9-54.66 312.22ZM362.89 294.13S427.61 162.55 303.36 0c-3.33 9.82-44.14 169.22 59.53 294.13ZM354.31 979.19s-124.57-113.02-62.56-340.04c7.78 9 118.53 154.78 62.56 340.04ZM444.63 725.92S314.02 651.85 309.1 431.05c9.35 6.39 135.2 104.98 135.53 294.87ZM319.89 275.41c-37.43-27.19-80.51-45.93-124.95-58.81.09 9.22 1.36 18.42 3.77 27.31 2.98 11.02 7.68 21.51 12.86 31.69 41.4 81.32 125.52 158.37 217.36 176.43-.3-10.34-7.29-24.21-10.17-34.36-16.65-58.66-49.18-106.17-98.87-142.27ZM217.74 132.82C156.73 83.5 78.53 55.89.08 55.98c-1.88 24.66 30.62 47.43 47.64 60.31 38.98 29.48 79.99 49.56 127.66 62.42 29.34 7.92 62.33 14.28 92.79 14.23.91 0 1.95-.07 2.51-.78.8-1.03.04-2.5-.73-3.56-6.03-8.36-13.82-15.26-20.15-23.39-9.47-12.14-20.09-22.72-32.06-32.4Z"/>
     </symbol>
   </svg>
+  <button class="modal-close-button player-profile-presentation-toggle" id="player-profile-presentation-toggle" type="button" data-player-profile-presentation-toggle aria-label="Profil als Seitenpanel öffnen" title="Profil als Seitenpanel öffnen" hidden>
+    <svg class="player-profile-presentation-icon player-profile-presentation-icon-panel" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></svg>
+    <svg class="player-profile-presentation-icon player-profile-presentation-icon-modal" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="6" width="14" height="12" rx="2"/></svg>
+  </button>
   <button class="modal-close-button player-profile-close" type="button" data-player-profile-close aria-label="Spielerprofil schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="player-profile-shell">
     <div class="player-profile-state" id="player-profile-state" role="status">Spielerprofil wird geladen …</div>

@@ -20,7 +20,7 @@ function deferred() {
   return { promise, resolve, reject };
 }
 
-test('season file and database start together and hydrate before Padeltipp forecasts', async () => {
+test('season file and database start together and hydrate before PadelTipp forecasts', async () => {
   const script = deferred(), database = deferred(), calls = [];
   const context = vm.createContext({
     window: {},
@@ -44,7 +44,7 @@ test('season file and database start together and hydrate before Padeltipp forec
   assert.deepEqual(result.articles, ['editorial']);
 });
 
-test('season-wide Padeltipp forecasts load only after account startup', () => {
+test('season-wide PadelTipp forecasts load only after account startup', () => {
   const initApp = app.match(/async function initApp\(\) \{[\s\S]*?(?=\n\}\n\nconst mobileViewportQuery)/)?.[0] || '';
   const seasonLoad = initApp.indexOf('await loadActiveSeason()');
   const accountLoad = initApp.indexOf('await window.PadelKonto?.init()');
@@ -170,12 +170,13 @@ test('a closed season keeps historical matches visible without reopening submiss
   assert.equal(context.isPredictionOpen(match), true);
 });
 
-test('Padeltipp starts season, module and account together without blocking on account startup', async () => {
+test('PadelTipp starts season, module and account together without blocking on account startup', async () => {
   const calls = [];
   const accountReady = deferred(), seasonReady = deferred(), moduleReady = deferred();
   const season = { id: '2026-sommer', label: 'Sommer 2026' };
   const window = {
     PADEL_SEASON: null,
+    location: { hash: '' },
     PadelKonto: { init() { calls.push('account'); return accountReady.promise; } }
   };
   const context = vm.createContext({
@@ -221,7 +222,7 @@ test('Padeltipp starts season, module and account together without blocking on a
   accountReady.resolve();
 });
 
-test('public Padeltipp rankings render while account, matches and Elo are still loading', async () => {
+test('public PadelTipp rankings render while account, matches and Elo are still loading', async () => {
   const accountReady = deferred(), matches = deferred(), participants = deferred(), leaderboard = deferred();
   const calls = [], events = new Map();
   const nodes = new Map(['prediction-ranking-body', 'prediction-ranking-empty', 'prediction-matches']
@@ -278,7 +279,7 @@ test('public Padeltipp rankings render while account, matches and Elo are still 
   assert.match(nodes.get('prediction-ranking-body').innerHTML, /authenticated-player-highlight/);
 });
 
-test('Padeltipp legacy rankings fall back independently and recover from a request failure', async () => {
+test('PadelTipp legacy rankings fall back independently and recover from a request failure', async () => {
   const calls = [], state = { leaderboard: [] };
   let failure = false;
   state.client = { async rpc(name, { p_season_id }) {
@@ -302,7 +303,7 @@ test('Padeltipp legacy rankings fall back independently and recover from a reque
   assert.equal(renders, 3);
 });
 
-test('personal Padeltipp responses cannot restore tips after logout', async () => {
+test('personal PadelTipp responses cannot restore tips after logout', async () => {
   const pending = deferred();
   let session = { user: { id: 'viewer' } };
   const state = {
@@ -318,7 +319,7 @@ test('personal Padeltipp responses cannot restore tips after logout', async () =
   assert.equal(state.predictions.size, 0);
 });
 
-test('the Padeltipp page reuses the legacy season match prefix', () => {
+test('the PadelTipp page reuses the legacy season match prefix', () => {
   const window = {
     PADEL_PLAYERS: [
       { id: 'a', name: 'A' }, { id: 'b', name: 'B' },

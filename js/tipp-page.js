@@ -106,7 +106,8 @@
       toggle.setAttribute('aria-expanded', 'false');
     });
     const ligaLink = document.getElementById('liga-link');
-    ligaLink.href = window.PadelSeasonRouting.getSeasonUrl(selected.id, 'league').href;
+    const ligaUrl = window.PadelSeasonRouting.getSeasonUrl(selected.id, 'league').href;
+    ligaLink.href = ligaUrl;
   }
 
   function showSection(id) {
@@ -249,7 +250,7 @@
       const accountReady = window.PadelKonto.init();
       await Promise.all([
         loadScript(`../${selected.file}`),
-        loadScript('../js/tippspiel.js?v=2026-10-28-prediction-achievement-account-first')
+        loadScript('../js/tippspiel.js?v=2026-10-28-ranking-column-sorting-2')
       ]);
       const season = hydrateSeason(window.PADEL_SEASON);
       selectedSeasonData = season;

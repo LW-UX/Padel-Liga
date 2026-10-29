@@ -186,7 +186,7 @@ test('database contract replaces separate votes with exact predictions', () => {
   assert.match(statisticsSource, /p_prediction: prediction/);
 });
 
-test('preview details render before their Padeltipp forecast is requested', () => {
+test('preview details render before their PadelTipp forecast is requested', () => {
   const open = statisticsSource.match(/async function open\(matchId,[\s\S]*?(?=\n  function prepareProfileOpen)/)?.[0] || '';
   const detailRequest = open.indexOf('await loadDetail(client, matchId, cached)');
   const detailRender = open.indexOf("forecastMessage = 'Tipps werden geladen …'");

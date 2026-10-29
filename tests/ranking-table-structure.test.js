@@ -33,7 +33,7 @@ test('league-page ranking tables use one named class per column without colgroup
   });
 
   assert.deepEqual(getColumnClasses(targetTables[0], 'th'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-points', 'col-gv', 'col-diff', 'col-elo', 'col-form', 'col-winrate', 'col-draw-factor']);
-  assert.deepEqual(getColumnClasses(targetTables[1], 'th'), ['col-rank', 'col-company', 'col-participants', 'col-games', 'col-wins', 'col-points', 'col-diff', 'col-points-per-player']);
+  assert.deepEqual(getColumnClasses(targetTables[1], 'th'), ['col-rank', 'col-company', 'col-participants', 'col-games', 'col-points-per-player', 'col-wins', 'col-points', 'col-diff']);
   assert.deepEqual(getColumnClasses(targetTables[2], 'th'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff', 'col-elo']);
   assert.deepEqual(getColumnClasses(targetTables[3], 'th'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-points', 'col-average-points', 'col-gv', 'col-diff']);
   assert.deepEqual(getColumnClasses(targetTables[4], 'th'), ['col-rank', 'col-name', 'col-games', 'col-points', 'col-diff']);
@@ -52,7 +52,7 @@ test('ranking renderers use the same named column classes as their headers', () 
 
   renderers.forEach(renderer => assert.doesNotMatch(renderer, legacyLayoutClass));
 
-  assert.deepEqual(getColumnClasses(renderers[0], 'td'), ['col-rank', 'col-company', 'col-participants', 'col-games', 'col-wins', 'col-points', 'col-diff', 'col-points-per-player']);
+  assert.deepEqual(getColumnClasses(renderers[0], 'td'), ['col-rank', 'col-company', 'col-participants', 'col-games', 'col-points-per-player', 'col-wins', 'col-points', 'col-diff']);
   assert.deepEqual(getColumnClasses(renderers[1], 'td'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff', 'col-elo']);
   assert.deepEqual(getColumnClasses(renderers[2], 'td'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-points', 'col-gv', 'col-diff', 'col-elo', 'col-form', 'col-winrate', 'col-draw-factor']);
   assert.deepEqual(getColumnClasses(renderers[3], 'td'), ['col-rank', 'col-name', 'col-games', 'col-wins', 'col-points', 'col-average-points', 'col-gv', 'col-diff']);
@@ -63,10 +63,9 @@ test('ranking renderers use the same named column classes as their headers', () 
   assert.doesNotMatch(renderers[0], /firma-badge/);
   assert.match(renderers[1], /<td class="col-wins rank-score">/);
   assert.match(renderers[2], /<td class="col-points rank-score">/);
-  assert.match(renderers[3], /<td class="col-points \$\{pointsScoreClass\}">/);
-  assert.match(renderers[3], /<td class="col-average-points \$\{averageScoreClass\}">/);
-  assert.match(renderers[3], /pointsScoreClass = allTimeRankingSortMode === 'points' \? 'rank-score' : ''/);
-  assert.match(renderers[3], /averageScoreClass = allTimeRankingSortMode === 'average' \? 'rank-score' : ''/);
+  assert.match(renderers[3], /<td class="col-points rank-score">/);
+  assert.match(renderers[3], /<td class="col-average-points">/);
+  assert.doesNotMatch(renderers[3], /pointsScoreClass|averageScoreClass/);
   assert.match(renderers[4], /<td class="col-points rank-score">/);
   assert.match(renderers[5], /<td class="col-wins rank-score">/);
 });
@@ -89,6 +88,8 @@ test('ranking layout behavior is expressed through named column selectors', () =
   assert.doesNotMatch(style, /\.(?:sticky-rank|sticky-name|extended-col|mobile-compact-hidden|ranking-help-header)\b/);
   assert.match(style, /\.final-four-ranking-wrap,[^]*?\.live-overview-ranking-wrap \{ overflow-x: hidden; \}/);
   assert.match(style, /table\.rt\.final-four-table,[^]*table\.rt\.live-overview-table \{[^}]*min-width: 0;[^}]*table-layout: fixed;/);
+  assert.match(style, /body\.player-profile-panel-open :is\(#ranking-profile-main, #all-time-ranking-profile-main\) \.firma-full \{ display: none; \}/);
+  assert.match(style, /body\.player-profile-panel-open :is\(#ranking-profile-main, #all-time-ranking-profile-main\) \.firma-short \{ display: inline; \}/);
 });
 
 test('ranking sort changes reuse the calculator row movement animation', () => {
@@ -101,6 +102,28 @@ test('ranking sort changes reuse the calculator row movement animation', () => {
   assert.match(style, /\.ranking-row \{ transform-origin: center; \}/);
   assert.doesNotMatch(style, /\.ranking-row \{[^}]*will-change: transform/);
   assert.doesNotMatch(app, /getCalculatorRowPositions|animateCalculatorRows|data-calculator-player/);
+});
+
+test('the three main rankings sort once through their column headers', () => {
+  const allTimeMarkup = page.match(/<div class="all-time-ranking"[\s\S]*?<tbody id="all-time-ranking-body"><\/tbody>/)?.[0] || '';
+  const leagueMarkup = page.match(/<table class="rt ranking-table compact" id="ranking-table">[\s\S]*?<tbody id="rl-body"><\/tbody>/)?.[0] || '';
+
+  assert.doesNotMatch(page, /id="ranking-sort-toggle"|id="all-time-ranking-sort-toggle"/);
+  ['games', 'wins', 'points', 'diff', 'elo', 'form', 'winrate', 'draw-factor'].forEach(mode => {
+    assert.match(leagueMarkup, new RegExp(`data-ranking-sort="${mode}"`));
+  });
+  ['games', 'wins', 'points', 'average', 'diff'].forEach(mode => {
+    assert.match(allTimeMarkup, new RegExp(`data-all-time-ranking-sort="${mode}"`));
+  });
+  const fixedHeaders = [...leagueMarkup.matchAll(/<th class="col-(?:rank|name|gv)"[^>]*>[\s\S]*?<\/th>/g)];
+  assert.equal(fixedHeaders.length, 3);
+  fixedHeaders.forEach(match => assert.doesNotMatch(match[0], /data-ranking-sort/));
+  assert.match(page, /class="col-points" aria-sort="descending"/);
+  assert.match(style, /th\[aria-sort\] \.ranking-sort-chevron \{ display: inline-block; \}/);
+  assert.match(app, /event\.target\.closest\('button\[data-ranking-sort\]'\)/);
+  assert.match(app, /event\.target\.closest\('button\[data-ranking-view\]'\)/);
+  assert.match(app, /if \(nextMode === rankingSortMode\) return;/);
+  assert.match(app, /if \(nextMode === allTimeRankingSortMode\) return;/);
 });
 
 test('league and final-four notes show the maximum games before sorting', () => {
@@ -118,7 +141,7 @@ test('league and final-four notes show the maximum games before sorting', () => 
   assert.match(page, /id="ff-ranking-note">Spiele: 3  \|  Sortierung: Siege/);
 });
 
-test('the regular season ranking shows previous league achievements directly after player names', () => {
+test('the regular season ranking shows previous league achievements after company labels', () => {
   const ranking = getFunctionSource('renderRanking', 'getAllTimeLeagueMatches');
 
   assert.match(app, /function getPreviousCompletedLeagueSeason\(seasonReference = selectedSeason\)/);
@@ -126,7 +149,11 @@ test('the regular season ranking shows previous league achievements directly aft
   assert.match(app, /\.from\('player_achievements'\)[^]*\.in\('kind', \['winner', 'final_four'\]\)/);
   assert.match(app, /achievement\.kind === 'winner'[^]*achievements\.set\(achievement\.player_id/);
   assert.match(app, /function renderLeagueRankingAchievementIcon\(player\)/);
-  assert.match(ranking, /class="ranking-player-name">\$\{renderPlayerProfileLink\(p, 'pname', rankingPlayerLabel\)\}\$\{renderLeagueRankingAchievementIcon\(p\)\}/);
+  assert.match(app, /ranking-player-achievement-laurel-stems/);
+  assert.match(app, /ranking-player-achievement-laurel-leaves/);
+  assert.match(ranking, /class="ranking-player-name">\$\{renderPlayerProfileLink\(p, 'pname', rankingPlayerLabel\)\}<\/span>\$\{absenceMark\}<span class="firma-badge[^]*?\$\{renderLeagueRankingAchievementIcon\(p\)\}/);
   assert.match(app, /class="mini-rank-name"><span class="ranking-player-name">\$\{renderPlayerProfileLink\(p\)\}\$\{renderLeagueRankingAchievementIcon\(p\)\}/);
   assert.match(style, /\.ranking-player-name \{[^}]*gap: 2px;/);
+  assert.match(style, /\.ranking-player-achievement \{ margin-left: 6px; \}/);
+  assert.match(style, /\.ranking-player-achievement-laurel-leaves \{[^}]*fill: currentColor;[^}]*stroke: none;/);
 });

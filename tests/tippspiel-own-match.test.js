@@ -58,7 +58,7 @@ test('ranking exposes passive own-match points as a separate blue value', () => 
   assert.match(passiveCountMigration, /false as is_passive/);
   assert.match(passiveCountMigration, /true,\s+floor\.awarded_points/);
   assert.match(passiveCountMigration, /count\(entry\.match_id\) filter \(where entry\.is_passive\) as passive_count/);
-  assert.match(page, /<th class="col-games">Tipps<\/th>\s*<th class="col-wins">Exakt<\/th>\s*<th class="col-passive">[\s\S]*?Passive Punkte erklären[\s\S]*?prediction-ranking-passive-help/);
+  assert.match(page, /<th class="col-games">[\s\S]*?data-prediction-ranking-sort="predictions"[\s\S]*?<th class="col-wins">[\s\S]*?data-prediction-ranking-sort="exact"[\s\S]*?<th class="col-passive">[\s\S]*?Passive Punkte erklären[\s\S]*?prediction-ranking-passive-help/);
   assert.doesNotMatch(page, /Teilnehmer mit Tippwertung/);
   assert.match(style, /\.prediction-ranking-table\.compact \.col-passive \{ display: none; \}/);
   assert.match(style, /\.prediction-ranking-table\.compact \.col-bonus \{ display: none; \}/);

@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const root = path.join(__dirname, '..');
 const page = fs.readFileSync(path.join(root, 'tipp', 'index.html'), 'utf8');
@@ -15,12 +16,12 @@ const accountTypeMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261028170000_prediction_leaderboard_account_type.sql'),
   'utf8'
 );
-const achievementMigration = fs.readFileSync(
-  path.join(root, 'supabase', 'migrations', '20261028180000_prediction_leaderboard_previous_achievements.sql'),
+const previousWinnerMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261028200000_prediction_leaderboard_previous_winner.sql'),
   'utf8'
 );
-const achievementLaurel = fs.readFileSync(
-  path.join(root, 'assets', 'icons', 'achievement-laurel.svg'),
+const companyBadgeMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261028210000_prediction_leaderboard_company_badges.sql'),
   'utf8'
 );
 
@@ -77,27 +78,55 @@ test('prediction rankings show the dim account type icon directly after each nam
   assert.match(decisions, /„Was ist neu\?“-Dialog verwendeten Padel-Schläger/);
 });
 
-test('prediction rankings show previous league champion and Final Four achievements', () => {
-  assert.match(achievementMigration, /previous_league_achievement text/);
-  assert.match(achievementMigration, /previous_league_season_label text/);
-  assert.match(achievementMigration, /season\.completed_at is not null/);
-  assert.match(achievementMigration, /season\.counts_for_profile/);
-  assert.match(achievementMigration, /season\.visual_theme <> 'cup'/);
-  assert.match(achievementMigration, /order by season\.starts_on desc nulls last, season\.completed_at desc, season\.id[\s\S]*limit 1/);
-  assert.match(achievementMigration, /bool_or\(achievement\.kind = 'winner'\)[\s\S]*bool_or\(achievement\.kind = 'final_four'\)/);
-  assert.match(script, /function renderPredictionAchievementIcon\(entry\)/);
-  assert.match(script, /kind === 'winner' \? 'Champion' : 'Final Four'/);
-  assert.match(script, /renderPredictionAccountTypeIcon\(entry\)\}\$\{renderPredictionAchievementIcon\(entry\)/);
-  assert.match(ligaScript, /function renderPredictionAchievementIcon\(entry, additionalClass = ''\)/);
-  assert.match(ligaScript, /renderPredictionAccountTypeIcon\(entry\)\}\$\{renderPredictionAchievementIcon\(entry\)/);
+test('prediction rankings reuse company badges with short labels only', () => {
+  assert.match(companyBadgeMigration, /company text/);
+  assert.match(companyBadgeMigration, /left join public\.profiles as profile on profile\.id = current_entry\.user_id/);
+  assert.match(companyBadgeMigration, /left join public\.players as player on player\.id = profile\.player_id/);
+  assert.match(companyBadgeMigration, /player\.company/);
+  assert.doesNotMatch(companyBadgeMigration.match(/returns table \([\s\S]*?\)/)?.[0] || '', /player_id|app_role/);
+
+  assert.match(script, /const COMPANY_SHORT_LABELS = Object\.freeze\(\{[\s\S]*Headsquare: 'HSQ'/);
+  assert.match(script, /function renderPredictionCompanyBadge\(entry\)/);
+  assert.match(script, /class="firma-badge firma-\$\{escapeHtml\(company\)\} prediction-company-badge"/);
+  assert.match(script, /renderPredictionAccountTypeIcon\(entry\)\}\$\{renderPredictionCompanyBadge\(entry\)\}\$\{renderPreviousPredictionWinnerIcon\(entry\)/);
+  assert.match(ligaScript, /function renderPredictionCompanyBadge\(entry\)/);
+  assert.match(ligaScript, /renderPredictionAccountTypeIcon\(entry\)\}\$\{renderPredictionCompanyBadge\(entry\)\}\$\{renderPreviousPredictionWinnerIcon\(entry\)/);
+  assert.match(style, /\.prediction-rank-account \.prediction-company-badge \{[\s\S]*margin-left: 4px;/);
+  assert.match(decisions, /Firmenbadge[\s\S]*Kürzel `ENV`, `HSQ` beziehungsweise `HAN`/);
+});
+
+test('prediction rankings show only the previous PadelTipp winner achievement', () => {
+  assert.match(previousWinnerMigration, /previous_prediction_winner boolean/);
+  assert.match(previousWinnerMigration, /previous_prediction_season_label text/);
+  assert.match(previousWinnerMigration, /season\.completed_at is not null/);
+  assert.match(previousWinnerMigration, /season\.counts_for_profile/);
+  assert.match(previousWinnerMigration, /season\.visual_theme <> 'cup'/);
+  assert.match(previousWinnerMigration, /order by season\.starts_on desc nulls last, season\.completed_at desc, season\.id[\s\S]*limit 1/);
+  assert.match(previousWinnerMigration, /cross join lateral private\.get_prediction_leaderboard_rows\(previous_season\.id\)/);
+  assert.match(previousWinnerMigration, /previous_entry\.points desc,[\s\S]*previous_entry\.exact_count desc,[\s\S]*previous_entry\.tendency_count desc/);
+  assert.doesNotMatch(previousWinnerMigration, /player_achievements|previous_league_achievement|final_four/);
+  assert.match(script, /function renderPreviousPredictionWinnerIcon\(entry\)/);
+  assert.match(script, /entry\?\.previous_prediction_winner !== true/);
+  assert.match(script, /`Tippsieger\$\{seasonLabel/);
+  assert.match(script, /renderPredictionCompanyBadge\(entry\)\}\$\{renderPreviousPredictionWinnerIcon\(entry\)/);
+  assert.match(ligaScript, /function renderPreviousPredictionWinnerIcon\(entry\)/);
+  assert.match(ligaScript, /renderPredictionCompanyBadge\(entry\)\}\$\{renderPreviousPredictionWinnerIcon\(entry\)/);
   assert.match(style, /\.prediction-achievement-icon--winner \{ color: var\(--gold\); \}/);
   assert.match(style, /\.prediction-achievement-icon--final-four \{ color: var\(--silver\); \}/);
-  assert.match(style, /\.prediction-rank-account \{[\s\S]*gap: 2px;/);
-  assert.match(style, /\.prediction-achievement-laurel \{[\s\S]*mask: url\('assets\/icons\/achievement-laurel\.svg'\)/);
-  assert.match(achievementLaurel, /viewBox="0 0 1255\.92 1166\.47"/);
-  assert.match(achievementLaurel, /M427\.94 1121\.56/);
-  assert.match(script, /class="prediction-achievement-laurel"/);
-  assert.match(decisions, /goldenen Pokal[\s\S]*silbernen Lorbeer/);
+  assert.match(style, /\.prediction-rank-account \{[\s\S]*gap: 4px;/);
+  assert.doesNotMatch(script, /prediction-achievement-laurel|previous_league_achievement|previous_league_season_label/);
+  assert.match(decisions, /ausschließlich der Tippsieger[\s\S]*goldenen Pokal/);
+  assert.match(decisions, /ohne Tippwertung[\s\S]*kein Pokal/);
+  assert.match(decisions, /Champion- und Final-Four-Auszeichnungen sowie Lorbeeren[\s\S]*nicht/);
+
+  const renderWinnerIcon = script.match(/  function renderPreviousPredictionWinnerIcon\(entry\) \{[\s\S]*?\n  \}/)?.[0] || '';
+  const context = vm.createContext({ escapeHtml: value => String(value) });
+  vm.runInContext(renderWinnerIcon, context);
+  assert.equal(context.renderPreviousPredictionWinnerIcon({ previous_prediction_winner: false }), '');
+  assert.match(context.renderPreviousPredictionWinnerIcon({
+    previous_prediction_winner: true,
+    previous_prediction_season_label: 'Winter 2026'
+  }), /aria-label="Tippsieger Winter 2026"/);
 });
 
 test('the current PadelPost article reuses the collapsible league-home structure', () => {

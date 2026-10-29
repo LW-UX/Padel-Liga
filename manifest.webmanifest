@@ -1,6 +1,6 @@
 {
-  "name": "Padel-Liga Sommer 2026",
-  "short_name": "Padel-Liga",
+  "name": "PadelLiga Sommer 2026",
+  "short_name": "PadelLiga",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

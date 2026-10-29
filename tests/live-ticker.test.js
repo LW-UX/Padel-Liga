@@ -172,6 +172,13 @@ test('the public view links only live or archived result centers and keeps profi
   assert.doesNotMatch(ticker, /Aufschlag gehalten/);
 });
 
+test('missing detail profile images reveal their emoji before direct previews initialize', () => {
+  const fallback = ticker.indexOf("document.addEventListener('error'");
+  const initialization = ticker.indexOf('async function init()');
+  assert.ok(fallback > -1 && fallback < initialization);
+  assert.match(ticker.slice(fallback, initialization), /data-detail-player-image[\s\S]*image\.hidden = true;[\s\S]*nextElementSibling\?\.removeAttribute\('hidden'\)/);
+});
+
 test('completed tiebreaks do not show one player as server for the whole game', () => {
   const source = ticker.match(/function getHistoryGameServer\(game, playersById\) \{[\s\S]*?\n  \}/)?.[0] || '';
   const getHistoryGameServer = vm.runInNewContext(`(() => { ${source}\nreturn getHistoryGameServer; })()`);

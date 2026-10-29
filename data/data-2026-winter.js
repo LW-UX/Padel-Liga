@@ -1,7 +1,7 @@
 window.PADEL_SEASON = {
   id: "2026-winter",
   label: "Winter 2026",
-  title: "Padel-Liga Winter 2026",
+  title: "PadelLiga Winter 2026",
   startDate: "2026-11-02",
   resultsEntryEnabled: true,
   competition: {
@@ -13,7 +13,7 @@ window.PADEL_SEASON = {
   },
   organizations: ["Headsquare", "Hanako", "Envidual"],
   leagues: [
-    { id: "main", label: "Padel-Liga Winter 2026", default: true }
+    { id: "main", label: "PadelLiga Winter 2026", default: true }
   ],
   shortInfo: [
     "Jeder Teilnehmer hat 6 Partien.",

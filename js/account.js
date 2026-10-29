@@ -1731,11 +1731,11 @@
     target.className = `auth-message ${type}`.trim();
   }
 
-  const PLAYER_INVITE_SUBJECT = 'Du bist zur Padel-Liga eingeladen';
+  const PLAYER_INVITE_SUBJECT = 'Du bist zur PadelLiga eingeladen';
 
 
   function buildPlayerInviteCopy(actionLink, playerName) {
-    return `Du bist zur Padel-Liga eingeladen
+    return `Du bist zur PadelLiga eingeladen
 
 Hallo ${playerName}, für dich wurde ein persönliches Spielerprofil vorbereitet. Lege über den folgenden Link dein eigenes Passwort fest und aktiviere deinen Zugang.
 
@@ -1760,7 +1760,7 @@ Dein Hanako-Leben-Squad`;
   function buildPlayerInviteHtml(actionLink, playerName) {
     const safeLink = escapeHtml(actionLink);
     const safePlayerName = escapeHtml(playerName);
-    return `<p><strong>Du bist zur Padel-Liga eingeladen</strong></p>
+    return `<p><strong>Du bist zur PadelLiga eingeladen</strong></p>
 <p>Hallo ${safePlayerName}, für dich wurde ein persönliches Spielerprofil vorbereitet. Lege über den folgenden Link dein eigenes Passwort fest und aktiviere deinen Zugang.</p>
 <p><a href="${safeLink}"><strong>Zugang einrichten</strong></a></p>
 <p>Mit deinem Spielerzugang kannst du:</p>

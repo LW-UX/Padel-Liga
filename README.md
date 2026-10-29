@@ -1,4 +1,4 @@
-# Padel-Liga – Datenmodell für mehrere Saisons
+# PadelLiga – Datenmodell für mehrere Saisons
 
 Die statische Webseite trennt dauerhafte Spielerdaten, saisonabhängige Daten und Trainingsspiele. Alle Verknüpfungen erfolgen über stabile IDs; Namen werden nur einmal zentral gepflegt.
 
@@ -10,7 +10,7 @@ Die statische Webseite trennt dauerhafte Spielerdaten, saisonabhängige Daten un
 padel-liga/
 ├── index.html
 ├── tipp/
-│   └── index.html                 Eigenständige Padeltipp-Seite
+│   └── index.html                 Eigenständige PadelTipp-Seite
 ├── style.css                      Gemeinsame Seiten- und Tippspiel-Stile
 ├── account.css                    Login-, Konto- und Partienübersichts-Stile
 ├── js/
@@ -69,7 +69,7 @@ Eine Saison kann neutral eine oder später mehrere Ligen definieren. Für 2026 e
 
 ```js
 leagues: [
-  { id: "main", label: "Padel-Liga Sommer 2026", default: true }
+  { id: "main", label: "PadelLiga Sommer 2026", default: true }
 ]
 ```
 

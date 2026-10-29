@@ -33,6 +33,12 @@
     return normalizeSeasonId(requested) || getSeasonIdFromPath();
   }
 
+  function usesQueryRoutes(url) {
+    const hostname = String(url.hostname || '').toLowerCase();
+    return url.protocol === 'file:'
+      || ['localhost', '127.0.0.1', '0.0.0.0', '[::1]', '::1'].includes(hostname);
+  }
+
   function getAreaBaseUrl(area) {
     const base = new URL(document.baseURI);
     const isTipBase = /\/tipp\/(?:index\.html)?$/.test(base.pathname);
@@ -47,15 +53,15 @@
   function getSeasonUrl(seasonId, area = 'league', options = {}) {
     const season = getSeasonById(seasonId);
     const base = getAreaBaseUrl(area);
-    const localFile = base.protocol === 'file:';
-    const url = !localFile && season?.route
+    const queryRoutes = usesQueryRoutes(base);
+    const url = !queryRoutes && season?.route
       ? new URL(`${season.route}/`, base)
       : new URL(base);
 
     if (options.preserveSearch) url.search = new URL(window.location.href).search;
     if (options.preserveHash) url.hash = new URL(window.location.href).hash;
     url.searchParams.delete('saison');
-    if ((localFile || !season?.route) && seasonId) url.searchParams.set('saison', normalizeSeasonId(seasonId));
+    if ((queryRoutes || !season?.route) && seasonId) url.searchParams.set('saison', normalizeSeasonId(seasonId));
     return url;
   }
 
@@ -89,7 +95,7 @@
   function getMatchUrl(seasonId, match, options = {}) {
     const seasonUrl = getSeasonUrl(seasonId, 'league', options);
     const slug = getMatchSlug(match);
-    if (seasonUrl.protocol === 'file:' || !slug) {
+    if (usesQueryRoutes(seasonUrl) || !slug) {
       if (match?.id || typeof match === 'string') seasonUrl.searchParams.set('partie', match?.id || match);
       return seasonUrl;
     }
@@ -141,7 +147,7 @@
   function getLiveUrl(seasonId, match, view = 'match', options = {}) {
     const seasonUrl = getSeasonUrl(seasonId, 'league', options);
     const slug = getLiveSlug(match);
-    if (seasonUrl.protocol === 'file:' || !slug) {
+    if (usesQueryRoutes(seasonUrl) || !slug) {
       if (match?.id || typeof match === 'string') seasonUrl.searchParams.set('live', match?.id || match);
       if (view === 'overview') seasonUrl.searchParams.set('liveView', 'overview');
       return seasonUrl;

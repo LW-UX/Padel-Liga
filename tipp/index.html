@@ -3,26 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Padeltipp</title>
+  <title>PadelTipp</title>
   <meta name="theme-color" content="#07080C">
   <link rel="icon" href="../favicon.ico" sizes="32x32">
   <link rel="icon" type="image/svg+xml" href="../data/favicon.svg?v=2026-10-26-rounded">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-  <link rel="stylesheet" href="../style.css?v=2026-10-28-player-profile-compact-ranking">
+  <link rel="stylesheet" href="../style.css?v=2026-10-28-ranking-column-sorting-2-all-time-profile-panel">
   <link rel="stylesheet" href="../match-statistics.css?v=2026-10-21-tip-buttons">
   <link rel="stylesheet" href="../account.css?v=2026-10-26-password-change">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="../data/players.js?v=2026-10-20-test-net-emoji"></script>
   <script defer src="../data/seasons.js?v=2026-10-21-test-windows"></script>
-  <script defer src="../js/season-routing.js?v=2026-10-28-local-file-fallback"></script>
+  <script defer src="../js/season-routing.js?v=2026-10-29-local-dev-fallback"></script>
   <script defer src="../data/supabase-config.js"></script>
   <script defer src="../js/global-actions.js?v=2026-10-20-speed-dial-player"></script>
   <script defer src="../js/score-input.js?v=2026-09-22-unified-score-counters"></script>
-  <script defer src="../js/account.js?v=2026-10-26-robust-auth"></script>
+  <script defer src="../js/account.js?v=2026-10-28-brand-names"></script>
   <script defer src="../js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="../js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
-  <script defer src="../js/tipp-page.js?v=2026-10-28-prediction-achievement-account-first"></script>
+  <script defer src="../js/tipp-page.js?v=2026-10-28-ranking-column-sorting-2"></script>
 </head>
 <body class="tip-page">
 <header class="site-header">
@@ -91,21 +91,24 @@
       <div class="sh-title">TIPPRANGLISTE</div>
     </div>
     <div class="ranking-wrap">
-      <table class="rt ranking-table compact prediction-ranking-table" data-ranking-sort="points">
+      <table class="rt ranking-table compact prediction-ranking-table" id="prediction-ranking-table" data-ranking-sort="points">
         <thead>
           <tr>
             <th class="col-rank">#</th>
             <th class="col-name">Name</th>
-            <th class="col-games">Tipps</th>
-            <th class="col-wins">Exakt</th>
+            <th class="col-games"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="predictions"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Tipps</span></button></th>
+            <th class="col-wins"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="exact"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Exakt</span></button></th>
             <th class="col-passive">
-              <span class="th-help-wrap prediction-ranking-passive-help">Passiv
-                <span class="help-icon" tabindex="0" role="button" aria-label="Passive Punkte erklären" aria-describedby="prediction-ranking-passive-help" data-help-tooltip-anchor>?</span>
-                <span class="help-tooltip" id="prediction-ranking-passive-help" role="tooltip">Deine eigenen Partien kannst du nicht tippen. Sobald sie gewertet werden, erhältst du automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Tipp der anderen. Hat niemand getippt, gibt es keine automatische Gutschrift.</span>
+              <span class="ranking-header-with-help prediction-ranking-passive-help">
+                <button type="button" class="ranking-sort-header" data-prediction-ranking-sort="passive"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Passiv</span></button>
+                <span class="th-help-wrap">
+                  <span class="help-icon" tabindex="0" role="button" aria-label="Passive Punkte erklären" aria-describedby="prediction-ranking-passive-help" data-help-tooltip-anchor>?</span>
+                  <span class="help-tooltip" id="prediction-ranking-passive-help" role="tooltip">Deine eigenen Partien kannst du nicht tippen. Sobald sie gewertet werden, erhältst du automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Tipp der anderen. Hat niemand getippt, gibt es keine automatische Gutschrift.</span>
+                </span>
               </span>
             </th>
-            <th class="col-bonus">Bonus</th>
-            <th class="col-points">Gesamt</th>
+            <th class="col-bonus"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="bonus"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Bonus</span></button></th>
+            <th class="col-points" aria-sort="descending"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="points"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Gesamt</span></button></th>
           </tr>
         </thead>
         <tbody id="prediction-ranking-body"></tbody>
@@ -134,7 +137,7 @@
     </div>
     <div class="prediction-info-layout">
       <article class="info-card prediction-info-about">
-        <p>Beim Padeltipp sagst du vor dem Spiel voraus, welches Team gewinnt und wie das genaue Satzergebnis ausfällt.<br>Dein Tipp ist nur eine persönliche Prognose. Er verändert weder das Spielergebnis noch die Elo-Rangliste.</p>
+        <p>Beim PadelTipp sagst du vor dem Spiel voraus, welches Team gewinnt und wie das genaue Satzergebnis ausfällt.<br>Dein Tipp ist nur eine persönliche Prognose. Er verändert weder das Spielergebnis noch die Elo-Rangliste.</p>
         <div class="info-group">
           <h3>Ab wann kann ich tippen?</h3>
           <ul class="clean-list">
@@ -207,6 +210,16 @@
     </div>
   </section>
 </main>
+
+<footer class="site-footer">
+  <p class="site-footer-line">
+    <span class="site-footer-partnership">
+      <span class="site-footer-brand">PADEL<em>LIGA</em></span>
+      <span class="site-footer-credit"><span>sponsored by</span> <strong>HEADSQUARE GROUP</strong></span>
+    </span>
+    <span class="site-footer-service site-footer-credit"><span>Ein Service des</span> <strong>HANAKO-LEBEN-SQUADS</strong></span>
+  </p>
+</footer>
 
 <dialog class="auth-dialog" id="auth-dialog" aria-labelledby="auth-dialog-title">
   <button class="modal-close-button auth-dialog-close" type="button" data-auth-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>

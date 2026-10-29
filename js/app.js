@@ -52,13 +52,13 @@ let statisticsLoadError = '';
 let statisticsPlayerFilters = new Map();
 const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;
 const PLAYER_PROFILE_ACHIEVEMENT_LIMIT = 4;
-const PLAYER_PROFILE_PANEL_BREAKPOINT = 1280;
-const PLAYER_PROFILE_PANEL_RANKING_MIN_WIDTH = 600;
+const PLAYER_PROFILE_PANEL_BREAKPOINT = 1100;
+const PLAYER_PROFILE_PANEL_RANKING_WIDTH = 540;
 const PLAYER_PROFILE_PANEL_MIN_WIDTH = 460;
-const PLAYER_PROFILE_PANEL_MAX_WIDTH = 560;
 const PLAYER_PROFILE_PANEL_GAP = 24;
 const PLAYER_PROFILE_PANEL_OUTER_GUTTER = 16;
 const PLAYER_PROFILE_PANEL_TRANSITION_MS = 220;
+const PLAYER_PROFILE_ROW_SELECTOR = '#rangliste tr[data-player-profile-id], #all-time-ranking-table tr[data-player-profile-id]';
 const PROFILE_SEASON_COLORS = Object.freeze({
   summer: '#FF8A5B',
   winter: '#B794F6',
@@ -76,6 +76,7 @@ const LEGACY_SEASON_IDS = Object.freeze({
 const TEST_TRAINING_PLAYER_IDS = new Set(['ludi_gmail', 'ludi_gmx', 'ludi_ionos', 'test_net']);
 let playerProfileLastTrigger = null;
 let playerProfilePresentation = 'modal';
+let playerProfilePresentationPreference = null;
 let playerProfileActiveId = null;
 let playerProfileForceModal = false;
 let playerProfileCloseTimer = null;
@@ -1049,7 +1050,7 @@ function updateSeasonPhaseLayout(phase = getSeasonDisplayPhase()) {
 
 function applySeasonMetadata() {
   const label = PADEL_DATA.label || selectedSeason.label || selectedSeason.id;
-  const title = PADEL_DATA.title || `Padel-Liga ${label}`;
+  const title = String(PADEL_DATA.title || `PadelLiga ${label}`).replaceAll('Padel-Liga', 'PadelLiga');
   const organizations = PADEL_DATA.organizations || [];
   const organizationLabel = organizations.join('  ×  ');
   const heroOrganizations = document.getElementById('hero-orgs');
@@ -1071,7 +1072,6 @@ function applySeasonMetadata() {
     heroButton.dataset.navTarget = cupSeason ? 'partien' : 'start';
     heroButton.setAttribute('aria-label', cupSeason ? 'Zum Turnierbaum' : 'Zur Startseite');
   }
-
   document.querySelectorAll('nav button[data-section]').forEach(button => {
     button.hidden = (cupSeason && !['partien', 'infos'].includes(button.dataset.section))
       || (button.dataset.section === 'rechner' && calculatorUnavailable);
@@ -1096,7 +1096,8 @@ function applySeasonMetadata() {
   const seasonLabel = document.getElementById('season-picker-label');
   const seasonMenu = document.getElementById('season-menu');
   const tippLink = document.getElementById('tipp-link');
-  if (tippLink) tippLink.href = window.PadelSeasonRouting.getSeasonUrl(selectedSeason.id, 'tipp').href;
+  const tippUrl = window.PadelSeasonRouting.getSeasonUrl(selectedSeason.id, 'tipp').href;
+  if (tippLink) tippLink.href = tippUrl;
   const homePredictionRankingLink = document.getElementById('home-prediction-ranking-link');
   if (homePredictionRankingLink) {
     const predictionRankingUrl = window.PadelSeasonRouting.getSeasonUrl(selectedSeason.id, 'tipp');
@@ -1945,7 +1946,7 @@ function renderPlayerProfileAchievements(achievements = []) {
       </svg>
       <div class="player-profile-achievement-copy">
         <div class="player-profile-achievement-title">${escapeHtml(title)}</div>
-        ${achievement.subtitle ? `<div class="player-profile-achievement-subtitle">${escapeHtml(achievement.subtitle)}</div>` : ''}
+        ${achievement.subtitle ? `<div class="player-profile-achievement-subtitle">${escapeHtml(String(achievement.subtitle).replaceAll('Padel-Liga', 'PadelLiga'))}</div>` : ''}
       </div>
       <svg class="player-profile-achievement-laurel" aria-hidden="true" focusable="false">
         <use href="#achievement-laurel-right"></use>
@@ -2740,49 +2741,83 @@ async function renderPlayerProfileUpcomingMatches() {
     : '<div class="empty-state">Keine kommenden Partien.</div>';
 }
 
-function getPlayerProfilePanelWidth(viewportWidth = window.innerWidth) {
-  return Math.min(
-    PLAYER_PROFILE_PANEL_MAX_WIDTH,
-    Math.max(PLAYER_PROFILE_PANEL_MIN_WIDTH, viewportWidth * 0.36)
-  );
-}
-
 function isRankingSectionActive() {
   const section = document.getElementById('rangliste');
   return Boolean(section?.classList.contains('active') && !section.hidden);
 }
 
+function isAllTimeRankingSectionActive() {
+  const section = document.getElementById('verlauf');
+  const layout = document.getElementById('all-time-ranking-profile-layout');
+  return Boolean(
+    statisticsMode === 'all-time'
+    && section?.classList.contains('active')
+    && !section.hidden
+    && layout
+    && !layout.hidden
+  );
+}
+
+function getPlayerProfilePanelContext() {
+  if (isRankingSectionActive()) {
+    return { id: 'ranking', hostId: 'ranking-profile-host' };
+  }
+  if (isAllTimeRankingSectionActive()) {
+    return { id: 'all-time-ranking', hostId: 'all-time-ranking-profile-host' };
+  }
+  return null;
+}
+
 function hasPlayerProfilePanelSpace() {
   const layoutViewportWidth = document.documentElement.clientWidth || window.innerWidth;
-  const requiredWidth = PLAYER_PROFILE_PANEL_RANKING_MIN_WIDTH
+  const requiredWidth = PLAYER_PROFILE_PANEL_RANKING_WIDTH
     + PLAYER_PROFILE_PANEL_GAP
-    + getPlayerProfilePanelWidth(window.innerWidth);
+    + PLAYER_PROFILE_PANEL_MIN_WIDTH;
   return window.innerWidth >= PLAYER_PROFILE_PANEL_BREAKPOINT
-    && layoutViewportWidth - PLAYER_PROFILE_PANEL_OUTER_GUTTER * 2 >= requiredWidth;
+    && layoutViewportWidth - PLAYER_PROFILE_PANEL_OUTER_GUTTER >= requiredWidth;
+}
+
+function canPlayerProfileUsePanel() {
+  return !isDetailEmbed
+    && Boolean(getPlayerProfilePanelContext())
+    && hasPlayerProfilePanelSpace();
 }
 
 function shouldUsePlayerProfilePanel() {
   return !playerProfileForceModal
-    && !isDetailEmbed
-    && isRankingSectionActive()
-    && hasPlayerProfilePanelSpace();
+    && playerProfilePresentationPreference !== 'modal'
+    && canPlayerProfileUsePanel();
+}
+
+function updatePlayerProfilePresentationToggle() {
+  const toggle = document.getElementById('player-profile-presentation-toggle');
+  if (!toggle) return;
+  const canToggle = !playerProfileForceModal && canPlayerProfileUsePanel();
+  const targetPresentation = playerProfilePresentation === 'panel' ? 'modal' : 'panel';
+  const label = targetPresentation === 'panel'
+    ? 'Profil als Seitenpanel öffnen'
+    : 'Profil als Modal öffnen';
+  toggle.hidden = !canToggle;
+  toggle.dataset.targetPresentation = targetPresentation;
+  toggle.setAttribute('aria-label', label);
+  toggle.title = label;
 }
 
 function updatePlayerProfilePanelMetrics() {
   if (playerProfilePresentation !== 'panel') return;
   const layoutViewportWidth = document.documentElement.clientWidth || window.innerWidth;
-  const panelWidth = getPlayerProfilePanelWidth(window.innerWidth);
-  const requiredWidth = PLAYER_PROFILE_PANEL_RANKING_MIN_WIDTH + PLAYER_PROFILE_PANEL_GAP + panelWidth;
+  const requiredWidth = PLAYER_PROFILE_PANEL_RANKING_WIDTH
+    + PLAYER_PROFILE_PANEL_GAP
+    + PLAYER_PROFILE_PANEL_MIN_WIDTH;
   const standardContentLeft = layoutViewportWidth > 1100
     ? (layoutViewportWidth - 1100) / 2 + 16
     : PLAYER_PROFILE_PANEL_OUTER_GUTTER;
   const latestPossibleLeft = layoutViewportWidth - PLAYER_PROFILE_PANEL_OUTER_GUTTER - requiredWidth;
   const splitLeft = Math.max(
-    PLAYER_PROFILE_PANEL_OUTER_GUTTER,
+    0,
     Math.min(standardContentLeft, latestPossibleLeft)
   );
   document.body.style.setProperty('--ranking-profile-split-left', `${splitLeft}px`);
-  document.body.style.setProperty('--player-profile-panel-width', `${panelWidth}px`);
 }
 
 function arrangePlayerProfileContent(presentation = playerProfilePresentation) {
@@ -2814,7 +2849,7 @@ function getPlayerProfileShellScrollTop() {
 }
 
 function updatePlayerProfileRankingHighlights() {
-  document.querySelectorAll('#rangliste [data-profile-player-id]').forEach(row => {
+  document.querySelectorAll('#rangliste [data-profile-player-id], #all-time-ranking-table [data-profile-player-id]').forEach(row => {
     const active = Boolean(playerProfileActiveId) && row.dataset.profilePlayerId === playerProfileActiveId;
     row.classList.toggle('profile-open-highlight', active);
     row.querySelectorAll('[data-player-profile-id]').forEach(control => {
@@ -2840,7 +2875,8 @@ function announcePlayerProfilePanel(name) {
 
 function movePlayerProfileDialog(presentation, { reopen = false, scrollTop = 0, restoreTriggerFocus = false } = {}) {
   const dialog = document.getElementById('player-profile-dialog');
-  const host = document.getElementById(presentation === 'panel' ? 'ranking-profile-host' : 'player-profile-modal-host');
+  const panelContext = presentation === 'panel' ? getPlayerProfilePanelContext() : null;
+  const host = document.getElementById(panelContext?.hostId || 'player-profile-modal-host');
   if (!dialog || !host) return false;
 
   const wasOpen = dialog.open;
@@ -2853,7 +2889,10 @@ function movePlayerProfileDialog(presentation, { reopen = false, scrollTop = 0, 
   arrangePlayerProfileContent(presentation);
   host.append(dialog);
   document.body.classList.toggle('player-profile-panel-open', presentation === 'panel');
+  if (panelContext) document.body.dataset.playerProfilePanelContext = panelContext.id;
+  else delete document.body.dataset.playerProfilePanelContext;
   updatePlayerProfilePanelMetrics();
+  updatePlayerProfilePresentationToggle();
 
   if (reopen || wasOpen) {
     if (presentation === 'panel') dialog.show();
@@ -2876,6 +2915,7 @@ function reconcilePlayerProfilePresentation() {
   const nextPresentation = shouldUsePlayerProfilePanel() ? 'panel' : 'modal';
   if (nextPresentation === playerProfilePresentation) {
     updatePlayerProfilePanelMetrics();
+    updatePlayerProfilePresentationToggle();
     playerProfileChart?.resize?.();
     return;
   }
@@ -2884,6 +2924,19 @@ function reconcilePlayerProfilePresentation() {
     scrollTop: getPlayerProfileShellScrollTop(),
     restoreTriggerFocus: nextPresentation === 'panel'
   });
+}
+
+function togglePlayerProfilePresentation() {
+  const dialog = document.getElementById('player-profile-dialog');
+  const toggle = document.getElementById('player-profile-presentation-toggle');
+  if (!dialog?.open || !toggle || playerProfileForceModal || !canPlayerProfileUsePanel()) return;
+  const nextPresentation = playerProfilePresentation === 'panel' ? 'modal' : 'panel';
+  playerProfilePresentationPreference = nextPresentation;
+  movePlayerProfileDialog(nextPresentation, {
+    reopen: true,
+    scrollTop: getPlayerProfileShellScrollTop()
+  });
+  requestAnimationFrame(() => toggle.focus({ preventScroll: true }));
 }
 
 function cancelPlayerProfileCloseTransition() {
@@ -2907,7 +2960,7 @@ function renderPlayerProfile(profile) {
   playerProfileCompareId = null;
   arrangePlayerProfileContent();
   document.getElementById('player-profile-name').textContent = identity.displayName || 'Spielerprofil';
-  const profileCompany = identity.company || 'Padel-Liga';
+  const profileCompany = identity.company || 'PadelLiga';
   const profileCompanyElement = document.getElementById('player-profile-company');
   profileCompanyElement.textContent = profileCompany;
   profileCompanyElement.className = 'player-profile-company firma-badge';
@@ -2952,14 +3005,19 @@ function renderPlayerProfile(profile) {
 async function openPlayerProfile(playerId, trigger = null, options = {}) {
   const dialog = document.getElementById('player-profile-dialog');
   if (!dialog || !playerId) return;
+  const profileWasOpen = dialog.open;
   cancelPlayerProfileCloseTransition();
+  if (!profileWasOpen) playerProfilePresentationPreference = null;
   const aboveStatistics = window.PadelMatchStatistics?.prepareProfileOpen(trigger, playerId, options.fromHistory);
   const triggerDialog = trigger?.closest?.('dialog');
+  const panelContext = getPlayerProfilePanelContext();
+  const opensFromAllTimeRanking = Boolean(trigger?.closest?.('#all-time-ranking-profile-main'));
   playerProfileForceModal = Boolean(
     options.forceModal
     || aboveStatistics
     || (triggerDialog && triggerDialog !== dialog)
-    || (triggerDialog === dialog && playerProfilePresentation === 'modal')
+    || (triggerDialog === dialog && playerProfileForceModal)
+    || (panelContext?.id === 'all-time-ranking' && !profileWasOpen && !opensFromAllTimeRanking)
   );
   playerProfileLastTrigger = trigger || document.activeElement;
   playerProfileActiveId = playerId;
@@ -2983,6 +3041,7 @@ async function openPlayerProfile(playerId, trigger = null, options = {}) {
       playerProfileLastTrigger.focus({ preventScroll: true });
     }
   }
+  updatePlayerProfilePresentationToggle();
 
   try {
     const profile = await fetchPlayerProfile(playerId);
@@ -3004,6 +3063,7 @@ window.PadelLigaCapturePlayerProfile = () => ({
   compareId: playerProfileCompareId,
   scrollTop: getPlayerProfileShellScrollTop(),
   presentation: playerProfilePresentation,
+  presentationPreference: playerProfilePresentationPreference,
   activeId: playerProfileActiveId,
   forceModal: playerProfileForceModal
 });
@@ -3012,6 +3072,9 @@ window.PadelLigaRestorePlayerProfile = snapshot => {
   if (!snapshot?.data || !profile) return;
   ++playerProfileRequestId;
   playerProfileActiveId = snapshot.activeId || snapshot.data.identity?.id || null;
+  playerProfilePresentationPreference = ['panel', 'modal'].includes(snapshot.presentationPreference)
+    ? snapshot.presentationPreference
+    : null;
   playerProfileForceModal = Boolean(snapshot.forceModal);
   playerProfileLastTrigger = playerProfileLastTrigger?.isConnected ? playerProfileLastTrigger : document.activeElement;
   movePlayerProfileDialog(shouldUsePlayerProfilePanel() ? 'panel' : 'modal', {
@@ -3037,11 +3100,12 @@ function finalizePlayerProfileClose({ restoreFocus = true } = {}) {
   if (dialog?.open) dialog.close();
   dialog?.classList.remove('is-closing');
   document.body.classList.remove('player-profile-panel-open');
+  delete document.body.dataset.playerProfilePanelContext;
   document.body.style.removeProperty('--ranking-profile-split-left');
-  document.body.style.removeProperty('--player-profile-panel-width');
   const modalHost = document.getElementById('player-profile-modal-host');
   if (dialog && modalHost && dialog.parentElement !== modalHost) modalHost.append(dialog);
   playerProfilePresentation = 'modal';
+  playerProfilePresentationPreference = null;
   if (dialog) dialog.dataset.presentation = 'modal';
   arrangePlayerProfileContent('modal');
   playerProfileChart?.destroy();
@@ -3049,6 +3113,7 @@ function finalizePlayerProfileClose({ restoreFocus = true } = {}) {
   playerProfileData = null;
   playerProfileActiveId = null;
   playerProfileForceModal = false;
+  updatePlayerProfilePresentationToggle();
   updatePlayerProfileRankingHighlights();
   const status = document.getElementById('player-profile-panel-status');
   if (status) status.textContent = '';
@@ -3132,7 +3197,21 @@ document.addEventListener('click', event => {
 
   const playerProfileOpenControl = event.target.closest('[data-player-profile-id]');
   if (playerProfileOpenControl) {
-    openPlayerProfile(playerProfileOpenControl.dataset.playerProfileId, playerProfileOpenControl);
+    const playerProfileRow = playerProfileOpenControl.matches(PLAYER_PROFILE_ROW_SELECTOR)
+      ? playerProfileOpenControl
+      : null;
+    const rowClickHitsControl = playerProfileRow && event.target.closest(
+      'a, button, input, select, textarea, summary, [role="button"], [data-form-match-id], [data-help-tooltip-anchor]'
+    );
+    if (!playerProfileRow || !rowClickHitsControl) {
+      openPlayerProfile(playerProfileOpenControl.dataset.playerProfileId, playerProfileOpenControl);
+      return;
+    }
+  }
+
+  const playerProfilePresentationToggle = event.target.closest('[data-player-profile-presentation-toggle]');
+  if (playerProfilePresentationToggle) {
+    togglePlayerProfilePresentation();
     return;
   }
 
@@ -3207,13 +3286,13 @@ document.addEventListener('click', event => {
     return;
   }
 
-  const rankingSortControl = event.target.closest('[data-ranking-sort]');
+  const rankingSortControl = event.target.closest('button[data-ranking-sort]');
   if (rankingSortControl) {
     setRankingSort(rankingSortControl.dataset.rankingSort);
     return;
   }
 
-  const rankingViewControl = event.target.closest('[data-ranking-view]');
+  const rankingViewControl = event.target.closest('button[data-ranking-view]');
   if (rankingViewControl) {
     setRankingView(rankingViewControl.dataset.rankingView);
     return;
@@ -3441,6 +3520,13 @@ document.addEventListener('focusout', event => {
 });
 
 document.addEventListener('keydown', event => {
+  const playerProfileRow = event.target.closest(PLAYER_PROFILE_ROW_SELECTOR);
+  if (event.target === playerProfileRow && (event.key === 'Enter' || event.key === ' ')) {
+    event.preventDefault();
+    openPlayerProfile(playerProfileRow.dataset.playerProfileId, playerProfileRow);
+    return;
+  }
+
   const profileCompareSearch = event.target.closest('[data-profile-compare-search]');
   if (profileCompareSearch) {
     const visibleOptions = [...document.querySelectorAll('[data-profile-compare-value]')]
@@ -3539,18 +3625,24 @@ function updateMatchSortToggle() {
 }
 
 function setRankingSort(mode) {
-  rankingSortMode = ['elo', 'draw-factor'].includes(mode) ? mode : 'points';
+  const nextMode = ['games', 'wins', 'points', 'diff', 'elo', 'form', 'winrate', 'draw-factor'].includes(mode)
+    ? mode
+    : 'points';
+  if (nextMode === rankingSortMode) return;
+  rankingSortMode = nextMode;
   renderRanking();
 }
 
-function updateRankingSortToggle() {
-  const toggle = document.getElementById('ranking-sort-toggle');
-  if (!toggle) return;
-
-  const buttons = toggle.querySelectorAll('button');
-  buttons[0]?.classList.toggle('active', rankingSortMode === 'points');
-  buttons[1]?.classList.toggle('active', rankingSortMode === 'elo');
-  buttons[2]?.classList.toggle('active', rankingSortMode === 'draw-factor');
+function updateRankingSortHeaders() {
+  document.querySelectorAll('#ranking-table [data-ranking-sort]').forEach(button => {
+    const header = button.closest('th');
+    if (!header) return;
+    if (button.dataset.rankingSort === rankingSortMode) {
+      header.setAttribute('aria-sort', rankingSortMode === 'draw-factor' ? 'ascending' : 'descending');
+    } else {
+      header.removeAttribute('aria-sort');
+    }
+  });
 }
 
 function setRankingView(mode) {
@@ -3573,7 +3665,9 @@ function setAllTimeRankingView(mode) {
 }
 
 function setAllTimeRankingSort(mode) {
-  allTimeRankingSortMode = mode === 'average' ? 'average' : 'points';
+  const nextMode = ['games', 'wins', 'points', 'average', 'diff'].includes(mode) ? mode : 'points';
+  if (nextMode === allTimeRankingSortMode) return;
+  allTimeRankingSortMode = nextMode;
   renderAllTimeRanking();
 }
 
@@ -3621,7 +3715,10 @@ function renderActiveSection() {
 function nav(id, el) {
   // Vor dem Umschalten messen: Ein noch nicht gerenderter Bereich verkürzt die Seite kurzzeitig.
   const navigationPinned = isNavigationPinned();
-  if (id !== 'rangliste' && playerProfilePresentation === 'panel') {
+  const panelContext = getPlayerProfilePanelContext()?.id;
+  const keepsPanelContext = (panelContext === 'ranking' && id === 'rangliste')
+    || (panelContext === 'all-time-ranking' && id === 'verlauf');
+  if (!keepsPanelContext && playerProfilePresentation === 'panel') {
     closePlayerProfile({ immediate: true, restoreFocus: false });
   }
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -3899,10 +3996,10 @@ function renderFirmenRanking() {
       <td class="col-company"><span class="pname">${f.firma}</span></td>
       <td class="col-participants">${f.teilnehmer}</td>
       <td class="col-games">${f.partien}</td>
+      <td class="col-points-per-player rank-score">${f.pktPerTN.toFixed(2)}</td>
       <td class="col-wins">${f.siege}</td>
       <td class="col-points">${f.punkte}</td>
       <td class="col-diff"><span class="${f.partien > 0 ? diffClass : 'neu'}">${diffStr}</span></td>
-      <td class="col-points-per-player rank-score">${f.pktPerTN.toFixed(2)}</td>
     </tr>`;
   }).join('');
 }
@@ -4212,7 +4309,7 @@ function formatDrawFactor(factor) {
   return `<span class="draw-factor-muted">${formatDecimal(factor.teamAverage)}</span><span class="draw-factor-muted"> / </span><span class="draw-factor-muted">${formatDecimal(factor.opponentAverage)}</span><span class="draw-factor-muted"> / </span><span class="${diffClass}">${formatSignedDecimal(factor.diff)}</span>`;
 }
 
-function getPlayerForm(player, matches = PADEL_DATA.matches) {
+function getPlayerRecentForm(player, matches = PADEL_DATA.matches) {
   return getPlayerMatches(player, matches)
     .filter(countsForRanking)
     .filter(match => match.sieger !== null)
@@ -4227,14 +4324,33 @@ function getPlayerForm(player, matches = PADEL_DATA.matches) {
       const tieBreak = mySets === 1 && opponentSets === 2 || mySets === 2 && opponentSets === 1;
       const title = `${formatMatchNumberLabel(match)}: ${won ? 'Sieg' : 'Niederlage'}${tieBreak ? ' im Match-Tie-Break' : ''}`;
 
-      return `<span
-        class="form-chip form-recency-${index} ${won ? 'form-win' : 'form-loss'} ${tieBreak ? 'form-tiebreak' : ''}"
+      return { match, index, won, tieBreak, title };
+    });
+}
+
+function comparePlayerRecentForm(left, right, matches = PADEL_DATA.matches) {
+  const leftForm = getPlayerRecentForm(left, matches);
+  const rightForm = getPlayerRecentForm(right, matches);
+  const winDifference = rightForm.filter(result => result.won).length - leftForm.filter(result => result.won).length;
+  if (winDifference) return winDifference;
+
+  for (let index = 0; index < 3; index += 1) {
+    const leftResult = leftForm[index] ? Number(leftForm[index].won) : -1;
+    const rightResult = rightForm[index] ? Number(rightForm[index].won) : -1;
+    if (leftResult !== rightResult) return rightResult - leftResult;
+  }
+  return 0;
+}
+
+function getPlayerForm(player, matches = PADEL_DATA.matches) {
+  return getPlayerRecentForm(player, matches)
+    .map(result => `<span
+        class="form-chip form-recency-${result.index} ${result.won ? 'form-win' : 'form-loss'} ${result.tieBreak ? 'form-tiebreak' : ''}"
         tabindex="0"
-        aria-label="${escapeHtml(title)}"
+        aria-label="${escapeHtml(result.title)}"
         data-form-player="${escapeHtml(player.name)}"
-        data-form-match-id="${escapeHtml(match.id)}"
-      >${won ? 'S' : 'N'}</span>`;
-    })
+        data-form-match-id="${escapeHtml(result.match.id)}"
+      >${result.won ? 'S' : 'N'}</span>`)
     .reverse()
     .join('') || '<span class="neu">—</span>';
 }
@@ -4300,7 +4416,7 @@ function getDrawFactorAdjustedRank(player, rankMap, referenceRankMap) {
 }
 
 function renderRanking() {
-  updateRankingSortToggle();
+  updateRankingSortHeaders();
   updateRankingViewToggle();
   const table = document.getElementById('ranking-table');
   const tableWrap = table.closest('.ranking-main-wrap');
@@ -4325,7 +4441,12 @@ function renderRanking() {
     points: getCompetitionConfig().qualificationPlaces
       ? withGamesNote(`Top ${getCompetitionConfig().qualificationPlaces}: Qualifikationsplätze`, gamesNote, 'Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele')
       : withGamesNote(gamesNote, 'Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele'),
+    games: withGamesNote(gamesNote, 'Sortierung: Partien · Punkte · Spiel-Differenz · gewonnene Spiele'),
+    wins: withGamesNote(gamesNote, 'Sortierung: Siege · Punkte · Spiel-Differenz · gewonnene Spiele'),
+    diff: withGamesNote(gamesNote, 'Sortierung: Spiel-Differenz · Punkte · gewonnene Spiele'),
     elo: withGamesNote(gamesNote, 'Sortierung: Elo · Punkte · Spiel-Differenz · gewonnene Spiele'),
+    form: withGamesNote(gamesNote, 'Sortierung: Siege der letzten 3 · jüngste Ergebnisse · Punkte'),
+    winrate: withGamesNote(gamesNote, 'Sortierung: Sieg-% · Punkte · Spiel-Differenz · gewonnene Spiele'),
     'draw-factor': withGamesNote(gamesNote, 'Sortierung: bereinigter Rang aus Punkte-Platz minus Losfaktor')
   };
   const rankingNote = document.getElementById('rl-sort-note');
@@ -4350,9 +4471,9 @@ function renderRanking() {
     const absenceMark = showMarcoAbsence && p.id === 'marco_m'
       ? '<span class="ranking-absence-mark"><span aria-hidden="true">*</span><span class="sr-only">Krankheitsbedingter Ausfall beim Final Four</span></span>'
       : '';
-    return `<tr class="ranking-row r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(p.id || p.name)}" data-profile-player-id="${escapeHtml(p.id || '')}">
+    return `<tr class="ranking-row r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(p.id || p.name)}" data-profile-player-id="${escapeHtml(p.id || '')}" data-player-profile-id="${escapeHtml(p.id || '')}" tabindex="0" role="link" aria-label="Profil von ${escapeHtml(p.name)} öffnen">
       <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${renderPointsRankReference(currentRank, pointsRank)}</span></td>
-      <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}${renderLeagueRankingAchievementIcon(p)}</span>${absenceMark}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span></span></td>
+      <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}</span>${absenceMark}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span>${renderLeagueRankingAchievementIcon(p)}</span></td>
       <td class="col-games">${renderRankingMatchCount(p)}</td>
       <td class="col-wins">${p.stats.siege}</td>
       <td class="col-points rank-score">${p.stats.punkte}</td>
@@ -4520,6 +4641,26 @@ function compareAllTimeRankingByAveragePoints(left, right) {
     compareAllTimeRankingByPoints(left, right);
 }
 
+function compareAllTimeRanking(left, right, sortMode = 'points') {
+  let primaryComparison = 0;
+  if (sortMode === 'games') {
+    primaryComparison = right.stats.partien - left.stats.partien;
+  } else if (sortMode === 'wins') {
+    primaryComparison = right.stats.siege - left.stats.siege;
+  } else if (sortMode === 'average') {
+    primaryComparison = compareDescendingNullable(
+      getAllTimeAveragePoints(left.stats),
+      getAllTimeAveragePoints(right.stats)
+    );
+  } else if (sortMode === 'diff') {
+    primaryComparison = compareDescendingNullable(
+      left.stats.partien > 0 ? left.stats.spielDiff : null,
+      right.stats.partien > 0 ? right.stats.spielDiff : null
+    );
+  }
+  return primaryComparison || compareAllTimeRankingByPoints(left, right);
+}
+
 function renderAllTimePointsRankReference(currentRank, pointsRank) {
   if (allTimeRankingSortMode === 'points' || !Number.isFinite(pointsRank)) return '';
 
@@ -4531,9 +4672,15 @@ function renderAllTimePointsRankReference(currentRank, pointsRank) {
   </span>`;
 }
 
-function updateAllTimeRankingSortToggle() {
+function updateAllTimeRankingSortHeaders() {
   document.querySelectorAll('[data-all-time-ranking-sort]').forEach(button => {
-    button.classList.toggle('active', button.dataset.allTimeRankingSort === allTimeRankingSortMode);
+    const header = button.closest('th');
+    if (!header) return;
+    if (button.dataset.allTimeRankingSort === allTimeRankingSortMode) {
+      header.setAttribute('aria-sort', 'descending');
+    } else {
+      header.removeAttribute('aria-sort');
+    }
   });
 }
 
@@ -4546,7 +4693,7 @@ function renderAllTimeRanking() {
 
   const previousPositions = getRankingRowPositions(body, '.ranking-row');
   updateAllTimeRankingViewToggle();
-  updateAllTimeRankingSortToggle();
+  updateAllTimeRankingSortHeaders();
   table.dataset.rankingSort = allTimeRankingSortMode;
   tableWrap.dataset.rankingView = allTimeRankingViewMode;
   table.classList.toggle('expanded', allTimeRankingViewMode === 'expanded');
@@ -4561,9 +4708,14 @@ function renderAllTimeRanking() {
     const halfMatchNote = allTimeRankingScope === 'training'
       ? 'Final-Four- und Trainingssätze zählen als halbe Partie, ein gewonnener Satz bringt 1,5 Punkte'
       : 'Final-Four-Sätze zählen als halbe Partie, ein gewonnener Satz bringt 1,5 Punkte';
-    const sortNote = allTimeRankingSortMode === 'average'
-      ? 'Sortierung: Ø-Punkte pro Partie · Punkte · Spiel-Differenz · gewonnene Spiele'
-      : ALL_TIME_RANKING_SORT_NOTE;
+    const sortNotes = {
+      points: ALL_TIME_RANKING_SORT_NOTE,
+      games: 'Sortierung: Partien · Punkte · Spiel-Differenz · gewonnene Spiele',
+      wins: 'Sortierung: Siege · Punkte · Spiel-Differenz · gewonnene Spiele',
+      average: 'Sortierung: Ø-Punkte pro Partie · Punkte · Spiel-Differenz · gewonnene Spiele',
+      diff: 'Sortierung: Spiel-Differenz · Punkte · gewonnene Spiele'
+    };
+    const sortNote = sortNotes[allTimeRankingSortMode] || ALL_TIME_RANKING_SORT_NOTE;
     note.textContent = isLeagueScope ? sortNote : `${halfMatchNote}  |  ${sortNote}`;
   }
 
@@ -4574,13 +4726,8 @@ function renderAllTimeRanking() {
   const pointsRankMap = new Map([...players]
     .sort(compareAllTimeRankingByPoints)
     .map((player, index) => [player.id || player.name, index + 1]));
-  const rankedPlayers = players.sort(allTimeRankingSortMode === 'average'
-    ? compareAllTimeRankingByAveragePoints
-    : compareAllTimeRankingByPoints);
+  const rankedPlayers = [...players].sort((left, right) => compareAllTimeRanking(left, right, allTimeRankingSortMode));
   const firmaShort = { Envidual: 'Env', Headsquare: 'Hsq', Hanako: 'Han' };
-  // Nur die aktuell sortierende Spalte wird blau und fett hervorgehoben.
-  const pointsScoreClass = allTimeRankingSortMode === 'points' ? 'rank-score' : '';
-  const averageScoreClass = allTimeRankingSortMode === 'average' ? 'rank-score' : '';
 
   meta.textContent = `${rankedPlayers.length} Spieler`;
   body.innerHTML = rankedPlayers.map((player, index) => {
@@ -4593,46 +4740,69 @@ function renderAllTimeRanking() {
       ? player.initials || player.name
       : player.name;
 
-    return `<tr class="ranking-row r${Math.min(currentRank, 4)} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id || player.name)}">
+    return `<tr class="ranking-row r${Math.min(currentRank, 4)} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id || player.name)}" data-profile-player-id="${escapeHtml(player.id || '')}" data-player-profile-id="${escapeHtml(player.id || '')}" tabindex="0" role="link" aria-label="Profil von ${escapeHtml(player.name)} öffnen">
       <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${renderAllTimePointsRankReference(currentRank, pointsRankMap.get(player.id || player.name))}</span></td>
       <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(player, 'pname', rankingPlayerLabel)}<span class="firma-badge firma-${player.firma}"><span class="firma-full">${player.firma}</span><span class="firma-short">${firmaShort[player.firma] || player.firma}</span></span></span></td>
       <td class="col-games">${isLeagueScope ? renderRankingMatchCount(player, matches) : formatAllTimeRankingValue(player.stats.partien)}</td>
       <td class="col-wins">${formatAllTimeRankingValue(player.stats.siege)}</td>
-      <td class="col-points ${pointsScoreClass}">${formatAllTimeRankingValue(player.stats.punkte)}</td>
-      <td class="col-average-points ${averageScoreClass}">${formatAllTimeAveragePoints(player.stats)}</td>
+      <td class="col-points rank-score">${formatAllTimeRankingValue(player.stats.punkte)}</td>
+      <td class="col-average-points">${formatAllTimeAveragePoints(player.stats)}</td>
       <td class="col-gv">${player.stats.partien > 0 ? player.stats.spieleGV : '—'}</td>
       <td class="col-diff"><span class="${player.stats.partien > 0 ? spielDiffClass : 'neu'}">${spielDiffStr}</span></td>
     </tr>`;
   }).join('');
   animateRankingRows(body, '.ranking-row', previousPositions);
+  updatePlayerProfileRankingHighlights();
+}
+
+function compareDescendingNullable(leftValue, rightValue) {
+  const leftValid = Number.isFinite(leftValue);
+  const rightValid = Number.isFinite(rightValue);
+  if (leftValid !== rightValid) return leftValid ? -1 : 1;
+  if (!leftValid) return 0;
+  return rightValue - leftValue;
+}
+
+function compareRankingByPoints(left, right) {
+  return right.stats.punkte - left.stats.punkte ||
+    right.stats.spielDiff - left.stats.spielDiff ||
+    right.stats.gewonneneSpiele - left.stats.gewonneneSpiele;
 }
 
 function getRankedPlayers(matches = PADEL_DATA.matches, sortMode = 'points') {
-  const withStats = PADEL_DATA.players.map(p => ({ ...p, stats: getPlayerStats(p, matches) }));
-  if (sortMode === 'elo') {
-    withStats.sort((a, b) =>
-      (getLatestPlayerEloValue(b) ?? -Infinity) - (getLatestPlayerEloValue(a) ?? -Infinity) ||
-      b.stats.punkte - a.stats.punkte ||
-      b.stats.spielDiff - a.stats.spielDiff ||
-      b.stats.gewonneneSpiele - a.stats.gewonneneSpiele
+  const withStats = PADEL_DATA.players.map(player => ({ ...player, stats: getPlayerStats(player, matches) }));
+  const pointsComparison = (left, right) => compareRankingByPoints(left, right);
+  let comparePrimary = pointsComparison;
+
+  if (sortMode === 'games') {
+    comparePrimary = (left, right) => right.stats.partien - left.stats.partien;
+  } else if (sortMode === 'wins') {
+    comparePrimary = (left, right) => right.stats.siege - left.stats.siege;
+  } else if (sortMode === 'diff') {
+    comparePrimary = (left, right) => compareDescendingNullable(
+      left.stats.partien > 0 ? left.stats.spielDiff : null,
+      right.stats.partien > 0 ? right.stats.spielDiff : null
+    );
+  } else if (sortMode === 'elo') {
+    comparePrimary = (left, right) => compareDescendingNullable(
+      getLatestPlayerEloValue(left),
+      getLatestPlayerEloValue(right)
+    );
+  } else if (sortMode === 'form') {
+    comparePrimary = (left, right) => comparePlayerRecentForm(left, right, matches);
+  } else if (sortMode === 'winrate') {
+    comparePrimary = (left, right) => compareDescendingNullable(
+      getPlayerWinQuote(left, matches),
+      getPlayerWinQuote(right, matches)
     );
   } else if (sortMode === 'draw-factor') {
     const rankMap = getSharedPointsRankMap(matches);
     const referenceRankMap = getDrawFactorReferenceRankMap();
-    withStats.sort((a, b) =>
-      getDrawFactorAdjustedRank(a, rankMap, referenceRankMap) - getDrawFactorAdjustedRank(b, rankMap, referenceRankMap) ||
-      b.stats.punkte - a.stats.punkte ||
-      b.stats.spielDiff - a.stats.spielDiff ||
-      b.stats.gewonneneSpiele - a.stats.gewonneneSpiele
-    );
-  } else {
-    withStats.sort((a,b) =>
-      b.stats.punkte     - a.stats.punkte     ||
-      b.stats.spielDiff  - a.stats.spielDiff  ||
-      b.stats.gewonneneSpiele - a.stats.gewonneneSpiele
-    );
+    comparePrimary = (left, right) =>
+      getDrawFactorAdjustedRank(left, rankMap, referenceRankMap) - getDrawFactorAdjustedRank(right, rankMap, referenceRankMap);
   }
-  return withStats;
+
+  return withStats.sort((left, right) => comparePrimary(left, right) || pointsComparison(left, right));
 }
 
 function getPlayerIdByName(playerName) {
@@ -5082,25 +5252,46 @@ function renderPredictionAccountTypeIcon(entry) {
   return `<span class="prediction-account-type-icon" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icon}</svg></span>`;
 }
 
-function renderPredictionAchievementIcon(entry, additionalClass = '') {
-  const kind = entry?.previous_league_achievement;
-  if (kind !== 'winner' && kind !== 'final_four') return '';
-  const seasonLabel = String(entry.previous_league_season_label || '').trim();
-  const label = `${kind === 'winner' ? 'Champion' : 'Final Four'}${seasonLabel ? ` ${seasonLabel}` : ''}`;
-  const icon = kind === 'winner'
-    ? '<svg viewBox="0 0 28 32" aria-hidden="true" focusable="false"><path d="M8 3h12v5c0 5-2.4 8.5-6 10-3.6-1.5-6-5-6-10V3Z"/><path d="M8 6H4v2c0 4 2 6 5.3 6.7M20 6h4v2c0 4-2 6-5.3 6.7"/><path d="M14 18v6M11 24h6v4M9 28h10"/></svg>'
-    : '<span class="prediction-achievement-laurel" aria-hidden="true"></span>';
+function renderPredictionCompanyBadge(entry) {
+  const company = String(entry?.company || '').trim();
+  if (!company) return '';
+  const shortLabels = { Envidual: 'ENV', Headsquare: 'HSQ', Hanako: 'HAN', Test: 'TEST' };
+  const shortLabel = shortLabels[company] || company.slice(0, 3).toUpperCase();
+  return `<span class="firma-badge firma-${escapeHtml(company)} prediction-company-badge" aria-label="Firma ${escapeHtml(company)}" title="${escapeHtml(company)}">${escapeHtml(shortLabel)}</span>`;
+}
+
+function renderTrophyIcon(label, additionalClass = '') {
   const extraClass = additionalClass ? ` ${escapeHtml(additionalClass)}` : '';
-  return `<span class="prediction-achievement-icon prediction-achievement-icon--${kind === 'winner' ? 'winner' : 'final-four'}${extraClass}" role="img" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">${icon}</span>`;
+  return `<span class="prediction-achievement-icon prediction-achievement-icon--winner${extraClass}" role="img" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}"><svg viewBox="0 0 28 32" aria-hidden="true" focusable="false"><path d="M8 3h12v5c0 5-2.4 8.5-6 10-3.6-1.5-6-5-6-10V3Z"/><path d="M8 6H4v2c0 4 2 6 5.3 6.7M20 6h4v2c0 4-2 6-5.3 6.7"/><path d="M14 18v6M11 24h6v4M9 28h10"/></svg></span>`;
+}
+
+function renderPreviousPredictionWinnerIcon(entry) {
+  if (entry?.previous_prediction_winner !== true) return '';
+  const seasonLabel = String(entry.previous_prediction_season_label || '').trim();
+  return renderTrophyIcon(`Tippsieger${seasonLabel ? ` ${seasonLabel}` : ''}`);
 }
 
 function renderLeagueRankingAchievementIcon(player) {
   const achievement = previousLeagueRankingAchievements.get(player?.id);
   if (!achievement) return '';
-  return renderPredictionAchievementIcon({
-    previous_league_achievement: achievement.kind,
-    previous_league_season_label: achievement.seasonLabel
-  }, 'ranking-player-achievement');
+  if (achievement.kind === 'final_four') {
+    const seasonLabel = String(achievement.seasonLabel || '').trim();
+    const label = `Final Four${seasonLabel ? ` ${seasonLabel}` : ''}`;
+    return `<span class="prediction-achievement-icon prediction-achievement-icon--final-four ranking-player-achievement" role="img" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">
+      <svg class="ranking-player-achievement-laurel" viewBox="0 0 1255.92 1166.47" aria-hidden="true" focusable="false">
+        <g class="ranking-player-achievement-laurel-stems">
+          <path d="M557.89 1161.81C222.45 1108.78 108.83 690.9 211.51 408.18c36.54-100.61 105.11-186.32 189.43-251.48"/>
+          <path d="M698.03 1161.81c335.44-53.03 449.06-470.91 346.38-753.63-36.54-100.61-105.11-186.32-189.43-251.48"/>
+        </g>
+        <g class="ranking-player-achievement-laurel-leaves">
+          <path d="M427.94 1121.56s80.68-130-36.83-314.82c-4.43 9.89-62.18 171.83 36.83 314.82ZM350.99 1068.8S203.11 1108.06 60.59 941.76c10.75-1.35 182.49-9.37 290.4 127.04ZM221.06 880.71S69.3 861.32 0 653.56c10.46 2.8 172.56 60.13 221.06 227.15ZM172.21 672.06S34.72 604.92 35.87 385.91c9.01 6.02 144.08 112.4 136.34 286.15ZM194.15 451.28S79.69 349.75 139.49 139.06c7.07 8.21 108.69 146.9 54.66 312.22ZM265.07 294.13S200.35 162.55 324.6 0c3.33 9.82 44.14 169.22-59.53 294.13ZM273.65 979.19s124.57-113.02 62.56-340.04c-7.78 9-118.53 154.78-62.56 340.04ZM183.33 725.92s130.61-74.07 135.53-294.87c-9.35 6.39-135.2 104.98-135.53 294.87ZM308.07 275.41c37.43-27.19 80.51-45.93 124.95-58.81-.09 9.22-1.36 18.42-3.77 27.31-2.98 11.02-7.68 21.51-12.86 31.69-41.4 81.32-125.52 158.37-217.36 176.43.3-10.34 7.29-24.21 10.17-34.36 16.65-58.66 49.18-106.17 98.87-142.27ZM410.22 132.82C471.23 83.5 549.44 55.89 627.89 55.97c1.88 24.66-30.62 47.43-47.64 60.31-38.98 29.48-79.99 49.56-127.66 62.42-29.34 7.92-62.33 14.28-92.79 14.23-.91 0-1.95-.07-2.51-.78-.8-1.03-.04-2.5.73-3.56 6.03-8.36 13.82-15.26 20.15-23.39 9.47-12.14 20.09-22.72 32.06-32.4Z"/>
+          <path d="M827.98 1121.56s-80.68-130 36.83-314.82c4.43 9.89 62.18 171.83-36.83 314.82ZM904.93 1068.8s147.88 39.26 290.4-127.04c-10.75-1.35-182.49-9.37-290.4 127.04ZM1034.86 880.71s151.77-19.39 221.06-227.15c-10.46 2.8-172.56 60.13-221.06 227.15ZM1083.71 672.06s137.49-67.14 136.34-286.15c-9.01 6.02-144.08 112.4-136.34 286.15ZM1061.77 451.28s114.46-101.53 54.66-312.22c-7.07 8.21-108.69 146.9-54.66 312.22ZM990.85 294.13S1055.57 162.55 931.32 0c-3.33 9.82-44.14 169.22 59.53 294.13ZM982.27 979.19s-124.57-113.02-62.56-340.04c7.78 9 118.53 154.78 62.56 340.04ZM1072.59 725.92S941.98 651.85 937.06 431.05c9.35 6.39 135.2 104.98 135.53 294.87ZM947.85 275.41c-37.43-27.19-80.51-45.93-124.95-58.81.09 9.22 1.36 18.42 3.77 27.31 2.98 11.02 7.68 21.51 12.86 31.69 41.4 81.32 125.52 158.37 217.36 176.43-.3-10.34-7.29-24.21-10.17-34.36-16.65-58.66-49.18-106.17-98.87-142.27ZM845.7 132.82C784.69 83.5 706.49 55.89 628.04 55.98c-1.88 24.66 30.62 47.43 47.64 60.31 38.98 29.48 79.99 49.56 127.66 62.42 29.34 7.92 62.33 14.28 92.79 14.23.91 0 1.95-.07 2.51-.78.8-1.03.04-2.5-.73-3.56-6.03-8.36-13.82-15.26-20.15-23.39-9.47-12.14-20.09-22.72-32.06-32.4Z"/>
+        </g>
+      </svg>
+    </span>`;
+  }
+  const seasonLabel = String(achievement.seasonLabel || '').trim();
+  return renderTrophyIcon(`Champion${seasonLabel ? ` ${seasonLabel}` : ''}`, 'ranking-player-achievement');
 }
 
 function renderHomePredictionLeaderboard() {
@@ -5121,7 +5312,7 @@ function renderHomePredictionLeaderboard() {
   target.innerHTML = homePredictionLeaderboard.slice(0, 4).map((entry, index) => `
     <div class="mini-rank-row r${index + 1}">
       <span class="rank-position">${index + 1}</span>
-      <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionAchievementIcon(entry)}</span></span>
+      <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionCompanyBadge(entry)}${renderPreviousPredictionWinnerIcon(entry)}</span></span>
       <span class="rank-score">${Number(entry.points) || 0} Pkt.</span>
     </div>
   `).join('');
@@ -5306,6 +5497,9 @@ function renderStatisticsModeState({ loading = false } = {}) {
 async function setStatisticsMode(mode) {
   const nextMode = mode === 'all-time' ? 'all-time' : 'season';
   if (nextMode === statisticsMode && !(nextMode === 'all-time' && !allTimeStatisticsData)) return;
+  if (nextMode !== statisticsMode && playerProfilePresentation === 'panel') {
+    closePlayerProfile({ immediate: true, restoreFocus: false });
+  }
 
   statisticsLoadError = '';
   if (nextMode === 'all-time') {

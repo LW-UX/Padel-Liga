@@ -78,19 +78,24 @@ test('all-time data is loaded lazily, cached, and keeps a separate player filter
 test('all-time view ends with the points ranking and only counts regular league matches', () => {
   const rankingMarkup = html.match(/<div class="all-time-ranking"[\s\S]*?<\/div>\s*<\/section>/)?.[0] || '';
   assert.match(html, /data-all-time-statistic hidden[\s\S]*id="all-time-ranking-table" data-ranking-sort="points"/);
+  assert.match(html, /class="all-time-ranking-profile-layout" id="all-time-ranking-profile-layout" data-all-time-statistic hidden/);
+  assert.match(html, /class="all-time-ranking-profile-main" id="all-time-ranking-profile-main"/);
+  assert.match(html, /id="all-time-ranking-profile-host" aria-label="Geöffnetes Spielerprofil"/);
   assert.match(html, /id="all-time-ranking-body"/);
   assert.match(html, /id="all-time-ranking-view-toggle" aria-label="Ranglistenansicht"/);
   assert.doesNotMatch(
     rankingMarkup,
-    /id="ranking-sort-toggle"|data-ranking-sort="(?:elo|draw-factor)"/
+    /id="ranking-sort-toggle"|id="all-time-ranking-sort-toggle"/
   );
-  assert.match(rankingMarkup, /class="active" data-all-time-ranking-sort="points">Ω-Punkte<\/button>/);
-  assert.match(rankingMarkup, /data-all-time-ranking-sort="average">Ø-Punkte<\/button>/);
-  assert.match(rankingMarkup, /class="col-points">[\s\S]*?<\/th>\s*<th class="col-average-points">Ø-Pkt\.<\/th>/);
+  assert.match(rankingMarkup, /class="col-points" aria-sort="descending">[\s\S]*?data-all-time-ranking-sort="points"/);
+  assert.match(rankingMarkup, /data-all-time-ranking-sort="average"[\s\S]*?Ø-Pkt\./);
+  assert.match(rankingMarkup, /class="col-points"[\s\S]*?<\/th>\s*<th class="col-average-points">/);
   assert.doesNotMatch(rankingMarkup, /col-elo|col-form|col-winrate|col-draw-factor|Letzte 3|Sieg-%|Losfaktor/);
   const renderer = app.match(/function renderAllTimeRanking\(\)[\s\S]*?(?=\nfunction getRankedPlayers)/)?.[0] || '';
   assert.doesNotMatch(renderer, /col-elo|col-form|col-winrate|col-draw-factor|getPlayerRankingExtras/);
   assert.match(renderer, /animateRankingRows\(body, '\.ranking-row', previousPositions\)/);
+  assert.match(renderer, /data-profile-player-id="\$\{escapeHtml\(player\.id \|\| ''\)\}" data-player-profile-id="\$\{escapeHtml\(player\.id \|\| ''\)\}" tabindex="0" role="link"/);
+  assert.match(renderer, /updatePlayerProfileRankingHighlights\(\)/);
   assert.match(style, /@media \(min-width: 769px\) \{\s*#all-time-ranking-view-toggle \{ display: none; \}\s*#all-time-ranking-table\.compact \.col-gv \{ display: table-cell; \}/);
   assert.match(app, /function getAllTimeLeagueMatches\(\)[\s\S]*countsForRanking\(match\)[\s\S]*getMatchStage\(match\) === 'league'/);
   assert.match(app, /right\.stats\.punkte - left\.stats\.punkte[\s\S]*right\.stats\.spielDiff - left\.stats\.spielDiff[\s\S]*right\.stats\.gewonneneSpiele - left\.stats\.gewonneneSpiele/);

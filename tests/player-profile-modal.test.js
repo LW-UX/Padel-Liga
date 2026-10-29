@@ -232,6 +232,7 @@ function evaluateAchievementHighlights(achievements) {
 
 test('public player profile is a separate accessible dialog', () => {
   assert.match(html, /<dialog class="player-profile-dialog" id="player-profile-dialog" aria-labelledby="player-profile-name" data-presentation="modal">/);
+  assert.match(html, /<button class="modal-close-button player-profile-presentation-toggle"[^>]*data-player-profile-presentation-toggle[^>]*hidden>/);
   assert.match(html, /<button class="modal-close-button player-profile-close"[^>]*data-player-profile-close/);
   assert.equal((html.match(/<article class="widget player-profile-widget/g) || []).length, 5);
   assert.match(html, /<article class="widget player-profile-widget player-profile-stats-widget">[\s\S]*id="player-profile-stats"/);
@@ -300,53 +301,79 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(html, /<dialog class="auth-dialog" id="auth-dialog"/);
   assert.doesNotMatch(html, /player-profile-cover|player-profile-cover-image/);
   assert.doesNotMatch(app, /cover\.webp|Coverbild von/);
-  assert.match(html, /<\/svg>\s*<button class="modal-close-button player-profile-close"[\s\S]*<div class="player-profile-shell">/);
+  assert.match(html, /<button class="modal-close-button player-profile-presentation-toggle"[\s\S]*<button class="modal-close-button player-profile-close"[\s\S]*<div class="player-profile-shell">/);
 });
 
 test('wide ranking views host the same player profile as a non-modal side panel', () => {
   assert.match(html, /class="ranking-profile-layout" id="ranking-profile-layout"/);
   assert.match(html, /class="ranking-profile-main" id="ranking-profile-main"/);
   assert.match(html, /class="ranking-profile-host" id="ranking-profile-host"/);
+  assert.match(html, /class="all-time-ranking-profile-layout" id="all-time-ranking-profile-layout" data-all-time-statistic hidden/);
+  assert.match(html, /class="all-time-ranking-profile-main" id="all-time-ranking-profile-main"/);
+  assert.match(html, /class="ranking-profile-host" id="all-time-ranking-profile-host"/);
   assert.match(html, /id="player-profile-modal-host"/);
   assert.match(html, /id="player-profile-panel-status" role="status" aria-live="polite"/);
-  assert.match(app, /const PLAYER_PROFILE_PANEL_BREAKPOINT = 1280;/);
-  assert.match(app, /const PLAYER_PROFILE_PANEL_RANKING_MIN_WIDTH = 600;/);
+  assert.match(app, /const PLAYER_PROFILE_PANEL_BREAKPOINT = 1100;/);
+  assert.match(app, /const PLAYER_PROFILE_PANEL_RANKING_WIDTH = 540;/);
   assert.match(app, /const PLAYER_PROFILE_PANEL_MIN_WIDTH = 460;/);
-  assert.match(app, /const PLAYER_PROFILE_PANEL_MAX_WIDTH = 560;/);
-  assert.match(app, /function hasPlayerProfilePanelSpace\(\)[\s\S]*?layoutViewportWidth - PLAYER_PROFILE_PANEL_OUTER_GUTTER \* 2 >= requiredWidth/);
+  assert.doesNotMatch(app, /PLAYER_PROFILE_PANEL_MAX_WIDTH|player-profile-panel-width/);
+  assert.match(app, /function hasPlayerProfilePanelSpace\(\)[\s\S]*?layoutViewportWidth - PLAYER_PROFILE_PANEL_OUTER_GUTTER >= requiredWidth/);
+  assert.match(app, /const splitLeft = Math\.max\(\s*0,\s*Math\.min\(standardContentLeft, latestPossibleLeft\)/);
   assert.match(app, /dialog\.show\(\)/);
   assert.match(app, /dialog\.showModal\(\)/);
+  assert.match(app, /let playerProfilePresentationPreference = null;/);
+  assert.match(app, /function updatePlayerProfilePresentationToggle\(\)[\s\S]*?Profil als Seitenpanel öffnen[\s\S]*?Profil als Modal öffnen[\s\S]*?toggle\.hidden = !canToggle;/);
+  assert.match(app, /function togglePlayerProfilePresentation\(\)[\s\S]*?playerProfilePresentation === 'panel' \? 'modal' : 'panel'[\s\S]*?playerProfilePresentationPreference = nextPresentation;[\s\S]*?movePlayerProfileDialog\(nextPresentation/);
+  assert.match(app, /presentationPreference: playerProfilePresentationPreference/);
+  assert.match(app, /playerProfilePresentationPreference = \['panel', 'modal'\]\.includes\(snapshot\.presentationPreference\)/);
   assert.match(app, /presentation === 'panel'[\s\S]*?'\.player-profile-elo-panel'[\s\S]*?'\.player-profile-participations-panel'[\s\S]*?'\.player-profile-history'[\s\S]*?'\.player-profile-relationships'/);
   assert.match(app, /scrollTop: getPlayerProfileShellScrollTop\(\)/);
   assert.match(app, /function cancelPlayerProfileCloseTransition[\s\S]*?document\.body\.classList\.add\('player-profile-panel-open'\)/);
-  assert.match(app, /id !== 'rangliste' && playerProfilePresentation === 'panel'/);
+  assert.match(app, /const PLAYER_PROFILE_ROW_SELECTOR = '#rangliste tr\[data-player-profile-id\], #all-time-ranking-table tr\[data-player-profile-id\]';/);
+  assert.match(app, /playerProfileOpenControl\.matches\(PLAYER_PROFILE_ROW_SELECTOR\)[\s\S]*?!playerProfileRow \|\| !rowClickHitsControl[\s\S]*?openPlayerProfile\(playerProfileOpenControl\.dataset\.playerProfileId, playerProfileOpenControl\)/);
+  assert.match(app, /data-profile-player-id="\$\{escapeHtml\(p\.id \|\| ''\)\}" data-player-profile-id="\$\{escapeHtml\(p\.id \|\| ''\)\}" tabindex="0" role="link" aria-label="Profil von \$\{escapeHtml\(p\.name\)\} öffnen"/);
+  assert.match(app, /data-profile-player-id="\$\{escapeHtml\(player\.id \|\| ''\)\}" data-player-profile-id="\$\{escapeHtml\(player\.id \|\| ''\)\}" tabindex="0" role="link" aria-label="Profil von \$\{escapeHtml\(player\.name\)\} öffnen"/);
+  assert.match(app, /event\.target === playerProfileRow && \(event\.key === 'Enter' \|\| event\.key === ' '\)[\s\S]*?openPlayerProfile\(playerProfileRow\.dataset\.playerProfileId, playerProfileRow\)/);
+  assert.match(app, /function getPlayerProfilePanelContext\(\)[\s\S]*?hostId: 'ranking-profile-host'[\s\S]*?hostId: 'all-time-ranking-profile-host'/);
+  assert.match(app, /panelContext\?\.id === 'all-time-ranking' && !profileWasOpen && !opensFromAllTimeRanking/);
+  assert.match(app, /const keepsPanelContext = \(panelContext === 'ranking' && id === 'rangliste'\)[\s\S]*?panelContext === 'all-time-ranking' && id === 'verlauf'/);
+  assert.match(app, /nextMode !== statisticsMode && playerProfilePresentation === 'panel'[\s\S]*?closePlayerProfile\(\{ immediate: true, restoreFocus: false \}\)/);
   assert.match(app, /closePlayerProfile\(\{ immediate: true, restoreFocus: false \}\)/);
-  assert.match(style, /body\.player-profile-panel-open \.ranking-profile-layout \{[\s\S]*?grid-template-columns: minmax\(600px, 1fr\) var\(--player-profile-panel-width, 460px\);[\s\S]*?gap: 24px;/);
-  assert.match(style, /body\.player-profile-panel-open #ranking-profile-main table\.rt th,[\s\S]*?padding-left: 8px;[\s\S]*?padding-right: 8px;/);
+  assert.match(style, /body\.player-profile-panel-open\[data-player-profile-panel-context="ranking"\] main \{[\s\S]*?margin-right: 16px;/);
+  assert.match(style, /body\.player-profile-panel-open\[data-player-profile-panel-context="ranking"\] \.ranking-profile-layout \{[\s\S]*?grid-template-columns: 540px minmax\(460px, 1fr\);[\s\S]*?gap: 24px;/);
+  assert.match(style, /body\.player-profile-panel-open\[data-player-profile-panel-context="all-time-ranking"\] \.all-time-ranking-profile-layout \{[\s\S]*?width: calc\(100vw - var\(--ranking-profile-split-left, 16px\) - 16px\);[\s\S]*?grid-template-columns: 540px minmax\(460px, 1fr\)/);
+  assert.match(style, /body\.player-profile-panel-open :is\(#ranking-profile-main, #all-time-ranking-profile-main\) table\.rt th,[\s\S]*?padding-left: 8px;[\s\S]*?padding-right: 8px;/);
+  assert.match(style, /body\.player-profile-panel-open :is\(#ranking-profile-main, #all-time-ranking-profile-main\) \.ranking-table \.col-name \{[\s\S]*?width: 178px;/);
+  assert.match(style, /body\.player-profile-panel-open :is\(#ranking-profile-main, #all-time-ranking-profile-main\) table\.rt th\.col-rank,[\s\S]*?padding-left: 12px;[\s\S]*?padding-right: 4px;/);
   assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \.player-profile-stats \{[\s\S]*?repeat\(4, minmax\(0, 1fr\)\)/);
   assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \.player-profile-match \{[\s\S]*?grid-template-columns: 30px minmax\(0, 1fr\) auto;/);
+  assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \{[\s\S]*?container: player-profile-panel \/ inline-size;/);
+  assert.match(style, /@container player-profile-panel \(min-width: 600px\) \{[\s\S]*?\.player-profile-match-teams \{[\s\S]*?flex-direction: row;[\s\S]*?\.player-profile-match-score \{[\s\S]*?min-height: 0;/);
+  assert.match(style, /@container player-profile-panel \(min-width: 760px\) \{[\s\S]*?grid-template-columns: 64px 32px minmax\(0, 1fr\) 132px 84px;[\s\S]*?flex-direction: row;/);
   assert.match(style, /tr\.profile-open-highlight td \{[\s\S]*?var\(--accent\)/);
+  assert.match(style, /#rangliste table\.rt tbody tr\[data-profile-player-id\],[\s\S]*?#all-time-ranking-table tbody tr\[data-profile-player-id\] \{ cursor: pointer; \}/);
+  assert.match(style, /\.player-profile-presentation-toggle \{ right: 68px; \}/);
+  assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \.player-profile-presentation-toggle \{ right: 60px; \}/);
   assert.match(style, /html\.is-detail-embed body > :not\(dialog\):not\(#player-profile-modal-host\)/);
 });
 
 test('player profile panel requires both the desktop breakpoint and the real split width', () => {
-  const constants = app.match(/const PLAYER_PROFILE_PANEL_BREAKPOINT = 1280;[\s\S]*?const PLAYER_PROFILE_PANEL_OUTER_GUTTER = 16;/)?.[0] || '';
-  const widthFunction = app.match(/function getPlayerProfilePanelWidth[\s\S]*?(?=\nfunction isRankingSectionActive)/)?.[0] || '';
+  const constants = app.match(/const PLAYER_PROFILE_PANEL_BREAKPOINT = 1100;[\s\S]*?const PLAYER_PROFILE_PANEL_OUTER_GUTTER = 16;/)?.[0] || '';
   const spaceFunction = app.match(/function hasPlayerProfilePanelSpace[\s\S]*?(?=\nfunction shouldUsePlayerProfilePanel)/)?.[0] || '';
   const context = {
-    window: { innerWidth: 1279 },
-    document: { documentElement: { clientWidth: 1279 } },
+    window: { innerWidth: 1099 },
+    document: { documentElement: { clientWidth: 1099 } },
     result: null
   };
   vm.createContext(context);
-  vm.runInContext(`${constants}\n${widthFunction}\n${spaceFunction}`, context);
+  vm.runInContext(`${constants}\n${spaceFunction}`, context);
 
   context.result = vm.runInContext('hasPlayerProfilePanelSpace()', context);
   assert.equal(context.result, false);
-  context.window.innerWidth = 1280;
-  context.document.documentElement.clientWidth = 1280;
+  context.window.innerWidth = 1100;
+  context.document.documentElement.clientWidth = 1100;
   assert.equal(vm.runInContext('hasPlayerProfilePanelSpace()', context), true);
-  context.document.documentElement.clientWidth = 1116;
+  context.document.documentElement.clientWidth = 1039;
   assert.equal(vm.runInContext('hasPlayerProfilePanelSpace()', context), false);
 });
 
@@ -784,7 +811,7 @@ test('Sommer 2026 label and confirmed profile achievements stay explicit', () =>
 
   assert.equal(context.window.PADEL_SEASON.id, '2026-sommer');
   assert.equal(context.window.PADEL_SEASON.label, 'Sommer 2026');
-  assert.equal(context.window.PADEL_SEASON.title, 'Padel-Liga Sommer 2026');
+  assert.equal(context.window.PADEL_SEASON.title, 'PadelLiga Sommer 2026');
   assert.match(importMigration, /'Sommer 2026'/);
   assert.match(achievementMigration, /from \(values \('luca_w'\), \('marco_m'\)\)/);
   assert.match(achievementMigration, /'Final 4 Teilnehmer'/);

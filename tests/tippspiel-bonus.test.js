@@ -136,7 +136,7 @@ test('bonus cards share the regular tipping lists and preserve the requested ord
   assert.match(tipping, /return \{ label: 'Gesperrt', classes: 'is-locked' \}/);
   assert.match(tipping, /champion: \{[\s\S]*?order: 1,[\s\S]*?final_four_players: \{[\s\S]*?order: 2,[\s\S]*?league_winner: \{[\s\S]*?order: 3,[\s\S]*?league_game_difference: \{[\s\S]*?order: 4,[\s\S]*?league_elo_gain: \{[\s\S]*?order: 5,[\s\S]*?company_winner: \{[\s\S]*?order: 6,/);
   assert.match(tipping, /question: 'Welche Firma gewinnt nach Ø-Punkten je Teilnehmer\?'/);
-  assert.match(tipping, /question: 'Wer wird der nächste Padel-Liga-Champion\?'/);
+  assert.match(tipping, /question: 'Wer wird der nächste PadelLiga-Champion\?'/);
   assert.match(tipping, /question: 'Wer belegt nach der Ligaphase Platz 1\?'/);
   assert.match(tipping, /sort\(compareBonusQuestions\)/);
   assert.doesNotMatch(tipping, /prediction-bonus-selection-count|von \$\{selectionCount\} gewählt/);
@@ -166,9 +166,9 @@ test('bonus cards share the regular tipping lists and preserve the requested ord
 test('leaderboard exposes bonus points while exact and passive stay match-only', () => {
   assert.match(migration, /bonus_points bigint/);
   assert.match(migration, /coalesce\(match_totals\.points, 0\) \+ coalesce\(bonus_totals\.bonus_points, 0\)/);
-  assert.match(page, /<th class="col-games">Tipps<\/th>[\s\S]*<th class="col-wins">Exakt<\/th>[\s\S]*<th class="col-passive">[\s\S]*Passiv[\s\S]*<th class="col-bonus">Bonus<\/th>[\s\S]*<th class="col-points">Gesamt<\/th>/);
+  assert.match(page, /class="col-games">[\s\S]*data-prediction-ranking-sort="predictions"[\s\S]*class="col-wins">[\s\S]*data-prediction-ranking-sort="exact"[\s\S]*class="col-passive">[\s\S]*Passiv[\s\S]*class="col-bonus">[\s\S]*data-prediction-ranking-sort="bonus"[\s\S]*class="col-points" aria-sort="descending">[\s\S]*Gesamt/);
   assert.match(tipping, /<td class="col-games">[\s\S]*<td class="col-wins">[\s\S]*<td class="col-passive"[\s\S]*<td class="col-bonus">[\s\S]*<td class="col-points rank-score">/);
-  assert.match(page, /<th class="col-bonus">Bonus<\/th>/);
+  assert.match(page, /<th class="col-bonus">[\s\S]*data-prediction-ranking-sort="bonus"[\s\S]*Bonus[\s\S]*<\/th>/);
   assert.match(tipping, /<td class="col-bonus">\$\{Number\(entry\.bonus_points\) \|\| 0\}<\/td>/);
   assert.match(tipping, /const matchPoints = \(Number\(entry\?\.points\) \|\| 0\) - \(Number\(entry\?\.bonus_points\) \|\| 0\)/);
 });

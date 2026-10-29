@@ -1,4 +1,4 @@
-# Projektentscheidungen Padel-Liga
+# Projektentscheidungen PadelLiga
 
 Dieses Dokument ist der Wegweiser zum fachlichen Projektgedächtnis. Die verbindlichen Entscheidungen stehen thematisch getrennt unter `docs/project-decisions/`.
 

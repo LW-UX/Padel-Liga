@@ -7,7 +7,7 @@ window.PADEL_SEASONS = [
     visualTheme: "summer",
     qualificationPlaces: 4,
     maximumLeagueMatches: 6,
-    file: "data/data-2026-sommer.js?v=2026-10-13-match-statistics",
+    file: "data/data-2026-sommer.js?v=2026-10-28-brand-names",
     default: false
   },
   {
@@ -18,7 +18,7 @@ window.PADEL_SEASONS = [
     visualTheme: "winter",
     qualificationPlaces: 8,
     maximumLeagueMatches: 6,
-    file: "data/data-2026-winter.js?v=2026-10-22-winter-break",
+    file: "data/data-2026-winter.js?v=2026-10-28-brand-names",
     default: true
   },
   {
@@ -38,7 +38,7 @@ window.PADEL_SEASONS = [
     route: "test",
     visualTheme: "neutral",
     qualificationPlaces: 3,
-    file: "data/data-2026-test.js?v=2026-10-21-test-windows",
+    file: "data/data-2026-test.js?v=2026-10-28-brand-names",
     hidden: true,
     default: false
   }

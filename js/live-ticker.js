@@ -42,6 +42,16 @@
       .replaceAll("'", '&#039;');
   }
 
+  // Direkt verlinkte und eingebettete Partievorschauen öffnen vor der
+  // asynchronen Liveticker-Initialisierung. Der Bild-Fallback muss deshalb
+  // bereits beim Laden des Moduls aktiv sein.
+  document.addEventListener('error', event => {
+    const image = event.target.closest?.('[data-detail-player-image]');
+    if (!image) return;
+    image.hidden = true;
+    image.nextElementSibling?.removeAttribute('hidden');
+  }, true);
+
   function getClient() {
     if (state.client) return state.client;
     const config = window.PADEL_SUPABASE_CONFIG;
@@ -1278,12 +1288,6 @@
   }
 
   function bindEvents() {
-    document.addEventListener('error', event => {
-      const image = event.target.closest?.('[data-detail-player-image]');
-      if (!image) return;
-      image.hidden = true;
-      image.nextElementSibling?.removeAttribute('hidden');
-    }, true);
     document.addEventListener('click', async event => {
       if (event.target.closest('[data-live-cancel-close]')) {
         closeCancelDialog();
