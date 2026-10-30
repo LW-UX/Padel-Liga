@@ -82,7 +82,7 @@
       overscroll-behavior: contain;
       padding: 1.5rem;
     }
-    .auth-dialog h2 { font-family: var(--font-heading); font-size: var(--text-heading); font-weight: var(--heading-font-weight); letter-spacing: var(--heading-letter-spacing); margin: 0.25rem 0 1rem; }
+    .auth-dialog h2 { margin: 0.25rem 0 1rem; }
     .auth-mode-toggle {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -284,7 +284,7 @@
       padding: 1rem;
     }
     .account-settings[hidden] { display: none; }
-    .account-settings .widget-label { margin: 0; }
+    .account-settings h3 { margin: 0; }
     .account-settings-account {
       display: grid;
       gap: 12px;
@@ -443,6 +443,7 @@
       padding-top: 2rem;
     }
     .account-section-heading { display: flex; align-items: center; justify-content: space-between; }
+    .account-section-heading h2 { margin: 0; }
     .account-section-heading .sh-title-with-help { position: relative; }
     .account-section-heading .account-games-help.th-help-wrap { position: static; }
     .account-section-heading .account-games-help.th-help-wrap .help-tooltip {
@@ -464,10 +465,11 @@
     .account-result-scope-toggle[hidden] { display: none; }
     .account-task-list { display: grid; gap: 18px; }
     #result-task-list { gap: 40px; }
-    #result-task-list > .account-task-group {
-      margin-top: 2rem;
+    #result-task-list > .match-group {
+      display: grid;
+      margin: 2rem 0 0;
     }
-    .account-task-group { display: grid; }
+    .match-group[data-training-form-group] { margin-bottom: 0; }
     .result-task-wrap { display: grid; gap: 6px; }
     .account-task-card {
       display: grid;
@@ -1068,9 +1070,9 @@
       .account-settings-actions .secondary-button { flex: 1 1 0; }
       .account-section { min-width: 0; }
       .account-section-heading { min-width: 0; }
-      .account-section-heading .sh-title { font-size: 1.65rem; }
+      .account-section-heading h2 { font-size: 1.65rem; }
       #result-task-list,
-      #result-task-list > .account-task-group,
+      #result-task-list > .match-group,
       #result-task-list .account-task-list { min-width: 0; }
       .result-entry-timing { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .result-entry-form :where(input, select), .match-schedule-form :where(input, select), .training-form :where(input, select) { width: 100%; }

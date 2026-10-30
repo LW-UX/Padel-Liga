@@ -38,7 +38,7 @@
       <span class="help-icon" tabindex="0" role="button" aria-label="${esc(title)} erklären" aria-describedby="${helpId}" aria-expanded="false" data-help-tooltip-anchor>?</span>
       <span class="help-tooltip" id="${helpId}" role="tooltip">${esc(helpText)}</span>
     </span>`;
-    return body ? `<section class="match-statistics-section"><h2 class="widget-label"><span class="match-statistics-heading">${esc(title)}${help}</span></h2>${body}</section>` : '';
+    return body ? `<section class="match-statistics-section"><h3><span class="match-statistics-heading">${esc(title)}${help}</span></h3>${body}</section>` : '';
   }
   function playerEmoji(player) {
     if (['👨', '👩'].includes(player?.profileEmoji)) return player.profileEmoji;
@@ -131,7 +131,7 @@
     if (forecast === null && !options.message) return '';
     if (!forecast || forecast.error) {
       return `<section class="match-forecast" data-match-forecast>
-        <strong class="widget-label match-forecast-question">Wer wird gewinnen?</strong>
+        <strong class="eyebrow match-forecast-question">Wer wird gewinnen?</strong>
         <div class="match-forecast-status" role="status">${esc(options.message || 'Die Tipps konnten nicht geladen werden.')}</div>
       </section>`;
     }
@@ -171,7 +171,7 @@
       ? '<span class="match-forecast-own-notice" role="status">Eigene Partie. Kein Tipp möglich.</span>'
       : '';
     return `<section class="match-forecast" data-match-forecast>
-      <strong class="widget-label match-forecast-question">Wer wird gewinnen?</strong>
+      <strong class="eyebrow match-forecast-question">Wer wird gewinnen?</strong>
       <div class="match-forecast-control">${control}</div>
       <div class="match-forecast-action">${change}${ownMatchNotice}</div>
       ${options.message ? `<div class="match-forecast-message" role="status">${esc(options.message)}</div>` : ''}
@@ -297,14 +297,14 @@
     const impactTitle = data.availability === 'analysis' ? 'Was sich verändert hat' : 'Was sich verändern kann';
     const impactBody = impactGroups.length
       ? `<div class="match-statistics-impact-groups">${impactGroups.map(({ player, facts }) => `<div class="match-statistics-impact-player">
-        <h3><button type="button" class="match-statistics-impact-player-name player-profile-link${viewerClass(player, selectedPlayerId)}" data-player-profile-id="${esc(player.playerId)}">${esc(player.displayName)}</button></h3>
+        <h4><button type="button" class="match-statistics-impact-player-name player-profile-link${viewerClass(player, selectedPlayerId)}" data-player-profile-id="${esc(player.playerId)}">${esc(player.displayName)}</button></h4>
         <ul>${facts.map(text => `<li>${esc(text)}</li>`).join('')}</ul>
       </div>`).join('')}</div>`
       : '<p class="match-statistics-empty-impact">Keine bedeutenden Auswirkungen.</p>';
     return `<div class="match-statistics-ranking-layout">
-      <section class="match-statistics-section match-statistics-ranking-panel"><h2 class="widget-label">Rangliste</h2>${renderPlayerRanking(data, selectedPlayerId)}</section>
+      <section class="match-statistics-section match-statistics-ranking-panel"><h3>Rangliste</h3>${renderPlayerRanking(data, selectedPlayerId)}</section>
       <div class="match-statistics-side-panels">
-        <section class="match-statistics-section match-statistics-impact-panel"><h2 class="widget-label">${impactTitle}</h2>${impactBody}</section>
+        <section class="match-statistics-section match-statistics-impact-panel"><h3>${impactTitle}</h3>${impactBody}</section>
       </div>
     </div>`;
   }

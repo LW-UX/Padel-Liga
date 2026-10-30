@@ -397,13 +397,13 @@
   function renderPrematchFacts() {
     if (state.prematchFactsLoading) {
       return `<section class="live-overview-section live-overview-prematch-section">
-        <div class="widget-label">Prematch-Fakten</div>
+        <h3>Prematch-Fakten</h3>
         <div class="live-overview-prematch-status">Prematch-Fakten werden geladen …</div>
       </section>`;
     }
     if (state.prematchFactsError) {
       return `<section class="live-overview-section live-overview-prematch-section">
-        <div class="widget-label">Prematch-Fakten</div>
+        <h3>Prematch-Fakten</h3>
         <div class="live-overview-prematch-status">Die Prematch-Fakten sind derzeit nicht verfügbar.</div>
       </section>`;
     }
@@ -419,7 +419,7 @@
 
     return `<section class="live-overview-section live-overview-prematch-section">
       <div class="live-overview-prematch-heading">
-        <div class="widget-label">Prematch-Fakten</div>
+        <h3>Prematch-Fakten</h3>
         <span class="th-help-wrap">
           <span class="help-icon" tabindex="0" aria-label="Titelprognose erklären">?</span>
           <span class="help-tooltip">Die Titelprognose basiert auf den Siegchancen in den drei wechselnden Teams.<br>Stand vor Beginn des Final Four.${replacementPlayer ? `<span class="live-overview-prematch-tooltip-paragraph">${escapeHtml(replacementPlayer.displayName)} ist für ${escapeHtml(replacementPlayer.replacesDisplayName)} nachgerückt.</span>` : ''}</span>
@@ -465,7 +465,7 @@
     if (!withdrawnPlayer) return '';
 
     return `<section class="live-overview-section live-overview-withdrawn-section">
-      <div class="widget-label">Qualifiziert · krankheitsbedingt ausgefallen</div>
+      <h3>Qualifiziert · krankheitsbedingt ausgefallen</h3>
       <article class="live-overview-prematch-withdrawn">
         <div class="live-overview-prematch-withdrawn-identity">
           <button type="button" class="match-detail-player live-overview-prematch-card player-profile-link" data-player-profile-id="${escapeHtml(withdrawnPlayer.playerId)}">
@@ -496,7 +496,7 @@
   function renderFinalFourPoll() {
     if (state.pollLoading) {
       return `<section class="live-overview-section live-overview-poll-section">
-        <div class="widget-label">Wer gewinnt das Final Four?</div>
+        <h3>Wer gewinnt das Final Four?</h3>
         <div class="live-overview-poll-status">Umfrage wird geladen …</div>
       </section>`;
     }
@@ -525,7 +525,7 @@
 
     return `<section class="live-overview-section live-overview-poll-section">
       <div class="live-overview-poll-heading">
-        <div class="widget-label">Wer gewinnt das Final Four?</div>
+        <h3>Wer gewinnt das Final Four?</h3>
         ${poll.closed ? '<span class="sh-meta">Abstimmung beendet</span>' : ''}
       </div>
       <div class="live-overview-poll-swap${showSelection ? ' is-selection' : ' is-result'}">
@@ -627,7 +627,7 @@
     target.innerHTML = `<div class="live-overview">
       ${renderOverviewPodium(payloads, stats)}
       <section class="live-overview-section">
-        <div class="widget-label">Partien</div>
+        <h3>Partien</h3>
         <div class="live-overview-matches">
           ${payloads.map((payload, index) => {
             const matchState = getOverviewMatchState(payload);
@@ -650,7 +650,7 @@
         </div>
       </section>
       <section class="live-overview-section">
-        <div class="widget-label">Rangliste</div>
+        <h3>Rangliste</h3>
         <div class="ranking-wrap live-overview-ranking-wrap">
           <table class="rt calculator-ranking-table final-four-calculator-ranking-table live-overview-table">
             <thead><tr>
@@ -745,7 +745,7 @@
         </div>` : ''}
       </article>
       <section class="live-ticker-history-section">
-        <div class="widget-label">Spielverlauf</div>
+        <h3>Spielverlauf</h3>
         ${renderHistory(payload)}
       </section>`;
     if (connection) connection.textContent = isLive
@@ -1183,7 +1183,7 @@
     section.hidden = !state.auth?.session || (!requests.length && !matches.length);
     if (section.hidden) return;
     const requestHtml = requests.map(request => `<article class="account-task-card is-actionable">
-      <div class="account-task-meta"><span class="widget-label">Schreiberanfrage</span><span class="account-task-status is-open">Offen</span></div>
+      <div class="account-task-meta"><span class="eyebrow">Schreiberanfrage</span><span class="account-task-status is-open">Offen</span></div>
       <strong>${escapeHtml(request.seasonLabel)} · ${escapeHtml(request.displayLabel)}</strong>
       <div class="result-card-timing">${escapeHtml(formatDateTime(request.matchAt))}</div>
       <div class="account-task-actions">
@@ -1193,7 +1193,7 @@
     </article>`).join('');
     const matchHtml = matches.map(task => `<article class="account-task-card${task.session ? ' is-actionable' : ''}">
       <div class="account-task-meta">
-        <span class="widget-label">${escapeHtml(task.seasonLabel)} · ${escapeHtml(task.displayLabel)}</span>
+        <span class="eyebrow">${escapeHtml(task.seasonLabel)} · ${escapeHtml(task.displayLabel)}</span>
         <span class="account-task-status ${task.session ? 'is-open' : ''}">${task.session ? 'Live' : task.assignment?.status === 'accepted' ? 'Bereit' : 'Zuweisung offen'}</span>
       </div>
       <div class="result-card-timing">${escapeHtml(formatDateTime(task.matchAt))}</div>

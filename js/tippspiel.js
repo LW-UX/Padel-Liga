@@ -242,12 +242,12 @@
     const range = matchday?.startDate && matchday?.endDate
       ? `${formatDay(matchday.startDate)} – ${formatDay(matchday.endDate)}`
       : '';
-    return `<div class="spieltag-label"><span>${escapeHtml(label)} (${count})</span>${range ? `<span>${escapeHtml(range)}</span>` : ''}</div>`;
+    return `<h3><span>${escapeHtml(label)} (${count})</span>${range ? `<span>${escapeHtml(range)}</span>` : ''}</h3>`;
   }
 
   function renderMatchGroup(labelHtml, matches, renderMatch) {
     if (!matches.length) return '';
-    return `<section class="prediction-match-group">${labelHtml}<div class="match-list">${matches.map(renderMatch).join('')}</div></section>`;
+    return `<section class="match-group">${labelHtml}<div class="match-list">${matches.map(renderMatch).join('')}</div></section>`;
   }
 
   function renderMatchesByMatchday(matches, renderMatch) {
@@ -461,7 +461,7 @@
 
   function renderPredictionHtmlGroup(label, cards) {
     if (!cards.length) return '';
-    return `<section class="prediction-match-group">${label}<div class="match-list">${cards.join('')}</div></section>`;
+    return `<section class="match-group">${label}<div class="match-list">${cards.join('')}</div></section>`;
   }
 
   function renderSortToggle() {
@@ -694,7 +694,7 @@
   function renderOverviewArticleCard(article) {
     return `<article class="article-card article-newspaper">
       ${renderArticleNewspaperHeader(article)}
-      <h3>${article.title}</h3>
+      <h2>${article.title}</h2>
       <div class="article-newspaper-publisher">United we Padel</div>
       <div class="article-body">${article.body.map(renderOverviewArticleBlock).join('')}</div>
     </article>`;
@@ -834,7 +834,7 @@
     return `
       <article class="widget prediction-overview-block prediction-overview-stand prediction-overview-personal-stand">
         <div class="prediction-overview-stand-copy">
-          <div class="widget-label">Dein Stand</div>
+          <h3>Dein Stand</h3>
           <div class="prediction-overview-account">${escapeHtml(displayName)}</div>
           <p>${escapeHtml(context)}</p>
         </div>
@@ -902,7 +902,7 @@
     if (!latest) {
       return `
         <article class="widget prediction-overview-block prediction-overview-latest">
-          <div class="widget-label">Letzte Auswertung</div>
+          <div class="eyebrow">Letzte Auswertung</div>
           <h2>Noch keine Wertung</h2>
           <p>Sobald ein bestätigtes Ergebnis für dich gewertet wurde, erscheint hier die Zusammenfassung.</p>
         </article>
@@ -917,7 +917,7 @@
     if (latest.automatic) details.push({ value: `${latest.automatic}×`, label: 'automatisch gewertet' });
     return `
       <article class="widget prediction-overview-block prediction-overview-latest">
-        <div class="widget-label">Letzte Auswertung · ${escapeHtml(latest.label)}</div>
+        <h3>Letzte Auswertung · ${escapeHtml(latest.label)}</h3>
         <div class="prediction-overview-stats prediction-overview-latest-stats">
           ${details.map(detail => `<div><strong>${escapeHtml(detail.value)}</strong><span class="stat-copy">${escapeHtml(detail.label)}</span></div>`).join('')}
         </div>
@@ -936,7 +936,7 @@
     const exactRate = scoredPredictions ? `${Math.round((exact / scoredPredictions) * 100)} %` : '–';
     return `
       <article class="widget prediction-overview-block prediction-overview-balance">
-        <div class="widget-label">Deine Saisonbilanz</div>
+        <h3>Deine Saisonbilanz</h3>
         <div class="prediction-overview-stats">
           <div><strong>${formatCount(predictions)}</strong><span class="stat-copy">Tipps</span></div>
           <div><strong>${formatCount(scored)}</strong><span class="stat-copy">Wertungen</span></div>
@@ -952,7 +952,7 @@
   function renderGuestStand() {
     return `
       <article class="widget prediction-overview-block prediction-overview-stand prediction-overview-guest">
-        <div class="widget-label">Dein PadelTipp</div>
+        <div class="eyebrow">Dein PadelTipp</div>
         <h2>Tippen, mitfiebern, Punkte sammeln.</h2>
         <p>Mit einem gemeinsamen Padel-Konto speicherst du deine Prognosen und siehst hier deinen persönlichen Saisonstand.</p>
       </article>
@@ -964,7 +964,7 @@
     const predictions = state.leaderboard.reduce((total, entry) => total + (Number(entry.predictions_count) || 0), 0);
     return `
       <article class="widget prediction-overview-block prediction-overview-community">
-        <div class="widget-label">Diese Saison</div>
+        <h3>Diese Saison</h3>
         <div class="prediction-overview-scoreline">
           <div><div class="stat-main">${formatCount(participants)}</div><div class="stat-copy">Teilnehmende</div></div>
           <div><div class="stat-main">${formatCount(predictions)}</div><div class="stat-copy">Tipps</div></div>
@@ -990,7 +990,7 @@
     const action = renderPredictionAction();
     const leaders = `
       <article class="widget prediction-overview-block prediction-overview-leaders">
-        <div class="widget-label">Spitzenfeld</div>
+        <h3>Spitzenfeld</h3>
         <div class="prediction-overview-ranks">${renderOverviewRankRows()}</div>
         <div class="home-widget-links">
           <button class="text-link inline-link" type="button" data-tip-nav="tippuebersicht">Zur Tipprangliste</button>
@@ -1097,7 +1097,7 @@
     if (state.sortMode === 'matchday') {
       const matchdayGroups = renderMatchesByMatchday(matches, renderMatch);
       const bonusGroup = renderPredictionHtmlGroup(
-        `<div class="spieltag-label"><span>Bonustipps (${bonusQuestions.length})</span></div>`,
+        `<h3><span>Bonustipps (${bonusQuestions.length})</span></h3>`,
         bonusQuestions.map(renderBonusQuestion)
       );
       target.innerHTML = `${matchdayGroups}${bonusGroup}`;
@@ -1115,9 +1115,9 @@
       ...lockedBonusQuestions.map(renderBonusQuestion)
     ];
     target.innerHTML = `
-      ${renderPredictionHtmlGroup(`<div class="spieltag-label"><span>Offene Tipps (${openCards.length})</span></div>`, openCards)}
-      ${renderPredictionHtmlGroup(`<div class="spieltag-label"><span>Demnächst tippbar (${upcomingCards.length})</span></div>`, upcomingCards)}
-      ${renderPredictionHtmlGroup(`<div class="spieltag-label"><span>Gesperrte Tipps (${lockedCards.length})</span></div>`, lockedCards)}
+      ${renderPredictionHtmlGroup(`<h3><span>Offene Tipps (${openCards.length})</span></h3>`, openCards)}
+      ${renderPredictionHtmlGroup(`<h3><span>Demnächst tippbar (${upcomingCards.length})</span></h3>`, upcomingCards)}
+      ${renderPredictionHtmlGroup(`<h3><span>Gesperrte Tipps (${lockedCards.length})</span></h3>`, lockedCards)}
     `;
   }
 

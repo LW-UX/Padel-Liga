@@ -21,9 +21,9 @@
       } catch (error) { /* Ohne Speicher bleibt das veröffentlichte Branding. */ }
     })();
   </script>
-  <link rel="stylesheet" href="../style.css?v=2026-10-30-role-color-names">
-  <link rel="stylesheet" href="../match-statistics.css?v=2026-10-30-radius-sm">
-  <link rel="stylesheet" href="../account.css?v=2026-10-30-role-color-names">
+  <link rel="stylesheet" href="../style.css?v=2026-10-30-heading-elements">
+  <link rel="stylesheet" href="../match-statistics.css?v=2026-10-30-heading-elements">
+  <link rel="stylesheet" href="../account.css?v=2026-10-30-heading-elements">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="../data/players.js?v=2026-10-20-test-net-emoji"></script>
@@ -34,7 +34,7 @@
   <script defer src="../js/score-input.js?v=2026-09-22-unified-score-counters"></script>
   <script defer src="../js/mobile-dialog-pages.js?v=2026-10-30-mobile-pages-tipp"></script>
   <script defer src="../js/branding-preview.js?v=2026-10-30-branding-change"></script>
-  <script defer src="../js/account.js?v=2026-10-30-schedule-time-tap"></script>
+  <script defer src="../js/account.js?v=2026-10-30-heading-elements"></script>
   <script defer src="../js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="../js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="../js/panel-layout.js?v=2026-10-29-shared-panel-layout"></script>
@@ -105,7 +105,7 @@
 
   <section id="tippuebersicht" class="section">
     <div class="sh">
-      <div class="sh-title">TIPPRANGLISTE</div>
+      <h2>TIPPRANGLISTE</h2>
     </div>
     <div class="ranking-wrap">
       <table class="rt ranking-table compact prediction-ranking-table" id="prediction-ranking-table" data-ranking-sort="points">
@@ -137,7 +137,7 @@
   <section id="tipptabelle" class="section">
     <div class="sh sh-with-control">
       <div class="sh-heading">
-        <div class="sh-title">TIPPÜBERSICHT</div>
+        <h2>TIPPÜBERSICHT</h2>
       </div>
       <div class="match-scope-toggle" id="prediction-table-view-toggle" aria-label="Tippübersicht umschalten">
         <button type="button" class="active" data-prediction-table-view="matches" aria-pressed="true">Partien</button>
@@ -155,7 +155,7 @@
       <div class="match-statistics-list-pane prediction-statistics-list-pane" id="prediction-statistics-list-pane">
         <div class="sh sh-with-control">
           <div class="sh-heading">
-            <div class="sh-title">TIPPABGABE</div>
+            <h2>TIPPABGABE</h2>
           </div>
           <div class="match-scope-toggle ranking-sort-toggle" id="prediction-sort-toggle" aria-label="Tippabgabe sortieren">
             <button type="button" class="active" data-prediction-sort="status" aria-pressed="true">Status</button>
@@ -171,14 +171,14 @@
 
   <section id="tippinfos" class="section">
     <div class="sh">
-      <div class="sh-title">INFOS</div>
+      <h2>INFOS</h2>
       <div class="sh-meta">Funktionsweise und Punktevergabe</div>
     </div>
     <div class="prediction-info-layout">
       <article class="info-card prediction-info-about">
         <p>Beim PadelTipp sagst du vor dem Spiel voraus, welches Team gewinnt und wie das genaue Satzergebnis ausfällt.<br>Dein Tipp ist nur eine persönliche Prognose. Er verändert weder das Spielergebnis noch die Elo-Rangliste.</p>
         <div class="info-group">
-          <h3>Ab wann kann ich tippen?</h3>
+          <h4>Ab wann kann ich tippen?</h4>
           <ul class="clean-list">
             <li>Getippt werden die Partien, die gerade anstehen: alle terminierten Partien sowie die Partien des aktuellen und des nächsten Spieltags.</li>
             <li>Das sind dieselben Partien, für die es auch die ausführliche Partievorschau gibt. So tippst du mit aktuellen Elo-Werten und nicht ins Blaue.</li>
@@ -187,7 +187,7 @@
           </ul>
         </div>
         <div class="info-group">
-          <h3>Bis wann kann ich tippen?</h3>
+          <h4>Bis wann kann ich tippen?</h4>
           <ul class="clean-list">
             <li>Bei offenen Partien kannst du deinen Tipp bis zum eingetragenen Spielbeginn abgeben und ändern.</li>
             <li>Mit Erreichen dieses Zeitpunkts schließt die Tippabgabe automatisch.</li>
@@ -195,7 +195,7 @@
           </ul>
         </div>
         <div class="info-group">
-          <h3>Was passiert bei einer Verschiebung?</h3>
+          <h4>Was passiert bei einer Verschiebung?</h4>
           <ul class="clean-list">
             <li>Dein bisheriger Tipp bleibt erhalten.</li>
             <li>Sobald der neue Termin eingetragen ist, richtet sich der Tippschluss nach dem neuen Spielbeginn.</li>
@@ -203,7 +203,7 @@
           </ul>
         </div>
         <div class="info-group">
-          <h3>Wann wird ausgewertet?</h3>
+          <h4>Wann wird ausgewertet?</h4>
           <ul class="clean-list">
             <li>Nachdem das Ergebnis eingetragen und bestätigt wurde, wird dein Tipp automatisch ausgewertet.</li>
             <li>Deine Punkte fließen dann in die Tipprangliste ein.</li>
@@ -211,7 +211,7 @@
           </ul>
         </div>
         <div class="info-group">
-          <h3>Wie funktionieren die Bonustipps?</h3>
+          <h4>Wie funktionieren die Bonustipps?</h4>
           <ul class="clean-list">
             <li id="prediction-bonus-season-info">Die sechs Bonustipps für Winter 2026 können bis Montag, 16. November 2026, 00:00 Uhr abgegeben und geändert werden.</li>
             <li>Jede richtige Antwort bringt 4 Punkte. Bei den vier Final-Four-Spielern zählt jeder richtig gewählte Spieler einzeln, sodass dort bis zu 16 Punkte möglich sind. Auch eine unvollständige Auswahl erhält Punkte für jeden Treffer.</li>
@@ -222,7 +222,7 @@
           </ul>
         </div>
         <div class="info-group">
-          <h3>Was gilt bei meiner eigenen Partie?</h3>
+          <h4>Was gilt bei meiner eigenen Partie?</h4>
           <ul class="clean-list">
             <li>Deine eigene Partie kannst du nicht tippen.</li>
             <li>Nach der Wertung erhältst du dafür automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Fremdtipp auf diese Partie.</li>
@@ -233,11 +233,11 @@
       </article>
       <aside class="prediction-info-sidebar">
         <article class="widget prediction-info-account">
-          <div class="widget-label">Dein Konto</div>
+          <h3>Dein Konto</h3>
           <div id="prediction-auth-hint"></div>
         </article>
         <article class="widget prediction-rules">
-          <div class="widget-label">Tipppunkte</div>
+          <h3>Tipppunkte</h3>
           <div class="prediction-rule-grid">
             <div><strong>4</strong><span>Richtige Bonusantwort</span><small>je richtigem Treffer</small></div>
             <div><strong>4</strong><span>Exaktes Satzergebnis</span><small>z. B. 2:0 → 2:0</small></div>
@@ -264,7 +264,7 @@
   <button class="modal-close-button auth-dialog-close" type="button" data-auth-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="auth-dialog-card">
     <div id="auth-guest-view">
-      <div class="widget-label">Dein Padel-Konto</div>
+      <div class="eyebrow">Dein Padel-Konto</div>
       <h2 id="auth-dialog-title">Einloggen</h2>
       <div class="auth-mode-toggle" aria-label="Login oder Registrierung">
         <button class="active" type="button" data-auth-mode="login">Login</button>
@@ -278,13 +278,13 @@
       </form>
     </div>
     <div id="auth-confirmation-view" hidden>
-      <div class="widget-label">Geschützter Link</div>
+      <div class="eyebrow">Geschützter Link</div>
       <h2 id="auth-confirmation-title">Link bestätigen</h2>
       <p class="auth-dialog-copy" id="auth-confirmation-copy">Öffne jetzt den geschützten Einmal-Link.</p>
       <button class="primary-button" type="button" data-auth-confirmation-continue>Weiter</button>
     </div>
     <div id="auth-password-view" hidden>
-      <div class="widget-label">Dein Zugang</div>
+      <div class="eyebrow">Dein Zugang</div>
       <h2 id="auth-password-title">Passwort festlegen</h2>
       <p class="auth-dialog-copy" id="auth-password-copy">Lege ein persönliches Passwort mit mindestens 8 Zeichen fest.</p>
       <form id="auth-password-form" class="auth-form">
@@ -300,7 +300,7 @@
     <div id="auth-account-view" hidden>
       <div class="account-header">
         <div>
-          <div class="widget-label">Dein Konto</div>
+          <div class="eyebrow">Dein Konto</div>
           <h2 id="account-display-name"></h2>
           <p class="auth-account-email" id="account-email"></p>
           <div class="auth-message account-auth-message" id="account-auth-message" role="status" aria-live="polite"></div>
@@ -322,14 +322,14 @@
       </div>
       <section class="account-settings" id="account-settings-panel" data-account-settings-panel hidden>
         <div class="account-settings-account">
-          <div class="widget-label">Konto</div>
+          <h3>Konto</h3>
           <div class="account-settings-actions">
             <button class="secondary-button" type="button" data-password-change>Passwort ändern</button>
             <button class="secondary-button" type="button" data-auth-logout>Ausloggen</button>
           </div>
         </div>
         <div class="account-settings-mail">
-          <div class="widget-label">E-Mail-Benachrichtigungen</div>
+          <h3>E-Mail-Benachrichtigungen</h3>
           <p>Du kannst jede automatische Mail einzeln ausschalten.</p>
           <label class="account-setting-row">
             <span><strong>Ergebnis eintragen</strong><small>Erinnerung 5 Stunden nach Spielbeginn, solange noch kein Ergebnis eingetragen wurde.</small></span>
@@ -349,7 +349,7 @@
           </label>
         </div>
         <div class="account-settings-design" data-account-branding hidden>
-          <div class="widget-label">Design</div>
+          <h3>Design</h3>
           <div class="account-branding-options" role="radiogroup" aria-label="Design auswählen" data-account-branding-options></div>
         </div>
         <div class="auth-message account-settings-message" data-account-settings-message role="status" aria-live="polite"></div>
@@ -359,7 +359,7 @@
         <div class="account-player-area" id="account-player-area" hidden>
           <section class="account-section" id="open-results-section">
             <div class="account-section-heading">
-              <h3 class="sh-title sh-title-with-help">Partienübersicht
+              <h2 class="sh-title-with-help">Partienübersicht
                 <span class="th-help-wrap account-games-help">
                   <span class="help-icon" tabindex="0" role="button" aria-label="Partienübersicht erklären" aria-describedby="account-games-help" aria-expanded="false" data-help-tooltip-anchor>?</span>
                   <span class="help-tooltip" id="account-games-help" role="tooltip">
@@ -370,15 +370,15 @@
                     <span class="account-games-help-block"><strong>Training</strong>Für einen zukünftigen Termin genügen Datum, Uhrzeit und vier Teilnehmer. Nach dem Termin ergänzt du Paarungen, Formate und Ergebnisse und sendest sie zur Bestätigung. Trainings zählen nicht für Rangliste und Elo.</span>
                   </span>
                 </span>
-              </h3>
+              </h2>
               <button class="secondary-button" type="button" data-training-toggle>Training hinzufügen</button>
             </div>
             <div class="match-scope-toggle account-result-scope-toggle" aria-label="Partienübersicht filtern" data-account-result-scope-toggle hidden>
               <button type="button" class="active" data-account-result-scope="relevant" aria-pressed="true">Relevant</button>
               <button type="button" data-account-result-scope="all" aria-pressed="false">Alle</button>
             </div>
-            <div data-training-form-group hidden>
-              <div class="spieltag-label"><span>Training</span></div>
+            <div class="match-group" data-training-form-group hidden>
+              <h3><span>Training</span></h3>
               <form class="training-form" id="training-form" hidden>
                 <div class="training-form-meta">
                   <label><span>Datum</span><span class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required></span></label>
@@ -406,7 +406,7 @@
 <dialog class="auth-dialog player-invite-dialog" id="player-invite-dialog" aria-labelledby="player-invite-title">
   <button class="modal-close-button auth-dialog-close" type="button" data-player-invite-close aria-label="Einladung schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="auth-dialog-card">
-    <div class="widget-label">Kontoverwaltung</div>
+    <div class="eyebrow">Kontoverwaltung</div>
     <h2 id="player-invite-title">Spielerzugänge</h2>
     <p class="auth-dialog-copy">Ordne die Arbeits-E-Mail zu und erstelle bei Bedarf eine persönliche Einladung für den manuellen Versand. Bereits zugeordnete Spieler können erneut eingeladen werden.</p>
     <form id="player-invite-form" class="auth-form">
@@ -425,7 +425,7 @@
     </form>
     <div class="auth-message" id="player-invite-message" role="status" aria-live="polite"></div>
     <section class="player-invite-output" id="player-invite-output" hidden>
-      <div class="widget-label">Einladung vorbereitet</div>
+      <h3>Einladung vorbereitet</h3>
       <label>
         <span>Betreff</span>
         <input id="player-invite-subject" type="text" readonly>

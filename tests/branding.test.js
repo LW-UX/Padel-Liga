@@ -9,6 +9,17 @@ const root = path.join(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const loadTool = () => import(pathToFileURL(path.join(root, 'tools/apply-branding.mjs')).href);
 
+test('headings get their look from the element instead of per-area classes', () => {
+  const style = read('style.css');
+  assert.match(style, /\bh2 \{[^}]*font-family: var\(--font-heading\);[^}]*font-weight: var\(--heading-font-weight\);/);
+  assert.match(style, /\bh3,\s*\.eyebrow \{[^}]*text-transform: uppercase;/);
+
+  const scripts = fs.readdirSync(path.join(root, 'js')).map(name => `js/${name}`);
+  for (const file of ['index.html', 'tipp/index.html', 'style.css', 'account.css', 'match-statistics.css', 'whats-new.css', ...scripts]) {
+    assert.doesNotMatch(read(file), /\bsh-title(?!-)|\bwidget-label\b|\bspieltag-label\b|\bspieltag-group\b/, file);
+  }
+});
+
 test('every branding defines the same variables as the OG-Design', async () => {
   const { readBrandingVariables } = await loadTool();
   const reference = Object.keys(readBrandingVariables(read('branding/og-design.css'))).sort();

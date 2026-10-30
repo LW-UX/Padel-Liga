@@ -2426,10 +2426,10 @@ function renderPlayerProfileRelationships(matches = []) {
     ${relationships.map(([label, records, valueClass, helpText], index) => {
       const tooltipId = `player-profile-relationship-help-${index}`;
       return `<div class="stat-shift-group">
-      <div class="widget-label"><span class="th-help-wrap">${escapeHtml(label)}
+      <h3><span class="th-help-wrap">${escapeHtml(label)}
         <span class="help-icon" tabindex="0" role="button" aria-label="${escapeHtml(label)} erklären" aria-describedby="${tooltipId}" aria-expanded="false" data-help-tooltip-anchor>?</span>
         <span class="help-tooltip" id="${tooltipId}" role="tooltip">${escapeHtml(helpText)}</span>
-      </span></div>
+      </span></h3>
       <div class="stat-shift-list">
         ${records.map(record => `<div class="stat-shift-item">
           <div class="stat-shift-head">
@@ -2568,11 +2568,11 @@ function renderPlayerProfileCompare(profile) {
   const selected = options.find(option => option.id === playerProfileCompareId) || null;
   if (!selected) playerProfileCompareId = null;
   if (!options.length) {
-    target.innerHTML = '<div class="widget-label">Vergleich</div><div class="empty-state">Noch keine gemeinsamen Partien mit anderen Spielern.</div>';
+    target.innerHTML = '<h3>Vergleich</h3><div class="empty-state">Noch keine gemeinsamen Partien mit anderen Spielern.</div>';
     return;
   }
   const label = selected?.name || 'Spieler wählen';
-  target.innerHTML = `<div class="widget-label">Vergleich</div>
+  target.innerHTML = `<h3>Vergleich</h3>
     <div class="training-picker" data-profile-compare-picker>
       <div class="training-picker-search-control">
         <button class="secondary-button secondary-button--dropdown training-picker-toggle" type="button" data-profile-compare-toggle aria-label="${escapeHtml(label)}" aria-haspopup="listbox" aria-expanded="false" aria-controls="player-profile-compare-menu">
@@ -5392,6 +5392,10 @@ function renderSplitMeta(label, detail, className) {
   </div>`;
 }
 
+function renderGroupHeading(label, detail) {
+  return `<h3><span>${escapeHtml(label)}</span>${detail ? `<span>${escapeHtml(detail)}</span>` : ''}</h3>`;
+}
+
 function renderArticleMeta(meta) {
   const [label, ...details] = formatArticleMeta(meta).split(/\s*\|\s*/);
   return renderSplitMeta(label, details.join(' | '), 'article-meta');
@@ -5411,7 +5415,7 @@ function renderArticleCard(article, { newspaper = true } = {}) {
     ${newspaper
       ? renderArticleNewspaperHeader(article)
       : article.meta ? renderArticleMeta(article.meta) : ''}
-    <h3>${article.title}</h3>
+    <h2>${article.title}</h2>
     ${newspaper ? '<div class="article-newspaper-publisher">United we Padel</div>' : ''}
     ${article.body ? `<div class="article-body">${article.body.map(renderArticleBlock).join('')}</div>` : ''}
   </article>`;
@@ -5494,7 +5498,7 @@ function renderHomeAnnouncement(now = new Date()) {
 
   container.hidden = !announcement;
   container.innerHTML = announcement
-    ? `${announcement.label ? `<div class="widget-label">${escapeHtml(announcement.label)}</div>` : ''}${renderArticleCard(announcement, { newspaper: false })}${announcement.link ? `<button class="text-link" data-nav-target="${escapeHtml(announcement.link.target)}">${escapeHtml(announcement.link.label)}</button>` : ''}`
+    ? `${announcement.label ? `<div class="eyebrow">${escapeHtml(announcement.label)}</div>` : ''}${renderArticleCard(announcement, { newspaper: false })}${announcement.link ? `<button class="text-link" data-nav-target="${escapeHtml(announcement.link.target)}">${escapeHtml(announcement.link.label)}</button>` : ''}`
     : '';
 
   if (homeAnnouncementExpiryTimer !== null) {
@@ -6193,11 +6197,11 @@ function renderRankingDeviationFact(targetId, fromMode, toMode, topDirection = '
   target.innerHTML = `
     <div class="stat-shift-groups">
       <div class="stat-shift-group">
-        <div class="widget-label">${escapeHtml(labels.top)}</div>
+        <h3>${escapeHtml(labels.top)}</h3>
         <div class="stat-shift-list">${up.length ? up.map(renderShiftItem).join('') : '<div class="empty-state">Keine Aufsteiger.</div>'}</div>
       </div>
       <div class="stat-shift-group">
-        <div class="widget-label">${escapeHtml(labels.bottom)}</div>
+        <h3>${escapeHtml(labels.bottom)}</h3>
         <div class="stat-shift-list">${down.length ? down.map(renderShiftItem).join('') : '<div class="empty-state">Keine Absteiger.</div>'}</div>
       </div>
     </div>
@@ -6355,7 +6359,7 @@ function renderTimePerformance() {
   target.innerHTML = `
     <div class="stat-shift-groups">
       <div class="stat-shift-group">
-        <div class="widget-label">Früher Vogel</div>
+        <h3>Früher Vogel</h3>
         <div class="stat-time-row">
           <div class="stat-time-text">
             ${renderPlayerProfileLink(earliest.player, `mini-rank-name ${isSelectedPlayer(earliest.player.name) ? 'viewer-player' : ''}`)}
@@ -6365,7 +6369,7 @@ function renderTimePerformance() {
         </div>
       </div>
       <div class="stat-shift-group">
-        <div class="widget-label">Langschläfer</div>
+        <h3>Langschläfer</h3>
         <div class="stat-time-row">
           <div class="stat-time-text">
             ${renderPlayerProfileLink(latest.player, `mini-rank-name ${isSelectedPlayer(latest.player.name) ? 'viewer-player' : ''}`)}
@@ -6508,7 +6512,7 @@ function renderInfoSection(section, id) {
   const intro = section.intro ? `<p>${section.intro} ${link}</p>` : '';
   const paragraphs = (section.paragraphs || []).map(p => `<p>${p}</p>`).join('');
   const groups = (section.groups || []).map(group => `<div class="info-group">
-    <h3>${group.title}</h3>
+    <h4>${group.title}</h4>
     <ul class="clean-list">${group.items.map(item => `<li>${item}</li>`).join('')}</ul>
   </div>`).join('');
   const items = section.items
@@ -6586,7 +6590,7 @@ function renderInfos() {
 
   const articleSection = `<section class="info-article-section info-anchor" id="artikel">
     <div class="sh info-article-heading">
-      <div class="sh-title">PADELPOST</div>
+      <h2>PADELPOST</h2>
       <div class="sh-meta">Archiv</div>
     </div>
     <div class="info-articles-stack">
@@ -6719,7 +6723,7 @@ function renderMatchRow(m) {
 function renderMatchdayGroup(spieltag, matches) {
   if (!matches.length) return '';
 
-  return `<div class="spieltag-group">
+  return `<div class="match-group">
     ${formatMatchdayLabel(spieltag)}
     <div class="match-list">${matches.map(renderMatchRow).join('')}</div>
   </div>`;
@@ -6738,8 +6742,8 @@ function getMatchdayBreakBetween(previousMatchday, nextMatchday) {
 function renderMatchdayBreak(matchdayBreak) {
   if (!matchdayBreak) return '';
 
-  return `<div class="spieltag-group matchday-break">
-    ${renderSplitMeta(matchdayBreak.title, formatMatchdayRange(matchdayBreak), 'spieltag-label')}
+  return `<div class="match-group matchday-break">
+    ${renderGroupHeading(matchdayBreak.title, formatMatchdayRange(matchdayBreak))}
   </div>`;
 }
 
@@ -6754,10 +6758,10 @@ function renderTournamentGroup(matches, fallbackTitle, className) {
   const detailLink = detailEntryMatchId
     ? `<button type="button" class="text-link inline-link final-four-detail-link" data-live-open-match="${escapeHtml(detailEntryMatchId)}" data-live-view="overview">Zur Übersicht</button>`
     : '';
-  return `<div class="spieltag-group ${className}">
+  return `<div class="match-group ${className}">
     <div class="sh final-four-heading">
       <div class="sh-heading">
-        <div class="sh-title">${title.toUpperCase()}</div>
+        <h2>${title.toUpperCase()}</h2>
         <div class="sh-meta">${played}/${matches.length}</div>
       </div>
       ${detailLink}
@@ -6824,16 +6828,16 @@ function formatMatchDateGroupLabel(date) {
 function renderMatchDateGroup(date, matches) {
   if (!matches.length) return '';
   const countLabel = matches.length === 1 ? '1 Partie' : `${matches.length} Partien`;
-  return `<div class="spieltag-group">
-    ${renderSplitMeta(formatMatchDateGroupLabel(date), countLabel, 'spieltag-label')}
+  return `<div class="match-group">
+    ${renderGroupHeading(formatMatchDateGroupLabel(date), countLabel)}
     <div class="match-list">${matches.map(renderMatchRow).join('')}</div>
   </div>`;
 }
 
 function renderOpenMatchGroup(matches) {
   if (!matches.length) return '';
-  return `<div class="spieltag-group">
-    ${renderSplitMeta('Offen', 'Ohne Termin', 'spieltag-label')}
+  return `<div class="match-group">
+    ${renderGroupHeading('Offen', 'Ohne Termin')}
     <div class="match-list">${matches.map(renderMatchRow).join('')}</div>
   </div>`;
 }
@@ -7774,7 +7778,7 @@ function formatMatchdayLabel(spieltag) {
   const range = formatMatchdayRange(matchday);
 
   if (range) details.push(range);
-  return renderSplitMeta(label, details.join(' | '), 'spieltag-label');
+  return renderGroupHeading(label, details.join(' | '));
 }
 
 // ── CHART ─────────────────────────────────────────────────────────

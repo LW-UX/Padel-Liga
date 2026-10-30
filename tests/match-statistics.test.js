@@ -76,7 +76,7 @@ test('content order, exclusions, escaped data and empty sections',()=>{
  assert.match(statisticsStyleSource,/@media \(max-width: 768px\) \{[\s\S]*?\.match-statistics-form-row \{ grid-template-columns: minmax\(0, 1fr\);/);
  assert.ok(html.indexOf('Elo-Entwicklung')<html.indexOf('Werte und Prognosen können sich'));assert.doesNotMatch(html,/Stand:/);
  assert.doesNotMatch(html,/<title>|Dominanz|Auszeichnungen|Lieblingspartner/);
- assert.match(html,/<h2 class="widget-label"><span class="match-statistics-heading">Elo-Entwicklung<span class="th-help-wrap match-statistics-heading-help">/);
+ assert.match(html,/<h3><span class="match-statistics-heading">Elo-Entwicklung<span class="th-help-wrap match-statistics-heading-help">/);
  assert.match(html,/data-help-tooltip-anchor>\?<\/span>[\s\S]*Die Fächer zeigen die Bereiche der möglichen Elo-Werte nach der Partie: grün bei einem Sieg und rot bei einer Niederlage\. Die gestrichelte Linie zeigt die Elo-Prognose des wahrscheinlichsten Ergebnisses\./);
  assert.doesNotMatch(html,/Auto-Tipp/);
  d.rematches=[];d.company=null;d.impacts=[];d.countsForElo=false;d.players.forEach(player=>{player.relationships=[];});const empty=render(d);
@@ -298,8 +298,8 @@ test('match header and full ranking follow ticker and ranking conventions',()=>{
  assert.match(html,/match-statistics-ranking-layout/);
  assert.match(html,/match-statistics-section match-statistics-ranking-panel/);
  assert.match(html,/match-statistics-section match-statistics-impact-panel/);
- assert.equal((html.match(/<h2 class="widget-label">/g)||[]).length,4);
- assert.doesNotMatch(html,/<h2 class="spieltag-label">/);
+ assert.equal((html.match(/<section class="match-statistics-section[^"]*"><h3>/g)||[]).length,4);
+ assert.doesNotMatch(html,/spieltag-label/);
  assert.doesNotMatch(html,/Siege in Folge|Niederlagen in Folge/);
  assert.match(statisticsStyleSource,/\.match-statistics-ranking tbody tr\.match-statistics-ranking-other td \{[\s\S]*?font-size: var\(--text-xs\);/);
  assert.match(html,/<th class="col-rank"><span aria-hidden="true">#<\/span><span class="sr-only">Platz<\/span><\/th>/);
@@ -311,7 +311,7 @@ test('match header and full ranking follow ticker and ranking conventions',()=>{
  assert.match(statisticsStyleSource,/\.match-statistics-ranking \.player-profile-link \{[\s\S]*?text-overflow: ellipsis;/);
 });
 test('completed league order is rendered below title and season metadata in text-xs',()=>{
- assert.match(indexSource,/<div class="sh-title" id="detail-view-title">FINAL FOUR<\/div>\s*<div class="sh-meta" id="detail-view-context"><\/div>\s*<div class="detail-view-played-order" id="match-statistics-played-order" hidden><\/div>/);
+ assert.match(indexSource,/<h2 id="detail-view-title">FINAL FOUR<\/h2>\s*<div class="sh-meta" id="detail-view-context"><\/div>\s*<div class="detail-view-played-order" id="match-statistics-played-order" hidden><\/div>/);
  assert.match(styleSource,/\.detail-view-played-order \{[\s\S]*?font-size: var\(--text-xs\);/);
  assert.match(source,/function restore\(\) \{[\s\S]*?setPlayedOrder\(\);/);
 });
@@ -357,9 +357,9 @@ test('homepage match cards link only their center values without a details icon'
  assert.doesNotMatch(renderer,/\.icon|mc-score-details-icon/);
 });
 test('match score hover colors every value and keeps the icon in the lower line',()=>{
- assert.match(styleSource,/button\.mc-score:hover :is\(\.mc-score-main, \.mc-prob, \.mc-result-prob, \.mc-pending-label, \.mc-score-detail, \.mc-score-details-icon\)/);
+ assert.match(styleSource,/button\.mc-score:hover :is\(\.mc-score-main, \.mc-prob, \.mc-result-prob, \.mc-score-detail, \.mc-score-details-icon\)/);
  assert.match(styleSource,/:is\(#spielplan, #final-four-spielplan\) \.mc\.played button\.mc-score \.mc-score-detail \{\s*pointer-events: auto;/);
- assert.match(styleSource,/\.mc-score-result-with-details,[\s\S]*?\.mc-pending-label:has\(\.mc-score-details-icon\)[\s\S]*?display: inline-flex/);
+ assert.match(styleSource,/\.mc-score-result-with-details \{[\s\S]*?display: inline-flex/);
  assert.match(styleSource,/\.mc-score-details-icon \{[\s\S]*?position: static;[\s\S]*?margin-left: 5px;[\s\S]*?transform: none/);
 });
 test('graph remains finite and clipped for identical, tight and extreme Elo values',()=>{

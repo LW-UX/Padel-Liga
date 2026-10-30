@@ -984,8 +984,8 @@
       return { ...group, items };
     });
     target.innerHTML = groupedItems
-      .map(group => `<section class="account-task-group" data-result-task-group="${group.key}">
-          <div class="spieltag-label"><span>${escapeHtml(group.label)}</span></div>
+      .map(group => `<section class="match-group" data-result-task-group="${group.key}">
+          <h3><span>${escapeHtml(group.label)}</span></h3>
           ${group.items.length
             ? `<div class="account-task-list">${group.items.map(item => item.kind === 'training'
                 ? renderTrainingTaskCard(item.task, item.index)

@@ -79,11 +79,11 @@ test('both account dialogs expose one four-group game overview', () => {
     assert.doesNotMatch(source, /id="admin-all-matches"/);
     assert.doesNotMatch(source, /id="training-history"/);
     assert.match(source, /id="open-results-section"[\s\S]*data-training-toggle/);
-    assert.match(source, /<h3 class="sh-title sh-title-with-help">Partienübersicht[\s\S]*?id="account-games-help"[\s\S]*?<\/h3>/);
+    assert.match(source, /<h2 class="sh-title-with-help">Partienübersicht[\s\S]*?id="account-games-help"[\s\S]*?<\/h2>/);
     assert.match(source, /class="match-scope-toggle account-result-scope-toggle"[^>]*data-account-result-scope-toggle hidden/);
     assert.match(source, /data-account-result-scope="relevant"[^>]*>Relevant<\/button>/);
     assert.match(source, /data-account-result-scope="all"[^>]*>Alle<\/button>/);
-    assert.doesNotMatch(source, /<h3 class="sh-title">Trainingsspiele<\/h3>/);
+    assert.doesNotMatch(source, /<h2>Trainingsspiele<\/h2>/);
     assert.doesNotMatch(source, /id="training-task-list"/);
     assert.match(source, /<button class="secondary-button account-settings-button"[^>]*data-account-settings/);
     assert.match(source, /<button class="secondary-button"[^>]*data-account-player-profile hidden>Spielerprofil<\/button>/);
@@ -93,7 +93,7 @@ test('both account dialogs expose one four-group game overview', () => {
     assert.match(source, /data-email-notification="resultConfirmation"/);
     assert.match(source, /data-email-notification="predictionReminder"/);
     assert.match(source, /data-training-toggle>Training hinzufügen<\/button>/);
-    assert.match(source, /<div data-training-form-group hidden>[\s\S]*?<div class="spieltag-label">[\s\S]*?Training[\s\S]*?<form class="training-form" id="training-form" hidden>/);
+    assert.match(source, /<div class="match-group" data-training-form-group hidden>[\s\S]*?<h3>[\s\S]*?Training[\s\S]*?<form class="training-form" id="training-form" hidden>/);
     assert.doesNotMatch(source, /picker-toggle-chevron/);
     assert.doesNotMatch(source, /auth-logout-button|compact-button|account-task-count|result-task-count/);
     assert.doesNotMatch(source, /Ligaübergreifend|Saisonunabhängig/);
@@ -117,7 +117,7 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(accountScript, /function keepTrainingPickerSearchVisible\(searchInput\)[\s\S]*targetOffset = Math\.min\(200,[\s\S]*window\.setTimeout\(alignInput, 350\)/);
   assert.match(accountScript, /searchInput\.focus\(\{ preventScroll: true \}\);\s*keepTrainingPickerSearchVisible\(searchInput\);/);
   assert.match(pages[1], /class="secondary-button secondary-button--dropdown global-action"[^>]*data-season-toggle/);
-  assert.match(style, /\.sh-title \{[^}]*font-size: var\(--text-heading\);[^}]*font-weight: var\(--heading-font-weight\);/);
+  assert.match(style, /\bh2 \{[^}]*font-size: var\(--text-heading\);[^}]*font-weight: var\(--heading-font-weight\);/);
   assert.match(style, /\.secondary-button \{[\s\S]*font-family: var\(--font-body\);[\s\S]*font-size: 0\.78rem;[\s\S]*font-weight: 500;/);
   assert.match(style, /\.secondary-button--dropdown \{[^}]*position: relative;[^}]*padding-right: 1\.8rem;/);
   assert.doesNotMatch(style, /\.picker-toggle/);
@@ -135,7 +135,7 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(accountScript, /searchParams\.set\('spielerprofil', playerId\)/);
   assert.match(appScript, /window\.PadelLigaOpenPlayerProfile = openPlayerProfile/);
   assert.match(appScript, /searchParams\.get\('spielerprofil'\)[\s\S]*openPlayerProfile\(requestedPlayerProfile\)/);
-  assert.match(style, /#result-task-list > \.account-task-group \{\s*margin-top: 2rem;\s*\}/);
+  assert.match(style, /#result-task-list > \.match-group \{[^}]*margin: 2rem 0 0;[^}]*\}/);
   assert.match(style, /\.account-task-card\.is-actionable \{[\s\S]*border-color: var\(--accent\);/);
   assert.match(style, /\.account-task-card\.is-waiting[\s\S]*opacity: 0\.58/);
   assert.match(style, /\.result-entry-actions \{[\s\S]*align-items: center;[\s\S]*justify-content: space-between;/);

@@ -26,9 +26,9 @@
       } catch (error) { /* Ohne Speicher bleibt das veröffentlichte Branding. */ }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026-10-30-role-color-names">
-  <link rel="stylesheet" href="account.css?v=2026-10-30-role-color-names">
-  <link rel="stylesheet" href="whats-new.css?v=2026-10-30-role-color-names">
+  <link rel="stylesheet" href="style.css?v=2026-10-30-heading-elements">
+  <link rel="stylesheet" href="account.css?v=2026-10-30-heading-elements">
+  <link rel="stylesheet" href="whats-new.css?v=2026-10-30-heading-elements">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -42,7 +42,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="match-statistics.css?v=2026-10-30-radius-sm">
+  <link rel="stylesheet" href="match-statistics.css?v=2026-10-30-heading-elements">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="data/players.js?v=2026-10-20-test-net-emoji"></script>
@@ -56,15 +56,15 @@
   <script defer src="js/whats-new.js?v=2026-10-28-feature-links"></script>
   <script defer src="js/elo-forecast.js?v=2026-10-14-shared-auto-tip"></script>
   <script defer src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
-  <script defer src="js/live-ticker.js?v=2026-10-29-detail-avatar-fallback"></script>
+  <script defer src="js/live-ticker.js?v=2026-10-30-heading-elements"></script>
   <script defer src="js/mobile-dialog-pages.js?v=2026-10-30-mobile-pages-tipp"></script>
   <script defer src="js/branding-preview.js?v=2026-10-30-branding-change"></script>
-  <script defer src="js/account.js?v=2026-10-30-schedule-time-tap"></script>
+  <script defer src="js/account.js?v=2026-10-30-heading-elements"></script>
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/panel-layout.js?v=2026-10-29-shared-panel-layout"></script>
-  <script defer src="js/match-statistics.js?v=2026-10-29-shared-panel-layout"></script>
-  <script defer src="js/app.js?v=2026-10-30-player-palette"></script>
+  <script defer src="js/match-statistics.js?v=2026-10-30-heading-elements"></script>
+  <script defer src="js/app.js?v=2026-10-30-heading-elements"></script>
 </head>
 <body>
 
@@ -162,7 +162,7 @@
         <article class="widget home-announcement" id="home-announcement" hidden></article>
         <article class="widget home-app-hint" hidden>
           <button class="home-app-hint-close" type="button" data-dismiss-app-hint aria-label="App-Hinweis schließen">×</button>
-          <div class="widget-label">Jetzt auch als App!</div>
+          <h3>Jetzt auch als App!</h3>
           <p class="home-app-hint-text">Diese Webseite auf dem Handy öffnen, im Browser-Menü auf Teilen drücken und zum Home-Bildschirm hinzufügen. Name vergeben, speichern und schon ist die App auf dem Handy für uneingeschränkten Zugriff.</p>
         </article>
         <article class="widget widget-articles">
@@ -181,14 +181,14 @@
 
       <div class="home-side">
         <article class="widget home-final-four-cta" id="home-final-four-cta" hidden>
-          <div class="widget-label">Übersicht</div>
+          <div class="eyebrow">Übersicht</div>
           <h2>Final Four</h2>
           <p>Alles auf einen Blick: Spiele, Rangliste, Prematch-Fakten, Spielverlauf und Co.</p>
           <button type="button" class="text-link" id="home-final-four-link" data-live-view="overview">Zur Übersicht</button>
         </article>
 
         <article class="widget">
-          <div class="widget-label">Top 4 · Ligaphase</div>
+          <h3>Top 4 · Ligaphase</h3>
           <div id="home-ranking" class="loading-skeleton skeleton-ranking" aria-hidden="true">
             <div class="skeleton-ranking-row"><span></span><span></span><span></span></div>
             <div class="skeleton-ranking-row"><span></span><span></span><span></span></div>
@@ -205,7 +205,7 @@
         </article>
 
         <article class="widget">
-          <div class="widget-label">Nächste Partien</div>
+          <h3>Nächste Partien</h3>
           <div id="home-next-matches" class="loading-skeleton skeleton-match-list" aria-hidden="true">
             <div class="skeleton-match-card"><span></span><span></span><span></span><span></span></div>
             <div class="skeleton-match-card"><span></span><span></span><span></span><span></span></div>
@@ -214,7 +214,7 @@
         </article>
 
         <article class="widget">
-          <div class="widget-label">Letzte Partien</div>
+          <h3>Letzte Partien</h3>
           <div id="home-recent-matches" class="loading-skeleton skeleton-match-list" aria-hidden="true">
             <div class="skeleton-match-card"><span></span><span></span><span></span><span></span></div>
             <div class="skeleton-match-card"><span></span><span></span><span></span><span></span></div>
@@ -223,7 +223,7 @@
         </article>
 
         <article class="widget">
-          <div class="widget-label">Top 4 · Tipprangliste</div>
+          <h3>Top 4 · Tipprangliste</h3>
           <div id="home-prediction-ranking" class="loading-skeleton skeleton-ranking" aria-hidden="true" aria-live="polite">
             <div class="skeleton-ranking-row"><span></span><span></span><span></span></div>
             <div class="skeleton-ranking-row"><span></span><span></span><span></span></div>
@@ -234,7 +234,7 @@
         </article>
 
         <article class="widget widget-short">
-          <div class="widget-label">Kurzinfos</div>
+          <div class="eyebrow">Kurzinfos</div>
           <h2>So funktioniert die Liga</h2>
           <ul id="home-short-info" class="clean-list loading-skeleton skeleton-short-info" aria-hidden="true">
             <li><span></span></li>
@@ -254,7 +254,7 @@
       <div class="ranking-profile-main" id="ranking-profile-main">
     <div class="sh sh-with-control">
       <div class="sh-heading">
-        <div class="sh-title">RANGLISTE</div>
+        <h2>RANGLISTE</h2>
         <div class="sh-meta" id="rl-meta"></div>
       </div>
       <div class="match-scope-toggle ranking-view-toggle" id="ranking-view-toggle" aria-label="Ranglistenansicht">
@@ -300,7 +300,7 @@
     </div>
     <div class="sh-meta ranking-note table-note" id="rl-sort-note">Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele</div>
     <div class="sh section-subheading">
-      <div class="sh-title">FIRMEN-RANGLISTE</div>
+      <h2>FIRMEN-RANGLISTE</h2>
       <div class="sh-meta" id="fr-meta"></div>
     </div>
     <div class="ranking-wrap">
@@ -324,7 +324,7 @@
     <div id="final-four-ranking-section">
       <div class="sh section-subheading final-four-heading">
         <div class="sh-heading">
-          <div class="sh-title">FINAL FOUR</div>
+          <h2>FINAL FOUR</h2>
           <div class="sh-meta" id="ff-meta"></div>
         </div>
         <button type="button" class="text-link inline-link final-four-detail-link" id="final-four-ranking-detail-link" data-live-view="overview" hidden>Zur Übersicht</button>
@@ -355,7 +355,7 @@
   <!-- STATISTIK -->
   <section id="verlauf" class="section">
     <div class="sh sh-with-control stats-heading">
-      <div class="sh-title">STATISTIK</div>
+      <h2>STATISTIK</h2>
       <div class="match-scope-toggle" id="statistics-mode-toggle" aria-label="Statistikzeitraum auswählen">
         <button type="button" class="active" aria-pressed="true" data-statistics-mode="season">Saison</button>
         <button type="button" aria-pressed="false" data-statistics-mode="all-time">All-Time</button>
@@ -364,45 +364,45 @@
     <div class="statistics-load-error" id="statistics-load-error" role="status" hidden></div>
     <div class="stats-grid">
       <article class="widget favorite-check-widget">
-        <div class="widget-label">
+        <h3>
           <span class="sh-title-with-help">Favoriten-Check
             <span class="th-help-wrap">
               <span class="help-icon" tabindex="0" role="button" aria-label="Favoriten-Check erklären" aria-describedby="favorite-check-help" aria-expanded="false" data-help-tooltip-anchor>?</span>
               <span class="help-tooltip" id="favorite-check-help" role="tooltip">Als Favorit zählt ein Team ab 55 % Siegchance.</span>
             </span>
           </span>
-        </div>
+        </h3>
         <div id="favorite-check"></div>
       </article>
       <article class="widget">
         <div id="stats-time-performance"></div>
       </article>
       <article class="widget">
-        <div class="widget-label">Ø-Satzergebnis</div>
+        <h3>Ø-Satzergebnis</h3>
         <div id="stats-average-set-score"></div>
       </article>
     </div>
     <div class="stats-grid stats-facts-grid">
       <article class="widget">
-        <div class="widget-label">Überraschungen</div>
+        <h3>Überraschungen</h3>
         <div id="biggest-upsets"></div>
       </article>
       <article class="widget">
-        <div class="widget-label">Dominanteste Partien</div>
+        <h3>Dominanteste Partien</h3>
         <div id="dominant-matches"></div>
       </article>
       <article class="widget">
-        <div class="widget-label">Satzdominanz</div>
+        <h3>Satzdominanz</h3>
         <div id="stats-set-dominance"></div>
       </article>
     </div>
     <div class="chart-box stats-chart-box" data-season-only-statistic>
-      <div class="chart-box-title widget-label">Platzierungen nach Spieltag</div>
+      <h3>Platzierungen nach Spieltag</h3>
       <div class="placement-chart-wrap"><canvas id="placementChart"></canvas></div>
     </div>
     <div class="stats-grid stats-facts-grid" data-season-only-statistic>
       <article class="widget">
-        <div class="widget-label" id="stats-qualification-forecast-label">Final-Four-Prognose</div>
+        <h3 id="stats-qualification-forecast-label">Final-Four-Prognose</h3>
         <div id="stats-final-four-forecast"></div>
       </article>
       <article class="widget">
@@ -413,7 +413,7 @@
       </article>
     </div>
     <div class="chart-box stats-chart-box">
-      <div class="chart-box-title widget-label">Elo-Score</div>
+      <h3>Elo-Score</h3>
       <div class="filter-controls">
         <div class="filter-toggle-btns">
           <div class="filter-toggle-all">
@@ -431,7 +431,7 @@
     <div class="all-time-ranking">
       <div class="sh sh-with-control section-subheading">
         <div class="sh-heading">
-          <div class="sh-title">EWIGE RANGLISTE</div>
+          <h2>EWIGE RANGLISTE</h2>
           <div class="sh-meta" id="all-time-ranking-meta"></div>
         </div>
         <div class="ranking-controls all-time-ranking-controls">
@@ -477,7 +477,7 @@
         <div id="final-four-spielplan" hidden></div>
         <div class="sh sh-with-control">
           <div class="sh-heading">
-            <div class="sh-title" id="partien-title">PARTIEN</div>
+            <h2 id="partien-title">PARTIEN</h2>
             <div class="sh-meta" id="sp-meta"></div>
           </div>
           <div class="match-scope-toggle ranking-sort-toggle" id="match-sort-toggle" aria-label="Partien sortieren">
@@ -502,12 +502,12 @@
     <div id="league-calculator">
       <div class="sh">
         <div class="sh-heading">
-          <div class="sh-title sh-title-with-help">LIGARECHNER
+          <h2 class="sh-title-with-help">LIGARECHNER
             <span class="th-help-wrap">
               <span class="help-icon" tabindex="0" aria-label="Turnierrechner erklären">?</span>
               <span class="help-tooltip">Ergebnisse gibst du satzweise als 6:x oder x:6 ein.<br>Ein Klick auf die Wahrscheinlichkeit eines Teams setzt es direkt mit 6:2, 6:2 als Sieger ein.<br>Ein Klick auf einen Namen öffnet das Spielerprofil.</span>
             </span>
-          </div>
+          </h2>
         </div>
       </div>
       <div class="calculator-layout">
@@ -530,7 +530,7 @@
           </aside>
         </div>
         <div class="calculator-panel calculator-ranking-panel">
-          <div class="widget-label">Simulierte Rangliste</div>
+          <h3>Simulierte Rangliste</h3>
           <div class="ranking-wrap calculator-ranking-wrap">
             <table class="rt calculator-ranking-table">
               <thead>
@@ -550,12 +550,12 @@
     </div>
     <div id="final-four-calculator" hidden>
       <div class="sh sh-with-control section-subheading">
-        <div class="sh-title sh-title-with-help">FINAL4-RECHNER
+        <h2 class="sh-title-with-help">FINAL4-RECHNER
           <span class="th-help-wrap">
             <span class="help-icon" tabindex="0" aria-label="Final4-Rechner erklären">?</span>
             <span class="help-tooltip">Jede der drei Partien besteht aus einem Satz. Trage die Ergebnisse ein, um die Final4-Rangliste live zu berechnen.<br>Nach zwei gültigen Sätzen siehst du, welcher Endstand im verbleibenden Satz welchen Gesamtsieger ergibt.<br>Alle Eingaben sind Simulationen. Zurücksetzen stellt die bestätigten Ergebnisse wieder her.</span>
           </span>
-        </div>
+        </h2>
         <button type="button" class="secondary-button" data-calculator-reset="final-four">Zurücksetzen</button>
       </div>
       <div class="calculator-layout">
@@ -569,7 +569,7 @@
           </aside>
         </div>
         <div class="calculator-panel calculator-ranking-panel">
-          <div class="widget-label">Simulierte Final4-Rangliste</div>
+          <h3>Simulierte Final4-Rangliste</h3>
           <div class="ranking-wrap calculator-ranking-wrap">
             <table class="rt calculator-ranking-table final-four-calculator-ranking-table">
               <thead><tr><th class="col-rank">#</th><th class="col-name">Spieler</th><th class="col-wins">Siege</th><th class="col-gv">G:V</th><th class="col-diff">Diff.</th></tr></thead>
@@ -581,7 +581,7 @@
         </div>
       </div>
       <div class="calculator-panel final-four-outcomes-panel">
-        <div class="widget-label">Wer gewinnt bei welchem Ergebnis?</div>
+        <h3>Wer gewinnt bei welchem Ergebnis?</h3>
         <p class="sh-meta" id="final-four-outcomes-note" role="status"></p>
         <div id="final-four-calculator-outcomes"></div>
       </div>
@@ -591,12 +591,12 @@
   <!-- INFOS -->
   <section id="infos" class="section">
     <div class="sh">
-      <div class="sh-title">INFOS</div>
+      <h2>INFOS</h2>
       <div class="sh-meta">Regeln & Informationen</div>
     </div>
     <div class="info-layout">
       <aside class="info-card info-menu-card">
-        <div class="widget-label info-menu-desktop-label">Inhalte</div>
+        <h3 class="info-menu-desktop-label">Inhalte</h3>
         <button type="button" class="info-menu-toggle" data-info-menu-toggle aria-expanded="false" aria-controls="info-menu">
           <span>Inhalte</span>
           <span class="info-menu-chevron" aria-hidden="true"></span>
@@ -624,7 +624,7 @@
   <div class="detail-view-shell">
     <header class="detail-view-header">
       <div class="detail-view-heading">
-        <div class="sh-title" id="detail-view-title">FINAL FOUR</div>
+        <h2 id="detail-view-title">FINAL FOUR</h2>
         <div class="sh-meta" id="detail-view-context"></div>
         <div class="detail-view-played-order" id="match-statistics-played-order" hidden></div>
       </div>
@@ -653,7 +653,7 @@
 <dialog class="auth-dialog" id="live-cancel-dialog" aria-labelledby="live-cancel-title" aria-describedby="live-cancel-description">
   <button class="modal-close-button auth-dialog-close" type="button" data-live-cancel-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="auth-dialog-card">
-    <div class="widget-label">Liveticker</div>
+    <div class="eyebrow">Liveticker</div>
     <h2 id="live-cancel-title">Liveticker verwerfen?</h2>
     <p class="auth-dialog-copy" id="live-cancel-description">Der öffentliche Spielverlauf wird entfernt. Die Partie bleibt für die normale Ergebniseingabe offen.</p>
     <div class="player-email-actions">
@@ -666,7 +666,7 @@
 <dialog class="auth-dialog" id="unschedule-match-dialog" aria-labelledby="unschedule-match-title" aria-describedby="unschedule-match-description">
   <button class="modal-close-button auth-dialog-close" type="button" data-unschedule-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="auth-dialog-card">
-    <div class="widget-label">Partie</div>
+    <div class="eyebrow">Partie</div>
     <h2 id="unschedule-match-title">Termin löschen</h2>
     <p class="auth-dialog-copy" id="unschedule-match-description">Soll der Termin dieser Partie wirklich gelöscht werden? Diese Aktion kann nicht rückgängig gemacht werden. Der Outlook-Termin und die Schläger-Reservierung werden ebenfalls gelöscht.</p>
     <div class="player-email-actions">
@@ -679,7 +679,7 @@
 <dialog class="auth-dialog" id="unrate-match-dialog" aria-labelledby="unrate-match-title" aria-describedby="unrate-match-description">
   <button class="modal-close-button auth-dialog-close" type="button" data-unrate-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="auth-dialog-card">
-    <div class="widget-label">Partie</div>
+    <div class="eyebrow">Partie</div>
     <h2 id="unrate-match-title">Partie nicht werten?</h2>
     <p class="auth-dialog-copy" id="unrate-match-description">Diese Partie wird dauerhaft als „ohne Wertung“ markiert. Sie zählt nicht für die Rangliste, Elo oder Tipps. Diese Aktion kann nicht rückgängig gemacht werden.</p>
     <div class="player-email-actions">
@@ -730,7 +730,7 @@
 
       <article class="widget player-profile-widget player-profile-elo-panel">
         <div class="player-profile-section-heading">
-          <h3 class="widget-label">Elo-Verlauf</h3>
+          <h3>Elo-Verlauf</h3>
           <span id="player-profile-elo-range"></span>
         </div>
         <div class="player-profile-chart-wrap">
@@ -740,19 +740,19 @@
       </article>
 
       <article class="widget player-profile-widget player-profile-participations-panel">
-        <div class="player-profile-section-heading"><h3 class="widget-label">Teilnahmen</h3></div>
+        <div class="player-profile-section-heading"><h3>Teilnahmen</h3></div>
         <div class="player-profile-participations" id="player-profile-participations"></div>
       </article>
 
       <article class="widget player-profile-widget player-profile-relationships">
-        <div class="player-profile-section-heading" id="player-profile-relationships-heading"><h3 class="widget-label">Mitspieler &amp; Gegner</h3></div>
+        <div class="player-profile-section-heading" id="player-profile-relationships-heading"><h3>Mitspieler &amp; Gegner</h3></div>
         <div id="player-profile-relationships"></div>
         <section class="player-profile-compare" id="player-profile-compare"></section>
       </article>
 
       <article class="widget player-profile-widget player-profile-history">
         <div class="player-profile-section-heading">
-          <h3 class="widget-label">Partien</h3>
+          <h3>Partien</h3>
           <div class="match-scope-toggle" aria-label="Partien filtern">
             <button type="button" class="active" data-player-profile-match-scope="past" aria-pressed="true">Vergangene</button>
             <button type="button" data-player-profile-match-scope="upcoming" aria-pressed="false">Kommende</button>
@@ -775,7 +775,7 @@
         <path d="m9 12 2 2 4-4"/>
       </svg>
     </span>
-    <div class="widget-label">PadelTipp</div>
+    <div class="eyebrow">PadelTipp</div>
     <h2 id="tipp-invitation-title">Schon getippt?</h2>
     <p class="auth-dialog-copy" id="tipp-invitation-copy">Tippe jetzt die nächsten Partien und sammle Punkte für die PadelTipp-Rangliste.</p>
     <div class="player-email-actions">
@@ -791,7 +791,7 @@
     <header class="whats-new-hero">
       <img class="whats-new-app-icon" src="data/icon-192.png" alt="" width="76" height="76">
       <div>
-        <div class="widget-label">Was ist neu</div>
+        <div class="eyebrow">Was ist neu</div>
         <h2 id="whats-new-title">PADEL<em>LIGA</em></h2>
         <p class="whats-new-version">Version 2.2.0.9 · Okt 2026</p>
       </div>
@@ -800,34 +800,34 @@
       <li class="whats-new-feature">
         <button class="whats-new-feature-link" type="button" data-whats-new-target="player-profile">
           <span class="whats-new-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><g transform="rotate(40 12 12)"><path d="M12 1.5c3.4 0 5.6 2.7 5.6 6.2 0 3.6-2.4 6.6-5.6 6.6s-5.6-3-5.6-6.6c0-3.5 2.2-6.2 5.6-6.2Z"/><path d="M9.6 13.6 11 16.6h2l1.4-3"/><rect x="10.8" y="16.6" width="2.4" height="5.6" rx="1.1"/><path d="M10 6h.01M14 6h.01M12 8h.01M10 10h.01M14 10h.01"/></g></svg></span>
-          <h3>Spielerprofil</h3>
+          <h4>Spielerprofil</h4>
         </button>
         <p>Statistiken, Spiele, Saisonteilnahmen, Gegnerbeziehungen und Elo-Verläufe jedes Spielers auf einen Blick.</p>
       </li>
       <li class="whats-new-feature">
         <button class="whats-new-feature-link" type="button" data-whats-new-target="matches">
           <span class="whats-new-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4 19V5m0 14h16"/><path d="m7 15 4-4 3 3 5-6"/></svg></span>
-          <h3>Partievorschau &amp; Partierückschau</h3>
+          <h4>Partievorschau &amp; Partierückschau</h4>
         </button>
         <p>Fakten zur Partie, mögliche Elo-Entwicklung und was sich verändern könnte. Gib hier direkt deinen Tipp ab! Die Partierückschau liefert dann Tatsachen.</p>
       </li>
       <li class="whats-new-feature">
         <button class="whats-new-feature-link" type="button" data-whats-new-target="account">
           <span class="whats-new-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/></svg></span>
-          <h3>Konto</h3>
+          <h4>Konto</h4>
         </button>
         <p>Melde dich an und trage Trainings und Ergebnisse selbst ein.</p>
       </li>
       <li class="whats-new-feature">
         <button class="whats-new-feature-link" type="button" data-whats-new-target="tipping">
           <span class="whats-new-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="m9 12 2 2 4-4"/></svg></span>
-          <h3>PadelTipp</h3>
+          <h4>PadelTipp</h4>
         </button>
         <p>Tippe auf die Ergebnisse der Partien und miss dich mit den anderen in der Tipprangliste.</p>
       </li>
     </ul>
     <section class="whats-new-more" aria-labelledby="whats-new-more-title">
-      <h3 id="whats-new-more-title">Weitere Neuerungen</h3>
+      <h4 id="whats-new-more-title">Weitere Neuerungen</h4>
       <ul>
         <li>Erweiterte Statistiken</li>
         <li>Design-Update</li>
@@ -843,7 +843,7 @@
   <button class="modal-close-button auth-dialog-close" type="button" data-auth-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="auth-dialog-card">
     <div id="auth-guest-view">
-      <div class="widget-label">Dein Padel-Konto</div>
+      <div class="eyebrow">Dein Padel-Konto</div>
       <h2 id="auth-dialog-title">Einloggen</h2>
       <div class="auth-mode-toggle" aria-label="Login oder Registrierung">
         <button class="active" type="button" data-auth-mode="login">Login</button>
@@ -863,13 +863,13 @@
       </form>
     </div>
     <div id="auth-confirmation-view" hidden>
-      <div class="widget-label">Geschützter Link</div>
+      <div class="eyebrow">Geschützter Link</div>
       <h2 id="auth-confirmation-title">Link bestätigen</h2>
       <p class="auth-dialog-copy" id="auth-confirmation-copy">Öffne jetzt den geschützten Einmal-Link.</p>
       <button class="primary-button" type="button" data-auth-confirmation-continue>Weiter</button>
     </div>
     <div id="auth-password-view" hidden>
-      <div class="widget-label">Dein Zugang</div>
+      <div class="eyebrow">Dein Zugang</div>
       <h2 id="auth-password-title">Passwort festlegen</h2>
       <p class="auth-dialog-copy" id="auth-password-copy">Lege ein persönliches Passwort mit mindestens 8 Zeichen fest.</p>
       <form id="auth-password-form" class="auth-form">
@@ -894,7 +894,7 @@
     <div id="auth-account-view" hidden>
       <div class="account-header">
         <div>
-          <div class="widget-label">Dein Konto</div>
+          <div class="eyebrow">Dein Konto</div>
           <h2 id="account-display-name"></h2>
           <p class="auth-account-email" id="account-email"></p>
         </div>
@@ -915,14 +915,14 @@
       </div>
       <section class="account-settings" id="account-settings-panel" data-account-settings-panel hidden>
         <div class="account-settings-account">
-          <div class="widget-label">Konto</div>
+          <h3>Konto</h3>
           <div class="account-settings-actions">
             <button class="secondary-button" type="button" data-password-change>Passwort ändern</button>
             <button class="secondary-button" type="button" data-auth-logout>Ausloggen</button>
           </div>
         </div>
         <div class="account-settings-mail">
-          <div class="widget-label">E-Mail-Benachrichtigungen</div>
+          <h3>E-Mail-Benachrichtigungen</h3>
           <p>Du kannst jede automatische Mail einzeln ausschalten.</p>
           <label class="account-setting-row">
             <span><strong>Ergebnis eintragen</strong><small>Erinnerung 5 Stunden nach Spielbeginn, solange noch kein Ergebnis eingetragen wurde.</small></span>
@@ -942,7 +942,7 @@
           </label>
         </div>
         <div class="account-settings-design" data-account-branding hidden>
-          <div class="widget-label">Design</div>
+          <h3>Design</h3>
           <div class="account-branding-options" role="radiogroup" aria-label="Design auswählen" data-account-branding-options></div>
         </div>
         <div class="auth-message account-settings-message" data-account-settings-message role="status" aria-live="polite"></div>
@@ -950,13 +950,13 @@
       <div id="account-games-panel">
         <div class="account-games-empty" id="account-games-empty" hidden>Als Tipper hast du keine eigenen Liga- oder Trainingspartien.</div>
         <section class="account-section" id="live-account-section" hidden>
-          <div class="account-section-heading"><h3 class="sh-title">Liveticker</h3></div>
+          <div class="account-section-heading"><h2>Liveticker</h2></div>
           <div class="account-task-list" id="live-account-list"></div>
         </section>
         <div class="account-player-area" id="account-player-area" hidden>
           <section class="account-section" id="open-results-section">
             <div class="account-section-heading">
-              <h3 class="sh-title sh-title-with-help">Partienübersicht
+              <h2 class="sh-title-with-help">Partienübersicht
                 <span class="th-help-wrap account-games-help">
                   <span class="help-icon" tabindex="0" role="button" aria-label="Partienübersicht erklären" aria-describedby="account-games-help" aria-expanded="false" data-help-tooltip-anchor>?</span>
                   <span class="help-tooltip" id="account-games-help" role="tooltip">
@@ -967,20 +967,20 @@
                     <span class="account-games-help-block"><strong>Training</strong>Für einen zukünftigen Termin genügen Datum, Uhrzeit und vier Teilnehmer. Nach dem Termin ergänzt du Paarungen, Formate und Ergebnisse und sendest sie zur Bestätigung. Trainings zählen nicht für Rangliste und Elo.</span>
                   </span>
                 </span>
-              </h3>
+              </h2>
               <button class="secondary-button" type="button" data-training-toggle>Training hinzufügen</button>
             </div>
             <div class="match-scope-toggle account-result-scope-toggle" aria-label="Partienübersicht filtern" data-account-result-scope-toggle hidden>
               <button type="button" class="active" data-account-result-scope="relevant" aria-pressed="true">Relevant</button>
               <button type="button" data-account-result-scope="all" aria-pressed="false">Alle</button>
             </div>
-            <div data-training-form-group hidden>
-              <div class="spieltag-label">
+            <div class="match-group" data-training-form-group hidden>
+              <h3>
                 <span class="th-help-wrap">Training
                   <span class="help-icon" tabindex="0" aria-label="Training eintragen erklären">?</span>
                   <span class="help-tooltip">Wähle Datum, Uhrzeit und vier verschiedene Teilnehmer. Liegt der Termin in der Zukunft, wird das Training ohne Ergebnis terminiert. Nach dem Termin kannst du Paarungen, Ergebnisformate und Satzstände ergänzen.</span>
                 </span>
-              </div>
+              </h3>
               <form class="training-form" id="training-form" hidden>
                 <div class="training-form-meta">
                   <label><span>Datum</span><span class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required></span></label>
@@ -1012,7 +1012,7 @@
 <dialog class="auth-dialog player-invite-dialog" id="player-invite-dialog" aria-labelledby="player-invite-title">
   <button class="modal-close-button auth-dialog-close" type="button" data-player-invite-close aria-label="Einladung schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="auth-dialog-card">
-    <div class="widget-label">Kontoverwaltung</div>
+    <div class="eyebrow">Kontoverwaltung</div>
     <h2 id="player-invite-title">Spielerzugänge</h2>
     <p class="auth-dialog-copy">Ordne die Arbeits-E-Mail zu und erstelle bei Bedarf eine persönliche Einladung für den manuellen Versand. Bereits zugeordnete Spieler können erneut eingeladen werden.</p>
     <form id="player-invite-form" class="auth-form">
@@ -1034,7 +1034,7 @@
     </form>
     <div class="auth-message" id="player-invite-message" role="status" aria-live="polite"></div>
     <section class="player-invite-output" id="player-invite-output" hidden>
-      <div class="widget-label">Einladung vorbereitet</div>
+      <h3>Einladung vorbereitet</h3>
       <label>
         <span>Betreff</span>
         <input id="player-invite-subject" type="text" readonly>

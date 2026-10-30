@@ -19,7 +19,7 @@ test('release-note feature icons and headings link to their corresponding target
       `<button class="whats-new-feature-link"[^>]*data-whats-new-target="${target}">[\\s\\S]*?<\\/button>`
     ))?.[0] || '';
     assert.match(control, /class="whats-new-feature-icon"/);
-    assert.match(control, new RegExp(`<h3>${heading}<\\/h3>`));
+    assert.match(control, new RegExp(`<h4>${heading}<\\/h4>`));
   }
 
   assert.match(script, /target === 'matches'[\s\S]*getElementById\('partien-nav-button'\)\?\.click\(\)/);

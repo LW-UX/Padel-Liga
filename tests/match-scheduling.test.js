@@ -50,7 +50,7 @@ test('all four groups render even when they are empty', () => {
     assert.match(account, new RegExp(`label: '${label}'`));
   });
   assert.match(account, /group\.items\.length[\s\S]*Derzeit keine Partie\./);
-  assert.match(account, /<div class="spieltag-label"><span>\$\{escapeHtml\(group\.label\)\}<\/span><\/div>/);
+  assert.match(account, /<h3><span>\$\{escapeHtml\(group\.label\)\}<\/span><\/h3>/);
   assert.doesNotMatch(account, /visibleGroups/);
 });
 
