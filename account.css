@@ -87,12 +87,12 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 4px;
-      border-radius: var(--dropdown-radius);
+      border-radius: var(--menu-radius);
       margin-bottom: 1rem;
     }
     .auth-mode-toggle button {
       border: 0;
-      border-radius: var(--dropdown-radius);
+      border-radius: var(--menu-radius);
       background: transparent;
       color: var(--dim);
       cursor: pointer;
