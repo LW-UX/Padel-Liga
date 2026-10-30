@@ -2652,7 +2652,7 @@
     .ranking-table.compact .col-form,
     .ranking-table.compact .col-winrate,
     .ranking-table.compact .col-draw-factor { display: none; }
-    .ranking-table .col-name { width: 200px; }
+    .ranking-table .col-name { width: 180px; }
     .ranking-table .col-winrate { min-width: 110px; }
     .ranking-table .col-draw-factor { min-width: 172px; }
     .ranking-table .col-form { min-width: 114px; }
@@ -2833,7 +2833,6 @@
     .ranking-player-achievement { margin-left: 6px; }
     .player-cell-inner > .ranking-player-achievement {
       box-sizing: content-box;
-      margin-left: auto;
       padding-left: 6px;
     }
     .ranking-player-achievement + .firma-badge { margin-left: 6px; }
@@ -3102,13 +3101,13 @@
       width: 14px;
       height: 14px;
       flex: 0 0 14px;
-      vertical-align: -2px;
+      padding-right: 2px;
     }
     .firma-badge.firma-icon.firma-Hanako {
       width: 18px;
       height: 18px;
       flex-basis: 18px;
-      vertical-align: -4px;
+      padding-right: 0;
     }
     .firma-icon.firma-Envidual   { --firma-mask: url("assets/logos/envidual-icon.svg"); }
     .firma-icon.firma-Hanako     { --firma-mask: url("assets/logos/hanako-icon.svg"); }
