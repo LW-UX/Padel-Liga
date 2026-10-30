@@ -23,6 +23,16 @@
     return getSeasons().find(season => season.id === normalized) || null;
   }
 
+  // Ohne <base> würden relative Skripte und Links nach dem Pfadwechsel unter dem Kurzpfad gesucht.
+  function replaceCurrentUrl(url) {
+    if (url.pathname !== window.location.pathname && !document.querySelector('base')) {
+      const base = document.createElement('base');
+      base.href = new URL('./', document.baseURI).href;
+      document.head.prepend(base);
+    }
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  }
+
   function getSeasonIdFromPath(pathname = window.location.pathname) {
     const segments = String(pathname).split('/').filter(Boolean).map(segment => segment.toLowerCase());
     return getSeasons().find(season => segments.includes(season.route?.toLowerCase()))?.id || null;
@@ -114,7 +124,7 @@
     const match = matches.find(item => item.id === requested);
     if (!match || !getMatchSlug(match)) return false;
     const url = getMatchUrl(seasonId, match, { preserveSearch: true, preserveHash: true });
-    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    replaceCurrentUrl(url);
     return true;
   }
 
@@ -172,7 +182,7 @@
     if (!match || !getLiveSlug(match)) return false;
     const view = params.get('liveView') === 'overview' ? 'overview' : 'match';
     const url = getLiveUrl(seasonId, match, view, { preserveSearch: true, preserveHash: true });
-    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    replaceCurrentUrl(url);
     return true;
   }
 
@@ -181,7 +191,7 @@
     if (!requested) return false;
     const normalized = normalizeSeasonId(requested);
     const url = getSeasonUrl(normalized, area, { preserveSearch: true, preserveHash: true });
-    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    replaceCurrentUrl(url);
     return true;
   }
 

@@ -19,10 +19,17 @@ function loadRouting(href, baseURI) {
     }
   };
   const window = { location, history, PADEL_SEASONS: [] };
-  const context = { window, document: { baseURI }, URL, URLSearchParams };
+  const document = {
+    baseURI,
+    pinnedBase: null,
+    querySelector() { return this.pinnedBase; },
+    createElement() { return {}; },
+    head: { prepend(element) { document.pinnedBase = element; } }
+  };
+  const context = { window, document, URL, URLSearchParams };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'data/seasons.js'), 'utf8'), context);
   vm.runInNewContext(routingSource, context);
-  return { routing: window.PadelSeasonRouting, history };
+  return { routing: window.PadelSeasonRouting, history, document };
 }
 
 test('short paths select their season and produce league and tipping URLs', () => {
@@ -132,6 +139,16 @@ test('legacy query links are replaced by the canonical short path and keep detai
   assert.equal(routing.getRequestedSeasonId(), '2026-winter');
   assert.equal(routing.normalizeCurrentUrl('league'), true);
   assert.equal(history.replaced, '/Padel-Liga/wi26/?partie=42');
+});
+
+test('leaving the root page for a short path keeps relative scripts at the site root', () => {
+  const { routing, history, document } = loadRouting(
+    'https://padelliga.envidual.com/?saison=test-2026&konto=1',
+    'https://padelliga.envidual.com/?saison=test-2026&konto=1'
+  );
+  routing.normalizeCurrentUrl('league');
+  assert.equal(history.replaced, '/test/?konto=1');
+  assert.equal(document.pinnedBase.href, 'https://padelliga.envidual.com/');
 });
 
 test('legacy match query links are normalized after the season matches are available', () => {

@@ -28,6 +28,10 @@ const calendarUpdateMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261030130000_calendar_mail_is_update.sql'),
   'utf8'
 );
+const previewLinkMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261030145000_calendar_mail_preview_link.sql'),
+  'utf8'
+);
 const calendarDelayMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261029220000_calendar_invitation_delay.sql'),
   'utf8'
@@ -92,6 +96,7 @@ test('calendar invitations follow schedule changes and keep one Outlook appointm
   assert.match(calendarMigration, /rename to queue_due_reminder_notifications/);
   assert.match(edgeFunction, /METHOD:\$\{cancelled \? "CANCEL" : "REQUEST"\}/);
   assert.match(edgeFunction, /SEQUENCE:\$\{calendar\.calendar_sequence\}/);
+  assert.match(edgeFunction, /SUMMARY:\$\{escapeIcsText\(\[job\.match_label, getEventLineup\(job\)\]/);
   assert.match(edgeFunction, /const calendarSubject = training \? "Training – PadelLiga" : `\$\{job\.match_label\} – PadelLiga \$\{job\.season_label\}`;/);
   assert.match(edgeFunction, /subject: `Abgesagt: \$\{calendarSubject\}`/);
   assert.match(edgeFunction, /const CALENDAR_LOCATION = "Lucky Star Padel";/);
@@ -128,6 +133,18 @@ test('calendar mail only announces a move when an invitation was really sent', (
   assert.match(calendarUpdateMigration, /earlier\.notification_type = 'calendar_invitation'/);
   assert.match(calendarUpdateMigration, /earlier\.status = 'sent'/);
   assert.match(edgeFunction, /const moved = calendar\?\.is_update \?\? false;/);
+});
+
+test('a new match invitation announces the match and explains updates below the details', () => {
+  assert.match(edgeFunction, /intro: "Pack deine Sportsachen! Das nächste Padel-Match steht an\."/);
+  assert.match(edgeFunction, /body: `Die \$\{matchTitle\} ist terminiert\. Hier sind die Details:`/);
+  assert.match(edgeFunction, /afterDetails: "Wird der Termin über die Webseite verschoben oder abgesagt/);
+});
+
+test('calendar invitations link to the match preview only when it is available', () => {
+  assert.match(previewLinkMigration, /private\.match_forecast_mode\(match\.id\) = 'preview'/);
+  assert.match(edgeFunction, /job\.notification_type === "calendar_invitation" && job\.match_has_preview/);
+  assert.match(edgeFunction, /url\.searchParams\.set\("partie", job\.match_id \?\? ""\)/);
 });
 
 test('calendar mail waits 15 minutes unless the match starts within two hours', () => {

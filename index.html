@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest?v=2026-10-28-brand-names">
-  <link rel="stylesheet" href="branding/og-design.css?v=0d83eef5aa">
+  <link rel="stylesheet" href="branding/og-design.css?v=5fc8711f3c">
   <script>
     // Die Admin-Design-Vorschau greift vor dem ersten Zeichnen; alles Weitere steht in js/branding-preview.js.
     (function () {
@@ -26,9 +26,9 @@
       } catch (error) { /* Ohne Speicher bleibt das veröffentlichte Branding. */ }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026-10-30-title-font-weight">
-  <link rel="stylesheet" href="account.css?v=2026-10-30-schedule-time-tap">
-  <link rel="stylesheet" href="whats-new.css?v=2026-10-30-radius-sm">
+  <link rel="stylesheet" href="style.css?v=2026-10-30-role-color-names">
+  <link rel="stylesheet" href="account.css?v=2026-10-30-role-color-names">
+  <link rel="stylesheet" href="whats-new.css?v=2026-10-30-role-color-names">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -47,7 +47,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="data/players.js?v=2026-10-20-test-net-emoji"></script>
   <script defer src="data/seasons.js?v=2026-10-30-test-match-ten"></script>
-  <script defer src="js/season-routing.js?v=2026-10-29-season-detail-reset"></script>
+  <script defer src="js/season-routing.js?v=2026-10-30-keep-base"></script>
   <script defer src="data/training-matches.js"></script>
   <script defer src="data/info.js"></script>
   <script defer src="data/supabase-config.js"></script>
@@ -668,7 +668,7 @@
   <div class="auth-dialog-card">
     <div class="widget-label">Partie</div>
     <h2 id="unschedule-match-title">Termin löschen</h2>
-    <p class="auth-dialog-copy" id="unschedule-match-description">Soll der Termin dieser Partie wirklich gelöscht werden? Diese Aktion kann nicht rückgängig gemacht werden.</p>
+    <p class="auth-dialog-copy" id="unschedule-match-description">Soll der Termin dieser Partie wirklich gelöscht werden? Diese Aktion kann nicht rückgängig gemacht werden. Der Outlook-Termin und die Schläger-Reservierung werden ebenfalls gelöscht.</p>
     <div class="player-email-actions">
       <button class="secondary-button" type="button" data-unschedule-close>Abbrechen</button>
       <button class="danger-button" type="button" data-unschedule-confirm>Termin löschen</button>
@@ -961,7 +961,7 @@
                   <span class="help-icon" tabindex="0" role="button" aria-label="Partienübersicht erklären" aria-describedby="account-games-help" aria-expanded="false" data-help-tooltip-anchor>?</span>
                   <span class="help-tooltip" id="account-games-help" role="tooltip">
                     <span class="account-games-help-block">Hier siehst du alle deine eigenen Liga- und Trainingspartien, sortiert nach dem, was als Nächstes zu tun ist.</span>
-                    <span class="account-games-help-block"><strong>Terminieren</strong>Bei einer geplanten Partie Datum und Uhrzeit wählen und „Terminieren“ klicken. Über „Termin ändern“ oder „Termin löschen“ passt du ihn später an.</span>
+                    <span class="account-games-help-block"><strong>Terminieren</strong>Bei einer geplanten Partie Datum und Uhrzeit wählen und „Terminieren“ klicken. Über „Termin ändern“ oder „Termin löschen“ passt du ihn später an.<br>Dabei werden automatisch die Schläger gebucht und der Outlook-Termin verschickt.</span>
                     <span class="account-games-help-block"><strong>Ergebnis eintragen</strong>Nach der Partie die Sätze eintragen, den tatsächlichen Partiezeitpunkt prüfen und „Zur Bestätigung senden“ klicken.</span>
                     <span class="account-games-help-block"><strong>Bestätigen</strong>Ergebnisse des anderen Teams stehen unter „Zu bestätigen“. Stimmt es, klickst du „Ergebnis bestätigen“, sonst „Alternative eingeben“. Ohne Reaktion gilt ein Vorschlag nach 48 Stunden als bestätigt.</span>
                     <span class="account-games-help-block"><strong>Training</strong>Für einen zukünftigen Termin genügen Datum, Uhrzeit und vier Teilnehmer. Nach dem Termin ergänzt du Paarungen, Formate und Ergebnisse und sendest sie zur Bestätigung. Trainings zählen nicht für Rangliste und Elo.</span>

@@ -313,11 +313,11 @@
       white-space: nowrap;
     }
     .site-nav button:hover,
-    .final-four-view-nav button:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+    .final-four-view-nav button:hover { color: var(--accent); background: color-mix(var(--accent) 12%); }
     .site-nav button.active,
     .final-four-view-nav button.active {
       color: var(--accent);
-      background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+      background: color-mix(var(--accent) 10%);
     }
     .viewer-picker {
       position: relative;
@@ -433,7 +433,7 @@
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 12px;
-      box-shadow: 0 18px 45px var(--shadow);
+      box-shadow: 0 18px 45px var(--shadow-color);
       text-transform: none;
       letter-spacing: normal;
     }
@@ -509,12 +509,12 @@
       border-radius: 20px;
       background: var(--bg);
       color: var(--text);
-      box-shadow: 0 34px 120px var(--shadow);
+      box-shadow: 0 34px 120px var(--shadow-color);
       overflow: hidden;
       padding: 0;
     }
     .player-profile-dialog::backdrop {
-      background: var(--black-shadow);
+      background: var(--backdrop);
       backdrop-filter: blur(2px);
     }
     html.is-detail-embed,
@@ -530,7 +530,7 @@
       background: transparent;
       color-scheme: normal;
     }
-    .liga-detail-frame.is-loading { background: var(--black-shadow); }
+    .liga-detail-frame.is-loading { background: var(--backdrop); }
     html:has(.liga-detail-frame[data-presentation="modal"]:not([hidden])) { overflow: hidden; }
     .liga-detail-frame[data-presentation="panel"] {
       position: relative;
@@ -540,7 +540,7 @@
       min-height: 0;
       border-radius: 20px;
       background: var(--bg);
-      box-shadow: 0 24px 72px var(--shadow);
+      box-shadow: 0 24px 72px var(--shadow-color);
       animation: match-statistics-panel-in 220ms ease-out;
     }
     .player-profile-shell {
@@ -634,7 +634,7 @@
       position: relative;
       overflow: hidden;
       background-color: var(--surface);
-      background-image: repeating-linear-gradient(135deg, var(--white-shine) 0 14px, transparent 14px 28px);
+      background-image: repeating-linear-gradient(135deg, var(--surface-tint) 0 14px, transparent 14px 28px);
       color: var(--dim);
       font-family: var(--font-mono);
       text-transform: uppercase;
@@ -1082,7 +1082,7 @@
       max-height: none;
       margin: 0;
       border-radius: 20px;
-      box-shadow: 0 24px 72px var(--shadow);
+      box-shadow: 0 24px 72px var(--shadow-color);
       animation: player-profile-panel-in 220ms ease-out;
       container: player-profile-panel / inline-size;
     }
@@ -3526,7 +3526,7 @@
     .ranking-table.expanded .col-rank { left: var(--rank-col-left); z-index: 5;}
     .ranking-table.expanded .col-name {
       left: var(--name-col-left);
-      box-shadow: 12px 0 18px var(--shadow);
+      box-shadow: 12px 0 18px var(--shadow-color);
       white-space: nowrap;
     }
     .ranking-table .col-name {
@@ -3609,7 +3609,7 @@
       border-radius: var(--radius-sm);
       background: var(--bg);
       color: var(--dim);
-      box-shadow: 0 14px 36px var(--shadow);
+      box-shadow: 0 14px 36px var(--shadow-color);
       font-family: var(--font-body);
       font-size: var(--text-sm);
       font-weight: 400;
@@ -3832,7 +3832,7 @@
       font-size: 0.82rem;
       line-height: 1.35;
       padding: 0.7rem 0.8rem;
-      box-shadow: 0 14px 36px var(--shadow);
+      box-shadow: 0 14px 36px var(--shadow-color);
     }
     .elo-chart-tooltip { width: 260px; }
     .placement-chart-tooltip { width: 220px; }
@@ -4280,7 +4280,7 @@
       border: 1px solid var(--border);
       border-radius: 20px;
       background: var(--bg);
-      box-shadow: 0 24px 72px var(--shadow);
+      box-shadow: 0 24px 72px var(--shadow-color);
       animation: match-statistics-panel-in 220ms ease-out;
       container: match-detail-panel / inline-size;
     }
@@ -5035,7 +5035,7 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       background: linear-gradient(145deg, color-mix(in srgb, var(--surface) 92%, var(--accent) 8%), var(--surface));
-      box-shadow: 0 12px 32px var(--shadow);
+      box-shadow: 0 12px 32px var(--shadow-color);
     }
     .cup-match-label {
       padding: 8px 12px;
@@ -5072,7 +5072,7 @@
       padding: 7px 10px;
       border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
-      background: var(--shadow);
+      background: var(--shadow-color);
       color: var(--dim);
       font-size: 0.76rem;
       text-align: center;
@@ -5371,7 +5371,8 @@
       flex: 0 0 auto;
       overflow: hidden;
       border-radius: var(--radius-full);
-      background: var(--white-shine);
+      box-shadow: inset 0 0 0 1px var(--border);
+      background: var(--surface);
     }
     .score-counter-step {
       display: inline-flex;
@@ -5399,7 +5400,7 @@
       border-radius: 0 var(--radius-full) var(--radius-full) 0;
     }
     .score-counter-step:hover {
-      background: var(--white-shine);
+      background: var(--surface-tint);
       color: var(--accent);
     }
     .score-counter-step:disabled {
@@ -6431,7 +6432,7 @@
         width: 100%;
         height: 100%;
         border: 0;
-        background: var(--shadow);
+        background: var(--shadow-color);
         cursor: default;
         opacity: 0;
         pointer-events: none;
@@ -6482,7 +6483,7 @@
         min-height: 44px;
         min-width: 160px;
         background: var(--surface);
-        box-shadow: 0 10px 30px var(--shadow);
+        box-shadow: 0 10px 30px var(--shadow-color);
       }
       .global-actions .viewer-profile-button {
         flex-basis: 44px;
@@ -6532,7 +6533,7 @@
         border-radius: var(--button-radius);
         background: var(--surface);
         color: var(--text);
-        box-shadow: 0 10px 30px var(--shadow);
+        box-shadow: 0 10px 30px var(--shadow-color);
         font-family: var(--font-body);
         font-size: var(--text-sm);
         font-weight: 600;
@@ -6571,7 +6572,7 @@
       .global-actions .auth-user-icon { width: 19px; height: 19px; }
       .global-actions.has-account-tasks .auth-button {
         border-color: var(--accent);
-        box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 48%, transparent), 0 10px 30px var(--shadow);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 48%, transparent), 0 10px 30px var(--shadow-color);
       }
       .global-action--live {
         border-color: var(--negativ);
@@ -6591,7 +6592,7 @@
         border-radius: var(--radius-full);
         background: var(--surface2);
         color: var(--text);
-        box-shadow: 0 12px 34px var(--shadow);
+        box-shadow: 0 12px 34px var(--shadow-color);
         cursor: pointer;
         padding: 0;
         place-items: center;
@@ -6649,12 +6650,12 @@
       }
       .global-actions.has-account-tasks:not(.has-live) .global-actions-toggle {
         border-color: var(--accent);
-        box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 48%, transparent), 0 12px 34px var(--shadow);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 48%, transparent), 0 12px 34px var(--shadow-color);
       }
       .global-actions.has-live .global-actions-toggle {
         border-color: var(--negativ);
         color: var(--negativ);
-        box-shadow: 0 0 0 1px color-mix(in srgb, var(--negativ) 48%, transparent), 0 12px 34px var(--shadow);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--negativ) 48%, transparent), 0 12px 34px var(--shadow-color);
       }
       .global-actions.has-live .global-actions-toggle-badge {
         background: var(--negativ);

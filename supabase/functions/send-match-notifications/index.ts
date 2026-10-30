@@ -23,6 +23,7 @@ type NotificationJob = {
   result_details: string | null;
   idempotency_key: string;
   training_participants: string | null;
+  match_has_preview: boolean;
 };
 
 type CalendarDetails = {
@@ -31,6 +32,15 @@ type CalendarDetails = {
   calendar_sequence: number;
   event_start: string;
   is_update: boolean;
+};
+
+type MailContent = {
+  subject: string;
+  intro: string;
+  body: string;
+  afterDetails?: string;
+  action: string;
+  matchName: string;
 };
 
 const CALENDAR_LOCATION = "Lucky Star Padel";
@@ -149,7 +159,7 @@ function buildCalendar(job: NotificationJob, calendar: CalendarDetails, organize
     `DTSTAMP:${formatIcsDate(new Date())}`,
     `DTSTART:${formatIcsDate(start)}`,
     `DTEND:${formatIcsDate(end)}`,
-    `SUMMARY:${escapeIcsText(`PadelLiga: ${isTrainingJob(job) ? "Training" : getEventLineup(job)}`)}`,
+    `SUMMARY:${escapeIcsText([job.match_label, getEventLineup(job)].filter(Boolean).join(": "))}`,
     `DESCRIPTION:${escapeIcsText(description)}`,
     `LOCATION:${escapeIcsText(CALENDAR_LOCATION)}`,
     `ORGANIZER;CN=PadelLiga:mailto:${organizer}`,
@@ -182,6 +192,10 @@ function encodeBase64(value: string) {
   return btoa(binary);
 }
 
+function linksToMatchPreview(job: NotificationJob) {
+  return job.notification_type === "calendar_invitation" && job.match_has_preview;
+}
+
 function buildDestination(job: NotificationJob, siteUrl: URL) {
   if (job.notification_type === "prediction_reminder") {
     const url = new URL("tipp/", siteUrl);
@@ -190,16 +204,31 @@ function buildDestination(job: NotificationJob, siteUrl: URL) {
   }
   const url = new URL(siteUrl);
   if (job.season_id) url.searchParams.set("saison", job.season_id);
+  if (linksToMatchPreview(job)) {
+    url.searchParams.set("partie", job.match_id ?? "");
+    return url.href;
+  }
   url.searchParams.set("konto", "1");
   return url.href;
 }
 
-function getMailContent(job: NotificationJob, calendar?: CalendarDetails) {
+function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailContent {
   const matchName = getEventHeading(job);
   const training = isTrainingJob(job);
   const calendarSubject = training ? "Training – PadelLiga" : `${job.match_label} – PadelLiga ${job.season_label}`;
   if (job.notification_type === "calendar_invitation") {
     const moved = calendar?.is_update ?? false;
+    if (!moved && !training) {
+      const matchTitle = job.match_label.startsWith("Partie ") ? job.match_label : `Partie „${job.match_label}“`;
+      return {
+        subject: calendarSubject,
+        intro: "Pack deine Sportsachen! Das nächste Padel-Match steht an.",
+        body: `Die ${matchTitle} ist terminiert. Hier sind die Details:`,
+        afterDetails: "Wird der Termin über die Webseite verschoben oder abgesagt, bekommst du automatisch eine Aktualisierung.",
+        action: linksToMatchPreview(job) ? "Partie ansehen" : "Zur PadelLiga",
+        matchName,
+      };
+    }
     return {
       subject: calendarSubject,
       intro: training
@@ -208,7 +237,7 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails) {
       body: moved
         ? "Die Kalendereinladung im Anhang ersetzt den bisherigen Termin in deinem Kalender."
         : "Die Kalendereinladung im Anhang trägt den Termin in deinen Kalender ein. Wird er verschoben oder abgesagt, bekommst du automatisch eine Aktualisierung.",
-      action: training ? "Training ansehen" : "Partie ansehen",
+      action: training ? "Training ansehen" : linksToMatchPreview(job) ? "Partie ansehen" : "Zur PadelLiga",
       matchName,
     };
   }
@@ -219,7 +248,7 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails) {
       body: training
         ? "Die Absage im Anhang entfernt den Termin aus deinem Kalender."
         : "Die Absage im Anhang entfernt den Termin aus deinem Kalender. Sobald ein neuer Termin feststeht, bekommst du eine neue Einladung.",
-      action: training ? "Zur PadelLiga" : "Partie ansehen",
+      action: "Zur PadelLiga",
       matchName,
     };
   }
@@ -282,17 +311,12 @@ function renderMail(job: NotificationJob, destination: string, calendar?: Calend
               ${lineupHtml}
               <tr><td style="padding:4px 16px 14px;color:#A8ADB7;font-size:13px;">${escapeHtml(matchAt)}</td></tr>
             </table>
+            ${content.afterDetails ? `<p style="margin:0 0 20px;">${escapeHtml(content.afterDetails)}</p>` : ""}
           </td>
         </tr>
         <tr>
           <td align="center" style="padding:0 28px 24px;">
             <a href="${escapeHtml(destination)}" style="display:inline-block;background:#D4F53A;color:#07080C;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 28px;border-radius:8px;">${escapeHtml(content.action)}</a>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:0 28px 20px;color:#A8ADB7;font-size:13px;line-height:1.5;">
-            <p style="margin:0 0 8px;">Falls der Knopf nicht funktioniert, öffne diesen Link:</p>
-            <p style="margin:0;overflow-wrap:anywhere;word-break:break-word;"><a href="${escapeHtml(destination)}" style="color:#D4F53A;text-decoration:underline;">PadelLiga im Browser öffnen</a></p>
           </td>
         </tr>
         <tr>
@@ -311,7 +335,7 @@ ${content.intro}
 ${content.body}
 
 ${[content.matchName, getEventLineup(job), matchAt].filter(Boolean).join("\n")}
-
+${content.afterDetails ? `\n${content.afterDetails}\n` : ""}
 ${content.action}: ${destination}
 
 Diese automatische E-Mail kannst du jederzeit in deinem PadelLiga-Konto unter „Einstellungen“ ausschalten.`;
