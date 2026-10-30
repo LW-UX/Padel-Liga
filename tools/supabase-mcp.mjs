@@ -14,7 +14,7 @@ const tokenFile = resolve(repositoryRoot, '.codex-secrets/supabase-access-token'
 const [command, argument] = process.argv.slice(2);
 
 if (!command) {
-  fail('Aufruf: supabase-mcp.mjs <list-tools|list-migrations|apply-migration|execute-sql|list-functions|get-function|deploy-function|get-logs|store-notification-service-key|get-auth-email-settings|update-recovery-template> [Datei oder Function]');
+  fail('Aufruf: supabase-mcp.mjs <list-tools|list-migrations|apply-migration|execute-sql|list-functions|get-function|deploy-function|get-logs|store-notification-service-key|get-auth-email-settings|update-recovery-template|update-account-email-templates> [Datei oder Function]');
 }
 
 let accessToken;
@@ -243,6 +243,29 @@ $do$;`
   console.log(JSON.stringify({
     mailer_subjects_recovery: config.mailer_subjects_recovery,
     template_updated: config.mailer_templates_recovery_content === content,
+  }, null, 2));
+} else if (command === 'update-account-email-templates') {
+  const confirmation = await readFile(resolve(repositoryRoot, 'supabase/templates/confirm-signup.html'), 'utf8');
+  const emailChange = await readFile(resolve(repositoryRoot, 'supabase/templates/change-email.html'), 'utf8');
+  const passwordChanged = await readFile(resolve(repositoryRoot, 'supabase/templates/password-changed.html'), 'utf8');
+  const config = await managementRequest('/config/auth', {
+    method: 'PATCH',
+    body: JSON.stringify({
+      mailer_subjects_confirmation: 'PadelLiga: E-Mail-Adresse bestätigen',
+      mailer_templates_confirmation_content: confirmation,
+      mailer_subjects_email_change: 'PadelLiga: Änderung der E-Mail-Adresse bestätigen',
+      mailer_templates_email_change_content: emailChange,
+      mailer_subjects_password_changed_notification: 'PadelLiga: Dein Passwort wurde geändert',
+      mailer_templates_password_changed_notification_content: passwordChanged,
+    }),
+  });
+  console.log(JSON.stringify({
+    mailer_subjects_confirmation: config.mailer_subjects_confirmation,
+    confirmation_updated: config.mailer_templates_confirmation_content === confirmation,
+    mailer_subjects_email_change: config.mailer_subjects_email_change,
+    email_change_updated: config.mailer_templates_email_change_content === emailChange,
+    mailer_subjects_password_changed_notification: config.mailer_subjects_password_changed_notification,
+    password_changed_updated: config.mailer_templates_password_changed_notification_content === passwordChanged,
   }, null, 2));
 } else {
   fail(`Unbekannter Befehl: ${command}`);

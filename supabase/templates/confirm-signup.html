@@ -1,5 +1,36 @@
-<h2>Anmeldung bestätigen</h2>
-<p>Hallo,</p>
-<p>bitte bestätige deine E-Mail-Adresse für die PadelLiga über diesen Link:</p>
-<p><a href="{{ .SiteURL }}?auth=confirm&amp;purpose=signup#{{ .ConfirmationURL }}">E-Mail-Adresse bestätigen</a></p>
-<p>Falls du dich nicht angemeldet hast, kannst du diese Nachricht ignorieren.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#07080C;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#0E1017;border:1px solid #29303F;border-radius:12px;">
+        <tr>
+          <td style="padding:28px 28px 8px;">
+            <a href="{{ .SiteURL }}" style="color:#FFFFFF;text-decoration:none;font-size:28px;font-weight:bold;letter-spacing:1px;">PADEL<span style="color:#D4F53A;">LIGA</span></a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:8px 28px 0;color:#F3F4F1;font-size:16px;line-height:1.5;">
+            <p style="margin:0 0 16px;">Willkommen bei der PadelLiga!</p>
+            <p style="margin:0 0 24px;">Bestätige über den Knopf unten deine E-Mail-Adresse, um dein Konto zu aktivieren. Der Link ist 48 Stunden gültig und kann nur einmal verwendet werden.</p>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:0 28px 24px;">
+            <a href="{{ .SiteURL }}?auth=confirm&amp;purpose=signup&amp;confirmation_url={{ .ConfirmationURL }}" style="display:inline-block;background:#D4F53A;color:#07080C;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 28px;border-radius:8px;">E-Mail-Adresse bestätigen</a>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 28px 20px;color:#A8ADB7;font-size:13px;line-height:1.5;">
+            <p style="margin:0 0 8px;">Falls der Knopf nicht funktioniert, öffne diesen Link:</p>
+            <p style="margin:0;overflow-wrap:anywhere;word-break:break-word;"><a href="{{ .SiteURL }}?auth=confirm&amp;purpose=signup&amp;confirmation_url={{ .ConfirmationURL }}" style="color:#D4F53A;text-decoration:underline;">Bestätigungslink im Browser öffnen</a></p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 28px 28px;color:#7E828B;font-size:13px;line-height:1.5;">
+            <p style="margin:0 0 8px;">Melde dich bei Fragen gerne beim Hanako-Leben-Squad.</p>
+            <p style="margin:0;">Du hast dich nicht angemeldet? Dann ignoriere diese Mail. Dein Konto wird dann nicht aktiviert.</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

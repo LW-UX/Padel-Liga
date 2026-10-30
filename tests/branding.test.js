@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 const { pathToFileURL } = require('node:url');
 
 const root = path.join(__dirname, '..');
@@ -71,4 +72,35 @@ test('the admin design preview offers every branding with matching wireframe col
     assert.ok(branding < script && script < html.indexOf('style.css'), `${file}: Vorschau direkt nach dem Branding laden`);
     assert.match(html, /data-account-branding hidden/);
   }
+});
+
+test('the design preview announces a switch once the stylesheet applies and follows other documents', () => {
+  const listeners = { link: {}, window: {} };
+  const attributes = { href: 'branding/og-design.css?v=abc' };
+  const stored = new Map();
+  const events = [];
+  const window = {
+    localStorage: { getItem: key => stored.get(key) ?? null, setItem: (key, value) => stored.set(key, value), removeItem: key => stored.delete(key) },
+    addEventListener: (type, handler) => { listeners.window[type] = handler; },
+    dispatchEvent: event => events.push(event.type)
+  };
+  const link = {
+    getAttribute: name => attributes[name],
+    setAttribute: (name, value) => { attributes[name] = value; },
+    addEventListener: (type, handler) => { listeners.link[type] = handler; }
+  };
+  const document = { querySelector: selector => selector.includes('theme-color') ? null : link };
+  class CustomEvent { constructor(type) { this.type = type; } }
+  vm.runInNewContext(read('js/branding-preview.js'), { window, document, CustomEvent });
+
+  window.PadelBrandingPreview.select('hanako-leben');
+  assert.equal(attributes.href, 'branding/hanako-leben.css');
+  assert.deepEqual(events, []);
+  listeners.link.load();
+  assert.deepEqual(events, ['padel:branding-change']);
+
+  stored.delete('padel-branding-preview');
+  listeners.window.storage({ key: 'padel-branding-preview' });
+  assert.equal(attributes.href, 'branding/og-design.css?v=abc');
+  assert.equal(window.PadelBrandingPreview.current(), 'og-design');
 });

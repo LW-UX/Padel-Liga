@@ -25,6 +25,14 @@ const passwordResetTemplate = fs.readFileSync(
   path.join(root, 'supabase', 'templates', 'reset-password.html'),
   'utf8'
 );
+const emailChangeTemplate = fs.readFileSync(
+  path.join(root, 'supabase', 'templates', 'change-email.html'),
+  'utf8'
+);
+const passwordChangedTemplate = fs.readFileSync(
+  path.join(root, 'supabase', 'templates', 'password-changed.html'),
+  'utf8'
+);
 const domainMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260909220000_company_signup_domains.sql'),
   'utf8'
@@ -126,7 +134,11 @@ test('invitation link is generated only by the server-side function', () => {
   assert.match(client, /confirmationUrl\.origin !== supabaseUrl\.origin/);
   assert.match(client, /confirmationUrl\.pathname !== '\/auth\/v1\/verify'/);
   assert.match(client, /window\.location\.assign\(confirmationUrl\.href\)/);
-  assert.match(signupTemplate, /\?auth=confirm&amp;purpose=signup#\{\{ \.ConfirmationURL \}\}/);
+  assert.match(signupTemplate, /\?auth=confirm&amp;purpose=signup&amp;confirmation_url=\{\{ \.ConfirmationURL \}\}/);
+  assert.match(emailChangeTemplate, /\?auth=confirm&amp;purpose=email_change&amp;confirmation_url=\{\{ \.ConfirmationURL \}\}/);
+  assert.doesNotMatch(signupTemplate, /href="\{\{ \.ConfirmationURL \}\}/);
+  assert.doesNotMatch(emailChangeTemplate, /href="\{\{ \.ConfirmationURL \}\}/);
+  assert.doesNotMatch(passwordChangedTemplate, /\{\{ \.SiteURL \}\}/);
   assert.match(passwordResetTemplate, /\?auth=confirm&amp;purpose=recovery&amp;confirmation_url=\{\{ \.ConfirmationURL \}\}/);
   assert.match(passwordResetTemplate, /PADEL<span[^>]*>LIGA<\/span>/);
   assert.match(passwordResetTemplate, /Der Link ist 48 Stunden gültig und kann nur einmal verwendet werden\./);

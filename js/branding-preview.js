@@ -54,7 +54,24 @@
     themeColor.setAttribute('content', colors.bg);
   }
 
-  var current = isKnown(readStored()) ? readStored() : publishedName;
+  function readCurrent() {
+    return isKnown(readStored()) ? readStored() : publishedName;
+  }
+
+  // Skripte, die Branding-Werte einmalig auslesen (etwa Diagramme), zeichnen nach diesem Ereignis neu.
+  // Es folgt erst auf das Laden des Stylesheets, weil die neuen Werte vorher noch nicht gelten.
+  link.addEventListener('load', function () {
+    window.dispatchEvent(new CustomEvent('padel:branding-change'));
+  });
+
+  // Andere Tabs und die eingebettete Detailansicht der Tippseite folgen der Auswahl ohne Neuladen.
+  window.addEventListener('storage', function (event) {
+    if (event.key !== STORAGE_KEY && event.key !== null) return;
+    current = readCurrent();
+    apply(current);
+  });
+
+  var current = readCurrent();
   apply(current);
 
   window.PadelBrandingPreview = {

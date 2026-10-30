@@ -1958,6 +1958,33 @@ function getThemeValue(variableName) {
   return themeValueCache.get(variableName);
 }
 
+function applyThemeToChartScale(scale) {
+  scale.grid.color = getThemeValue('--border');
+  scale.ticks.color = getThemeValue('--muted');
+  scale.ticks.font.family = getThemeValue('--font-body');
+  if (!scale.title?.display) return;
+  scale.title.color = getThemeValue('--dim');
+  scale.title.font.family = getThemeValue('--font-body');
+}
+
+// Diagramme übernehmen Branding-Werte beim Erstellen und folgen einem Wechsel daher nicht von selbst.
+function refreshThemeDependentCharts() {
+  themeValueCache.clear();
+  const getLiveCharts = () => [chart, placementChart].filter(instance => instance?.ctx);
+  getLiveCharts().forEach(instance => {
+    ['x', 'y'].forEach(scaleId => applyThemeToChartScale(instance.options.scales[scaleId]));
+    instance.update('none');
+  });
+  // Die Schrift eines neuen Brandings lädt erst beim Zeichnen; danach stimmen auch die Achsenbeschriftungen.
+  document.fonts?.ready.then(() => getLiveCharts().forEach(instance => instance.update('none')));
+
+  if (!playerProfileData || !document.getElementById('player-profile-dialog')?.open) return;
+  renderPlayerProfileParticipations(playerProfileData.participations || [], playerProfileData.matches || []);
+  renderPlayerProfileEloChart(playerProfileData.eloSeries || []);
+}
+
+window.addEventListener('padel:branding-change', refreshThemeDependentCharts);
+
 function getDefaultProfileSeasonColor() {
   return getThemeValue(PROFILE_SEASON_COLOR_VARIABLES.neutral);
 }

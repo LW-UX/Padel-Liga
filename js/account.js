@@ -523,6 +523,11 @@
           title: 'Spielerzugang einrichten',
           copy: 'Bestätige jetzt deine Einladung. Der eigentliche Einmal-Link wird erst durch deinen Klick verwendet.',
           button: 'Einladung bestätigen'
+        },
+        email_change: {
+          title: 'E-Mail-Adresse ändern',
+          copy: 'Bestätige jetzt die Änderung deiner E-Mail-Adresse. Der eigentliche Einmal-Link wird erst durch deinen Klick verwendet.',
+          button: 'Änderung bestätigen'
         }
       }[state.confirmationPurpose] || {
         title: 'Link bestätigen',
