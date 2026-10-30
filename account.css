@@ -101,7 +101,8 @@
       font-weight: 500;
       padding: 0.55rem;
     }
-    .auth-mode-toggle button.active { background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent); }
+    .auth-mode-toggle button:hover,
+    .auth-mode-toggle button.active { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); }
     .auth-form { display: grid; gap: 12px; }
     .auth-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
     .auth-form label[hidden] { display: none !important; }

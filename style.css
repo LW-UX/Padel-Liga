@@ -313,7 +313,7 @@
       white-space: nowrap;
     }
     .site-nav button:hover,
-    .final-four-view-nav button:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+    .final-four-view-nav button:hover,
     .site-nav button.active,
     .final-four-view-nav button.active {
       color: var(--accent);
