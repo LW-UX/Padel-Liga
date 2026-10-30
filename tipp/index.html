@@ -21,10 +21,10 @@
       } catch (error) { /* Ohne Speicher bleibt das veröffentlichte Branding. */ }
     })();
   </script>
-  <link rel="stylesheet" href="../style.css?v=2026-10-30-company-logos">
+  <link rel="stylesheet" href="../style.css?v=2026-10-30-company-icon-sizes">
   <link rel="stylesheet" href="../tipp.css?v=2026-10-30-tipp-css">
   <link rel="stylesheet" href="../match-statistics.css?v=2026-10-30-table-core">
-  <link rel="stylesheet" href="../account.css?v=2026-10-30-control-radius">
+  <link rel="stylesheet" href="../account.css?v=2026-10-30-design-cards">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="../data/players.js?v=2026-10-20-test-net-emoji"></script>
@@ -40,7 +40,7 @@
   <script defer src="../js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="../js/table-core.js?v=2026-10-30-diff-zero"></script>
   <script defer src="../js/panel-layout.js?v=2026-10-29-shared-panel-layout"></script>
-  <script defer src="../js/tipp-page.js?v=2026-10-30-company-logos"></script>
+  <script defer src="../js/tipp-page.js?v=2026-10-30-sort-toggle"></script>
 </head>
 <body class="tip-page">
 <header class="site-header">
@@ -115,19 +115,19 @@
           <tr>
             <th class="col-rank">#</th>
             <th class="col-name">Name</th>
-            <th class="col-games"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="predictions"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Tipps</span></button></th>
-            <th class="col-wins"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="exact"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Exakt</span></button></th>
+            <th class="col-games"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="predictions"><span class="sort-chevron" aria-hidden="true"></span><span>Tipps</span></button></th>
+            <th class="col-wins"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="exact"><span class="sort-chevron" aria-hidden="true"></span><span>Exakt</span></button></th>
             <th class="col-passive">
               <span class="ranking-header-with-help prediction-ranking-passive-help">
-                <button type="button" class="ranking-sort-header" data-prediction-ranking-sort="passive"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Passiv</span></button>
+                <button type="button" class="ranking-sort-header" data-prediction-ranking-sort="passive"><span class="sort-chevron" aria-hidden="true"></span><span>Passiv</span></button>
                 <span class="th-help-wrap">
                   <span class="help-icon" tabindex="0" role="button" aria-label="Passive Punkte erklären" aria-describedby="prediction-ranking-passive-help" data-help-tooltip-anchor>?</span>
                   <span class="help-tooltip" id="prediction-ranking-passive-help" role="tooltip">Deine eigenen Partien kannst du nicht tippen. Sobald sie gewertet werden, erhältst du automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Tipp der anderen. Hat niemand getippt, gibt es keine automatische Gutschrift.</span>
                 </span>
               </span>
             </th>
-            <th class="col-bonus"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="bonus"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Bonus</span></button></th>
-            <th class="col-points" aria-sort="descending"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="points"><span class="ranking-sort-chevron" aria-hidden="true"></span><span>Gesamt</span></button></th>
+            <th class="col-bonus"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="bonus"><span class="sort-chevron" aria-hidden="true"></span><span>Bonus</span></button></th>
+            <th class="col-points" aria-sort="descending"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="points"><span class="sort-chevron" aria-hidden="true"></span><span>Gesamt</span></button></th>
           </tr>
         </thead>
         <tbody id="prediction-ranking-body"></tbody>
@@ -159,9 +159,9 @@
           <div class="sh-heading">
             <h2>TIPPABGABE</h2>
           </div>
-          <div class="toggle toggle--underline" id="prediction-sort-toggle" aria-label="Tippabgabe sortieren">
-            <button type="button" class="active" data-prediction-sort="status" aria-pressed="true">Status</button>
-            <button type="button" data-prediction-sort="matchday" aria-pressed="false">Spieltage</button>
+          <div class="toggle toggle--sort" id="prediction-sort-toggle" data-sort-direction="ascending" aria-label="Tippabgabe sortieren">
+            <button type="button" class="active" data-prediction-sort="status" aria-pressed="true" aria-label="Status, aufsteigend"><span class="sort-chevron" aria-hidden="true"></span>Status</button>
+            <button type="button" data-prediction-sort="matchday" aria-pressed="false"><span class="sort-chevron" aria-hidden="true"></span>Spieltage</button>
           </div>
         </div>
         <div id="prediction-matches" class="prediction-match-list"></div>

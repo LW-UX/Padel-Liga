@@ -12,6 +12,7 @@ let selectedSeason = null;
 let selectedViewerId = 'sb';
 let matchScope = 'all';
 let matchSortMode = 'matchday';
+let matchSortDescending = false;
 let rankingSortMode = 'points';
 let rankingViewMode = 'compact';
 let allTimeRankingViewMode = 'compact';
@@ -1163,6 +1164,7 @@ function resetSeasonState() {
   }
   matchScope = 'all';
   matchSortMode = 'matchday';
+  matchSortDescending = false;
   rankingSortMode = 'points';
   rankingViewMode = 'compact';
   allTimeRankingViewMode = 'compact';
@@ -3961,8 +3963,8 @@ function updateMatchScopeToggle() {
 
 function setMatchSort(mode) {
   const nextMode = mode === 'date' ? 'date' : 'matchday';
-  if (nextMode === matchSortMode) return;
-
+  // Ein erneuter Klick dreht die Richtung um, ein Wechsel beginnt wieder aufsteigend.
+  matchSortDescending = nextMode === matchSortMode && !matchSortDescending;
   matchSortMode = nextMode;
   renderPartien({ animateSort: true });
 }
@@ -3971,9 +3973,18 @@ function updateMatchSortToggle() {
   const toggle = document.getElementById('match-sort-toggle');
   if (!toggle) return;
 
-  const buttons = toggle.querySelectorAll('button');
-  buttons[0]?.classList.toggle('active', matchSortMode === 'matchday');
-  buttons[1]?.classList.toggle('active', matchSortMode === 'date');
+  toggle.dataset.sortDirection = matchSortDescending ? 'descending' : 'ascending';
+  toggle.querySelectorAll('button').forEach(button => {
+    const isActive = button.dataset.matchSort === matchSortMode;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-pressed', String(isActive));
+    if (isActive) button.setAttribute('aria-label', `${button.textContent.trim()}, ${matchSortDescending ? 'absteigend' : 'aufsteigend'}`);
+    else button.removeAttribute('aria-label');
+  });
+}
+
+function applyMatchSortDirection(items) {
+  return matchSortDescending ? [...items].reverse() : items;
 }
 
 function setRankingSort(mode) {
@@ -6805,19 +6816,21 @@ function joinSeasonPhaseSections(sections) {
 
 function renderPartienByMatchday(matches) {
   const regularMatches = matches.filter(match => getMatchStage(match) === 'league');
-  const semifinalMatches = matches
+  const semifinalMatches = applyMatchSortDirection(matches
     .filter(match => getMatchStage(match) === 'semifinal')
-    .sort(compareMatchesByNumber);
-  const finalFourMatches = matches
+    .sort(compareMatchesByNumber));
+  const finalFourMatches = applyMatchSortDirection(matches
     .filter(match => getMatchStage(match) === 'final-four')
-    .sort(compareMatchesByNumber);
-  const matchdays = [...new Set(regularMatches.map(match => match.spieltag))].sort((a, b) => a - b);
+    .sort(compareMatchesByNumber));
+  const matchdays = applyMatchSortDirection([...new Set(regularMatches.map(match => match.spieltag))].sort((a, b) => a - b));
 
   const regularHtml = matchdays.map((matchday, index) => {
-    const matchesForDay = regularMatches
+    const matchesForDay = applyMatchSortDirection(regularMatches
       .filter(match => match.spieltag === matchday)
-      .sort(compareMatchesByNumber);
-    const matchdayBreak = index > 0 ? getMatchdayBreakBetween(matchdays[index - 1], matchday) : null;
+      .sort(compareMatchesByNumber));
+    const matchdayBreak = index > 0
+      ? getMatchdayBreakBetween(...applyMatchSortDirection([matchdays[index - 1], matchday]))
+      : null;
     return renderMatchdayBreak(matchdayBreak) + renderMatchdayGroup(matchday, matchesForDay);
   }).join('');
   const semifinalHtml = renderTournamentGroup(semifinalMatches, 'Halbfinale', 'semifinal-group');
@@ -6856,15 +6869,20 @@ function renderOpenMatchGroup(matches) {
   </div>`;
 }
 
+// Partien ohne Termin haben kein Datum zum Umdrehen und bleiben in beiden Richtungen am Ende.
+function sortMatchesBySchedule(matches) {
+  const sorted = [...matches].sort(compareMatchesBySchedule);
+  return [
+    ...applyMatchSortDirection(sorted.filter(hasMatchSortDate)),
+    ...applyMatchSortDirection(sorted.filter(match => !hasMatchSortDate(match)))
+  ];
+}
+
 function renderPartienByDate(matches) {
   const regularMatches = matches.filter(match => getMatchStage(match) === 'league');
-  const semifinalMatches = matches
-    .filter(match => getMatchStage(match) === 'semifinal')
-    .sort(compareMatchesBySchedule);
-  const finalFourMatches = matches
-    .filter(match => getMatchStage(match) === 'final-four')
-    .sort(compareMatchesBySchedule);
-  const sortedMatches = [...regularMatches].sort(compareMatchesBySchedule);
+  const semifinalMatches = sortMatchesBySchedule(matches.filter(match => getMatchStage(match) === 'semifinal'));
+  const finalFourMatches = sortMatchesBySchedule(matches.filter(match => getMatchStage(match) === 'final-four'));
+  const sortedMatches = sortMatchesBySchedule(regularMatches);
   const scheduledMatches = sortedMatches.filter(hasMatchSortDate);
   const openMatches = sortedMatches.filter(match => !hasMatchSortDate(match));
   const dateGroups = [...new Set(scheduledMatches.map(match => toDateKey(getMatchSortDate(match))))];

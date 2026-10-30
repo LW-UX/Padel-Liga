@@ -10,8 +10,8 @@ const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
 const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 
 test('match overview defaults to matchdays and exposes date sorting in the ranking position', () => {
-  assert.match(html, /id="match-sort-toggle"[\s\S]*class="active" data-match-sort="matchday">Spieltage/);
-  assert.match(html, /data-match-sort="date">Datum/);
+  assert.match(html, /id="match-sort-toggle"[\s\S]*class="active" data-match-sort="matchday"[^>]*>.*Spieltage/);
+  assert.match(html, /data-match-sort="date"[^>]*>.*Datum/);
   assert.match(app, /let matchSortMode = 'matchday'/);
   assert.match(app, /matchSortMode = 'matchday';[\s\S]*rankingSortMode = 'points'/);
   assert.match(app, /matchSortMode === 'date'[\s\S]*renderPartienByDate\(visibleMatches\)/);
@@ -63,6 +63,45 @@ test('date sorting places matches without a complete date and time last', () => 
   assert.match(app, /if \(matchScope === 'open'\) return match\.sieger === null/);
   assert.doesNotMatch(app, /function getPendingMatchLabel/);
   assert.match(app, /statistics\?\.mode === 'preview' \? renderMatchForecastLine\(m\) : ''/);
+});
+
+test('a repeated click reverses the match order and switching starts ascending again', () => {
+  const source = app.match(/function setMatchSort\(mode\) \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(source);
+  const context = { matchSortMode: 'matchday', matchSortDescending: false, renderPartien: () => {} };
+  vm.runInNewContext(`${source}; this.setMatchSort = setMatchSort;`, context);
+
+  context.setMatchSort('matchday');
+  assert.equal(context.matchSortDescending, true);
+  context.setMatchSort('matchday');
+  assert.equal(context.matchSortDescending, false);
+  context.setMatchSort('matchday');
+  context.setMatchSort('date');
+  assert.equal(context.matchSortMode, 'date');
+  assert.equal(context.matchSortDescending, false);
+});
+
+test('descending date sorting keeps matches without a date last', () => {
+  const applySource = app.match(/function applyMatchSortDirection\(items\) \{[\s\S]*?\n\}/)?.[0];
+  const sortSource = app.match(/function sortMatchesBySchedule\(matches\) \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(applySource && sortSource);
+  const context = {
+    matchSortDescending: true,
+    hasMatchSortDate: match => Boolean(match.datum),
+    compareMatchesBySchedule: (a, b) => a.order - b.order
+  };
+  vm.runInNewContext(`${applySource}\n${sortSource}\nthis.sortMatchesBySchedule = sortMatchesBySchedule;`, context);
+
+  const matches = [
+    { id: 'earlier', order: 1, datum: '2026-06-01' },
+    { id: 'open-first', order: 3, datum: null },
+    { id: 'later', order: 2, datum: '2026-06-02' },
+    { id: 'open-second', order: 4, datum: null }
+  ];
+  assert.deepEqual(
+    Array.from(context.sortMatchesBySchedule(matches), match => match.id),
+    ['later', 'earlier', 'open-second', 'open-first']
+  );
 });
 
 test('open scope includes scheduled matches without a result and excludes completed matches', () => {

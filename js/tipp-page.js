@@ -420,7 +420,7 @@
       const accountReady = window.PadelKonto.init();
       await Promise.all([
         loadScript(`../${selected.file}`),
-        loadScript('../js/tippspiel.js?v=2026-10-30-company-logos')
+        loadScript('../js/tippspiel.js?v=2026-10-30-sort-toggle')
       ]);
       const season = hydrateSeason(window.PADEL_SEASON);
       selectedSeasonData = season;

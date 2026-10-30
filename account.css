@@ -986,6 +986,7 @@
       .account-header h2 { font-size: 1.65rem; }
       .account-settings-actions { justify-content: stretch; }
       .account-settings-actions .secondary-button { flex: 1 1 0; }
+      .account-branding-options { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
       .account-section { min-width: 0; }
       .account-section-heading { min-width: 0; }
       .account-section-heading h2 { font-size: 1.65rem; }

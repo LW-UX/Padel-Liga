@@ -38,6 +38,7 @@
     error: null,
     bound: false,
     sortMode: 'status',
+    sortDescending: false,
     leaderboardSortMode: 'points',
     articleExpanded: false,
     tableView: 'matches',
@@ -253,13 +254,17 @@
     return `<section class="match-group">${labelHtml}<div class="match-list">${matches.map(renderMatch).join('')}</div></section>`;
   }
 
+  function applyPredictionSortDirection(items) {
+    return state.sortDescending ? [...items].reverse() : items;
+  }
+
   function renderMatchesByMatchday(matches, renderMatch) {
-    const matchdays = [...new Set(matches.map(match => match.spieltag))]
-      .sort((first, second) => Number(first ?? Infinity) - Number(second ?? Infinity));
+    const matchdays = applyPredictionSortDirection([...new Set(matches.map(match => match.spieltag))]
+      .sort((first, second) => Number(first ?? Infinity) - Number(second ?? Infinity)));
     return matchdays.map(spieltag => {
-      const matchdayMatches = matches
+      const matchdayMatches = applyPredictionSortDirection(matches
         .filter(match => match.spieltag === spieltag)
-        .sort(compareMatchesByNumber);
+        .sort(compareMatchesByNumber));
       return renderMatchGroup(
         formatMatchdayLabel(spieltag, matchdayMatches.length),
         matchdayMatches,
@@ -468,10 +473,14 @@
   }
 
   function renderSortToggle() {
+    const toggle = document.getElementById('prediction-sort-toggle');
+    if (toggle) toggle.dataset.sortDirection = state.sortDescending ? 'descending' : 'ascending';
     document.querySelectorAll('[data-prediction-sort]').forEach(button => {
       const isActive = button.dataset.predictionSort === state.sortMode;
       button.classList.toggle('active', isActive);
       button.setAttribute('aria-pressed', String(isActive));
+      if (isActive) button.setAttribute('aria-label', `${button.textContent.trim()}, ${state.sortDescending ? 'absteigend' : 'aufsteigend'}`);
+      else button.removeAttribute('aria-label');
     });
   }
 
@@ -1117,11 +1126,11 @@
       ...lockedMatches.map(renderMatch),
       ...lockedBonusQuestions.map(renderBonusQuestion)
     ];
-    target.innerHTML = `
-      ${renderPredictionHtmlGroup(`<h3><span>Offene Tipps (${openCards.length})</span></h3>`, openCards)}
-      ${renderPredictionHtmlGroup(`<h3><span>Demnächst tippbar (${upcomingCards.length})</span></h3>`, upcomingCards)}
-      ${renderPredictionHtmlGroup(`<h3><span>Gesperrte Tipps (${lockedCards.length})</span></h3>`, lockedCards)}
-    `;
+    target.innerHTML = applyPredictionSortDirection([
+      renderPredictionHtmlGroup(`<h3><span>Offene Tipps (${openCards.length})</span></h3>`, applyPredictionSortDirection(openCards)),
+      renderPredictionHtmlGroup(`<h3><span>Demnächst tippbar (${upcomingCards.length})</span></h3>`, applyPredictionSortDirection(upcomingCards)),
+      renderPredictionHtmlGroup(`<h3><span>Gesperrte Tipps (${lockedCards.length})</span></h3>`, applyPredictionSortDirection(lockedCards))
+    ]).join('');
   }
 
   function getPredictionLeaderboardSortValue(entry, sortMode) {
@@ -1859,7 +1868,9 @@
         return;
       }
       const sortButton = event.target.closest('[data-prediction-sort]');
-      if (!sortButton || sortButton.dataset.predictionSort === state.sortMode) return;
+      if (!sortButton) return;
+      // Ein erneuter Klick dreht die Richtung um, ein Wechsel beginnt wieder aufsteigend.
+      state.sortDescending = sortButton.dataset.predictionSort === state.sortMode && !state.sortDescending;
       state.sortMode = sortButton.dataset.predictionSort;
       renderSortToggle();
       renderMatches();

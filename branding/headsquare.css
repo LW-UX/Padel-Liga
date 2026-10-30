@@ -81,7 +81,6 @@
   --dropdown-radius: 0px;
   --menu-radius: 0px;
   --input-radius: 0px;
-  /* Zähler (Ergebniseingabe) und Schalter (An/Aus). */
   --control-radius: 0px;
   /* Inhaltscontainer: base für Dialoge, sm für Karten, xs für Hinweise, lg nur für Ausnahmen. Die Stufen rechnen sich aus base und lassen sich einzeln überschreiben. */
   --container-radius-base: 0px;

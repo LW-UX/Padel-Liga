@@ -117,7 +117,7 @@ test('the three main rankings sort once through their column headers', () => {
   assert.equal(fixedHeaders.length, 3);
   fixedHeaders.forEach(match => assert.doesNotMatch(match[0], /data-ranking-sort/));
   assert.match(page, /class="col-points" aria-sort="descending"/);
-  assert.match(style, /th\[aria-sort\] \.ranking-sort-chevron \{ display: inline-block; \}/);
+  assert.match(style, /th\[aria-sort\] \.sort-chevron \{ display: inline-block; \}/);
   assert.match(app, /event\.target\.closest\('button\[data-ranking-sort\]'\)/);
   assert.match(app, /event\.target\.closest\('button\[data-ranking-view\]'\)/);
   assert.match(app, /if \(nextMode === rankingSortMode\) return;/);
