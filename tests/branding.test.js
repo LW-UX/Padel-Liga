@@ -12,7 +12,7 @@ const loadTool = () => import(pathToFileURL(path.join(root, 'tools/apply-brandin
 test('every branding defines the same variables as the OG-Design', async () => {
   const { readBrandingVariables } = await loadTool();
   const reference = Object.keys(readBrandingVariables(read('branding/og-design.css'))).sort();
-  assert.ok(reference.includes('--bg') && reference.includes('--button-radius') && reference.includes('--section-gap') && reference.includes('--widget-bg'));
+  assert.ok(reference.includes('--bg') && reference.includes('--button-radius') && reference.includes('--container-radius') && reference.includes('--section-gap') && reference.includes('--widget-bg'));
 
   for (const file of fs.readdirSync(path.join(root, 'branding')).filter(name => name.endsWith('.css'))) {
     assert.deepEqual(Object.keys(readBrandingVariables(read(`branding/${file}`))).sort(), reference, file);
@@ -23,7 +23,8 @@ test('shared stylesheets keep no brand values', () => {
   for (const file of ['style.css', 'account.css', 'match-statistics.css', 'whats-new.css']) {
     const css = read(file);
     assert.doesNotMatch(css, /#[0-9a-fA-F]{3,8}\b|rgba?\(|@font-face/, file);
-    assert.doesNotMatch(css, /^\s*--(bg|accent|font-body|text-heading|section-gap|button-radius|widget-bg|widget-padding):/m, file);
+    assert.doesNotMatch(css, /^\s*--(bg|accent|font-body|text-heading|section-gap|button-radius|container-radius|widget-bg|widget-padding):/m, file);
+    assert.doesNotMatch(css, /--radius-(xs|sm|lg)\b|--widget-radius/, file);
   }
 });
 

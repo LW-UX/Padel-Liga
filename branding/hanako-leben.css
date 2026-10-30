@@ -44,13 +44,14 @@
   /* Rahmen der Inhaltsbereiche (.widget); transparent und 0 lassen die Bereiche frei auf --bg stehen. */
   --widget-bg: transparent;
   --widget-border: transparent;
-  --widget-radius: 0;
   --widget-padding: 0;
 
-  /* Eckenradien nach Rolle; Werte aus der Grundskala in style.css */
+  /* Eckenradien nach Rolle */
   --button-radius: var(--radius-full);
   --dropdown-radius: var(--radius-full);
-  --menu-radius: var(--radius-sm);
+  --menu-radius: 8px;
+  /* Äußerste Ebene der Inhaltscontainer; die inneren Ebenen berechnet style.css daraus. */
+  --container-radius: 20px;
 
   /* Flächen und Text. --bg färbt auch Browserleiste und App-Start, --accent das Safari-Tab-Symbol. */
   --bg:         #F7F4EE;

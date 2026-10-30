@@ -67,7 +67,7 @@
       max-height: min(calc(100vh - 64px), 900px);
       margin: auto;
       border: 1px solid var(--border);
-      border-radius: 20px;
+      border-radius: var(--container-radius);
       background: var(--bg);
       color: var(--text);
       box-shadow: 0 34px 120px var(--shadow-color);
@@ -112,7 +112,7 @@
       width: 100%;
       min-height: 44px;
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
+      border-radius: var(--container-radius-3);
       background: var(--bg);
       color: var(--text);
       font-family: var(--font-body);
@@ -188,7 +188,7 @@
     .player-invite-preview {
       width: 100%;
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
+      border-radius: var(--container-radius-3);
       background: var(--bg);
       color: var(--text);
       font: inherit;
@@ -222,7 +222,7 @@
       min-height: 44px;
       margin: 0;
       border: 1px solid var(--accent);
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       background: var(--surface);
       box-shadow: 0 14px 40px var(--shadow-color);
       color: var(--text);
@@ -239,7 +239,7 @@
       width: 28px;
       height: 28px;
       border: 1px solid var(--border);
-      border-radius: var(--radius-full);
+      border-radius: var(--button-radius);
       background: transparent;
       color: var(--dim);
       cursor: pointer;
@@ -278,7 +278,7 @@
       display: grid;
       gap: 1rem;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       background: var(--surface);
       margin-bottom: 1.35rem;
       padding: 1rem;
@@ -297,7 +297,7 @@
       display: grid;
       gap: 10px;
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
+      border-radius: var(--container-radius-3);
       background: var(--bg);
       cursor: pointer;
       padding: 8px 8px 10px;
@@ -311,7 +311,7 @@
       gap: 7px;
       aspect-ratio: 4 / 3;
       border: 1px solid var(--wf-border);
-      border-radius: var(--radius-xs);
+      border-radius: 4px;
       background: var(--wf-bg);
       overflow: hidden;
       padding: 7px;
@@ -361,7 +361,7 @@
       height: 20px;
       margin: 0;
       border: 1px solid var(--border);
-      border-radius: var(--radius-xs);
+      border-radius: 4px;
       background: var(--surface2);
       cursor: pointer;
       outline: none;
@@ -429,7 +429,7 @@
     .account-settings-actions { display: flex; gap: 8px; }
     .account-games-empty {
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--container-radius-2);
       color: var(--dim);
       font-size: 0.82rem;
       padding: 1rem;
@@ -473,7 +473,7 @@
       display: grid;
       gap: 12px;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       background: var(--surface);
       padding: 1rem;
     }
@@ -542,7 +542,7 @@
       top: inherit;
     }
     .account-task-player-name.is-authenticated { color: var(--accent2); }
-    .result-proposal { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: var(--radius-sm); background: var(--surface2); padding: 0.7rem; }
+    .result-proposal { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: var(--container-radius-3); background: var(--surface2); padding: 0.7rem; }
     .result-proposal span { color: var(--dim); font-size: var(--text-sm); }
     .result-proposal strong { font-family: var(--font-body); font-size: var(--text-sm); text-align: right; letter-spacing: 0.02rem; }
     .account-task-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
@@ -577,7 +577,7 @@
       max-width: 100%;
       min-height: 38px;
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
+      border-radius: var(--container-radius-3);
       background: var(--surface);
       color: var(--text);
       font: var(--text-sm) var(--font-body);
@@ -596,7 +596,7 @@
     .schedule-time-field { display: flex; align-items: center; gap: 4px; min-width: 0; color: var(--dim); }
     .schedule-time-field .training-picker { flex: 1 1 4rem; width: 4rem; min-width: 3.5rem; }
     .schedule-time-field .training-picker-label { display: none; }
-    .schedule-time-field .training-picker-toggle { min-height: 38px; border-radius: var(--radius-sm); padding-right: 1.5rem; padding-left: 0.65rem; }
+    .schedule-time-field .training-picker-toggle { min-height: 38px; border-radius: var(--container-radius-3); padding-right: 1.5rem; padding-left: 0.65rem; }
     .schedule-time-field .training-picker-toggle::after { right: 0.65rem; }
     .schedule-time-field :is(.training-picker-display, .training-picker-display-line) { overflow: visible; text-overflow: clip; }
     .schedule-time-field .training-picker-menu { right: auto; left: 0; width: 100%; min-width: 72px; max-height: min(240px, 50vh); overscroll-behavior: contain; }
@@ -741,7 +741,7 @@
       min-height: 88px;
       gap: 5px;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       background: var(--surface2);
       color: var(--text);
       cursor: pointer;
@@ -779,7 +779,7 @@
       display: grid;
       gap: 4px;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       background: var(--surface2);
       padding: 0.9rem;
       text-align: center;
@@ -810,7 +810,7 @@
       display: grid; 
       gap: 10px; 
       border: 1px solid var(--border); 
-      border-radius: 12px; 
+      border-radius: var(--container-radius-2); 
       padding: 0.9rem; 
       background-color: var(--surface); 
     }
@@ -985,7 +985,7 @@
       width: 30px;
       height: 30px;
       border: 0;
-      border-radius: var(--radius-full);
+      border-radius: var(--button-radius);
       background: transparent;
       color: var(--dim);
       cursor: pointer;
@@ -998,7 +998,7 @@
     .training-picker-menu { right: auto; left: 0; width: max(100%, 260px); }
     .training-player-fields .training-picker:nth-child(even) .training-picker-menu { right: 0; left: auto; }
     .training-rounds { display: grid; gap: 16px; }
-    .training-round-field { display: grid; gap: 14px; border: 1px solid var(--border); padding: 0.9rem; border-radius: 12px; background-color: var(--surface2); }
+    .training-round-field { display: grid; gap: 14px; border: 1px solid var(--border); padding: 0.9rem; border-radius: var(--container-radius-2); background-color: var(--surface2); }
     .training-round-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .42fr) auto; align-items: end; gap: 8px; }
     .training-score-entry { grid-template-columns: repeat(3, auto); gap: 10px; }
     .training-round-remove {
@@ -1006,7 +1006,7 @@
       width: 40px;
       height: 40px;
       border: 1px solid var(--border);
-      border-radius: var(--radius-full);
+      border-radius: var(--button-radius);
       background: var(--surface);
       color: var(--text);
       cursor: pointer;

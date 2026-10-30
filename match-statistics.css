@@ -110,7 +110,7 @@
   font-size: var(--text-sm);
   font-weight: 600;
   padding: 1rem;
-  border-radius: 12px;
+  border-radius: var(--container-radius-2);
   color: var(--accent);
 }
 .match-forecast-login:is(:hover, :focus-visible) { opacity: .7; }
@@ -221,7 +221,7 @@ table.rt.match-statistics-ranking .col-rank {
   text-align: center;
   padding: 1rem 1.2rem;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--container-radius-2);
   background: var(--surface);
 }
 .match-statistics-context p { font-size: var(--text-sm); line-height: 1.45; }
@@ -349,13 +349,13 @@ table.rt.match-statistics-ranking .col-rank {
 .match-statistics-projection-range.loss { fill: var(--negativ); }
 .match-statistics-player-graph { transition: opacity .18s ease, transform .18s ease; }
 .match-statistics-skeleton { display: grid; gap: 1.5rem; }
-.match-statistics-skeleton-card { display: grid; gap: 1rem; min-height: 165px; padding: 1rem; border: 1px solid var(--border); border-radius: 12px; }
+.match-statistics-skeleton-card { display: grid; gap: 1rem; min-height: 165px; padding: 1rem; border: 1px solid var(--border); border-radius: var(--container-radius-2); }
 .match-statistics-skeleton-card .loading-skeleton { display: block; height: 20px; }
 .match-statistics-skeleton-card .loading-skeleton:first-child { height: 65px; }
 .match-statistics-skeleton-meta { height: 48px; }
 .match-statistics-skeleton-history { height: 100px; }
 .match-statistics-skeleton-graph { height: 430px; }
-.match-statistics-notice { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); z-index: 5000; max-width: calc(100% - 2rem); padding: 1rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.match-statistics-notice { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); z-index: 5000; max-width: calc(100% - 2rem); padding: 1rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--container-radius-3); }
 .article-match.has-partie-detail { position: relative; }
 .article-match-action { position: absolute; inset: 0; width: 100%; border: 0; border-radius: inherit; background: transparent; cursor: pointer; }
 .article-match-action:is(:hover, :focus-visible) ~ .article-match-result { color: var(--accent); }
@@ -542,6 +542,6 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
   #detail-view-dialog:not([data-presentation="panel"]) .match-statistics-player-label { display: none; }
 }
 #final-four-view-switcher[hidden] { display: none; }
-.match-statistics-skeleton .loading-skeleton { background: linear-gradient(100deg, var(--skeleton-base) 20%, var(--skeleton-highlight) 38%, var(--skeleton-base) 56%); background-size: 220% 100%; animation: skeleton-shimmer 1.45s ease-in-out infinite; border-radius: 6px; }
+.match-statistics-skeleton .loading-skeleton { background: linear-gradient(100deg, var(--skeleton-base) 20%, var(--skeleton-highlight) 38%, var(--skeleton-base) 56%); background-size: 220% 100%; animation: skeleton-shimmer 1.45s ease-in-out infinite; border-radius: var(--container-radius-4); }
 @media (prefers-reduced-motion: reduce) { .match-statistics-skeleton .loading-skeleton { animation: none; } }
 .match-statistics-section, .match-statistics-graph { min-width: 0; }

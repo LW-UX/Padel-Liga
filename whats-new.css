@@ -82,7 +82,7 @@
       max-width: 100%;
       margin: 0;
       border: 0;
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       background: transparent;
       color: inherit;
       cursor: pointer;
@@ -107,7 +107,7 @@
       width: 40px;
       height: 40px;
       border: 1px solid color-mix(in srgb, var(--accent2) 30%, var(--border));
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       background: color-mix(in srgb, var(--accent2) 9%, var(--surface));
       color: var(--accent2);
     }
@@ -136,7 +136,7 @@
     .whats-new-more {
       margin-top: 1.35rem;
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: var(--container-radius-2);
       background: var(--surface);
       padding: 0.9rem 1rem;
     }

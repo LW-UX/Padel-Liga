@@ -58,7 +58,7 @@ test('statistics header switches presentation and hides paging in panel mode', (
   assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \.detail-view-pager \{ display: none; \}/);
   assert.match(style, /@media \(max-width: 768px\)[\s\S]*?\.detail-view-pager \{ display: none !important; \}/);
   assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \.detail-view-presentation-icon-modal \{ display: block; \}/);
-  assert.match(style, /\.detail-view-presentation-toggle,[\s\S]*?width: 32px;[\s\S]*?border: 1px solid var\(--border\);[\s\S]*?border-radius: var\(--radius-full\);[\s\S]*?background: var\(--bg\);/);
+  assert.match(style, /\.detail-view-presentation-toggle,[\s\S]*?width: 32px;[\s\S]*?border: 1px solid var\(--border\);[\s\S]*?border-radius: var\(--button-radius\);[\s\S]*?background: var\(--bg\);/);
   assert.match(style, /\.detail-view-close svg \{[\s\S]*?stroke-width: 3\.2;/);
 });
 

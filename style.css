@@ -6,10 +6,11 @@
       --text-sm: 0.85rem;
       --text-base: 1rem;
 
-      /* Grundskala der Eckenradien. Die Rollen-Radien setzt das Branding. */
-      --radius-xs: 4px;
-      --radius-sm: 8px;
-      --radius-lg: 16px;
+      /* Eckenradien verschachtelter Inhaltscontainer, berechnet aus --container-radius des Brandings. */
+      --container-radius-2: calc(var(--container-radius) * 0.6);
+      --container-radius-3: calc(var(--container-radius) * 0.4);
+      --container-radius-4: calc(var(--container-radius) * 0.3);
+      /* Form für Kreise und Pillen, unabhängig vom Branding. */
       --radius-full: 999px;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -35,7 +36,7 @@
     .widget {
       background: var(--widget-bg);
       border: 1px solid var(--widget-border);
-      border-radius: var(--widget-radius);
+      border-radius: var(--container-radius);
       padding: var(--widget-padding);
     }
     .sr-only {
@@ -109,7 +110,7 @@
       gap: 0.65rem 1rem;
       min-height: 6.15rem;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       padding: 1rem;
     }
     .skeleton-match-card span {
@@ -432,7 +433,7 @@
       padding: 6px;
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       box-shadow: 0 18px 45px var(--shadow-color);
       text-transform: none;
       letter-spacing: normal;
@@ -506,7 +507,7 @@
       max-height: min(calc(100vh - 64px), 900px);
       margin: auto;
       border: 1px solid var(--border);
-      border-radius: 20px;
+      border-radius: var(--container-radius);
       background: var(--bg);
       color: var(--text);
       box-shadow: 0 34px 120px var(--shadow-color);
@@ -538,7 +539,7 @@
       width: 100%;
       height: 100%;
       min-height: 0;
-      border-radius: 20px;
+      border-radius: var(--container-radius);
       background: var(--bg);
       box-shadow: 0 24px 72px var(--shadow-color);
       animation: match-statistics-panel-in 220ms ease-out;
@@ -596,7 +597,7 @@
       width: 32px;
       height: 32px;
       border: 1px solid var(--border);
-      border-radius: var(--radius-full);
+      border-radius: var(--button-radius);
       background: var(--bg);
       color: var(--text);
       cursor: pointer;
@@ -664,7 +665,7 @@
       width: 168px;
       aspect-ratio: 1;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       place-items: center;
       text-align: center;
     }
@@ -1053,7 +1054,7 @@
         min-height: 0;
         padding: 40px 0 12px;
       }
-      .player-profile-avatar { width: 116px; border-radius: 20px; }
+      .player-profile-avatar { width: 116px; border-radius: var(--container-radius); }
       .player-profile-avatar-placeholder { font-size: 4.5rem; }
       .player-profile-achievements {
         gap: 8px;
@@ -1081,7 +1082,7 @@
       max-width: var(--player-profile-max-width);
       max-height: none;
       margin: 0;
-      border-radius: 20px;
+      border-radius: var(--container-radius);
       box-shadow: 0 24px 72px var(--shadow-color);
       animation: player-profile-panel-in 220ms ease-out;
       container: player-profile-panel / inline-size;
@@ -1122,7 +1123,7 @@
     }
     .player-profile-dialog[data-presentation="panel"] .player-profile-avatar {
       width: 116px;
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
     }
     .player-profile-dialog[data-presentation="panel"] .player-profile-avatar-placeholder { font-size: 4.5rem; }
     .player-profile-dialog[data-presentation="panel"] .player-profile-achievements {
@@ -1271,7 +1272,7 @@
       }
       .player-profile-dialog[data-presentation="panel"] .player-profile-avatar {
         width: 168px;
-        border-radius: 12px;
+        border-radius: var(--container-radius-2);
       }
       .player-profile-dialog[data-presentation="panel"] .player-profile-avatar-placeholder {
         font-size: clamp(4.5rem, 8vw, 6.5rem);
@@ -1336,7 +1337,7 @@
     }
     .player-profile-dialog .player-profile-hero.is-condensed .player-profile-avatar {
       width: 52px;
-      border-radius: 10px;
+      border-radius: var(--container-radius-3);
     }
     .player-profile-dialog .player-profile-hero.is-condensed .player-profile-avatar-placeholder { font-size: 2rem; }
     .player-profile-dialog .player-profile-hero.is-condensed .player-profile-identity h2 { font-size: 1.7rem; }
@@ -1511,7 +1512,7 @@
       justify-content: space-between;
       gap: 18px;
       border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       background: color-mix(in srgb, var(--accent) 7%, transparent);
       padding: 1rem 1.15rem;
     }
@@ -1601,7 +1602,7 @@
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 14px;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       background: transparent;
       padding: 1rem 1.15rem;
     }
@@ -1896,7 +1897,7 @@
       color: var(--text);
     }
     .prediction-match-center-link {
-      border-radius: 5px;
+      border-radius: var(--container-radius-4);
       padding: 0.35rem 0.2rem;
       text-decoration: none;
     }
@@ -1922,7 +1923,7 @@
     .prediction-option {
       min-height: 42px;
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
+      border-radius: var(--container-radius-3);
       background: var(--surface);
       color: var(--dim);
       cursor: pointer;
@@ -2132,7 +2133,7 @@
       display: grid;
       gap: 4px;
       border: 1px solid color-mix(in srgb, var(--negativ) 50%, var(--border));
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       color: var(--text);
       padding: 1rem;
     }
@@ -2547,7 +2548,7 @@
       width: 30px;
       height: 30px;
       border: 0;
-      border-radius: var(--radius-full);
+      border-radius: var(--button-radius);
       background: transparent;
       color: var(--dim);
       cursor: pointer;
@@ -2574,7 +2575,7 @@
     .statistics-load-error {
       margin: -0.5rem 0 1.5rem;
       border: 1px solid color-mix(in srgb, var(--negativ) 55%, var(--border));
-      border-radius: 10px;
+      border-radius: var(--container-radius-2);
       background: color-mix(in srgb, var(--negativ) 8%, transparent);
       color: var(--negativ);
       padding: 0.75rem 0.9rem;
@@ -2646,7 +2647,7 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       overflow: hidden;
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: var(--container-radius-4);
       background: color-mix(in srgb, var(--surface2) 72%, transparent);
     }
     .qualification-flow-ranks span {
@@ -2669,7 +2670,7 @@
       min-height: 38px;
       overflow: hidden;
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: var(--container-radius-4);
       background: color-mix(in srgb, var(--surface2) 72%, transparent);
       color: var(--text);
       font-family: var(--font-mono);
@@ -2713,7 +2714,7 @@
       gap: 6px;
       padding: 10px 6px;
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: var(--container-radius-4);
       background: color-mix(in srgb, var(--surface2) 72%, transparent);
       box-sizing: border-box;
     }
@@ -2891,7 +2892,7 @@
       border: 1px solid var(--border);
       padding: 1rem;
       background: var(--surface);
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
     }
     .article-newspaper-header {
       margin-bottom: 1rem;
@@ -3154,7 +3155,7 @@
     }
     .mini-match-row {
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       padding: 1rem;
       background: transparent;
       max-width: 418.3px;
@@ -3192,7 +3193,7 @@
     .mini-match-status-action {
       appearance: none;
       border: 0;
-      border-radius: 7px;
+      border-radius: var(--container-radius-4);
       margin: -.3rem;
       padding: .3rem;
       background: transparent;
@@ -3606,7 +3607,7 @@
       width: 260px;
       padding: 0.65rem 0.75rem;
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
+      border-radius: var(--container-radius-3);
       background: var(--bg);
       color: var(--dim);
       box-shadow: 0 14px 36px var(--shadow-color);
@@ -3802,7 +3803,7 @@
     .fb-selected-icon-dot { fill: currentColor; stroke: none; }
     .fb-toggle {
       font-family: var(--font-body); font-size: var(--text-sm); font-weight: 500;
-      padding: 4px 12px; border-radius: var(--radius-full); border: 1px solid var(--border);
+      padding: 4px 12px; border-radius: var(--button-radius); border: 1px solid var(--border);
       background: var(--surface2); color: var(--dim); cursor: pointer;
       transition: all 0.15s; white-space: nowrap;
     }
@@ -3826,7 +3827,7 @@
       transition: opacity 0.08s ease;
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
+      border-radius: var(--container-radius-3);
       color: var(--text);
       font-family: var(--font-body);
       font-size: 0.82rem;
@@ -3920,7 +3921,7 @@
       white-space: nowrap;
     }
     .mc {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--container-radius-2);
       padding: .9rem 1.5rem;
       display: grid;
       grid-template-columns: minmax(160px, 1fr) 1fr 130px 1fr;
@@ -4201,7 +4202,7 @@
       min-height: 32px;
       place-items: center;
       border: 1px solid var(--border);
-      border-radius: var(--radius-full);
+      border-radius: var(--button-radius);
       background: var(--bg);
       color: var(--text);
       cursor: pointer;
@@ -4278,7 +4279,7 @@
       max-height: none;
       margin: 0;
       border: 1px solid var(--border);
-      border-radius: 20px;
+      border-radius: var(--container-radius);
       background: var(--bg);
       box-shadow: 0 24px 72px var(--shadow-color);
       animation: match-statistics-panel-in 220ms ease-out;
@@ -4363,7 +4364,7 @@
       gap: 8px;
       padding: 0.5rem 1.2rem;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       background: transparent;
       color: inherit;
       cursor: pointer;
@@ -4582,7 +4583,7 @@
     .live-overview-prematch-status {
       padding: 1rem 1.1rem;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       background: var(--surface);
       color: var(--dim);
     }
@@ -4681,13 +4682,13 @@
     }
     .live-overview-poll-percentage { display: none; }
     .live-overview-poll-segment:first-child .live-overview-poll-bar {
-      border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+      border-radius: var(--container-radius-3) 0 0 var(--container-radius-3);
     }
     .live-overview-poll-segment:last-child .live-overview-poll-bar {
-      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      border-radius: 0 var(--container-radius-3) var(--container-radius-3) 0;
     }
     .live-overview-poll-segment:only-child .live-overview-poll-bar {
-      border-radius: var(--radius-sm);
+      border-radius: var(--container-radius-3);
     }
     .live-overview-poll-change {
       display: block;
@@ -4701,7 +4702,7 @@
     .live-overview-poll-message {
       padding: 1rem 1.1rem;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       background: var(--surface);
       color: var(--dim);
       text-align: center;
@@ -4737,7 +4738,7 @@
       gap: 0.45rem;
       padding: 0.9rem 0.5rem 0.75rem;
       border: 1px solid transparent;
-      border-radius: 9px;
+      border-radius: var(--container-radius-3);
       background: var(--surface2);
       text-align: center;
       border: 1px solid var(--border);
@@ -5033,7 +5034,7 @@
       min-width: 0;
       overflow: hidden;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--container-radius-2);
       background: linear-gradient(145deg, color-mix(in srgb, var(--surface) 92%, var(--accent) 8%), var(--surface));
       box-shadow: 0 12px 32px var(--shadow-color);
     }
@@ -5167,7 +5168,7 @@
       }
       .cup-redraw-line:last-child { transform: scaleY(-1); }
       .cup-redraw-label {
-        border-radius: var(--radius-lg);
+        border-radius: var(--container-radius-2);
       }
     }
 
@@ -5251,7 +5252,7 @@
       display: grid;
       gap: 0.35rem;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--container-radius-2);
       padding: .7rem 1rem;
       background: transparent;
     }
@@ -5324,7 +5325,7 @@
     }
     .calculator-probability-button:hover { color: var(--accent); }
     .calculator-probability-button:focus-visible {
-      border-radius: var(--radius-xs);
+      border-radius: 4px;
       outline: 2px solid var(--accent);
       outline-offset: 1px;
     }
@@ -6589,7 +6590,7 @@
         width: 56px;
         height: 56px;
         border: 1px solid var(--muted);
-        border-radius: var(--radius-full);
+        border-radius: var(--button-radius);
         background: var(--surface2);
         color: var(--text);
         box-shadow: 0 12px 34px var(--shadow-color);
