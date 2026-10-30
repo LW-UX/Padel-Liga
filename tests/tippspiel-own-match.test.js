@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'js', 'tippspiel.js'), 'utf8');
-const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+const style = ['style.css', 'tipp.css'].map(file => fs.readFileSync(path.join(root, file), 'utf8')).join('\n');
 const migration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261020170000_prevent_own_match_predictions.sql'),
   'utf8'

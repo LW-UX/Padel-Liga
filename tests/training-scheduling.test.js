@@ -22,7 +22,10 @@ const seasonEndScopeMigration = fs.readFileSync(
 );
 const account = fs.readFileSync(path.join(root, 'js/account.js'), 'utf8');
 const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
-const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+const style = [
+  fs.readFileSync(path.join(root, 'style.css'), 'utf8'),
+  fs.readFileSync(path.join(root, 'account.css'), 'utf8')
+].join('\n');
 
 test('scheduled trainings stay separate from result proposals', () => {
   assert.match(migration, /status in \('scheduled', 'pending', 'confirmed'\)/);

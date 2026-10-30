@@ -2,6 +2,7 @@
 (function () {
   'use strict';
   const eloForecast = typeof module !== 'undefined' ? require('./elo-forecast.js') : window.PadelEloForecast;
+  const tableCore = typeof module !== 'undefined' ? require('./table-core.js') : window.PadelTable;
   const previewWindow = typeof module !== 'undefined' ? require('./preview-window.js') : window.PadelPreviewWindow;
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const number = value => value == null || !Number.isFinite(Number(value)) ? '—' : Number(value).toLocaleString('de-DE', { maximumFractionDigits: 1 });
@@ -280,7 +281,7 @@
       const qualificationClass = hasRanking && qualificationPlaces > 0 && rank <= qualificationPlaces
         ? ' match-statistics-ranking-qualified'
         : '';
-      rows.push(`<tr class="${rowClass}${hasRanking ? ` r${Math.min(rank, 4)}` : ''}${qualificationClass}${teamClass}">
+      rows.push(`<tr class="${rowClass}${hasRanking ? ` r${Math.min(rank, 4)}` : ''}${qualificationClass}${teamClass}"${tableCore.renderPlayerProfileRowAttributes({ id: player.playerId, name: player.displayName })}>
         ${hasRanking ? `<td class="col-rank rank-position"><span class="match-statistics-rank-position">${number(rank)}</span></td>${analysis ? `<td class="col-rank-change">${renderRankChange(statistics, analysis)}</td>` : ''}` : ''}
         <td class="col-name"><button type="button" class="pname player-profile-link${viewerClass(player, selectedPlayerId)}" data-player-profile-id="${esc(player.playerId)}">${esc(player.displayName)}</button></td>
         <td class="col-games">${number(statistics.played)}</td>
@@ -491,10 +492,10 @@
       ...lanes.filter(lane => lane.playerId === initialPlayerId)
     ]
       .map(lane => lane.markup).join('');
-    const playerSelect = `<div class="match-statistics-graph-picker match-statistics-player-picker match-scope-toggle" role="group" aria-label="Spieler für Elo-Entwicklung auswählen">
+    const playerSelect = `<div class="site-nav" data-statistics-graph-picker="player" role="group" aria-label="Spieler für Elo-Entwicklung auswählen">
       ${data.players.map((player, index) => `<button type="button"${index === 0 ? ' class="active"' : ''} data-statistics-graph-select="${esc(player.playerId)}" aria-pressed="${index === 0 ? 'true' : 'false'}">${esc(player.displayName)}</button>`).join('')}
     </div>`;
-    const teamSelect = `<div class="match-statistics-graph-picker match-statistics-team-picker match-scope-toggle" role="group" aria-label="Team für Elo-Entwicklung auswählen">
+    const teamSelect = `<div class="site-nav" data-statistics-graph-picker="team" role="group" aria-label="Team für Elo-Entwicklung auswählen">
       ${[1, 2].map(team => {
         const active = team === initialTeam;
         return `<button type="button"${active ? ' class="active"' : ''} data-statistics-graph-team-select="${team}" aria-pressed="${active ? 'true' : 'false'}">Team ${team}</button>`;
@@ -1178,7 +1179,7 @@
     if (stepButton) { step(Number(stepButton.dataset.statisticsStep)); return; }
     const graphPlayerButton = event.target.closest('[data-statistics-graph-select]');
     if (graphPlayerButton) {
-      const picker = graphPlayerButton.closest('.match-statistics-graph-picker');
+      const picker = graphPlayerButton.closest('[data-statistics-graph-picker]');
       const graph = picker?.closest('.match-statistics-section')?.querySelector('.match-statistics-svg');
       const players = [...(graph?.querySelectorAll('[data-statistics-graph-player]') || [])];
       const selected = players.find(player => player.dataset.statisticsGraphPlayer === graphPlayerButton.dataset.statisticsGraphSelect);
@@ -1193,7 +1194,7 @@
     }
     const graphTeamButton = event.target.closest('[data-statistics-graph-team-select]');
     if (graphTeamButton) {
-      const picker = graphTeamButton.closest('.match-statistics-graph-picker');
+      const picker = graphTeamButton.closest('[data-statistics-graph-picker]');
       const graph = picker?.closest('.match-statistics-section')?.querySelector('.match-statistics-svg');
       const players = [...(graph?.querySelectorAll('[data-statistics-graph-player]') || [])];
       const selectedTeam = graphTeamButton.dataset.statisticsGraphTeamSelect;

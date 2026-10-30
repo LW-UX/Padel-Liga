@@ -11,6 +11,6 @@ test('header opens the standalone game without local dependencies or season coup
 
   assert.match(html, /id="external-game-link" href="https:\/\/lw-ux\.github\.io\/PadelPong\/" target="_blank" rel="noopener"/);
   assert.doesNotMatch(html, /js\/arcade-link\.js|href="arcade\/"|id="arcade-link"|id="pong-link"/);
-  assert.match(style, /\.external-game-link\s*\{/);
+  assert.match(html, /class="secondary-button secondary-button--icon global-action" id="external-game-link"/);
   assert.doesNotMatch(style, /\.(?:arcade|pong)-link\b/);
 });

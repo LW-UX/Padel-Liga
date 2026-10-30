@@ -34,7 +34,10 @@
     }
     if (target === 'tipping') {
       const seasonId = window.PadelSeasonRouting?.getRequestedSeasonId();
-      window.location.assign(window.PadelSeasonRouting?.getSeasonUrl(seasonId, 'tipp') || new URL('tipp/', document.baseURI));
+      const url = window.PadelSeasonRouting?.getSeasonUrl(seasonId, 'tipp') || new URL('tipp/', document.baseURI);
+      // Die mobile Seite gibt ihren Zurück-Schritt an die Tippseite ab, sonst bliebe dahinter ein toter Schritt.
+      if (window.history.state?.mobileDialogPage) window.location.replace(url);
+      else window.location.assign(url);
       return;
     }
     if (target === 'player-profile') {
@@ -62,8 +65,10 @@
     dialog.addEventListener('click', event => {
       const featureLink = event.target.closest('[data-whats-new-target]');
       if (featureLink) {
-        dialog.close();
-        openFeatureTarget(featureLink.dataset.whatsNewTarget);
+        const target = featureLink.dataset.whatsNewTarget;
+        // Schließen löst auf dem Handy einen Zurück-Schritt aus, der die Weiterleitung zur Tippseite abbrechen würde.
+        if (target !== 'tipping' || !window.history.state?.mobileDialogPage) dialog.close();
+        openFeatureTarget(target);
         return;
       }
       if (event.target === dialog || event.target.closest('[data-whats-new-close]')) dialog.close();

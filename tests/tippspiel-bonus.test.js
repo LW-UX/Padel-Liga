@@ -7,7 +7,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const tipping = fs.readFileSync(path.join(root, 'js/tippspiel.js'), 'utf8');
 const page = fs.readFileSync(path.join(root, 'tipp/index.html'), 'utf8');
-const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+const style = fs.readFileSync(path.join(root, 'tipp.css'), 'utf8');
 const migration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20261027120000_prediction_bonus_questions.sql'),
   'utf8'

@@ -117,11 +117,11 @@
 
   function showSection(id) {
     // Wie auf der Ligaseite bleibt eine bereits oben angeheftete Navigation stehen.
-    const navigation = document.querySelector('.tip-site-nav');
+    const navigation = document.querySelector('nav.site-nav');
     const navigationPinned = Boolean(navigation) && navigation.getBoundingClientRect().top <= 1;
     if (id !== 'tippen' && ligaDetailFrame.element) closeLigaDetail();
     document.querySelectorAll('main > .section').forEach(section => section.classList.toggle('active', section.id === id));
-    document.querySelectorAll('.tip-site-nav button').forEach(button => button.classList.toggle('active', button.dataset.tipNav === id));
+    document.querySelectorAll('nav.site-nav button').forEach(button => button.classList.toggle('active', button.dataset.tipNav === id));
     if (navigationPinned) window.scrollTo({ top: document.querySelector('.site-header')?.offsetHeight || 0, behavior: 'instant' });
     window.PadelTippspiel?.onSectionShown?.(id);
   }
@@ -139,7 +139,7 @@
       onSwipe: step => {
         const sections = [
           'tippstart',
-          ...[...document.querySelectorAll('.tip-site-nav button[data-tip-nav]')]
+          ...[...document.querySelectorAll('nav.site-nav button[data-tip-nav]')]
             .filter(button => !button.hidden)
             .map(button => button.dataset.tipNav)
         ];
@@ -420,7 +420,7 @@
       const accountReady = window.PadelKonto.init();
       await Promise.all([
         loadScript(`../${selected.file}`),
-        loadScript('../js/tippspiel.js?v=2026-10-30-prediction-table-bonus-head')
+        loadScript('../js/tippspiel.js?v=2026-10-30-company-logos')
       ]);
       const season = hydrateSeason(window.PADEL_SEASON);
       selectedSeasonData = season;

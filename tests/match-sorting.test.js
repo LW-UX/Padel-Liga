@@ -22,7 +22,7 @@ test('switching match sorting reuses the ranking movement animation for stable m
   assert.match(app, /data-match-entry="\$\{escapeHtml\(m\.id\)\}"/);
   assert.match(app, /getRankingRowPositions\(partienSection, '\.mc', 'matchEntry'\)/);
   assert.match(app, /animateRankingRows\(partienSection, '\.mc', previousPositions, 'matchEntry'\)/);
-  assert.match(app, /function animateRankingRows\([^]*prefers-reduced-motion: reduce[^]*520ms cubic-bezier/);
+  assert.match(fs.readFileSync(path.join(root, 'js', 'table-core.js'), 'utf8'), /function animateRankingRows\([^]*prefers-reduced-motion: reduce[^]*520ms cubic-bezier/);
 });
 
 test('league and Final Four match plans share score-detail hover and mobile click behavior', () => {

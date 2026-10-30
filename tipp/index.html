@@ -8,7 +8,7 @@
   <link rel="icon" href="../favicon.ico" sizes="32x32">
   <link rel="icon" type="image/svg+xml" href="../data/favicon.svg?v=2026-10-26-rounded">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-  <link rel="stylesheet" href="../branding/og-design.css?v=33ecb648b3">
+  <link rel="stylesheet" href="../branding/og-design.css?v=05291aeb6f">
   <script>
     // Die Admin-Design-Vorschau greift vor dem ersten Zeichnen; alles Weitere steht in js/branding-preview.js.
     (function () {
@@ -21,9 +21,10 @@
       } catch (error) { /* Ohne Speicher bleibt das veröffentlichte Branding. */ }
     })();
   </script>
-  <link rel="stylesheet" href="../style.css?v=2026-10-30-heading-elements">
-  <link rel="stylesheet" href="../match-statistics.css?v=2026-10-30-heading-elements">
-  <link rel="stylesheet" href="../account.css?v=2026-10-30-heading-elements">
+  <link rel="stylesheet" href="../style.css?v=2026-10-30-company-logos">
+  <link rel="stylesheet" href="../tipp.css?v=2026-10-30-tipp-css">
+  <link rel="stylesheet" href="../match-statistics.css?v=2026-10-30-table-core">
+  <link rel="stylesheet" href="../account.css?v=2026-10-30-control-radius">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="../data/players.js?v=2026-10-20-test-net-emoji"></script>
@@ -32,13 +33,14 @@
   <script defer src="../data/supabase-config.js"></script>
   <script defer src="../js/global-actions.js?v=2026-10-20-speed-dial-player"></script>
   <script defer src="../js/score-input.js?v=2026-09-22-unified-score-counters"></script>
-  <script defer src="../js/mobile-dialog-pages.js?v=2026-10-30-mobile-pages-tipp"></script>
-  <script defer src="../js/branding-preview.js?v=2026-10-30-branding-change"></script>
-  <script defer src="../js/account.js?v=2026-10-30-heading-elements"></script>
+  <script defer src="../js/mobile-dialog-pages.js?v=2026-10-30-whats-new-page"></script>
+  <script defer src="../js/branding-preview.js?v=2026-10-30-hanako-accent"></script>
+  <script defer src="../js/account.js?v=2026-10-30-button-merge"></script>
   <script defer src="../js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="../js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
+  <script defer src="../js/table-core.js?v=2026-10-30-diff-zero"></script>
   <script defer src="../js/panel-layout.js?v=2026-10-29-shared-panel-layout"></script>
-  <script defer src="../js/tipp-page.js?v=2026-10-30-mobile-pages-tipp"></script>
+  <script defer src="../js/tipp-page.js?v=2026-10-30-company-logos"></script>
 </head>
 <body class="tip-page">
 <header class="site-header">
@@ -52,12 +54,12 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg>
             <span>Zurück zur Liga</span>
           </a>
-          <a class="external-game-link global-action global-action--mobile-only" id="external-game-link" href="https://lw-ux.github.io/PadelPong/" target="_blank" rel="noopener" aria-label="PadelPong in neuem Tab öffnen" title="PadelPong" data-global-action data-global-action-close>
+          <a class="secondary-button secondary-button--icon global-action global-action--mobile-only" id="external-game-link" href="https://lw-ux.github.io/PadelPong/" target="_blank" rel="noopener" aria-label="PadelPong in neuem Tab öffnen" title="PadelPong" data-global-action data-global-action-close>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10l3 3 1 8-3 1-4-4h-4l-4 4-3-1 1-8z"/><path d="M7 9v5m-2.5-2.5h5M16 10h.01M18 13h.01"/></svg>
             <span class="global-action-label">PadelPong</span>
           </a>
           <div class="season-picker" id="season-picker">
-            <button class="secondary-button secondary-button--dropdown global-action" type="button" data-season-toggle data-global-action aria-haspopup="listbox" aria-expanded="false">
+            <button class="secondary-button secondary-button--dropdown secondary-button--with-icon global-action" type="button" data-season-toggle data-global-action aria-haspopup="listbox" aria-expanded="false">
               <span class="season-picker-trophy" aria-hidden="true">
                 <svg viewBox="0 0 28 32" role="presentation" focusable="false">
                   <path class="season-picker-trophy-line" d="M8 3h12v5c0 5-2.4 8.5-6 10-3.6-1.5-6-5-6-10V3Z"/>
@@ -69,7 +71,7 @@
             </button>
             <div class="season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
           </div>
-          <button class="auth-button global-action" id="auth-button" type="button" data-auth-open data-global-action data-global-action-close>
+          <button class="primary-button auth-button global-action" id="auth-button" type="button" data-auth-open data-global-action data-global-action-close>
             <svg class="auth-user-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/>
             </svg>
@@ -89,7 +91,7 @@
   </div>
 </header>
 
-<nav class="site-nav tip-site-nav" aria-label="Tippspiel-Navigation">
+<nav class="site-nav" aria-label="Tippspiel-Navigation">
   <button data-tip-nav="tippuebersicht">Tipprangliste</button>
   <button data-tip-nav="tipptabelle">Tippübersicht</button>
   <button data-tip-nav="tippen">Tippabgabe</button>
@@ -139,7 +141,7 @@
       <div class="sh-heading">
         <h2>TIPPÜBERSICHT</h2>
       </div>
-      <div class="match-scope-toggle" id="prediction-table-view-toggle" aria-label="Tippübersicht umschalten">
+      <div class="toggle" id="prediction-table-view-toggle" aria-label="Tippübersicht umschalten">
         <button type="button" class="active" data-prediction-table-view="matches" aria-pressed="true">Partien</button>
         <button type="button" data-prediction-table-view="bonus" aria-pressed="false">Bonustipps</button>
       </div>
@@ -157,7 +159,7 @@
           <div class="sh-heading">
             <h2>TIPPABGABE</h2>
           </div>
-          <div class="match-scope-toggle ranking-sort-toggle" id="prediction-sort-toggle" aria-label="Tippabgabe sortieren">
+          <div class="toggle toggle--underline" id="prediction-sort-toggle" aria-label="Tippabgabe sortieren">
             <button type="button" class="active" data-prediction-sort="status" aria-pressed="true">Status</button>
             <button type="button" data-prediction-sort="matchday" aria-pressed="false">Spieltage</button>
           </div>
@@ -260,9 +262,9 @@
   </p>
 </footer>
 
-<dialog class="auth-dialog" id="auth-dialog" aria-labelledby="auth-dialog-title">
-  <button class="modal-close-button auth-dialog-close" type="button" data-auth-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
-  <div class="auth-dialog-card">
+<dialog class="dialog" id="auth-dialog" aria-labelledby="auth-dialog-title">
+  <button class="secondary-button modal-close-button" type="button" data-auth-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
+  <div class="dialog-card">
     <div id="auth-guest-view">
       <div class="eyebrow">Dein Padel-Konto</div>
       <h2 id="auth-dialog-title">Einloggen</h2>
@@ -280,13 +282,13 @@
     <div id="auth-confirmation-view" hidden>
       <div class="eyebrow">Geschützter Link</div>
       <h2 id="auth-confirmation-title">Link bestätigen</h2>
-      <p class="auth-dialog-copy" id="auth-confirmation-copy">Öffne jetzt den geschützten Einmal-Link.</p>
+      <p class="dialog-copy" id="auth-confirmation-copy">Öffne jetzt den geschützten Einmal-Link.</p>
       <button class="primary-button" type="button" data-auth-confirmation-continue>Weiter</button>
     </div>
     <div id="auth-password-view" hidden>
       <div class="eyebrow">Dein Zugang</div>
       <h2 id="auth-password-title">Passwort festlegen</h2>
-      <p class="auth-dialog-copy" id="auth-password-copy">Lege ein persönliches Passwort mit mindestens 8 Zeichen fest.</p>
+      <p class="dialog-copy" id="auth-password-copy">Lege ein persönliches Passwort mit mindestens 8 Zeichen fest.</p>
       <form id="auth-password-form" class="auth-form">
         <label data-current-password-field hidden><span>Aktuelles Passwort</span><input type="password" name="currentPassword" autocomplete="current-password" minlength="8"></label>
         <label><span>Neues Passwort</span><input type="password" name="password" autocomplete="new-password" minlength="8" required></label>
@@ -306,15 +308,15 @@
           <div class="auth-message account-auth-message" id="account-auth-message" role="status" aria-live="polite"></div>
         </div>
         <div class="account-header-actions">
-          <button class="secondary-button account-action-button" type="button" data-account-player-profile hidden>
+          <button class="secondary-button secondary-button--with-icon" type="button" data-account-player-profile hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g transform="rotate(45 12 12)"><path d="M12 1.8c3.2 0 5.4 2.3 5.4 5.5 0 2.9-1.7 5.2-3.9 6l-.4 1.6h-2.2l-.4-1.6c-2.2-.8-3.9-3.1-3.9-6 0-3.2 2.2-5.5 5.4-5.5Z"/><path d="M10.9 14.9h2.2v6.4a1.1 1.1 0 0 1-2.2 0Z"/><g fill="currentColor" stroke="none"><circle cx="10.1" cy="5.4" r=".75"/><circle cx="13.9" cy="5.4" r=".75"/><circle cx="12" cy="7.6" r=".75"/><circle cx="10.1" cy="9.8" r=".75"/><circle cx="13.9" cy="9.8" r=".75"/></g></g><circle cx="5.2" cy="5.2" r="2"/></svg>
             <span>Spielerprofil</span>
           </button>
-          <button class="secondary-button account-action-button" type="button" data-account-settings aria-expanded="false" aria-controls="account-settings-panel">
+          <button class="secondary-button secondary-button--with-icon" type="button" data-account-settings aria-expanded="false" aria-controls="account-settings-panel">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.86 2.86-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21H9.55v-.09A1.7 1.7 0 0 0 8.5 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.86-2.86.06-.06A1.7 1.7 0 0 0 4.1 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H2V9.55h.09A1.7 1.7 0 0 0 3.7 8.5a1.7 1.7 0 0 0-.34-1.88l-.06-.06L6.16 3.7l.06.06A1.7 1.7 0 0 0 8.1 4.1a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V2h4.05v.09A1.7 1.7 0 0 0 14.6 3.7a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.86 2.86-.06.06A1.7 1.7 0 0 0 19 8.1a1.7 1.7 0 0 0 .6 1 1.7 1.7 0 0 0 1.1.4h.3v4.05h-.09A1.7 1.7 0 0 0 19.4 15Z"/></svg>
             <span>Einstellungen</span>
           </button>
-          <button class="secondary-button account-action-button" id="player-invite-open" type="button" data-player-invite-open hidden>
+          <button class="secondary-button secondary-button--with-icon" id="player-invite-open" type="button" data-player-invite-open hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.6 6.6 8.4 6.4 8.4-6.4"/></svg>
             <span>E-Mails</span>
           </button>
@@ -330,7 +332,6 @@
         </div>
         <div class="account-settings-mail">
           <h3>E-Mail-Benachrichtigungen</h3>
-          <p>Du kannst jede automatische Mail einzeln ausschalten.</p>
           <label class="account-setting-row">
             <span><strong>Ergebnis eintragen</strong><small>Erinnerung 5 Stunden nach Spielbeginn, solange noch kein Ergebnis eingetragen wurde.</small></span>
             <input type="checkbox" role="switch" data-email-notification="resultEntry" checked>
@@ -373,7 +374,7 @@
               </h2>
               <button class="secondary-button" type="button" data-training-toggle>Training hinzufügen</button>
             </div>
-            <div class="match-scope-toggle account-result-scope-toggle" aria-label="Partienübersicht filtern" data-account-result-scope-toggle hidden>
+            <div class="toggle" aria-label="Partienübersicht filtern" data-account-result-scope-toggle hidden>
               <button type="button" class="active" data-account-result-scope="relevant" aria-pressed="true">Relevant</button>
               <button type="button" data-account-result-scope="all" aria-pressed="false">Alle</button>
             </div>
@@ -403,12 +404,12 @@
   </div>
 </dialog>
 
-<dialog class="auth-dialog player-invite-dialog" id="player-invite-dialog" aria-labelledby="player-invite-title">
-  <button class="modal-close-button auth-dialog-close" type="button" data-player-invite-close aria-label="Einladung schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
-  <div class="auth-dialog-card">
+<dialog class="dialog" id="player-invite-dialog" aria-labelledby="player-invite-title">
+  <button class="secondary-button modal-close-button" type="button" data-player-invite-close aria-label="Einladung schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
+  <div class="dialog-card">
     <div class="eyebrow">Kontoverwaltung</div>
     <h2 id="player-invite-title">Spielerzugänge</h2>
-    <p class="auth-dialog-copy">Ordne die Arbeits-E-Mail zu und erstelle bei Bedarf eine persönliche Einladung für den manuellen Versand. Bereits zugeordnete Spieler können erneut eingeladen werden.</p>
+    <p class="dialog-copy">Ordne die Arbeits-E-Mail zu und erstelle bei Bedarf eine persönliche Einladung für den manuellen Versand. Bereits zugeordnete Spieler können erneut eingeladen werden.</p>
     <form id="player-invite-form" class="auth-form">
       <label>
         <span>Spieler</span>

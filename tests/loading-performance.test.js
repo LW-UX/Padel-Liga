@@ -256,6 +256,7 @@ test('public PadelTipp rankings render while account, matches and Elo are still 
       addEventListener() {}
     }
   });
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'table-core.js'), 'utf8'), context);
   vm.runInContext(tipping, context);
   const request = window.PadelTippspiel.init({ id: '2026-winter', matches: [] });
   assert.deepEqual(calls, ['get_public_season', 'matches', 'get_prediction_leaderboard', 'get_prediction_match_floors']);

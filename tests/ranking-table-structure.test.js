@@ -23,7 +23,7 @@ function getColumnClasses(source, cellName) {
 }
 
 test('league-page ranking tables use one named class per column without colgroups', () => {
-  const targetTables = [...page.matchAll(/<table class="rt(?: ranking-table compact| company-ranking-table| final-four-table| calculator-ranking-table(?: final-four-calculator-ranking-table)?)"[^]*?<\/table>/g)]
+  const targetTables = [...page.matchAll(/<table class="rt(?: ranking-table compact| company-ranking-table| rt--fit| rt--dense(?: rt--fit)?)"[^]*?<\/table>/g)]
     .map(match => match[0]);
 
   assert.equal(targetTables.length, 6);
@@ -86,19 +86,17 @@ test('ranking layout behavior is expressed through named column selectors', () =
   assert.doesNotMatch(`${app}\n${style}`, /mini-rank-pos|calculator-mini-rank-pos/);
   assert.doesNotMatch(`${app}\n${style}`, /mini-rank-points|punkte-val/);
   assert.doesNotMatch(style, /\.(?:sticky-rank|sticky-name|extended-col|mobile-compact-hidden|ranking-help-header)\b/);
-  assert.match(style, /\.final-four-ranking-wrap,[^]*?\.live-overview-ranking-wrap \{ overflow-x: hidden; \}/);
-  assert.match(style, /table\.rt\.final-four-table,[^]*table\.rt\.live-overview-table \{[^}]*min-width: 0;[^}]*table-layout: fixed;/);
-  assert.match(style, /body\.player-profile-panel-open :is\(#ranking-profile-main, #all-time-ranking-profile-main\) \.firma-full \{ display: none; \}/);
-  assert.match(style, /body\.player-profile-panel-open :is\(#ranking-profile-main, #all-time-ranking-profile-main\) \.firma-short \{ display: inline; \}/);
+  assert.match(style, /\.ranking-wrap--fit \{ overflow-x: hidden; \}/);
+  assert.match(style, /table\.rt\.rt--fit \{[^}]*min-width: 0;[^}]*table-layout: fixed;/);
 });
 
 test('ranking sort changes reuse the calculator row movement animation', () => {
   const renderer = getFunctionSource('renderRanking', 'getAllTimeLeagueMatches');
 
   assert.match(renderer, /getRankingRowPositions\(body, '\.ranking-row'\)/);
-  assert.match(renderer, /class="ranking-row [^\"]*" data-ranking-entry="\$\{escapeHtml\(p\.id \|\| p\.name\)\}" data-profile-player-id="\$\{escapeHtml\(p\.id \|\| ''\)\}"/);
+  assert.match(renderer, /class="ranking-row [^\"]*" data-ranking-entry="\$\{escapeHtml\(p\.id \|\| p\.name\)\}"\$\{renderPlayerProfileRowAttributes\(p\)\}>/);
   assert.match(renderer, /animateRankingRows\(body, '\.ranking-row', previousPositions\)/);
-  assert.match(app, /function animateRankingRows\([^]*prefers-reduced-motion: reduce[^]*translateY\(\$\{deltaY\}px\)[^]*520ms cubic-bezier/);
+  assert.match(fs.readFileSync(path.join(root, 'js', 'table-core.js'), 'utf8'), /function animateRankingRows\([^]*prefers-reduced-motion: reduce[^]*translateY\(\$\{deltaY\}px\)[^]*520ms cubic-bezier/);
   assert.match(style, /\.ranking-row \{ transform-origin: center; \}/);
   assert.doesNotMatch(style, /\.ranking-row \{[^}]*will-change: transform/);
   assert.doesNotMatch(app, /getCalculatorRowPositions|animateCalculatorRows|data-calculator-player/);
@@ -135,7 +133,7 @@ test('league and final-four notes show the maximum games before sorting', () => 
   assert.match(ranking, /Top \$\{getCompetitionConfig\(\)\.qualificationPlaces\}: Qualifikationsplätze`[^]*gamesNote[^]*'Sortierung:/);
   assert.match(finalFour, /`Spiele: \$\{matches\.length\}  \|  Sortierung: Siege/);
   assert.match(finalFour, /eloPlayer\?\.id === 'ludwig_w'/);
-  assert.match(finalFour, /data-profile-player-id="\$\{escapeHtml\(eloPlayer\?\.id \|\| getPlayerIdByName\(player\.name\) \|\| ''\)\}"/);
+  assert.match(finalFour, /renderPlayerProfileRowAttributes\(\{ id: profilePlayerId, name: player\.name \}\)/);
   assert.match(finalFour, /ranking-absence-mark[^]*nachgerückt für Marco M\./);
   assert.match(finalFour, /replacementNote\.textContent = '\*Ludwig W\. ist für Marco M\. nachgerückt\.'/);
   assert.match(page, /id="ff-ranking-note">Spiele: 3  \|  Sortierung: Siege/);
@@ -151,7 +149,7 @@ test('the regular season ranking shows previous league achievements after compan
   assert.match(app, /function renderLeagueRankingAchievementIcon\(player\)/);
   assert.match(app, /ranking-player-achievement-laurel-stems/);
   assert.match(app, /ranking-player-achievement-laurel-leaves/);
-  assert.match(ranking, /class="ranking-player-name">\$\{renderPlayerProfileLink\(p, 'pname', rankingPlayerLabel\)\}<\/span>\$\{absenceMark\}<span class="firma-badge[^]*?\$\{renderLeagueRankingAchievementIcon\(p\)\}/);
+  assert.match(ranking, /class="ranking-player-name">\$\{renderPlayerProfileLink\(p, 'pname', rankingPlayerLabel\)\}<\/span>\$\{absenceMark\}\$\{renderRankingCompanyBadge\(p\)\}[^]*?\$\{renderLeagueRankingAchievementIcon\(p\)\}/);
   assert.match(app, /class="mini-rank-name"><span class="ranking-player-name">\$\{renderPlayerProfileLink\(p\)\}\$\{renderLeagueRankingAchievementIcon\(p\)\}/);
   assert.match(style, /\.ranking-player-name \{[^}]*gap: 2px;/);
   assert.match(style, /\.ranking-player-achievement \{ margin-left: 6px; \}/);

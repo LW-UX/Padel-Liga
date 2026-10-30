@@ -1,32 +1,5 @@
 /* „Was ist neu?“: Kopfzeilen-Button und Release-Notes-Dialog im Stil eines App-Updates. */
-    .whats-new-button {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      min-height: 38px;
-      border: 1px solid var(--border);
-      border-radius: var(--button-radius);
-      background: var(--surface);
-      color: var(--text);
-      cursor: pointer;
-      font-family: var(--font-body);
-      font-size: var(--text-sm);
-      font-weight: 600;
-      padding: 0.45rem 0.9rem 0.45rem 0.7rem;
-      white-space: nowrap;
-    }
-    .whats-new-button svg {
-      width: 18px;
-      height: 18px;
-      fill: none;
-      stroke: var(--accent);
-      stroke-linejoin: round;
-      stroke-width: 1.6;
-    }
-    .whats-new-button:hover,
-    .whats-new-button:focus-visible { border-color: var(--accent); color: var(--accent); }
-    .whats-new-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    #whats-new-button { position: relative; }
     .whats-new-button-dot {
       position: absolute;
       top: 0px;
@@ -38,10 +11,10 @@
       background: var(--accent);
       box-shadow: 0 0 0 2px var(--bg);
     }
-    .whats-new-button.is-unseen { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
-    .whats-new-button.is-unseen .whats-new-button-dot { display: block; }
+    #whats-new-button.is-unseen { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+    #whats-new-button.is-unseen .whats-new-button-dot { display: block; }
 
-    .whats-new-dialog { width: min(calc(100vw - 16px), 560px); }
+    #whats-new-dialog { --dialog-width: 560px; }
     .whats-new-card { padding: 1.75rem 1.5rem 1.5rem; }
     .whats-new-hero {
       display: grid;
@@ -57,8 +30,8 @@
       border-radius: 18px;
       box-shadow: 0 0 0 1px var(--border), 0 12px 32px var(--shadow-color);
     }
-    .whats-new-dialog h2 { font-size: 2.4rem; line-height: 0.95; margin: 0.2rem 0 0.35rem; }
-    .whats-new-dialog h2 em { color: var(--accent); font-style: normal; }
+    #whats-new-dialog h2 { font-size: 2.4rem; line-height: 0.95; margin: 0.2rem 0 0.35rem; }
+    #whats-new-dialog h2 em { color: var(--accent); font-style: normal; }
     .whats-new-version {
       margin: 0;
       color: var(--muted);
@@ -82,7 +55,7 @@
       max-width: 100%;
       margin: 0;
       border: 0;
-      border-radius: var(--container-radius-2);
+      border-radius: var(--container-radius-sm);
       background: transparent;
       color: inherit;
       cursor: pointer;
@@ -107,7 +80,7 @@
       width: 40px;
       height: 40px;
       border: 1px solid color-mix(in srgb, var(--accent2) 30%, var(--border));
-      border-radius: var(--container-radius-2);
+      border-radius: var(--container-radius-sm);
       background: color-mix(in srgb, var(--accent2) 9%, var(--surface));
       color: var(--accent2);
     }
@@ -136,7 +109,7 @@
     .whats-new-more {
       margin-top: 1.35rem;
       border: 1px solid var(--border);
-      border-radius: var(--container-radius-2);
+      border-radius: var(--container-radius-sm);
       background: var(--surface);
       padding: 0.9rem 1rem;
     }
@@ -165,12 +138,10 @@
     .whats-new-confirm { width: 100%; min-height: 44px; margin-top: 1.35rem; font-size: 0.95rem; }
 
     @media (max-width: 768px) {
-      .global-actions .whats-new-button.global-action { gap: 9px; min-height: 44px; padding: 0.65rem 1rem; }
-      .global-actions .whats-new-button svg { width: 20px; height: 20px; }
-      .whats-new-card { padding: 1.4rem 1.1rem 1.1rem; }
+      #whats-new-dialog .whats-new-card { padding: 1.4rem 1rem 1.1rem; }
       .whats-new-hero { gap: 0.9rem; }
       .whats-new-app-icon { width: 64px; height: 64px; border-radius: 15px; }
-      .whats-new-dialog h2 { font-size: 2.05rem; }
+      #whats-new-dialog h2 { font-size: 2.05rem; }
     }
     @media (max-width: 420px) {
       .whats-new-more ul { grid-template-columns: 1fr; }

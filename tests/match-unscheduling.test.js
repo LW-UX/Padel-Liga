@@ -37,7 +37,7 @@ test('future and overdue match cards confirm and submit schedule deletion', () =
   assert.doesNotMatch(tippspiel, /window\.confirm\('Soll der Termin/);
   assert.match(tippspiel, /data-match-unschedule[\s\S]*openUnscheduleDialog\(unscheduleButton\)/);
   assert.match(tippspiel, /data-unschedule-confirm[\s\S]*closeUnscheduleDialog\(\);[\s\S]*await handleUnscheduleMatch\(matchId, trigger\)/);
-  assert.match(indexSource, /<dialog class=\"auth-dialog\" id=\"unschedule-match-dialog\"[^>]*aria-describedby=\"unschedule-match-description\">/);
+  assert.match(indexSource, /<dialog class=\"dialog\" id=\"unschedule-match-dialog\"[^>]*aria-describedby=\"unschedule-match-description\">/);
   assert.match(indexSource, /Soll der Termin dieser Partie wirklich gelöscht werden\?/);
   assert.match(indexSource, /data-unschedule-close>Abbrechen<\/button>[\s\S]*class=\"danger-button\"[^>]*data-unschedule-confirm>Termin löschen<\/button>/);
   assert.match(tippspiel, /state\.client\.rpc\('unschedule_match', \{ p_match_id: matchId \}\)/);

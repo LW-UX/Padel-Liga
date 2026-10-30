@@ -11,6 +11,7 @@ const app = fs.readFileSync(path.join(root, 'js', 'app.js'), 'utf8');
 const tippPage = fs.readFileSync(path.join(root, 'js', 'tipp-page.js'), 'utf8');
 const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 const statisticsStyle = fs.readFileSync(path.join(root, 'match-statistics.css'), 'utf8');
+const tippStyle = fs.readFileSync(path.join(root, 'tipp.css'), 'utf8');
 const panelLayout = require(path.join(root, 'js', 'panel-layout.js'));
 
 test('league matches use the approved capped 420/24/600 split and a dedicated detail host', () => {
@@ -49,8 +50,8 @@ test('all side panels end at the viewport and grow until they reach the sticky n
 
 test('statistics header switches presentation and hides paging in panel mode', () => {
   assert.match(index, /data-match-statistics-presentation-toggle/);
-  assert.doesNotMatch(index, /class="secondary-button detail-view-presentation-toggle"/);
-  assert.match(index, /class="detail-view-close"[^>]*data-detail-view-back/);
+  assert.match(index, /class="secondary-button detail-view-presentation-toggle"/);
+  assert.match(index, /class="secondary-button detail-view-close"[^>]*data-detail-view-back/);
   assert.doesNotMatch(index, /detail-view-swipe-hint/);
   assert.match(statistics, /function togglePresentation\(\)/);
   assert.match(statistics, /presentationPreference = target;/);
@@ -58,7 +59,7 @@ test('statistics header switches presentation and hides paging in panel mode', (
   assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \.detail-view-pager \{ display: none; \}/);
   assert.match(style, /@media \(max-width: 768px\)[\s\S]*?\.detail-view-pager \{ display: none !important; \}/);
   assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \.detail-view-presentation-icon-modal \{ display: block; \}/);
-  assert.match(style, /\.detail-view-presentation-toggle,[\s\S]*?width: 32px;[\s\S]*?border: 1px solid var\(--border\);[\s\S]*?border-radius: var\(--button-radius\);[\s\S]*?background: var\(--bg\);/);
+  assert.match(style, /\.detail-view-presentation-toggle,[\s\S]*?width: 32px;[\s\S]*?padding: 0;\s*\}/);
   assert.match(style, /\.detail-view-close svg \{[\s\S]*?stroke-width: 3\.2;/);
 });
 
@@ -151,18 +152,18 @@ test('panel content uses compact match, prediction and statistics layouts', () =
   assert.match(style, /body\.match-statistics-panel-open #partien \.mc \{[\s\S]*?grid-template-areas:[\s\S]*?"team1 score team2"/);
   assert.match(style, /body\.match-statistics-panel-open #partien \.mc-players \{[\s\S]*?overflow: visible;/);
   assert.match(style, /body\.match-statistics-panel-open #partien \.mc-player-name \{[\s\S]*?overflow: hidden;[\s\S]*?text-overflow: ellipsis;/);
-  assert.match(style, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-match-card:not\(\.is-single-set\)/);
-  assert.match(style, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-team \{[\s\S]*?display: flex;[\s\S]*?flex-direction: column;[\s\S]*?overflow: visible;/);
-  assert.match(style, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-player \{[\s\S]*?overflow: hidden;[\s\S]*?text-overflow: ellipsis;/);
-  assert.match(style, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-team \.mc-player-sep \{ display: none; \}/);
+  assert.match(tippStyle, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-match-card:not\(\.is-single-set\)/);
+  assert.match(tippStyle, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-team \{[\s\S]*?display: flex;[\s\S]*?flex-direction: column;[\s\S]*?overflow: visible;/);
+  assert.match(tippStyle, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-player \{[\s\S]*?overflow: hidden;[\s\S]*?text-overflow: ellipsis;/);
+  assert.match(tippStyle, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-team \.mc-player-sep \{ display: none; \}/);
   assert.match(statisticsStyle, /#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-ranking-layout \{\s*grid-template-columns: 1fr;/);
   assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \{[\s\S]*?max-width: var\(--match-detail-panel-max-width\);[\s\S]*?container: match-detail-panel \/ inline-size;/);
   assert.match(style, /@container match-detail-panel \(min-width: 1100px\) \{[\s\S]*?detail-view-dialog\[data-presentation="panel"\] \.detail-view-content \{[\s\S]*?width: min\(calc\(100% - 2rem\), 1100px\);/);
   assert.match(statisticsStyle, /@container match-detail-panel \(min-width: 900px\) \{[\s\S]*?#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-ranking-layout \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
   assert.match(statisticsStyle, /\.match-statistics-form-row \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
   assert.match(statisticsStyle, /\.match-statistics-form-team \{[\s\S]*?display: grid;[\s\S]*?gap: 1\.5rem;/);
-  assert.match(statisticsStyle, /#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-team-picker \{[\s\S]*?display: grid;[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
-  assert.match(statisticsStyle, /#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-player-picker \{ display: none; \}/);
+  assert.match(statisticsStyle, /#detail-view-dialog\[data-presentation="panel"\] \[data-statistics-graph-picker="team"\] \{[\s\S]*?display: grid;[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
+  assert.match(statisticsStyle, /\[data-statistics-graph-picker\] \{[^}]*display: none;/);
   assert.match(statisticsStyle, /\.match-statistics-graph \{[^}]*container-type: inline-size;/);
   assert.match(statisticsStyle, /\.match-statistics-player-graph\.match-statistics-team-player-2 \{[\s\S]*?50cqw - 500px/);
 });

@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'js', 'tippspiel.js'), 'utf8');
-const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+const style = fs.readFileSync(path.join(root, 'tipp.css'), 'utf8');
 
 function fn(name) {
   const match = source.match(new RegExp(`  function ${name}\\([^]*?\\n  }`));

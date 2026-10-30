@@ -232,9 +232,9 @@ function evaluateAchievementHighlights(achievements) {
 }
 
 test('public player profile is a separate accessible dialog', () => {
-  assert.match(html, /<dialog class="player-profile-dialog" id="player-profile-dialog" aria-labelledby="player-profile-name" data-presentation="modal">/);
-  assert.match(html, /<button class="modal-close-button player-profile-presentation-toggle"[^>]*data-player-profile-presentation-toggle[^>]*hidden>/);
-  assert.match(html, /<button class="modal-close-button player-profile-close"[^>]*data-player-profile-close/);
+  assert.match(html, /<dialog class="dialog dialog--page player-profile-dialog" id="player-profile-dialog" aria-labelledby="player-profile-name" data-presentation="modal">/);
+  assert.match(html, /<button class="secondary-button modal-close-button player-profile-presentation-toggle"[^>]*data-player-profile-presentation-toggle[^>]*hidden>/);
+  assert.match(html, /<button class="secondary-button modal-close-button player-profile-close"[^>]*data-player-profile-close/);
   assert.equal((html.match(/<article class="widget player-profile-widget/g) || []).length, 5);
   assert.match(html, /<article class="widget player-profile-widget player-profile-stats-widget">[\s\S]*id="player-profile-stats"/);
   assert.match(html, /<h2 id="player-profile-name"><\/h2>\s*<span class="player-profile-company firma-badge"/);
@@ -273,7 +273,7 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(players, /id: "chris_m"[^\n]+profileEmoji: "👨"/);
   assert.match(players, /id: "agnes_k"[^\n]+profileEmoji: "👩"/);
   assert.doesNotMatch(html, /data-player-profile-filter/);
-  assert.match(html, /class="match-scope-toggle" aria-label="Partien filtern">[\s\S]*?data-player-profile-match-scope="past" aria-pressed="true">Vergangene<[\s\S]*?data-player-profile-match-scope="upcoming" aria-pressed="false">Kommende</);
+  assert.match(html, /class="toggle" aria-label="Partien filtern">[\s\S]*?data-player-profile-match-scope="past" aria-pressed="true">Vergangene<[\s\S]*?data-player-profile-match-scope="upcoming" aria-pressed="false">Kommende</);
   assert.match(html, /class="secondary-button player-profile-show-all"[^>]*data-player-profile-show-all/);
   assert.match(app, /const PLAYER_PROFILE_MATCH_PREVIEW_LIMIT = 10;/);
   assert.match(app, /startDate: season\.starts_on/);
@@ -299,10 +299,10 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /relationships\.map\(\(\[label, records, valueClass, helpText\], index\)[\s\S]*data-help-tooltip-anchor>[?]<\/span>[\s\S]*escapeHtml\(helpText\)/);
   assert.equal((app.match(/Trainings werden mitgezählt\./g) || []).length, 4);
   assert.match(app, /records\.map\(record =>/);
-  assert.match(html, /<dialog class="auth-dialog" id="auth-dialog"/);
+  assert.match(html, /<dialog class="dialog" id="auth-dialog"/);
   assert.doesNotMatch(html, /player-profile-cover|player-profile-cover-image/);
   assert.doesNotMatch(app, /cover\.webp|Coverbild von/);
-  assert.match(html, /<button class="modal-close-button player-profile-presentation-toggle"[\s\S]*<button class="modal-close-button player-profile-close"[\s\S]*<div class="player-profile-shell">/);
+  assert.match(html, /<button class="secondary-button modal-close-button player-profile-presentation-toggle"[\s\S]*<button class="secondary-button modal-close-button player-profile-close"[\s\S]*<div class="player-profile-shell">/);
 });
 
 test('wide ranking views host the same player profile as a non-modal side panel', () => {
@@ -333,10 +333,10 @@ test('wide ranking views host the same player profile as a non-modal side panel'
   assert.match(app, /presentation === 'panel'[\s\S]*?'\.player-profile-elo-panel'[\s\S]*?'\.player-profile-participations-panel'[\s\S]*?'\.player-profile-history'[\s\S]*?'\.player-profile-relationships'/);
   assert.match(app, /scrollTop: getPlayerProfileShellScrollTop\(\)/);
   assert.match(app, /function cancelPlayerProfileCloseTransition[\s\S]*?document\.body\.classList\.add\('player-profile-panel-open'\)/);
-  assert.match(app, /const PLAYER_PROFILE_ROW_SELECTOR = '#rangliste tr\[data-player-profile-id\], #all-time-ranking-table tr\[data-player-profile-id\], \.calculator-ranking-table tr\[data-player-profile-id\]';/);
+  assert.match(app, /const PLAYER_PROFILE_ROW_SELECTOR = 'tr\[data-player-profile-id\], #home-ranking \.mini-rank-row\[data-player-profile-id\]';/);
   assert.match(app, /playerProfileOpenControl\.matches\(PLAYER_PROFILE_ROW_SELECTOR\)[\s\S]*?!playerProfileRow \|\| !rowClickHitsControl[\s\S]*?openPlayerProfile\(playerProfileOpenControl\.dataset\.playerProfileId, playerProfileOpenControl\)/);
-  assert.match(app, /data-profile-player-id="\$\{escapeHtml\(p\.id \|\| ''\)\}" data-player-profile-id="\$\{escapeHtml\(p\.id \|\| ''\)\}" tabindex="0" role="link" aria-label="Profil von \$\{escapeHtml\(p\.name\)\} öffnen"/);
-  assert.match(app, /data-profile-player-id="\$\{escapeHtml\(player\.id \|\| ''\)\}" data-player-profile-id="\$\{escapeHtml\(player\.id \|\| ''\)\}" tabindex="0" role="link" aria-label="Profil von \$\{escapeHtml\(player\.name\)\} öffnen"/);
+  assert.match(app, /data-ranking-entry="\$\{escapeHtml\(p\.id \|\| p\.name\)\}"\$\{renderPlayerProfileRowAttributes\(p\)\}>/);
+  assert.match(app, /data-ranking-entry="\$\{escapeHtml\(player\.id \|\| player\.name\)\}"\$\{renderPlayerProfileRowAttributes\(player\)\}>/);
   assert.match(app, /event\.target === playerProfileRow && \(event\.key === 'Enter' \|\| event\.key === ' '\)[\s\S]*?openPlayerProfile\(playerProfileRow\.dataset\.playerProfileId, playerProfileRow\)/);
   assert.match(app, /function getPlayerProfilePanelContext\(\)[\s\S]*?hostId: 'ranking-profile-host'[\s\S]*?hostId: 'all-time-ranking-profile-host'/);
   assert.match(app, /panelContext\?\.id === 'all-time-ranking' && !profileWasOpen && !opensFromAllTimeRanking/);
@@ -351,7 +351,7 @@ test('wide ranking views host the same player profile as a non-modal side panel'
   assert.match(style, /body\.player-profile-panel-open :is\(#ranking-profile-main, #all-time-ranking-profile-main\) table\.rt th\.col-rank,[\s\S]*?padding-left: 12px;[\s\S]*?padding-right: 4px;/);
   assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \.player-profile-stats \{[\s\S]*?repeat\(4, minmax\(0, 1fr\)\)/);
   assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \.player-profile-match \{[\s\S]*?grid-template-columns: 30px minmax\(0, 1fr\) auto;/);
-  assert.match(style, /\.player-profile-dialog \{[\s\S]*?--player-profile-max-width: 1200px;[\s\S]*?width: min\(calc\(100vw - 28px\), var\(--player-profile-max-width\)\);/);
+  assert.match(style, /\.player-profile-dialog \{[\s\S]*?--player-profile-max-width: 1200px;[\s\S]*?--dialog-width: var\(--player-profile-max-width\);/);
   assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \{[\s\S]*?max-width: var\(--player-profile-max-width\);[\s\S]*?container: player-profile-panel \/ inline-size;/);
   assert.match(style, /@container player-profile-panel \(min-width: 600px\) \{[\s\S]*?\.player-profile-match-teams \{[\s\S]*?flex-direction: row;[\s\S]*?\.player-profile-match-score \{[\s\S]*?min-height: 0;/);
   assert.match(style, /@container player-profile-panel \(min-width: 760px\) \{[\s\S]*?grid-template-columns: 64px 32px minmax\(0, 1fr\) 132px 84px;[\s\S]*?flex-direction: row;/);
@@ -363,7 +363,7 @@ test('wide ranking views host the same player profile as a non-modal side panel'
   assert.match(style, /@container player-profile-panel \(min-width: 1100px\) \{[\s\S]*?\.player-profile-relationships \{[\s\S]*?grid-column: 1;[\s\S]*?\.player-profile-history \{[\s\S]*?grid-column: 2 \/ 4;/);
   assert.match(style, /@container player-profile-panel \(min-width: 1100px\) \{[\s\S]*?\.player-profile-stats \{[\s\S]*?grid-template-columns: repeat\(8, minmax\(0, 1fr\)\);/);
   assert.match(style, /tr\.profile-open-highlight td \{[\s\S]*?var\(--accent\)/);
-  assert.match(style, /#rangliste table\.rt tbody tr\[data-profile-player-id\],[\s\S]*?#all-time-ranking-table tbody tr\[data-profile-player-id\] \{ cursor: pointer; \}/);
+  assert.match(style, /table\.rt tbody tr\[data-player-profile-id\] \{ cursor: pointer; \}/);
   assert.match(style, /\.player-profile-presentation-toggle \{ right: 68px; \}/);
   assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \.player-profile-presentation-toggle \{ right: 60px; \}/);
   assert.match(style, /html\.is-detail-embed body > :not\(dialog\):not\(#player-profile-modal-host\)/);
@@ -822,4 +822,12 @@ test('Sommer 2026 label and confirmed profile achievements stay explicit', () =>
   assert.match(winnerAchievementMigration, /'winner'/);
   assert.match(winnerAchievementMigration, /'Gewinner'/);
   assert.match(winnerAchievementMigration, /'Padel-Liga Sommer 2026'/);
+});
+
+test('jedes Profilbild besitzt ein Vorschaubild für die Ranglisten', () => {
+  const playersDir = path.join(root, 'assets/players');
+  const withoutThumbnail = fs.readdirSync(playersDir)
+    .filter(id => fs.existsSync(path.join(playersDir, id, 'profile.webp')))
+    .filter(id => !fs.existsSync(path.join(playersDir, id, 'thumb.jpg')));
+  assert.deepEqual(withoutThumbnail, []);
 });

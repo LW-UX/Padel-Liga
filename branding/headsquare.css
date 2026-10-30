@@ -1,0 +1,197 @@
+/*
+  Headsquare – dunkles, eckiges Branding nach der Headsquare-Webseite.
+
+  Metrisch Bold in Großbuchstaben für Überschriften, Barlow für den Fließtext, Dunkelblau als Grund,
+  Rot als Akzent und keine Eckenradien. Die Farben --bg, --text, --dim und --accent stammen aus der
+  Palette der Webseite. Wo die Vorlage keinen Wert hat, ist er abgeleitet und mit „abgeleitet“ markiert.
+
+  Aufbau und Pflichtvariablen wie in branding/og-design.css.
+  Am Ende stehen die Regeln, die es nur in diesem Branding gibt.
+*/
+
+@font-face {
+  font-family: 'Metrisch';
+  src: url('../fonts/Metrisch-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Barlow';
+  src: url('../fonts/Barlow-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Barlow';
+  src: url('../fonts/Barlow-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Barlow';
+  src: url('../fonts/Barlow-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Barlow';
+  src: url('../fonts/Barlow-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Barlow';
+  src: url('../fonts/Barlow-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  /* Schriften. Die Vorlage nutzt keine Serifen- und keine eigene Monospace-Schrift. */
+  --font-body: 'Barlow', system-ui, sans-serif;
+  --font-heading: 'Metrisch', 'Barlow', sans-serif;
+  --font-newspaper: 'Metrisch', 'Barlow', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Grundgröße der Überschriftenschrift; alle Überschriften, Wortmarken und großen Zahlen skalieren mit. */
+  --text-heading: 1.75rem;
+  /* Laufweite und Stärke der Titel in Abschnitten, Widgets, Dialogen, Profil und Podium */
+  --heading-letter-spacing: 0;
+  --heading-font-weight: 700;
+
+  /* Look der Inhaltsbereiche */
+  --section-gap: 4rem;
+  /* Rahmen der Inhaltsbereiche (.widget); transparent und 0 lassen die Bereiche frei auf --bg stehen. */
+  --widget-bg: transparent;
+  --widget-border: transparent;
+  --widget-padding: 0;
+
+  /* Eckenradien nach Rolle. Mit Einheit, weil die Stylesheets mit den Werten rechnen. */
+  --button-radius: 0px;
+  --dropdown-radius: 0px;
+  --menu-radius: 0px;
+  --input-radius: 0px;
+  /* Zähler (Ergebniseingabe) und Schalter (An/Aus). */
+  --control-radius: 0px;
+  /* Inhaltscontainer: base für Dialoge, sm für Karten, xs für Hinweise, lg nur für Ausnahmen. Die Stufen rechnen sich aus base und lassen sich einzeln überschreiben. */
+  --container-radius-base: 0px;
+  --container-radius-lg: calc(var(--container-radius-base) * 2);
+  --container-radius-sm: calc(var(--container-radius-base) / 2);
+  --container-radius-xs: calc(var(--container-radius-base) / 4);
+
+  /* Flächen und Text. --bg färbt auch Browserleiste und App-Start, --accent das Safari-Tab-Symbol. */
+  --bg:         #0A0B1A;
+  --surface:    #121426; /* abgeleitet */
+  --surface2:   #1E2036; /* abgeleitet */
+  --border:     #43465E; /* abgeleitet */
+  --text:       #FFFFFF;
+  --muted:      #8D8F9E; /* abgeleitet */
+  --dim:        #E3E3E3;
+  /* Leichte Tönung auf einer Fläche, etwa für Zähler und Hover: hell auf dunklen, dunkel auf hellen Designs. */
+  --surface-tint: rgba(255, 255, 255, 0.05); /* abgeleitet */
+  /* Farbe von Schatten unter schwebenden Elementen */
+  --shadow-color: rgba(0, 0, 0, 0.5); /* abgeleitet */
+  /* Abdunklung hinter Dialogen */
+  --backdrop: rgba(3, 4, 12, 0.7); /* abgeleitet */
+
+  /* Akzente und Zustände */
+  --accent:     #FF0000;
+  --accent2:    #5B8DEF; /* abgeleitet */
+  --positiv:    #3AF5B4; /* abgeleitet */
+  --negativ:    #FF0000;
+  --team-one:   #B58CFF; /* abgeleitet */
+  --team-two:   #FF9A4D; /* abgeleitet */
+
+  /* Auszeichnungen und Saisons; alle abgeleitet */
+  --gold:       #FFD000;
+  --silver:     #ADC8D8;
+  --cup-gold:   #C59600;
+  --cup-silver: #7F98A8;
+  --bronze:     #C97B2E;
+  --season-summer: #FF8A5B;
+  --season-winter: #B794F6;
+  --season-cup:    #50B7F5;
+
+  /* Firmen der Spieler */
+  --envidual:   #2E8FC4;
+  --hanako:     #2B6D88;
+  --headsquare: #FF0000;
+
+  /* Spielerfarben der Diagramme: gleiche Reihenfolge und Farbtöne wie im OG-Design */
+  --player-1:  #6EF79C;
+  --player-2:  #C96EF7;
+  --player-3:  #F7F76E;
+  --player-4:  #6EC9F7;
+  --player-5:  #F76E9C;
+  --player-6:  #6EF76E;
+  --player-7:  #9C6EF7;
+  --player-8:  #F7C96E;
+  --player-9:  #6EF7F7;
+  --player-10: #F76EC9;
+  --player-11: #9CF76E;
+  --player-12: #6E6EF7;
+  --player-13: #F79C6E;
+  --player-14: #6EF7C9;
+  --player-15: #F76EF7;
+  --player-16: #C9F76E;
+  --player-17: #6E9CF7;
+  --player-18: #F76E6E;
+}
+
+h1,
+h2 {
+  text-transform: uppercase;
+}
+
+/* Artikeltitel setzt style.css sonst in die Fließtextschrift. */
+html:root .article-card h2 {
+  font-family: var(--font-heading);
+}
+
+/* Wortmarke ganz in Textfarbe, am Ende steht das rote Viereck auf der Grundlinie wie ein Punkt. */
+html:root :is(.hero h1, .site-footer-brand, #whats-new-dialog h2) em {
+  color: var(--text);
+}
+
+html:root :is(.hero h1, .site-footer-brand, #whats-new-dialog h2) em::after {
+  content: '';
+  display: inline-block;
+  width: 0.18em;
+  height: 0.18em;
+  margin-left: 0.07em;
+  background: var(--accent);
+}
+
+/* Rotes Viereck hinter den Abschnittstiteln. Dialogtitel bleiben ohne Viereck. */
+h2:not(dialog h2) {
+  position: relative;
+  isolation: isolate;
+}
+
+h2:not(dialog h2)::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -0.15em;
+  width: 0.36em;
+  height: 0.36em;
+  background: var(--accent);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Roter Balken links neben den Spieltagslabels */
+.match-group h3 {
+  border-left: 0.45em solid var(--accent);
+  padding-left: 0.6em;
+}

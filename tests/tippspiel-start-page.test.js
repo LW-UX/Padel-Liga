@@ -10,7 +10,7 @@ const script = fs.readFileSync(path.join(root, 'js', 'tippspiel.js'), 'utf8');
 const pageScript = fs.readFileSync(path.join(root, 'js', 'tipp-page.js'), 'utf8');
 const ligaPage = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const ligaScript = fs.readFileSync(path.join(root, 'js', 'app.js'), 'utf8');
-const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+const style = ['style.css', 'tipp.css'].map(file => fs.readFileSync(path.join(root, file), 'utf8')).join('\n');
 const decisions = fs.readFileSync(path.join(root, 'docs', 'project-decisions', 'tipping.md'), 'utf8');
 const accountTypeMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261028170000_prediction_leaderboard_account_type.sql'),
@@ -27,7 +27,7 @@ const companyBadgeMigration = fs.readFileSync(
 
 test('PadelTipp opens on the start page without adding a start menu item', () => {
   assert.match(page, /data-tip-nav="tippstart" aria-label="Zur PadelTipp-Startseite"/);
-  const navigation = page.match(/<nav class="site-nav tip-site-nav"[\s\S]*?<\/nav>/)?.[0] || '';
+  const navigation = page.match(/<nav class="site-nav"[\s\S]*?<\/nav>/)?.[0] || '';
   assert.match(
     navigation,
     /data-tip-nav="tippuebersicht">Tipprangliste[\s\S]*data-tip-nav="tippen">Tippabgabe[\s\S]*data-tip-nav="tippinfos">Infos/
@@ -109,12 +109,12 @@ test('prediction rankings reuse company badges with short labels only', () => {
 
   assert.match(script, /const COMPANY_SHORT_LABELS = Object\.freeze\(\{[\s\S]*Headsquare: 'HSQ'/);
   assert.match(script, /function renderPredictionCompanyBadge\(entry\)/);
-  assert.match(script, /class="firma-badge firma-\$\{escapeHtml\(company\)\} prediction-company-badge"/);
+  assert.match(script, /class="firma-badge firma-icon firma-\$\{escapeHtml\(company\)\} prediction-company-badge"/);
   assert.match(script, /renderPredictionAccountTypeIcon\(entry\)\}\$\{renderPredictionCompanyBadge\(entry\)\}\$\{renderPreviousPredictionWinnerIcon\(entry\)/);
   assert.match(ligaScript, /function renderPredictionCompanyBadge\(entry\)/);
   assert.match(ligaScript, /renderPredictionAccountTypeIcon\(entry\)\}\$\{renderPredictionCompanyBadge\(entry\)\}\$\{renderPreviousPredictionWinnerIcon\(entry\)/);
   assert.match(style, /\.prediction-rank-account \.prediction-company-badge \{[\s\S]*margin-left: 4px;/);
-  assert.match(decisions, /Firmenbadge[\s\S]*Kürzel `ENV`, `HSQ` beziehungsweise `HAN`/);
+  assert.match(decisions, /Firmen-Icon/);
 });
 
 test('prediction rankings show only the previous PadelTipp winner achievement', () => {
@@ -234,4 +234,9 @@ test('the dashboard follows the containerless four-rem layout', () => {
   assert.doesNotMatch(blockStyle, /border|background|padding|border-radius/);
   assert.match(style, /\.prediction-overview-grid \{[\s\S]*?gap: var\(--section-gap\);/);
   assert.match(decisions, /freie Blöcke ohne Kartenhintergründe oder Außenrahmen und mit vier Rem Abstand/);
+});
+
+test('tipping styles stay a separate stylesheet that only the tipping page loads', () => {
+  assert.doesNotMatch(ligaPage, /tipp\.css/);
+  assert.match(page, /style\.css\?v=[^"]+">\s*<link rel="stylesheet" href="\.\.\/tipp\.css\?v=[^"]+">/);
 });

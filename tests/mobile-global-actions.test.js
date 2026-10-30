@@ -30,17 +30,17 @@ test('Liga and PadelTipp share the accessible mobile global action shell', () =>
   });
 
   assert.match(liga, /data-global-actions-list[\s\S]*data-live-open-active[\s\S]*id="external-game-link"[\s\S]*id="tipp-link"[\s\S]*id="season-picker"[\s\S]*data-auth-open/);
-  assert.match(liga, /class="header-icon-link global-action" id="tipp-link"[^>]*aria-label="PadelTipp öffnen"[\s\S]*<svg viewBox="0 0 24 24"[\s\S]*<span class="global-action-label">PadelTipp<\/span>/);
+  assert.match(liga, /class="secondary-button secondary-button--with-icon global-action" id="tipp-link"[^>]*aria-label="PadelTipp öffnen"[\s\S]*<svg viewBox="0 0 24 24"[\s\S]*<span class="global-action-label">PadelTipp<\/span>/);
   assert.match(tipp, /data-global-actions-list[\s\S]*id="liga-link"[\s\S]*id="external-game-link"[\s\S]*id="season-picker"[\s\S]*data-auth-open/);
   assert.match(tipp, /id="liga-link"[^>]*>[\s\S]*<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"\/><\/svg>[\s\S]*<span>Zurück zur Liga<\/span>/);
   assert.doesNotMatch(tipp.match(/id="liga-link"[^>]*>[\s\S]*?<\/a>/)?.[0] || '', /<svg[^>]+class=/);
-  assert.match(style, /\.header-icon-link svg,\s*\.external-game-link svg,\s*\.context-link svg \{ width: 20px; height: 20px;/);
+  assert.match(style, /\.secondary-button--icon svg,\s*\.context-link svg \{ width: 20px; height: 20px;/);
   assert.match(style, /\.context-link svg \{ display: none; \}[\s\S]*@media \(max-width: 768px\)[\s\S]*\.global-actions \.context-link svg \{ display: block; \}/);
 });
 
 test('the mobile speed dial stays separate from the local navigation', () => {
   assert.match(style, /@media \(max-width: 768px\)[\s\S]*\.context-actions\.global-actions\s*\{[\s\S]*position: fixed;/);
-  assert.match(style, /\.global-actions-dismiss\s*\{[\s\S]*background: rgba\(0,0,0,0\.46\);[\s\S]*opacity: 0;[\s\S]*transition: opacity 160ms ease;/);
+  assert.match(style, /\.global-actions-dismiss\s*\{[\s\S]*background: var\(--shadow-color\);[\s\S]*opacity: 0;[\s\S]*transition: opacity 160ms ease;/);
   assert.match(style, /\.global-actions\.open \.global-actions-dismiss\s*\{\s*opacity: 1;\s*pointer-events: auto;/);
   assert.match(style, /body:has\(dialog\[open\]\) \.context-actions\.global-actions\s*\{\s*display: none;/);
   assert.match(style, /\.global-actions \.season-menu\s*\{[\s\S]*right: calc\(100% \+ 8px\);/);

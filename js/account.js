@@ -510,6 +510,7 @@
     window.PadelGlobalActions?.setAccountTaskCount(taskCount);
     button.classList.toggle('is-authenticated', isLoggedIn);
     button.classList.toggle('secondary-button', isLoggedIn);
+    button.classList.toggle('primary-button', !isLoggedIn);
     button.setAttribute('aria-label', isLoggedIn ? `Partienübersicht von ${displayName} öffnen` : 'Einloggen');
     button.title = isLoggedIn ? displayName : '';
     guestView.hidden = isLoggedIn || isConfirmingLink;
@@ -2511,7 +2512,7 @@ Dein Hanako-Leben-Squad`;
     dialog.dataset.matchId = button.dataset.matchUnschedule;
     unscheduleTrigger = button;
     if (!dialog.open) dialog.showModal();
-    dialog.querySelector('.secondary-button[data-unschedule-close]')?.focus();
+    dialog.querySelector('.secondary-button:not(.modal-close-button)[data-unschedule-close]')?.focus();
   }
 
   function closeUnscheduleDialog() {
@@ -2524,7 +2525,7 @@ Dein Hanako-Leben-Squad`;
     dialog.dataset.matchId = button.dataset.matchCancel;
     unrateTrigger = button;
     if (!dialog.open) dialog.showModal();
-    dialog.querySelector('.secondary-button[data-unrate-close]')?.focus();
+    dialog.querySelector('.secondary-button:not(.modal-close-button)[data-unrate-close]')?.focus();
   }
 
   function closeUnrateDialog() {

@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest?v=2026-10-28-brand-names">
-  <link rel="stylesheet" href="branding/og-design.css?v=33ecb648b3">
+  <link rel="stylesheet" href="branding/og-design.css?v=05291aeb6f">
   <script>
     // Die Admin-Design-Vorschau greift vor dem ersten Zeichnen; alles Weitere steht in js/branding-preview.js.
     (function () {
@@ -26,9 +26,9 @@
       } catch (error) { /* Ohne Speicher bleibt das veröffentlichte Branding. */ }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026-10-30-heading-elements">
-  <link rel="stylesheet" href="account.css?v=2026-10-30-heading-elements">
-  <link rel="stylesheet" href="whats-new.css?v=2026-10-30-heading-elements">
+  <link rel="stylesheet" href="style.css?v=2026-10-30-company-logos">
+  <link rel="stylesheet" href="account.css?v=2026-10-30-control-radius">
+  <link rel="stylesheet" href="whats-new.css?v=2026-10-30-with-icon">
   <script>
     (function () {
       var standalone = window.matchMedia('(display-mode: standalone)').matches
@@ -42,7 +42,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="match-statistics.css?v=2026-10-30-heading-elements">
+  <link rel="stylesheet" href="match-statistics.css?v=2026-10-30-table-core">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="data/players.js?v=2026-10-20-test-net-emoji"></script>
@@ -53,18 +53,19 @@
   <script defer src="data/supabase-config.js"></script>
   <script defer src="js/global-actions.js?v=2026-10-20-speed-dial-player"></script>
   <script defer src="js/tipp-invitation.js?v=2026-10-27-first-visit"></script>
-  <script defer src="js/whats-new.js?v=2026-10-28-feature-links"></script>
+  <script defer src="js/whats-new.js?v=2026-10-30-mobile-page"></script>
   <script defer src="js/elo-forecast.js?v=2026-10-14-shared-auto-tip"></script>
   <script defer src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
-  <script defer src="js/live-ticker.js?v=2026-10-30-heading-elements"></script>
-  <script defer src="js/mobile-dialog-pages.js?v=2026-10-30-mobile-pages-tipp"></script>
-  <script defer src="js/branding-preview.js?v=2026-10-30-branding-change"></script>
-  <script defer src="js/account.js?v=2026-10-30-heading-elements"></script>
+  <script defer src="js/table-core.js?v=2026-10-30-diff-zero"></script>
+  <script defer src="js/live-ticker.js?v=2026-10-30-diff-zero"></script>
+  <script defer src="js/mobile-dialog-pages.js?v=2026-10-30-whats-new-page"></script>
+  <script defer src="js/branding-preview.js?v=2026-10-30-hanako-accent"></script>
+  <script defer src="js/account.js?v=2026-10-30-button-merge"></script>
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/panel-layout.js?v=2026-10-29-shared-panel-layout"></script>
-  <script defer src="js/match-statistics.js?v=2026-10-30-heading-elements"></script>
-  <script defer src="js/app.js?v=2026-10-30-heading-elements"></script>
+  <script defer src="js/match-statistics.js?v=2026-10-30-table-core"></script>
+  <script defer src="js/app.js?v=2026-10-30-company-logos"></script>
 </head>
 <body>
 
@@ -75,17 +76,17 @@
       <div class="context-actions global-actions" id="global-actions" data-global-actions>
         <button class="global-actions-dismiss" type="button" data-global-actions-dismiss aria-label="Schnellzugriffe schließen" tabindex="-1"></button>
         <div class="global-actions-list" id="global-actions-list" data-global-actions-list>
-          <button class="secondary-button global-action global-action--live" id="live-ticker-link" type="button" data-live-open-active data-global-action data-global-action-close hidden><span class="global-action-icon" aria-hidden="true">●</span><span>LIVE</span></button>
-          <button class="whats-new-button global-action" id="whats-new-button" type="button" hidden aria-haspopup="dialog" aria-controls="whats-new-dialog" data-global-action data-global-action-close>
+          <button class="secondary-button secondary-button--with-icon global-action global-action--live" id="live-ticker-link" type="button" data-live-open-active data-global-action data-global-action-close hidden><span class="global-action-icon" aria-hidden="true">●</span><span>LIVE</span></button>
+          <button class="secondary-button secondary-button--with-icon global-action" id="whats-new-button" type="button" hidden aria-haspopup="dialog" aria-controls="whats-new-dialog" data-global-action data-global-action-close>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 3.5 11.6 8 16 9.5 11.6 11 10 15.5 8.4 11 4 9.5 8.4 8Z"/><path d="M17.5 13.5 18.3 15.7 20.5 16.5 18.3 17.3 17.5 19.5 16.7 17.3 14.5 16.5 16.7 15.7Z"/></svg>
             <span class="whats-new-button-label">Was ist neu?</span>
             <span class="whats-new-button-dot" aria-hidden="true"></span>
           </button>
-          <a class="external-game-link global-action" id="external-game-link" href="https://lw-ux.github.io/PadelPong/" target="_blank" rel="noopener" aria-label="PadelPong in neuem Tab öffnen" title="PadelPong" data-global-action data-global-action-close>
+          <a class="secondary-button secondary-button--icon global-action" id="external-game-link" href="https://lw-ux.github.io/PadelPong/" target="_blank" rel="noopener" aria-label="PadelPong in neuem Tab öffnen" title="PadelPong" data-global-action data-global-action-close>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10l3 3 1 8-3 1-4-4h-4l-4 4-3-1 1-8z"/><path d="M7 9v5m-2.5-2.5h5M16 10h.01M18 13h.01"/></svg>
             <span class="global-action-label">PadelPong</span>
           </a>
-          <a class="header-icon-link global-action" id="tipp-link" href="tipp/" aria-label="PadelTipp öffnen" title="PadelTipp" data-global-action data-global-action-close>
+          <a class="secondary-button secondary-button--with-icon global-action" id="tipp-link" href="tipp/" aria-label="PadelTipp öffnen" title="PadelTipp" data-global-action data-global-action-close>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
               <path d="m9 12 2 2 4-4"/>
@@ -93,7 +94,7 @@
             <span class="global-action-label">PadelTipp</span>
           </a>
           <div class="season-picker" id="season-picker">
-            <button class="secondary-button secondary-button--dropdown global-action" type="button" data-season-toggle data-global-action aria-haspopup="listbox" aria-expanded="false">
+            <button class="secondary-button secondary-button--dropdown secondary-button--with-icon global-action" type="button" data-season-toggle data-global-action aria-haspopup="listbox" aria-expanded="false">
               <span class="season-picker-trophy" aria-hidden="true">
                 <svg viewBox="0 0 28 32" role="presentation" focusable="false">
                   <path class="season-picker-trophy-line" d="M8 3h12v5c0 5-2.4 8.5-6 10-3.6-1.5-6-5-6-10V3Z"/>
@@ -105,7 +106,7 @@
             </button>
             <div class="season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
           </div>
-          <button class="auth-button global-action" id="auth-button" type="button" data-auth-open data-global-action data-global-action-close>
+          <button class="primary-button auth-button global-action" id="auth-button" type="button" data-auth-open data-global-action data-global-action-close>
             <svg class="auth-user-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0"/>
             </svg>
@@ -257,7 +258,7 @@
         <h2>RANGLISTE</h2>
         <div class="sh-meta" id="rl-meta"></div>
       </div>
-      <div class="match-scope-toggle ranking-view-toggle" id="ranking-view-toggle" aria-label="Ranglistenansicht">
+      <div class="toggle" id="ranking-view-toggle" aria-label="Ranglistenansicht">
         <button type="button" class="active" data-ranking-view="compact">Kompakt</button>
         <button type="button" data-ranking-view="expanded">Erweitert</button>
       </div>
@@ -329,8 +330,8 @@
         </div>
         <button type="button" class="text-link inline-link final-four-detail-link" id="final-four-ranking-detail-link" data-live-view="overview" hidden>Zur Übersicht</button>
       </div>
-      <div class="ranking-wrap final-four-ranking-wrap">
-        <table class="rt final-four-table">
+      <div class="ranking-wrap ranking-wrap--fit">
+        <table class="rt rt--fit">
           <thead>
             <tr>
               <th class="col-rank">#</th>
@@ -356,7 +357,7 @@
   <section id="verlauf" class="section">
     <div class="sh sh-with-control stats-heading">
       <h2>STATISTIK</h2>
-      <div class="match-scope-toggle" id="statistics-mode-toggle" aria-label="Statistikzeitraum auswählen">
+      <div class="toggle" id="statistics-mode-toggle" aria-label="Statistikzeitraum auswählen">
         <button type="button" class="active" aria-pressed="true" data-statistics-mode="season">Saison</button>
         <button type="button" aria-pressed="false" data-statistics-mode="all-time">All-Time</button>
       </div>
@@ -435,12 +436,12 @@
           <div class="sh-meta" id="all-time-ranking-meta"></div>
         </div>
         <div class="ranking-controls all-time-ranking-controls">
-          <div class="match-scope-toggle" id="all-time-ranking-scope-toggle" aria-label="Gewertete Spiele der ewigen Rangliste">
+          <div class="toggle" id="all-time-ranking-scope-toggle" aria-label="Gewertete Spiele der ewigen Rangliste">
             <button type="button" class="active" data-all-time-ranking-scope="league" title="Nur Spiele der Ligaphase">Ligaphase</button>
             <button type="button" data-all-time-ranking-scope="official" title="Alle gewerteten Spiele inklusive Cup und Final Four">Gewertet</button>
             <button type="button" data-all-time-ranking-scope="training" title="Alle gewerteten Spiele inklusive Trainings">Inkl. Training</button>
           </div>
-          <div class="match-scope-toggle ranking-view-toggle" id="all-time-ranking-view-toggle" aria-label="Ranglistenansicht">
+          <div class="toggle" id="all-time-ranking-view-toggle" aria-label="Ranglistenansicht">
             <button type="button" class="active" data-all-time-ranking-view="compact">Kompakt</button>
             <button type="button" data-all-time-ranking-view="expanded">Erweitert</button>
           </div>
@@ -480,11 +481,11 @@
             <h2 id="partien-title">PARTIEN</h2>
             <div class="sh-meta" id="sp-meta"></div>
           </div>
-          <div class="match-scope-toggle ranking-sort-toggle" id="match-sort-toggle" aria-label="Partien sortieren">
+          <div class="toggle toggle--underline" id="match-sort-toggle" aria-label="Partien sortieren">
             <button type="button" class="active" data-match-sort="matchday">Spieltage</button>
             <button type="button" data-match-sort="date">Datum</button>
           </div>
-          <div class="match-scope-toggle" id="match-scope-toggle" aria-label="Spielplan filtern">
+          <div class="toggle" id="match-scope-toggle" aria-label="Spielplan filtern">
             <button type="button" class="active" data-match-scope="all">Alle</button>
             <button type="button" data-match-scope="open">Offen</button>
             <button type="button" data-match-scope="mine">Meine</button>
@@ -515,7 +516,7 @@
           <div class="calculator-match-column">
             <div class="calculator-controls-row">
               <div class="calculator-autotip-bar" id="calculator-autotip-bar">
-                <button type="button" class="calculator-autotip-switch" data-calculator-autotip role="switch" aria-checked="false" aria-label="Auto-Tipp: alle Partien nach Siegwahrscheinlichkeit tippen">
+                <button type="button" class="secondary-button calculator-autotip-switch" data-calculator-autotip role="switch" aria-checked="false" aria-label="Auto-Tipp: alle Partien nach Siegwahrscheinlichkeit tippen">
                   <span class="calculator-autotip-track"><span class="calculator-autotip-knob"></span></span>
                   <span class="calculator-autotip-text">Auto-Tipp</span>
                 </button>
@@ -532,7 +533,7 @@
         <div class="calculator-panel calculator-ranking-panel">
           <h3>Simulierte Rangliste</h3>
           <div class="ranking-wrap calculator-ranking-wrap">
-            <table class="rt calculator-ranking-table">
+            <table class="rt rt--dense">
               <thead>
                 <tr>
                   <th class="col-rank">#</th>
@@ -571,7 +572,7 @@
         <div class="calculator-panel calculator-ranking-panel">
           <h3>Simulierte Final4-Rangliste</h3>
           <div class="ranking-wrap calculator-ranking-wrap">
-            <table class="rt calculator-ranking-table final-four-calculator-ranking-table">
+            <table class="rt rt--dense rt--fit">
               <thead><tr><th class="col-rank">#</th><th class="col-name">Spieler</th><th class="col-wins">Siege</th><th class="col-gv">G:V</th><th class="col-diff">Diff.</th></tr></thead>
               <tbody id="final-four-calculator-ranking-body"></tbody>
             </table>
@@ -620,7 +621,7 @@
 </footer>
 
 <div id="detail-view-modal-host">
-<dialog class="detail-view-dialog" id="detail-view-dialog" aria-labelledby="detail-view-title" data-presentation="modal">
+<dialog class="dialog detail-view-dialog" id="detail-view-dialog" aria-labelledby="detail-view-title" data-presentation="modal">
   <div class="detail-view-shell">
     <header class="detail-view-header">
       <div class="detail-view-heading">
@@ -633,15 +634,15 @@
           <button class="secondary-button detail-view-step" type="button" data-statistics-step="-1" aria-label="Vorherige Partie"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 18-6-6 6-6"></path></svg></button>
           <button class="secondary-button detail-view-step" type="button" data-statistics-step="1" aria-label="Nächste Partie"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"></path></svg></button>
         </div>
-        <button class="detail-view-presentation-toggle" id="match-statistics-presentation-toggle" type="button" data-match-statistics-presentation-toggle aria-label="Partiestatistik als Seitenpanel öffnen" title="Partiestatistik als Seitenpanel öffnen" hidden>
+        <button class="secondary-button detail-view-presentation-toggle" id="match-statistics-presentation-toggle" type="button" data-match-statistics-presentation-toggle aria-label="Partiestatistik als Seitenpanel öffnen" title="Partiestatistik als Seitenpanel öffnen" hidden>
           <svg class="detail-view-presentation-icon detail-view-presentation-icon-panel" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></svg>
           <svg class="detail-view-presentation-icon detail-view-presentation-icon-modal" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="6" width="14" height="12" rx="2"/></svg>
         </button>
-        <button class="detail-view-close" type="button" data-detail-view-back aria-label="Final Four schließen" title="Final Four schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
+        <button class="secondary-button detail-view-close" type="button" data-detail-view-back aria-label="Final Four schließen" title="Final Four schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
       </div>
     </header>
     <section class="detail-view-content" id="detail-view">
-      <div class="final-four-view-nav" id="final-four-view-switcher" aria-label="Final-Four-Partie auswählen"></div>
+      <div class="site-nav" id="final-four-view-switcher" aria-label="Final-Four-Partie auswählen"></div>
       <div id="detail-view-body">
         <div class="empty-state">Der Liveticker wird geladen …</div>
       </div>
@@ -650,12 +651,12 @@
 </dialog>
 </div>
 
-<dialog class="auth-dialog" id="live-cancel-dialog" aria-labelledby="live-cancel-title" aria-describedby="live-cancel-description">
-  <button class="modal-close-button auth-dialog-close" type="button" data-live-cancel-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
-  <div class="auth-dialog-card">
+<dialog class="dialog" id="live-cancel-dialog" aria-labelledby="live-cancel-title" aria-describedby="live-cancel-description">
+  <button class="secondary-button modal-close-button" type="button" data-live-cancel-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
+  <div class="dialog-card">
     <div class="eyebrow">Liveticker</div>
     <h2 id="live-cancel-title">Liveticker verwerfen?</h2>
-    <p class="auth-dialog-copy" id="live-cancel-description">Der öffentliche Spielverlauf wird entfernt. Die Partie bleibt für die normale Ergebniseingabe offen.</p>
+    <p class="dialog-copy" id="live-cancel-description">Der öffentliche Spielverlauf wird entfernt. Die Partie bleibt für die normale Ergebniseingabe offen.</p>
     <div class="player-email-actions">
       <button class="secondary-button" type="button" data-live-cancel-close>Abbrechen</button>
       <button class="primary-button" type="button" data-live-cancel-confirm>Liveticker verwerfen</button>
@@ -663,12 +664,12 @@
   </div>
 </dialog>
 
-<dialog class="auth-dialog" id="unschedule-match-dialog" aria-labelledby="unschedule-match-title" aria-describedby="unschedule-match-description">
-  <button class="modal-close-button auth-dialog-close" type="button" data-unschedule-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
-  <div class="auth-dialog-card">
+<dialog class="dialog" id="unschedule-match-dialog" aria-labelledby="unschedule-match-title" aria-describedby="unschedule-match-description">
+  <button class="secondary-button modal-close-button" type="button" data-unschedule-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
+  <div class="dialog-card">
     <div class="eyebrow">Partie</div>
     <h2 id="unschedule-match-title">Termin löschen</h2>
-    <p class="auth-dialog-copy" id="unschedule-match-description">Soll der Termin dieser Partie wirklich gelöscht werden? Diese Aktion kann nicht rückgängig gemacht werden. Der Outlook-Termin und die Schläger-Reservierung werden ebenfalls gelöscht.</p>
+    <p class="dialog-copy" id="unschedule-match-description">Soll der Termin dieser Partie wirklich gelöscht werden? Diese Aktion kann nicht rückgängig gemacht werden. Der Outlook-Termin und die Schläger-Reservierung werden ebenfalls gelöscht.</p>
     <div class="player-email-actions">
       <button class="secondary-button" type="button" data-unschedule-close>Abbrechen</button>
       <button class="danger-button" type="button" data-unschedule-confirm>Termin löschen</button>
@@ -676,12 +677,12 @@
   </div>
 </dialog>
 
-<dialog class="auth-dialog" id="unrate-match-dialog" aria-labelledby="unrate-match-title" aria-describedby="unrate-match-description">
-  <button class="modal-close-button auth-dialog-close" type="button" data-unrate-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
-  <div class="auth-dialog-card">
+<dialog class="dialog" id="unrate-match-dialog" aria-labelledby="unrate-match-title" aria-describedby="unrate-match-description">
+  <button class="secondary-button modal-close-button" type="button" data-unrate-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
+  <div class="dialog-card">
     <div class="eyebrow">Partie</div>
     <h2 id="unrate-match-title">Partie nicht werten?</h2>
-    <p class="auth-dialog-copy" id="unrate-match-description">Diese Partie wird dauerhaft als „ohne Wertung“ markiert. Sie zählt nicht für die Rangliste, Elo oder Tipps. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+    <p class="dialog-copy" id="unrate-match-description">Diese Partie wird dauerhaft als „ohne Wertung“ markiert. Sie zählt nicht für die Rangliste, Elo oder Tipps. Diese Aktion kann nicht rückgängig gemacht werden.</p>
     <div class="player-email-actions">
       <button class="secondary-button" type="button" data-unrate-close>Abbrechen</button>
       <button class="danger-button" type="button" data-unrate-confirm>Nicht werten</button>
@@ -690,7 +691,7 @@
 </dialog>
 
 <div id="player-profile-modal-host">
-<dialog class="player-profile-dialog" id="player-profile-dialog" aria-labelledby="player-profile-name" data-presentation="modal">
+<dialog class="dialog dialog--page player-profile-dialog" id="player-profile-dialog" aria-labelledby="player-profile-name" data-presentation="modal">
   <svg class="achievement-symbols" aria-hidden="true">
     <symbol id="achievement-laurel-left" viewBox="0 0 627.96 1166.47">
       <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="9.33" d="M557.89 1161.81C222.45 1108.78 108.83 690.9 211.51 408.18c36.54-100.61 105.11-186.32 189.43-251.48"/>
@@ -701,11 +702,11 @@
       <path fill="currentColor" d="M200.02 1121.56s-80.68-130 36.83-314.82c4.43 9.89 62.18 171.83-36.83 314.82ZM276.97 1068.8s147.88 39.26 290.4-127.04c-10.75-1.35-182.49-9.37-290.4 127.04ZM406.9 880.71s151.77-19.39 221.06-227.15c-10.46 2.8-172.56 60.13-221.06 227.15ZM455.75 672.06s137.49-67.14 136.34-286.15c-9.01 6.02-144.08 112.4-136.34 286.15ZM433.81 451.28s114.46-101.53 54.66-312.22c-7.07 8.21-108.69 146.9-54.66 312.22ZM362.89 294.13S427.61 162.55 303.36 0c-3.33 9.82-44.14 169.22 59.53 294.13ZM354.31 979.19s-124.57-113.02-62.56-340.04c7.78 9 118.53 154.78 62.56 340.04ZM444.63 725.92S314.02 651.85 309.1 431.05c9.35 6.39 135.2 104.98 135.53 294.87ZM319.89 275.41c-37.43-27.19-80.51-45.93-124.95-58.81.09 9.22 1.36 18.42 3.77 27.31 2.98 11.02 7.68 21.51 12.86 31.69 41.4 81.32 125.52 158.37 217.36 176.43-.3-10.34-7.29-24.21-10.17-34.36-16.65-58.66-49.18-106.17-98.87-142.27ZM217.74 132.82C156.73 83.5 78.53 55.89.08 55.98c-1.88 24.66 30.62 47.43 47.64 60.31 38.98 29.48 79.99 49.56 127.66 62.42 29.34 7.92 62.33 14.28 92.79 14.23.91 0 1.95-.07 2.51-.78.8-1.03.04-2.5-.73-3.56-6.03-8.36-13.82-15.26-20.15-23.39-9.47-12.14-20.09-22.72-32.06-32.4Z"/>
     </symbol>
   </svg>
-  <button class="modal-close-button player-profile-presentation-toggle" id="player-profile-presentation-toggle" type="button" data-player-profile-presentation-toggle aria-label="Profil als Seitenpanel öffnen" title="Profil als Seitenpanel öffnen" hidden>
+  <button class="secondary-button modal-close-button player-profile-presentation-toggle" id="player-profile-presentation-toggle" type="button" data-player-profile-presentation-toggle aria-label="Profil als Seitenpanel öffnen" title="Profil als Seitenpanel öffnen" hidden>
     <svg class="player-profile-presentation-icon player-profile-presentation-icon-panel" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/></svg>
     <svg class="player-profile-presentation-icon player-profile-presentation-icon-modal" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="6" width="14" height="12" rx="2"/></svg>
   </button>
-  <button class="modal-close-button player-profile-close" type="button" data-player-profile-close aria-label="Spielerprofil schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
+  <button class="secondary-button modal-close-button player-profile-close" type="button" data-player-profile-close aria-label="Spielerprofil schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="player-profile-shell">
     <div class="player-profile-state" id="player-profile-state" role="status">Spielerprofil wird geladen …</div>
     <div class="player-profile-content" id="player-profile-content" hidden>
@@ -753,7 +754,7 @@
       <article class="widget player-profile-widget player-profile-history">
         <div class="player-profile-section-heading">
           <h3>Partien</h3>
-          <div class="match-scope-toggle" aria-label="Partien filtern">
+          <div class="toggle" aria-label="Partien filtern">
             <button type="button" class="active" data-player-profile-match-scope="past" aria-pressed="true">Vergangene</button>
             <button type="button" data-player-profile-match-scope="upcoming" aria-pressed="false">Kommende</button>
           </div>
@@ -766,9 +767,9 @@
 </dialog>
 </div>
 
-<dialog class="auth-dialog tipp-invitation-dialog" id="tipp-invitation-dialog" aria-labelledby="tipp-invitation-title" aria-describedby="tipp-invitation-copy">
-  <button class="modal-close-button auth-dialog-close" type="button" data-tipp-invitation-close aria-label="Tipp-Hinweis schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
-  <div class="auth-dialog-card tipp-invitation-card">
+<dialog class="dialog" id="tipp-invitation-dialog" aria-labelledby="tipp-invitation-title" aria-describedby="tipp-invitation-copy">
+  <button class="secondary-button modal-close-button" type="button" data-tipp-invitation-close aria-label="Tipp-Hinweis schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
+  <div class="dialog-card tipp-invitation-card">
     <span class="tipp-invitation-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" focusable="false">
         <path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
@@ -777,7 +778,7 @@
     </span>
     <div class="eyebrow">PadelTipp</div>
     <h2 id="tipp-invitation-title">Schon getippt?</h2>
-    <p class="auth-dialog-copy" id="tipp-invitation-copy">Tippe jetzt die nächsten Partien und sammle Punkte für die PadelTipp-Rangliste.</p>
+    <p class="dialog-copy" id="tipp-invitation-copy">Tippe jetzt die nächsten Partien und sammle Punkte für die PadelTipp-Rangliste.</p>
     <div class="player-email-actions">
       <button class="secondary-button" type="button" data-tipp-invitation-close>Nicht jetzt</button>
       <button class="primary-button" type="button" data-tipp-invitation-link>Jetzt tippen</button>
@@ -785,9 +786,9 @@
   </div>
 </dialog>
 
-<dialog class="auth-dialog whats-new-dialog" id="whats-new-dialog" aria-labelledby="whats-new-title">
-  <button class="modal-close-button auth-dialog-close" type="button" data-whats-new-close aria-label="Neuigkeiten schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
-  <div class="auth-dialog-card whats-new-card">
+<dialog class="dialog dialog--page" id="whats-new-dialog" aria-labelledby="whats-new-title">
+  <button class="secondary-button modal-close-button" type="button" data-whats-new-close aria-label="Neuigkeiten schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
+  <div class="dialog-card whats-new-card">
     <header class="whats-new-hero">
       <img class="whats-new-app-icon" src="data/icon-192.png" alt="" width="76" height="76">
       <div>
@@ -839,9 +840,9 @@
   </div>
 </dialog>
 
-<dialog class="auth-dialog" id="auth-dialog" aria-labelledby="auth-dialog-title">
-  <button class="modal-close-button auth-dialog-close" type="button" data-auth-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
-  <div class="auth-dialog-card">
+<dialog class="dialog" id="auth-dialog" aria-labelledby="auth-dialog-title">
+  <button class="secondary-button modal-close-button" type="button" data-auth-close aria-label="Dialog schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
+  <div class="dialog-card">
     <div id="auth-guest-view">
       <div class="eyebrow">Dein Padel-Konto</div>
       <h2 id="auth-dialog-title">Einloggen</h2>
@@ -865,13 +866,13 @@
     <div id="auth-confirmation-view" hidden>
       <div class="eyebrow">Geschützter Link</div>
       <h2 id="auth-confirmation-title">Link bestätigen</h2>
-      <p class="auth-dialog-copy" id="auth-confirmation-copy">Öffne jetzt den geschützten Einmal-Link.</p>
+      <p class="dialog-copy" id="auth-confirmation-copy">Öffne jetzt den geschützten Einmal-Link.</p>
       <button class="primary-button" type="button" data-auth-confirmation-continue>Weiter</button>
     </div>
     <div id="auth-password-view" hidden>
       <div class="eyebrow">Dein Zugang</div>
       <h2 id="auth-password-title">Passwort festlegen</h2>
-      <p class="auth-dialog-copy" id="auth-password-copy">Lege ein persönliches Passwort mit mindestens 8 Zeichen fest.</p>
+      <p class="dialog-copy" id="auth-password-copy">Lege ein persönliches Passwort mit mindestens 8 Zeichen fest.</p>
       <form id="auth-password-form" class="auth-form">
         <label data-current-password-field hidden>
           <span>Aktuelles Passwort</span>
@@ -899,15 +900,15 @@
           <p class="auth-account-email" id="account-email"></p>
         </div>
         <div class="account-header-actions">
-          <button class="secondary-button account-action-button" type="button" data-account-player-profile hidden>
+          <button class="secondary-button secondary-button--with-icon" type="button" data-account-player-profile hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g transform="rotate(45 12 12)"><path d="M12 1.8c3.2 0 5.4 2.3 5.4 5.5 0 2.9-1.7 5.2-3.9 6l-.4 1.6h-2.2l-.4-1.6c-2.2-.8-3.9-3.1-3.9-6 0-3.2 2.2-5.5 5.4-5.5Z"/><path d="M10.9 14.9h2.2v6.4a1.1 1.1 0 0 1-2.2 0Z"/><g fill="currentColor" stroke="none"><circle cx="10.1" cy="5.4" r=".75"/><circle cx="13.9" cy="5.4" r=".75"/><circle cx="12" cy="7.6" r=".75"/><circle cx="10.1" cy="9.8" r=".75"/><circle cx="13.9" cy="9.8" r=".75"/></g></g><circle cx="5.2" cy="5.2" r="2"/></svg>
             <span>Spielerprofil</span>
           </button>
-          <button class="secondary-button account-action-button" type="button" data-account-settings aria-expanded="false" aria-controls="account-settings-panel">
+          <button class="secondary-button secondary-button--with-icon" type="button" data-account-settings aria-expanded="false" aria-controls="account-settings-panel">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.86 2.86-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21H9.55v-.09A1.7 1.7 0 0 0 8.5 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.86-2.86.06-.06A1.7 1.7 0 0 0 4.1 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H2V9.55h.09A1.7 1.7 0 0 0 3.7 8.5a1.7 1.7 0 0 0-.34-1.88l-.06-.06L6.16 3.7l.06.06A1.7 1.7 0 0 0 8.1 4.1a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V2h4.05v.09A1.7 1.7 0 0 0 14.6 3.7a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.86 2.86-.06.06A1.7 1.7 0 0 0 19 8.1a1.7 1.7 0 0 0 .6 1 1.7 1.7 0 0 0 1.1.4h.3v4.05h-.09A1.7 1.7 0 0 0 19.4 15Z"/></svg>
             <span>Einstellungen</span>
           </button>
-          <button class="secondary-button account-action-button" id="player-invite-open" type="button" data-player-invite-open hidden>
+          <button class="secondary-button secondary-button--with-icon" id="player-invite-open" type="button" data-player-invite-open hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.6 6.6 8.4 6.4 8.4-6.4"/></svg>
             <span>E-Mails</span>
           </button>
@@ -923,7 +924,6 @@
         </div>
         <div class="account-settings-mail">
           <h3>E-Mail-Benachrichtigungen</h3>
-          <p>Du kannst jede automatische Mail einzeln ausschalten.</p>
           <label class="account-setting-row">
             <span><strong>Ergebnis eintragen</strong><small>Erinnerung 5 Stunden nach Spielbeginn, solange noch kein Ergebnis eingetragen wurde.</small></span>
             <input type="checkbox" role="switch" data-email-notification="resultEntry" checked>
@@ -970,7 +970,7 @@
               </h2>
               <button class="secondary-button" type="button" data-training-toggle>Training hinzufügen</button>
             </div>
-            <div class="match-scope-toggle account-result-scope-toggle" aria-label="Partienübersicht filtern" data-account-result-scope-toggle hidden>
+            <div class="toggle" aria-label="Partienübersicht filtern" data-account-result-scope-toggle hidden>
               <button type="button" class="active" data-account-result-scope="relevant" aria-pressed="true">Relevant</button>
               <button type="button" data-account-result-scope="all" aria-pressed="false">Alle</button>
             </div>
@@ -1009,12 +1009,12 @@
   </div>
 </dialog>
 
-<dialog class="auth-dialog player-invite-dialog" id="player-invite-dialog" aria-labelledby="player-invite-title">
-  <button class="modal-close-button auth-dialog-close" type="button" data-player-invite-close aria-label="Einladung schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
-  <div class="auth-dialog-card">
+<dialog class="dialog" id="player-invite-dialog" aria-labelledby="player-invite-title">
+  <button class="secondary-button modal-close-button" type="button" data-player-invite-close aria-label="Einladung schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
+  <div class="dialog-card">
     <div class="eyebrow">Kontoverwaltung</div>
     <h2 id="player-invite-title">Spielerzugänge</h2>
-    <p class="auth-dialog-copy">Ordne die Arbeits-E-Mail zu und erstelle bei Bedarf eine persönliche Einladung für den manuellen Versand. Bereits zugeordnete Spieler können erneut eingeladen werden.</p>
+    <p class="dialog-copy">Ordne die Arbeits-E-Mail zu und erstelle bei Bedarf eine persönliche Einladung für den manuellen Versand. Bereits zugeordnete Spieler können erneut eingeladen werden.</p>
     <form id="player-invite-form" class="auth-form">
       <label>
         <span>Spieler</span>

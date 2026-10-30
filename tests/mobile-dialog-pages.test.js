@@ -17,6 +17,7 @@ function setup({ search = '', mobile = true } = {}) {
   const nodes = {
     'auth-dialog': dialog(),
     'player-profile-dialog': dialog(),
+    'whats-new-dialog': dialog(),
     'detail-view-dialog': { open: false }
   };
   const stack = [{ state: null }];
@@ -66,6 +67,24 @@ test('Zurück-Geste schließt das mobile Konto und lässt die Seite offen', () =
   flush();
   assert.equal(nodes['auth-dialog'].open, false);
   assert.equal(entries(), 0);
+});
+
+test('Zurück-Geste schließt auch „Was ist neu?“ und der Wechsel ins Konto bleibt ein Schritt', () => {
+  const { nodes, flush, history, entries } = setup();
+  nodes['whats-new-dialog'].open = true;
+  flush();
+  assert.equal(entries(), 1);
+  history.back();
+  flush();
+  assert.equal(nodes['whats-new-dialog'].open, false);
+  assert.equal(entries(), 0);
+
+  nodes['whats-new-dialog'].open = true;
+  flush();
+  nodes['whats-new-dialog'].open = false;
+  nodes['auth-dialog'].open = true;
+  flush();
+  assert.equal(entries(), 1);
 });
 
 test('Schließen per Button entfernt den Verlaufseintrag wieder', () => {

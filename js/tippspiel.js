@@ -103,7 +103,10 @@
   function renderPredictionCompanyBadge(entry) {
     const company = String(entry?.company || '').trim();
     if (!company) return '';
-    const shortLabel = COMPANY_SHORT_LABELS[company] || company.slice(0, 3).toUpperCase();
+    if (COMPANY_SHORT_LABELS[company]) {
+      return `<span class="firma-badge firma-icon firma-${escapeHtml(company)} prediction-company-badge" role="img" aria-label="Firma ${escapeHtml(company)}" title="${escapeHtml(company)}"></span>`;
+    }
+    const shortLabel = company.slice(0, 3).toUpperCase();
     return `<span class="firma-badge firma-${escapeHtml(company)} prediction-company-badge" aria-label="Firma ${escapeHtml(company)}" title="${escapeHtml(company)}">${escapeHtml(shortLabel)}</span>`;
   }
 
@@ -909,7 +912,7 @@
       `;
     }
     const details = [
-      { value: `+${formatCount(latest.points)}`, label: latest.points === 1 ? 'Punkt' : 'Punkte' }
+      { value: `${latest.points > 0 ? '+' : ''}${formatCount(latest.points)}`, label: latest.points === 1 ? 'Punkt' : 'Punkte' }
     ];
     if (latest.exact) details.push({ value: `${latest.exact}×`, label: 'exakt' });
     if (latest.tendency) details.push({ value: `${latest.tendency}×`, label: 'Sieger richtig' });
@@ -1163,57 +1166,16 @@
     </span>`;
   }
 
-  function updatePredictionRankingSortHeaders() {
-    if (!document.querySelectorAll) return;
-    document.querySelectorAll('[data-prediction-ranking-sort]').forEach(button => {
-      const header = button.closest('th');
-      if (!header) return;
-      if (button.dataset.predictionRankingSort === state.leaderboardSortMode) {
-        header.setAttribute('aria-sort', 'descending');
-      } else {
-        header.removeAttribute('aria-sort');
-      }
-    });
-  }
-
-  function getPredictionRankingRowPositions(body) {
-    if (!body?.querySelectorAll) return new Map();
-    return new Map([...body.querySelectorAll('.ranking-row[data-ranking-entry]')]
-      .map(row => [row.dataset.rankingEntry, row.getBoundingClientRect().top])
-      .filter(([entryId, top]) => entryId && Number.isFinite(top)));
-  }
-
-  function animatePredictionRankingRows(body, previousPositions) {
-    if (!body?.querySelectorAll || !previousPositions.size || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    body.querySelectorAll('.ranking-row[data-ranking-entry]').forEach(row => {
-      const previousTop = previousPositions.get(row.dataset.rankingEntry);
-      if (!Number.isFinite(previousTop)) return;
-      const deltaY = previousTop - row.getBoundingClientRect().top;
-      if (Math.abs(deltaY) < 1) return;
-      row.style.transition = 'none';
-      row.style.transform = `translateY(${deltaY}px)`;
-      row.getBoundingClientRect();
-      requestAnimationFrame(() => {
-        row.style.transition = 'transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1)';
-        row.style.transform = 'translateY(0)';
-        window.setTimeout(() => {
-          row.style.transition = '';
-          row.style.transform = '';
-        }, 540);
-      });
-    });
-  }
-
   function renderLeaderboard() {
     const body = document.getElementById('prediction-ranking-body');
     const empty = document.getElementById('prediction-ranking-empty');
     if (!body || !empty) return;
 
-    const previousPositions = getPredictionRankingRowPositions(body);
+    const previousPositions = window.PadelTable.getRankingRowPositions(body, '.ranking-row');
     const sortedEntries = getSortedPredictionLeaderboard();
     const table = document.getElementById('prediction-ranking-table');
     if (table) table.dataset.rankingSort = state.leaderboardSortMode;
-    updatePredictionRankingSortHeaders();
+    window.PadelTable.updateSortHeaders('[data-prediction-ranking-sort]', 'predictionRankingSort', state.leaderboardSortMode);
     body.innerHTML = sortedEntries.map(({ entry, canonicalRank }, index) => `
       <tr class="ranking-row r${Math.min(index + 1, 4)} ${state.session?.user?.id === entry.user_id ? 'authenticated-player-highlight' : ''}" data-ranking-entry="${escapeHtml(entry.user_id)}">
         <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${index + 1}</span>${renderPredictionRankReference(index + 1, canonicalRank)}</span></td>
@@ -1225,7 +1187,7 @@
         <td class="col-points rank-score">${Number(entry.points) || 0}</td>
       </tr>
     `).join('');
-    animatePredictionRankingRows(body, previousPositions);
+    window.PadelTable.animateRankingRows(body, '.ranking-row', previousPositions);
     empty.textContent = state.leaderboardError || (!state.leaderboardReady && state.error)
       ? 'Die Rangliste kann gerade nicht geladen werden.'
       : state.leaderboard.length

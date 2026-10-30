@@ -8,12 +8,17 @@
     {
       name: 'og-design',
       label: 'OG-Design',
-      colors: { bg: '#07080C', surface: '#0E1017', border: '#343C4E', text: '#F3F4F1', dim: '#B9BBC2', accent: '#d4f53a' }
+      colors: { bg: '#07080C', surface: '#131620', border: '#343C4E', text: '#F3F4F1', dim: '#B9BBC2', accent: '#d4f53a' }
     },
     {
       name: 'hanako-leben',
       label: 'Hanako Leben',
-      colors: { bg: '#F7F4EE', surface: '#FFFFFF', border: '#E6E1D7', text: '#14303D', dim: '#4F6670', accent: '#316D88' }
+      colors: { bg: '#F7F4EE', surface: '#FFFFFF', border: '#E6E1D7', text: '#14303D', dim: '#4F6670', accent: '#397a98' }
+    },
+    {
+      name: 'headsquare',
+      label: 'Headsquare',
+      colors: { bg: '#0A0B1A', surface: '#121426', border: '#43465E', text: '#FFFFFF', dim: '#E3E3E3', accent: '#FF0000' }
     }
   ];
 

@@ -1,13 +1,15 @@
-// Konto und Spielerprofil wirken auf dem Handy wie eigene Seiten; die Zurück-Geste schließt sie deshalb auch wie eine Seite.
+// Konto, Spielerprofil und „Was ist neu?“ wirken auf dem Handy wie eigene Seiten; die Zurück-Geste schließt sie deshalb auch wie eine Seite.
 (() => {
   // Eingebettet teilt der Rahmen den Verlauf der Tippseite; dort führt die Tippseite den Zurück-Schritt.
   if (document.documentElement.classList.contains('is-detail-embed')) return;
 
   const authDialog = document.getElementById('auth-dialog');
   const profileDialog = document.getElementById('player-profile-dialog');
+  const whatsNewDialog = document.getElementById('whats-new-dialog');
   const pages = [
     { isOpen: () => Boolean(authDialog?.open), close: () => authDialog?.close() },
-    { isOpen: () => Boolean(profileDialog?.open), close: () => window.PadelLigaClosePlayerProfile?.({ fromHistory: true }) }
+    { isOpen: () => Boolean(profileDialog?.open), close: () => window.PadelLigaClosePlayerProfile?.({ fromHistory: true }) },
+    { isOpen: () => Boolean(whatsNewDialog?.open), close: () => whatsNewDialog?.close() }
   ];
   const mobile = window.matchMedia('(max-width: 768px)');
   let entryId = null;
@@ -34,7 +36,7 @@
     }
   }
 
-  [authDialog, profileDialog].filter(Boolean).forEach(dialog => {
+  [authDialog, profileDialog, whatsNewDialog].filter(Boolean).forEach(dialog => {
     new MutationObserver(sync).observe(dialog, { attributes: true, attributeFilter: ['open'] });
   });
   window.addEventListener('popstate', () => {

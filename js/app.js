@@ -55,7 +55,16 @@ const PLAYER_PROFILE_ACHIEVEMENT_LIMIT = 4;
 const PLAYER_PROFILE_PANEL_TRANSITION_MS = 220;
 const panelLayout = window.PadelLigaPanelLayout;
 const playerProfilePresentationStore = panelLayout.createPresentationPreference('padel-liga-player-profile-presentation');
-const PLAYER_PROFILE_ROW_SELECTOR = '#rangliste tr[data-player-profile-id], #all-time-ranking-table tr[data-player-profile-id], .calculator-ranking-table tr[data-player-profile-id], #home-ranking .mini-rank-row[data-player-profile-id]';
+const {
+  renderPlayerProfileRowAttributes,
+  updateSortHeaders,
+  getRankingRowPositions,
+  animateRankingRows,
+  getDeltaClass,
+  formatStatDiff,
+  renderDiffValue
+} = window.PadelTable;
+const PLAYER_PROFILE_ROW_SELECTOR = 'tr[data-player-profile-id], #home-ranking .mini-rank-row[data-player-profile-id]';
 const PROFILE_SEASON_COLOR_VARIABLES = Object.freeze({
   summer: '--season-summer',
   winter: '--season-winter',
@@ -1241,7 +1250,7 @@ function isMobileViewport() {
 
 function getViewerOptions() {
   return [
-    { id: 'sb', name: 'Spieler auswählen', short: '-/-', mobileLabel: 'Auswählen' },
+    { id: 'sb', name: 'Spieler auswählen', short: '-/-', mobileLabel: 'Auswählen', menuLabel: 'Auswählen' },
     ...PADEL_DATA.players.map(player => ({
       id: player.id,
       name: player.name,
@@ -1512,7 +1521,7 @@ function updateViewerPicker() {
       data-viewer-id="${option.id}"
       data-viewer-search-text="${escapeHtml(option.name)} ${escapeHtml(option.short)}"
     >
-      <span>${option.name}</span>
+      <span>${option.menuLabel || option.name}</span>
       <span>${option.short}</span>
     </button>
   `).join('') + '<div class="picker-search-empty" data-viewer-search-empty hidden>Kein Spieler gefunden.</div>';
@@ -3086,8 +3095,8 @@ function updatePlayerProfileHeroCondensed() {
 }
 
 function updatePlayerProfileRankingHighlights() {
-  document.querySelectorAll('#rangliste [data-profile-player-id], #all-time-ranking-table [data-profile-player-id]').forEach(row => {
-    const active = Boolean(playerProfileActiveId) && row.dataset.profilePlayerId === playerProfileActiveId;
+  document.querySelectorAll('#rangliste tr[data-player-profile-id], #all-time-ranking-table tr[data-player-profile-id]').forEach(row => {
+    const active = Boolean(playerProfileActiveId) && row.dataset.playerProfileId === playerProfileActiveId;
     row.classList.toggle('profile-open-highlight', active);
     row.querySelectorAll('[data-player-profile-id]').forEach(control => {
       control.setAttribute('aria-expanded', String(active));
@@ -3227,10 +3236,16 @@ function renderPlayerProfile(profile) {
   document.getElementById('player-profile-name').textContent = identity.displayName || 'Spielerprofil';
   const profileCompany = identity.company || 'PadelLiga';
   const profileCompanyElement = document.getElementById('player-profile-company');
-  profileCompanyElement.textContent = profileCompany;
+  const profileCompanyHasLogo = COMPANIES_WITH_LOGO.includes(profileCompany);
+  profileCompanyElement.textContent = profileCompanyHasLogo ? '' : profileCompany;
   profileCompanyElement.className = 'player-profile-company firma-badge';
-  if (['Envidual', 'Hanako', 'Headsquare'].includes(profileCompany)) {
+  profileCompanyElement.toggleAttribute('role', profileCompanyHasLogo);
+  profileCompanyElement.toggleAttribute('aria-label', profileCompanyHasLogo);
+  if (profileCompanyHasLogo) {
+    profileCompanyElement.classList.add('firma-logo');
     profileCompanyElement.classList.add(`firma-${profileCompany}`);
+    profileCompanyElement.setAttribute('role', 'img');
+    profileCompanyElement.setAttribute('aria-label', profileCompany);
   }
   configurePlayerProfileImage(
     document.getElementById('player-profile-avatar-image'),
@@ -3971,15 +3986,7 @@ function setRankingSort(mode) {
 }
 
 function updateRankingSortHeaders() {
-  document.querySelectorAll('#ranking-table [data-ranking-sort]').forEach(button => {
-    const header = button.closest('th');
-    if (!header) return;
-    if (button.dataset.rankingSort === rankingSortMode) {
-      header.setAttribute('aria-sort', rankingSortMode === 'draw-factor' ? 'ascending' : 'descending');
-    } else {
-      header.removeAttribute('aria-sort');
-    }
-  });
+  updateSortHeaders('#ranking-table [data-ranking-sort]', 'rankingSort', rankingSortMode, rankingSortMode === 'draw-factor' ? 'ascending' : 'descending');
 }
 
 function setRankingView(mode) {
@@ -4333,8 +4340,6 @@ function renderFirmenRanking() {
   );
   document.getElementById('fr-meta').textContent = '3 Firmen';
   document.getElementById('fr-body').innerHTML = stats.map((f, i) => {
-    const diffStr   = f.partien > 0 ? (f.spielDiff >= 0 ? `+${f.spielDiff}` : `${f.spielDiff}`) : '—';
-    const diffClass = getStatDiffClass(f.spielDiff);
     return `<tr class="r${i+1} ${isSelectedViewerFirma(f.firma) ? 'viewer-highlight' : ''}">
       <td class="col-rank rank-position">${i+1}</td>
       <td class="col-company"><span class="pname">${f.firma}</span></td>
@@ -4343,7 +4348,7 @@ function renderFirmenRanking() {
       <td class="col-points-per-player rank-score">${f.pktPerTN.toFixed(2)}</td>
       <td class="col-wins">${f.siege}</td>
       <td class="col-points">${f.punkte}</td>
-      <td class="col-diff"><span class="${f.partien > 0 ? diffClass : 'neu'}">${diffStr}</span></td>
+      <td class="col-diff">${renderDiffValue(f.spielDiff, { played: f.partien > 0 })}</td>
     </tr>`;
   }).join('');
 }
@@ -4474,19 +4479,19 @@ function renderFinalFourRanking() {
   }
 
   body.innerHTML = stats.map((player, index) => {
-    const diffClass = getStatDiffClass(player.diff);
-    const diffLabel = player.diff > 0 ? `+${player.diff}` : String(player.diff);
     const eloPlayer = PADEL_DATA.players.find(entry => entry.name === player.name);
     const replacementMark = showSummerReplacement && eloPlayer?.id === 'ludwig_w'
       ? '<span class="ranking-absence-mark"><span aria-hidden="true">*</span><span class="sr-only">, nachgerückt für Marco M.</span></span>'
       : '';
 
-    return `<tr class="r${index + 1}" data-profile-player-id="${escapeHtml(eloPlayer?.id || getPlayerIdByName(player.name) || '')}">
+    const profilePlayerId = eloPlayer?.id || getPlayerIdByName(player.name);
+
+    return `<tr class="r${index + 1}"${renderPlayerProfileRowAttributes({ id: profilePlayerId, name: player.name })}>
       <td class="col-rank rank-position">${index + 1}</td>
       <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(player, 'pname')}${replacementMark}</span></td>
       <td class="col-wins rank-score">${player.siege}</td>
       <td class="col-gv">${player.spieleGV}</td>
-      <td class="col-diff"><span class="${diffClass}">${diffLabel}</span></td>
+      <td class="col-diff">${renderDiffValue(player.diff)}</td>
       <td class="col-elo">${eloPlayer ? getLatestPlayerElo(eloPlayer) : '—'}</td>
     </tr>`;
   }).join('');
@@ -4504,8 +4509,38 @@ function formatSignedInteger(value) {
   return value > 0 ? `+${value}` : `${value}`;
 }
 
-function getDeltaClass(value) {
-  return value > 0 ? 'pos' : value < 0 ? 'neg' : 'neu';
+// Spieler ohne Vorschaubild werden gemerkt, damit nicht jedes Neurendern erneut eine 404-Anfrage auslöst.
+const playersWithoutRankingAvatar = new Set();
+
+document.addEventListener('error', event => {
+  const image = event.target.closest?.('[data-ranking-avatar-image]');
+  if (!image) return;
+  playersWithoutRankingAvatar.add(image.dataset.rankingAvatarImage);
+  image.hidden = true;
+  image.nextElementSibling?.removeAttribute('hidden');
+}, true);
+
+// Das Bild belegt in der Punktesortierung die Lücke, die sonst der Punkte-Rang füllt.
+const COMPANIES_WITH_LOGO = Object.freeze(['Envidual', 'Hanako', 'Headsquare']);
+
+function renderCompanyIcon(company, extraClass = '') {
+  const name = escapeHtml(company);
+  return `<span class="firma-badge firma-icon firma-${name}${extraClass}" role="img" aria-label="Firma ${name}" title="${name}"></span>`;
+}
+
+function renderRankingCompanyBadge(player) {
+  return COMPANIES_WITH_LOGO.includes(player.firma)
+    ? renderCompanyIcon(player.firma)
+    : `<span class="firma-badge">${escapeHtml(player.firma)}</span>`;
+}
+
+function renderRankingAvatar(player) {
+  const playerId = player.id || '';
+  const emoji = ['👨', '👩'].includes(player.profileEmoji) ? player.profileEmoji : '👤';
+  const hasImage = playerId && !playersWithoutRankingAvatar.has(playerId);
+  return `<span class="ranking-avatar" aria-hidden="true">${hasImage
+    ? `<img class="ranking-avatar-image" src="assets/players/${encodeURIComponent(playerId)}/thumb.jpg" alt="" loading="lazy" data-ranking-avatar-image="${escapeHtml(playerId)}">`
+    : ''}<span class="ranking-avatar-emoji"${hasImage ? ' hidden' : ''}>${emoji}</span></span>`;
 }
 
 function renderPointsRankReference(currentRank, pointsRank) {
@@ -4775,7 +4810,6 @@ function renderRanking() {
   const rankMap = getRankingPositionMap('points');
   const drawFactorRankMap = getDrawFactorReferenceRankMap();
   if (!drawFactorRankMap) requestDrawFactorReference();
-  const firmaShort = { Envidual: 'Env', Headsquare: 'Hsq', Hanako: 'Han' };
   const maximumLeagueMatches = getMaximumLeagueMatches();
   const gamesNote = maximumLeagueMatches > 0 ? `Spiele: ${maximumLeagueMatches}` : '';
   const withGamesNote = (...parts) => parts.filter(Boolean).join('  |  ');
@@ -4805,8 +4839,6 @@ function renderRanking() {
     const currentRank = i + 1;
     const pointsRank = rankMap.get(p.name);
     const extras = getPlayerRankingExtras(p, drawFactorRankMap);
-    const spielDiffStr = p.stats.partien > 0 ? (p.stats.spielDiff >= 0 ? `+${p.stats.spielDiff}` : `${p.stats.spielDiff}`) : '—';
-    const spielDiffClass = getStatDiffClass(p.stats.spielDiff);
     const isTopFourQualifier = getCompetitionConfig().qualificationPlaces > 0
       && pointsRank <= getCompetitionConfig().qualificationPlaces;
     const rankingPlayerLabel = isMobileViewport() && rankingViewMode === 'expanded'
@@ -4815,14 +4847,14 @@ function renderRanking() {
     const absenceMark = showMarcoAbsence && p.id === 'marco_m'
       ? '<span class="ranking-absence-mark"><span aria-hidden="true">*</span><span class="sr-only">Krankheitsbedingter Ausfall beim Final Four</span></span>'
       : '';
-    return `<tr class="ranking-row r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(p.id || p.name)}" data-profile-player-id="${escapeHtml(p.id || '')}" data-player-profile-id="${escapeHtml(p.id || '')}" tabindex="0" role="link" aria-label="Profil von ${escapeHtml(p.name)} öffnen">
-      <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${renderPointsRankReference(currentRank, pointsRank)}</span></td>
-      <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}</span>${absenceMark}<span class="firma-badge firma-${p.firma}"><span class="firma-full">${p.firma}</span><span class="firma-short">${firmaShort[p.firma] || p.firma}</span></span>${renderLeagueRankingAchievementIcon(p)}</span></td>
+    return `<tr class="ranking-row r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(p.id || p.name)}"${renderPlayerProfileRowAttributes(p)}>
+      <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${rankingSortMode === 'points' ? renderRankingAvatar(p) : renderPointsRankReference(currentRank, pointsRank)}</span></td>
+      <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}</span>${absenceMark}${renderRankingCompanyBadge(p)}${renderLeagueRankingAchievementIcon(p)}</span></td>
       <td class="col-games">${renderRankingMatchCount(p)}</td>
       <td class="col-wins">${p.stats.siege}</td>
       <td class="col-points rank-score">${p.stats.punkte}</td>
       <td class="col-gv">${p.stats.partien > 0 ? p.stats.spieleGV : '—'}</td>
-      <td class="col-diff"><span class="${p.stats.partien > 0 ? spielDiffClass : 'neu'}">${spielDiffStr}</span></td>
+      <td class="col-diff">${renderDiffValue(p.stats.spielDiff, { played: p.stats.partien > 0 })}</td>
       <td class="col-elo">${getLatestPlayerElo(p)}</td>
       <td class="col-form">${extras.form}</td>
       <td class="col-winrate">${extras.winQuote === null ? '—' : `${extras.winQuote}%`}</td>
@@ -5017,15 +5049,7 @@ function renderAllTimePointsRankReference(currentRank, pointsRank) {
 }
 
 function updateAllTimeRankingSortHeaders() {
-  document.querySelectorAll('[data-all-time-ranking-sort]').forEach(button => {
-    const header = button.closest('th');
-    if (!header) return;
-    if (button.dataset.allTimeRankingSort === allTimeRankingSortMode) {
-      header.setAttribute('aria-sort', 'descending');
-    } else {
-      header.removeAttribute('aria-sort');
-    }
-  });
+  updateSortHeaders('[data-all-time-ranking-sort]', 'allTimeRankingSort', allTimeRankingSortMode);
 }
 
 function renderAllTimeRanking() {
@@ -5071,28 +5095,23 @@ function renderAllTimeRanking() {
     .sort(compareAllTimeRankingByPoints)
     .map((player, index) => [player.id || player.name, index + 1]));
   const rankedPlayers = [...players].sort((left, right) => compareAllTimeRanking(left, right, allTimeRankingSortMode));
-  const firmaShort = { Envidual: 'Env', Headsquare: 'Hsq', Hanako: 'Han' };
 
   meta.textContent = `${rankedPlayers.length} Spieler`;
   body.innerHTML = rankedPlayers.map((player, index) => {
     const currentRank = index + 1;
-    const spielDiffStr = player.stats.partien > 0
-      ? player.stats.spielDiff >= 0 ? `+${player.stats.spielDiff}` : String(player.stats.spielDiff)
-      : '—';
-    const spielDiffClass = getStatDiffClass(player.stats.spielDiff);
     const rankingPlayerLabel = isMobileViewport() && allTimeRankingViewMode === 'expanded'
       ? player.initials || player.name
       : player.name;
 
-    return `<tr class="ranking-row r${Math.min(currentRank, 4)} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id || player.name)}" data-profile-player-id="${escapeHtml(player.id || '')}" data-player-profile-id="${escapeHtml(player.id || '')}" tabindex="0" role="link" aria-label="Profil von ${escapeHtml(player.name)} öffnen">
-      <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${renderAllTimePointsRankReference(currentRank, pointsRankMap.get(player.id || player.name))}</span></td>
-      <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(player, 'pname', rankingPlayerLabel)}<span class="firma-badge firma-${player.firma}"><span class="firma-full">${player.firma}</span><span class="firma-short">${firmaShort[player.firma] || player.firma}</span></span></span></td>
+    return `<tr class="ranking-row r${Math.min(currentRank, 4)} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id || player.name)}"${renderPlayerProfileRowAttributes(player)}>
+      <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${allTimeRankingSortMode === 'points' ? renderRankingAvatar(player) : renderAllTimePointsRankReference(currentRank, pointsRankMap.get(player.id || player.name))}</span></td>
+      <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(player, 'pname', rankingPlayerLabel)}${renderRankingCompanyBadge(player)}</span></td>
       <td class="col-games">${isLeagueScope ? renderRankingMatchCount(player, matches) : formatAllTimeRankingValue(player.stats.partien)}</td>
       <td class="col-wins">${formatAllTimeRankingValue(player.stats.siege)}</td>
       <td class="col-points rank-score">${formatAllTimeRankingValue(player.stats.punkte)}</td>
       <td class="col-average-points">${formatAllTimeAveragePoints(player.stats)}</td>
       <td class="col-gv">${player.stats.partien > 0 ? player.stats.spieleGV : '—'}</td>
-      <td class="col-diff"><span class="${player.stats.partien > 0 ? spielDiffClass : 'neu'}">${spielDiffStr}</span></td>
+      <td class="col-diff">${renderDiffValue(player.stats.spielDiff, { played: player.stats.partien > 0 })}</td>
     </tr>`;
   }).join('');
   animateRankingRows(body, '.ranking-row', previousPositions);
@@ -5154,11 +5173,6 @@ function getPlayerIdByName(playerName) {
     .find(item => item.name === playerName);
   if (player?.id) return player.id;
   return (window.PADEL_PLAYERS || []).find(item => item.name === playerName)?.id || null;
-}
-
-function renderPlayerProfileRowAttributes(player) {
-  if (!player?.id || !player.name) return '';
-  return ` data-player-profile-id="${escapeHtml(player.id)}" tabindex="0" role="link" aria-label="Profil von ${escapeHtml(player.name)} öffnen"`;
 }
 
 function renderPlayerProfileLink(player, className = '', displayName = '') {
@@ -5608,8 +5622,8 @@ function renderPredictionAccountTypeIcon(entry) {
 function renderPredictionCompanyBadge(entry) {
   const company = String(entry?.company || '').trim();
   if (!company) return '';
-  const shortLabels = { Envidual: 'ENV', Headsquare: 'HSQ', Hanako: 'HAN', Test: 'TEST' };
-  const shortLabel = shortLabels[company] || company.slice(0, 3).toUpperCase();
+  if (COMPANIES_WITH_LOGO.includes(company)) return renderCompanyIcon(company, ' prediction-company-badge');
+  const shortLabel = company === 'Test' ? 'TEST' : company.slice(0, 3).toUpperCase();
   return `<span class="firma-badge firma-${escapeHtml(company)} prediction-company-badge" aria-label="Firma ${escapeHtml(company)}" title="${escapeHtml(company)}">${escapeHtml(shortLabel)}</span>`;
 }
 
@@ -5778,7 +5792,7 @@ function renderHome() {
   document.getElementById('home-ranking').innerHTML = homeRankingEntries
     .map(({ player: p, rank, separated }) => {
       const spielDiffStr = p.stats.partien > 0 ? formatStatDiff(p.stats.spielDiff) : '—';
-      const spielDiffClass = getStatDiffClass(p.stats.spielDiff);
+      const spielDiffClass = getDeltaClass(p.stats.spielDiff);
 
       return `<div class="mini-rank-row r${rank}${isSelectedPlayer(p.name) ? ' viewer-highlight' : ''}${separated ? ' home-ranking-selected-row' : ''}"${renderPlayerProfileRowAttributes(p)}>
       <span class="rank-position">${rank}</span>
@@ -6440,7 +6454,7 @@ function renderDominantMatches() {
         <span class="rank-position">${index + 1}</span>
         <div>
           <div class="mini-rank-name">${renderStatTeamPlayers(getWinnerTeam(item.match))}</div>
-          <div class="stat-meta-line">${formatStatisticsMatchLabel(item.match)} · ${formatWinnerResult(item.match)} · +${item.gameStats.diff}</div>
+          <div class="stat-meta-line">${formatStatisticsMatchLabel(item.match)} · ${formatWinnerResult(item.match)} · ${formatStatDiff(item.gameStats.diff)}</div>
         </div>
       </div>
     `).join('')
@@ -7575,8 +7589,6 @@ function renderCalculatorRanking() {
 
   renderCalculatorMiniRanking(rankedPlayers, previousMiniPositions, activePlayerIds);
   body.innerHTML = rankedPlayers.map((player, index) => {
-    const diffStr = player.stats.partien > 0 ? formatStatDiff(player.stats.spielDiff) : '—';
-    const diffClass = getStatDiffClass(player.stats.spielDiff);
     const activeMatchClass = activePlayerIds.has(player.id) ? 'calculator-active-match-player' : '';
     const qualificationClass = index < qualificationPlaces ? 'top-four-highlight' : '';
 
@@ -7585,7 +7597,7 @@ function renderCalculatorRanking() {
       <td class="col-name">${renderPlayerProfileLink(player, 'pname')}</td>
       <td class="col-games">${player.stats.partien}</td>
       <td class="col-points rank-score">${player.stats.punkte}</td>
-      <td class="col-diff"><span class="${player.stats.partien > 0 ? diffClass : 'neu'}">${diffStr}</span></td>
+      <td class="col-diff">${renderDiffValue(player.stats.spielDiff, { played: player.stats.partien > 0 })}</td>
     </tr>`;
   }).join('');
   animateRankingRows(body, '.calculator-ranking-row', previousRankingPositions);
@@ -7606,42 +7618,6 @@ function renderCalculatorMiniRanking(rankedPlayers, previousPositions = null, ac
     </div>`;
   }).join('');
   animateRankingRows(miniRanking, '.calculator-mini-rank-row', previousPositions);
-}
-
-function getRankingRowPositions(container, rowSelector, entryDatasetKey = 'rankingEntry') {
-  if (!container) return null;
-
-  return new Map([...container.querySelectorAll(rowSelector)]
-    .map(row => [row.dataset[entryDatasetKey], row.getBoundingClientRect().top])
-    .filter(([entryId, top]) => entryId && Number.isFinite(top)));
-}
-
-function animateRankingRows(container, rowSelector, previousPositions, entryDatasetKey = 'rankingEntry') {
-  if (!container || !previousPositions?.size) return;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  container.querySelectorAll(rowSelector).forEach(row => {
-    const previousTop = previousPositions.get(row.dataset[entryDatasetKey]);
-    if (!Number.isFinite(previousTop)) return;
-
-    const currentTop = row.getBoundingClientRect().top;
-    const deltaY = previousTop - currentTop;
-    if (Math.abs(deltaY) < 1) return;
-
-    row.style.transition = 'none';
-    row.style.transform = `translateY(${deltaY}px)`;
-    row.getBoundingClientRect();
-
-    requestAnimationFrame(() => {
-      row.style.transition = 'transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1)';
-      row.style.transform = 'translateY(0)';
-
-      window.setTimeout(() => {
-        row.style.transition = '';
-        row.style.transform = '';
-      }, 540);
-    });
-  });
 }
 
 function renderCalculator() {
@@ -7702,7 +7678,7 @@ function renderFinalFourCalculatorRanking() {
     <td class="col-name">${renderPlayerProfileLink(player, 'pname')}</td>
     <td class="col-wins rank-score">${player.siege}</td>
     <td class="col-gv">${player.spieleGV}</td>
-    <td class="col-diff"><span class="${getStatDiffClass(player.diff)}">${formatStatDiff(player.diff)}</span></td>
+    <td class="col-diff">${renderDiffValue(player.diff)}</td>
   </tr>`).join('');
   mini.innerHTML = players.map((player, index) => `<div class="calculator-mini-rank-row r${Math.min(index + 1, 4)} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id || player.name)}" title="${escapeHtml(player.name)}">
     <span class="rank-position calculator-rank-position">${index + 1}</span>
@@ -8164,15 +8140,6 @@ function getPlayerMatchEloTooltipData(playerName, match) {
   };
 }
 
-function formatStatDiff(diff) {
-  if (!Number.isFinite(diff)) return '—';
-  return diff >= 0 ? `+${diff}` : `${diff}`;
-}
-
-function getStatDiffClass(diff) {
-  return getDeltaClass(diff);
-}
-
 function getRankingDeviationLabels(targetId) {
   return targetId === 'stats-elo-points-deviation'
     ? { top: 'Überperformt', bottom: 'Underperformt' }
@@ -8486,7 +8453,7 @@ function externalPlacementTooltip(context) {
   tooltipEl.innerHTML = items.map(item => {
     const stats = item.dataset.statsByPoint?.[item.dataIndex];
     const diff = stats ? formatStatDiff(stats.spielDiff) : '—';
-    const diffClass = getStatDiffClass(stats?.spielDiff);
+    const diffClass = getDeltaClass(stats?.spielDiff);
     const points = stats && Number.isFinite(Number(stats.punkte)) ? String(stats.punkte) : '0';
     const wins = stats && Number.isFinite(Number(stats.siege)) ? String(stats.siege) : '0';
 

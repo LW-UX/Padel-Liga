@@ -286,7 +286,7 @@ test('match header and full ranking follow ticker and ranking conventions',()=>{
  assert.match(html,/match-statistics-ranking-player r1 match-statistics-ranking-qualified[\s\S]*?match-statistics-rank-position">1<\/span>/);
  assert.match(html,/match-statistics-ranking-player r3 match-statistics-ranking-qualified[\s\S]*?match-statistics-rank-position">3<\/span>/);
  assert.doesNotMatch(render({...d,qualificationPlaces:0}),/match-statistics-ranking-qualified/);
- assert.match(statisticsStyleSource,/\.match-statistics-ranking \.col-diff \{ padding-right: 1rem !important; \}/);
+ assert.match(statisticsStyleSource,/table\.rt\.match-statistics-ranking \.col-diff \{ padding-right: 1rem; \}/);
  assert.match(statisticsStyleSource,/\.match-statistics-ranking tbody tr\.match-statistics-ranking-player td:last-child \{\s*box-shadow: inset -3px 0 0 var\(--statistics-team-color\);/);
  assert.match(statisticsStyleSource,/#detail-view-dialog\[data-mode="statistics"\] \.match-detail-team \.match-detail-player-photo \{\s*border: 2px solid var\(--statistics-team-color\);/);
  const withoutBoundary={...d};delete withoutBoundary.qualificationPlaces;
@@ -326,8 +326,8 @@ test('completed rankings align historical movement in a dedicated column',()=>{
  assert.match(analysis,/match-statistics-rank-position">3<\/span><\/td><td class="col-rank-change"><span class="match-statistics-rank-change same" aria-label="Tabellenplatz unverändert">–<\/span>/);
  assert.match(analysis,/class="rt match-statistics-ranking has-rank-change"/);
  assert.match(statisticsStyleSource,/table\.rt\.match-statistics-ranking \.col-rank \{[\s\S]*?text-align: center;[\s\S]*?font-variant-numeric: tabular-nums;/);
- assert.match(statisticsStyleSource,/\.match-statistics-ranking\.has-rank-change \.col-rank \{[\s\S]*?width: 40px;[\s\S]*?padding-left: 8px !important;[\s\S]*?padding-right: 2px !important;/);
- assert.match(statisticsStyleSource,/\.match-statistics-ranking \.col-rank-change \{[\s\S]*?width: 24px;[\s\S]*?padding-left: 0 !important;[\s\S]*?padding-right: 8px !important;[\s\S]*?text-align: center;/);
+ assert.match(statisticsStyleSource,/\.match-statistics-ranking\.has-rank-change \.col-rank \{[\s\S]*?width: 40px;[\s\S]*?padding-left: 8px;[\s\S]*?padding-right: 2px;/);
+ assert.match(statisticsStyleSource,/\.match-statistics-ranking \.col-rank-change \{[\s\S]*?width: 24px;[\s\S]*?padding-left: 0;[\s\S]*?padding-right: 8px;[\s\S]*?text-align: center;/);
  assert.match(statisticsStyleSource,/\.match-statistics-rank-change\.up \{ color: var\(--positiv\); \}/);
  assert.match(statisticsStyleSource,/\.match-statistics-rank-change\.down \{ color: var\(--negativ\); \}/);
 });
@@ -424,10 +424,10 @@ test('played Elo graphs keep solid 20 percent ranges behind the actual line',()=
 });
 test('Elo graph keeps four mobile player choices and groups only the panel by team',()=>{
  const html=render(fixture());
- assert.match(html,/match-statistics-graph-picker match-statistics-player-picker match-scope-toggle" role="group" aria-label="Spieler für Elo-Entwicklung auswählen"/);
+ assert.match(html,/class="site-nav" data-statistics-graph-picker="player" role="group" aria-label="Spieler für Elo-Entwicklung auswählen"/);
  assert.equal((html.match(/data-statistics-graph-select=/g)||[]).length,4);
  assert.match(html,/<button type="button" class="active" data-statistics-graph-select="greta_p" aria-pressed="true">Greta P\.<\/button>/);
- assert.match(html,/match-statistics-graph-picker match-statistics-team-picker match-scope-toggle" role="group" aria-label="Team für Elo-Entwicklung auswählen"/);
+ assert.match(html,/class="site-nav" data-statistics-graph-picker="team" role="group" aria-label="Team für Elo-Entwicklung auswählen"/);
  assert.equal((html.match(/data-statistics-graph-team-select=/g)||[]).length,2);
  assert.match(html,/<button type="button" class="active" data-statistics-graph-team-select="1" aria-pressed="true">Team 1<\/button>/);
  assert.match(html,/<button type="button" data-statistics-graph-team-select="2" aria-pressed="false">Team 2<\/button>/);
@@ -441,11 +441,11 @@ test('Elo graph keeps four mobile player choices and groups only the panel by te
  assert.match(html,/data-statistics-graph-player="marco_m"[^>]*--statistics-mobile-offset:-705px;--statistics-panel-offset:-235px/);
  assert.match(source,/graphPlayerButton = event\.target\.closest\('\[data-statistics-graph-select\]'\)[\s\S]*?classList\.toggle\('is-player-selected', player === selected\)[\s\S]*?selected\.parentElement\.append\(selected\)/);
  assert.match(source,/graphTeamButton = event\.target\.closest\('\[data-statistics-graph-team-select\]'\)[\s\S]*?selectedPlayers = players\.filter\([\s\S]*?classList\.toggle\('is-team-selected', selectedPlayers\.includes\(player\)\)[\s\S]*?selectedPlayers\.forEach\(player => player\.parentElement\.append\(player\)\)/);
- assert.match(statisticsStyleSource,/\.match-statistics-graph-picker \{\s*margin: 1rem 0 0;\s*\}/);
+ assert.match(statisticsStyleSource,/\[data-statistics-graph-picker\] \{[^}]*margin: 1rem 0 0;/);
  assert.doesNotMatch(statisticsStyleSource,/\.match-statistics-graph-team-(?:button|label|players|player)/);
- assert.match(statisticsStyleSource,/@media \(max-width: 768px\) \{[\s\S]*?#detail-view-dialog:not\(\[data-presentation="panel"\]\) \.match-statistics-player-picker \{[\s\S]*?grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
+ assert.match(statisticsStyleSource,/@media \(max-width: 768px\) \{[\s\S]*?#detail-view-dialog:not\(\[data-presentation="panel"\]\) \[data-statistics-graph-picker="player"\] \{[\s\S]*?grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
  assert.match(statisticsStyleSource,/#detail-view-dialog:not\(\[data-presentation="panel"\]\) \.match-statistics-player-graph\.is-player-selected \{ opacity: 1; \}/);
- assert.match(statisticsStyleSource,/#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-team-picker \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
+ assert.match(statisticsStyleSource,/#detail-view-dialog\[data-presentation="panel"\] \[data-statistics-graph-picker="team"\] \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
  assert.match(statisticsStyleSource,/#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-player-graph\.is-team-selected \{ opacity: 1; \}/);
  assert.match(statisticsStyleSource,/\.match-statistics-graph \{[^}]*container-type: inline-size;/);
  assert.match(statisticsStyleSource,/#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-player-graph\.match-statistics-team-player-2 \{\s*transform: translateX\(calc\(var\(--statistics-panel-offset\) \+ min\(0px, calc\(50cqw - 500px\)\)\)\);/);

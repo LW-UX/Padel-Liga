@@ -109,12 +109,18 @@
   --button-radius: var(--radius-full);
   --dropdown-radius: var(--radius-full);
   --menu-radius: 8px;
-  /* Äußerste Ebene der Inhaltscontainer; die inneren Ebenen berechnet style.css daraus. */
-  --container-radius: 20px;
+  --input-radius: 8px;
+  /* Zähler (Ergebniseingabe) und Schalter (An/Aus). */
+  --control-radius: var(--radius-full);
+  /* Inhaltscontainer: base für Dialoge, sm für Karten, xs für Hinweise, lg nur für Ausnahmen. Die Stufen rechnen sich aus base und lassen sich einzeln überschreiben. */
+  --container-radius-base: 16px;
+  --container-radius-lg: calc(var(--container-radius-base) * 2);
+  --container-radius-sm: calc(var(--container-radius-base) / 2);
+  --container-radius-xs: calc(var(--container-radius-base) / 4);
 
   /* Flächen und Text. --bg färbt auch Browserleiste und App-Start, --accent das Safari-Tab-Symbol. */
   --bg:         #07080C;
-  --surface:    #0E1017;
+  --surface:    #131620;
   --surface2:   #1A1F2C;
   --border:     #343C4E;
   --text:       #F3F4F1;
@@ -123,7 +129,7 @@
   /* Leichte Tönung auf einer Fläche, etwa für Zähler und Hover: hell auf dunklen, dunkel auf hellen Designs. */
   --surface-tint: rgba(255, 255, 255, 0.05);
   /* Farbe von Schatten unter schwebenden Elementen */
-  --shadow-color: rgba(0, 0, 0, 0.45);
+  --shadow-color: rgba(0, 0, 0, 0.5);
   /* Abdunklung hinter Dialogen */
   --backdrop: rgba(3, 4, 8, 0.7);
 

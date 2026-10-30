@@ -152,7 +152,7 @@ test('finishing a live match refreshes the regular account tasks', () => {
 });
 
 test('discarding a live ticker uses the styled page dialog instead of a browser confirmation', () => {
-  assert.match(index, /<dialog class="auth-dialog" id="live-cancel-dialog"/);
+  assert.match(index, /<dialog class="dialog" id="live-cancel-dialog"/);
   assert.match(index, /id="live-cancel-title">Liveticker verwerfen\?<\/h2>/);
   assert.match(index, /class="secondary-button"[^>]*data-live-cancel-close>Abbrechen<\/button>/);
   assert.match(index, /class="primary-button"[^>]*data-live-cancel-confirm>Liveticker verwerfen<\/button>/);
@@ -163,7 +163,7 @@ test('discarding a live ticker uses the styled page dialog instead of a browser 
 
 test('the public view links only live or archived result centers and keeps profiles independent', () => {
   assert.match(index, /id="live-ticker-link"[\s\S]*data-live-open-active[\s\S]*hidden/);
-  assert.match(index, /<dialog class="detail-view-dialog" id="detail-view-dialog"/);
+  assert.match(index, /<dialog class="dialog detail-view-dialog" id="detail-view-dialog"/);
   assert.match(index, /<section class="detail-view-content" id="detail-view">/);
   assert.match(app, /class="mc-score" data-live-open-match/);
   assert.match(app, /PadelLiveTicker\?\.hasHistory\(m\.id\)/);
@@ -243,7 +243,7 @@ test('the ticker opens as a full-screen detail dialog and keeps tab changes in o
 test('the ticker starts with an overview tab for all three matches and the final-four table', () => {
   assert.match(ticker, /data-live-overview>Übersicht<\/button>/);
   assert.match(ticker, /class="live-overview-matches"/);
-  assert.match(ticker, /class="rt calculator-ranking-table final-four-calculator-ranking-table live-overview-table"/);
+  assert.match(ticker, /class="rt rt--dense rt--fit"/);
   const overview = ticker.match(/function renderOverview\(\) \{[\s\S]*?(?=\n  function renderPublic)/)?.[0] || '';
   assert.match(overview, /<th class="col-diff">Diff\.<\/th>/);
   assert.match(overview, /<th class="col-gv">G:V<\/th>/);

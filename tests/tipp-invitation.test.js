@@ -55,12 +55,12 @@ test('the first-visit prompt offers both requested actions and an accessible clo
   assert.match(html, /data-tipp-invitation-close>Nicht jetzt</);
   assert.match(html, /data-tipp-invitation-link>Jetzt tippen</);
   assert.match(html, /id="tipp-invitation-title">Schon getippt\?</);
-  assert.match(html, /<p class="auth-dialog-copy" id="tipp-invitation-copy">/);
+  assert.match(html, /<p class="dialog-copy" id="tipp-invitation-copy">/);
   assert.match(html, /class="tipp-invitation-icon"[\s\S]*?<svg/);
   assert.match(html, /<div class="player-email-actions">[\s\S]*class="secondary-button"[\s\S]*class="primary-button"/);
   assert.doesNotMatch(html, /tipp-invitation\.css|class="[^"]*tipp-invitation-(?:actions|link)/);
   assert.match(accountStyle, /\.tipp-invitation-card \{[\s\S]*?align-items: center;[\s\S]*?text-align: center;/);
-  assert.match(accountStyle, /\.tipp-invitation-dialog \.auth-dialog-copy \{[\s\S]*?font-size: var\(--text-base\);/);
+  assert.match(accountStyle, /#tipp-invitation-dialog \.dialog-copy \{[\s\S]*?font-size: var\(--text-base\);/);
   assert.doesNotMatch(accountStyle, /\.tipp-invitation-(?:actions|link)|\.tipp-invitation[^}]*\.primary-button|\.tipp-invitation[^}]*\.secondary-button/);
 });
 

@@ -651,20 +651,18 @@
       </section>
       <section class="live-overview-section">
         <h3>Rangliste</h3>
-        <div class="ranking-wrap live-overview-ranking-wrap">
-          <table class="rt calculator-ranking-table final-four-calculator-ranking-table live-overview-table">
+        <div class="ranking-wrap ranking-wrap--fit">
+          <table class="rt rt--dense rt--fit">
             <thead><tr>
               <th class="col-rank">#</th><th class="col-name">Spieler</th>
               <th class="col-wins">Siege</th><th class="col-gv">G:V</th><th class="col-diff">Diff.</th>
             </tr></thead>
             <tbody>${stats.map((player, index) => {
-              const diff = player.gamesWon - player.gamesLost;
-              const diffClass = diff > 0 ? 'pos' : diff < 0 ? 'neg' : 'neu';
-              return `<tr class="r${index + 1}">
+              return `<tr class="r${index + 1}"${window.PadelTable.renderPlayerProfileRowAttributes({ id: player.playerId, name: player.displayName })}>
                 <td class="col-rank rank-position">${index + 1}</td>
                 <td class="col-name"><button class="pname player-profile-link" type="button" data-player-profile-id="${escapeHtml(player.playerId)}">${escapeHtml(player.displayName)}${replacementPlayer?.playerId === player.playerId ? '<span aria-hidden="true">*</span><span class="sr-only">, nachgerückt</span>' : ''}</button></td>
                 <td class="col-wins rank-score">${player.wins}</td><td class="col-gv">${player.gamesWon}:${player.gamesLost}</td>
-                <td class="col-diff"><span class="${diffClass}">${diff > 0 ? `+${diff}` : diff}</span></td>
+                <td class="col-diff">${window.PadelTable.renderDiffValue(player.gamesWon - player.gamesLost)}</td>
               </tr>`;
             }).join('')}</tbody>
           </table>

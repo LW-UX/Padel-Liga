@@ -6,35 +6,15 @@
       justify-content: center;
       gap: 0.45rem;
       min-width: 84px;
-      min-height: 38px;
-      border: 1px solid var(--accent);
-      border-radius: var(--button-radius);
-      background: var(--accent);
-      color: var(--bg);
-      cursor: pointer;
-      font-family: var(--font-body);
-      font-size: var(--text-sm);
       font-weight: 700;
       padding: 0.45rem 0.9rem;
       white-space: nowrap;
     }
-    .auth-button:hover { filter: brightness(1.08); }
+    .auth-button.primary-button:hover { filter: brightness(1.08); }
     .auth-button.is-authenticated {
       width: 38px;
       min-width: 38px;
       padding: 0;
-    }
-    .auth-button.is-authenticated.secondary-button {
-      border-color: var(--border);
-      background: var(--surface);
-      color: var(--text);
-      filter: none;
-    }
-    .auth-button.is-authenticated.secondary-button:hover,
-    .auth-button.is-authenticated.secondary-button:focus-visible {
-      border-color: var(--accent);
-      color: var(--accent);
-      filter: none;
     }
     .auth-user-icon {
       width: 20px;
@@ -61,28 +41,6 @@
       font-family: var(--font-mono);
       font-size: 0.66rem;
     }
-    .auth-dialog {
-      width: min(calc(100vw - 16px), 640px);
-      max-width: none;
-      max-height: min(calc(100vh - 64px), 900px);
-      margin: auto;
-      border: 1px solid var(--border);
-      border-radius: var(--container-radius);
-      background: var(--bg);
-      color: var(--text);
-      box-shadow: 0 34px 120px var(--shadow-color);
-      overflow: hidden;
-      padding: 0;
-    }
-    .auth-dialog::backdrop { background: var(--backdrop); backdrop-filter: blur(2px); }
-    .auth-dialog-card {
-      box-sizing: border-box;
-      max-height: inherit;
-      overflow: auto;
-      overscroll-behavior: contain;
-      padding: 1.5rem;
-    }
-    .auth-dialog h2 { margin: 0.25rem 0 1rem; }
     .auth-mode-toggle {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -107,36 +65,33 @@
     .auth-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
     .auth-form label[hidden] { display: none !important; }
     .auth-form label { display: grid; gap: 6px; color: var(--dim); font-size: var(--text-sm); font-weight: 600; }
+    /* Das Aussehen kommt aus der gemeinsamen Regel mit .secondary-button in style.css. */
     .auth-form input,
-    .auth-form select {
+    .auth-form select,
+    .player-invite-output input {
       width: 100%;
-      min-height: 44px;
-      border: 1px solid var(--border);
-      border-radius: var(--container-radius-3);
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font-body);
-      font-size: var(--text-base);
+      border-radius: var(--input-radius);
       outline: none;
-      padding: 0.65rem 0.75rem;
     }
+    .auth-form input,
+    .player-invite-output input { cursor: text; }
+    /* Der Pfeil folgt wie bei .secondary-button--dropdown der Textfarbe. */
     .auth-form select {
       appearance: none;
-      background-image: linear-gradient(45deg, transparent 50%, var(--dim) 50%), linear-gradient(135deg, var(--dim) 50%, transparent 50%);
-      background-position: calc(100% - 16px) 19px, calc(100% - 11px) 19px;
+      background-image:
+        linear-gradient(45deg, transparent 39%, currentColor 39%, currentColor 61%, transparent 61%),
+        linear-gradient(-45deg, transparent 39%, currentColor 39%, currentColor 61%, transparent 61%);
+      background-position: calc(100% - 0.85rem - 4px) 50%, calc(100% - 0.85rem) 50%;
       background-repeat: no-repeat;
-      background-size: 5px 5px, 5px 5px;
-      padding-right: 2.25rem;
+      background-size: 4px 4px, 4px 4px;
+      padding-right: 1.8rem;
     }
-    .auth-form input:focus,
-    .auth-form select:focus { border-color: var(--accent); }
     .auth-form-link { justify-self: center; margin-top: 0; }
     #auth-guest-view .auth-form-link[hidden] {
       display: inline-flex !important;
       visibility: hidden;
     }
-    .auth-dialog-copy { color: var(--dim); font-size: 0.88rem; line-height: 1.5; margin: -0.35rem 0 1rem; }
-    .tipp-invitation-dialog { width: min(calc(100vw - 24px), 460px); }
+    #tipp-invitation-dialog { --dialog-width: 460px; }
     .tipp-invitation-card {
       display: flex;
       flex-direction: column;
@@ -149,10 +104,10 @@
       place-items: center;
       width: 64px;
       height: 64px;
-      border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+      border: 1px solid color-mix(in srgb, var(--accent2) 30%, var(--border));
       border-radius: 18px;
-      background: color-mix(in srgb, var(--accent) 10%, var(--surface));
-      color: var(--accent);
+      background: color-mix(in srgb, var(--accent2) 9%, var(--surface));
+      color: var(--accent2);
       margin-bottom: 1.15rem;
     }
     .tipp-invitation-icon svg {
@@ -164,12 +119,12 @@
       stroke-linejoin: round;
       stroke-width: 1.7;
     }
-    .tipp-invitation-dialog h2 {
+    #tipp-invitation-dialog h2 {
       margin: 0.3rem 0 0.85rem;
       font-size: clamp(2.3rem, 9vw, 3.25rem);
       line-height: 0.95;
     }
-    .tipp-invitation-dialog .auth-dialog-copy {
+    #tipp-invitation-dialog .dialog-copy {
       max-width: 34ch;
       font-size: var(--text-base);
     }
@@ -184,27 +139,25 @@
     }
     .player-invite-output[hidden] { display: none; }
     .player-invite-output label { display: grid; gap: 5px; color: var(--dim); font-size: 0.78rem; font-weight: 600; }
-    .player-invite-output input,
     .player-invite-preview {
       width: 100%;
+      min-height: 290px;
       border: 1px solid var(--border);
-      border-radius: var(--container-radius-3);
-      background: var(--bg);
+      border-radius: var(--input-radius);
+      background: var(--surface);
       color: var(--text);
       font: inherit;
       font-size: var(--text-sm);
+      font-weight: 400;
       line-height: 1.5;
-      outline: none;
-      padding: 0.65rem 0.75rem;
+      padding: 0.65rem 0.85rem;
+      transition: all 0.15s;
     }
-    .player-invite-output input { min-height: 44px; }
-    .player-invite-preview { min-height: 290px; font-weight: 400; }
+    .player-invite-preview:is(:hover, :focus-within) { border-color: var(--accent); }
     .player-invite-preview p { margin: 0 0 1rem; }
     .player-invite-preview p:last-child { margin-bottom: 0; }
     .player-invite-preview ul { margin: 0 0 1rem; padding-left: 1.2rem; }
     .player-invite-preview a { color: var(--accent); pointer-events: none; }
-    .player-invite-output input:focus,
-    .player-invite-preview:focus-within { border-color: var(--accent); }
     .player-invite-expiry { color: var(--dim); font-size: 0.75rem; line-height: 1.45; margin: 0; }
     .auth-message { min-height: 1.25rem; color: var(--dim); font-size: 0.82rem; margin-top: 0.8rem; }
     #auth-dialog #auth-message { min-height: 2.5rem; line-height: 1.5; }
@@ -222,7 +175,7 @@
       min-height: 44px;
       margin: 0;
       border: 1px solid var(--accent);
-      border-radius: var(--container-radius-2);
+      border-radius: var(--container-radius-sm);
       background: var(--surface);
       box-shadow: 0 14px 40px var(--shadow-color);
       color: var(--text);
@@ -261,43 +214,25 @@
     }
     .account-header > div { min-width: 0; }
     .account-header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
-    .account-action-button { display: inline-flex; align-items: center; gap: 0.45rem; }
-    .account-action-button svg {
-      width: 16px;
-      height: 16px;
-      flex: none;
-      fill: none;
-      stroke: currentColor;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      stroke-width: 1.55;
-    }
     .account-header h2 { margin-bottom: 0.1rem; }
     .auth-account-email { color: var(--dim); font-size: 0.88rem; margin: 0; text-wrap: nowrap; }
     .account-settings {
       display: grid;
-      gap: 1rem;
+      gap: 2rem;
       border: 1px solid var(--border);
-      border-radius: var(--container-radius-2);
+      border-radius: var(--container-radius-sm);
       background: var(--surface);
-      margin-bottom: 1.35rem;
+      margin-bottom: 1rem;
       padding: 1rem;
     }
     .account-settings[hidden] { display: none; }
-    .account-settings h3 { margin: 0; }
-    .account-settings-account {
-      display: grid;
-      gap: 12px;
-      padding-bottom: 18px;
-    }
-    .account-settings-design { display: grid; gap: 12px; }
     .account-settings-design[hidden] { display: none; }
     .account-branding-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
     .account-branding-option {
       display: grid;
       gap: 10px;
       border: 1px solid var(--border);
-      border-radius: var(--container-radius-3);
+      border-radius: var(--container-radius-xs);
       background: var(--bg);
       cursor: pointer;
       padding: 8px 8px 10px;
@@ -379,31 +314,25 @@
     .account-branding-caption input:checked { border-color: var(--accent); background: var(--accent); }
     .account-branding-caption input:checked::after { opacity: 1; }
     .account-settings-mail { display: grid; }
-    .account-settings-mail > p {
-      margin: 6px 0 12px;
-      color: var(--dim);
-      font-size: var(--text-xs);
-      line-height: 1.45;
-    }
     .account-setting-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
       gap: 16px;
       cursor: pointer;
-      padding: 0.75rem 0;
-      border-top: 1px solid var(--border);
+      padding-bottom: 0.75rem;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
     }
     .account-setting-row > span { display: grid; gap: 3px; min-width: 0; }
-    .account-setting-row strong { color: var(--text); font-size: var(--text-sm); }
-    .account-setting-row small { color: var(--dim); font-size: var(--text-xs); line-height: 1.4; }
+    .account-setting-row small { color: var(--dim); font-size: var(--text-sm); }
     .account-setting-row input {
       appearance: none;
       position: relative;
       width: 42px;
       height: 24px;
       border: 1px solid var(--border);
-      border-radius: var(--radius-full);
+      border-radius: var(--control-radius);
       background: var(--surface2);
       cursor: pointer;
       outline: none;
@@ -416,7 +345,7 @@
       left: 3px;
       width: 16px;
       height: 16px;
-      border-radius: var(--radius-full);
+      border-radius: var(--control-radius);
       background: var(--dim);
       transition: background 160ms ease, transform 160ms ease;
     }
@@ -429,7 +358,7 @@
     .account-settings-actions { display: flex; gap: 8px; }
     .account-games-empty {
       border: 1px solid var(--border);
-      border-radius: var(--container-radius-2);
+      border-radius: var(--container-radius-sm);
       color: var(--dim);
       font-size: 0.82rem;
       padding: 1rem;
@@ -461,8 +390,7 @@
       color: var(--text);
       font-weight: 600;
     }
-    .account-result-scope-toggle { justify-self: start; }
-    .account-result-scope-toggle[hidden] { display: none; }
+    [data-account-result-scope-toggle] { justify-self: start; }
     .account-task-list { display: grid; gap: 18px; }
     #result-task-list { gap: 40px; }
     #result-task-list > .match-group {
@@ -475,7 +403,7 @@
       display: grid;
       gap: 12px;
       border: 1px solid var(--border);
-      border-radius: var(--container-radius-2);
+      border-radius: var(--container-radius-sm);
       background: var(--surface);
       padding: 1rem;
     }
@@ -544,7 +472,7 @@
       top: inherit;
     }
     .account-task-player-name.is-authenticated { color: var(--accent2); }
-    .result-proposal { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: var(--container-radius-3); background: var(--surface2); padding: 0.7rem; }
+    .result-proposal { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: var(--container-radius-xs); background: var(--surface2); padding: 0.7rem; }
     .result-proposal span { color: var(--dim); font-size: var(--text-sm); }
     .result-proposal strong { font-family: var(--font-body); font-size: var(--text-sm); text-align: right; letter-spacing: 0.02rem; }
     .account-task-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
@@ -577,13 +505,6 @@
       width: 70%;
       min-width: 0;
       max-width: 100%;
-      min-height: 38px;
-      border: 1px solid var(--border);
-      border-radius: var(--container-radius-3);
-      background: var(--surface);
-      color: var(--text);
-      font: var(--text-sm) var(--font-body);
-      padding: 0.55rem 0.65rem;
     }
     :where(.result-entry-form, .match-schedule-form, .training-form) input:is([type="date"], [type="time"]) {
       display: block;
@@ -592,13 +513,28 @@
       max-inline-size: 100%;
       text-align: left;
     }
+    /* Das Aussehen kommt aus der gemeinsamen Regel mit .secondary-button in style.css. */
+    .datetime-input-shell input {
+      border-radius: var(--input-radius);
+      outline: none;
+      padding-inline: 0.65rem;
+    }
     :where(.result-entry-form, .match-schedule-form, .training-form) input:is([type="date"], [type="time"])::-webkit-date-and-time-value {
       text-align: left;
+    }
+    /* Das Symbol folgt der Textfarbe, damit es in jedem Branding sichtbar bleibt. */
+    :where(.result-entry-form, .match-schedule-form, .training-form) input[type="date"]::-webkit-calendar-picker-indicator {
+      width: 14px;
+      height: 14px;
+      background: currentColor;
+      cursor: pointer;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat;
     }
     .schedule-time-field { display: flex; align-items: center; gap: 4px; min-width: 0; color: var(--dim); }
     .schedule-time-field .training-picker { flex: 1 1 4rem; width: 4rem; min-width: 3.5rem; }
     .schedule-time-field .training-picker-label { display: none; }
-    .schedule-time-field .training-picker-toggle { min-height: 38px; border-radius: var(--container-radius-3); padding-right: 1.5rem; padding-left: 0.65rem; }
+    .schedule-time-field .training-picker-toggle { min-height: 38px; border-radius: var(--input-radius); padding-right: 1.5rem; padding-left: 0.65rem; }
     .schedule-time-field .training-picker-toggle::after { right: 0.65rem; }
     .schedule-time-field :is(.training-picker-display, .training-picker-display-line) { overflow: visible; text-overflow: clip; }
     .schedule-time-field .training-picker-menu { right: auto; left: 0; width: 100%; min-width: 72px; max-height: min(240px, 50vh); overscroll-behavior: contain; }
@@ -624,9 +560,9 @@
       align-self: center;
       justify-self: start;
       color: var(--dim);
-      font: var(--text-sm) var(--font-body);
+      font: 500 var(--text-sm) var(--font-body);
       opacity: 0;
-      padding: 0.55rem 0.65rem;
+      padding: 0.5rem 0.65rem;
       pointer-events: none;
       white-space: nowrap;
     }
@@ -743,7 +679,7 @@
       min-height: 88px;
       gap: 5px;
       border: 1px solid var(--border);
-      border-radius: var(--container-radius-2);
+      border-radius: var(--container-radius-sm);
       background: var(--surface2);
       color: var(--text);
       cursor: pointer;
@@ -781,7 +717,7 @@
       display: grid;
       gap: 4px;
       border: 1px solid var(--border);
-      border-radius: var(--container-radius-2);
+      border-radius: var(--container-radius-sm);
       background: var(--surface2);
       padding: 0.9rem;
       text-align: center;
@@ -812,7 +748,7 @@
       display: grid; 
       gap: 10px; 
       border: 1px solid var(--border); 
-      border-radius: var(--container-radius-2); 
+      border-radius: var(--container-radius-sm); 
       padding: 0.9rem; 
       background-color: var(--surface); 
     }
@@ -1000,7 +936,7 @@
     .training-picker-menu { right: auto; left: 0; width: max(100%, 260px); }
     .training-player-fields .training-picker:nth-child(even) .training-picker-menu { right: 0; left: auto; }
     .training-rounds { display: grid; gap: 16px; }
-    .training-round-field { display: grid; gap: 14px; border: 1px solid var(--border); padding: 0.9rem; border-radius: var(--container-radius-2); background-color: var(--surface2); }
+    .training-round-field { display: grid; gap: 14px; border: 1px solid var(--border); padding: 0.9rem; border-radius: var(--container-radius-sm); background-color: var(--surface2); }
     .training-round-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .42fr) auto; align-items: end; gap: 8px; }
     .training-score-entry { grid-template-columns: repeat(3, auto); gap: 10px; }
     .training-round-remove {
@@ -1043,24 +979,6 @@
     @media (max-width: 768px) {
       .auth-button { min-width: 58px; }
       .auth-task-badge { position: unset; }
-      .auth-dialog { max-height: 94vh; }
-      .auth-dialog-card { padding: 1.1rem 0.5rem; }
-      #auth-dialog:has(#auth-account-view:not([hidden]), #auth-password-view:not([hidden])) {
-        width: 100vw;
-        height: 100vh;
-        height: 100dvh;
-        max-height: none;
-        margin: 0;
-        border: 0;
-        border-radius: 0;
-        box-shadow: none;
-      }
-      #auth-dialog:has(#auth-account-view:not([hidden]), #auth-password-view:not([hidden]))::backdrop { background: var(--bg); backdrop-filter: none; }
-      #auth-dialog:has(#auth-account-view:not([hidden]), #auth-password-view:not([hidden])) .auth-dialog-card {
-        height: 100%;
-        max-height: none;
-        padding: 1.1rem 1rem;
-      }
       .tipp-invitation-card { padding: 2.25rem 1.25rem 1.25rem; }
       .account-auth-message { bottom: max(8px, env(safe-area-inset-bottom)); max-width: calc(100% - 32px); }
       .account-header { flex-wrap: wrap; gap: 12px; }

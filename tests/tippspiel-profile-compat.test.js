@@ -8,6 +8,7 @@ const appSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'u
 const indexSource = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const styleSource = [
   fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8'),
+  fs.readFileSync(path.join(__dirname, '..', 'tipp.css'), 'utf8'),
   fs.readFileSync(path.join(__dirname, '..', 'account.css'), 'utf8')
 ].join('\n');
 const scoreInputSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'score-input.js'), 'utf8');
@@ -318,18 +319,18 @@ test('scheduling, unscheduling, unrated matches and future result entry use thei
   assert.match(tippspielSource, /state\.client\.rpc\('unschedule_match', \{ p_match_id: matchId \}\)/);
   assert.doesNotMatch(tippspielSource, /window\.confirm\('Soll der Termin dieser Partie wirklich gelöscht werden\?'\)/);
   assert.match(tippspielSource, /openUnscheduleDialog\(unscheduleButton\)/);
-  assert.match(indexSource, /<dialog class="auth-dialog" id="unschedule-match-dialog"[^>]*aria-labelledby="unschedule-match-title"[^>]*aria-describedby="unschedule-match-description">/);
+  assert.match(indexSource, /<dialog class="dialog" id="unschedule-match-dialog"[^>]*aria-labelledby="unschedule-match-title"[^>]*aria-describedby="unschedule-match-description">/);
   assert.match(indexSource, /<h2 id="unschedule-match-title">Termin löschen<\/h2>/);
   assert.match(indexSource, /Soll der Termin dieser Partie wirklich gelöscht werden\? Diese Aktion kann nicht rückgängig gemacht werden\./);
   assert.match(indexSource, /data-unschedule-close>Abbrechen<\/button>[\s\S]*class="danger-button"[^>]*data-unschedule-confirm>Termin löschen<\/button>/);
-  assert.match(tippspielSource, /querySelector\('\.secondary-button\[data-unschedule-close\]'\)\?\.focus\(\)/);
+  assert.match(tippspielSource, /querySelector\('\.secondary-button:not\(\.modal-close-button\)\[data-unschedule-close\]'\)\?\.focus\(\)/);
   assert.doesNotMatch(tippspielSource, /window\.confirm\('Diese Partie wird dauerhaft als „ohne Wertung“ markiert/);
   assert.match(tippspielSource, /openUnrateDialog\(cancelMatchButton\)/);
-  assert.match(indexSource, /<dialog class="auth-dialog" id="unrate-match-dialog"[^>]*aria-labelledby="unrate-match-title"[^>]*aria-describedby="unrate-match-description">/);
+  assert.match(indexSource, /<dialog class="dialog" id="unrate-match-dialog"[^>]*aria-labelledby="unrate-match-title"[^>]*aria-describedby="unrate-match-description">/);
   assert.match(indexSource, /<h2 id="unrate-match-title">Partie nicht werten\?<\/h2>/);
   assert.match(indexSource, /Diese Partie wird dauerhaft als „ohne Wertung“ markiert\. Sie zählt nicht für die Rangliste, Elo oder Tipps\. Diese Aktion kann nicht rückgängig gemacht werden\./);
   assert.match(indexSource, /data-unrate-close>Abbrechen<\/button>[\s\S]*class="danger-button"[^>]*data-unrate-confirm>Nicht werten<\/button>/);
-  assert.match(tippspielSource, /querySelector\('\.secondary-button\[data-unrate-close\]'\)\?\.focus\(\)/);
+  assert.match(tippspielSource, /querySelector\('\.secondary-button:not\(\.modal-close-button\)\[data-unrate-close\]'\)\?\.focus\(\)/);
   assert.match(styleSource, /\.danger-button \{[\s\S]*background: var\(--negativ\)/);
   assert.match(tippspielSource, /p_match_at: buildMatchAtValue\(/);
   assert.doesNotMatch(tippspielSource, /p_scheduled_date:|p_scheduled_time:/);

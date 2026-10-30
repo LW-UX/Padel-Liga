@@ -94,7 +94,7 @@ test('all-time view ends with the points ranking and only counts regular league 
   const renderer = app.match(/function renderAllTimeRanking\(\)[\s\S]*?(?=\nfunction getRankedPlayers)/)?.[0] || '';
   assert.doesNotMatch(renderer, /col-elo|col-form|col-winrate|col-draw-factor|getPlayerRankingExtras/);
   assert.match(renderer, /animateRankingRows\(body, '\.ranking-row', previousPositions\)/);
-  assert.match(renderer, /data-profile-player-id="\$\{escapeHtml\(player\.id \|\| ''\)\}" data-player-profile-id="\$\{escapeHtml\(player\.id \|\| ''\)\}" tabindex="0" role="link"/);
+  assert.match(renderer, /data-ranking-entry="\$\{escapeHtml\(player\.id \|\| player\.name\)\}"\$\{renderPlayerProfileRowAttributes\(player\)\}>/);
   assert.match(renderer, /updatePlayerProfileRankingHighlights\(\)/);
   assert.match(style, /@media \(min-width: 769px\) \{\s*#all-time-ranking-view-toggle \{ display: none; \}\s*#all-time-ranking-table\.compact \.col-gv \{ display: table-cell; \}/);
   assert.match(app, /function getAllTimeLeagueMatches\(\)[\s\S]*countsForRanking\(match\)[\s\S]*getMatchStage\(match\) === 'league'/);

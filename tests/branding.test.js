@@ -15,7 +15,7 @@ test('headings get their look from the element instead of per-area classes', () 
   assert.match(style, /\bh3,\s*\.eyebrow \{[^}]*text-transform: uppercase;/);
 
   const scripts = fs.readdirSync(path.join(root, 'js')).map(name => `js/${name}`);
-  for (const file of ['index.html', 'tipp/index.html', 'style.css', 'account.css', 'match-statistics.css', 'whats-new.css', ...scripts]) {
+  for (const file of ['index.html', 'tipp/index.html', 'style.css', 'tipp.css', 'account.css', 'match-statistics.css', 'whats-new.css', ...scripts]) {
     assert.doesNotMatch(read(file), /\bsh-title(?!-)|\bwidget-label\b|\bspieltag-label\b|\bspieltag-group\b/, file);
   }
 });
@@ -23,7 +23,7 @@ test('headings get their look from the element instead of per-area classes', () 
 test('every branding defines the same variables as the OG-Design', async () => {
   const { readBrandingVariables } = await loadTool();
   const reference = Object.keys(readBrandingVariables(read('branding/og-design.css'))).sort();
-  assert.ok(reference.includes('--bg') && reference.includes('--button-radius') && reference.includes('--container-radius') && reference.includes('--section-gap') && reference.includes('--widget-bg'));
+  assert.ok(reference.includes('--bg') && reference.includes('--button-radius') && reference.includes('--container-radius-base') && reference.includes('--section-gap') && reference.includes('--widget-bg'));
 
   for (const file of fs.readdirSync(path.join(root, 'branding')).filter(name => name.endsWith('.css'))) {
     assert.deepEqual(Object.keys(readBrandingVariables(read(`branding/${file}`))).sort(), reference, file);
@@ -31,10 +31,10 @@ test('every branding defines the same variables as the OG-Design', async () => {
 });
 
 test('shared stylesheets keep no brand values', () => {
-  for (const file of ['style.css', 'account.css', 'match-statistics.css', 'whats-new.css']) {
+  for (const file of ['style.css', 'tipp.css', 'account.css', 'match-statistics.css', 'whats-new.css']) {
     const css = read(file);
     assert.doesNotMatch(css, /#[0-9a-fA-F]{3,8}\b|rgba?\(|@font-face/, file);
-    assert.doesNotMatch(css, /^\s*--(bg|accent|font-body|text-heading|section-gap|button-radius|container-radius|widget-bg|widget-padding):/m, file);
+    assert.doesNotMatch(css, /^\s*--(bg|accent|font-body|text-heading|section-gap|button-radius|container-radius-(base|lg|sm|xs)|widget-bg|widget-padding):/m, file);
     assert.doesNotMatch(css, /--radius-(xs|sm|lg)\b|--widget-radius/, file);
   }
 });
