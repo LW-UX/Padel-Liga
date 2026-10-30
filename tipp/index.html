@@ -21,7 +21,7 @@
       } catch (error) { /* Ohne Speicher bleibt das veröffentlichte Branding. */ }
     })();
   </script>
-  <link rel="stylesheet" href="../style.css?v=2026-10-30-widget-container">
+  <link rel="stylesheet" href="../style.css?v=2026-10-31-article-container">
   <link rel="stylesheet" href="../tipp.css?v=2026-10-30-tipp-css">
   <link rel="stylesheet" href="../match-statistics.css?v=2026-10-30-widget-container">
   <link rel="stylesheet" href="../account.css?v=2026-10-30-design-cards">
@@ -50,7 +50,7 @@
       <div class="context-actions global-actions" id="global-actions" data-global-actions>
         <button class="global-actions-dismiss" type="button" data-global-actions-dismiss aria-label="Schnellzugriffe schließen" tabindex="-1"></button>
         <div class="global-actions-list" id="global-actions-list" data-global-actions-list>
-          <a class="context-link global-action" id="liga-link" href="../" data-global-action data-global-action-close>
+          <a class="text-link global-action" id="liga-link" href="../" data-global-action data-global-action-close>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg>
             <span>Zurück zur Liga</span>
           </a>
@@ -69,7 +69,7 @@
               </span>
               <span id="season-picker-label"></span>
             </button>
-            <div class="season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
+            <div class="picker-menu season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
           </div>
           <button class="primary-button auth-button global-action" id="auth-button" type="button" data-auth-open data-global-action data-global-action-close>
             <svg class="auth-user-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -101,7 +101,7 @@
 <main>
   <section id="tippstart" class="section active">
     <div id="prediction-overview" class="prediction-overview" aria-live="polite">
-      <div class="prediction-overview-loading">Deine Tippzentrale wird geladen …</div>
+      <div class="hint prediction-overview-loading">Deine Tippzentrale wird geladen …</div>
     </div>
   </section>
 
@@ -134,13 +134,13 @@
           <tbody id="prediction-ranking-body"></tbody>
         </table>
       </div>
-      <div id="prediction-ranking-empty" class="empty-state">Rangliste wird geladen …</div>
+      <div id="prediction-ranking-empty" class="hint">Rangliste wird geladen …</div>
     </article>
   </section>
 
   <section id="tipptabelle" class="section">
     <div class="sh sh-with-control">
-      <div class="sh-heading">
+      <div class="heading-row">
         <h2>TIPPÜBERSICHT</h2>
       </div>
       <div class="toggle" id="prediction-table-view-toggle" aria-label="Tippübersicht umschalten">
@@ -152,7 +152,7 @@
       <div class="prediction-table-wrap" id="prediction-table-wrap">
         <table class="rt prediction-table" id="prediction-table"></table>
       </div>
-      <div id="prediction-table-empty" class="empty-state">Tippübersicht wird geladen …</div>
+      <div id="prediction-table-empty" class="hint">Tippübersicht wird geladen …</div>
     </article>
   </section>
 
@@ -160,7 +160,7 @@
     <div class="match-statistics-split-layout prediction-statistics-split-layout" id="prediction-statistics-split-layout">
       <div class="match-statistics-list-pane prediction-statistics-list-pane" id="prediction-statistics-list-pane">
         <div class="sh sh-with-control">
-          <div class="sh-heading">
+          <div class="heading-row">
             <h2>TIPPABGABE</h2>
           </div>
           <div class="toggle toggle--sort" id="prediction-sort-toggle" data-sort-direction="ascending" aria-label="Tippabgabe sortieren">
@@ -363,7 +363,7 @@
         <div class="account-games-empty" id="account-games-empty" hidden>Als Tipper hast du keine eigenen Liga- oder Trainingspartien.</div>
         <div class="account-player-area" id="account-player-area" hidden>
           <section class="account-section" id="open-results-section">
-            <div class="account-section-heading">
+            <div class="heading-row heading-row--center heading-row--between account-section-heading">
               <h2 class="sh-title-with-help">Partienübersicht
                 <span class="th-help-wrap account-games-help">
                   <span class="help-icon" tabindex="0" role="button" aria-label="Partienübersicht erklären" aria-describedby="account-games-help" aria-expanded="false" data-help-tooltip-anchor>?</span>

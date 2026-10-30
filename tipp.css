@@ -26,8 +26,6 @@
       min-height: 220px;
       display: grid;
       place-items: center;
-      color: var(--dim);
-      font-size: var(--text-sm);
     }
     .prediction-overview-grid {
       display: grid;
@@ -96,7 +94,7 @@
     .prediction-overview-action .primary-button,
     .prediction-overview-action .secondary-button { margin-top: auto; padding-top: 0.55rem; }*/
     .prediction-overview-ranks { display: grid; }
-    .prediction-overview-empty { color: var(--dim); font-size: var(--text-sm); padding: 0.65rem 0; }
+    .prediction-overview-empty { padding: 0.65rem 0; }
     .prediction-overview-stats {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -181,14 +179,13 @@
       gap: 14px;
       border: 1px solid var(--border);
       border-radius: var(--container-radius-sm);
-      background: transparent;
+      background: color-mix(in srgb, var(--surface) 33%, transparent);
       padding: 1rem 1.15rem;
     }
     .prediction-match-card.has-prediction {
       border-color: var(--border);
       background: var(--surface);
     }
-    .prediction-match-card.is-locked { background: color-mix(in srgb, var(--surface) 33%, transparent); }
     .prediction-match-meta {
       grid-column: 1;
       grid-row: 1;
@@ -627,7 +624,7 @@
       right: 0;
       width: max(100%, 190px);
     }
-    .prediction-bonus-picker .viewer-option:disabled {
+    .prediction-bonus-picker .picker-option:disabled {
       cursor: not-allowed;
       opacity: 0.35;
     }
@@ -685,7 +682,7 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-team .mc-player-sep { display: none; }
+    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-team .team-sep { display: none; }
     body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-match-card:not(.is-single-set) .prediction-options {
       grid-column: 1 / -1;
       grid-row: 3;
@@ -783,7 +780,7 @@
         gap: 2px;
         font-size: 0.94rem;
       }
-      .prediction-team .mc-player-sep { display: none; }
+      .prediction-team .team-sep { display: none; }
       .prediction-options { gap: 5px; }
       .prediction-option { min-height: 40px; font-size: 0.9rem; }
       /* Mobil behalten Bonus-Auswahlen die allgemeinen Maße der Spielerauswahl. */

@@ -1139,7 +1139,7 @@ function applySeasonMetadata() {
     seasonMenu.innerHTML = getSeasonOptions().map(season => `
       <button
         type="button"
-        class="season-option ${season.id === selectedSeason.id ? 'active' : ''}"
+        class="picker-option ${season.id === selectedSeason.id ? 'active' : ''}"
         role="option"
         aria-selected="${season.id === selectedSeason.id}"
         data-season-id="${season.id}"
@@ -1334,7 +1334,7 @@ function normalizePlayerSearch(value) {
 }
 
 function filterViewerOptions(query = '') {
-  const menu = document.getElementById('viewer-menu');
+  const menu = document.getElementById('picker-menu');
   if (!menu) return;
   const normalizedQuery = normalizePlayerSearch(query);
   let visibleOptions = 0;
@@ -1514,10 +1514,10 @@ function updateViewerPicker() {
     hasSelectedPlayer ? selected.id : '',
     hasSelectedPlayer ? selected.profileEmoji : '👤'
   );
-  document.getElementById('viewer-menu').innerHTML = getViewerOptions().map(option => `
+  document.getElementById('picker-menu').innerHTML = getViewerOptions().map(option => `
     <button
       type="button"
-      class="viewer-option ${option.id === selectedViewerId ? 'active' : ''}"
+      class="picker-option ${option.id === selectedViewerId ? 'active' : ''}"
       role="option"
       aria-selected="${option.id === selectedViewerId}"
       data-viewer-id="${option.id}"
@@ -2063,7 +2063,7 @@ function renderPlayerProfileStats(summary = {}, matches = []) {
   target.innerHTML = stats.map(([value, label, valueClass = '', valueIsHtml = false]) => `
     <div class="player-profile-stat">
       <div class="player-profile-stat-value ${valueClass}">${valueIsHtml ? value : escapeHtml(value)}</div>
-      <div class="stat-meta-line">${escapeHtml(label)}</div>
+      <div class="hint stat-meta-line">${escapeHtml(label)}</div>
     </div>
   `).join('');
 }
@@ -2311,7 +2311,7 @@ function renderPlayerProfileParticipations(participations = [], matches = []) {
           <section class="player-profile-participation-phase">
             <div class="player-profile-participation-phase-content">
               <div class="player-profile-participation-phase-heading">Finalrunde</div>
-              <div class="stat-meta-line">${renderPlayerProfileParticipationStats(finalRound, 'Siege', finalRound.wins)}</div>
+              <div class="hint stat-meta-line">${renderPlayerProfileParticipationStats(finalRound, 'Siege', finalRound.wins)}</div>
             </div>
             <strong class="player-profile-participation-phase-result ${finalRound.placement ? `player-profile-participation-placement r${Math.min(finalRound.placement, 4)}` : ''}">${escapeHtml(finalRoundLabel)}</strong>
           </section>
@@ -2319,7 +2319,7 @@ function renderPlayerProfileParticipations(participations = [], matches = []) {
         <section class="player-profile-participation-phase">
           <div class="player-profile-participation-phase-content">
             <div class="player-profile-participation-phase-heading">Ligaphase</div>
-            <div class="stat-meta-line">
+            <div class="hint stat-meta-line">
               ${renderPlayerProfileParticipationStats(participation, 'Punkte', participation.points)}
             </div>
           </div>
@@ -2336,7 +2336,7 @@ function renderPlayerProfileParticipations(participations = [], matches = []) {
         <span class="player-profile-participation-marker"><i></i></span>
         Trainings
       </div>
-      <div class="stat-meta-line">${renderPlayerProfileParticipationStats(training, 'Siege', training.wins)}</div>
+      <div class="hint stat-meta-line">${renderPlayerProfileParticipationStats(training, 'Siege', training.wins)}</div>
     </div>` : '';
   target.innerHTML = seasonRows + trainingRow;
   configurePlayerProfileResponsiveGrid(
@@ -2419,7 +2419,7 @@ function renderPlayerProfileRelationships(matches = []) {
   if (heading) heading.hidden = relationships.length > 0;
   target.classList.toggle('has-results', relationships.length > 0);
   if (!relationships.length) {
-    target.innerHTML = '<div class="empty-state">Noch keine Wertung – sie zählt ab 3 gemeinsamen Partien mit einer Quote über oder unter 50 %. Dabei zählen Trainings mit.</div>';
+    target.innerHTML = '<div class="hint">Noch keine Wertung – sie zählt ab 3 gemeinsamen Partien mit einer Quote über oder unter 50 %. Dabei zählen Trainings mit.</div>';
     return;
   }
 
@@ -2447,7 +2447,7 @@ function renderPlayerProfileRelationships(matches = []) {
             <span class="stat-shift-name">${escapeHtml(record.name)}</span>
             <span class="stat-shift-value ${valueClass}">${Math.round(record.winRate * 100)} %</span>
           </div>
-          <div class="stat-meta-line">${escapeHtml(formatRecord(record))}</div>
+          <div class="hint stat-meta-line">${escapeHtml(formatRecord(record))}</div>
         </div>`).join('')}
       </div>
     </div>`;
@@ -2561,7 +2561,7 @@ function renderPlayerProfileCompareResult() {
   const ownElo = profile.summary?.currentElo ?? null;
   const otherElo = playerProfileCompareElos.get(otherId) ?? null;
   const sharedMatches = comparison.together + comparison.against;
-  target.innerHTML = `<div class="stat-meta-line">${escapeHtml(`${formatProfileMatchCount(sharedMatches)} gemeinsame Partien`)}<br>${escapeHtml([
+  target.innerHTML = `<div class="hint stat-meta-line">${escapeHtml(`${formatProfileMatchCount(sharedMatches)} gemeinsame Partien`)}<br>${escapeHtml([
     `${formatProfileMatchCount(comparison.together)} miteinander`,
     `${formatProfileMatchCount(comparison.against)} gegeneinander`
   ].join(' · '))}</div>
@@ -2579,7 +2579,7 @@ function renderPlayerProfileCompare(profile) {
   const selected = options.find(option => option.id === playerProfileCompareId) || null;
   if (!selected) playerProfileCompareId = null;
   if (!options.length) {
-    target.innerHTML = '<h3>Vergleich</h3><div class="empty-state">Noch keine gemeinsamen Partien mit anderen Spielern.</div>';
+    target.innerHTML = '<h3>Vergleich</h3><div class="hint">Noch keine gemeinsamen Partien mit anderen Spielern.</div>';
     return;
   }
   const label = selected?.name || 'Spieler wählen';
@@ -2591,9 +2591,9 @@ function renderPlayerProfileCompare(profile) {
         </button>
         <input class="training-picker-search-input" type="search" data-profile-compare-search role="combobox" aria-label="Vergleichsspieler suchen" aria-controls="player-profile-compare-menu" aria-expanded="false" autocomplete="off" spellcheck="false" placeholder="Spieler suchen …" disabled>
       </div>
-      <div class="viewer-menu training-picker-menu" id="player-profile-compare-menu" role="listbox" aria-label="Vergleichsspieler auswählen">
+      <div class="picker-menu training-picker-menu" id="player-profile-compare-menu" role="listbox" aria-label="Vergleichsspieler auswählen">
         ${options.map(option => `<button
-          class="viewer-option training-picker-option${option.id === selected?.id ? ' active' : ''}"
+          class="picker-option training-picker-option${option.id === selected?.id ? ' active' : ''}"
           type="button"
           role="option"
           aria-label="${escapeHtml(option.name)}"
@@ -2655,7 +2655,7 @@ function renderPlayerProfileNames(names = [], fallback = '—') {
   if (!names.length) return escapeHtml(fallback);
   return names
     .map(name => escapeHtml(name))
-    .join('<span class="mc-player-sep">&amp;</span>');
+    .join('<span class="team-sep">&amp;</span>');
 }
 
 function orientProfileResult(resultDetails, team) {
@@ -2797,7 +2797,7 @@ function renderPlayerProfilePastMatches() {
   const matches = playerProfileData?.matches || [];
   const visibleGroups = getVisiblePlayerProfileMatchGroups(matches);
   if (!visibleGroups.length) {
-    target.innerHTML = '<div class="empty-state">Noch keine vergangenen Partien.</div>';
+    target.innerHTML = '<div class="hint">Noch keine vergangenen Partien.</div>';
   } else {
     target.innerHTML = visibleGroups.map(group => {
       const rows = group.matches.map((match, index) => {
@@ -2922,14 +2922,14 @@ async function renderPlayerProfileUpcomingMatches() {
   const playerId = profile?.identity?.id;
   showAll.hidden = true;
   if (!target.querySelector('.player-profile-match.upcoming')) {
-    target.innerHTML = '<div class="empty-state">Kommende Partien werden geladen …</div>';
+    target.innerHTML = '<div class="hint">Kommende Partien werden geladen …</div>';
   }
   const seasons = await loadPlayerProfileUpcomingSeasons();
   if (playerProfileData !== profile || playerProfileMatchScope !== 'upcoming') return;
   const matches = getPlayerProfileUpcomingMatches(playerId, seasons);
   target.innerHTML = matches.length
     ? matches.map(entry => `<section class="player-profile-match-group">${renderPlayerProfileUpcomingMatch(entry, playerId)}</section>`).join('')
-    : '<div class="empty-state">Keine kommenden Partien.</div>';
+    : '<div class="hint">Keine kommenden Partien.</div>';
 }
 
 function isRankingSectionActive() {
@@ -3911,7 +3911,7 @@ document.addEventListener('keydown', event => {
       }
       return;
     }
-    const visibleOptions = [...document.querySelectorAll('#viewer-menu [data-viewer-id]')]
+    const visibleOptions = [...document.querySelectorAll('#picker-menu [data-viewer-id]')]
       .filter(option => !option.hidden);
     if (event.key === 'ArrowDown' && visibleOptions.length) {
       event.preventDefault();
@@ -4109,7 +4109,7 @@ async function openLiveTicker(matchId, options = {}) {
       scrollY: window.scrollY
     };
     document.getElementById('final-four-view-switcher').innerHTML = '';
-    document.getElementById('detail-view-body').innerHTML = '<div class="empty-state">Der Liveticker wird geladen …</div>';
+    document.getElementById('detail-view-body').innerHTML = '<div class="hint">Der Liveticker wird geladen …</div>';
     dialog.showModal();
   }
   const seasonLabel = document.getElementById('detail-view-context');
@@ -4497,7 +4497,7 @@ function renderFinalFourRanking() {
 
     return `<tr class="r${index + 1}"${renderPlayerProfileRowAttributes({ id: profilePlayerId, name: player.name })}>
       <td class="col-rank rank-position">${index + 1}</td>
-      <td class="col-name"><span class="player-cell-inner">${renderPlayerProfileLink(player, 'pname')}${replacementMark}</span></td>
+      <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(player, 'pname')}${replacementMark}</span></span></td>
       <td class="col-wins rank-score">${player.siege}</td>
       <td class="col-gv">${player.spieleGV}</td>
       <td class="col-diff">${renderDiffValue(player.diff)}</td>
@@ -4856,7 +4856,7 @@ function renderRanking() {
       : '';
     return `<tr class="ranking-row r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(p.id || p.name)}"${renderPlayerProfileRowAttributes(p)}>
       <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${rankingSortMode === 'points' ? renderRankingAvatar(p) : renderPointsRankReference(currentRank, pointsRank)}</span></td>
-      <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}</span>${absenceMark}${renderLeagueRankingAchievementIcon(p)}${renderRankingCompanyBadge(p)}</span></td>
+      <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}${absenceMark}</span>${renderLeagueRankingAchievementIcon(p)}${renderRankingCompanyBadge(p)}</span></td>
       <td class="col-games">${renderRankingMatchCount(p)}</td>
       <td class="col-wins">${p.stats.siege}</td>
       <td class="col-points rank-score">${p.stats.punkte}</td>
@@ -5200,7 +5200,7 @@ function renderPlayerProfileLink(player, className = '', displayName = '') {
 
 function renderTeamPlayers(players) {
   return players.map((player, index) => `
-    ${index > 0 ? '<span class="mc-player-sep">&amp;</span>' : ''}
+    ${index > 0 ? '<span class="team-sep">&amp;</span>' : ''}
     ${renderPlayerProfileLink(player, `mc-player-name ${isSelectedPlayer(player) ? 'viewer-player' : ''}`)}
   `).join('');
 }
@@ -5374,7 +5374,7 @@ function renderHomeTrainingCard(training, { recent = false } = {}) {
   return `<div class="mini-match-row mini-training-row ${isViewerTraining(training) ? 'viewer-match' : ''}">
     <div class="mini-match-meta">Training – ${escapeHtml(formatRelativeMatchDate(pseudoMatch))}</div>
     <div class="mini-training-players">${participantLinks.join('')}</div>
-    <div class="mini-training-summary">${recent ? `${escapeHtml(roundLabel)} · ${escapeHtml(setLabel)}` : '4 Teilnehmer'}</div>
+    <div class="hint mini-training-summary">${recent ? `${escapeHtml(roundLabel)} · ${escapeHtml(setLabel)}` : '4 Teilnehmer'}</div>
   </div>`;
 }
 
@@ -5671,11 +5671,11 @@ function renderHomePredictionLeaderboard() {
   target.classList.remove('loading-skeleton', 'skeleton-ranking');
   target.removeAttribute('aria-hidden');
   if (homePredictionLeaderboardError) {
-    target.innerHTML = '<div class="empty-state">Die Tipprangliste kann gerade nicht geladen werden.</div>';
+    target.innerHTML = '<div class="hint">Die Tipprangliste kann gerade nicht geladen werden.</div>';
     return;
   }
   if (!homePredictionLeaderboard.length) {
-    target.innerHTML = `<div class="empty-state">${PADEL_DATA?.completedAt
+    target.innerHTML = `<div class="hint">${PADEL_DATA?.completedAt
       ? 'In dieser Saison wurden keine Tipps abgegeben.'
       : 'Noch keine Tippwertung vorhanden.'}</div>`;
     return;
@@ -5783,7 +5783,7 @@ function renderHome() {
 
   document.getElementById('home-articles').innerHTML = `
     <div class="home-article-preview" id="home-article-preview">
-      ${getCurrentArticle() ? renderArticleCard(getCurrentArticle()) : '<div class="empty-state">Noch keine PadelPost-Ausgabe für diese Saison.</div>'}
+      ${getCurrentArticle() ? renderArticleCard(getCurrentArticle()) : '<div class="hint">Noch keine PadelPost-Ausgabe für diese Saison.</div>'}
     </div>
     <button class="text-link article-readmore" id="article-readmore" data-expand-home-article>Weiterlesen</button>
   `;
@@ -5831,7 +5831,7 @@ function renderHome() {
     ? nextEntries.map(entry => entry.kind === 'training'
       ? renderHomeTrainingCard(entry.training)
       : renderHomeMatchCard(entry.match)).join('')
-    : `<div class="empty-state">${emptyNextMatchesText}</div>`;
+    : `<div class="hint">${emptyNextMatchesText}</div>`;
 
   const playedMatches = PADEL_DATA.matches.filter(match => match.sieger !== null);
   const recentMatchEntries = playedMatches
@@ -5850,7 +5850,7 @@ function renderHome() {
     ? recentEntries.map(entry => entry.kind === 'training'
       ? renderHomeTrainingCard(entry.training, { recent: true })
       : renderHomeMatchCard(entry.match)).join('')
-    : `<div class="empty-state">${emptyRecentMatchesText}</div>`;
+    : `<div class="hint">${emptyRecentMatchesText}</div>`;
 }
 
 function renderStatTeamPlayers(players) {
@@ -6108,13 +6108,13 @@ function renderFavoriteCheck() {
   const stats = getFavoriteCheckStats();
 
   if (!stats.matches) {
-    document.getElementById('favorite-check').innerHTML = '<div class="empty-state">Noch keine Favoriten-Daten.</div>';
+    document.getElementById('favorite-check').innerHTML = '<div class="hint">Noch keine Favoriten-Daten.</div>';
     return;
   }
 
   document.getElementById('favorite-check').innerHTML = `
     <div class="stat-main">${stats.rate}%</div>
-    <div class="stat-copy">Favoriten gewannen ${stats.wins} von ${stats.matches} Partien.</div>
+    <div class="hint">Favoriten gewannen ${stats.wins} von ${stats.matches} Partien.</div>
   `;
 }
 
@@ -6145,8 +6145,8 @@ function renderAverageSetScoreFact() {
 
   target.innerHTML = setRows
     ? `<div class="stat-split-score">${setRows}</div>
-       <div class="stat-copy">Die Sieger gewannen im Schnitt mit ${formatDecimal(averages.averageMatchDiff)} Spielen Abstand.</div>`
-    : '<div class="empty-state">Noch keine gespielten Partien.</div>';
+       <div class="hint">Die Sieger gewannen im Schnitt mit ${formatDecimal(averages.averageMatchDiff)} Spielen Abstand.</div>`
+    : '<div class="hint">Noch keine gespielten Partien.</div>';
 }
 
 function getRankingDeviationGroups(fromMode, toMode, topDirection = 'negative') {
@@ -6207,7 +6207,7 @@ function renderRankingDeviationFact(targetId, fromMode, toMode, topDirection = '
       ${renderPlayerProfileLink(item.player, `stat-shift-name ${isSelectedPlayer(item.player.name) ? 'viewer-player' : ''}`)}
       <span class="stat-shift-value ${getDeltaClass(item.delta)}">${formatSignedInteger(item.delta)}</span>
     </div>
-    <div class="stat-meta-line">${toMode === 'elo'
+    <div class="hint stat-meta-line">${toMode === 'elo'
       ? `${modeLabels[toMode]} #${item.toRank} -> ${modeLabels[fromMode]} #${item.fromRank}`
       : `${modeLabels[fromMode]} #${item.fromRank} -> ${modeLabels[toMode]} #${item.toRank}`}</div>
   </div>`;
@@ -6216,11 +6216,11 @@ function renderRankingDeviationFact(targetId, fromMode, toMode, topDirection = '
     <div class="stat-shift-groups">
       <div class="stat-shift-group">
         <h3>${escapeHtml(labels.top)}</h3>
-        <div class="stat-shift-list">${up.length ? up.map(renderShiftItem).join('') : '<div class="empty-state">Keine Aufsteiger.</div>'}</div>
+        <div class="stat-shift-list">${up.length ? up.map(renderShiftItem).join('') : '<div class="hint">Keine Aufsteiger.</div>'}</div>
       </div>
       <div class="stat-shift-group">
         <h3>${escapeHtml(labels.bottom)}</h3>
-        <div class="stat-shift-list">${down.length ? down.map(renderShiftItem).join('') : '<div class="empty-state">Keine Absteiger.</div>'}</div>
+        <div class="stat-shift-list">${down.length ? down.map(renderShiftItem).join('') : '<div class="hint">Keine Absteiger.</div>'}</div>
       </div>
     </div>
   `;
@@ -6322,11 +6322,11 @@ function renderFinalFourForecast() {
         <span class="rank-position">${index + 1}</span>
         <div>
           ${renderPlayerProfileLink(item.player, `mini-rank-name ${isSelectedPlayer(item.player.name) ? 'viewer-player' : ''}`)}
-          <div class="stat-meta-line">${formatDecimal(item.projectedPoints)} erwartete Punkte · ${item.currentPoints} aktuell</div>
+          <div class="hint stat-meta-line">${formatDecimal(item.projectedPoints)} erwartete Punkte · ${item.currentPoints} aktuell</div>
         </div>
       </div>
     `).join('')}`
-    : '<div class="empty-state">Noch keine Prognosedaten.</div>';
+    : '<div class="hint">Noch keine Prognosedaten.</div>';
 }
 
 function formatAverageMatchTime(minutes) {
@@ -6367,7 +6367,7 @@ function renderTimePerformance() {
     );
 
   if (!playerTimes.length) {
-    target.innerHTML = '<div class="empty-state">Noch keine Partien mit Uhrzeit.</div>';
+    target.innerHTML = '<div class="hint">Noch keine Partien mit Uhrzeit.</div>';
     return;
   }
 
@@ -6381,7 +6381,7 @@ function renderTimePerformance() {
         <div class="stat-time-row">
           <div class="stat-time-text">
             ${renderPlayerProfileLink(earliest.player, `mini-rank-name ${isSelectedPlayer(earliest.player.name) ? 'viewer-player' : ''}`)}
-            <div class="stat-meta-line">Ø-Spielbeginn aus ${earliest.count} Partien</div>
+            <div class="hint stat-meta-line">Ø-Spielbeginn aus ${earliest.count} Partien</div>
           </div>
           <span class="stat-split-value">${formatAverageMatchTime(earliest.averageMinutes)}</span>
         </div>
@@ -6391,7 +6391,7 @@ function renderTimePerformance() {
         <div class="stat-time-row">
           <div class="stat-time-text">
             ${renderPlayerProfileLink(latest.player, `mini-rank-name ${isSelectedPlayer(latest.player.name) ? 'viewer-player' : ''}`)}
-            <div class="stat-meta-line">Ø-Spielbeginn aus ${latest.count} Partien</div>
+            <div class="hint stat-meta-line">Ø-Spielbeginn aus ${latest.count} Partien</div>
           </div>
           <span class="stat-split-value">${formatAverageMatchTime(latest.averageMinutes)}</span>
         </div>
@@ -6433,11 +6433,11 @@ function renderSetDominance() {
         <span class="rank-position">${index + 1}</span>
         <div>
           ${renderPlayerProfileLink(item.player, `mini-rank-name ${isSelectedPlayer(item.player.name) ? 'viewer-player' : ''}`)}
-          <div class="stat-meta-line">${formatSignedDecimal(item.averageDiff)} Spiele pro ${isAllTimeStatistics() ? 'Satz' : 'Partie'} · ${formatStatDiff(item.stats.spielDiff)} gesamt</div>
+          <div class="hint stat-meta-line">${formatSignedDecimal(item.averageDiff)} Spiele pro ${isAllTimeStatistics() ? 'Satz' : 'Partie'} · ${formatStatDiff(item.stats.spielDiff)} gesamt</div>
         </div>
       </div>
     `).join('')
-    : '<div class="empty-state">Noch keine gespielten Partien.</div>';
+    : '<div class="hint">Noch keine gespielten Partien.</div>';
 }
 
 function renderDominantMatches() {
@@ -6458,11 +6458,11 @@ function renderDominantMatches() {
         <span class="rank-position">${index + 1}</span>
         <div>
           <div class="mini-rank-name">${renderStatTeamPlayers(getWinnerTeam(item.match))}</div>
-          <div class="stat-meta-line">${formatStatisticsMatchLabel(item.match)} · ${formatWinnerResult(item.match)} · ${formatStatDiff(item.gameStats.diff)}</div>
+          <div class="hint stat-meta-line">${formatStatisticsMatchLabel(item.match)} · ${formatWinnerResult(item.match)} · ${formatStatDiff(item.gameStats.diff)}</div>
         </div>
       </div>
     `).join('')
-    : '<div class="empty-state">Noch keine gespielten Partien.</div>';
+    : '<div class="hint">Noch keine gespielten Partien.</div>';
 }
 
 function renderBiggestUpsets() {
@@ -6484,11 +6484,11 @@ function renderBiggestUpsets() {
         <span class="rank-position">${index + 1}</span>
         <div>
           <div class="mini-rank-name">${renderStatTeamPlayers(getWinnerTeam(item.match))}</div>
-          <div class="stat-meta-line">${formatStatisticsMatchLabel(item.match)} · nur ${item.winnerProbability}% Siegchance</div>
+          <div class="hint stat-meta-line">${formatStatisticsMatchLabel(item.match)} · nur ${item.winnerProbability}% Siegchance</div>
         </div>
       </div>
     `).join('')
-    : '<div class="empty-state">Noch kein Außenseiter-Sieg.</div>';
+    : '<div class="hint">Noch kein Außenseiter-Sieg.</div>';
 }
 
 function renderStatistik() {
@@ -6557,7 +6557,7 @@ function renderInfoSection(section, id) {
 }
 
 function renderInfoArticle(article, index) {
-  return `<article class="widget info-anchor" id="artikel-${article.spieltag}">
+  return `<article class="info-anchor" id="artikel-${article.spieltag}">
     <div class="info-article-preview" id="info-article-preview-${index}">
       ${renderArticleCard(article)}
     </div>
@@ -6612,7 +6612,7 @@ function renderInfos() {
       <div class="sh-meta">Archiv</div>
     </div>
     <div class="info-articles-stack">
-      ${articles.length ? articles.map(renderInfoArticle).join('') : '<article class="widget"><div class="empty-state">Noch keine PadelPost-Ausgabe für diese Saison.</div></article>'}
+      ${articles.length ? articles.map(renderInfoArticle).join('') : '<article class="widget"><div class="hint">Noch keine PadelPost-Ausgabe für diese Saison.</div></article>'}
     </div>
   </section>`;
 
@@ -6667,7 +6667,7 @@ function renderMatchRow(m) {
       </div>
       <div class="mc-score">
         <div class="mc-score-main">o.W.</div>
-        <div class="mc-score-detail">ohne Wertung</div>
+        <div class="hint mc-score-detail">ohne Wertung</div>
       </div>
       <div class="mc-team mc-team-2">
         <div class="mc-players">${renderTeamPlayers(m.team2.spieler)}</div>
@@ -6678,7 +6678,7 @@ function renderMatchRow(m) {
   if (m.sieger === null) {
     const probability = getMatchWinProbability(m);
     const probabilityHtml = probability
-      ? `<div class="mc-prob">${probability.team1}% : ${probability.team2}%</div>`
+      ? `<div class="hint mc-prob">${probability.team1}% : ${probability.team2}%</div>`
       : '';
     return `<div class="mc pending ${isViewerMatch(m) ? 'viewer-match' : ''}" data-match-entry="${escapeHtml(m.id)}">
       <div class="mc-meta"><span class="mc-nr">${formatMatchMeta(m, { relative: true })}</span></div>
@@ -6687,7 +6687,7 @@ function renderMatchRow(m) {
       </div>
       ${isLive ? `<button type="button" class="mc-score" data-live-open-match="${escapeHtml(m.id)}" aria-label="Liveticker öffnen, Satzstand 0 zu 0, Spielstand ${Number(activeLive.teamOneGames) || 0} zu ${Number(activeLive.teamTwoGames) || 0}">
         <div class="mc-score-main">0:0</div>
-        <div class="mc-score-detail mc-score-live">${Number(activeLive.teamOneGames) || 0}:${Number(activeLive.teamTwoGames) || 0} <span class="mc-score-live-dot" aria-hidden="true">●</span>LIVE</div>
+        <div class="hint mc-score-detail mc-score-live">${Number(activeLive.teamOneGames) || 0}:${Number(activeLive.teamTwoGames) || 0} <span class="mc-score-live-dot" aria-hidden="true">●</span>LIVE</div>
       </button>` : `${statistics ? `<button type="button" class="mc-score" ${statistics.attributes}>` : '<div class="mc-score">'}
         ${probabilityHtml}
         ${statistics?.mode === 'preview' ? renderMatchForecastLine(m) : ''}
@@ -6709,7 +6709,7 @@ function renderMatchRow(m) {
   </span>` : '');
   const scoreMain = String(m.saetze || '—');
   const scoreDetail = m.ergebnis
-    ? `<div class="mc-score-detail">${hasLiveHistory || statistics ? `<span class="mc-score-result-with-details">${m.ergebnis}${liveHistoryIcon}</span>` : m.ergebnis}</div>`
+    ? `<div class="hint mc-score-detail">${hasLiveHistory || statistics ? `<span class="mc-score-result-with-details">${m.ergebnis}${liveHistoryIcon}</span>` : m.ergebnis}</div>`
     : '';
   const viewerInT1 = isParticipantView() && m.team1.spieler.includes(getSelectedViewer().name);
   const viewerInT2 = isParticipantView() && m.team2.spieler.includes(getSelectedViewer().name);
@@ -6717,8 +6717,8 @@ function renderMatchRow(m) {
   const viewerLost = (viewerInT1 && m.sieger === 2) || (viewerInT2 && m.sieger === 1);
   const viewerResultClass = viewerWon ? 'viewer-win' : viewerLost ? 'viewer-loss' : '';
   const probability = getHistoricalMatchWinProbability(m);
-  const leftProbability = probability ? `<span class="mc-result-prob">${probability.team1}%</span>` : '';
-  const rightProbability = probability ? `<span class="mc-result-prob">${probability.team2}%</span>` : '';
+  const leftProbability = probability ? `<span class="hint mc-result-prob">${probability.team1}%</span>` : '';
+  const rightProbability = probability ? `<span class="hint mc-result-prob">${probability.team2}%</span>` : '';
 
   return `<div class="mc played ${isViewerMatch(m) ? `viewer-match ${viewerResultClass}` : ''}" data-match-entry="${escapeHtml(m.id)}">        <div class="mc-meta"><span class="mc-nr">${formatMatchMeta(m, { relative: true })}</span></div>
     <div class="mc-team mc-team-1 ${t1w?'win':''}">
@@ -6778,7 +6778,7 @@ function renderTournamentGroup(matches, fallbackTitle, className) {
     : '';
   return `<div class="match-group ${className}">
     <div class="sh final-four-heading">
-      <div class="sh-heading">
+      <div class="heading-row">
         <h2>${title.toUpperCase()}</h2>
         <div class="sh-meta">${played}/${matches.length}</div>
       </div>
@@ -7030,7 +7030,7 @@ function renderPartien({ animateSort = false } = {}) {
   const emptyMatchesText = PADEL_DATA.matches.length === 0
     ? 'Der Spielplan folgt.'
     : 'Keine Partien für diese Auswahl.';
-  spielplan.innerHTML = spielplanHtml || `<div class="empty-state">${emptyMatchesText}</div>`;
+  spielplan.innerHTML = spielplanHtml || `<div class="hint">${emptyMatchesText}</div>`;
   if (['final-four', 'completed'].includes(getSeasonDisplayPhase())) {
     const finalFourGroup = spielplan.querySelector('.final-four-group');
     if (finalFourGroup) {
@@ -7555,7 +7555,7 @@ function renderCalculatorMatchCard(match) {
 
   return `<article class="calculator-match-card ${result.match ? 'calculator-match-complete' : ''} ${isViewerMatch(match) ? 'viewer-match' : ''} ${activeCalculatorMatchId === match.id ? 'calculator-match-active' : ''}" data-calculator-match-card="${escapeHtml(match.id)}">
     <div class="calculator-match-head">
-      <div class="calculator-match-meta">${formatMatchNumberLabel(match)}</div>
+      <div class="hint calculator-match-meta">${formatMatchNumberLabel(match)}</div>
       ${renderCalculatorMatchStatusHtml(match)}
     </div>
     <div class="calculator-match-teams">
@@ -7642,7 +7642,7 @@ function renderCalculator() {
   const openMatches = getOpenMatches();
   matchContainer.innerHTML = openMatches.length
     ? openMatches.map(renderCalculatorMatchCard).join('')
-    : '<div class="empty-state">Keine offenen Partien.</div>';
+    : '<div class="hint">Keine offenen Partien.</div>';
   syncCalculatorActiveMatchCard();
   updateCalculatorAutoTipUi();
   renderFinalFourCalculator();
@@ -8974,7 +8974,7 @@ async function initApp() {
     invalidateSections();
     renderActiveSection();
   } catch (error) {
-    document.querySelector('main').innerHTML = `<div class="empty-state">Die Saison-Daten konnten nicht geladen werden.</div>`;
+    document.querySelector('main').innerHTML = `<div class="hint">Die Saison-Daten konnten nicht geladen werden.</div>`;
     document.querySelector('main')?.setAttribute('aria-busy', 'false');
     console.error(error);
     return;

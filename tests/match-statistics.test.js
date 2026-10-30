@@ -76,7 +76,7 @@ test('content order, exclusions, escaped data and empty sections',()=>{
  assert.match(statisticsStyleSource,/@media \(max-width: 768px\) \{[\s\S]*?\.match-statistics-form-row \{ grid-template-columns: minmax\(0, 1fr\);/);
  assert.ok(html.indexOf('Elo-Entwicklung')<html.indexOf('Werte und Prognosen können sich'));assert.doesNotMatch(html,/Stand:/);
  assert.doesNotMatch(html,/<title>|Dominanz|Auszeichnungen|Lieblingspartner/);
- assert.match(html,/<h3><span class="match-statistics-heading">Elo-Entwicklung<span class="th-help-wrap match-statistics-heading-help">/);
+ assert.match(html,/<h3><span class="heading-row heading-row--center match-statistics-heading">Elo-Entwicklung<span class="th-help-wrap match-statistics-heading-help">/);
  assert.match(html,/data-help-tooltip-anchor>\?<\/span>[\s\S]*Die Fächer zeigen die Bereiche der möglichen Elo-Werte nach der Partie: grün bei einem Sieg und rot bei einer Niederlage\. Die gestrichelte Linie zeigt die Elo-Prognose des wahrscheinlichsten Ergebnisses\./);
  assert.doesNotMatch(html,/Auto-Tipp/);
  d.rematches=[];d.company=null;d.impacts=[];d.countsForElo=false;d.players.forEach(player=>{player.relationships=[];});const empty=render(d);

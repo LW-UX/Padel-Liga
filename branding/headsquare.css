@@ -61,7 +61,7 @@
   /* Schriften. Die Vorlage nutzt keine Serifen- und keine eigene Monospace-Schrift. */
   --font-body: 'Barlow', system-ui, sans-serif;
   --font-heading: 'Metrisch', 'Barlow', sans-serif;
-  --font-newspaper: 'Metrisch', 'Barlow', sans-serif;
+  --font-newspaper: 'DM Serif Display', Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   /* Grundgröße der Überschriftenschrift; alle Überschriften, Wortmarken und großen Zahlen skalieren mit. */
   --text-heading: 1.75rem;

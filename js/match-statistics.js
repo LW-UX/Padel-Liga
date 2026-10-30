@@ -39,7 +39,7 @@
       <span class="help-icon" tabindex="0" role="button" aria-label="${esc(title)} erklären" aria-describedby="${helpId}" aria-expanded="false" data-help-tooltip-anchor>?</span>
       <span class="help-tooltip" id="${helpId}" role="tooltip">${esc(helpText)}</span>
     </span>`;
-    return body ? `<section class="widget match-statistics-section"><h3><span class="match-statistics-heading">${esc(title)}${help}</span></h3>${body}</section>` : '';
+    return body ? `<section class="widget match-statistics-section"><h3><span class="heading-row heading-row--center match-statistics-heading">${esc(title)}${help}</span></h3>${body}</section>` : '';
   }
   function playerEmoji(player) {
     if (['👨', '👩'].includes(player?.profileEmoji)) return player.profileEmoji;
@@ -67,7 +67,7 @@
   function playerBlock(p, selectedPlayerId) {
     return `<button type="button" class="match-detail-player player-profile-link" data-player-profile-id="${esc(p.playerId)}">
       <span class="match-detail-player-photo" aria-hidden="true"><img class="match-detail-player-image" src="assets/players/${encodeURIComponent(p.playerId)}/profile.webp" alt="" data-detail-player-image><span class="match-detail-player-emoji" hidden>${esc(playerEmoji(p))}</span></span>
-      <span class="match-detail-player-name${viewerClass(p, selectedPlayerId)}">${esc(p.displayName)}</span>${p.elo ? `<small class="match-detail-player-elo">${number(p.elo.before)} Elo</small>` : ''}</button>`;
+      <span class="match-detail-player-name${viewerClass(p, selectedPlayerId)}">${esc(p.displayName)}</span>${p.elo ? `<small class="hint match-detail-player-elo">${number(p.elo.before)} Elo</small>` : ''}</button>`;
   }
   function renderHead(data, selectedPlayerId) {
     const teamOneProbability = data.probability == null ? null : Math.round(data.probability * 100);
@@ -83,7 +83,7 @@
     return `<article class="match-detail"><div class="match-detail-meta"><span class="match-detail-status${analysis ? ' is-finished' : ''}">${analysis ? 'Beendet' : 'Offen'}</span></div>
       <div class="match-detail-matchup"><div class="match-detail-team match-detail-team-1">${data.players.filter(p => p.team === 1).map(p => playerBlock(p, selectedPlayerId)).join('')}</div>
       <div class="match-detail-scoreboard"><span class="match-detail-score-label">${analysis ? 'Ergebnis' : 'Gewinnchance'}</span>
-      ${analysis ? `<strong class="match-detail-score">${esc(data.sets || '—')}</strong>` : previewProbability || '<strong class="match-detail-score">—</strong>'}
+      ${analysis ? `<strong class="score score--match">${esc(data.sets || '—')}</strong>` : previewProbability || '<strong class="score score--match">—</strong>'}
       ${analysis ? `<span class="match-detail-score-note">${esc(data.result)}</span>${analysisProbability ? `<span class="match-detail-score-note">${analysisProbability}</span>` : ''}` : previewProbability ? '<span class="match-detail-score-note">Prozent</span>' : ''}
       </div>
       <div class="match-detail-team match-detail-team-2">${data.players.filter(p => p.team === 2).map(p => playerBlock(p, selectedPlayerId)).join('')}</div></div></article>`;
@@ -133,7 +133,7 @@
     if (!forecast || forecast.error) {
       return `<section class="match-forecast" data-match-forecast>
         <strong class="eyebrow match-forecast-question">Wer wird gewinnen?</strong>
-        <div class="match-forecast-status" role="status">${esc(options.message || 'Die Tipps konnten nicht geladen werden.')}</div>
+        <div class="hint match-forecast-status" role="status">${esc(options.message || 'Die Tipps konnten nicht geladen werden.')}</div>
       </section>`;
     }
     const session = options.session || null;
@@ -169,7 +169,7 @@
       ? '<button type="button" class="text-link match-forecast-change" data-match-forecast-change>Tipp ändern</button>'
       : '';
     const ownMatchNotice = isOwnMatch && forecast.open
-      ? '<span class="match-forecast-own-notice" role="status">Eigene Partie. Kein Tipp möglich.</span>'
+      ? '<span class="hint match-forecast-own-notice" role="status">Eigene Partie. Kein Tipp möglich.</span>'
       : '';
     return `<section class="match-forecast" data-match-forecast>
       <strong class="eyebrow match-forecast-question">Wer wird gewinnen?</strong>
@@ -1045,7 +1045,7 @@
     } catch (error) {
       if (token !== request) return;
       content().setAttribute('aria-busy', 'false');
-      content().innerHTML = '<div class="empty-state" role="alert">Die Partiestatistik konnte nicht geladen werden.<br><button type="button" class="secondary-button" data-statistics-retry>Erneut laden</button></div>';
+      content().innerHTML = '<div class="hint" role="alert">Die Partiestatistik konnte nicht geladen werden.<br><button type="button" class="secondary-button" data-statistics-retry>Erneut laden</button></div>';
     }
   }
   function prepareProfileOpen(trigger, playerId, fromHistory = false, sharedDetail = false) {

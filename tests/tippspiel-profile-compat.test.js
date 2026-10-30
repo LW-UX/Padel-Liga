@@ -229,8 +229,8 @@ test('all training selectors reuse the custom page viewer dropdown', () => {
   assert.match(tippspielSource, /function renderTrainingPicker\(/);
   assert.match(tippspielSource, /type="hidden" name="\$\{escapeHtml\(name\)\}"/);
   assert.match(tippspielSource, /secondary-button secondary-button--dropdown training-picker-toggle/);
-  assert.match(tippspielSource, /viewer-menu training-picker-menu/);
-  assert.match(tippspielSource, /viewer-option training-picker-option/);
+  assert.match(tippspielSource, /picker-menu training-picker-menu/);
+  assert.match(tippspielSource, /picker-option training-picker-option/);
   assert.match(tippspielSource, /data-training-picker-toggle/);
   assert.match(tippspielSource, /data-training-picker-value/);
   assert.match(tippspielSource, /data-training-picker-search role="combobox"/);
@@ -506,7 +506,7 @@ test('result entry exposes live validation messages beside the submit action', (
 });
 
 test('account matchups reuse the muted player separator', () => {
-  assert.match(tippspielSource, /join\('<span class="mc-player-sep">&amp;<\/span>'\)/);
+  assert.match(tippspielSource, /join\('<span class="team-sep">&amp;<\/span>'\)/);
 });
 
 test('account cards use accent2 for viewer participation while actionable yellow stays dominant', () => {

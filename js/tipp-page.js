@@ -77,7 +77,7 @@
     const menu = document.getElementById('season-menu');
     label.textContent = selected.shortLabel || selected.label;
     menu.innerHTML = getSeasonOptions().map(option =>
-      `<button type="button" class="season-option ${option.id === selected.id ? 'active' : ''}" role="option" aria-selected="${option.id === selected.id}" data-season-id="${option.id}"><span>${option.label}</span></button>`
+      `<button type="button" class="picker-option ${option.id === selected.id ? 'active' : ''}" role="option" aria-selected="${option.id === selected.id}" data-season-id="${option.id}"><span>${option.label}</span></button>`
     ).join('');
 
     toggle.addEventListener('click', () => {
@@ -420,7 +420,7 @@
       const accountReady = window.PadelKonto.init();
       await Promise.all([
         loadScript(`../${selected.file}`),
-        loadScript('../js/tippspiel.js?v=2026-10-30-remove-company-chips')
+        loadScript('../js/tippspiel.js?v=2026-10-31-article-container')
       ]);
       const season = hydrateSeason(window.PADEL_SEASON);
       selectedSeasonData = season;
@@ -429,7 +429,7 @@
       if (!window.PadelTippspiel?.init) throw new Error('Das Tippspiel-Modul ist nicht verfügbar.');
       await window.PadelTippspiel.init(season, { accountReady });
     } catch (error) {
-      document.querySelector('main').innerHTML = `<div class="empty-state">Die Tippspiel-Daten konnten nicht geladen werden.</div>`;
+      document.querySelector('main').innerHTML = `<div class="hint">Die Tippspiel-Daten konnten nicht geladen werden.</div>`;
       console.error(error);
     }
   }

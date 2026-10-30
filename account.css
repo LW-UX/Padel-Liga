@@ -371,7 +371,7 @@
       gap: 18px;
       padding-top: 2rem;
     }
-    .account-section-heading { display: flex; align-items: center; justify-content: space-between; }
+    .account-section-heading { gap: normal; }
     .account-section-heading h2 { margin: 0; }
     .account-section-heading .sh-title-with-help { position: relative; }
     .account-section-heading .account-games-help.th-help-wrap { position: static; }
@@ -741,8 +741,6 @@
       padding-top: 12px;
     }
     .live-server-correction-forms[hidden] { display: none; }
-    .account-empty,
-    .account-waiting { color: var(--dim); font-size: var(--text-sm); }
     .account-waiting { display: inline-flex; align-items: center; min-height: 36px; }
     .training-form { 
       display: grid; 
@@ -870,13 +868,10 @@
     }
     .training-picker-separator {
       flex: 0 0 auto;
-      margin-left: 0.25em;
-      color: var(--muted);
-      font-weight: 400;
+      margin: 0 0 0 0.25em;
     }
     .training-picker-versus {
-      color: var(--muted);
-      font-weight: 400;
+      margin: 0;
       text-align: center;
     }
     .training-picker-option-label {

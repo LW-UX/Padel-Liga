@@ -16,7 +16,7 @@
 .match-forecast-action { display: flex; align-items: center; gap: 1rem; justify-self: end; min-width: 0; }
 .match-forecast-action .text-link { margin-top: 0; }
 .match-forecast-change { white-space: nowrap; }
-.match-forecast-own-notice { color: var(--dim); font-size: var(--text-sm); text-align: center; }
+.match-forecast-own-notice { text-align: center; }
 .match-forecast-choices {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -114,7 +114,7 @@
   color: var(--accent);
 }
 .match-forecast-login:is(:hover, :focus-visible) { opacity: .7; }
-.match-forecast-status { color: var(--dim); font-size: var(--text-sm); text-align: center; }
+.match-forecast-status { text-align: center; }
 .match-forecast-message {
   grid-column: 2;
   color: var(--negativ);
@@ -279,7 +279,7 @@ table.rt.match-statistics-ranking .col-diff { padding-right: 1rem; }
 .match-statistics-form-group.is-multi-match .form-chip:focus-visible,
 .match-statistics-form-group.is-multi-match .form-chip:hover { z-index: 1; }
 .match-statistics-section:has(> .match-statistics-graph) > h3 { margin-bottom: 0; }
-.match-statistics-heading { display: flex; align-items: center; gap: 5px; width: fit-content; }
+.match-statistics-heading { gap: 5px; width: fit-content; }
 .match-statistics-heading-help { justify-content: flex-start; }
 [data-statistics-graph-picker] {
   position: static;

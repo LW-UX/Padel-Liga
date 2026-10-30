@@ -34,8 +34,8 @@ test('Liga and PadelTipp share the accessible mobile global action shell', () =>
   assert.match(tipp, /data-global-actions-list[\s\S]*id="liga-link"[\s\S]*id="external-game-link"[\s\S]*id="season-picker"[\s\S]*data-auth-open/);
   assert.match(tipp, /id="liga-link"[^>]*>[\s\S]*<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"\/><\/svg>[\s\S]*<span>Zurück zur Liga<\/span>/);
   assert.doesNotMatch(tipp.match(/id="liga-link"[^>]*>[\s\S]*?<\/a>/)?.[0] || '', /<svg[^>]+class=/);
-  assert.match(style, /\.secondary-button--icon svg,\s*\.context-link svg \{ width: 20px; height: 20px;/);
-  assert.match(style, /\.context-link svg \{ display: none; \}[\s\S]*@media \(max-width: 768px\)[\s\S]*\.global-actions \.context-link svg \{ display: block; \}/);
+  assert.match(style, /\.secondary-button--icon svg,\s*\.global-actions \.text-link svg \{ width: 20px; height: 20px;/);
+  assert.match(style, /\.global-actions \.text-link svg \{ display: none; \}[\s\S]*@media \(max-width: 768px\)[\s\S]*\.global-actions \.text-link svg \{ display: block; \}/);
 });
 
 test('the mobile speed dial stays separate from the local navigation', () => {

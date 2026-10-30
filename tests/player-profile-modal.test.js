@@ -281,7 +281,7 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /visibleMatchCount >= PLAYER_PROFILE_MATCH_PREVIEW_LIMIT/);
   assert.match(style, /\.player-profile-show-all\[hidden\] \{ display: none; \}/);
   assert.match(app, /function renderPlayerProfileNames\(names = \[\], fallback = '—'\)/);
-  assert.match(app, /join\('<span class="mc-player-sep">&amp;<\/span>'\)/);
+  assert.match(app, /join\('<span class="team-sep">&amp;<\/span>'\)/);
   assert.match(app, /player-profile-match-team-line"><span>mit<\/span>[\s\S]*?player-profile-match-team-line"><span>vs\.<\/span>/);
   assert.match(style, /@media \(max-width: 1199px\) \{[\s\S]*?\.player-profile-match-teams \{[\s\S]*?flex-direction: column;/);
   assert.match(style, /@media \(max-width: 999px\) \{[\s\S]*?\.player-profile-match \{[\s\S]*?grid-template-columns: 30px minmax\(0, 1fr\) auto;/);

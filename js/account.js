@@ -808,7 +808,7 @@
           ? `<span class="account-task-player-name is-authenticated">${escapedName}</span>`
           : escapedName;
       })
-      .join('<span class="mc-player-sep">&amp;</span>');
+      .join('<span class="team-sep">&amp;</span>');
   }
 
   function renderTaskMatchup(task) {
@@ -908,7 +908,7 @@
     }
     if (task.task_type === 'waiting') {
       return `${renderProposedResult(task, true)}
-        <div class="account-task-actions"><span class="account-waiting">Auf Bestätigung warten</span></div>`;
+        <div class="account-task-actions"><span class="hint account-waiting">Auf Bestätigung warten</span></div>`;
     }
     if (task.task_type === 'review') {
       return `${renderProposedResult(task)}
@@ -993,7 +993,7 @@
                 : item.kind === 'training-scheduled'
                   ? renderScheduledTrainingTaskCard(item.task, group.key)
                 : renderResultTaskCard(item.task, group.key)).join('')}</div>`
-            : '<div class="account-empty">Derzeit keine Partie.</div>'}
+            : '<div class="hint">Derzeit keine Partie.</div>'}
         </section>`)
       .join('');
   }
@@ -1003,8 +1003,8 @@
     if (target && isPlayerAccount() && (state.playerToolsLoading || state.playerToolsError)) {
       target.setAttribute('aria-busy', String(state.playerToolsLoading));
       target.innerHTML = state.playerToolsLoading
-        ? '<div class="account-empty" role="status">Partien werden geladen …</div>'
-        : '<div class="account-empty" role="status">Partien konnten nicht geladen werden. <button class="text-link" type="button" data-account-tasks-retry>Erneut versuchen</button></div>';
+        ? '<div class="hint" role="status">Partien werden geladen …</div>'
+        : '<div class="hint" role="status">Partien konnten nicht geladen werden. <button class="text-link" type="button" data-account-tasks-retry>Erneut versuchen</button></div>';
       return;
     }
     target?.setAttribute('aria-busy', 'false');
@@ -1069,7 +1069,7 @@
       const isAuthenticated = playerId === state.profile?.player_id;
       const isGuest = isTrainingGuestKey(playerId);
       return `<span class="account-task-player-name${isAuthenticated ? ' is-authenticated' : ''}${isGuest ? ' is-guest' : ''}">${escapeHtml(getPlayerName(playerId, guestNames, participantIds))}</span>`;
-    }).join('<span class="mc-player-sep">&amp;</span>');
+    }).join('<span class="team-sep">&amp;</span>');
   }
 
   function getTrainingFormatConfig(format = 'one_set') {
@@ -1172,12 +1172,12 @@
     if (showMatchup && Array.isArray(option?.teams) && option.teams.length === 2) {
       const renderTeam = (players, side) => `<span class="training-picker-team training-picker-team--${side}">
         ${players.map((player, index) => `<span class="training-picker-player">
-          <span class="training-picker-player-name">${escapeHtml(player)}</span>${index === 0 ? '<span class="training-picker-separator">&amp;</span>' : ''}
+          <span class="training-picker-player-name">${escapeHtml(player)}</span>${index === 0 ? '<span class="team-sep training-picker-separator">&amp;</span>' : ''}
         </span>`).join('')}
       </span>`;
       return `<span class="training-picker-matchup">
         ${renderTeam(option.teams[0], 'left')}
-        <span class="training-picker-versus">vs.</span>
+        <span class="team-sep training-picker-versus">vs.</span>
         ${renderTeam(option.teams[1], 'right')}
       </span>`;
     }
@@ -1196,9 +1196,9 @@
         ${toggle}
         <input class="training-picker-search-input" type="search" data-training-picker-search role="combobox" aria-label="${escapeHtml(label)} suchen" aria-controls="${escapeHtml(menuId)}" aria-expanded="false" autocomplete="off" spellcheck="false" placeholder="Spieler suchen …" disabled>
       </div>` : toggle}
-      <div class="viewer-menu training-picker-menu" id="${escapeHtml(menuId)}" role="listbox" aria-label="${escapeHtml(label)} auswählen">
+      <div class="picker-menu training-picker-menu" id="${escapeHtml(menuId)}" role="listbox" aria-label="${escapeHtml(label)} auswählen">
         ${options.map(option => `<button
-          class="viewer-option training-picker-option${option.value === selected?.value ? ' active' : ''}"
+          class="picker-option training-picker-option${option.value === selected?.value ? ' active' : ''}"
           type="button"
           role="option"
           aria-label="${escapeHtml(option.label)}"
@@ -1647,7 +1647,7 @@
       <div class="training-task-rounds">${rounds.map((round, roundIndex) => renderTrainingTaskRound(task, round, roundIndex, rounds.length)).join('')}</div>
       <div class="account-task-actions${task.created_by_me ? '' : ' result-review-actions'}">
         ${task.created_by_me
-          ? '<span class="account-waiting">Auf Bestätigung warten</span>'
+          ? '<span class="hint account-waiting">Auf Bestätigung warten</span>'
           : `<button class="secondary-button" type="button" data-training-edit="${task.session_id}">Alternative eingeben</button>
           <button class="primary-button" type="button" data-training-confirm="${task.session_id}">Training bestätigen</button>`}
       </div>

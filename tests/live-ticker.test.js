@@ -80,7 +80,7 @@ test('ticker assignment lives inside the scheduled match card and reveals only a
   assert.match(ticker, /class="training-picker" data-training-picker/);
   assert.match(ticker, /class="secondary-button secondary-button--dropdown training-picker-toggle"/);
   assert.match(ticker, /data-training-picker-search role="combobox"/);
-  assert.match(ticker, /class="viewer-menu training-picker-menu"/);
+  assert.match(ticker, /class="picker-menu training-picker-menu"/);
   assert.match(ticker, /data-training-picker-search-text/);
   assert.doesNotMatch(ticker, /<select name="scorerProfileId"/);
   assert.match(accountStyle, /\.match-schedule-form :where\(input, select\)/);
@@ -173,7 +173,7 @@ test('the public view links only live or archived result centers and keeps profi
   assert.match(ticker, /const breakLabel = last\.break \? '<strong>BREAK/);
   assert.match(ticker, /data-live-game-points/);
   assert.match(ticker, /label !== 'Spiel'/);
-  assert.match(ticker, /isLive && !isGamesMode \? `<strong class="live-ticker-points" data-live-current-points>\$\{escapeHtml\(pointLabel\(session\)\)\}<\/strong>` : ''/);
+  assert.match(ticker, /isLive && !isGamesMode \? `<strong class="score score--points" data-live-current-points>\$\{escapeHtml\(pointLabel\(session\)\)\}<\/strong>` : ''/);
   assert.match(ticker, /class="match-detail"/);
   assert.match(ticker, /class="live-ticker-game-line"/);
   assert.match(ticker, /class="match-detail-player-photo"/);
@@ -387,7 +387,7 @@ test('only Final Four detail views use the split probability score', () => {
   const overview = ticker.match(/function renderOverview\(\) \{[\s\S]*?(?=\n  function renderPublic)/)?.[0] || '';
   const publicMatch = ticker.match(/function renderPublic\(\) \{[\s\S]*?(?=\n  async function load)/)?.[0] || '';
 
-  assert.match(matchRow, /`<div class="mc-prob">\$\{probability\.team1\}% : \$\{probability\.team2\}%<\/div>`/);
+  assert.match(matchRow, /`<div class="hint mc-prob">\$\{probability\.team1\}% : \$\{probability\.team2\}%<\/div>`/);
   assert.doesNotMatch(matchRow, /renderProbabilityScore/);
   assert.match(ticker, /function getPayloadWinProbability\(payload\)[\s\S]*player\.currentElo[\s\S]*elos\[0\] \* 0\.7 \+ elos\[1\] \* 0\.3/);
   assert.match(overview, /renderProbabilityScore\(matchState\.probability, 'live-overview-probability'\)/);
@@ -403,11 +403,11 @@ test('only Final Four detail views use the split probability score', () => {
 test('the public match list always leads with sets and keeps games and history below', () => {
   const matchRow = app.match(/function renderMatchRow\(m\) \{[\s\S]*?(?=\n\}\n\nfunction renderMatchdayGroup)/)?.[0] || '';
   assert.match(matchRow, /const scoreMain = String\(m\.saetze \|\| '—'\)/);
-  assert.match(matchRow, /class="mc-score-detail"[\s\S]*m\.ergebnis[\s\S]*liveHistoryIcon/);
+  assert.match(matchRow, /class="hint mc-score-detail"[\s\S]*m\.ergebnis[\s\S]*liveHistoryIcon/);
   assert.match(matchRow, /hasLiveHistory && getMatchStage\(m\) !== 'final-four'/);
   assert.doesNotMatch(matchRow, /isSingleSetMatch\(m\) \? \(m\.ergebnis/);
   assert.match(matchRow, /class="mc-score-main">0:0<\/div>/);
-  assert.match(matchRow, /class="mc-score-detail mc-score-live">\$\{Number\(activeLive\.teamOneGames\)/);
+  assert.match(matchRow, /class="hint mc-score-detail mc-score-live">\$\{Number\(activeLive\.teamOneGames\)/);
   assert.match(matchRow, /class="mc-score-result-with-details">\$\{m\.ergebnis\}\$\{liveHistoryIcon\}/);
   assert.match(matchRow, /const probability = getHistoricalMatchWinProbability\(m\)/);
   assert.doesNotMatch(matchRow, /countsForRanking\(m\) \? getHistoricalMatchWinProbability/);

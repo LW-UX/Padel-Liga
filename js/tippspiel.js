@@ -363,9 +363,9 @@
             >` : ''}
           </div>
         </div>
-        <div class="viewer-menu prediction-bonus-picker-menu" id="${escapeHtml(menuId)}" role="listbox" aria-label="${escapeHtml(label)} auswählen">
+        <div class="picker-menu prediction-bonus-picker-menu" id="${escapeHtml(menuId)}" role="listbox" aria-label="${escapeHtml(label)} auswählen">
           <button
-            class="viewer-option${selected ? '' : ' active'}"
+            class="picker-option${selected ? '' : ' active'}"
             type="button"
             role="option"
             aria-selected="${!selected}"
@@ -375,7 +375,7 @@
           ${options.map(option => {
             const usedElsewhere = option.value !== selected && getBonusAnswers(question.question_id).includes(option.value);
             return `<button
-              class="viewer-option${option.value === selected ? ' active' : ''}"
+              class="picker-option${option.value === selected ? ' active' : ''}"
               type="button"
               role="option"
               aria-selected="${option.value === selected}"
@@ -569,7 +569,7 @@
         if (!playerId) return `<span class="${className}">${escapeHtml(player)}</span>`;
         return `<a class="${className} player-profile-link" href="../?spielerprofil=${encodeURIComponent(playerId)}" data-player-profile-id="${escapeHtml(playerId)}" aria-label="Profil von ${escapeHtml(player)} öffnen">${escapeHtml(player)}</a>`;
       })
-      .join('<span class="mc-player-sep"> &amp; </span>');
+      .join('<span class="team-sep"> &amp; </span>');
   }
 
   function renderAuthHint() {
@@ -711,7 +711,7 @@
   function renderOverviewArticle() {
     const article = getCurrentOverviewArticle();
     if (!article) return '';
-    return `<article class="widget widget-articles prediction-overview-block prediction-overview-article">
+    return `<article class="widget-articles prediction-overview-block prediction-overview-article">
       <div class="home-article-preview${state.articleExpanded ? ' expanded' : ''}" id="prediction-home-article-preview">
         ${renderOverviewArticleCard(article)}
       </div>
@@ -803,7 +803,7 @@
 
   function renderOverviewRankRows() {
     if (!state.leaderboard.length) {
-      return '<div class="prediction-overview-empty">Noch keine Tippwertung vorhanden.</div>';
+      return '<div class="hint prediction-overview-empty">Noch keine Tippwertung vorhanden.</div>';
     }
     const { index: ownIndex } = getOwnLeaderboardPosition();
     const indexes = [0, 1, 2].filter(index => state.leaderboard[index]);
@@ -847,8 +847,8 @@
           <p>${escapeHtml(context)}</p>
         </div>
         <div class="prediction-overview-scoreline">
-          <div><div class="stat-main">${entry ? index + 1 : '–'}</div><div class="stat-copy">Platz</div></div>
-          <div><div class="stat-main">${formatCount(entry?.points)}</div><div class="stat-copy">Punkte</div></div>
+          <div><div class="stat-main">${entry ? index + 1 : '–'}</div><div class="hint">Platz</div></div>
+          <div><div class="stat-main">${formatCount(entry?.points)}</div><div class="hint">Punkte</div></div>
           <div>
             <div class="stat-main prediction-passive-points-value">
               <span>${formatCount(passivePoints)}</span>
@@ -857,7 +857,7 @@
                 <span class="help-tooltip" id="prediction-passive-points-help" role="tooltip">Deine eigenen Partien kannst du nicht tippen. Sobald sie gewertet werden, erhältst du automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Tipp der anderen. Hat niemand getippt, gibt es keine automatische Gutschrift.</span>
               </span>
             </div>
-            <div class="stat-copy">Passive Punkte</div>
+            <div class="hint">Passive Punkte</div>
           </div>
         </div>
       </article>
@@ -927,7 +927,7 @@
       <article class="widget prediction-overview-block prediction-overview-latest">
         <h3>Letzte Auswertung · ${escapeHtml(latest.label)}</h3>
         <div class="prediction-overview-stats prediction-overview-latest-stats">
-          ${details.map(detail => `<div><strong>${escapeHtml(detail.value)}</strong><span class="stat-copy">${escapeHtml(detail.label)}</span></div>`).join('')}
+          ${details.map(detail => `<div><strong>${escapeHtml(detail.value)}</strong><span class="hint">${escapeHtml(detail.label)}</span></div>`).join('')}
         </div>
       </article>
     `;
@@ -946,12 +946,12 @@
       <article class="widget prediction-overview-block prediction-overview-balance">
         <h3>Deine Saisonbilanz</h3>
         <div class="prediction-overview-stats">
-          <div><strong>${formatCount(predictions)}</strong><span class="stat-copy">Tipps</span></div>
-          <div><strong>${formatCount(scored)}</strong><span class="stat-copy">Wertungen</span></div>
-          <div><strong>${average}</strong><span class="stat-copy">Ø Punkte</span></div>
-          <div><strong>${formatCount(correctWinners)}</strong><span class="stat-copy">Sieger richtig</span></div>
-          <div><strong>${formatCount(exact)}</strong><span class="stat-copy">Exakt</span></div>
-          <div><strong>${exactRate}</strong><span class="stat-copy">Exaktquote</span></div>
+          <div><strong>${formatCount(predictions)}</strong><span class="hint">Tipps</span></div>
+          <div><strong>${formatCount(scored)}</strong><span class="hint">Wertungen</span></div>
+          <div><strong>${average}</strong><span class="hint">Ø Punkte</span></div>
+          <div><strong>${formatCount(correctWinners)}</strong><span class="hint">Sieger richtig</span></div>
+          <div><strong>${formatCount(exact)}</strong><span class="hint">Exakt</span></div>
+          <div><strong>${exactRate}</strong><span class="hint">Exaktquote</span></div>
         </div>
       </article>
     `;
@@ -974,8 +974,8 @@
       <article class="widget prediction-overview-block prediction-overview-community">
         <h3>Diese Saison</h3>
         <div class="prediction-overview-scoreline">
-          <div><div class="stat-main">${formatCount(participants)}</div><div class="stat-copy">Teilnehmende</div></div>
-          <div><div class="stat-main">${formatCount(predictions)}</div><div class="stat-copy">Tipps</div></div>
+          <div><div class="stat-main">${formatCount(participants)}</div><div class="hint">Teilnehmende</div></div>
+          <div><div class="stat-main">${formatCount(predictions)}</div><div class="hint">Tipps</div></div>
         </div>
       </article>
     `;
@@ -989,7 +989,7 @@
       return;
     }
     if (!state.ready) {
-      target.innerHTML = '<div class="prediction-overview-loading">Deine Tippzentrale wird geladen …</div>';
+      target.innerHTML = '<div class="hint prediction-overview-loading">Deine Tippzentrale wird geladen …</div>';
       return;
     }
     const { entry, index } = getOwnLeaderboardPosition();
@@ -1028,7 +1028,7 @@
     }
 
     if (!state.ready) {
-      target.innerHTML = '<div class="empty-state">Offene Tipps werden geladen …</div>';
+      target.innerHTML = '<div class="hint">Offene Tipps werden geladen …</div>';
       return;
     }
 
@@ -1048,7 +1048,7 @@
     const completeBonusQuestions = openBonusQuestions.filter(isBonusQuestionComplete);
     const lockedBonusQuestions = bonusQuestions.filter(question => !isBonusQuestionOpen(question));
     if (!matches.length && !bonusQuestions.length) {
-      target.innerHTML = '<div class="widget empty-state">Für diese Saison sind noch keine Spiele im Tippspiel hinterlegt.</div>';
+      target.innerHTML = '<div class="widget hint">Für diese Saison sind noch keine Spiele im Tippspiel hinterlegt.</div>';
       return;
     }
 

@@ -164,7 +164,7 @@ test('prediction rankings show only the previous PadelTipp winner achievement', 
 test('the current PadelPost article reuses the collapsible league-home structure', () => {
   assert.match(script, /function getCurrentOverviewArticle\(\)/);
   assert.match(script, /Array\.isArray\(state\.season\?\.articles\)/);
-  assert.match(script, /class="widget widget-articles prediction-overview-block prediction-overview-article"/);
+  assert.match(script, /class="widget-articles prediction-overview-block prediction-overview-article"/);
   assert.match(script, /class="home-article-preview\$\{state\.articleExpanded \? ' expanded' : ''\}"/);
   assert.match(script, /class="article-card article-newspaper"/);
   assert.match(script, /class="text-link article-readmore"[\s\S]*data-expand-prediction-article[\s\S]*>Weiterlesen<\/button>/);
@@ -204,7 +204,7 @@ test('personal and guest dashboard states remain distinct', () => {
   assert.match(script, /Exaktquote/);
   assert.match(seasonBalance, />Tipps<[\s\S]*>Wertungen<[\s\S]*>Ø Punkte<[\s\S]*>Sieger richtig<[\s\S]*>Exakt<[\s\S]*>Exaktquote</);
   assert.match(script, /const passivePoints = getPersonalContributions\(\)[\s\S]*?\.filter\(item => item\.automatic\)[\s\S]*?\.reduce\(\(total, item\) => total \+ item\.points, 0\)/);
-  assert.match(script, /<div class="stat-copy">Passive Punkte<\/div>/);
+  assert.match(script, /<div class="hint">Passive Punkte<\/div>/);
   assert.match(script, /class="stat-main prediction-passive-points-value"[\s\S]*?aria-label="Passive Punkte erklären"[\s\S]*?id="prediction-passive-points-help" role="tooltip"/);
   assert.match(script, /Deine eigenen Partien kannst du nicht tippen\.[\s\S]*?schlechteste tatsächlich abgegebene Tipp der anderen\.[\s\S]*?keine automatische Gutschrift\./);
   assert.match(script, /class="prediction-overview-stand-copy">[\s\S]*?Dein Stand[\s\S]*?prediction-overview-account[\s\S]*?<p>\$\{escapeHtml\(context\)\}<\/p>/);
@@ -214,7 +214,7 @@ test('personal and guest dashboard states remain distinct', () => {
   assert.match(script, /Letzte Auswertung/);
   assert.match(script, /class="prediction-overview-stats prediction-overview-latest-stats"/);
   assert.match(script, /details\.push\(\{ value: `\$\{latest\.exact\}×`, label: 'exakt' \}\)/);
-  assert.match(script, /<strong>\$\{escapeHtml\(detail\.value\)\}<\/strong><span class="stat-copy">\$\{escapeHtml\(detail\.label\)\}<\/span>/);
+  assert.match(script, /<strong>\$\{escapeHtml\(detail\.value\)\}<\/strong><span class="hint">\$\{escapeHtml\(detail\.label\)\}<\/span>/);
   assert.match(script, /Spitzenfeld/);
   assert.match(script, /if \(ownIndex >= 3\) indexes\.push\(ownIndex\)/);
   assert.match(script, /class="mini-rank-row r\$\{index \+ 1\}/);

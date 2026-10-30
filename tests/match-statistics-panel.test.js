@@ -155,7 +155,7 @@ test('panel content uses compact match, prediction and statistics layouts', () =
   assert.match(tippStyle, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-match-card:not\(\.is-single-set\)/);
   assert.match(tippStyle, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-team \{[\s\S]*?display: flex;[\s\S]*?flex-direction: column;[\s\S]*?overflow: visible;/);
   assert.match(tippStyle, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-player \{[\s\S]*?overflow: hidden;[\s\S]*?text-overflow: ellipsis;/);
-  assert.match(tippStyle, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-team \.mc-player-sep \{ display: none; \}/);
+  assert.match(tippStyle, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-team \.team-sep \{ display: none; \}/);
   assert.match(statisticsStyle, /#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-ranking-layout \{\s*grid-template-columns: 1fr;/);
   assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \{[\s\S]*?max-width: var\(--match-detail-panel-max-width\);[\s\S]*?container: match-detail-panel \/ inline-size;/);
   assert.match(style, /@container match-detail-panel \(min-width: 1100px\) \{[\s\S]*?detail-view-dialog\[data-presentation="panel"\] \.detail-view-content \{[\s\S]*?width: min\(calc\(100% - 2rem\), 1100px\);/);

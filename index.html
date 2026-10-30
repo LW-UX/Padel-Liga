@@ -26,7 +26,7 @@
       } catch (error) { /* Ohne Speicher bleibt das veröffentlichte Branding. */ }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026-10-30-widget-container">
+  <link rel="stylesheet" href="style.css?v=2026-10-31-article-container">
   <link rel="stylesheet" href="account.css?v=2026-10-30-design-cards">
   <link rel="stylesheet" href="whats-new.css?v=2026-10-30-with-icon">
   <script>
@@ -65,7 +65,7 @@
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/panel-layout.js?v=2026-10-29-shared-panel-layout"></script>
   <script defer src="js/match-statistics.js?v=2026-10-30-widget-container"></script>
-  <script defer src="js/app.js?v=2026-10-30-widget-container"></script>
+  <script defer src="js/app.js?v=2026-10-31-article-container"></script>
 </head>
 <body>
 
@@ -104,7 +104,7 @@
               </span>
               <span id="season-picker-label"><span class="loading-skeleton skeleton-pill" aria-hidden="true"></span></span>
             </button>
-            <div class="season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
+            <div class="picker-menu season-menu" id="season-menu" role="listbox" aria-label="Saison auswählen"></div>
           </div>
           <button class="primary-button auth-button global-action" id="auth-button" type="button" data-auth-open data-global-action data-global-action-close>
             <svg class="auth-user-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -130,14 +130,14 @@
               <span class="viewer-profile-emoji" id="viewer-profile-emoji" aria-hidden="true">👤</span>
             </button>
             <div class="viewer-combobox">
-              <button class="secondary-button secondary-button--dropdown" type="button" data-viewer-toggle data-global-action aria-haspopup="listbox" aria-expanded="false" aria-controls="viewer-menu">
+              <button class="secondary-button secondary-button--dropdown" type="button" data-viewer-toggle data-global-action aria-haspopup="listbox" aria-expanded="false" aria-controls="picker-menu">
                 <span class="viewer-label-full" id="viewer-label-full">Spieler auswählen</span>
                 <span class="viewer-label-short" id="viewer-label-short">Auswählen</span>
               </button>
-              <input class="viewer-search-input" id="viewer-search-input" type="search" data-viewer-search role="combobox" aria-label="Spieler suchen" aria-controls="viewer-menu" aria-expanded="false" autocomplete="off" spellcheck="false" placeholder="Suchen …" disabled>
+              <input class="viewer-search-input" id="viewer-search-input" type="search" data-viewer-search role="combobox" aria-label="Spieler suchen" aria-controls="picker-menu" aria-expanded="false" autocomplete="off" spellcheck="false" placeholder="Suchen …" disabled>
             </div>
           </div>
-          <div class="viewer-menu" id="viewer-menu" role="listbox"></div>
+          <div class="picker-menu" id="picker-menu" role="listbox"></div>
         </div>
       </div>
     </div>
@@ -166,7 +166,7 @@
           <h3>Jetzt auch als App!</h3>
           <p class="home-app-hint-text">Diese Webseite auf dem Handy öffnen, im Browser-Menü auf Teilen drücken und zum Home-Bildschirm hinzufügen. Name vergeben, speichern und schon ist die App auf dem Handy für uneingeschränkten Zugriff.</p>
         </article>
-        <article class="widget widget-articles">
+        <article class="widget-articles">
           <div id="home-articles">
             <div class="loading-skeleton skeleton-article skeleton-article-large" aria-hidden="true">
               <span class="skeleton-line skeleton-line-kicker"></span>
@@ -198,7 +198,7 @@
           </div>
           <div class="home-widget-links">
             <button class="text-link inline-link" data-nav-target="rangliste">Zur Rangliste</button>
-            <div class="home-widget-note" id="home-calculator-link">
+            <div class="hint home-widget-note" id="home-calculator-link">
               <span>Prognose wagen?</span>
               <button class="text-link inline-link" data-nav-target="rechner">Zum Rechner</button>
             </div>
@@ -254,7 +254,7 @@
     <div class="ranking-profile-layout" id="ranking-profile-layout">
       <div class="ranking-profile-main" id="ranking-profile-main">
     <div class="sh sh-with-control">
-      <div class="sh-heading">
+      <div class="heading-row">
         <h2>RANGLISTE</h2>
         <div class="sh-meta" id="rl-meta"></div>
       </div>
@@ -328,7 +328,7 @@
     </article>
     <div id="final-four-ranking-section">
       <div class="sh section-subheading final-four-heading">
-        <div class="sh-heading">
+        <div class="heading-row">
           <h2>FINAL FOUR</h2>
           <div class="sh-meta" id="ff-meta"></div>
         </div>
@@ -437,7 +437,7 @@
       <div class="all-time-ranking-profile-main" id="all-time-ranking-profile-main">
     <div class="all-time-ranking">
       <div class="sh sh-with-control section-subheading">
-        <div class="sh-heading">
+        <div class="heading-row">
           <h2>EWIGE RANGLISTE</h2>
           <div class="sh-meta" id="all-time-ranking-meta"></div>
         </div>
@@ -485,7 +485,7 @@
       <div class="match-statistics-list-pane" id="match-statistics-list-pane">
         <div id="final-four-spielplan" hidden></div>
         <div class="sh sh-with-control">
-          <div class="sh-heading">
+          <div class="heading-row">
             <h2 id="partien-title">PARTIEN</h2>
             <div class="sh-meta" id="sp-meta"></div>
           </div>
@@ -510,7 +510,7 @@
   <section id="rechner" class="section">
     <div id="league-calculator">
       <div class="sh">
-        <div class="sh-heading">
+        <div class="heading-row">
           <h2 class="sh-title-with-help">LIGARECHNER
             <span class="th-help-wrap">
               <span class="help-icon" tabindex="0" aria-label="Turnierrechner erklären">?</span>
@@ -632,7 +632,7 @@
 <dialog class="dialog detail-view-dialog" id="detail-view-dialog" aria-labelledby="detail-view-title" data-presentation="modal">
   <div class="detail-view-shell">
     <header class="detail-view-header">
-      <div class="detail-view-heading">
+      <div class="heading-row detail-view-heading">
         <h2 id="detail-view-title">FINAL FOUR</h2>
         <div class="sh-meta" id="detail-view-context"></div>
         <div class="detail-view-played-order" id="match-statistics-played-order" hidden></div>
@@ -652,7 +652,7 @@
     <section class="detail-view-content" id="detail-view">
       <div class="site-nav" id="final-four-view-switcher" aria-label="Final-Four-Partie auswählen"></div>
       <div id="detail-view-body">
-        <div class="empty-state">Der Liveticker wird geladen …</div>
+        <div class="hint">Der Liveticker wird geladen …</div>
       </div>
     </section>
   </div>
@@ -738,7 +738,7 @@
       </div>
 
       <article class="widget player-profile-widget player-profile-elo-panel">
-        <div class="player-profile-section-heading">
+        <div class="heading-row heading-row--center heading-row--between player-profile-section-heading">
           <h3>Elo-Verlauf</h3>
           <span id="player-profile-elo-range"></span>
         </div>
@@ -749,18 +749,18 @@
       </article>
 
       <article class="widget player-profile-widget player-profile-participations-panel">
-        <div class="player-profile-section-heading"><h3>Teilnahmen</h3></div>
+        <div class="heading-row heading-row--center heading-row--between player-profile-section-heading"><h3>Teilnahmen</h3></div>
         <div class="player-profile-participations" id="player-profile-participations"></div>
       </article>
 
       <article class="widget player-profile-widget player-profile-relationships">
-        <div class="player-profile-section-heading" id="player-profile-relationships-heading"><h3>Mitspieler &amp; Gegner</h3></div>
+        <div class="heading-row heading-row--center heading-row--between player-profile-section-heading" id="player-profile-relationships-heading"><h3>Mitspieler &amp; Gegner</h3></div>
         <div id="player-profile-relationships"></div>
         <section class="player-profile-compare" id="player-profile-compare"></section>
       </article>
 
       <article class="widget player-profile-widget player-profile-history">
-        <div class="player-profile-section-heading">
+        <div class="heading-row heading-row--center heading-row--between player-profile-section-heading">
           <h3>Partien</h3>
           <div class="toggle" aria-label="Partien filtern">
             <button type="button" class="active" data-player-profile-match-scope="past" aria-pressed="true">Vergangene</button>
@@ -958,12 +958,12 @@
       <div id="account-games-panel">
         <div class="account-games-empty" id="account-games-empty" hidden>Als Tipper hast du keine eigenen Liga- oder Trainingspartien.</div>
         <section class="account-section" id="live-account-section" hidden>
-          <div class="account-section-heading"><h2>Liveticker</h2></div>
+          <div class="heading-row heading-row--center heading-row--between account-section-heading"><h2>Liveticker</h2></div>
           <div class="account-task-list" id="live-account-list"></div>
         </section>
         <div class="account-player-area" id="account-player-area" hidden>
           <section class="account-section" id="open-results-section">
-            <div class="account-section-heading">
+            <div class="heading-row heading-row--center heading-row--between account-section-heading">
               <h2 class="sh-title-with-help">Partienübersicht
                 <span class="th-help-wrap account-games-help">
                   <span class="help-icon" tabindex="0" role="button" aria-label="Partienübersicht erklären" aria-describedby="account-games-help" aria-expanded="false" data-help-tooltip-anchor>?</span>

@@ -201,7 +201,7 @@
         <span class="match-detail-player-emoji" hidden>${escapeHtml(profileEmoji(player.playerId))}</span>
       </span>
       <span class="match-detail-player-name">${escapeHtml(player.displayName)}</span>
-      <small class="match-detail-player-elo">${Number.isFinite(Number(player.currentElo)) ? `${Math.round(Number(player.currentElo))} Elo` : 'Elo –'}</small>
+      <small class="hint match-detail-player-elo">${Number.isFinite(Number(player.currentElo)) ? `${Math.round(Number(player.currentElo))} Elo` : 'Elo –'}</small>
     </button>`;
   }
 
@@ -283,7 +283,7 @@
       return `<article class="live-ticker-game" data-live-game-row>
         <div class="live-ticker-game-line">
           <div class="live-ticker-game-server live-ticker-game-server-1">${left}</div>
-          <div class="live-ticker-game-score">${last.teamOneGames}:${last.teamTwoGames}</div>
+          <div class="score score--game">${last.teamOneGames}:${last.teamTwoGames}</div>
           <div class="live-ticker-game-server live-ticker-game-server-2">${right}</div>
         </div>
         ${points ? `<div class="live-ticker-game-points" data-live-game-points>${points}</div>` : ''}
@@ -317,7 +317,7 @@
   function renderOverviewTeam(payload, team) {
     return getTeamPlayers(payload, team)
       .map(player => `<span>${escapeHtml(player.displayName)}</span>`)
-      .join('<span class="live-overview-team-separator">&amp;</span>');
+      .join('<span class="team-sep live-overview-team-separator">&amp;</span>');
   }
 
   function getOverviewMatchState(payload) {
@@ -418,7 +418,7 @@
     );
 
     return `<section class="widget live-overview-section live-overview-prematch-section">
-      <div class="live-overview-prematch-heading">
+      <div class="heading-row heading-row--center live-overview-prematch-heading">
         <h3>Prematch-Fakten</h3>
         <span class="th-help-wrap">
           <span class="help-icon" tabindex="0" aria-label="Titelprognose erklären">?</span>
@@ -432,7 +432,7 @@
             <span class="match-detail-player-emoji" hidden>${escapeHtml(profileEmoji(player.playerId))}</span>
           </span>
           <span class="match-detail-player-name">${escapeHtml(player.displayName)}${player.participationStatus === 'replacement' ? '<span aria-hidden="true">*</span><span class="sr-only">, nachgerückt</span>' : ''}</span>
-          <small class="match-detail-player-elo">${Number.isFinite(Number(player.elo)) ? `${Math.round(Number(player.elo))} Elo` : 'Elo –'}</small>
+          <small class="hint match-detail-player-elo">${Number.isFinite(Number(player.elo)) ? `${Math.round(Number(player.elo))} Elo` : 'Elo –'}</small>
         </button>
         <div class="live-overview-prematch-fact live-overview-prematch-forecast">
           <span class="live-overview-prematch-label">Titelprognose</span>
@@ -474,7 +474,7 @@
               <span class="match-detail-player-emoji" hidden>${escapeHtml(profileEmoji(withdrawnPlayer.playerId))}</span>
             </span>
             <span class="match-detail-player-name">${escapeHtml(withdrawnPlayer.displayName)}</span>
-            <small class="match-detail-player-elo">${Number.isFinite(Number(withdrawnPlayer.elo)) ? `${Math.round(Number(withdrawnPlayer.elo))} Elo` : 'Elo –'}</small>
+            <small class="hint match-detail-player-elo">${Number.isFinite(Number(withdrawnPlayer.elo)) ? `${Math.round(Number(withdrawnPlayer.elo))} Elo` : 'Elo –'}</small>
           </button>
         </div>
         <div class="live-overview-prematch-fact live-overview-prematch-forecast">
@@ -524,7 +524,7 @@
         : '<div class="live-overview-poll-status">Kein Umfrageergebnis verfügbar.</div>';
 
     return `<section class="widget live-overview-section live-overview-poll-section">
-      <div class="live-overview-poll-heading">
+      <div class="heading-row heading-row--between live-overview-poll-heading">
         <h3>Wer gewinnt das Final Four?</h3>
         ${poll.closed ? '<span class="sh-meta">Abstimmung beendet</span>' : ''}
       </div>
@@ -614,7 +614,7 @@
     if (!target) return;
     const payloads = state.overviewPayloads;
     if (!payloads.length) {
-      target.innerHTML = '<div class="empty-state">Die Übersicht wird geladen …</div>';
+      target.innerHTML = '<div class="hint">Die Übersicht wird geladen …</div>';
       disconnectPollLayoutObserver();
       if (connection) connection.textContent = 'Wird aktualisiert …';
       return;
@@ -634,7 +634,7 @@
             const teamOneWinner = matchState.isFinished && Number(payload.winner) === 1;
             const teamTwoWinner = matchState.isFinished && Number(payload.winner) === 2;
             return `<button class="live-overview-match${matchState.isFinished ? ' is-finished' : ''}" type="button" data-live-match-id="${escapeHtml(payload.matchId)}">
-              <span class="live-overview-match-meta">
+              <span class="hint live-overview-match-meta">
                 <span>${escapeHtml(payload.displayLabel || `Partie ${index + 1}`)}</span>
                 ${matchState.isLive ? '<span class="live-overview-live"><span class="live-overview-score-dot" aria-hidden="true">●</span>Live</span>' : ''}
               </span>
@@ -688,7 +688,7 @@
     disconnectPollLayoutObserver();
     if (!target || !switcher) return;
     if (!payload) {
-      target.innerHTML = '<div class="empty-state">Für diese Partie ist kein Liveticker verfügbar.</div>';
+      target.innerHTML = '<div class="hint">Für diese Partie ist kein Liveticker verfügbar.</div>';
       switcher.innerHTML = '';
       if (connection) connection.textContent = 'Nicht verfügbar';
       return;
@@ -731,8 +731,8 @@
             <span class="match-detail-score-label">${pendingProbability ? 'Gewinnchance' : 'Spielstand'}</span>
             ${pendingProbability
               ? renderProbabilityScore(pendingProbability, 'match-detail-probability', false)
-              : `<strong class="match-detail-score">${escapeHtml(score)}</strong>`}
-            ${isLive && !isGamesMode ? `<strong class="live-ticker-points" data-live-current-points>${escapeHtml(pointLabel(session))}</strong>` : ''}
+              : `<strong class="score score--match">${escapeHtml(score)}</strong>`}
+            ${isLive && !isGamesMode ? `<strong class="score score--points" data-live-current-points>${escapeHtml(pointLabel(session))}</strong>` : ''}
             <span class="match-detail-score-note">${escapeHtml(scoreNote)}</span>
           </div>
           ${renderTeam(players, 2, currentServerId)}
@@ -956,9 +956,9 @@
         ${toggle}
         <input class="training-picker-search-input" type="search" data-training-picker-search role="combobox" aria-label="${escapeHtml(label)} suchen" aria-controls="${escapeHtml(menuId)}" aria-expanded="false" autocomplete="off" spellcheck="false" placeholder="${escapeHtml(searchPlaceholder)}" disabled>
       </div>` : toggle}
-      <div class="viewer-menu training-picker-menu" id="${escapeHtml(menuId)}" role="listbox" aria-label="${escapeHtml(label)} auswählen">
+      <div class="picker-menu training-picker-menu" id="${escapeHtml(menuId)}" role="listbox" aria-label="${escapeHtml(label)} auswählen">
         ${options.map(option => `<button
-          class="viewer-option training-picker-option${option.value === selected.value ? ' active' : ''}"
+          class="picker-option training-picker-option${option.value === selected.value ? ' active' : ''}"
           type="button"
           role="option"
           aria-label="${escapeHtml(option.label)}"
@@ -1059,7 +1059,7 @@
     const editorOpen = state.assignmentEditors.has(task.matchId);
     const candidates = state.candidates.get(task.matchId) || [];
     return `<div class="account-task-actions">
-        ${assignment ? `<span class="account-waiting">${assignment.status === 'accepted' ? 'Schreiber' : 'Angefragt'}: ${escapeHtml(assignment.scorerName)}</span>
+        ${assignment ? `<span class="hint account-waiting">${assignment.status === 'accepted' ? 'Schreiber' : 'Angefragt'}: ${escapeHtml(assignment.scorerName)}</span>
           <button class="secondary-button" type="button" data-live-revoke="${escapeHtml(task.matchId)}">Aufheben</button>` : ''}
         <button class="secondary-button" type="button" data-live-assignment-toggle="${escapeHtml(task.matchId)}">${editorOpen ? 'Vergabe schließen' : 'Liveticker vergeben'}</button>
       </div>
@@ -1074,7 +1074,7 @@
     const session = task.session;
     if (!session) {
       if (task.assignment?.status !== 'accepted') {
-        return '<div class="account-waiting">Der Schreiber muss die Zuweisung zuerst annehmen.</div>';
+        return '<div class="hint account-waiting">Der Schreiber muss die Zuweisung zuerst annehmen.</div>';
       }
       return `<form class="auth-form" data-live-start-form="${escapeHtml(task.matchId)}">
         ${renderStartModePicker(task)}
@@ -1163,7 +1163,7 @@
       return `<span class="account-live-player">${escapeHtml(player.displayName)}${serving
         ? '<span class="account-live-server" role="img" aria-label="hat Aufschlag" title="Aufschlag">◉</span>'
         : ''}</span>`;
-    }).join('<span class="mc-player-sep">&amp;</span>');
+    }).join('<span class="team-sep">&amp;</span>');
   }
 
   function renderAccount() {
@@ -1199,14 +1199,14 @@
         <strong>${renderAccountTeamLabel(task, 1)}</strong>
         ${task.session ? `<div class="account-task-live-score" aria-label="Aktueller Stand ${Number(task.session.teamOneGames) || 0} zu ${Number(task.session.teamTwoGames) || 0}${scoringMode(task.session) === 'points' ? `, Punkte ${escapeHtml(pointLabel(task.session))}` : ''}">
           <span class="mc-score-main">${Number(task.session.teamOneGames) || 0}:${Number(task.session.teamTwoGames) || 0}</span>
-          <span class="mc-score-detail">${scoringMode(task.session) === 'points'
+          <span class="hint mc-score-detail">${scoringMode(task.session) === 'points'
             ? escapeHtml(pointLabel(task.session))
             : '–'}</span>
         </div>` : '<span>vs.</span>'}
         <strong>${renderAccountTeamLabel(task, 2)}</strong>
       </div>
       ${task.assignment && task.assignment.scorerProfileId !== profileId
-        ? `<div class="account-waiting">Schreiber: ${escapeHtml(task.assignment.scorerName)}</div>`
+        ? `<div class="hint account-waiting">Schreiber: ${escapeHtml(task.assignment.scorerName)}</div>`
         : ''}
       ${renderWriterControls(task)}
       ${task.result ? `<button class="text-link" type="button" data-live-open-match="${escapeHtml(task.matchId)}">Spielverlauf öffnen</button>` : ''}
