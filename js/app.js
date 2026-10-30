@@ -3236,17 +3236,15 @@ function renderPlayerProfile(profile) {
   playerProfileCompareId = null;
   arrangePlayerProfileContent();
   document.getElementById('player-profile-name').textContent = identity.displayName || 'Spielerprofil';
-  const profileCompany = identity.company || 'PadelLiga';
+  const profileCompany = identity.company || '';
   const profileCompanyElement = document.getElementById('player-profile-company');
   const profileCompanyHasLogo = COMPANIES_WITH_LOGO.includes(profileCompany);
-  profileCompanyElement.textContent = profileCompanyHasLogo ? '' : profileCompany;
-  profileCompanyElement.className = 'player-profile-company firma-badge';
-  profileCompanyElement.toggleAttribute('role', profileCompanyHasLogo);
-  profileCompanyElement.toggleAttribute('aria-label', profileCompanyHasLogo);
+  profileCompanyElement.hidden = !profileCompanyHasLogo;
+  profileCompanyElement.className = 'player-profile-company';
+  profileCompanyElement.removeAttribute('aria-label');
   if (profileCompanyHasLogo) {
     profileCompanyElement.classList.add('firma-logo');
     profileCompanyElement.classList.add(`firma-${profileCompany}`);
-    profileCompanyElement.setAttribute('role', 'img');
     profileCompanyElement.setAttribute('aria-label', profileCompany);
   }
   configurePlayerProfileImage(
@@ -4536,13 +4534,11 @@ const COMPANIES_WITH_LOGO = Object.freeze(['Envidual', 'Hanako', 'Headsquare']);
 
 function renderCompanyIcon(company, extraClass = '') {
   const name = escapeHtml(company);
-  return `<span class="firma-badge firma-icon firma-${name}${extraClass}" role="img" aria-label="Firma ${name}" title="${name}"></span>`;
+  return `<span class="firma-icon firma-${name}${extraClass}" role="img" aria-label="Firma ${name}" title="${name}"></span>`;
 }
 
 function renderRankingCompanyBadge(player) {
-  return COMPANIES_WITH_LOGO.includes(player.firma)
-    ? renderCompanyIcon(player.firma)
-    : `<span class="firma-badge">${escapeHtml(player.firma)}</span>`;
+  return COMPANIES_WITH_LOGO.includes(player.firma) ? renderCompanyIcon(player.firma) : '';
 }
 
 function renderRankingAvatar(player) {
@@ -5632,10 +5628,7 @@ function renderPredictionAccountTypeIcon(entry) {
 
 function renderPredictionCompanyBadge(entry) {
   const company = String(entry?.company || '').trim();
-  if (!company) return '';
-  if (COMPANIES_WITH_LOGO.includes(company)) return renderCompanyIcon(company, ' prediction-company-badge');
-  const shortLabel = company === 'Test' ? 'TEST' : company.slice(0, 3).toUpperCase();
-  return `<span class="firma-badge firma-${escapeHtml(company)} prediction-company-badge" aria-label="Firma ${escapeHtml(company)}" title="${escapeHtml(company)}">${escapeHtml(shortLabel)}</span>`;
+  return COMPANIES_WITH_LOGO.includes(company) ? renderCompanyIcon(company, ' prediction-company-badge') : '';
 }
 
 function renderTrophyIcon(label, additionalClass = '') {

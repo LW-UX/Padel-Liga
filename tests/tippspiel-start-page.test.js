@@ -109,7 +109,7 @@ test('prediction rankings reuse company badges with short labels only', () => {
 
   assert.match(script, /const COMPANY_SHORT_LABELS = Object\.freeze\(\{[\s\S]*Headsquare: 'HSQ'/);
   assert.match(script, /function renderPredictionCompanyBadge\(entry\)/);
-  assert.match(script, /class="firma-badge firma-icon firma-\$\{escapeHtml\(company\)\} prediction-company-badge"/);
+  assert.match(script, /class="firma-icon firma-\$\{escapeHtml\(company\)\} prediction-company-badge"/);
   assert.match(script, /renderPredictionAccountTypeIcon\(entry\)\}\$\{renderPredictionCompanyBadge\(entry\)\}\$\{renderPreviousPredictionWinnerIcon\(entry\)/);
   assert.match(ligaScript, /function renderPredictionCompanyBadge\(entry\)/);
   assert.match(ligaScript, /renderPredictionAccountTypeIcon\(entry\)\}\$\{renderPredictionCompanyBadge\(entry\)\}\$\{renderPreviousPredictionWinnerIcon\(entry\)/);

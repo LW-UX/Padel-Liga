@@ -2835,7 +2835,7 @@
       box-sizing: content-box;
       padding-left: 6px;
     }
-    .ranking-player-achievement + .firma-badge { margin-left: 6px; }
+    .ranking-player-achievement + .firma-icon { margin-left: 6px; }
     .ranking-absence-mark {
       flex: 0 0 auto;
       align-self: flex-start;
@@ -2860,8 +2860,7 @@
     .ranking-table.expanded tbody tr.viewer-highlight .col-name {
       background: color-mix(in srgb, var(--accent2) 20%, var(--bg));
     }
-    .ranking-table .col-name .pname,
-    .ranking-table .col-name .firma-badge {
+    .ranking-table .col-name .pname {
       white-space: nowrap;
     }
     .th-help-wrap {
@@ -3078,32 +3077,25 @@
     }
 
     .pname { font-weight: 500; font-size: var(--text-base); }
-    .firma-badge {
-      display: inline-block; font-size: var(--text-xs); font-weight: 600;
-      letter-spacing: 0.08em; text-transform: uppercase;
-      padding: 2px 7px; border-radius: var(--radius-full); margin-left: 8px;
-    }
     .th-label-short { display: none; }
     .firma-Envidual   { color: var(--envidual); }
-    .firma-Hanako     { color: var(--hanako); }
-    .firma-Headsquare { color: var(--text); }
-    .firma-badge:is(.firma-icon, .firma-logo) {
-      padding: 0;
-      border-radius: 0;
+    .firma-Hanako     { color: color-mix(in srgb, var(--hanako) 75%, var(--text)); }
+    .firma-Headsquare { color: color-mix(in srgb, var(--headsquare) 75%, transparent); }
+    .firma-icon,
+    .firma-logo {
+      display: inline-block;
       background-color: currentColor;
       -webkit-mask: var(--firma-mask) center / contain no-repeat;
       mask: var(--firma-mask) center / contain no-repeat;
     }
-    .firma-badge.firma-Hanako:is(.firma-icon, .firma-logo) {
-      color: color-mix(in srgb, var(--hanako) 75%, var(--text));
-    }
-    .firma-badge.firma-icon {
+    .firma-icon {
+      margin-left: 8px;
       width: 14px;
       height: 14px;
       flex: 0 0 14px;
       padding-right: 2px;
     }
-    .firma-badge.firma-icon.firma-Hanako {
+    .firma-icon.firma-Hanako {
       width: 18px;
       height: 18px;
       flex-basis: 18px;
@@ -5063,7 +5055,7 @@
         width: 46px;
         min-width: 46px;
       }
-      #all-time-ranking-table.compact .firma-badge { display: none; }
+      #all-time-ranking-table.compact .firma-icon { display: none; }
       :is(#ranking-table, #all-time-ranking-table).compact .th-label-full { display: none; }
       :is(#ranking-table, #all-time-ranking-table).compact .th-label-short { display: inline; }
       #all-time-ranking-table.compact th { white-space: nowrap; }
@@ -5080,7 +5072,7 @@
       .ranking-table.compact .col-elo {
         display: none;
       }
-      .ranking-table.expanded .firma-badge {
+      .ranking-table.expanded .firma-icon {
         display: none;
       }
       .ranking-table.expanded th,
@@ -5122,7 +5114,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      .ranking-table.compact .firma-badge {
+      .ranking-table.compact .firma-icon {
         flex: 0 0 auto;
       }
       .ranking-table.expanded .col-games,
@@ -5203,13 +5195,7 @@
         font-size: 0.64rem;
       }
       .pname { font-size: var(--text-base); white-space: nowrap; }
-      .firma-badge {
-        font-size: var(--text-xs);
-        letter-spacing: 0.04em;
-        padding: 1px 5px;
-        margin-left: 5px;
-        vertical-align: 0.08em;
-      }
+      .firma-icon { margin-left: 5px; }
       .filter-controls {
         align-items: flex-start;
         flex-direction: column;

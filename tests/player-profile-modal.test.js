@@ -237,7 +237,7 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(html, /<button class="secondary-button modal-close-button player-profile-close"[^>]*data-player-profile-close/);
   assert.equal((html.match(/<article class="widget player-profile-widget/g) || []).length, 5);
   assert.match(html, /<article class="widget player-profile-widget player-profile-stats-widget">[\s\S]*id="player-profile-stats"/);
-  assert.match(html, /<h2 id="player-profile-name"><\/h2>\s*<span class="player-profile-company firma-badge"/);
+  assert.match(html, /<h2 id="player-profile-name"><\/h2>\s*<span class="player-profile-company"/);
   assert.match(app, /profileCompanyElement\.classList\.add\(`firma-\$\{profileCompany\}`\)/);
   assert.match(app, /achievement\.kind === 'winner'/);
   assert.match(app, /achievement\.kind === 'final_four'/);

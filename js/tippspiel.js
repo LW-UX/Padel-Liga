@@ -103,12 +103,8 @@
 
   function renderPredictionCompanyBadge(entry) {
     const company = String(entry?.company || '').trim();
-    if (!company) return '';
-    if (COMPANY_SHORT_LABELS[company]) {
-      return `<span class="firma-badge firma-icon firma-${escapeHtml(company)} prediction-company-badge" role="img" aria-label="Firma ${escapeHtml(company)}" title="${escapeHtml(company)}"></span>`;
-    }
-    const shortLabel = company.slice(0, 3).toUpperCase();
-    return `<span class="firma-badge firma-${escapeHtml(company)} prediction-company-badge" aria-label="Firma ${escapeHtml(company)}" title="${escapeHtml(company)}">${escapeHtml(shortLabel)}</span>`;
+    if (!['Envidual', 'Hanako', 'Headsquare'].includes(company)) return '';
+    return `<span class="firma-icon firma-${escapeHtml(company)} prediction-company-badge" role="img" aria-label="Firma ${escapeHtml(company)}" title="${escapeHtml(company)}"></span>`;
   }
 
   function renderPreviousPredictionWinnerIcon(entry) {

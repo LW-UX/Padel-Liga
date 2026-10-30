@@ -60,7 +60,7 @@ test('ranking renderers use the same named column classes as their headers', () 
   assert.deepEqual(getColumnClasses(renderers[5], 'td'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff']);
   renderers.forEach(renderer => assert.match(renderer, /<td class="col-rank rank-position">/));
   assert.match(renderers[0], /<td class="col-points-per-player rank-score">/);
-  assert.doesNotMatch(renderers[0], /firma-badge/);
+  assert.doesNotMatch(renderers[0], /firma-icon/);
   assert.match(renderers[1], /<td class="col-wins rank-score">/);
   assert.match(renderers[2], /<td class="col-points rank-score">/);
   assert.match(renderers[3], /<td class="col-points rank-score">/);

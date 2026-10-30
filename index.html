@@ -26,7 +26,7 @@
       } catch (error) { /* Ohne Speicher bleibt das veröffentlichte Branding. */ }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026-10-30-award-next-to-company">
+  <link rel="stylesheet" href="style.css?v=2026-10-30-remove-company-chips">
   <link rel="stylesheet" href="account.css?v=2026-10-30-design-cards">
   <link rel="stylesheet" href="whats-new.css?v=2026-10-30-with-icon">
   <script>
@@ -65,7 +65,7 @@
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/panel-layout.js?v=2026-10-29-shared-panel-layout"></script>
   <script defer src="js/match-statistics.js?v=2026-10-30-table-core"></script>
-  <script defer src="js/app.js?v=2026-10-30-award-before-company"></script>
+  <script defer src="js/app.js?v=2026-10-30-remove-company-chips"></script>
 </head>
 <body>
 
@@ -718,7 +718,7 @@
           </div>
           <div class="player-profile-identity">
             <h2 id="player-profile-name"></h2>
-            <span class="player-profile-company firma-badge" id="player-profile-company"></span>
+            <span class="player-profile-company" id="player-profile-company" role="img" hidden></span>
           </div>
           <div class="player-profile-achievements" id="player-profile-achievements" hidden></div>
         </div>
