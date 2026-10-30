@@ -313,11 +313,11 @@
       white-space: nowrap;
     }
     .site-nav button:hover,
-    .final-four-view-nav button:hover { color: var(--accent); background: color-mix(var(--accent) 12%); }
+    .final-four-view-nav button:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
     .site-nav button.active,
     .final-four-view-nav button.active {
       color: var(--accent);
-      background: color-mix(var(--accent) 10%);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
     }
     .viewer-picker {
       position: relative;
@@ -3902,7 +3902,7 @@
       letter-spacing: 0.1rem; 
       text-transform: uppercase;
       color: var(--dim); 
-      margin-bottom: 18px; 
+      margin-bottom: 0.75rem; 
     }
     .spieltag-label span:first-child {
       white-space: nowrap;
