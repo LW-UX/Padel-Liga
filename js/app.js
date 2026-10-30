@@ -4860,7 +4860,7 @@ function renderRanking() {
       : '';
     return `<tr class="ranking-row r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(p.id || p.name)}"${renderPlayerProfileRowAttributes(p)}>
       <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${rankingSortMode === 'points' ? renderRankingAvatar(p) : renderPointsRankReference(currentRank, pointsRank)}</span></td>
-      <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}</span>${absenceMark}${renderRankingCompanyBadge(p)}${renderLeagueRankingAchievementIcon(p)}</span></td>
+      <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}</span>${absenceMark}${renderLeagueRankingAchievementIcon(p)}${renderRankingCompanyBadge(p)}</span></td>
       <td class="col-games">${renderRankingMatchCount(p)}</td>
       <td class="col-wins">${p.stats.siege}</td>
       <td class="col-points rank-score">${p.stats.punkte}</td>

@@ -149,7 +149,7 @@ test('the regular season ranking shows previous league achievements after compan
   assert.match(app, /function renderLeagueRankingAchievementIcon\(player\)/);
   assert.match(app, /ranking-player-achievement-laurel-stems/);
   assert.match(app, /ranking-player-achievement-laurel-leaves/);
-  assert.match(ranking, /class="ranking-player-name">\$\{renderPlayerProfileLink\(p, 'pname', rankingPlayerLabel\)\}<\/span>\$\{absenceMark\}\$\{renderRankingCompanyBadge\(p\)\}[^]*?\$\{renderLeagueRankingAchievementIcon\(p\)\}/);
+  assert.match(ranking, /class="ranking-player-name">\$\{renderPlayerProfileLink\(p, 'pname', rankingPlayerLabel\)\}<\/span>\$\{absenceMark\}\$\{renderLeagueRankingAchievementIcon\(p\)\}\$\{renderRankingCompanyBadge\(p\)\}/);
   assert.match(app, /class="mini-rank-name"><span class="ranking-player-name">\$\{renderPlayerProfileLink\(p\)\}\$\{renderLeagueRankingAchievementIcon\(p\)\}/);
   assert.match(style, /\.ranking-player-name \{[^}]*gap: 2px;/);
   assert.match(style, /\.ranking-player-achievement \{ margin-left: 6px; \}/);

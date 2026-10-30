@@ -2821,6 +2821,8 @@
       display: inline-flex;
       align-items: center;
       white-space: nowrap;
+      width: 100%;
+      justify-content: space-between;
     }
     .ranking-player-name {
       display: inline-flex;
@@ -2829,6 +2831,12 @@
       gap: 2px;
     }
     .ranking-player-achievement { margin-left: 6px; }
+    .player-cell-inner > .ranking-player-achievement {
+      box-sizing: content-box;
+      margin-left: auto;
+      padding-left: 6px;
+    }
+    .ranking-player-achievement + .firma-badge { margin-left: 6px; }
     .ranking-absence-mark {
       flex: 0 0 auto;
       align-self: flex-start;
@@ -3097,10 +3105,10 @@
       vertical-align: -2px;
     }
     .firma-badge.firma-icon.firma-Hanako {
-      width: 16px;
-      height: 16px;
-      flex-basis: 16px;
-      vertical-align: -3px;
+      width: 18px;
+      height: 18px;
+      flex-basis: 18px;
+      vertical-align: -4px;
     }
     .firma-icon.firma-Envidual   { --firma-mask: url("assets/logos/envidual-icon.svg"); }
     .firma-icon.firma-Hanako     { --firma-mask: url("assets/logos/hanako-icon.svg"); }
