@@ -6544,7 +6544,7 @@ function renderInfoSection(section, id) {
   const paragraphsAfterTable = (section.paragraphsAfterTable || []).map(p => `<p>${p}</p>`).join('');
   const note = section.note ? `<p class="info-note">${section.note}</p>` : '';
 
-  return `<article class="info-card info-anchor" id="${id}">
+  return `<article class="widget info-anchor" id="${id}">
     <h2>${section.title}</h2>
     ${intro}
     ${paragraphs}
@@ -6557,7 +6557,7 @@ function renderInfoSection(section, id) {
 }
 
 function renderInfoArticle(article, index) {
-  return `<article class="info-card info-article-card info-anchor" id="artikel-${article.spieltag}">
+  return `<article class="widget info-anchor" id="artikel-${article.spieltag}">
     <div class="info-article-preview" id="info-article-preview-${index}">
       ${renderArticleCard(article)}
     </div>
@@ -6600,7 +6600,7 @@ function renderInfos() {
     </div>
   </div>`;
 
-  const shortInfo = `<article class="info-card info-anchor" id="kurzinfo">
+  const shortInfo = `<article class="widget info-anchor" id="kurzinfo">
     <h2>Kurzinfo</h2>
     <ul class="clean-list">${(PADEL_DATA.shortInfo || []).map(item => `<li>${item}</li>`).join('')}</ul>
     ${renderTop8QualificationFlow()}
@@ -6612,7 +6612,7 @@ function renderInfos() {
       <div class="sh-meta">Archiv</div>
     </div>
     <div class="info-articles-stack">
-      ${articles.length ? articles.map(renderInfoArticle).join('') : '<article class="info-card"><div class="empty-state">Noch keine PadelPost-Ausgabe für diese Saison.</div></article>'}
+      ${articles.length ? articles.map(renderInfoArticle).join('') : '<article class="widget"><div class="empty-state">Noch keine PadelPost-Ausgabe für diese Saison.</div></article>'}
     </div>
   </section>`;
 

@@ -39,7 +39,7 @@
       <span class="help-icon" tabindex="0" role="button" aria-label="${esc(title)} erklären" aria-describedby="${helpId}" aria-expanded="false" data-help-tooltip-anchor>?</span>
       <span class="help-tooltip" id="${helpId}" role="tooltip">${esc(helpText)}</span>
     </span>`;
-    return body ? `<section class="match-statistics-section"><h3><span class="match-statistics-heading">${esc(title)}${help}</span></h3>${body}</section>` : '';
+    return body ? `<section class="widget match-statistics-section"><h3><span class="match-statistics-heading">${esc(title)}${help}</span></h3>${body}</section>` : '';
   }
   function playerEmoji(player) {
     if (['👨', '👩'].includes(player?.profileEmoji)) return player.profileEmoji;
@@ -303,9 +303,9 @@
       </div>`).join('')}</div>`
       : '<p class="match-statistics-empty-impact">Keine bedeutenden Auswirkungen.</p>';
     return `<div class="match-statistics-ranking-layout">
-      <section class="match-statistics-section match-statistics-ranking-panel"><h3>Rangliste</h3>${renderPlayerRanking(data, selectedPlayerId)}</section>
+      <section class="widget match-statistics-section match-statistics-ranking-panel"><h3>Rangliste</h3>${renderPlayerRanking(data, selectedPlayerId)}</section>
       <div class="match-statistics-side-panels">
-        <section class="match-statistics-section match-statistics-impact-panel"><h3>${impactTitle}</h3>${impactBody}</section>
+        <section class="widget match-statistics-section match-statistics-impact-panel"><h3>${impactTitle}</h3>${impactBody}</section>
       </div>
     </div>`;
   }

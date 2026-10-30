@@ -24,6 +24,10 @@ const companyBadgeMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261028210000_prediction_leaderboard_company_badges.sql'),
   'utf8'
 );
+const tipperCompanyMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261031120000_tipper_company_and_gender.sql'),
+  'utf8'
+);
 
 test('PadelTipp opens on the start page without adding a start menu item', () => {
   assert.match(page, /data-tip-nav="tippstart" aria-label="Zur PadelTipp-Startseite"/);
@@ -98,6 +102,12 @@ test('prediction rankings show the dim account type icon directly after each nam
   assert.match(ligaScript, /getHomePredictionRankingEntries\(homePredictionLeaderboard, authenticatedUserId\)[\s\S]*renderPredictionAccountTypeIcon\(entry\)/);
   assert.match(style, /\.prediction-account-type-icon \{[\s\S]*color: var\(--dim\);/);
   assert.match(decisions, /„Was ist neu\?“-Dialog verwendeten Padel-Schläger/);
+});
+
+test('tipper accounts show their own company while gender stays private', () => {
+  assert.match(tipperCompanyMigration, /coalesce\(player\.company, profile\.company\)/);
+  assert.doesNotMatch(tipperCompanyMigration.match(/returns table \([\s\S]*?\)/)?.[0] || '', /gender|player_id|app_role/);
+  assert.doesNotMatch(tipperCompanyMigration, /grant [^;]*on table public\.profiles|grant [^;]*\b(company|gender)\b/i);
 });
 
 test('prediction rankings reuse company badges with short labels only', () => {

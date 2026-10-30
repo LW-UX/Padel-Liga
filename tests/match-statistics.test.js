@@ -141,7 +141,7 @@ test('rematches and earlier duels form one numbered multiline fact',()=>{
 });
 test('possible Elo peaks use an outline icon and achieved peaks use a filled icon',()=>{
  const preview=render(fixture());
- const previewImpactPanel=preview.match(/<section class="match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
+ const previewImpactPanel=preview.match(/<section class="widget match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
  assert.match(previewImpactPanel,/Greta P\.[\s\S]*?Kann einen neuen Elo-Höchstwert erreichen\./);
  assert.equal((preview.match(/Kann einen neuen Elo-Höchstwert erreichen\./g)||[]).length,1);
  assert.doesNotMatch(preview,/Neuer Höchstwert möglich/);
@@ -149,7 +149,7 @@ test('possible Elo peaks use an outline icon and achieved peaks use a filled ico
  assert.match(preview,/href="#statistics-peak-star-icon"[^>]+width="14" height="14" class="match-statistics-peak-star possible"/);
  assert.doesNotMatch(preview,/★/);
  const analysis=render(fixture('analysis'));
- const impactPanel=analysis.match(/<section class="match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
+ const impactPanel=analysis.match(/<section class="widget match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
  assert.match(impactPanel,/Greta P\.[\s\S]*?Erreicht einen neuen Elo-Höchstwert\./);
  assert.equal((analysis.match(/Erreicht einen neuen Elo-Höchstwert\./g)||[]).length,1);
  assert.match(analysis,/class="match-statistics-peak-star achieved"/);
@@ -166,7 +166,7 @@ test('significant impacts are grouped as facts below each affected player',()=>{
   {kind:'qualificationPossible',playerId:'agnes_k',places:4,onWin:true}
  );
  const html=render(d);
- const panel=html.match(/<section class="match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
+ const panel=html.match(/<section class="widget match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
  assert.equal((panel.match(/data-player-profile-id="agnes_k"/g)||[]).length,1);
  assert.match(panel,/Agnes K\.[\s\S]*Kann bei einem Sieg die Tabellenführung übernehmen\.[\s\S]*Kann bei einem Sieg die Top 4 erreichen\./);
  assert.doesNotMatch(panel,/Agnes K\. kann|Team 1 gewinnt/);
@@ -225,7 +225,7 @@ test('team-wide match outcomes appear once in the general match context',()=>{
   d.impacts.push(impact);
   const html=render(d);
   const context=html.match(/<section class="match-statistics-context"[\s\S]*?<\/section>/)?.[0]||'';
-  const panel=html.match(/<section class="match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
+  const panel=html.match(/<section class="widget match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
   assert.equal(html.split(text).length-1,1);
   assert.ok(context.includes(text));
   assert.doesNotMatch(panel,/Favoritenrolle|statistische Überraschung/);
@@ -298,7 +298,7 @@ test('match header and full ranking follow ticker and ranking conventions',()=>{
  assert.match(html,/match-statistics-ranking-layout/);
  assert.match(html,/match-statistics-section match-statistics-ranking-panel/);
  assert.match(html,/match-statistics-section match-statistics-impact-panel/);
- assert.equal((html.match(/<section class="match-statistics-section[^"]*"><h3>/g)||[]).length,4);
+ assert.equal((html.match(/<section class="widget match-statistics-section[^"]*"><h3>/g)||[]).length,4);
  assert.doesNotMatch(html,/spieltag-label/);
  assert.doesNotMatch(html,/Siege in Folge|Niederlagen in Folge/);
  assert.match(statisticsStyleSource,/\.match-statistics-ranking tbody tr\.match-statistics-ranking-other td \{[\s\S]*?font-size: var\(--text-xs\);/);

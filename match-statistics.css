@@ -9,7 +9,7 @@
   align-items: center;
   gap: 1rem;
   min-height: 48px;
-  margin-top: -3rem;
+  margin-top: calc(1rem - var(--section-gap));
 }
 .match-forecast-question { margin-bottom: 0; }
 .match-forecast-control { min-width: 0; }
@@ -124,7 +124,7 @@
 .match-statistics-ranking-layout {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  gap: clamp(1.5rem, 4vw, 4rem);
+  gap: var(--section-gap);
   align-items: start;
 }
 .match-statistics-ranking-panel,
@@ -362,7 +362,7 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
 }
 #detail-view-dialog[data-presentation="panel"] .match-statistics-ranking-layout {
   grid-template-columns: 1fr;
-  gap: 1.5rem;
+  gap: var(--section-gap);
 }
 #detail-view-dialog[data-presentation="panel"] .match-statistics-ranking th,
 #detail-view-dialog[data-presentation="panel"] .match-statistics-ranking td {
@@ -404,7 +404,7 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
 @container match-detail-panel (min-width: 760px) {
   #detail-view-dialog[data-presentation="panel"] .match-statistics-ranking-layout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 2rem;
+    gap: var(--section-gap);
   }
 }
 
@@ -416,7 +416,7 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
   #detail-view-dialog[data-presentation="panel"] .match-forecast {
     grid-template-columns: minmax(150px, .7fr) minmax(320px, 1.6fr) minmax(150px, .7fr);
     gap: 1rem;
-    margin-top: -3rem;
+    margin-top: calc(1rem - var(--section-gap));
     padding: 0;
   }
   #detail-view-dialog[data-presentation="panel"] .match-forecast-question { text-align: left; }
@@ -468,7 +468,7 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
   .match-statistics-context { gap:.7rem; }
   .match-statistics-form-row { grid-template-columns: minmax(0, 1fr); gap: 1rem; min-width: 0; }
   .match-statistics-form-group.is-multi-match .form-chip + .form-chip { margin-left: -6px; }
-  .match-statistics-ranking-layout { grid-template-columns: 1fr; gap: 1.5rem; }
+  .match-statistics-ranking-layout { grid-template-columns: 1fr; gap: var(--section-gap); }
   table.rt.match-statistics-ranking th,
   table.rt.match-statistics-ranking td {
     padding-left: 4px;

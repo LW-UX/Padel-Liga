@@ -645,7 +645,6 @@
     .player-profile-hero-block > .player-profile-stats-widget {
       margin: 0;
       overflow: hidden;
-      padding: 0;
     }
     .modal-close-button {
       position: absolute;
@@ -1905,7 +1904,7 @@
     .statistics-load-error[hidden],
     [data-season-only-statistic][hidden] { display: none; }
     .widget h2 { margin-bottom: 0.5rem; }
-    .info-card h2 {
+    :where(.info-sections) .widget h2 {
       line-height: 1;
       margin-bottom: 0.85rem;
     }
@@ -2227,7 +2226,8 @@
       text-transform: uppercase;
     }
     .article-card p,
-    .info-card p { color: var(--dim); line-height: 1.5; margin-bottom: 0.8rem; }
+    :where(.info-sections) .widget p,
+    .prediction-info-about p { color: var(--dim); line-height: 1.5; margin-bottom: 0.8rem; }
     .article-meta {
       display: flex;
       justify-content: space-between;
@@ -2560,7 +2560,7 @@
       gap: var(--section-gap);
       align-items: start;
     }
-    .info-layout > .info-card { position: sticky; top: 78px; }
+    .info-layout > .info-menu-card { position: sticky; top: 78px; }
     .info-sections { display: grid; gap: var(--section-gap); }
     .info-anchor { scroll-margin-top: 82px; }
     .info-menu-toggle { display: none; }
@@ -3113,7 +3113,7 @@
     .neu { color: var(--dim); }
 
     /* ── CHART ── */
-    .chart-box {
+    #verlauf > .widget {
       margin-bottom: var(--section-gap);
     }
     .filter-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap; }
@@ -3310,7 +3310,7 @@
       }
     }
 
-    .mc.pending { background: transparent; }
+    .mc.pending { background: color-mix(in srgb, var(--surface) 33%, transparent); }
     .mc-meta { display: flex; align-items: center; gap: 14px; white-space: nowrap; }
     .mc-team { display: flex; flex-direction: column; gap: 2px; }
     .mc-team-2 { text-align: right; align-items: flex-end; }
@@ -4538,7 +4538,7 @@
       border: 1px solid var(--border);
       border-radius: var(--container-radius-sm);
       padding: .7rem 1rem;
-      background: transparent;
+      background: color-mix(in srgb, var(--surface) 33%, transparent);
     }
     .calculator-match-card.calculator-match-complete {
       background: var(--surface);

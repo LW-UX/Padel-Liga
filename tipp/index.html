@@ -8,7 +8,7 @@
   <link rel="icon" href="../favicon.ico" sizes="32x32">
   <link rel="icon" type="image/svg+xml" href="../data/favicon.svg?v=2026-10-26-rounded">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-  <link rel="stylesheet" href="../branding/og-design.css?v=05291aeb6f">
+  <link rel="stylesheet" href="../branding/og-design.css?v=87533a9ed2">
   <script>
     // Die Admin-Design-Vorschau greift vor dem ersten Zeichnen; alles Weitere steht in js/branding-preview.js.
     (function () {
@@ -21,9 +21,9 @@
       } catch (error) { /* Ohne Speicher bleibt das veröffentlichte Branding. */ }
     })();
   </script>
-  <link rel="stylesheet" href="../style.css?v=2026-10-30-remove-company-chips">
+  <link rel="stylesheet" href="../style.css?v=2026-10-30-widget-container">
   <link rel="stylesheet" href="../tipp.css?v=2026-10-30-tipp-css">
-  <link rel="stylesheet" href="../match-statistics.css?v=2026-10-30-table-core">
+  <link rel="stylesheet" href="../match-statistics.css?v=2026-10-30-widget-container">
   <link rel="stylesheet" href="../account.css?v=2026-10-30-design-cards">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -109,31 +109,33 @@
     <div class="sh">
       <h2>TIPPRANGLISTE</h2>
     </div>
-    <div class="ranking-wrap">
-      <table class="rt ranking-table compact prediction-ranking-table" id="prediction-ranking-table" data-ranking-sort="points">
-        <thead>
-          <tr>
-            <th class="col-rank">#</th>
-            <th class="col-name">Name</th>
-            <th class="col-games"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="predictions"><span class="sort-chevron" aria-hidden="true"></span><span>Tipps</span></button></th>
-            <th class="col-wins"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="exact"><span class="sort-chevron" aria-hidden="true"></span><span>Exakt</span></button></th>
-            <th class="col-passive">
-              <span class="ranking-header-with-help prediction-ranking-passive-help">
-                <button type="button" class="ranking-sort-header" data-prediction-ranking-sort="passive"><span class="sort-chevron" aria-hidden="true"></span><span>Passiv</span></button>
-                <span class="th-help-wrap">
-                  <span class="help-icon" tabindex="0" role="button" aria-label="Passive Punkte erklären" aria-describedby="prediction-ranking-passive-help" data-help-tooltip-anchor>?</span>
-                  <span class="help-tooltip" id="prediction-ranking-passive-help" role="tooltip">Deine eigenen Partien kannst du nicht tippen. Sobald sie gewertet werden, erhältst du automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Tipp der anderen. Hat niemand getippt, gibt es keine automatische Gutschrift.</span>
+    <article class="widget">
+      <div class="ranking-wrap">
+        <table class="rt ranking-table compact prediction-ranking-table" id="prediction-ranking-table" data-ranking-sort="points">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-name">Name</th>
+              <th class="col-games"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="predictions"><span class="sort-chevron" aria-hidden="true"></span><span>Tipps</span></button></th>
+              <th class="col-wins"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="exact"><span class="sort-chevron" aria-hidden="true"></span><span>Exakt</span></button></th>
+              <th class="col-passive">
+                <span class="ranking-header-with-help prediction-ranking-passive-help">
+                  <button type="button" class="ranking-sort-header" data-prediction-ranking-sort="passive"><span class="sort-chevron" aria-hidden="true"></span><span>Passiv</span></button>
+                  <span class="th-help-wrap">
+                    <span class="help-icon" tabindex="0" role="button" aria-label="Passive Punkte erklären" aria-describedby="prediction-ranking-passive-help" data-help-tooltip-anchor>?</span>
+                    <span class="help-tooltip" id="prediction-ranking-passive-help" role="tooltip">Deine eigenen Partien kannst du nicht tippen. Sobald sie gewertet werden, erhältst du automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Tipp der anderen. Hat niemand getippt, gibt es keine automatische Gutschrift.</span>
+                  </span>
                 </span>
-              </span>
-            </th>
-            <th class="col-bonus"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="bonus"><span class="sort-chevron" aria-hidden="true"></span><span>Bonus</span></button></th>
-            <th class="col-points" aria-sort="descending"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="points"><span class="sort-chevron" aria-hidden="true"></span><span>Gesamt</span></button></th>
-          </tr>
-        </thead>
-        <tbody id="prediction-ranking-body"></tbody>
-      </table>
-    </div>
-    <div id="prediction-ranking-empty" class="empty-state">Rangliste wird geladen …</div>
+              </th>
+              <th class="col-bonus"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="bonus"><span class="sort-chevron" aria-hidden="true"></span><span>Bonus</span></button></th>
+              <th class="col-points" aria-sort="descending"><button type="button" class="ranking-sort-header" data-prediction-ranking-sort="points"><span class="sort-chevron" aria-hidden="true"></span><span>Gesamt</span></button></th>
+            </tr>
+          </thead>
+          <tbody id="prediction-ranking-body"></tbody>
+        </table>
+      </div>
+      <div id="prediction-ranking-empty" class="empty-state">Rangliste wird geladen …</div>
+    </article>
   </section>
 
   <section id="tipptabelle" class="section">
@@ -146,10 +148,12 @@
         <button type="button" data-prediction-table-view="bonus" aria-pressed="false">Bonustipps</button>
       </div>
     </div>
-    <div class="prediction-table-wrap" id="prediction-table-wrap">
-      <table class="rt prediction-table" id="prediction-table"></table>
-    </div>
-    <div id="prediction-table-empty" class="empty-state">Tippübersicht wird geladen …</div>
+    <article class="widget">
+      <div class="prediction-table-wrap" id="prediction-table-wrap">
+        <table class="rt prediction-table" id="prediction-table"></table>
+      </div>
+      <div id="prediction-table-empty" class="empty-state">Tippübersicht wird geladen …</div>
+    </article>
   </section>
 
   <section id="tippen" class="section">
@@ -177,7 +181,7 @@
       <div class="sh-meta">Funktionsweise und Punktevergabe</div>
     </div>
     <div class="prediction-info-layout">
-      <article class="info-card prediction-info-about">
+      <article class="widget prediction-info-about">
         <p>Beim PadelTipp sagst du vor dem Spiel voraus, welches Team gewinnt und wie das genaue Satzergebnis ausfällt.<br>Dein Tipp ist nur eine persönliche Prognose. Er verändert weder das Spielergebnis noch die Elo-Rangliste.</p>
         <div class="info-group">
           <h4>Ab wann kann ich tippen?</h4>

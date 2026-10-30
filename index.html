@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest?v=2026-10-28-brand-names">
-  <link rel="stylesheet" href="branding/og-design.css?v=05291aeb6f">
+  <link rel="stylesheet" href="branding/og-design.css?v=87533a9ed2">
   <script>
     // Die Admin-Design-Vorschau greift vor dem ersten Zeichnen; alles Weitere steht in js/branding-preview.js.
     (function () {
@@ -26,7 +26,7 @@
       } catch (error) { /* Ohne Speicher bleibt das veröffentlichte Branding. */ }
     })();
   </script>
-  <link rel="stylesheet" href="style.css?v=2026-10-30-remove-company-chips">
+  <link rel="stylesheet" href="style.css?v=2026-10-30-widget-container">
   <link rel="stylesheet" href="account.css?v=2026-10-30-design-cards">
   <link rel="stylesheet" href="whats-new.css?v=2026-10-30-with-icon">
   <script>
@@ -42,7 +42,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="match-statistics.css?v=2026-10-30-table-core">
+  <link rel="stylesheet" href="match-statistics.css?v=2026-10-30-widget-container">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="data/players.js?v=2026-10-20-test-net-emoji"></script>
@@ -57,15 +57,15 @@
   <script defer src="js/elo-forecast.js?v=2026-10-14-shared-auto-tip"></script>
   <script defer src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
   <script defer src="js/table-core.js?v=2026-10-30-diff-zero"></script>
-  <script defer src="js/live-ticker.js?v=2026-10-30-diff-zero"></script>
+  <script defer src="js/live-ticker.js?v=2026-10-30-widget-container"></script>
   <script defer src="js/mobile-dialog-pages.js?v=2026-10-30-whats-new-page"></script>
   <script defer src="js/branding-preview.js?v=2026-10-30-hanako-accent"></script>
   <script defer src="js/account.js?v=2026-10-30-button-merge"></script>
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/panel-layout.js?v=2026-10-29-shared-panel-layout"></script>
-  <script defer src="js/match-statistics.js?v=2026-10-30-table-core"></script>
-  <script defer src="js/app.js?v=2026-10-30-remove-company-chips"></script>
+  <script defer src="js/match-statistics.js?v=2026-10-30-widget-container"></script>
+  <script defer src="js/app.js?v=2026-10-30-widget-container"></script>
 </head>
 <body>
 
@@ -263,65 +263,69 @@
         <button type="button" data-ranking-view="expanded">Erweitert</button>
       </div>
     </div>
-    <div class="ranking-wrap ranking-main-wrap" data-ranking-view="compact">
-      <table class="rt ranking-table compact" id="ranking-table">
-        <thead>
-          <tr>
-            <th class="col-rank">#</th>
-            <th class="col-name">Spieler</th>
-            <th class="col-games"><button type="button" class="ranking-sort-header" data-ranking-sort="games"><span class="sort-chevron" aria-hidden="true"></span><span class="th-label-full">Partien</span><span class="th-label-short">PTN.</span></button></th>
-            <th class="col-wins"><button type="button" class="ranking-sort-header" data-ranking-sort="wins"><span class="sort-chevron" aria-hidden="true"></span><span>Siege</span></button></th>
-            <th class="col-points" aria-sort="descending"><button type="button" class="ranking-sort-header" data-ranking-sort="points"><span class="sort-chevron" aria-hidden="true"></span><span class="th-label-full">Punkte</span><span class="th-label-short">Pkt.</span></button></th>
-            <th class="col-gv">G:V</th>
-            <th class="col-diff"><button type="button" class="ranking-sort-header" data-ranking-sort="diff"><span class="sort-chevron" aria-hidden="true"></span><span>Diff.</span></button></th>
-            <th class="col-elo"><button type="button" class="ranking-sort-header" data-ranking-sort="elo"><span class="sort-chevron" aria-hidden="true"></span><span>Elo</span></button></th>
-            <th class="col-form"><button type="button" class="ranking-sort-header" data-ranking-sort="form"><span class="sort-chevron" aria-hidden="true"></span><span>Letzte 3</span></button></th>
-            <th class="col-winrate">
-              <span class="ranking-header-with-help">
-                <button type="button" class="ranking-sort-header" data-ranking-sort="winrate"><span class="sort-chevron" aria-hidden="true"></span><span>Sieg-%</span></button>
-                <span class="th-help-wrap">
-                  <span class="help-icon" tabindex="0" aria-label="Sieg-Prozent erklären">?</span>
-                  <span class="help-tooltip">Ø Elo-Siegwahrscheinlichkeit der Teams eines Spielers über alle gewerteten Partien.<br>Bei gespielten Partien zählt die Prognose vor der Partie, bei offenen die aktuelle. Nicht die tatsächliche Siegquote.</span>
+    <article class="widget">
+      <div class="ranking-wrap ranking-main-wrap" data-ranking-view="compact">
+        <table class="rt ranking-table compact" id="ranking-table">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-name">Spieler</th>
+              <th class="col-games"><button type="button" class="ranking-sort-header" data-ranking-sort="games"><span class="sort-chevron" aria-hidden="true"></span><span class="th-label-full">Partien</span><span class="th-label-short">PTN.</span></button></th>
+              <th class="col-wins"><button type="button" class="ranking-sort-header" data-ranking-sort="wins"><span class="sort-chevron" aria-hidden="true"></span><span>Siege</span></button></th>
+              <th class="col-points" aria-sort="descending"><button type="button" class="ranking-sort-header" data-ranking-sort="points"><span class="sort-chevron" aria-hidden="true"></span><span class="th-label-full">Punkte</span><span class="th-label-short">Pkt.</span></button></th>
+              <th class="col-gv">G:V</th>
+              <th class="col-diff"><button type="button" class="ranking-sort-header" data-ranking-sort="diff"><span class="sort-chevron" aria-hidden="true"></span><span>Diff.</span></button></th>
+              <th class="col-elo"><button type="button" class="ranking-sort-header" data-ranking-sort="elo"><span class="sort-chevron" aria-hidden="true"></span><span>Elo</span></button></th>
+              <th class="col-form"><button type="button" class="ranking-sort-header" data-ranking-sort="form"><span class="sort-chevron" aria-hidden="true"></span><span>Letzte 3</span></button></th>
+              <th class="col-winrate">
+                <span class="ranking-header-with-help">
+                  <button type="button" class="ranking-sort-header" data-ranking-sort="winrate"><span class="sort-chevron" aria-hidden="true"></span><span>Sieg-%</span></button>
+                  <span class="th-help-wrap">
+                    <span class="help-icon" tabindex="0" aria-label="Sieg-Prozent erklären">?</span>
+                    <span class="help-tooltip">Ø Elo-Siegwahrscheinlichkeit der Teams eines Spielers über alle gewerteten Partien.<br>Bei gespielten Partien zählt die Prognose vor der Partie, bei offenen die aktuelle. Nicht die tatsächliche Siegquote.</span>
+                  </span>
                 </span>
-              </span>
-            </th>
-            <th class="col-draw-factor">
-              <span class="ranking-header-with-help">
-                <button type="button" class="ranking-sort-header" data-ranking-sort="draw-factor"><span class="sort-chevron sort-chevron--ascending" aria-hidden="true"></span><span>Losfaktor</span></button>
-                <span class="th-help-wrap">
-                  <span class="help-icon" tabindex="0" aria-label="Losfaktor erklären">?</span>
-                  <span class="help-tooltip">Ø Platz eigenes Team (inkl. Spieler) /<br>Ø Platz Gegnerteam /<br>Differenz.<br>Der Platz stammt aus den All-Time-Ø-Punkten aller gewerteten Partien.<br>Positive Werte bedeuten: Die Gegner waren im Schnitt stärker platziert als das eigene Team.</span>
+              </th>
+              <th class="col-draw-factor">
+                <span class="ranking-header-with-help">
+                  <button type="button" class="ranking-sort-header" data-ranking-sort="draw-factor"><span class="sort-chevron sort-chevron--ascending" aria-hidden="true"></span><span>Losfaktor</span></button>
+                  <span class="th-help-wrap">
+                    <span class="help-icon" tabindex="0" aria-label="Losfaktor erklären">?</span>
+                    <span class="help-tooltip">Ø Platz eigenes Team (inkl. Spieler) /<br>Ø Platz Gegnerteam /<br>Differenz.<br>Der Platz stammt aus den All-Time-Ø-Punkten aller gewerteten Partien.<br>Positive Werte bedeuten: Die Gegner waren im Schnitt stärker platziert als das eigene Team.</span>
+                  </span>
                 </span>
-              </span>
-            </th>
-          </tr>
-        </thead>
-        <tbody id="rl-body"></tbody>
-      </table>
-    </div>
-    <div class="sh-meta ranking-note table-note" id="rl-sort-note">Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="rl-body"></tbody>
+        </table>
+      </div>
+      <div class="sh-meta ranking-note table-note" id="rl-sort-note">Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele</div>
+    </article>
     <div class="sh section-subheading">
       <h2>FIRMEN-RANGLISTE</h2>
       <div class="sh-meta" id="fr-meta"></div>
     </div>
-    <div class="ranking-wrap">
-      <table class="rt company-ranking-table">
-        <thead>
-          <tr>
-            <th class="col-rank">#</th>
-            <th class="col-company">Firma</th>
-            <th class="col-participants">TN</th>
-            <th class="col-games">Partien</th>
-            <th class="col-points-per-player">Pkt/TN</th>
-            <th class="col-wins">Siege</th>
-            <th class="col-points">Punkte</th>
-            <th class="col-diff">Diff.</th>
-          </tr>
-        </thead>
-        <tbody id="fr-body"></tbody>
-      </table>
-    </div>
-    <div class="sh-meta ranking-note table-note">Sortierung: Punkte pro Teilnehmer · Spiel-Differenz</div>
+    <article class="widget">
+      <div class="ranking-wrap">
+        <table class="rt company-ranking-table">
+          <thead>
+            <tr>
+              <th class="col-rank">#</th>
+              <th class="col-company">Firma</th>
+              <th class="col-participants">TN</th>
+              <th class="col-games">Partien</th>
+              <th class="col-points-per-player">Pkt/TN</th>
+              <th class="col-wins">Siege</th>
+              <th class="col-points">Punkte</th>
+              <th class="col-diff">Diff.</th>
+            </tr>
+          </thead>
+          <tbody id="fr-body"></tbody>
+        </table>
+      </div>
+      <div class="sh-meta ranking-note table-note">Sortierung: Punkte pro Teilnehmer · Spiel-Differenz</div>
+    </article>
     <div id="final-four-ranking-section">
       <div class="sh section-subheading final-four-heading">
         <div class="sh-heading">
@@ -330,22 +334,24 @@
         </div>
         <button type="button" class="text-link inline-link final-four-detail-link" id="final-four-ranking-detail-link" data-live-view="overview" hidden>Zur Übersicht</button>
       </div>
-      <div class="ranking-wrap ranking-wrap--fit">
-        <table class="rt rt--fit">
-          <thead>
-            <tr>
-              <th class="col-rank">#</th>
-              <th class="col-name">Spieler</th>
-              <th class="col-wins">Siege</th>
-              <th class="col-gv">G:V</th>
-              <th class="col-diff">Diff.</th>
-              <th class="col-elo">Elo</th>
-            </tr>
-          </thead>
-          <tbody id="ff-body"></tbody>
-        </table>
-      </div>
-      <div class="sh-meta ranking-note table-note" id="ff-ranking-note">Spiele: 3  |  Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ligaplatzierung</div>
+      <article class="widget">
+        <div class="ranking-wrap ranking-wrap--fit">
+          <table class="rt rt--fit">
+            <thead>
+              <tr>
+                <th class="col-rank">#</th>
+                <th class="col-name">Spieler</th>
+                <th class="col-wins">Siege</th>
+                <th class="col-gv">G:V</th>
+                <th class="col-diff">Diff.</th>
+                <th class="col-elo">Elo</th>
+              </tr>
+            </thead>
+            <tbody id="ff-body"></tbody>
+          </table>
+        </div>
+        <div class="sh-meta ranking-note table-note" id="ff-ranking-note">Spiele: 3  |  Sortierung: Siege · Spiel-Differenz · gewonnene Spiele · Ligaplatzierung</div>
+      </article>
     </div>
       </div>
       <aside class="ranking-profile-host" id="ranking-profile-host" aria-label="Geöffnetes Spielerprofil"></aside>
@@ -397,10 +403,10 @@
         <div id="stats-set-dominance"></div>
       </article>
     </div>
-    <div class="chart-box stats-chart-box" data-season-only-statistic>
+    <article class="widget" data-season-only-statistic>
       <h3>Platzierungen nach Spieltag</h3>
       <div class="placement-chart-wrap"><canvas id="placementChart"></canvas></div>
-    </div>
+    </article>
     <div class="stats-grid stats-facts-grid" data-season-only-statistic>
       <article class="widget">
         <h3 id="stats-qualification-forecast-label">Final-Four-Prognose</h3>
@@ -413,7 +419,7 @@
         <div id="stats-points-draw-factor-deviation"></div>
       </article>
     </div>
-    <div class="chart-box stats-chart-box">
+    <article class="widget">
       <h3>Elo-Score</h3>
       <div class="filter-controls">
         <div class="filter-toggle-btns">
@@ -426,7 +432,7 @@
         <div class="filter-row" id="filter-row"></div>
       </div>
       <div class="chart-wrap"><canvas id="eloChart"></canvas></div>
-    </div>
+    </article>
     <div class="all-time-ranking-profile-layout" id="all-time-ranking-profile-layout" data-all-time-statistic hidden>
       <div class="all-time-ranking-profile-main" id="all-time-ranking-profile-main">
     <div class="all-time-ranking">
@@ -447,24 +453,26 @@
           </div>
         </div>
       </div>
-      <div class="ranking-wrap ranking-main-wrap" id="all-time-ranking-wrap" data-ranking-view="compact">
-        <table class="rt ranking-table compact" id="all-time-ranking-table" data-ranking-sort="points">
-          <thead>
-            <tr>
-              <th class="col-rank">#</th>
-              <th class="col-name">Spieler</th>
-              <th class="col-games"><button type="button" class="ranking-sort-header" data-all-time-ranking-sort="games"><span class="sort-chevron" aria-hidden="true"></span><span class="th-label-full">Partien</span><span class="th-label-short">Part.</span></button></th>
-              <th class="col-wins"><button type="button" class="ranking-sort-header" data-all-time-ranking-sort="wins"><span class="sort-chevron" aria-hidden="true"></span><span>Siege</span></button></th>
-              <th class="col-points" aria-sort="descending"><button type="button" class="ranking-sort-header" data-all-time-ranking-sort="points"><span class="sort-chevron" aria-hidden="true"></span><span class="th-label-full">Punkte</span><span class="th-label-short">Pkt.</span></button></th>
-              <th class="col-average-points"><button type="button" class="ranking-sort-header" data-all-time-ranking-sort="average"><span class="sort-chevron" aria-hidden="true"></span><span>Ø-Pkt.</span></button></th>
-              <th class="col-gv">G:V</th>
-              <th class="col-diff"><button type="button" class="ranking-sort-header" data-all-time-ranking-sort="diff"><span class="sort-chevron" aria-hidden="true"></span><span>Diff.</span></button></th>
-            </tr>
-          </thead>
-          <tbody id="all-time-ranking-body"></tbody>
-        </table>
-      </div>
-      <div class="sh-meta ranking-note table-note" id="all-time-ranking-note">Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele</div>
+      <article class="widget">
+        <div class="ranking-wrap ranking-main-wrap" id="all-time-ranking-wrap" data-ranking-view="compact">
+          <table class="rt ranking-table compact" id="all-time-ranking-table" data-ranking-sort="points">
+            <thead>
+              <tr>
+                <th class="col-rank">#</th>
+                <th class="col-name">Spieler</th>
+                <th class="col-games"><button type="button" class="ranking-sort-header" data-all-time-ranking-sort="games"><span class="sort-chevron" aria-hidden="true"></span><span class="th-label-full">Partien</span><span class="th-label-short">Part.</span></button></th>
+                <th class="col-wins"><button type="button" class="ranking-sort-header" data-all-time-ranking-sort="wins"><span class="sort-chevron" aria-hidden="true"></span><span>Siege</span></button></th>
+                <th class="col-points" aria-sort="descending"><button type="button" class="ranking-sort-header" data-all-time-ranking-sort="points"><span class="sort-chevron" aria-hidden="true"></span><span class="th-label-full">Punkte</span><span class="th-label-short">Pkt.</span></button></th>
+                <th class="col-average-points"><button type="button" class="ranking-sort-header" data-all-time-ranking-sort="average"><span class="sort-chevron" aria-hidden="true"></span><span>Ø-Pkt.</span></button></th>
+                <th class="col-gv">G:V</th>
+                <th class="col-diff"><button type="button" class="ranking-sort-header" data-all-time-ranking-sort="diff"><span class="sort-chevron" aria-hidden="true"></span><span>Diff.</span></button></th>
+              </tr>
+            </thead>
+            <tbody id="all-time-ranking-body"></tbody>
+          </table>
+        </div>
+        <div class="sh-meta ranking-note table-note" id="all-time-ranking-note">Sortierung: Punkte · Spiel-Differenz · gewonnene Spiele</div>
+      </article>
     </div>
       </div>
       <aside class="ranking-profile-host" id="all-time-ranking-profile-host" aria-label="Geöffnetes Spielerprofil"></aside>
@@ -530,7 +538,7 @@
             <div id="calculator-mini-ranking"></div>
           </aside>
         </div>
-        <div class="calculator-panel calculator-ranking-panel">
+        <div class="widget calculator-ranking-panel">
           <h3>Simulierte Rangliste</h3>
           <div class="ranking-wrap calculator-ranking-wrap">
             <table class="rt rt--dense">
@@ -569,7 +577,7 @@
             <div id="final-four-calculator-mini-ranking"></div>
           </aside>
         </div>
-        <div class="calculator-panel calculator-ranking-panel">
+        <div class="widget calculator-ranking-panel">
           <h3>Simulierte Final4-Rangliste</h3>
           <div class="ranking-wrap calculator-ranking-wrap">
             <table class="rt rt--dense rt--fit">
@@ -581,7 +589,7 @@
           <div class="final-four-calculator-winner" id="final-four-calculator-winner" role="status"></div>
         </div>
       </div>
-      <div class="calculator-panel final-four-outcomes-panel">
+      <div class="widget final-four-outcomes-panel">
         <h3>Wer gewinnt bei welchem Ergebnis?</h3>
         <p class="sh-meta" id="final-four-outcomes-note" role="status"></p>
         <div id="final-four-calculator-outcomes"></div>
@@ -596,7 +604,7 @@
       <div class="sh-meta">Regeln & Informationen</div>
     </div>
     <div class="info-layout">
-      <aside class="info-card info-menu-card">
+      <aside class="widget info-menu-card">
         <h3 class="info-menu-desktop-label">Inhalte</h3>
         <button type="button" class="info-menu-toggle" data-info-menu-toggle aria-expanded="false" aria-controls="info-menu">
           <span>Inhalte</span>

@@ -396,13 +396,13 @@
 
   function renderPrematchFacts() {
     if (state.prematchFactsLoading) {
-      return `<section class="live-overview-section live-overview-prematch-section">
+      return `<section class="widget live-overview-section live-overview-prematch-section">
         <h3>Prematch-Fakten</h3>
         <div class="live-overview-prematch-status">Prematch-Fakten werden geladen …</div>
       </section>`;
     }
     if (state.prematchFactsError) {
-      return `<section class="live-overview-section live-overview-prematch-section">
+      return `<section class="widget live-overview-section live-overview-prematch-section">
         <h3>Prematch-Fakten</h3>
         <div class="live-overview-prematch-status">Die Prematch-Fakten sind derzeit nicht verfügbar.</div>
       </section>`;
@@ -417,7 +417,7 @@
       Array.isArray(player.relationships) && player.relationships.length
     );
 
-    return `<section class="live-overview-section live-overview-prematch-section">
+    return `<section class="widget live-overview-section live-overview-prematch-section">
       <div class="live-overview-prematch-heading">
         <h3>Prematch-Fakten</h3>
         <span class="th-help-wrap">
@@ -464,7 +464,7 @@
     const withdrawnPlayer = players.find(player => player.participationStatus === 'withdrawn');
     if (!withdrawnPlayer) return '';
 
-    return `<section class="live-overview-section live-overview-withdrawn-section">
+    return `<section class="widget live-overview-section live-overview-withdrawn-section">
       <h3>Qualifiziert · krankheitsbedingt ausgefallen</h3>
       <article class="live-overview-prematch-withdrawn">
         <div class="live-overview-prematch-withdrawn-identity">
@@ -495,7 +495,7 @@
 
   function renderFinalFourPoll() {
     if (state.pollLoading) {
-      return `<section class="live-overview-section live-overview-poll-section">
+      return `<section class="widget live-overview-section live-overview-poll-section">
         <h3>Wer gewinnt das Final Four?</h3>
         <div class="live-overview-poll-status">Umfrage wird geladen …</div>
       </section>`;
@@ -523,7 +523,7 @@
           </div>`
         : '<div class="live-overview-poll-status">Kein Umfrageergebnis verfügbar.</div>';
 
-    return `<section class="live-overview-section live-overview-poll-section">
+    return `<section class="widget live-overview-section live-overview-poll-section">
       <div class="live-overview-poll-heading">
         <h3>Wer gewinnt das Final Four?</h3>
         ${poll.closed ? '<span class="sh-meta">Abstimmung beendet</span>' : ''}
@@ -626,7 +626,7 @@
     const livePayload = payloads.find(payload => ['live', 'needs_server', 'ready_to_finish'].includes(payload.session?.status));
     target.innerHTML = `<div class="live-overview">
       ${renderOverviewPodium(payloads, stats)}
-      <section class="live-overview-section">
+      <section class="widget live-overview-section">
         <h3>Partien</h3>
         <div class="live-overview-matches">
           ${payloads.map((payload, index) => {
@@ -649,7 +649,7 @@
           }).join('')}
         </div>
       </section>
-      <section class="live-overview-section">
+      <section class="widget live-overview-section">
         <h3>Rangliste</h3>
         <div class="ranking-wrap ranking-wrap--fit">
           <table class="rt rt--dense rt--fit">
@@ -742,7 +742,7 @@
           <button class="secondary-button" type="button" data-live-refresh>Ergebnis aktualisieren</button>
         </div>` : ''}
       </article>
-      <section class="live-ticker-history-section">
+      <section class="widget live-ticker-history-section">
         <h3>Spielverlauf</h3>
         ${renderHistory(payload)}
       </section>`;

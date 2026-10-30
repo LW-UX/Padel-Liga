@@ -188,7 +188,7 @@
       border-color: var(--border);
       background: var(--surface);
     }
-    .prediction-match-card.is-locked { background: color-mix(in srgb, var(--surface) 54%, transparent); }
+    .prediction-match-card.is-locked { background: color-mix(in srgb, var(--surface) 33%, transparent); }
     .prediction-match-meta {
       grid-column: 1;
       grid-row: 1;

@@ -42,9 +42,9 @@
   /* Look der Inhaltsbereiche */
   --section-gap: 2rem;
   /* Rahmen der Inhaltsbereiche (.widget); transparent und 0 lassen die Bereiche frei auf --bg stehen. */
-  --widget-bg: transparent;
-  --widget-border: transparent;
-  --widget-padding: 0;
+  --widget-bg: var(--surface);
+  --widget-border: var(--border);
+  --widget-padding: var(--container-radius-base);
 
   /* Eckenradien nach Rolle */
   --button-radius: var(--radius-full);
