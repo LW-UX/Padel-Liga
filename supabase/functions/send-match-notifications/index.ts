@@ -225,7 +225,7 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
         intro: "Pack deine Sportsachen! Das nächste Padel-Match steht an.",
         body: `Die ${matchTitle} ist terminiert. Hier sind die Details:`,
         afterDetails: "Wird der Termin über die Webseite verschoben oder abgesagt, bekommst du automatisch eine Aktualisierung.",
-        action: linksToMatchPreview(job) ? "Partie ansehen" : "Zur PadelLiga",
+        action: linksToMatchPreview(job) ? "Partie ansehen" : "Zum Konto",
         matchName,
       };
     }
@@ -237,7 +237,7 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
       body: moved
         ? "Die Kalendereinladung im Anhang ersetzt den bisherigen Termin in deinem Kalender."
         : "Die Kalendereinladung im Anhang trägt den Termin in deinen Kalender ein. Wird er verschoben oder abgesagt, bekommst du automatisch eine Aktualisierung.",
-      action: training ? "Training ansehen" : linksToMatchPreview(job) ? "Partie ansehen" : "Zur PadelLiga",
+      action: linksToMatchPreview(job) ? "Partie ansehen" : "Zum Konto",
       matchName,
     };
   }
@@ -248,7 +248,7 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
       body: training
         ? "Die Absage im Anhang entfernt den Termin aus deinem Kalender."
         : "Die Absage im Anhang entfernt den Termin aus deinem Kalender. Sobald ein neuer Termin feststeht, bekommst du eine neue Einladung.",
-      action: "Zur PadelLiga",
+      action: training ? "Zum Konto" : "Partie neu terminieren",
       matchName,
     };
   }
