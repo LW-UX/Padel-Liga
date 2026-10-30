@@ -1973,8 +1973,12 @@ function refreshThemeDependentCharts() {
   const getLiveCharts = () => [chart, placementChart].filter(instance => instance?.ctx);
   getLiveCharts().forEach(instance => {
     ['x', 'y'].forEach(scaleId => applyThemeToChartScale(instance.options.scales[scaleId]));
-    instance.update('none');
   });
+  if (chart?.ctx) {
+    updateEloChartFocus();
+    renderFilter();
+  }
+  if (placementChart?.ctx) updatePlacementChartFocus();
   // Die Schrift eines neuen Brandings lädt erst beim Zeichnen; danach stimmen auch die Achsenbeschriftungen.
   document.fonts?.ready.then(() => getLiveCharts().forEach(instance => instance.update('none')));
 
@@ -1982,8 +1986,6 @@ function refreshThemeDependentCharts() {
   renderPlayerProfileParticipations(playerProfileData.participations || [], playerProfileData.matches || []);
   renderPlayerProfileEloChart(playerProfileData.eloSeries || []);
 }
-
-window.addEventListener('padel:branding-change', refreshThemeDependentCharts);
 
 function getDefaultProfileSeasonColor() {
   return getThemeValue(PROFILE_SEASON_COLOR_VARIABLES.neutral);
@@ -7776,27 +7778,8 @@ function formatMatchdayLabel(spieltag) {
 }
 
 // ── CHART ─────────────────────────────────────────────────────────
-const COLORS = [
-  '#6EF79C',
-  '#C96EF7',
-  '#F7F76E',
-  '#6EC9F7',
-  '#F76E9C',
-  '#6EF76E',
-  '#9C6EF7',
-  '#F7C96E',
-  '#6EF7F7',
-  '#F76EC9',
-  '#9CF76E',
-  '#6E6EF7',
-  '#F79C6E',
-  '#6EF7C9',
-  '#F76EF7',
-  '#C9F76E',
-  '#6E9CF7',
-  '#F76E6E'
-];
-const GRAY = '#444444';
+const PLAYER_COLOR_COUNT = 18;
+const CHART_FADED_ALPHA = '59';
 const CHART_DIM_ALPHA = 'D6';
 const CHART_GRAY_MIX = 0.28;
 
@@ -7808,7 +7791,7 @@ let hoveredPlacementChartPlayerName = null;
 function getChartBaseColor(player, fallbackIndex = 0) {
   const centralIndex = (window.PADEL_PLAYERS || []).findIndex(item => item.id === player?.id);
   const colorIndex = centralIndex >= 0 ? centralIndex : fallbackIndex;
-  return COLORS[colorIndex % COLORS.length];
+  return getThemeValue(`--player-${colorIndex % PLAYER_COLOR_COUNT + 1}`);
 }
 
 function hexToRgb(color) {
@@ -7834,9 +7817,14 @@ function blendHexColors(color, mixColor, mixAmount) {
   });
 }
 
+// Bleibt dem Spieler zuzuordnen und passt durch die Transparenz auf --bg wie auf --surface.
+function fadeChartColor(color) {
+  return `${color.slice(0, 7)}${CHART_FADED_ALPHA}`;
+}
+
 function dimChartColor(color) {
   if (typeof color === 'string' && color.startsWith('#') && color.length === 7) {
-    return `${blendHexColors(color, GRAY, CHART_GRAY_MIX)}${CHART_DIM_ALPHA}`;
+    return `${blendHexColors(color, getThemeValue('--muted'), CHART_GRAY_MIX)}${CHART_DIM_ALPHA}`;
   }
 
   return color;
@@ -7934,9 +7922,11 @@ function updatePlacementChartFocus() {
   if (!placementChart) return;
   placementChart.data.datasets.forEach((dataset, index) => {
     const player = PADEL_DATA.players[index];
-    const color = getPlacementChartColor(getChartBaseColor(player, index), player.name);
+    const baseColor = getChartBaseColor(player, index);
+    const color = getPlacementChartColor(baseColor, player.name);
     const playedFlags = dataset.playedFlags;
     const byeFlags = dataset.byeFlags;
+    dataset.baseColor = baseColor;
     dataset.borderColor = color;
     dataset.pointBackgroundColor = playedFlags.map(hasMatch => hasMatch ? color : 'transparent');
     dataset.pointBorderColor = playedFlags.map((hasMatch, pointIndex) => hasMatch || byeFlags[pointIndex] ? color : 'transparent');
@@ -8797,15 +8787,16 @@ function getPlacementSegmentColor(context, playedFlags, color) {
   const toPlayed = playedFlags[context.p1DataIndex];
 
   if (fromPlayed && toPlayed) return color;
-  if (!fromPlayed && !toPlayed) return GRAY;
+  const fadedColor = fadeChartColor(color);
+  if (!fromPlayed && !toPlayed) return fadedColor;
 
   const xScale = context.chart.scales.x;
   const x0 = xScale.getPixelForValue(context.p0DataIndex);
   const x1 = xScale.getPixelForValue(context.p1DataIndex);
   const gradient = context.chart.ctx.createLinearGradient(x0, 0, x1, 0);
 
-  gradient.addColorStop(0, fromPlayed ? color : GRAY);
-  gradient.addColorStop(1, toPlayed ? color : GRAY);
+  gradient.addColorStop(0, fromPlayed ? color : fadedColor);
+  gradient.addColorStop(1, toPlayed ? color : fadedColor);
 
   return gradient;
 }
@@ -9165,6 +9156,8 @@ playerProfileDialog?.addEventListener('click', event => {
   if (event.target === playerProfileDialog && playerProfilePresentation === 'modal') closePlayerProfile();
 });
 playerProfileDialog?.querySelector('.player-profile-shell')?.addEventListener('scroll', updatePlayerProfileHeroCondensed, { passive: true });
+
+window.addEventListener('padel:branding-change', refreshThemeDependentCharts);
 
 let playerProfileResizeFrame = 0;
 window.addEventListener('resize', () => {

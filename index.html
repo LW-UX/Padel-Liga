@@ -13,10 +13,21 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest?v=2026-10-28-brand-names">
-  <link rel="stylesheet" href="branding/og-design.css?v=b3eb4d3f27">
-  <script src="js/branding-preview.js?v=2026-10-30-branding-change"></script>
-  <link rel="stylesheet" href="style.css?v=2026-10-30-mobile-pages">
-  <link rel="stylesheet" href="account.css?v=2026-10-30-schedule-time-picker">
+  <link rel="stylesheet" href="branding/og-design.css?v=0d83eef5aa">
+  <script>
+    // Die Admin-Design-Vorschau greift vor dem ersten Zeichnen; alles Weitere steht in js/branding-preview.js.
+    (function () {
+      try {
+        var name = window.localStorage.getItem('padel-branding-preview');
+        var link = document.querySelector('link[rel="stylesheet"][href*="branding/"]');
+        if (!link || !/^[a-z0-9-]+$/.test(name || '')) return;
+        link.dataset.publishedHref = link.getAttribute('href');
+        link.setAttribute('href', link.getAttribute('href').replace(/branding\/.*$/, 'branding/' + name + '.css'));
+      } catch (error) { /* Ohne Speicher bleibt das veröffentlichte Branding. */ }
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css?v=2026-10-30-title-font-weight">
+  <link rel="stylesheet" href="account.css?v=2026-10-30-schedule-time-tap">
   <link rel="stylesheet" href="whats-new.css?v=2026-10-30-radius-sm">
   <script>
     (function () {
@@ -35,7 +46,7 @@
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="data/players.js?v=2026-10-20-test-net-emoji"></script>
-  <script defer src="data/seasons.js?v=2026-10-21-test-windows"></script>
+  <script defer src="data/seasons.js?v=2026-10-30-test-match-ten"></script>
   <script defer src="js/season-routing.js?v=2026-10-29-season-detail-reset"></script>
   <script defer src="data/training-matches.js"></script>
   <script defer src="data/info.js"></script>
@@ -47,12 +58,13 @@
   <script defer src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
   <script defer src="js/live-ticker.js?v=2026-10-29-detail-avatar-fallback"></script>
   <script defer src="js/mobile-dialog-pages.js?v=2026-10-30-mobile-pages-tipp"></script>
-  <script defer src="js/account.js?v=2026-10-30-schedule-time-picker"></script>
+  <script defer src="js/branding-preview.js?v=2026-10-30-branding-change"></script>
+  <script defer src="js/account.js?v=2026-10-30-schedule-time-tap"></script>
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/panel-layout.js?v=2026-10-29-shared-panel-layout"></script>
   <script defer src="js/match-statistics.js?v=2026-10-29-shared-panel-layout"></script>
-  <script defer src="js/app.js?v=2026-10-30-branding-change"></script>
+  <script defer src="js/app.js?v=2026-10-30-player-palette"></script>
 </head>
 <body>
 
@@ -925,7 +937,7 @@
             <input type="checkbox" role="switch" data-email-notification="predictionReminder" checked>
           </label>
           <label class="account-setting-row">
-            <span><strong>Kalendereinladung</strong><small>Termin deiner Partie für Outlook und andere Kalender, inklusive Verschiebung und Absage.</small></span>
+            <span><strong>Kalendereinladung</strong><small>Termine deiner Partien und Trainings für Outlook und andere Kalender, inklusive Verschiebung und Absage.</small></span>
             <input type="checkbox" role="switch" data-email-notification="calendarInvitation" checked>
           </label>
         </div>
@@ -972,7 +984,7 @@
               <form class="training-form" id="training-form" hidden>
                 <div class="training-form-meta">
                   <label><span>Datum</span><span class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required></span></label>
-                  <label><span>Uhrzeit</span><span class="schedule-time-field" data-schedule-time-field="displayTime"></span></label>
+                  <div class="schedule-time-label" role="group" aria-label="Uhrzeit"><span>Uhrzeit</span><span class="schedule-time-field" data-schedule-time-field="displayTime"></span></div>
                 </div>
                 <div class="racket-check" data-racket-check role="status" aria-live="polite" hidden></div>
                 <div class="training-player-fields" id="training-player-fields" data-training-player-fields></div>

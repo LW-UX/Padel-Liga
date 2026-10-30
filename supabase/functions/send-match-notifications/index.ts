@@ -12,16 +12,17 @@ type NotificationJob = {
   notification_type: NotificationType;
   recipient_email: string;
   recipient_name: string;
-  season_id: string;
-  season_label: string;
-  match_id: string;
+  season_id: string | null;
+  season_label: string | null;
+  match_id: string | null;
   match_label: string;
-  team_one_label: string;
-  team_two_label: string;
+  team_one_label: string | null;
+  team_two_label: string | null;
   match_at: string;
   actual_sets: string | null;
   result_details: string | null;
   idempotency_key: string;
+  training_participants: string | null;
 };
 
 type CalendarDetails = {
@@ -29,6 +30,7 @@ type CalendarDetails = {
   calendar_uid: string;
   calendar_sequence: number;
   event_start: string;
+  is_update: boolean;
 };
 
 const CALENDAR_LOCATION = "Lucky Star Padel";
@@ -70,6 +72,21 @@ function formatMatchAt(value: string) {
 
 function isCalendarJob(job: NotificationJob) {
   return job.notification_type === "calendar_invitation" || job.notification_type === "calendar_cancellation";
+}
+
+function isTrainingJob(job: NotificationJob) {
+  return job.match_id === null;
+}
+
+function getEventHeading(job: NotificationJob) {
+  return isTrainingJob(job) ? "Training" : `${job.season_label} · ${job.match_label}`;
+}
+
+// A deleted training has no participants left, so its line stays empty.
+function getEventLineup(job: NotificationJob) {
+  return isTrainingJob(job)
+    ? job.training_participants ?? ""
+    : `${job.team_one_label} vs. ${job.team_two_label}`;
 }
 
 function formatIcsDate(date: Date) {
@@ -115,8 +132,8 @@ function buildCalendar(job: NotificationJob, calendar: CalendarDetails, organize
   const start = new Date(calendar.event_start);
   const end = new Date(start.getTime() + CALENDAR_DURATION_MINUTES * 60 * 1000);
   const description = [
-    `${job.season_label} · ${job.match_label}`,
-    `${job.team_one_label} vs. ${job.team_two_label}`,
+    getEventHeading(job),
+    getEventLineup(job),
     "",
     `PadelLiga: ${destination}`,
   ].join("\n");
@@ -132,7 +149,7 @@ function buildCalendar(job: NotificationJob, calendar: CalendarDetails, organize
     `DTSTAMP:${formatIcsDate(new Date())}`,
     `DTSTART:${formatIcsDate(start)}`,
     `DTEND:${formatIcsDate(end)}`,
-    `SUMMARY:${escapeIcsText(`PadelLiga: ${job.team_one_label} vs. ${job.team_two_label}`)}`,
+    `SUMMARY:${escapeIcsText(`PadelLiga: ${isTrainingJob(job) ? "Training" : getEventLineup(job)}`)}`,
     `DESCRIPTION:${escapeIcsText(description)}`,
     `LOCATION:${escapeIcsText(CALENDAR_LOCATION)}`,
     `ORGANIZER;CN=PadelLiga:mailto:${organizer}`,
@@ -168,36 +185,41 @@ function encodeBase64(value: string) {
 function buildDestination(job: NotificationJob, siteUrl: URL) {
   if (job.notification_type === "prediction_reminder") {
     const url = new URL("tipp/", siteUrl);
-    url.searchParams.set("saison", job.season_id);
+    url.searchParams.set("saison", job.season_id ?? "");
     return url.href;
   }
   const url = new URL(siteUrl);
-  url.searchParams.set("saison", job.season_id);
+  if (job.season_id) url.searchParams.set("saison", job.season_id);
   url.searchParams.set("konto", "1");
   return url.href;
 }
 
 function getMailContent(job: NotificationJob, calendar?: CalendarDetails) {
-  const matchName = `${job.season_label} · ${job.match_label}`;
-  const calendarSubject = `${job.match_label} – PadelLiga ${job.season_label}`;
+  const matchName = getEventHeading(job);
+  const training = isTrainingJob(job);
+  const calendarSubject = training ? "Training – PadelLiga" : `${job.match_label} – PadelLiga ${job.season_label}`;
   if (job.notification_type === "calendar_invitation") {
-    const moved = (calendar?.calendar_sequence ?? 0) > 0;
+    const moved = calendar?.is_update ?? false;
     return {
       subject: calendarSubject,
-      intro: moved ? "Eure Partie wurde verschoben." : "Eure Partie ist terminiert.",
+      intro: training
+        ? moved ? "Euer Training wurde verschoben." : "Euer Training ist terminiert."
+        : moved ? "Eure Partie wurde verschoben." : "Eure Partie ist terminiert.",
       body: moved
         ? "Die Kalendereinladung im Anhang ersetzt den bisherigen Termin in deinem Kalender."
         : "Die Kalendereinladung im Anhang trägt den Termin in deinen Kalender ein. Wird er verschoben oder abgesagt, bekommst du automatisch eine Aktualisierung.",
-      action: "Partie ansehen",
+      action: training ? "Training ansehen" : "Partie ansehen",
       matchName,
     };
   }
   if (job.notification_type === "calendar_cancellation") {
     return {
       subject: `Abgesagt: ${calendarSubject}`,
-      intro: "Der Termin eurer Partie entfällt.",
-      body: "Die Absage im Anhang entfernt den Termin aus deinem Kalender. Sobald ein neuer Termin feststeht, bekommst du eine neue Einladung.",
-      action: "Partie ansehen",
+      intro: training ? "Der Termin eures Trainings entfällt." : "Der Termin eurer Partie entfällt.",
+      body: training
+        ? "Die Absage im Anhang entfernt den Termin aus deinem Kalender."
+        : "Die Absage im Anhang entfernt den Termin aus deinem Kalender. Sobald ein neuer Termin feststeht, bekommst du eine neue Einladung.",
+      action: training ? "Zur PadelLiga" : "Partie ansehen",
       matchName,
     };
   }
@@ -235,6 +257,12 @@ function renderMail(job: NotificationJob, destination: string, calendar?: Calend
   const content = getMailContent(job, calendar);
   const greeting = job.recipient_name ? `Hallo ${job.recipient_name},` : "Hallo,";
   const matchAt = formatMatchAt(calendar?.event_start ?? job.match_at);
+  const lineupCell = isTrainingJob(job)
+    ? escapeHtml(job.training_participants)
+    : `${escapeHtml(job.team_one_label)} <span style="color:#7E828B;font-weight:normal;">vs.</span> ${escapeHtml(job.team_two_label)}`;
+  const lineupHtml = lineupCell
+    ? `<tr><td style="padding:2px 16px;color:#F3F4F1;font-size:15px;font-weight:bold;">${lineupCell}</td></tr>`
+    : "";
   const html = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#07080C;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;">
   <tr>
     <td align="center">
@@ -251,7 +279,7 @@ function renderMail(job: NotificationJob, destination: string, calendar?: Calend
             <p style="margin:0 0 20px;">${escapeHtml(content.body)}</p>
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;background:#141823;border:1px solid #29303F;border-radius:8px;">
               <tr><td style="padding:14px 16px 4px;color:#D4F53A;font-size:13px;font-weight:bold;">${escapeHtml(content.matchName)}</td></tr>
-              <tr><td style="padding:2px 16px;color:#F3F4F1;font-size:15px;font-weight:bold;">${escapeHtml(job.team_one_label)} <span style="color:#7E828B;font-weight:normal;">vs.</span> ${escapeHtml(job.team_two_label)}</td></tr>
+              ${lineupHtml}
               <tr><td style="padding:4px 16px 14px;color:#A8ADB7;font-size:13px;">${escapeHtml(matchAt)}</td></tr>
             </table>
           </td>
@@ -282,9 +310,7 @@ function renderMail(job: NotificationJob, destination: string, calendar?: Calend
 ${content.intro}
 ${content.body}
 
-${content.matchName}
-${job.team_one_label} vs. ${job.team_two_label}
-${matchAt}
+${[content.matchName, getEventLineup(job), matchAt].filter(Boolean).join("\n")}
 
 ${content.action}: ${destination}
 

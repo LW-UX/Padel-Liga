@@ -185,9 +185,10 @@ if (command === 'list-tools') {
     }
   }));
 } else if (command === 'store-notification-service-key') {
+  // Die Function vergleicht mit SUPABASE_SERVICE_ROLE_KEY, und das ist in diesem Projekt der neue Secret Key.
   // Der Schlüssel wird nie ausgegeben; auch Fehlermeldungen geben die Abfrage nicht wieder.
   const keys = await managementRequest('/api-keys?reveal=true');
-  const serviceKey = keys.find((key) => key.name === 'service_role')?.api_key;
+  const serviceKey = keys.find((key) => key.type === 'secret')?.api_key;
   if (!/^[A-Za-z0-9_.-]+$/.test(serviceKey || '')) fail('Der Service-Role-Schlüssel konnte nicht gelesen werden.');
   const result = await rpc('tools/call', {
     name: 'execute_sql',

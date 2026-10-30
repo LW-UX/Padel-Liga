@@ -82,7 +82,7 @@
       overscroll-behavior: contain;
       padding: 1.5rem;
     }
-    .auth-dialog h2 { font-family: var(--font-heading); font-size: var(--text-heading); letter-spacing: 0.04em; margin: 0.25rem 0 1rem; }
+    .auth-dialog h2 { font-family: var(--font-heading); font-size: var(--text-heading); font-weight: var(--heading-font-weight); letter-spacing: var(--heading-letter-spacing); margin: 0.25rem 0 1rem; }
     .auth-mode-toggle {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -559,7 +559,8 @@
     .scheduled-result-actions { display: flex; justify-content: flex-end; }
     .result-entry-form label,
     .match-schedule-form label,
-    .training-form label {
+    .training-form label,
+    .schedule-time-label {
       display: flex;
       align-items: center;
       gap: 8px;
@@ -592,10 +593,12 @@
       text-align: left;
     }
     .schedule-time-field { display: flex; align-items: center; gap: 4px; min-width: 0; color: var(--dim); }
-    .schedule-time-field .training-picker { flex: 1 1 0; }
+    .schedule-time-field .training-picker { flex: 1 1 4rem; width: 4rem; min-width: 3.5rem; }
     .schedule-time-field .training-picker-label { display: none; }
-    .schedule-time-field .training-picker-toggle { min-height: 38px; border-radius: var(--radius-sm); }
-    .schedule-time-field .training-picker-menu { right: auto; left: 0; width: 100%; min-width: 72px; max-height: min(240px, 50vh); }
+    .schedule-time-field .training-picker-toggle { min-height: 38px; border-radius: var(--radius-sm); padding-right: 1.5rem; padding-left: 0.65rem; }
+    .schedule-time-field .training-picker-toggle::after { right: 0.65rem; }
+    .schedule-time-field :is(.training-picker-display, .training-picker-display-line) { overflow: visible; text-overflow: clip; }
+    .schedule-time-field .training-picker-menu { right: auto; left: 0; width: 100%; min-width: 72px; max-height: min(240px, 50vh); overscroll-behavior: contain; }
     .datetime-input-shell { display: contents; }
     .datetime-input-shell.is-empty input { color: var(--dim); }
     .has-controlled-datetime-hints .datetime-input-shell {
@@ -1080,7 +1083,7 @@
         align-self: flex-start;
         justify-self: start;
       }
-      .result-entry-timing label { min-width: 0; flex-direction: column; align-items: stretch; gap: 4px; }
+      .result-entry-timing :is(label, .schedule-time-label) { min-width: 0; flex-direction: column; align-items: stretch; gap: 4px; }
       .account-section-heading { align-items: center; flex-wrap: wrap; gap: 8px; }
       .account-task-matchup strong { display: flex; flex-wrap: wrap; }
       .account-task-matchup strong:last-child { justify-content: end; }
@@ -1105,7 +1108,7 @@
       .training-round-head { display: flex; flex-wrap: wrap-reverse; justify-content: space-between; }
       .training-round-head .training-picker:first-child { width: 100%; }
       .training-round-head .training-picker { width: 80%; }
-      .training-form-meta label { display: grid; gap: 4px; }
+      .training-form-meta :is(label, .schedule-time-label) { display: grid; gap: 4px; }
       .training-picker-toggle { min-width: 0; }
       .training-form-actions { align-items: stretch; flex-direction: column-reverse; }
       .training-form-actions .primary-button,

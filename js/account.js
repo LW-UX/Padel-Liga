@@ -96,6 +96,16 @@
       .replaceAll("'", '&#039;');
   }
 
+  // Auf schmalen Ansichten öffnet ein Tipp auf das ganze Feld die Auswahl, nicht nur auf das kleine Kalendersymbol. iOS macht das selbst.
+  function openDateTimePickerOnTap(target) {
+    if (isIosWebKit || !target.matches?.('[data-datetime-field] input') || !window.matchMedia('(max-width: 768px)').matches) return;
+    try {
+      target.showPicker?.();
+    } catch (error) {
+      console.warn('Datumsauswahl konnte nicht geöffnet werden:', error);
+    }
+  }
+
   function syncScheduleTimeField(field) {
     const name = field.dataset.scheduleTimeField;
     const hour = field.querySelector(`[name="${name}Hour"]`)?.value;
@@ -293,7 +303,7 @@
     return note ? `${message} ${note}.` : message;
   }
 
-  // Die Datenbank hält Kalendermails 15 Minuten zurück, außer die Partie beginnt innerhalb von zwei Stunden.
+  // Die Datenbank hält Kalendermails 15 Minuten zurück, außer der Termin beginnt innerhalb von zwei Stunden.
   function withCalendarNote(message, matchAtValue) {
     const startsIn = new Date(matchAtValue).getTime() - Date.now();
     if (!(startsIn > 0)) return message;
@@ -845,10 +855,10 @@
           <span>Datum</span>
           <span class="datetime-input-shell" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="scheduledDate" required value="${escapeHtml(matchTime.date || '')}"></span>
         </label>
-        <label>
+        <div class="schedule-time-label" role="group" aria-label="Uhrzeit">
           <span>Uhrzeit</span>
           ${renderScheduleTimeField('scheduledTime', matchTime.time)}
-        </label>
+        </div>
       </div>
       <div class="racket-check" data-racket-check role="status" aria-live="polite" hidden></div>
       <div class="match-schedule-actions">
@@ -1588,7 +1598,7 @@
     return `<form class="training-form training-alternative-form scheduled-training-form${due ? ' is-result-entry' : ''}" data-training-scheduled="${escapeHtml(task.session_id)}" ${due ? '' : 'hidden'}>
       <div class="training-form-meta">
         <label><span>Datum</span><span class="datetime-input-shell" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required value="${escapeHtml(task.played_on)}"></span></label>
-        <label><span>Uhrzeit</span>${renderScheduleTimeField('displayTime', task.display_time)}</label>
+        <div class="schedule-time-label" role="group" aria-label="Uhrzeit"><span>Uhrzeit</span>${renderScheduleTimeField('displayTime', task.display_time)}</div>
       </div>
       <div class="racket-check" data-racket-check role="status" aria-live="polite" hidden></div>
       <div class="training-player-fields" data-training-player-fields></div>
@@ -2928,7 +2938,10 @@ Dein Hanako-Leben-Squad`;
     const formGroup = form.closest('[data-training-form-group]');
     if (formGroup) formGroup.hidden = true;
     setAuthMessage(schedulesFuture
-      ? withRacketNote(scheduledTrainingId ? 'Trainingstermin wurde geändert.' : 'Training wurde terminiert.', racket)
+      ? withCalendarNote(
+        withRacketNote(scheduledTrainingId ? 'Trainingstermin wurde geändert.' : 'Training wurde terminiert.', racket),
+        buildMatchAtValue(payload.p_played_on, payload.p_display_time)
+      )
       : state.profile?.app_role === 'admin' ? 'Training wurde direkt eingetragen.' : 'Training wurde zur Bestätigung gesendet.', 'success');
     await refresh();
     window.dispatchEvent(new CustomEvent('padel:training-data-changed'));
@@ -2980,6 +2993,7 @@ Dein Hanako-Leben-Squad`;
     });
     document.addEventListener('click', async event => {
       if (!event.target.closest('[data-training-picker]')) closeTrainingPickerMenus();
+      openDateTimePickerOnTap(event.target);
       const open = event.target.closest('[data-auth-open]');
       if (open) {
         openAuthDialog();

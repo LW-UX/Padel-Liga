@@ -117,7 +117,7 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(accountScript, /function keepTrainingPickerSearchVisible\(searchInput\)[\s\S]*targetOffset = Math\.min\(200,[\s\S]*window\.setTimeout\(alignInput, 350\)/);
   assert.match(accountScript, /searchInput\.focus\(\{ preventScroll: true \}\);\s*keepTrainingPickerSearchVisible\(searchInput\);/);
   assert.match(pages[1], /class="secondary-button secondary-button--dropdown global-action"[^>]*data-season-toggle/);
-  assert.match(style, /\.sh-title \{[^}]*font-size: var\(--text-heading\);[^}]*font-weight: 400;/);
+  assert.match(style, /\.sh-title \{[^}]*font-size: var\(--text-heading\);[^}]*font-weight: var\(--heading-font-weight\);/);
   assert.match(style, /\.secondary-button \{[\s\S]*font-family: var\(--font-body\);[\s\S]*font-size: 0\.78rem;[\s\S]*font-weight: 500;/);
   assert.match(style, /\.secondary-button--dropdown \{[^}]*position: relative;[^}]*padding-right: 1\.8rem;/);
   assert.doesNotMatch(style, /\.picker-toggle/);
@@ -156,7 +156,7 @@ test('both account dialogs expose one four-group game overview', () => {
 test('date and time hints are dimmed while Safari and iOS receive controlled text', () => {
   pages.forEach(source => {
     assert.match(source, /class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="TT\.MM\.JJJJ"><input type="date"/);
-    assert.match(source, /<label><span>Uhrzeit<\/span><span class="schedule-time-field" data-schedule-time-field="displayTime"><\/span><\/label>/);
+    assert.match(source, /<div class="schedule-time-label" role="group" aria-label="Uhrzeit"><span>Uhrzeit<\/span><span class="schedule-time-field" data-schedule-time-field="displayTime"><\/span><\/div>/);
   });
   assert.match(accountScript, /SCHEDULE_HOUR_OPTIONS = Array\.from\(\{ length: 20 - 6 \+ 1 \}/);
   assert.match(accountScript, /SCHEDULE_MINUTE_OPTIONS = \['00', '15', '30', '45'\]/);
@@ -166,6 +166,9 @@ test('date and time hints are dimmed while Safari and iOS receive controlled tex
   assert.match(accountScript, /picker\.closest\('\[data-schedule-time-field\]'\)\) keepTrainingPickerMenuVisible\(picker\)/);
   assert.match(accountScript, /form\.reset\(\);\s*syncDateTimeHints\(form\);\s*resetScheduleTimeFields\(form\);/);
   assert.match(accountScript, /Bitte Stunde und Minute auswählen/);
+  // Ein umschließendes label würde Klicks auf den Menürand an die Stundenauswahl weiterleiten.
+  assert.doesNotMatch(accountScript, /<label>\s*<span>Uhrzeit<\/span>\s*\$\{renderScheduleTimeField/);
+  assert.match(accountScript, /function openDateTimePickerOnTap\(target\)[\s\S]*target\.showPicker\?\.\(\)/);
   assert.match(accountScript, /const isIosWebKit = [\s\S]*const isDesktopSafari = [\s\S]*classList\?\.toggle\('has-controlled-datetime-hints', isIosWebKit \|\| isDesktopSafari\)/);
   assert.match(accountScript, /function syncDateTimeHint\(input\)[\s\S]*classList\.toggle\('is-empty', !input\.value\)/);
   assert.match(accountScript, /data-datetime-hint="TT\.MM\.JJJJ"><input type="date" name="(?:playedOn|scheduledDate)"/);

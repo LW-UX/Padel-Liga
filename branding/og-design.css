@@ -94,6 +94,9 @@
   --font-mono: 'DM Mono', monospace;
   /* Grundgröße der Überschriftenschrift; alle Überschriften, Wortmarken und großen Zahlen skalieren mit. */
   --text-heading: 2rem;
+  /* Laufweite und Stärke der Titel in Abschnitten, Widgets, Dialogen, Profil und Podium */
+  --heading-letter-spacing: 0.04em;
+  --heading-font-weight: 400;
 
   /* Look der Inhaltsbereiche */
   --section-gap: 4rem;
@@ -112,7 +115,7 @@
   --bg:         #07080C;
   --surface:    #0E1017;
   --surface2:   #1A1F2C;
-  --border:     #29303F;
+  --border:     #343C4E;
   --text:       #F3F4F1;
   --muted:      #7E828B;
   --dim:        #B9BBC2;
@@ -142,4 +145,24 @@
   --envidual:   #2E8FC4;
   --hanako:     #2B6D88;
   --headsquare: #E70713;
+
+  /* Spielerfarben der Diagramme */
+  --player-1:  #6EF79C;
+  --player-2:  #C96EF7;
+  --player-3:  #F7F76E;
+  --player-4:  #6EC9F7;
+  --player-5:  #F76E9C;
+  --player-6:  #6EF76E;
+  --player-7:  #9C6EF7;
+  --player-8:  #F7C96E;
+  --player-9:  #6EF7F7;
+  --player-10: #F76EC9;
+  --player-11: #9CF76E;
+  --player-12: #6E6EF7;
+  --player-13: #F79C6E;
+  --player-14: #6EF7C9;
+  --player-15: #F76EF7;
+  --player-16: #C9F76E;
+  --player-17: #6E9CF7;
+  --player-18: #F76E6E;
 }

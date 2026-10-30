@@ -20,6 +20,14 @@ const testReminderMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261029210000_test_prediction_reminders_only_test_accounts.sql'),
   'utf8'
 );
+const trainingCalendarMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261030120000_training_calendar_invitations.sql'),
+  'utf8'
+);
+const calendarUpdateMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261030130000_calendar_mail_is_update.sql'),
+  'utf8'
+);
 const calendarDelayMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261029220000_calendar_invitation_delay.sql'),
   'utf8'
@@ -84,7 +92,7 @@ test('calendar invitations follow schedule changes and keep one Outlook appointm
   assert.match(calendarMigration, /rename to queue_due_reminder_notifications/);
   assert.match(edgeFunction, /METHOD:\$\{cancelled \? "CANCEL" : "REQUEST"\}/);
   assert.match(edgeFunction, /SEQUENCE:\$\{calendar\.calendar_sequence\}/);
-  assert.match(edgeFunction, /const calendarSubject = `\$\{job\.match_label\} – PadelLiga \$\{job\.season_label\}`;/);
+  assert.match(edgeFunction, /const calendarSubject = training \? "Training – PadelLiga" : `\$\{job\.match_label\} – PadelLiga \$\{job\.season_label\}`;/);
   assert.match(edgeFunction, /subject: `Abgesagt: \$\{calendarSubject\}`/);
   assert.match(edgeFunction, /const CALENDAR_LOCATION = "Lucky Star Padel";/);
   assert.match(edgeFunction, /"TRIGGER:-PT1H"/);
@@ -102,6 +110,24 @@ test('calendar invitations skip matches that were already scheduled at activatio
 test('prediction reminders for test matches only reach the internal test profiles', () => {
   assert.match(testReminderMigration, /create or replace function private\.queue_due_reminder_notifications\(\)/);
   assert.match(testReminderMigration, /season\.id not in \('2026-test', 'test-2026'\)\s+or profile\.player_id in \('ludi_gmail', 'ludi_gmx', 'ludi_ionos', 'test_net'\)/);
+});
+
+test('scheduled trainings get calendar mail, also after their row was deleted', () => {
+  assert.match(trainingCalendarMigration, /alter column match_id drop not null/);
+  assert.match(trainingCalendarMigration, /session\.status = 'scheduled'/);
+  assert.match(trainingCalendarMigration, /insert into private\.training_calendar_baseline/);
+  assert.match(trainingCalendarMigration, /full join known/);
+  assert.match(trainingCalendarMigration, /when needed_session_at <= now\(\) \+ interval '2 hours' then now\(\)\s+else now\(\) \+ interval '15 minutes'/);
+  assert.match(trainingCalendarMigration, /left join public\.matches as match on match\.id = claimed\.match_id/);
+  assert.match(trainingCalendarMigration, /concat\('training-', queue\.training_session_id\)/);
+  assert.match(edgeFunction, /subject: `Abgesagt: \$\{calendarSubject\}`/);
+  assert.match(edgeFunction, /job\.training_participants \?\? ""/);
+});
+
+test('calendar mail only announces a move when an invitation was really sent', () => {
+  assert.match(calendarUpdateMigration, /earlier\.notification_type = 'calendar_invitation'/);
+  assert.match(calendarUpdateMigration, /earlier\.status = 'sent'/);
+  assert.match(edgeFunction, /const moved = calendar\?\.is_update \?\? false;/);
 });
 
 test('calendar mail waits 15 minutes unless the match starts within two hours', () => {

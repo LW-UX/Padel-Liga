@@ -35,9 +35,12 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   /* Grundgröße der Überschriftenschrift; alle Überschriften, Wortmarken und großen Zahlen skalieren mit. */
   --text-heading: 2rem;
+  /* Laufweite und Stärke der Titel in Abschnitten, Widgets, Dialogen, Profil und Podium */
+  --heading-letter-spacing: 0;
+  --heading-font-weight: 700;
 
   /* Look der Inhaltsbereiche */
-  --section-gap: 4rem;
+  --section-gap: 2rem;
   /* Rahmen der Inhaltsbereiche (.widget); transparent und 0 lassen die Bereiche frei auf --bg stehen. */
   --widget-bg: transparent;
   --widget-border: transparent;
@@ -83,4 +86,24 @@
   --envidual:   #2E8FC4;
   --hanako:     #316D88;
   --headsquare: #E70713;
+
+  /* Spielerfarben der Diagramme: gleiche Reihenfolge und Farbtöne wie im OG-Design, abgedunkelt für hellen Hintergrund */
+  --player-1:  #0B8043;
+  --player-2:  #A921ED;
+  --player-3:  #806A00;
+  --player-4:  #0E74A7;
+  --player-5:  #D71154;
+  --player-6:  #1B6E1B;
+  --player-7:  #7443E0;
+  --player-8:  #96620A;
+  --player-9:  #007A80;
+  --player-10: #D01190;
+  --player-11: #4A7A00;
+  --player-12: #2E2EB8;
+  --player-13: #BD4A0F;
+  --player-14: #00795C;
+  --player-15: #B00FB0;
+  --player-16: #5F7000;
+  --player-17: #1F64ED;
+  --player-18: #DB1212;
 }

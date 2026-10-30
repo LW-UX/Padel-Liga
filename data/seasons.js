@@ -38,7 +38,7 @@ window.PADEL_SEASONS = [
     route: "test",
     visualTheme: "neutral",
     qualificationPlaces: 3,
-    file: "data/data-2026-test.js?v=2026-10-28-brand-names",
+    file: "data/data-2026-test.js?v=2026-10-30-test-match-ten",
     hidden: true,
     default: false
   }

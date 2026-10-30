@@ -39,13 +39,13 @@ const context = { window: {} };
 vm.runInNewContext(source, context);
 const season = context.window.PADEL_SEASON;
 
-test('test season contains nine interactive matches plus a separate statistics history fixture', () => {
+test('test season contains ten interactive matches plus a separate statistics history fixture', () => {
   assert.equal(season.id, '2026-test');
   assert.equal(season.competition.qualificationPlaces, 3);
   assert.match(season.shortInfo.join(' '), /isoliertes Test-Elo/);
   assert.deepEqual(
     JSON.parse(JSON.stringify(season.matches.map(match => match.id))),
-    Array.from({ length: 9 }, (_, index) => `test-2026-partie-${index + 1}`)
+    Array.from({ length: 10 }, (_, index) => `test-2026-partie-${index + 1}`)
   );
   assert.ok(season.matches.every(match => (
     match.result === null && match.sets === null && match.winner === null

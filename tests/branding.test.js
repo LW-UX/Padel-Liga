@@ -68,8 +68,9 @@ test('the admin design preview offers every branding with matching wireframe col
   for (const file of ['index.html', 'tipp/index.html']) {
     const html = read(file);
     const branding = html.search(/branding\/[a-z0-9-]+\.css/);
-    const script = html.indexOf('js/branding-preview.js');
-    assert.ok(branding < script && script < html.indexOf('style.css'), `${file}: Vorschau direkt nach dem Branding laden`);
+    const earlyPreview = html.indexOf("localStorage.getItem('padel-branding-preview')");
+    assert.ok(branding < earlyPreview && earlyPreview < html.indexOf('style.css'), `${file}: Vorschau direkt nach dem Branding anwenden`);
+    assert.ok(html.indexOf('js/branding-preview.js') < html.indexOf('js/account.js'), `${file}: Vorschau vor dem Konto laden`);
     assert.match(html, /data-account-branding hidden/);
   }
 });
@@ -85,6 +86,7 @@ test('the design preview announces a switch once the stylesheet applies and foll
     dispatchEvent: event => events.push(event.type)
   };
   const link = {
+    dataset: {},
     getAttribute: name => attributes[name],
     setAttribute: (name, value) => { attributes[name] = value; },
     addEventListener: (type, handler) => { listeners.link[type] = handler; }
@@ -103,4 +105,33 @@ test('the design preview announces a switch once the stylesheet applies and foll
   listeners.window.storage({ key: 'padel-branding-preview' });
   assert.equal(attributes.href, 'branding/og-design.css?v=abc');
   assert.equal(window.PadelBrandingPreview.current(), 'og-design');
+});
+
+test('every branding offers readable, distinct player colors and lines without a match keep them', async () => {
+  const { readBrandingVariables } = await loadTool();
+  const luminance = hex => {
+    const [r, g, b] = [1, 3, 5].map(start => parseInt(hex.slice(start, start + 2), 16) / 255)
+      .map(value => value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const contrast = (first, second) => {
+    const [dark, light] = [luminance(first), luminance(second)].sort((a, b) => a - b);
+    return (light + 0.05) / (dark + 0.05);
+  };
+
+  for (const file of fs.readdirSync(path.join(root, 'branding')).filter(name => name.endsWith('.css'))) {
+    const variables = readBrandingVariables(read(`branding/${file}`));
+    const colors = Array.from({ length: 18 }, (_, index) => variables[`--player-${index + 1}`]);
+    assert.equal(new Set(colors).size, 18, file);
+    for (const color of colors) {
+      for (const background of ['--bg', '--surface']) {
+        assert.ok(contrast(color, variables[background]) >= 4.5, `${file}: ${color} auf ${background}`);
+      }
+    }
+  }
+
+  const app = read('js/app.js');
+  assert.doesNotMatch(app, /\bGRAY\b|\bCOLORS\b/);
+  const fade = app.match(/function fadeChartColor\(color\) \{[\s\S]*?\n\}/)[0];
+  assert.equal(vm.runInNewContext(`const CHART_FADED_ALPHA = '59';\n${fade}\nfadeChartColor('#112233D6');`), '#11223359');
 });

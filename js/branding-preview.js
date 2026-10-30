@@ -1,6 +1,6 @@
 // Admins können auf ihrem Gerät ein anderes Branding als Vorschau einschalten; alle anderen sehen
-// das mit tools/apply-branding.mjs veröffentlichte Branding. Das Skript läuft direkt nach dem
-// Branding-Stylesheet, damit die Seite ohne Flackern im gewählten Branding erscheint.
+// das mit tools/apply-branding.mjs veröffentlichte Branding. Ein kleines Inline-Skript im Seitenkopf
+// schaltet die gespeicherte Auswahl schon vor dem ersten Zeichnen ein und merkt sich den ursprünglichen Link.
 // Die Farben je Branding dienen nur der Webseiten-Skizze auf den Designkarten im Konto und müssen zur Branding-Datei passen.
 (function () {
   var STORAGE_KEY = 'padel-branding-preview';
@@ -8,7 +8,7 @@
     {
       name: 'og-design',
       label: 'OG-Design',
-      colors: { bg: '#07080C', surface: '#0E1017', border: '#29303F', text: '#F3F4F1', dim: '#B9BBC2', accent: '#d4f53a' }
+      colors: { bg: '#07080C', surface: '#0E1017', border: '#343C4E', text: '#F3F4F1', dim: '#B9BBC2', accent: '#d4f53a' }
     },
     {
       name: 'hanako-leben',
@@ -18,11 +18,11 @@
   ];
 
   var link = document.querySelector('link[rel="stylesheet"][href*="branding/"]');
-  var match = link && link.getAttribute('href').match(/^(.*branding\/)([a-z0-9-]+)\.css/);
+  var publishedHref = link && (link.dataset.publishedHref || link.getAttribute('href'));
+  var match = publishedHref && publishedHref.match(/^(.*branding\/)([a-z0-9-]+)\.css/);
   if (!match) return;
   var basePath = match[1];
   var publishedName = match[2];
-  var publishedHref = link.getAttribute('href');
   var themeColor = document.querySelector('meta[name="theme-color"]');
   var publishedThemeColor = themeColor && themeColor.getAttribute('content');
 

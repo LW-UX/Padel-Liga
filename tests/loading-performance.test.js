@@ -344,8 +344,8 @@ test('the PadelTipp page reuses the legacy season match prefix', () => {
 test('account startup publishes identity without waiting for private game tasks', async () => {
   const events = [];
   const context = vm.createContext({ state: { client: {} }, document: { getElementById: () => ({ open: false }) },
-    loadProfile: async () => events.push('profile'), publishAuthState: () => events.push('identity'),
-    refreshPlayerTools: async () => events.push('tasks'), schedulePlayerTools: () => events.push('background'), render() {}, console });
+    loadProfile: async () => events.push('profile'), loadNotificationPreferences: async () => {}, publishAuthState: () => events.push('identity'),
+    refreshPlayerTools: async () => events.push('tasks'), schedulePlayerTools: () => events.push('background'), syncBrandingPreviewAccess() {}, render() {}, console });
   vm.runInContext(fn(account, 'refresh', '  '), context);
   await context.refresh();
   assert.deepEqual(events, ['profile', 'identity', 'background']);

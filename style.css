@@ -672,7 +672,8 @@
     .player-profile-identity h2 {
       font-family: var(--font-heading);
       font-size: clamp(var(--text-heading) * 1.2, 4vw, var(--text-heading) * 2);
-      letter-spacing: 0.05em;
+      font-weight: var(--heading-font-weight);
+      letter-spacing: var(--heading-letter-spacing);
       margin-bottom: 0;
       overflow: hidden;
       text-wrap: nowrap;
@@ -1449,7 +1450,7 @@
       color: var(--text);
       font-family: var(--font-heading);
       font-size: var(--text-heading);
-      font-weight: 400;
+      font-weight: var(--heading-font-weight);
       line-height: 1;
     }
     .prediction-overview-community .prediction-overview-scoreline { margin: 0; }
@@ -2319,7 +2320,7 @@
       grid-template-columns: minmax(0, 1fr) auto;
     }
     .sh-heading { display: flex; align-items: baseline; gap: 12px; }
-    .sh-title { font-family: var(--font-heading); font-size: var(--text-heading); font-weight: 400; letter-spacing: 0.05em; }
+    .sh-title { font-family: var(--font-heading); font-size: var(--text-heading); font-weight: var(--heading-font-weight); letter-spacing: var(--heading-letter-spacing); }
     .sh-title-with-help {
       display: inline-flex;
       align-items: center;
@@ -2335,7 +2336,7 @@
       padding: 3px;
       border: 1px solid var(--border);
       border-radius: var(--dropdown-radius);
-      background: var(--white-shine);
+      background: var(--surface);
     }
     .match-scope-toggle button {
       border: 0;
@@ -2432,8 +2433,8 @@
       margin-top: 0.35rem;
       font-family: var(--font-heading);
       font-size: clamp(var(--text-heading) * 1.175, 6vw, var(--text-heading) * 2);
-      font-weight: 400;
-      letter-spacing: 0.035em;
+      font-weight: var(--heading-font-weight);
+      letter-spacing: var(--heading-letter-spacing);
       line-height: 1;
     }
     .home-season-podium-steps {
@@ -2482,6 +2483,7 @@
       width: 100%;
       min-height: 64px;
       place-items: center;
+      font-weight: var(--heading-font-weight);
       padding: 0;
       border-top: 1px solid color-mix(in srgb, var(--dim) 34%, transparent);
       border-right: 0;
@@ -2592,14 +2594,15 @@
     .widget h2 {
       font-family: var(--font-heading);
       font-size: var(--text-heading);
-      letter-spacing: 0.04em;
+      font-weight: var(--heading-font-weight);
+      letter-spacing: var(--heading-letter-spacing);
       margin-bottom: 0.5rem;
     }
     .info-card h2 {
       font-family: var(--font-heading);
       font-size: var(--text-heading);
-      font-weight: 400;
-      letter-spacing: 0.05em;
+      font-weight: var(--heading-font-weight);
+      letter-spacing: var(--heading-letter-spacing);
       line-height: 1;
       margin-bottom: 0.85rem;
     }
@@ -2785,7 +2788,7 @@
       font-size: var(--text-heading);
       line-height: 0.9;
       color: var(--accent2);
-      letter-spacing: 0.1rem;
+      letter-spacing: var(--heading-letter-spacing);
       white-space: nowrap;
     }
     .stat-shift-groups {
