@@ -14,7 +14,7 @@ const tokenFile = resolve(repositoryRoot, '.codex-secrets/supabase-access-token'
 const [command, argument] = process.argv.slice(2);
 
 if (!command) {
-  fail('Aufruf: supabase-mcp.mjs <list-tools|list-migrations|apply-migration|execute-sql|list-functions|get-function|deploy-function|get-logs|get-auth-email-settings|update-recovery-template> [Datei oder Function]');
+  fail('Aufruf: supabase-mcp.mjs <list-tools|list-migrations|apply-migration|execute-sql|list-functions|get-function|deploy-function|get-logs|store-notification-service-key|get-auth-email-settings|update-recovery-template> [Datei oder Function]');
 }
 
 let accessToken;
@@ -184,6 +184,30 @@ if (command === 'list-tools') {
       files
     }
   }));
+} else if (command === 'store-notification-service-key') {
+  // Der Schlüssel wird nie ausgegeben; auch Fehlermeldungen geben die Abfrage nicht wieder.
+  const keys = await managementRequest('/api-keys?reveal=true');
+  const serviceKey = keys.find((key) => key.name === 'service_role')?.api_key;
+  if (!/^[A-Za-z0-9_.-]+$/.test(serviceKey || '')) fail('Der Service-Role-Schlüssel konnte nicht gelesen werden.');
+  const result = await rpc('tools/call', {
+    name: 'execute_sql',
+    arguments: {
+      query: `do $do$
+declare
+  existing uuid;
+begin
+  select id into existing from vault.secrets where name = 'send_match_notifications_service_key';
+  if existing is null then
+    perform vault.create_secret('${serviceKey}', 'send_match_notifications_service_key', 'Aufruf der Function send-match-notifications');
+  else
+    perform vault.update_secret(existing, '${serviceKey}');
+  end if;
+end
+$do$;`
+    }
+  });
+  if (result?.isError) fail('Der Schlüssel konnte nicht gespeichert werden.');
+  console.log('Schlüssel gespeichert.');
 } else if (command === 'get-auth-email-settings') {
   const config = await managementRequest('/config/auth');
   console.log(JSON.stringify({
@@ -193,6 +217,15 @@ if (command === 'list-tools') {
     smtp_sender_name: config.smtp_sender_name,
     mailer_subjects_recovery: config.mailer_subjects_recovery,
     mailer_templates_recovery_content: config.mailer_templates_recovery_content,
+    mailer_otp_exp: config.mailer_otp_exp,
+    mailer_secure_email_change_enabled: config.mailer_secure_email_change_enabled,
+    mailer_notifications_password_changed_enabled: config.mailer_notifications_password_changed_enabled,
+    mailer_subjects_confirmation: config.mailer_subjects_confirmation,
+    mailer_templates_confirmation_content: config.mailer_templates_confirmation_content,
+    mailer_subjects_email_change: config.mailer_subjects_email_change,
+    mailer_templates_email_change_content: config.mailer_templates_email_change_content,
+    mailer_subjects_password_changed_notification: config.mailer_subjects_password_changed_notification,
+    mailer_templates_password_changed_notification_content: config.mailer_templates_password_changed_notification_content,
   }, null, 2));
 } else if (command === 'update-recovery-template') {
   const templatePath = requireFilePath(argument || 'supabase/templates/reset-password.html');

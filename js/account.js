@@ -96,7 +96,16 @@
       .replaceAll("'", '&#039;');
   }
 
+  function syncScheduleTimeField(field) {
+    const name = field.dataset.scheduleTimeField;
+    const hour = field.querySelector(`[name="${name}Hour"]`)?.value;
+    const minute = field.querySelector(`[name="${name}Minute"]`)?.value;
+    const target = field.querySelector(`[name="${name}"]`);
+    if (target) target.value = hour && minute ? `${hour}:${minute}` : '';
+  }
+
   function syncDateTimeHint(input) {
+    if (input?.matches?.('[data-schedule-time-field]')) syncScheduleTimeField(input);
     if (!input?.matches?.('input:is([type="date"], [type="time"])')) return;
     input.closest('[data-datetime-field]')?.classList.toggle('is-empty', !input.value);
   }
@@ -104,23 +113,41 @@
   function syncDateTimeHints(root = document) {
     root?.querySelectorAll?.('[data-datetime-field] input:is([type="date"], [type="time"])')
       .forEach(syncDateTimeHint);
+    root?.querySelectorAll?.('[data-schedule-time-field]').forEach(syncScheduleTimeField);
   }
 
-  // Termine liegen auf Viertelstunden; Browser ohne step-Unterstützung im Zeitwähler werden nachgezogen.
-  function toQuarterHour(value) {
-    const match = /^(\d{2}):(\d{2})/.exec(String(value || ''));
-    if (!match) return value;
-    const minutes = Math.min(Math.round((Number(match[1]) * 60 + Number(match[2])) / 15) * 15, 23 * 60 + 45);
-    return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+  // Termine liegen auf Viertelstunden zwischen 06:00 und 20:45 Uhr; ein abweichender gespeicherter Wert bleibt wählbar.
+  const SCHEDULE_HOUR_OPTIONS = Array.from({ length: 20 - 6 + 1 }, (_, index) => String(6 + index).padStart(2, '0'));
+  const SCHEDULE_MINUTE_OPTIONS = ['00', '15', '30', '45'];
+
+  let scheduleTimePickerCount = 0;
+
+  function renderScheduleTimePicker(name, label, options, value) {
+    const values = value && !options.includes(value) ? [...options, value].sort() : options;
+    scheduleTimePickerCount += 1;
+    return renderTrainingPicker({
+      label,
+      name,
+      value,
+      menuId: `schedule-time-menu-${scheduleTimePickerCount}`,
+      options: [{ value: '', label: '--' }, ...values.map(option => ({ value: option, label: option }))]
+    });
   }
 
-  function snapQuarterHourInput(input) {
-    if (!input?.matches?.('input[type="time"][data-quarter-hour]') || !input.value) return false;
-    const snapped = toQuarterHour(input.value);
-    if (snapped === input.value.slice(0, 5)) return false;
-    input.value = snapped;
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-    return true;
+  function renderScheduleTimeControls(name, value = '') {
+    const [hour = '', minute = ''] = String(value || '').slice(0, 5).split(':');
+    return `<input type="hidden" name="${name}" value="${hour && minute ? `${hour}:${minute}` : ''}">${renderScheduleTimePicker(`${name}Hour`, 'Stunde', SCHEDULE_HOUR_OPTIONS, hour)}<span aria-hidden="true">:</span>${renderScheduleTimePicker(`${name}Minute`, 'Minute', SCHEDULE_MINUTE_OPTIONS, minute)}`;
+  }
+
+  function renderScheduleTimeField(name, value = '') {
+    const time = String(value || '').slice(0, 5);
+    return `<span class="schedule-time-field" data-schedule-time-field="${name}" data-schedule-time-default="${escapeHtml(time)}">${renderScheduleTimeControls(name, time)}</span>`;
+  }
+
+  function resetScheduleTimeFields(root = document) {
+    root.querySelectorAll('[data-schedule-time-field]').forEach(field => {
+      field.innerHTML = renderScheduleTimeControls(field.dataset.scheduleTimeField, field.dataset.scheduleTimeDefault);
+    });
   }
 
   function getMatchAtTimestamp(value, fallback = Number.POSITIVE_INFINITY) {
@@ -561,12 +588,52 @@
         input.checked = Boolean(state.notificationPreferences[key]);
         input.disabled = !state.notificationPreferencesReady || !state.notificationPreferencesAvailable;
       });
+      renderBrandingPreview();
       const settingsMessage = document.querySelector('[data-account-settings-message]');
       if (settingsMessage && !state.notificationPreferencesAvailable) {
         settingsMessage.textContent = 'Die E-Mail-Einstellungen sind gerade nicht verfügbar.';
         settingsMessage.className = 'auth-message account-settings-message error';
       }
     }
+  }
+
+  function renderBrandingPreview() {
+    const preview = window.PadelBrandingPreview;
+    const section = document.querySelector('[data-account-branding]');
+    const options = document.querySelector('[data-account-branding-options]');
+    if (!section || !options) return;
+    section.hidden = !preview || state.profile?.app_role !== 'admin';
+    if (section.hidden) return;
+    const current = preview.current();
+    if (options.childElementCount) {
+      options.querySelectorAll('[data-account-branding-choice]').forEach(input => {
+        input.checked = input.value === current;
+      });
+      return;
+    }
+    options.innerHTML = preview.brandings.map(branding => {
+      const colors = Object.entries(branding.colors).map(([key, value]) => `--wf-${key}: ${value}`).join('; ');
+      return `<label class="account-branding-option">
+        <span class="account-branding-wireframe" style="${escapeHtml(colors)}" aria-hidden="true">
+          <span class="wf-header"><span class="wf-logo"></span><span class="wf-menu"><span></span><span></span><span class="wf-pill"></span></span></span>
+          <span class="wf-hero"><span class="wf-title"></span><span class="wf-line short"></span></span>
+          <span class="wf-tabs"><span class="active"></span><span></span><span></span></span>
+          <span class="wf-cards">
+            <span class="wf-card"><span class="wf-line"></span><span class="wf-line short"></span><span class="wf-button"></span></span>
+            <span class="wf-card"><span class="wf-line"></span><span class="wf-line"></span><span class="wf-line short"></span></span>
+          </span>
+        </span>
+        <span class="account-branding-caption">
+          <span><strong>${escapeHtml(branding.label)}</strong>${branding.name === preview.publishedName ? '<small>Veröffentlicht</small>' : ''}</span>
+          <input type="radio" name="account-branding" value="${escapeHtml(branding.name)}" data-account-branding-choice${branding.name === current ? ' checked' : ''}>
+        </span>
+      </label>`;
+    }).join('');
+  }
+
+  // Die Design-Vorschau ist Admins vorbehalten; für alle anderen Konten gilt wieder das veröffentlichte Branding.
+  function syncBrandingPreviewAccess() {
+    if (state.profile?.app_role !== 'admin') window.PadelBrandingPreview?.reset();
   }
 
   function formatTaskDate(dateValue, timeValue) {
@@ -775,7 +842,7 @@
         </label>
         <label>
           <span>Uhrzeit</span>
-          <span class="datetime-input-shell" data-datetime-field data-datetime-hint="--:--"><input type="time" name="scheduledTime" required step="900" data-quarter-hour value="${escapeHtml(matchTime.time || '')}"></span>
+          ${renderScheduleTimeField('scheduledTime', matchTime.time)}
         </label>
       </div>
       <div class="racket-check" data-racket-check role="status" aria-live="polite" hidden></div>
@@ -1351,6 +1418,17 @@
     if (emptyState) emptyState.hidden = visibleOptions > 0;
   }
 
+  function getScrollParent(element) {
+    let scrollParent = element.parentElement;
+    while (scrollParent && scrollParent !== document.body) {
+      const { overflowY } = window.getComputedStyle(scrollParent);
+      if (/(auto|scroll|overlay)/.test(overflowY)
+        && scrollParent.scrollHeight > scrollParent.clientHeight) return scrollParent;
+      scrollParent = scrollParent.parentElement;
+    }
+    return null;
+  }
+
   function keepTrainingPickerSearchVisible(searchInput) {
     if (!searchInput || !window.matchMedia('(max-width: 768px)').matches) return;
     const alignInput = () => {
@@ -1361,20 +1439,32 @@
       const scrollDelta = searchInput.getBoundingClientRect().top - viewportTop - targetOffset;
       if (Math.abs(scrollDelta) < 8) return;
 
-      let scrollParent = searchInput.parentElement;
-      while (scrollParent && scrollParent !== document.body) {
-        const { overflowY } = window.getComputedStyle(scrollParent);
-        if (/(auto|scroll|overlay)/.test(overflowY)
-          && scrollParent.scrollHeight > scrollParent.clientHeight) break;
-        scrollParent = scrollParent.parentElement;
-      }
-
-      const scrollTarget = scrollParent && scrollParent !== document.body ? scrollParent : window;
+      const scrollTarget = getScrollParent(searchInput) || window;
       scrollTarget.scrollBy({ top: scrollDelta, behavior: 'smooth' });
     };
 
     requestAnimationFrame(alignInput);
     window.setTimeout(alignInput, 350);
+  }
+
+  // Scrollt nur so weit, dass das offene Menü vollständig sichtbar ist und sein Auslöser nicht oben herausfällt.
+  function keepTrainingPickerMenuVisible(picker) {
+    const menu = picker?.querySelector('.training-picker-menu');
+    const toggle = picker?.querySelector('[data-training-picker-toggle]');
+    if (!menu || !toggle) return;
+    const selectedOption = menu.querySelector('.training-picker-option.active:not([data-training-picker-value=""])');
+    if (selectedOption) menu.scrollTop = selectedOption.offsetTop - (menu.clientHeight - selectedOption.offsetHeight) / 2;
+    const scrollParent = getScrollParent(picker);
+    const parentRect = scrollParent?.getBoundingClientRect();
+    const viewportTop = window.visualViewport?.offsetTop || 0;
+    const viewportBottom = viewportTop + (window.visualViewport?.height || window.innerHeight);
+    const visibleTop = Math.max(viewportTop, parentRect?.top ?? viewportTop) + 16;
+    const visibleBottom = Math.min(viewportBottom, parentRect?.bottom ?? viewportBottom) - 16;
+    const scrollDelta = Math.min(
+      menu.getBoundingClientRect().bottom - visibleBottom,
+      toggle.getBoundingClientRect().top - visibleTop
+    );
+    if (scrollDelta > 0) (scrollParent || window).scrollBy({ top: scrollDelta, behavior: 'smooth' });
   }
 
   function setTrainingPickerValue(picker, value) {
@@ -1403,6 +1493,7 @@
     closeTrainingPickerMenus(picker);
     picker.classList.toggle('open', shouldOpen);
     toggle.setAttribute('aria-expanded', String(shouldOpen));
+    if (shouldOpen && picker.closest('[data-schedule-time-field]')) keepTrainingPickerMenuVisible(picker);
     const searchInput = picker.querySelector('[data-training-picker-search]');
     if (searchInput) {
       searchInput.setAttribute('aria-expanded', String(shouldOpen));
@@ -1443,6 +1534,7 @@
     }
     setTrainingPickerValue(picker, option.dataset.trainingPickerValue);
     closeTrainingPickerMenus();
+    picker?.closest('[data-schedule-time-field]')?.dispatchEvent(new Event('change', { bubbles: true }));
     if (form && (inputName === 'resultFormat' || inputName === 'playerId')) {
       const preserved = readTrainingRoundValues(form);
       renderTrainingRounds(preserved, form, preserved.length);
@@ -1491,7 +1583,7 @@
     return `<form class="training-form training-alternative-form scheduled-training-form${due ? ' is-result-entry' : ''}" data-training-scheduled="${escapeHtml(task.session_id)}" ${due ? '' : 'hidden'}>
       <div class="training-form-meta">
         <label><span>Datum</span><span class="datetime-input-shell" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required value="${escapeHtml(task.played_on)}"></span></label>
-        <label><span>Uhrzeit</span><span class="datetime-input-shell" data-datetime-field data-datetime-hint="--:--"><input type="time" name="displayTime" required step="900" data-quarter-hour value="${escapeHtml(String(task.display_time).slice(0, 5))}"></span></label>
+        <label><span>Uhrzeit</span>${renderScheduleTimeField('displayTime', task.display_time)}</label>
       </div>
       <div class="racket-check" data-racket-check role="status" aria-live="polite" hidden></div>
       <div class="training-player-fields" data-training-player-fields></div>
@@ -1724,6 +1816,7 @@
     try {
       await loadProfile();
       if (state.session?.user?.id !== userId) return;
+      syncBrandingPreviewAccess();
       await loadNotificationPreferences();
       if (state.session?.user?.id !== userId) return;
       publishAuthState();
@@ -2369,6 +2462,10 @@ Dein Hanako-Leben-Squad`;
     event.preventDefault();
     const form = event.target;
     const data = new FormData(form);
+    if (!data.get('scheduledTime')) {
+      setAuthMessage('Bitte Stunde und Minute auswählen.', 'error');
+      return;
+    }
     const button = form.querySelector('[type="submit"]');
     if (button) button.disabled = true;
     setAuthMessage('Partie wird terminiert …');
@@ -2708,6 +2805,7 @@ Dein Hanako-Leben-Squad`;
     }
     form.reset();
     syncDateTimeHints(form);
+    resetScheduleTimeFields(form);
     renderTrainingForm();
   }
 
@@ -2726,6 +2824,10 @@ Dein Hanako-Leben-Squad`;
     const form = event.target;
     setTrainingMessage('', '', form);
     const data = new FormData(form);
+    if (!data.get('displayTime')) {
+      setTrainingMessage('Bitte Stunde und Minute auswählen.', 'error', form);
+      return;
+    }
     const playerIds = data.getAll('playerId').map(String);
     if (new Set(playerIds).size !== 4 || playerIds.some(id => !id)) {
       setTrainingMessage('Bitte vier verschiedene Spieler oder Gäste auswählen.', 'error', form);
@@ -2816,6 +2918,7 @@ Dein Hanako-Leben-Squad`;
     setTrainingMessage('', '', form);
     form.reset();
     syncDateTimeHints(form);
+    resetScheduleTimeFields(form);
     form.hidden = true;
     const formGroup = form.closest('[data-training-form-group]');
     if (formGroup) formGroup.hidden = true;
@@ -3157,15 +3260,8 @@ Dein Hanako-Leben-Squad`;
       else if (event.target.matches('.training-form')) handleTrainingSubmit(event);
     });
     document.addEventListener('invalid', event => {
-      if (event.target.validity?.stepMismatch && snapQuarterHourInput(event.target)) {
-        event.preventDefault();
-        const form = event.target.form;
-        if (form?.checkValidity()) form.requestSubmit();
-        return;
-      }
       if (event.target.closest('.training-form')) handleTrainingInvalid(event);
     }, true);
-    document.addEventListener('focusout', event => snapQuarterHourInput(event.target));
     document.addEventListener('input', event => {
       syncDateTimeHint(event.target);
       if (event.target.matches('.match-schedule-form input:is([type="date"], [type="time"])')) {
@@ -3203,11 +3299,15 @@ Dein Hanako-Leben-Squad`;
         void saveNotificationPreferences(event.target);
         return;
       }
-      if (event.target.matches('.match-schedule-form input:is([type="date"], [type="time"])')) {
+      if (event.target.matches('[data-account-branding-choice]')) {
+        if (state.profile?.app_role === 'admin') window.PadelBrandingPreview?.select(event.target.value);
+        return;
+      }
+      if (event.target.matches('.match-schedule-form :is(input[type="date"], input[type="time"], [data-schedule-time-field])')) {
         scheduleRacketCheck(event.target.closest('.match-schedule-form'));
         return;
       }
-      if (event.target.matches('.training-form input:is([type="date"], [type="time"])')) {
+      if (event.target.matches('.training-form :is(input[type="date"], input[type="time"], [data-schedule-time-field])')) {
         syncTrainingFormMode(event.target.closest('.training-form'));
         return;
       }
@@ -3284,6 +3384,7 @@ Dein Hanako-Leben-Squad`;
       unrateTrigger = null;
     });
     window.addEventListener('padel:live-status-changed', renderResultTasks);
+    resetScheduleTimeFields();
     syncDateTimeHints();
   }
 

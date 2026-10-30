@@ -156,8 +156,16 @@ test('both account dialogs expose one four-group game overview', () => {
 test('date and time hints are dimmed while Safari and iOS receive controlled text', () => {
   pages.forEach(source => {
     assert.match(source, /class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="TT\.MM\.JJJJ"><input type="date"/);
-    assert.match(source, /class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="--:--"><input type="time"/);
+    assert.match(source, /<label><span>Uhrzeit<\/span><span class="schedule-time-field" data-schedule-time-field="displayTime"><\/span><\/label>/);
   });
+  assert.match(accountScript, /SCHEDULE_HOUR_OPTIONS = Array\.from\(\{ length: 20 - 6 \+ 1 \}/);
+  assert.match(accountScript, /SCHEDULE_MINUTE_OPTIONS = \['00', '15', '30', '45'\]/);
+  assert.match(accountScript, /renderScheduleTimeField\('scheduledTime', matchTime\.time\)/);
+  assert.match(accountScript, /renderScheduleTimeField\('displayTime', task\.display_time\)/);
+  assert.match(accountScript, /function keepTrainingPickerMenuVisible\(picker\)[\s\S]*menu\.getBoundingClientRect\(\)\.bottom - visibleBottom[\s\S]*toggle\.getBoundingClientRect\(\)\.top - visibleTop/);
+  assert.match(accountScript, /picker\.closest\('\[data-schedule-time-field\]'\)\) keepTrainingPickerMenuVisible\(picker\)/);
+  assert.match(accountScript, /form\.reset\(\);\s*syncDateTimeHints\(form\);\s*resetScheduleTimeFields\(form\);/);
+  assert.match(accountScript, /Bitte Stunde und Minute auswählen/);
   assert.match(accountScript, /const isIosWebKit = [\s\S]*const isDesktopSafari = [\s\S]*classList\?\.toggle\('has-controlled-datetime-hints', isIosWebKit \|\| isDesktopSafari\)/);
   assert.match(accountScript, /function syncDateTimeHint\(input\)[\s\S]*classList\.toggle\('is-empty', !input\.value\)/);
   assert.match(accountScript, /data-datetime-hint="TT\.MM\.JJJJ"><input type="date" name="(?:playedOn|scheduledDate)"/);

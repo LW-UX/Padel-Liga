@@ -236,6 +236,7 @@
     updatePredictionDetailHighlights();
     const status = document.getElementById('prediction-statistics-panel-status');
     if (status) status.textContent = '';
+    window.PadelMobileDialogPages?.sync();
     const focusTarget = returnFocus?.isConnected
       ? returnFocus
       : (activeMatchId
@@ -306,10 +307,15 @@
     ligaDetailFrame.pendingDetail = detail;
     applyLigaDetailFramePresentation(detail.panelAvailable ? 'panel' : 'modal');
     updatePredictionDetailHighlights();
+    window.PadelMobileDialogPages?.sync();
   }
 
   function bindLigaDetails() {
     window.PadelLigaOpenPlayerProfile = (playerId, trigger) => openLigaDetail({ playerId }, trigger);
+    window.PadelMobileDialogPages?.register({
+      isOpen: () => Boolean(ligaDetailFrame.element),
+      close: disposeLigaDetailFrame
+    });
     document.addEventListener('click', event => {
       const link = event.target.closest('[data-player-profile-id], [data-match-statistics]');
       if (!link || event.defaultPrevented || event.button !== 0

@@ -11,6 +11,7 @@ Dieses Dokument ist der Wegweiser zum fachlichen Projektgedächtnis. Die verbind
 - [Ranglisten, Statistik und Profile](project-decisions/rankings-statistics-and-profiles.md): Elo, Ranglisten, All-Time-Statistik, Profile und Auszeichnungen.
 - [Tippspiel](project-decisions/tipping.md): Tippbarkeit, Fristen, Wertung und Tippseite.
 - [Ligaartikel](project-decisions/articles.md): Aufbau, Datenformat, Stil und Begriffe der Saisonartikel.
+- [Branding](project-decisions/branding.md): OG-Design, markenspezifische Gestaltungswerte und Wechsel des Brandings.
 
 PadelPong wird in seinem eigenen Repository dokumentiert. Dieses Projekt hält nur noch die externe Navigation dorthin fest.
 

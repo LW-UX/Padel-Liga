@@ -10,6 +10,7 @@ Vor fachlichen oder technischen Änderungen sind nur die für die Aufgabe einsch
 - Tippseite, Tipp, Tippschluss oder Tippwertung: `docs/project-decisions/tipping.md`
 - Externer PadelPong-Link oder Seitennavigation: `docs/project-decisions/seasons-and-pages.md`
 - Ligaartikel, Spieltagsvorschau oder redaktionelle Texte: `docs/project-decisions/articles.md`; für Fakten zusätzlich die Datenbank lesend abfragen
+- Branding, Design, Farben, Schriften, Eckenradien oder Bereichsabstand: `docs/project-decisions/branding.md`
 
 Bei fachübergreifenden Aufgaben sind alle betroffenen Dateien zu lesen. Konto-Spielkarten und Ergebniseingaben betreffen insbesondere Konten und Partien; Elo-Korrekturen betreffen Ranglisten und Partien; termin- oder ergebnisabhängige Tipps betreffen Tippspiel und Partien. Bei Supabase-, Migrations-, Veröffentlichungs- oder Live-Statusfragen ist zusätzlich `docs/PROJECT_STATUS.md` zu lesen. Wenn die Zuordnung unklar ist, dient `docs/PROJECT_DECISIONS.md` als Wegweiser; anschließend ist gezielt in `docs/project-decisions/` zu suchen. Das vollständige Projektgedächtnis wird nur bei repositoryweiten Grundsatzänderungen gelesen.
 

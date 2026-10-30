@@ -13,8 +13,10 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest?v=2026-10-28-brand-names">
-  <link rel="stylesheet" href="style.css?v=2026-10-30-radius-sm">
-  <link rel="stylesheet" href="account.css?v=2026-10-30-radius-sm">
+  <link rel="stylesheet" href="branding/og-design.css?v=b3eb4d3f27">
+  <script src="js/branding-preview.js?v=2026-10-30-admin-preview"></script>
+  <link rel="stylesheet" href="style.css?v=2026-10-30-mobile-pages">
+  <link rel="stylesheet" href="account.css?v=2026-10-30-schedule-time-picker">
   <link rel="stylesheet" href="whats-new.css?v=2026-10-30-radius-sm">
   <script>
     (function () {
@@ -44,7 +46,8 @@
   <script defer src="js/elo-forecast.js?v=2026-10-14-shared-auto-tip"></script>
   <script defer src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
   <script defer src="js/live-ticker.js?v=2026-10-29-detail-avatar-fallback"></script>
-  <script defer src="js/account.js?v=2026-10-29-quarter-hour"></script>
+  <script defer src="js/mobile-dialog-pages.js?v=2026-10-30-mobile-pages-tipp"></script>
+  <script defer src="js/account.js?v=2026-10-30-schedule-time-picker"></script>
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/panel-layout.js?v=2026-10-29-shared-panel-layout"></script>
@@ -926,6 +929,10 @@
             <input type="checkbox" role="switch" data-email-notification="calendarInvitation" checked>
           </label>
         </div>
+        <div class="account-settings-design" data-account-branding hidden>
+          <div class="widget-label">Design</div>
+          <div class="account-branding-options" role="radiogroup" aria-label="Design auswählen" data-account-branding-options></div>
+        </div>
         <div class="auth-message account-settings-message" data-account-settings-message role="status" aria-live="polite"></div>
       </section>
       <div id="account-games-panel">
@@ -965,7 +972,7 @@
               <form class="training-form" id="training-form" hidden>
                 <div class="training-form-meta">
                   <label><span>Datum</span><span class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required></span></label>
-                  <label><span>Uhrzeit</span><span class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="--:--"><input type="time" name="displayTime" required step="900" data-quarter-hour></span></label>
+                  <label><span>Uhrzeit</span><span class="schedule-time-field" data-schedule-time-field="displayTime"></span></label>
                 </div>
                 <div class="racket-check" data-racket-check role="status" aria-live="polite" hidden></div>
                 <div class="training-player-fields" id="training-player-fields" data-training-player-fields></div>

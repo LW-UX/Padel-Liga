@@ -219,7 +219,7 @@ test('dashboard uses independent left and right columns and keeps the start page
   assert.match(script, /prediction-overview-column prediction-overview-column--left">\$\{leftColumn\}/);
   assert.match(script, /const rightColumn = state\.session\?\.user \? `\$\{latest\}\$\{balance\}\$\{leaders\}` : `\$\{latest\}\$\{leaders\}`/);
   assert.match(script, /prediction-overview-column prediction-overview-column--right">\$\{rightColumn\}/);
-  assert.match(style, /\.prediction-overview-column \{[\s\S]*?display: grid;[\s\S]*?gap: 4rem;/);
+  assert.match(style, /\.prediction-overview-column \{[\s\S]*?display: grid;[\s\S]*?gap: var\(--section-gap\);/);
   const overviewGridStyle = style.match(/\.prediction-overview-grid \{[^}]*\}/)?.[0] || '';
   assert.doesNotMatch(overviewGridStyle, /grid-template-areas:/);
   assert.match(style, /\.prediction-overview-action \{ order: 1; \}[\s\S]*\.prediction-overview-stand \{ order: 2; \}[\s\S]*\.prediction-overview-article \{ order: 3; \}[\s\S]*\.prediction-overview-latest \{ order: 4; \}[\s\S]*\.prediction-overview-balance \{ order: 5; \}[\s\S]*\.prediction-overview-leaders \{ order: 6; \}/);
@@ -232,6 +232,6 @@ test('dashboard uses independent left and right columns and keeps the start page
 test('the dashboard follows the containerless four-rem layout', () => {
   const blockStyle = style.match(/\.prediction-overview-block \{[^}]*\}/)?.[0] || '';
   assert.doesNotMatch(blockStyle, /border|background|padding|border-radius/);
-  assert.match(style, /\.prediction-overview-grid \{[\s\S]*?gap: 4rem;/);
+  assert.match(style, /\.prediction-overview-grid \{[\s\S]*?gap: var\(--section-gap\);/);
   assert.match(decisions, /freie Blöcke ohne Kartenhintergründe oder Außenrahmen und mit vier Rem Abstand/);
 });

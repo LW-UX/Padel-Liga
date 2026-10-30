@@ -7,6 +7,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
 const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+const branding = fs.readFileSync(path.join(root, 'branding/og-design.css'), 'utf8');
 const migration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20260909160000_profile_visual_themes.sql'),
   'utf8'
@@ -29,7 +30,7 @@ function evaluateProfileTheme(seasonId, achievement, seasons) {
   const achievementContext = app.match(/function getPlayerProfileAchievementContext\(achievement, seasons = getSeasonOptions\(\)\) \{[\s\S]*?\n\}/);
   assert.ok(colors && themeValue && fallback && legacyIds && normalizeId && theme && seasonColor && achievementContext);
 
-  const rootStyle = style.match(/:root \{[\s\S]*?\}/)[0];
+  const rootStyle = branding.match(/:root \{[\s\S]*?\}/)[0];
   const getPropertyValue = name => rootStyle.match(new RegExp(`${name}:\\s*([^;]+);`))?.[1] || '';
   const context = {
     seasonId,
@@ -71,10 +72,10 @@ test('profile season colors are stable by visual theme instead of list position'
 });
 
 test('league, ranking and cup achievements use their selected metal colors', () => {
-  assert.match(style, /--gold:\s+#FFD000;/);
-  assert.match(style, /--silver:\s+#ADC8D8;/);
-  assert.match(style, /--cup-gold:\s+#C59600;/);
-  assert.match(style, /--cup-silver:\s+#7F98A8;/);
+  assert.match(branding, /--gold:\s+#FFD000;/);
+  assert.match(branding, /--silver:\s+#ADC8D8;/);
+  assert.match(branding, /--cup-gold:\s+#C59600;/);
+  assert.match(branding, /--cup-silver:\s+#7F98A8;/);
   assert.match(style, /\.r1 \.rank-position \{ color: var\(--gold\)/);
   assert.match(style, /\.r2 \.rank-position \{ color: var\(--silver\)/);
   assert.match(style, /\.player-profile-achievement-winner\.player-profile-achievement-cup \{ --achievement-color: var\(--cup-gold\); \}/);

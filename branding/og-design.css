@@ -1,0 +1,145 @@
+/*
+  OG-Design – das ursprüngliche Branding der PadelLiga.
+
+  Diese Datei enthält alle markenspezifischen Werte: Schriften samt Überschriftengröße, Farben,
+  Eckenradien und den Abstand zwischen Inhaltsbereichen. Die übrigen Schriftgrößen, die
+  Radius-Grundskala und alle übrigen Abstände bleiben in style.css und gelten für jedes Branding gleich.
+
+  Ein weiteres Branding entsteht als Kopie dieser Datei unter branding/<name>.css mit eigenen
+  Werten. Jede Branding-Datei muss dieselben Variablen definieren. tools/apply-branding.mjs
+  aktiviert ein Branding und überträgt die Farben in Browserleiste und App-Manifest.
+  Die E-Mails verwenden vorerst fest die Farben des OG-Designs.
+
+  Bilddateien gehören ebenfalls zum Branding, liegen aber an ihren festen Pfaden:
+  favicon.ico, apple-touch-icon*.png, data/favicon.svg, data/safari-pinned-tab.svg und data/icon-*.png.
+*/
+
+@font-face {
+  font-family: 'Bebas Neue';
+  src: url('../fonts/BebasNeue-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Serif Display';
+  src: url('../fonts/DMSerifDisplay-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('../fonts/DMSans-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('../fonts/DMSans-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('../fonts/DMSans-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('../fonts/DMSans-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('../fonts/DMSans-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Mono';
+  src: url('../fonts/DMMono-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Mono';
+  src: url('../fonts/DMMono-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Schriften */
+  --font-body: 'DM Sans', sans-serif;
+  --font-heading: 'Bebas Neue', sans-serif;
+  --font-newspaper: 'DM Serif Display', Georgia, serif;
+  --font-mono: 'DM Mono', monospace;
+  /* Grundgröße der Überschriftenschrift; alle Überschriften, Wortmarken und großen Zahlen skalieren mit. */
+  --text-heading: 2rem;
+
+  /* Look der Inhaltsbereiche */
+  --section-gap: 4rem;
+  /* Rahmen der Inhaltsbereiche (.widget); transparent und 0 lassen die Bereiche frei auf --bg stehen. */
+  --widget-bg: transparent;
+  --widget-border: transparent;
+  --widget-radius: 0;
+  --widget-padding: 0;
+
+  /* Eckenradien nach Rolle; Werte aus der Grundskala in style.css */
+  --button-radius: var(--radius-full);
+  --dropdown-radius: var(--radius-full);
+  --menu-radius: var(--radius-sm);
+
+  /* Flächen und Text. --bg färbt auch Browserleiste und App-Start, --accent das Safari-Tab-Symbol. */
+  --bg:         #07080C;
+  --surface:    #0E1017;
+  --surface2:   #1A1F2C;
+  --border:     #29303F;
+  --text:       #F3F4F1;
+  --muted:      #7E828B;
+  --dim:        #B9BBC2;
+  --white-shine: rgba(255, 255, 255, 0.05);
+  --shadow:     rgba(0, 0, 0, 0.45);
+  --black-shadow: rgba(3, 4, 8, 0.7);
+
+  /* Akzente und Zustände */
+  --accent:     #d4f53a;
+  --accent2:    #5B8DEF;
+  --positiv:    #3af5b4;
+  --negativ:    #FF3F5E;
+  --team-one:   #B58CFF;
+  --team-two:   #FF9A4D;
+
+  /* Auszeichnungen und Saisons */
+  --gold:       #FFD000;
+  --silver:     #ADC8D8;
+  --cup-gold:   #C59600;
+  --cup-silver: #7F98A8;
+  --bronze:     #C97B2E;
+  --season-summer: #FF8A5B;
+  --season-winter: #B794F6;
+  --season-cup:    #50B7F5;
+
+  /* Firmen der Spieler */
+  --envidual:   #2E8FC4;
+  --hanako:     #2B6D88;
+  --headsquare: #E70713;
+}

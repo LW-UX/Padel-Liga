@@ -289,6 +289,94 @@
       gap: 12px;
       padding-bottom: 18px;
     }
+    .account-settings-design { display: grid; gap: 12px; }
+    .account-settings-design[hidden] { display: none; }
+    .account-branding-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .account-branding-option {
+      display: grid;
+      gap: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      cursor: pointer;
+      padding: 8px 8px 10px;
+      transition: border-color 160ms ease;
+    }
+    .account-branding-option:has(input:checked) { border-color: var(--accent); }
+    .account-branding-option:has(input:focus-visible) { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+    .account-branding-wireframe {
+      display: grid;
+      align-content: start;
+      gap: 7px;
+      aspect-ratio: 4 / 3;
+      border: 1px solid var(--wf-border);
+      border-radius: var(--radius-xs);
+      background: var(--wf-bg);
+      overflow: hidden;
+      padding: 7px;
+    }
+    .account-branding-wireframe span { display: block; }
+    .account-branding-wireframe .wf-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: -7px -7px 0;
+      border-bottom: 1px solid var(--wf-border);
+      background: var(--wf-surface);
+      padding: 6px 7px;
+    }
+    .account-branding-wireframe .wf-logo { width: 26%; height: 6px; border-radius: 2px; background: var(--wf-text); }
+    .account-branding-wireframe .wf-menu { display: flex; align-items: center; gap: 4px; }
+    .account-branding-wireframe .wf-menu > span { width: 10px; height: 3px; border-radius: 2px; background: var(--wf-dim); opacity: 0.6; }
+    .account-branding-wireframe .wf-menu > .wf-pill { width: 16px; height: 7px; border-radius: 4px; background: var(--wf-accent); opacity: 1; }
+    .account-branding-wireframe .wf-hero { display: grid; gap: 4px; padding-top: 2px; }
+    .account-branding-wireframe .wf-title { width: 62%; height: 9px; border-radius: 2px; background: var(--wf-text); }
+    .account-branding-wireframe .wf-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--wf-border); padding-bottom: 4px; }
+    .account-branding-wireframe .wf-tabs > span { width: 14%; height: 3px; border-radius: 2px; background: var(--wf-dim); opacity: 0.5; }
+    .account-branding-wireframe .wf-tabs > .active { background: var(--wf-accent); opacity: 1; }
+    .account-branding-wireframe .wf-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .account-branding-wireframe .wf-card {
+      display: grid;
+      align-content: start;
+      gap: 4px;
+      border: 1px solid var(--wf-border);
+      border-radius: 3px;
+      background: var(--wf-surface);
+      padding: 5px;
+    }
+    .account-branding-wireframe .wf-line { height: 3px; border-radius: 2px; background: var(--wf-dim); opacity: 0.55; }
+    .account-branding-wireframe .wf-line.short { width: 60%; }
+    .account-branding-wireframe .wf-button { width: 70%; height: 7px; margin-top: 2px; border-radius: 3px; background: var(--wf-accent); }
+    .account-branding-caption > span { display: grid; gap: 2px; min-width: 0; }
+    .account-branding-caption small { color: var(--dim); font-size: var(--text-xs); }
+    .account-branding-caption { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .account-branding-caption strong { color: var(--text); font-size: var(--text-sm); }
+    .account-branding-caption input {
+      appearance: none;
+      display: grid;
+      place-items: center;
+      flex: none;
+      width: 20px;
+      height: 20px;
+      margin: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      background: var(--surface2);
+      cursor: pointer;
+      outline: none;
+    }
+    .account-branding-caption input::after {
+      content: '';
+      width: 5px;
+      height: 10px;
+      margin-top: -2px;
+      border: solid var(--bg);
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      opacity: 0;
+    }
+    .account-branding-caption input:checked { border-color: var(--accent); background: var(--accent); }
+    .account-branding-caption input:checked::after { opacity: 1; }
     .account-settings-mail { display: grid; }
     .account-settings-mail > p {
       margin: 6px 0 12px;
@@ -465,6 +553,7 @@
       padding-top: 12px;
     }
     .result-entry-timing { display: grid; grid-template-columns: minmax(150px, 200px) minmax(120px, 160px); gap: 8px; }
+    :where(.match-schedule-form) .result-entry-timing { grid-template-columns: minmax(150px, 200px) minmax(200px, 220px); }
     .match-schedule-form { display: grid; gap: 8px; }
     .match-schedule-actions,
     .scheduled-result-actions { display: flex; justify-content: flex-end; }
@@ -479,7 +568,7 @@
       font-weight: 600;
     }
     .result-entry-form :where(input, select),
-    .match-schedule-form :where(input),
+    .match-schedule-form :where(input, select),
     .training-form :where(input, select) {
       width: 70%;
       min-width: 0;
@@ -502,6 +591,11 @@
     :where(.result-entry-form, .match-schedule-form, .training-form) input:is([type="date"], [type="time"])::-webkit-date-and-time-value {
       text-align: left;
     }
+    .schedule-time-field { display: flex; align-items: center; gap: 4px; min-width: 0; color: var(--dim); }
+    .schedule-time-field .training-picker { flex: 1 1 0; }
+    .schedule-time-field .training-picker-label { display: none; }
+    .schedule-time-field .training-picker-toggle { min-height: 38px; border-radius: var(--radius-sm); }
+    .schedule-time-field .training-picker-menu { right: auto; left: 0; width: 100%; min-width: 72px; max-height: min(240px, 50vh); }
     .datetime-input-shell { display: contents; }
     .datetime-input-shell.is-empty input { color: var(--dim); }
     .has-controlled-datetime-hints .datetime-input-shell {
@@ -945,6 +1039,22 @@
       .auth-task-badge { position: unset; }
       .auth-dialog { max-height: 94vh; }
       .auth-dialog-card { padding: 1.1rem 0.5rem; }
+      #auth-dialog:has(#auth-account-view:not([hidden]), #auth-password-view:not([hidden])) {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        max-height: none;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      #auth-dialog:has(#auth-account-view:not([hidden]), #auth-password-view:not([hidden]))::backdrop { background: var(--bg); backdrop-filter: none; }
+      #auth-dialog:has(#auth-account-view:not([hidden]), #auth-password-view:not([hidden])) .auth-dialog-card {
+        height: 100%;
+        max-height: none;
+        padding: 1.1rem 1rem;
+      }
       .tipp-invitation-card { padding: 2.25rem 1.25rem 1.25rem; }
       .account-auth-message { bottom: max(8px, env(safe-area-inset-bottom)); max-width: calc(100% - 32px); }
       .account-header { flex-wrap: wrap; gap: 12px; }
@@ -959,7 +1069,7 @@
       #result-task-list > .account-task-group,
       #result-task-list .account-task-list { min-width: 0; }
       .result-entry-timing { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .result-entry-form :where(input, select), .match-schedule-form :where(input), .training-form :where(input, select) { width: 100%; }
+      .result-entry-form :where(input, select), .match-schedule-form :where(input, select), .training-form :where(input, select) { width: 100%; }
       :where(.result-entry-form, .match-schedule-form, .training-form) input:is([type="date"], [type="time"]) {
         -webkit-appearance: none;
         appearance: none;

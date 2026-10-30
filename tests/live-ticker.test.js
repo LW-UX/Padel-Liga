@@ -83,7 +83,7 @@ test('ticker assignment lives inside the scheduled match card and reveals only a
   assert.match(ticker, /class="viewer-menu training-picker-menu"/);
   assert.match(ticker, /data-training-picker-search-text/);
   assert.doesNotMatch(ticker, /<select name="scorerProfileId"/);
-  assert.match(accountStyle, /\.match-schedule-form :where\(input\)/);
+  assert.match(accountStyle, /\.match-schedule-form :where\(input, select\)/);
   assert.match(ticker, /task\.assignment && \([\s\S]*task\.isAdmin[\s\S]*assignment\.status === 'accepted'/);
   assert.match(ticker, /section\.hidden = !state\.auth\?\.session \|\| \(!requests\.length && !matches\.length\)/);
   assert.doesNotMatch(ticker, /function renderAssignment\(task\)/);
@@ -397,7 +397,7 @@ test('only Final Four detail views use the split probability score', () => {
   assert.match(style, /\.match-probability \{[\s\S]*grid-template-columns: minmax\(34px, 1fr\) auto minmax\(34px, 1fr\);[\s\S]*column-gap: 0\.4rem;/);
   assert.match(style, /\.match-probability-value \{[\s\S]*color: var\(--dim\);[\s\S]*font-size: var\(--text-sm\);/);
   assert.match(style, /\.match-probability-separator \{[\s\S]*color: var\(--dim\);[\s\S]*font-size: var\(--text-sm\);/);
-  assert.match(style, /\.match-detail-probability :is\(\.match-probability-value, \.match-probability-separator\) \{[\s\S]*font-family: var\(--font-heading\);[\s\S]*font-size: clamp\(2rem, 4vw, 3rem\);/);
+  assert.match(style, /\.match-detail-probability :is\(\.match-probability-value, \.match-probability-separator\) \{[\s\S]*font-family: var\(--font-heading\);[\s\S]*font-size: clamp\(var\(--text-heading\), 4vw, var\(--text-heading\) \* 1\.5\);/);
 });
 
 test('the public match list always leads with sets and keeps games and history below', () => {

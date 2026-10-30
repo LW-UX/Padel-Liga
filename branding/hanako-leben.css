@@ -1,0 +1,86 @@
+/*
+  Hanako Leben – helles Branding nach dem Hanako-Leben-Dashboard (chair-menus-49153290.figma.site).
+
+  Werte aus dem Stylesheet der Vorlage übernommen: Papier-Hintergrund, Ink-Text, Petrol als Akzent,
+  Linienfarbe, die Textfarben der vier Säulen (Bewegen, Ernähren, Vorsorgen, Arbeitsplatz), die
+  Fehlerfarbe abgesagter Termine sowie Schatten und Abdunklung der Dialoge. Wo die Vorlage keinen
+  Wert hat, ist er aus ihrer Palette abgeleitet und mit „abgeleitet“ markiert.
+
+  Aufbau und Pflichtvariablen wie in branding/og-design.css.
+*/
+
+/* Überschriften: variable Schrift, die optische Größe folgt automatisch der Schriftgröße. */
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('../fonts/BricolageGrotesque-Variable.ttf') format('truetype');
+  font-weight: 200 800;
+  font-stretch: 75% 100%;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Figtree';
+  src: url('../fonts/Figtree-Variable.ttf') format('truetype');
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Schriften. Die Vorlage nutzt keine Serifen- und keine eigene Monospace-Schrift. */
+  --font-body: 'Figtree', system-ui, sans-serif;
+  --font-heading: 'Bricolage Grotesque', sans-serif;
+  --font-newspaper: 'Bricolage Grotesque', Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Grundgröße der Überschriftenschrift; alle Überschriften, Wortmarken und großen Zahlen skalieren mit. */
+  --text-heading: 2rem;
+
+  /* Look der Inhaltsbereiche */
+  --section-gap: 4rem;
+  /* Rahmen der Inhaltsbereiche (.widget); transparent und 0 lassen die Bereiche frei auf --bg stehen. */
+  --widget-bg: transparent;
+  --widget-border: transparent;
+  --widget-radius: 0;
+  --widget-padding: 0;
+
+  /* Eckenradien nach Rolle; Werte aus der Grundskala in style.css */
+  --button-radius: var(--radius-full);
+  --dropdown-radius: var(--radius-full);
+  --menu-radius: var(--radius-sm);
+
+  /* Flächen und Text. --bg färbt auch Browserleiste und App-Start, --accent das Safari-Tab-Symbol. */
+  --bg:         #F7F4EE;
+  --surface:    #FFFFFF;
+  --surface2:   #EFEAE1; /* abgeleitet */
+  --border:     #E6E1D7;
+  --text:       #14303D;
+  --muted:      #8A989E; /* abgeleitet */
+  --dim:        #4F6670;
+  --white-shine: rgba(20, 48, 61, 0.04); /* abgeleitet */
+  --shadow:     rgba(20, 48, 61, 0.2);
+  --black-shadow: rgba(20, 48, 61, 0.38);
+
+  /* Akzente und Zustände */
+  --accent:     #316D88;
+  --accent2:    #5F3FA6;
+  --positiv:    #3F6424;
+  --negativ:    #8B3A32;
+  --team-one:   #316D88;
+  --team-two:   #A84A0C;
+
+  /* Auszeichnungen und Saisons; alle abgeleitet und für hellen Grund abgedunkelt */
+  --gold:       #C59600;
+  --silver:     #7F98A8;
+  --cup-gold:   #9C7600;
+  --cup-silver: #5F7888;
+  --bronze:     #A8641F;
+  --season-summer: #F28C38;
+  --season-winter: #AD95E0;
+  --season-cup:    #8FB56A;
+
+  /* Firmen der Spieler */
+  --envidual:   #2E8FC4;
+  --hanako:     #316D88;
+  --headsquare: #E70713;
+}

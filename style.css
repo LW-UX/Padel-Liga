@@ -1,126 +1,16 @@
-@font-face {
-      font-family: 'Bebas Neue';
-      src: url('fonts/BebasNeue-Regular.ttf') format('truetype');
-      font-weight: 400;
-      font-style: normal;
-      font-display: swap;
-    }
-
-    @font-face {
-      font-family: 'DM Serif Display';
-      src: url('fonts/DMSerifDisplay-Regular.ttf') format('truetype');
-      font-weight: 400;
-      font-style: normal;
-      font-display: swap;
-    }
-
-    @font-face {
-      font-family: 'DM Sans';
-      src: url('fonts/DMSans-Light.ttf') format('truetype');
-      font-weight: 300;
-      font-style: normal;
-      font-display: swap;
-    }
-
-    @font-face {
-      font-family: 'DM Sans';
-      src: url('fonts/DMSans-Regular.ttf') format('truetype');
-      font-weight: 400;
-      font-style: normal;
-      font-display: swap;
-    }
-
-    @font-face {
-      font-family: 'DM Sans';
-      src: url('fonts/DMSans-Medium.ttf') format('truetype');
-      font-weight: 500;
-      font-style: normal;
-      font-display: swap;
-    }
-
-    @font-face {
-      font-family: 'DM Sans';
-      src: url('fonts/DMSans-SemiBold.ttf') format('truetype');
-      font-weight: 600;
-      font-style: normal;
-      font-display: swap;
-    }
-
-    @font-face {
-      font-family: 'DM Sans';
-      src: url('fonts/DMSans-Italic.ttf') format('truetype');
-      font-weight: 400;
-      font-style: italic;
-      font-display: swap;
-    }
-
-    @font-face {
-      font-family: 'DM Mono';
-      src: url('fonts/DMMono-Regular.ttf') format('truetype');
-      font-weight: 400;
-      font-style: normal;
-      font-display: swap;
-    }
-
-    @font-face {
-      font-family: 'DM Mono';
-      src: url('fonts/DMMono-Medium.ttf') format('truetype');
-      font-weight: 500;
-      font-style: normal;
-      font-display: swap;
-    }
-
+/* Markenspezifische Werte (Schriften, Überschriftengröße, Farben, Rollen-Radien, Bereichsabstand) liegen in branding/. */
 :root {
       /* Gemeinsame Typografie. Sonder- und responsive Größen bleiben lokal. */
-      --font-body: 'DM Sans', sans-serif;
-      --font-heading: 'Bebas Neue', sans-serif;
-      --font-newspaper: 'DM Serif Display', Georgia, serif;
-      --font-mono: 'DM Mono', monospace;
       --font-emoji: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', system-ui, sans-serif;
       --text-xs: 0.7rem;
       --text-sm: 0.85rem;
       --text-base: 1rem;
-      --text-heading: 2rem;
 
-      /* Gemeinsamer Abstand zwischen Inhaltsbereichen. */
-      --section-gap: 4rem;
-
-      /* Eckenradien: Grundskala und Rollen. Fürs Branding werden die Rollen angepasst. */
+      /* Grundskala der Eckenradien. Die Rollen-Radien setzt das Branding. */
       --radius-xs: 4px;
       --radius-sm: 8px;
       --radius-lg: 16px;
       --radius-full: 999px;
-      --button-radius: var(--radius-full);
-      --dropdown-radius: var(--radius-full);
-      --menu-radius: var(--radius-sm);
-
-      --bg:         #07080C;
-      --surface:    #0E1017;
-      --surface2:   #1A1F2C;
-      --border:     #29303F;
-      --accent:     #d4f53a;
-      --accent2:    #5B8DEF;
-      --positiv:    #3af5b4;
-      --negativ:    #FF3F5E;
-      --team-one:   #B58CFF;
-      --team-two:   #FF9A4D;
-      --gold:       #FFD000;
-      --silver:     #ADC8D8;
-      --cup-gold:   #C59600;
-      --cup-silver: #7F98A8;
-      --bronze:     #C97B2E;
-      --season-summer: #FF8A5B;
-      --season-winter: #B794F6;
-      --season-cup:    #50B7F5;
-      --text:       #F3F4F1;
-      --muted:      #7E828B;
-      --dim:        #B9BBC2;
-      --envidual:   #2E8FC4;
-      --hanako:     #2B6D88;
-      --headsquare: #E70713;
-      --white-shine: rgba(255, 255, 255, 0.05);
-      --shadow:     rgba(0, 0, 0, 0.45);
-      --black-shadow: rgba(3, 4, 8, 0.7);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     [hidden] { display: none !important; }
@@ -140,6 +30,13 @@
       caret-color: transparent;
       -webkit-user-select: none;
       user-select: none;
+    }
+    /* Inhaltsbereich; das Aussehen setzt das Branding. Steht vorn, damit Bereichsregeln es überschreiben. */
+    .widget {
+      background: var(--widget-bg);
+      border: 1px solid var(--widget-border);
+      border-radius: var(--widget-radius);
+      padding: var(--widget-padding);
     }
     .sr-only {
       position: absolute;
@@ -341,7 +238,7 @@
       justify-content: space-between;
       gap: 1.5rem;
     }
-    .hero h1 { font-family: var(--font-heading); font-size: clamp(3.4rem, 8vw, 6.4rem); line-height: 0.9; letter-spacing: 0.02em; }
+    .hero h1 { font-family: var(--font-heading); font-size: clamp(var(--text-heading) * 1.7, 8vw, var(--text-heading) * 3.2); line-height: 0.9; letter-spacing: 0.02em; }
     .hero h1 em { color: var(--accent); font-style: normal; }
     .hero-home-button {
       border: 0;
@@ -774,7 +671,7 @@
     .player-profile-identity .player-profile-company { margin: 6px 0 0; }
     .player-profile-identity h2 {
       font-family: var(--font-heading);
-      font-size: clamp(2.4rem, 4vw, 4rem);
+      font-size: clamp(var(--text-heading) * 1.2, 4vw, var(--text-heading) * 2);
       letter-spacing: 0.05em;
       margin-bottom: 0;
       overflow: hidden;
@@ -1132,12 +1029,17 @@
     }
 
     @media (max-width: 768px) {
-      .player-profile-dialog {
-        width: calc(100vw - 24px);
-        height: calc(100vh - 24px);
-        max-height: calc(100vh - 24px);
-        border-radius: 20px;
+      .player-profile-dialog:not([data-presentation="panel"]) {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        max-height: none;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
       }
+      .player-profile-dialog:not([data-presentation="panel"])::backdrop { background: var(--bg); backdrop-filter: none; }
       .player-profile-shell { --player-profile-shell-padding: 1rem; }
       .player-profile-content { grid-template-columns: 1fr; }
       .player-profile-content > .player-profile-widget { grid-column: 1; }
@@ -1158,7 +1060,7 @@
         width: 100%;
       }
       .player-profile-achievement-laurel { width: 24px; height: 44px; }
-      .player-profile-achievement-title { font-size: 1.8rem; }
+      .player-profile-achievement-title { font-size: calc(var(--text-heading) * 0.9); }
       .player-profile-achievement-subtitle { letter-spacing: -0.03rem; }
       .player-profile-stats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1544,9 +1446,9 @@
       text-align: center;
     }
     .prediction-overview-stats strong {
-      color: var(--accent2);
+      color: var(--text);
       font-family: var(--font-heading);
-      font-size: 2rem;
+      font-size: var(--text-heading);
       font-weight: 400;
       line-height: 1;
     }
@@ -1595,7 +1497,7 @@
       grid-row: 1 / 3;
       color: var(--accent2);
       font-family: var(--font-heading);
-      font-size: 2.4rem;
+      font-size: calc(var(--text-heading) * 1.2);
       font-weight: 400;
       line-height: 1;
     }
@@ -1989,7 +1891,7 @@
     }
     .prediction-match-center--result {
       font-family: var(--font-heading);
-      font-size: 1.5rem;
+      font-size: calc(var(--text-heading) * 0.75);
       color: var(--text);
     }
     .prediction-match-center-link {
@@ -2257,7 +2159,7 @@
     .site-footer-brand {
       color: var(--text);
       font-family: var(--font-heading);
-      font-size: clamp(1rem, 2.6vw, 1.3rem);
+      font-size: clamp(var(--text-heading) * 0.5, 2.6vw, var(--text-heading) * 0.65);
       letter-spacing: 0.04em;
     }
     .site-footer-brand em { color: var(--accent); font-style: normal; }
@@ -2529,7 +2431,7 @@
     .home-season-podium h2 {
       margin-top: 0.35rem;
       font-family: var(--font-heading);
-      font-size: clamp(2.35rem, 6vw, 4rem);
+      font-size: clamp(var(--text-heading) * 1.175, 6vw, var(--text-heading) * 2);
       font-weight: 400;
       letter-spacing: 0.035em;
       line-height: 1;
@@ -2603,7 +2505,7 @@
     .home-season-podium-step span {
       color: color-mix(in srgb, var(--text) 26%, transparent);
       font-family: var(--font-heading);
-      font-size: 3rem;
+      font-size: calc(var(--text-heading) * 1.5);
       line-height: 1;
     }
     .home-season-podium-place--1 .home-season-podium-step {
@@ -2617,7 +2519,7 @@
       .home-season-podium {
         padding: 1.25rem 0.75rem 0;
       }
-      .home-season-podium h2 { font-size: 2.55rem; }
+      .home-season-podium h2 { font-size: calc(var(--text-heading) * 1.275); }
       .home-season-podium-steps { gap: 5px; }
       .home-season-podium-place .cup-trophy { width: 48px; }
       .home-season-podium-player { font-size: 0.74rem; }
@@ -2625,7 +2527,7 @@
       .home-season-podium-step { min-height: 58px; }
       .home-season-podium-place--1 .home-season-podium-step { min-height: 84px; }
       .home-season-podium-place--3 .home-season-podium-step { min-height: 46px; }
-      .home-season-podium-step span { font-size: 2.4rem; }
+      .home-season-podium-step span { font-size: calc(var(--text-heading) * 1.2); }
     }
     .home-app-hint {
       position: relative;
@@ -2832,7 +2734,7 @@
     }
     .stat-main {
       font-family: var(--font-heading);
-      font-size: 4rem;
+      font-size: calc(var(--text-heading) * 2);
       line-height: 0.9;
       color: var(--accent2);
       letter-spacing: 0.02em;
@@ -4636,7 +4538,7 @@
     }
     .live-overview-prematch-forecast strong {
       font-family: var(--font-heading);
-      font-size: clamp(2.2rem, 4vw, 3.35rem);
+      font-size: clamp(var(--text-heading) * 1.1, 4vw, var(--text-heading) * 1.675);
       font-weight: 400;
       letter-spacing: 0.03em;
       line-height: 1;
@@ -4904,14 +4806,14 @@
       letter-spacing: 0.05em;
       line-height: 1;
     }
-    .match-detail-score { font-size: clamp(3.6rem, 8vw, 4.8rem); }
+    .match-detail-score { font-size: clamp(var(--text-heading) * 1.8, 8vw, var(--text-heading) * 2.4); }
     .match-detail-probability :is(.match-probability-value, .match-probability-separator) {
       font-family: var(--font-heading);
-      font-size: clamp(2rem, 4vw, 3rem);
+      font-size: clamp(var(--text-heading), 4vw, var(--text-heading) * 1.5);
     }
     .live-ticker-points {
       color: var(--accent);
-      font-size: 1.8rem;
+      font-size: calc(var(--text-heading) * 0.9);
     }
     .match-detail-status {
       color: var(--dim);
@@ -5175,7 +5077,7 @@
     .cup-match-status strong {
       color: var(--text);
       font-family: var(--font-heading);
-      font-size: 1.25rem;
+      font-size: calc(var(--text-heading) * 0.625);
       font-weight: 400;
       letter-spacing: 0.05em;
     }
@@ -6149,7 +6051,7 @@
         left: 0;
         transform: none;
       }
-      .live-overview-prematch-forecast strong { font-size: 2.8rem; }
+      .live-overview-prematch-forecast strong { font-size: calc(var(--text-heading) * 1.4); }
       .live-overview-poll-section { margin-top: 2.5rem; }
       .live-overview-poll-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .live-overview-poll-swap.is-result {
@@ -6217,8 +6119,8 @@
       .live-ticker-serve {
         font-size: 1.5rem;
       }
-      .match-detail-score { font-size: 3rem; }
-      .live-ticker-points { font-size: 1.5rem; }
+      .match-detail-score { font-size: calc(var(--text-heading) * 1.5); }
+      .live-ticker-points { font-size: calc(var(--text-heading) * 0.75); }
       .live-ticker-actions {
         flex-wrap: wrap;
       }

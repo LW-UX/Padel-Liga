@@ -26,7 +26,9 @@ automatisch bereit. Zugangsdaten gehören nicht in diese Datei oder in Git.
 
 ## Zeitsteuerung
 
-Die Function sollte alle fünf Minuten aufgerufen werden. Jeder Lauf erzeugt die
+Die Function sollte alle fünf Minuten über `pg_net` aufgerufen werden; den
+Service-Role-Schlüssel liest der Aufruf aus dem Vault-Eintrag
+`send_match_notifications_service_key`. Jeder Lauf erzeugt die
 inzwischen fälligen Aufträge, verwirft fachlich überholte Aufträge und versendet
 bis zu 25 Nachrichten. Fehlgeschlagene Aufträge werden mit Abstand erneut
 versucht; eindeutige Versandkennungen schützen vor Doppelzustellung.
