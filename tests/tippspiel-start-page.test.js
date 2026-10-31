@@ -143,8 +143,8 @@ test('prediction rankings show only the previous PadelTipp winner achievement', 
   assert.match(script, /renderPredictionCompanyBadge\(entry\)\}\$\{renderPreviousPredictionWinnerIcon\(entry\)/);
   assert.match(ligaScript, /function renderPreviousPredictionWinnerIcon\(entry\)/);
   assert.match(ligaScript, /renderPredictionCompanyBadge\(entry\)\}\$\{renderPreviousPredictionWinnerIcon\(entry\)/);
-  assert.match(style, /\.prediction-achievement-icon--winner \{ color: var\(--gold\); \}/);
-  assert.match(style, /\.prediction-achievement-icon--final-four \{ color: var\(--silver\); \}/);
+  assert.match(style, /\.prediction-achievement-icon--winner \{ color: var\(--achievement-gold\); \}/);
+  assert.match(style, /\.prediction-achievement-icon--final-four \{ color: var\(--achievement-silver\); \}/);
   assert.match(style, /\.prediction-rank-account \{[\s\S]*gap: 4px;/);
   assert.doesNotMatch(script, /prediction-achievement-laurel|previous_league_achievement|previous_league_season_label/);
   assert.match(decisions, /ausschließlich der Tippsieger[\s\S]*goldenen Pokal/);

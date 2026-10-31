@@ -286,7 +286,6 @@
     }
     table.rt.prediction-table tbody tr:nth-child(even) { background: transparent; }
     table.rt.prediction-table tbody tr:nth-child(even) > * { background-color: var(--surface); }
-    table.rt.prediction-table tbody tr:hover > * { background-color: var(--surface2); }
     .prediction-table .prediction-table-account,
     .prediction-table .prediction-table-total {
       position: sticky;
@@ -476,8 +475,6 @@
       padding: 0.35rem 0.2rem;
       text-decoration: none;
     }
-    .prediction-match-center-link:hover { color: var(--accent); }
-    .prediction-match-center-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .prediction-options {
       grid-column: 1 / -1;
       grid-row: 3;

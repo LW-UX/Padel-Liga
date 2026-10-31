@@ -135,7 +135,7 @@
       border-radius: var(--radius-full);
       background: var(--accent2);
     }
-    .whats-new-confirm { width: 100%; min-height: 44px; margin-top: 1.35rem; font-size: 0.95rem; }
+    .whats-new-confirm { width: 100%; min-height: 44px; margin-top: 1.35rem; font-size: var(--text-base); }
 
     @media (max-width: 768px) {
       #whats-new-dialog .whats-new-card { padding: 1.4rem 1rem 1.1rem; }

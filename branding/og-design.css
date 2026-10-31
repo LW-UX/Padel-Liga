@@ -92,9 +92,9 @@
   --font-heading: 'Bebas Neue', sans-serif;
   --font-newspaper: 'DM Serif Display', Georgia, serif;
   --font-mono: 'DM Mono', monospace;
+
   /* Grundgröße der Überschriftenschrift; alle Überschriften, Wortmarken und großen Zahlen skalieren mit. */
   --text-heading: 2rem;
-  /* Laufweite und Stärke der Titel in Abschnitten, Widgets, Dialogen, Profil und Podium */
   --heading-letter-spacing: 0.04em;
   --heading-font-weight: 400;
 
@@ -111,6 +111,7 @@
   --menu-radius: 8px;
   --input-radius: 8px;
   --control-radius: var(--radius-full);
+
   /* Inhaltscontainer: base für Dialoge, sm für Karten, xs für Hinweise, lg nur für Ausnahmen. Die Stufen rechnen sich aus base und lassen sich einzeln überschreiben. */
   --container-radius-base: 16px;
   --container-radius-lg: calc(var(--container-radius-base) * 2);
@@ -125,6 +126,7 @@
   --text:       #F3F4F1;
   --muted:      #7E828B;
   --dim:        #B9BBC2;
+  
   /* Leichte Tönung auf einer Fläche, etwa für Zähler und Hover: hell auf dunklen, dunkel auf hellen Designs. */
   --surface-tint: rgba(255, 255, 255, 0.05);
   /* Farbe von Schatten unter schwebenden Elementen */

@@ -1,0 +1,132 @@
+/*
+  Envidual – helles, ruhiges Branding nach den Envidual-Präsentationsfolien.
+
+  Red Hat Display für alle Texte, Überschriften fett in Großbuchstaben, weiße Karten mit hellblauem
+  Rahmen auf blassblauem Grund, Blau als Akzent. Die Farben --bg, --surface2, --border, --text, --dim
+  und --accent stammen aus der Envidual-Palette. Wo die Vorlage keinen Wert hat, ist er abgeleitet und
+  mit „abgeleitet“ markiert.
+
+  Aufbau und Pflichtvariablen wie in branding/og-design.css.
+  Am Ende stehen die Regeln, die es nur in diesem Branding gibt.
+*/
+
+@font-face {
+  font-family: 'Red Hat Display';
+  src: url('../fonts/RedHatDisplay-Variable.woff2') format('woff2');
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Red Hat Display';
+  src: url('../fonts/RedHatDisplay-VariableItalic.woff2') format('woff2');
+  font-weight: 300 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  /* Schriften. Die Vorlage nutzt keine Serifen- und keine eigene Monospace-Schrift. */
+  --font-body: 'Red Hat Display', system-ui, sans-serif;
+  --font-heading: 'Red Hat Display', system-ui, sans-serif;
+  --font-newspaper: 'DM Serif Display', Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Grundgröße der Überschriftenschrift; alle Überschriften, Wortmarken und großen Zahlen skalieren mit. */
+  --text-heading: 1.75rem;
+  --heading-letter-spacing: 0.04em;
+  --heading-font-weight: 700;
+
+  /* Look der Inhaltsbereiche */
+  --section-gap: 1.5rem;
+  /* Rahmen der Inhaltsbereiche (.widget); transparent und 0 lassen die Bereiche frei auf --bg stehen. */
+  --widget-bg: var(--surface);
+  --widget-border: var(--border);
+  --widget-padding: 1.5rem;
+
+  /* Eckenradien nach Rolle */
+  --button-radius: var(--radius-full);
+  --dropdown-radius: var(--radius-full);
+  --menu-radius: 6px;
+  --input-radius: 8px;
+  --control-radius: 8px;
+
+  /* Inhaltscontainer: base für Dialoge, sm für Karten, xs für Hinweise, lg nur für Ausnahmen. Die Stufen rechnen sich aus base und lassen sich einzeln überschreiben. */
+  --container-radius-base: 16px;
+  --container-radius-lg: calc(var(--container-radius-base) * 2);
+  --container-radius-sm: calc(var(--container-radius-base) / 2);
+  --container-radius-xs: calc(var(--container-radius-base) / 4);
+
+  /* Flächen und Text. --bg färbt auch Browserleiste und App-Start, --accent das Safari-Tab-Symbol. */
+  --bg:         #EEF6FA;
+  --surface:    #FFFFFF; /* abgeleitet: die weißen Karten der Folien */
+  --surface2:   #D1E3EB;
+  --border:     #A4C6D7;
+  --text:       #05171F;
+  --muted:      #5F7C8B; /* abgeleitet */
+  --dim:        #0B2D3E;
+
+  /* Leichte Tönung auf einer Fläche, etwa für Zähler und Hover: hell auf dunklen, dunkel auf hellen Designs. */
+  --surface-tint: rgba(11, 45, 62, 0.05); /* abgeleitet */
+  /* Farbe von Schatten unter schwebenden Elementen */
+  --shadow-color: rgba(11, 45, 62, 0.12); /* abgeleitet */
+  /* Abdunklung hinter Dialogen */
+  --backdrop: rgba(5, 23, 31, 0.45); /* abgeleitet */
+
+  /* Akzente und Zustände */
+  --accent:     #1B719C;
+  --accent2:    #4384B8; /* abgeleitet: Blau aus den Diagrammen der Vorlage */
+  --positiv:    #1F7A4D; /* abgeleitet */
+  --negativ:    #B3362F; /* abgeleitet */
+  --team-one:   #5F3FA6; /* abgeleitet */
+  --team-two:   #D9722A; /* abgeleitet */
+
+  /* Auszeichnungen und Saisons; alle abgeleitet und für hellen Grund abgedunkelt */
+  --gold:       #C59600;
+  --silver:     #7F98A8;
+  --cup-gold:   #9C7600;
+  --cup-silver: #5F7888;
+  --bronze:     #A8641F;
+  --season-summer: #F28C38;
+  --season-winter: #5F3FA6;
+  --season-cup:    #2E8FC4;
+
+  /* Firmen der Spieler */
+  --envidual:   #1B719C;
+  --hanako:     #316D88;
+  --headsquare: #E70713;
+
+  /* Spielerfarben der Diagramme: gleiche Reihenfolge und Farbtöne wie im OG-Design, abgedunkelt für hellen Hintergrund */
+  --player-1:  #0B8043;
+  --player-2:  #A921ED;
+  --player-3:  #806A00;
+  --player-4:  #0E74A7;
+  --player-5:  #D71154;
+  --player-6:  #1B6E1B;
+  --player-7:  #7443E0;
+  --player-8:  #96620A;
+  --player-9:  #007A80;
+  --player-10: #D01190;
+  --player-11: #4A7A00;
+  --player-12: #2E2EB8;
+  --player-13: #BD4A0F;
+  --player-14: #00795C;
+  --player-15: #B00FB0;
+  --player-16: #5F7000;
+  --player-17: #1F64ED;
+  --player-18: #DB1212;
+}
+
+/* Titel in Großbuchstaben wie auf den Folien. Artikeltitel bleiben als Fließtext lesbar. */
+h1,
+h2:not(.article-card h2) {
+  text-transform: uppercase;
+}
+
+/* Dachzeilen in Akzentfarbe und normaler Schreibweise wie über den Folientiteln. */
+.eyebrow {
+  color: var(--accent);
+  letter-spacing: 0;
+  text-transform: none;
+}

@@ -10,7 +10,6 @@
       padding: 0.45rem 0.9rem;
       white-space: nowrap;
     }
-    .auth-button.primary-button:hover { filter: brightness(1.08); }
     .auth-button.is-authenticated {
       width: 38px;
       min-width: 38px;
@@ -59,8 +58,6 @@
       font-weight: 500;
       padding: 0.55rem;
     }
-    .auth-mode-toggle button:hover,
-    .auth-mode-toggle button.active { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); }
     .auth-form { display: grid; gap: 12px; }
     .auth-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
     .auth-form label[hidden] { display: none !important; }
@@ -200,8 +197,6 @@
       padding: 0 0 2px;
       place-items: center;
     }
-    .account-auth-message-dismiss:hover,
-    .account-auth-message-dismiss:focus-visible { border-color: var(--accent); color: var(--accent); }
     .training-message { margin: 0; }
     .training-message:empty { display: none; }
     .account-header {
@@ -227,7 +222,7 @@
     }
     .account-settings[hidden] { display: none; }
     .account-settings-design[hidden] { display: none; }
-    .account-branding-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .account-branding-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
     .account-branding-option {
       display: grid;
       gap: 10px;
@@ -239,7 +234,7 @@
       transition: border-color 160ms ease;
     }
     .account-branding-option:has(input:checked) { border-color: var(--accent); }
-    .account-branding-option:has(input:focus-visible) { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+    .account-branding-option:has(input:focus-visible),
     .account-branding-wireframe {
       display: grid;
       align-content: start;
@@ -345,14 +340,13 @@
       left: 3px;
       width: 16px;
       height: 16px;
-      border-radius: var(--control-radius);
+      border-radius: calc(var(--control-radius)/2);
       background: var(--dim);
       transition: background 160ms ease, transform 160ms ease;
     }
     .account-setting-row input:checked { border-color: var(--accent); background: var(--accent); }
     .account-setting-row input:checked::after { background: var(--bg); transform: translateX(18px); }
     .account-setting-row input:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
-    .account-setting-row input:disabled { cursor: wait; opacity: 0.55; }
     .account-settings-message { min-height: 0; margin: -6px 0 0; }
     .account-settings-message:empty { display: none; }
     .account-settings-actions { display: flex; gap: 8px; }
@@ -368,8 +362,11 @@
     .account-player-area[hidden] { display: none; }
     .account-section {
       display: grid;
-      gap: 18px;
-      padding-top: 2rem;
+      gap: 1rem;
+      margin: -1px;
+      padding: 2rem 0 0;
+      background: none;
+      border-color: transparent;
     }
     .account-section-heading { gap: normal; }
     .account-section-heading h2 { margin: 0; }
@@ -391,8 +388,8 @@
       font-weight: 600;
     }
     [data-account-result-scope-toggle] { justify-self: start; }
-    .account-task-list { display: grid; gap: 18px; }
-    #result-task-list { gap: 40px; }
+    .account-task-list { display: grid; gap: 1rem; }
+    #result-task-list { gap: var(--section-gap); }
     #result-task-list > .match-group {
       display: grid;
       margin: 2rem 0 0;
@@ -701,7 +698,9 @@
       overflow-wrap: anywhere;
     }
     .live-point-team-button:hover,
-    .live-point-team-button:focus-visible {
+    .live-point-team-button:focus-visible,
+    .training-round-remove:hover,
+    .training-round-remove:focus-visible {
       border-color: var(--accent);
       color: var(--accent);
       outline: none;
@@ -712,7 +711,6 @@
       color: var(--bg);
     }
     .live-point-team-button.active > span { color: currentColor; opacity: 0.7; }
-    .live-point-team-button:disabled { cursor: wait; opacity: 0.55; }
     .live-finish-summary {
       display: grid;
       gap: 4px;
@@ -956,8 +954,6 @@
       stroke-width: 3.2;
       pointer-events: none;
     }
-    .training-round-remove:hover,
-    .training-round-remove:focus-visible { border-color: var(--accent); color: var(--accent); outline: none; }
     .training-round-summary { min-height: 1rem; }
     .training-task-rounds { display: grid; gap: 14px; }
     .training-task-participants {
@@ -981,7 +977,7 @@
       .account-header h2 { font-size: 1.65rem; }
       .account-settings-actions { justify-content: stretch; }
       .account-settings-actions .secondary-button { flex: 1 1 0; }
-      .account-branding-options { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+      .account-branding-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .account-section { min-width: 0; }
       .account-section-heading { min-width: 0; }
       .account-section-heading h2 { font-size: 1.65rem; }

@@ -72,14 +72,16 @@ test('profile season colors are stable by visual theme instead of list position'
 });
 
 test('league, ranking and cup achievements use their selected metal colors', () => {
-  assert.match(branding, /--gold:\s+#FFD000;/);
-  assert.match(branding, /--silver:\s+#ADC8D8;/);
-  assert.match(branding, /--cup-gold:\s+#C59600;/);
-  assert.match(branding, /--cup-silver:\s+#7F98A8;/);
+  const achievements = fs.readFileSync(path.join(root, 'achievements.css'), 'utf8');
+  for (const [name, color] of [['gold', '#FFD000'], ['silver', '#ADC8D8'], ['cup-gold', '#C59600'], ['cup-silver', '#7F98A8']]) {
+    assert.match(branding, new RegExp(`--${name}:\\s+${color};`));
+    assert.match(achievements, new RegExp(`--achievement-${name}:\\s+${color};`));
+  }
   assert.match(style, /\.r1 \.rank-position \{ color: var\(--gold\)/);
   assert.match(style, /\.r2 \.rank-position \{ color: var\(--silver\)/);
-  assert.match(style, /\.player-profile-achievement-winner\.player-profile-achievement-cup \{ --achievement-color: var\(--cup-gold\); \}/);
-  assert.match(style, /\.player-profile-achievement-finalist\.player-profile-achievement-cup \{ --achievement-color: var\(--cup-silver\); \}/);
+  assert.match(style, /\.player-profile-achievement-winner\.player-profile-achievement-cup \{ --achievement-color: var\(--achievement-cup-gold\); \}/);
+  assert.match(style, /\.player-profile-achievement-finalist\.player-profile-achievement-cup \{ --achievement-color: var\(--achievement-cup-silver\); \}/);
+  assert.match(style, /\.prediction-achievement-icon--winner \{ color: var\(--achievement-gold\); \}/);
   assert.match(app, /player-profile-achievement-\$\{kind\} player-profile-achievement-\$\{context\}/);
 });
 

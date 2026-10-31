@@ -40,7 +40,7 @@
   --heading-font-weight: 700;
 
   /* Look der Inhaltsbereiche */
-  --section-gap: 2rem;
+  --section-gap: 1.5rem;
   /* Rahmen der Inhaltsbereiche (.widget); transparent und 0 lassen die Bereiche frei auf --bg stehen. */
   --widget-bg: var(--surface);
   --widget-border: var(--border);

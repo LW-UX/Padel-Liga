@@ -8,7 +8,7 @@
   <link rel="icon" href="../favicon.ico" sizes="32x32">
   <link rel="icon" type="image/svg+xml" href="../data/favicon.svg?v=2026-10-26-rounded">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-  <link rel="stylesheet" href="../branding/og-design.css?v=87533a9ed2">
+  <link rel="stylesheet" href="../branding/og-design.css?v=e92e66d668">
   <script>
     // Die Admin-Design-Vorschau greift vor dem ersten Zeichnen; alles Weitere steht in js/branding-preview.js.
     (function () {
@@ -21,10 +21,11 @@
       } catch (error) { /* Ohne Speicher bleibt das veröffentlichte Branding. */ }
     })();
   </script>
-  <link rel="stylesheet" href="../style.css?v=2026-10-31-article-container">
-  <link rel="stylesheet" href="../tipp.css?v=2026-10-30-tipp-css">
-  <link rel="stylesheet" href="../match-statistics.css?v=2026-10-30-widget-container">
-  <link rel="stylesheet" href="../account.css?v=2026-10-30-design-cards">
+  <link rel="stylesheet" href="../achievements.css?v=2026-10-31">
+  <link rel="stylesheet" href="../style.css?v=2026-10-31-achievements">
+  <link rel="stylesheet" href="../tipp.css?v=2026-10-31-class-names">
+  <link rel="stylesheet" href="../match-statistics.css?v=2026-10-31-class-names">
+  <link rel="stylesheet" href="../account.css?v=2026-10-31-design-grid">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="../data/players.js?v=2026-10-20-test-net-emoji"></script>
@@ -34,13 +35,13 @@
   <script defer src="../js/global-actions.js?v=2026-10-20-speed-dial-player"></script>
   <script defer src="../js/score-input.js?v=2026-09-22-unified-score-counters"></script>
   <script defer src="../js/mobile-dialog-pages.js?v=2026-10-30-whats-new-page"></script>
-  <script defer src="../js/branding-preview.js?v=2026-10-30-hanako-accent"></script>
-  <script defer src="../js/account.js?v=2026-10-30-button-merge"></script>
+  <script defer src="../js/branding-preview.js?v=2026-10-31-centre-court"></script>
+  <script defer src="../js/account.js?v=2026-10-31-class-names"></script>
   <script defer src="../js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="../js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="../js/table-core.js?v=2026-10-30-diff-zero"></script>
   <script defer src="../js/panel-layout.js?v=2026-10-29-shared-panel-layout"></script>
-  <script defer src="../js/tipp-page.js?v=2026-10-30-remove-company-chips"></script>
+  <script defer src="../js/tipp-page.js?v=2026-10-31-class-names"></script>
 </head>
 <body class="tip-page">
 <header class="site-header">
@@ -362,7 +363,7 @@
       <div id="account-games-panel">
         <div class="account-games-empty" id="account-games-empty" hidden>Als Tipper hast du keine eigenen Liga- oder Trainingspartien.</div>
         <div class="account-player-area" id="account-player-area" hidden>
-          <section class="account-section" id="open-results-section">
+          <section class="widget account-section" id="open-results-section">
             <div class="heading-row heading-row--center heading-row--between account-section-heading">
               <h2 class="sh-title-with-help">Partienübersicht
                 <span class="th-help-wrap account-games-help">

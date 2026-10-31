@@ -1334,7 +1334,7 @@ function normalizePlayerSearch(value) {
 }
 
 function filterViewerOptions(query = '') {
-  const menu = document.getElementById('picker-menu');
+  const menu = document.getElementById('viewer-menu');
   if (!menu) return;
   const normalizedQuery = normalizePlayerSearch(query);
   let visibleOptions = 0;
@@ -1514,7 +1514,7 @@ function updateViewerPicker() {
     hasSelectedPlayer ? selected.id : '',
     hasSelectedPlayer ? selected.profileEmoji : '👤'
   );
-  document.getElementById('picker-menu').innerHTML = getViewerOptions().map(option => `
+  document.getElementById('viewer-menu').innerHTML = getViewerOptions().map(option => `
     <button
       type="button"
       class="picker-option ${option.id === selectedViewerId ? 'active' : ''}"
@@ -3911,7 +3911,7 @@ document.addEventListener('keydown', event => {
       }
       return;
     }
-    const visibleOptions = [...document.querySelectorAll('#picker-menu [data-viewer-id]')]
+    const visibleOptions = [...document.querySelectorAll('#viewer-menu [data-viewer-id]')]
       .filter(option => !option.hidden);
     if (event.key === 'ArrowDown' && visibleOptions.length) {
       event.preventDefault();
@@ -4495,7 +4495,7 @@ function renderFinalFourRanking() {
 
     const profilePlayerId = eloPlayer?.id || getPlayerIdByName(player.name);
 
-    return `<tr class="r${index + 1}"${renderPlayerProfileRowAttributes({ id: profilePlayerId, name: player.name })}>
+    return `<tr class="r${index + 1} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}"${renderPlayerProfileRowAttributes({ id: profilePlayerId, name: player.name })}>
       <td class="col-rank rank-position">${index + 1}</td>
       <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(player, 'pname')}${replacementMark}</span></span></td>
       <td class="col-wins rank-score">${player.siege}</td>
@@ -6544,16 +6544,20 @@ function renderInfoSection(section, id) {
   const paragraphsAfterTable = (section.paragraphsAfterTable || []).map(p => `<p>${p}</p>`).join('');
   const note = section.note ? `<p class="info-note">${section.note}</p>` : '';
 
-  return `<article class="widget info-anchor" id="${id}">
-    <h2>${section.title}</h2>
-    ${intro}
-    ${paragraphs}
-    ${groups}
-    ${table}
-    ${paragraphsAfterTable}
-    ${items}
-    ${note}
-  </article>`;
+  return `<div class="widget-group info-anchor" id="${id}">
+    <div class="sh">
+      <h2>${section.title}</h2>
+    </div>
+    <article class="widget">
+      ${intro}
+      ${paragraphs}
+      ${groups}
+      ${table}
+      ${paragraphsAfterTable}
+      ${items}
+      ${note}
+    </article>
+  </div>`;
 }
 
 function renderInfoArticle(article, index) {
@@ -6600,14 +6604,18 @@ function renderInfos() {
     </div>
   </div>`;
 
-  const shortInfo = `<article class="widget info-anchor" id="kurzinfo">
-    <h2>Kurzinfo</h2>
-    <ul class="clean-list">${(PADEL_DATA.shortInfo || []).map(item => `<li>${item}</li>`).join('')}</ul>
-    ${renderTop8QualificationFlow()}
-  </article>`;
+  const shortInfo = `<div class="widget-group info-anchor" id="kurzinfo">
+    <div class="sh">
+      <h2>Kurzinfo</h2>
+    </div>
+    <article class="widget">
+      <ul class="clean-list">${(PADEL_DATA.shortInfo || []).map(item => `<li>${item}</li>`).join('')}</ul>
+      ${renderTop8QualificationFlow()}
+    </article>
+  </div>`;
 
-  const articleSection = `<section class="info-article-section info-anchor" id="artikel">
-    <div class="sh info-article-heading">
+  const articleSection = `<section class="widget-group info-anchor" id="artikel">
+    <div class="sh">
       <h2>PADELPOST</h2>
       <div class="sh-meta">Archiv</div>
     </div>

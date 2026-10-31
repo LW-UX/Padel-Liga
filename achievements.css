@@ -1,0 +1,30 @@
+/*
+  Auszeichnungen sehen in jedem Branding gleich aus: Farben und Schriften sind fest die des OG-Designs.
+  Deshalb stehen diese Werte hier und nicht in branding/. Die Regeln dazu stehen in style.css.
+*/
+
+@font-face {
+  font-family: 'Bebas Neue';
+  src: url('fonts/BebasNeue-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('fonts/DMSans-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --achievement-font-title: 'Bebas Neue', sans-serif;
+  --achievement-font-subtitle: 'DM Sans', sans-serif;
+  --achievement-gold:       #FFD000;
+  --achievement-silver:     #ADC8D8;
+  --achievement-cup-gold:   #C59600;
+  --achievement-cup-silver: #7F98A8;
+  --achievement-custom:     #5B8DEF;
+}

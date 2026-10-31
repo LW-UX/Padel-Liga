@@ -16,6 +16,21 @@
       colors: { bg: '#F7F4EE', surface: '#FFFFFF', border: '#E6E1D7', text: '#14303D', dim: '#4F6670', accent: '#397a98' }
     },
     {
+      name: 'centre-court',
+      label: 'Centre Court',
+      colors: { bg: '#0E2A21', surface: '#15382C', border: '#3A6657', text: '#F5F1E4', dim: '#C8D2C6', accent: '#F0DC4E' }
+    },
+    {
+      name: 'envidual',
+      label: 'Envidual',
+      colors: { bg: '#EEF6FA', surface: '#FFFFFF', border: '#A4C6D7', text: '#05171F', dim: '#0B2D3E', accent: '#1B719C' }
+    },
+    {
+      name: 'hanako',
+      label: 'Hanako',
+      colors: { bg: '#F6F6F6', surface: '#FFFFFF', border: '#DCDCDC', text: '#1A1A1A', dim: '#555555', accent: '#D9672C' }
+    },
+    {
       name: 'headsquare',
       label: 'Headsquare',
       colors: { bg: '#0A0B1A', surface: '#121426', border: '#43465E', text: '#FFFFFF', dim: '#E3E3E3', accent: '#FF0000' }

@@ -67,8 +67,20 @@
     .auth-form :is(input, select):is(:hover, :focus),
     .player-invite-output input:is(:hover, :focus),
     .secondary-button:hover,
-    .secondary-button:focus-visible { border-color: var(--accent); color: var(--accent); }
-    .secondary-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .secondary-button:focus-visible,
+    .fb-toggle:hover,
+    .account-auth-message-dismiss:hover,
+    .account-auth-message-dismiss:focus-visible { border-color: var(--accent); color: var(--accent); }
+    .mini-match-status-action:focus-visible,
+    .prediction-match-center-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .secondary-button:focus-visible,
+    .article-match-action:focus-visible,
+    [data-match-statistics]:focus-visible,
+    .match-statistics-graph:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .danger-button:disabled,
+    .primary-button:disabled,
+    .account-setting-row input:disabled,
+    .live-point-team-button:disabled { cursor: wait; opacity: 0.55; }
     /* Links im Button-Aussehen: niedrige Gewichtung, damit Aktions- und Zustandsregeln sie überschreiben. */
     :where(a).secondary-button {
       display: inline-flex;
@@ -135,6 +147,8 @@
       border-radius: var(--container-radius-base);
       padding: var(--widget-padding);
     }
+    /* Hält eine Überschrift und ihr Widget als einen Bereich zusammen. */
+    .widget-group { min-width: 0; }
     .sr-only {
       position: absolute;
       width: 1px;
@@ -379,7 +393,9 @@
       white-space: nowrap;
     }
     .site-nav button:hover,
-    .site-nav button.active {
+    .site-nav button.active,
+    .auth-mode-toggle button:hover,
+    .auth-mode-toggle button.active {
       color: var(--accent);
       background: color-mix(in srgb, var(--accent) 10%, transparent);
     }
@@ -479,7 +495,7 @@
       width: 30px;
       height: 30px;
       display: block;
-      border-radius: var(--control-radius);
+      border-radius: calc(var(--dropdown-radius)/2);
       object-fit: cover;
     }
     .viewer-profile-image[hidden],
@@ -766,13 +782,13 @@
       color: var(--achievement-color);
       text-align: center;
     }
-    .player-profile-achievement-winner { --achievement-color: var(--gold); }
+    .player-profile-achievement-winner { --achievement-color: var(--achievement-gold); }
     .player-profile-achievement-final-four,
-    .player-profile-achievement-finalist { --achievement-color: var(--silver); }
-    .player-profile-achievement-winner.player-profile-achievement-cup { --achievement-color: var(--cup-gold); }
+    .player-profile-achievement-finalist { --achievement-color: var(--achievement-silver); }
+    .player-profile-achievement-winner.player-profile-achievement-cup { --achievement-color: var(--achievement-cup-gold); }
     .player-profile-achievement-final-four.player-profile-achievement-cup,
-    .player-profile-achievement-finalist.player-profile-achievement-cup { --achievement-color: var(--cup-silver); }
-    .player-profile-achievement-custom { --achievement-color: var(--accent2); }
+    .player-profile-achievement-finalist.player-profile-achievement-cup { --achievement-color: var(--achievement-cup-silver); }
+    .player-profile-achievement-custom { --achievement-color: var(--achievement-custom); }
     .achievement-symbols {
       position: absolute;
       width: 0;
@@ -789,12 +805,14 @@
     }
     .player-profile-achievement-copy { min-width: 0; }
     .player-profile-achievement-title {
-      font-family: var(--font-heading);
-      font-size: var(--text-heading);
+      font-family: var(--achievement-font-title);
+      font-size: 2rem;
+      font-weight: 400;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
     .player-profile-achievement-subtitle {
+      font-family: var(--achievement-font-subtitle);
       font-size: var(--text-xs);
       font-weight: 400;
       margin-top: -6px;
@@ -820,6 +838,7 @@
       font-size: var(--text-heading);
       letter-spacing: 0.05em;
       line-height: 1;
+      font-weight: 600;
     }
     .player-profile-stat-value.positive { color: var(--positiv); }
     .player-profile-stat-value.negative { color: var(--negativ); }
@@ -1102,6 +1121,7 @@
       .player-profile-shell { --player-profile-shell-padding: 1rem; }
       .player-profile-content { grid-template-columns: 1fr; }
       .player-profile-content > .player-profile-widget { grid-column: 1; }
+      .player-profile-stats-widget { padding: 0; }
       .player-profile-relationships { order: 1; }
       .modal-close-button { top: 16px; right: 16px; width: 32px; height: 32px; }
       .player-profile-identity-row {
@@ -1118,7 +1138,7 @@
         width: 100%;
       }
       .player-profile-achievement-laurel { width: 24px; height: 44px; }
-      .player-profile-achievement-title { font-size: calc(var(--text-heading) * 0.9); }
+      .player-profile-achievement-title { font-size: 1.8rem; }
       .player-profile-achievement-subtitle { letter-spacing: -0.03rem; }
       .player-profile-stats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1162,8 +1182,8 @@
     .player-profile-dialog[data-presentation="panel"] .player-profile-hero { margin-top: -12px; }
     .player-profile-dialog[data-presentation="panel"] .player-profile-hero-block {
       grid-column: 1;
-      margin: 0 -12px;
     }
+    .player-profile-dialog[data-presentation="panel"] .player-profile-stats-widget { padding: 0; }
     .player-profile-dialog[data-presentation="panel"] .modal-close-button {
       top: 16px;
       right: 16px;
@@ -1345,7 +1365,7 @@
         height: 52px;
       }
       .player-profile-dialog[data-presentation="panel"] .player-profile-achievement-title {
-        font-size: var(--text-heading);
+        font-size: 2rem;
       }
       .player-profile-dialog[data-presentation="panel"] .player-profile-achievement-subtitle {
         letter-spacing: normal;
@@ -1427,14 +1447,14 @@
       font-weight: 500;
       padding: 0.5rem 0.85rem;
       background: var(--accent); 
-      color: var(--bg); }
+      color: color-mix(in srgb, var(--bg) 50%, var(--surface)); }
       
     .danger-button {
       min-height: 38px;
       border: 1px solid var(--negativ);
       border-radius: var(--button-radius);
       background: var(--negativ);
-      color: var(--bg);
+      color: color-mix(in srgb, var(--bg) 50%, var(--surface));
       cursor: pointer;
       font-family: var(--font-body);
       font-size: var(--text-sm);
@@ -1442,8 +1462,8 @@
       padding: 0.5rem 0.85rem;
     }
     .danger-button:hover,
-    .danger-button:focus-visible { filter: brightness(1.08); }
-    .danger-button:disabled { cursor: wait; opacity: 0.55; }
+    .danger-button:focus-visible,
+    .auth-button.primary-button:hover { filter: brightness(1.08); }
     .secondary-button--dropdown {
       border-radius: var(--dropdown-radius);
       position: relative;
@@ -1475,11 +1495,10 @@
     .training-picker.open .secondary-button--dropdown::after {
       transform: translateY(-35%) rotate(225deg);
     }
-    .primary-button:disabled { cursor: wait; opacity: 0.55; }
     .prediction-match-list { display: grid; gap: 20px; }
 
     /* ── MAIN ── */
-    main { flex: 1; width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 1rem 6rem; }
+    main { flex: 1; width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 1rem 4rem; }
 
     /* ── FOOTER ── */
     .site-footer {
@@ -1594,6 +1613,12 @@
     }
     .ranking-profile-main,
     .all-time-ranking-profile-main { min-width: 0; }
+    .ranking-profile-main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--section-gap);
+      align-content: start;
+    }
     .ranking-profile-host {
       position: sticky;
       z-index: 90;
@@ -1645,10 +1670,10 @@
       display: flex;
       align-items: baseline;
       gap: 12px;
-      margin-bottom: 1rem;
+      margin-bottom: max(0.75rem, calc(var(--section-gap) * 0.25));
     }
     .sh-with-control { align-items: center; justify-content: space-between; }
-    #ranking-profile-main > .sh-with-control,
+    #ranking-profile-main > .widget-group > .sh-with-control,
     #match-statistics-list-pane > .sh-with-control,
     #prediction-statistics-list-pane > .sh-with-control {
       display: grid;
@@ -1656,7 +1681,7 @@
       align-items: center;
       gap: 18px;
     }
-    #ranking-profile-main > .sh-with-control {
+    #ranking-profile-main > .widget-group > .sh-with-control {
       grid-template-columns: minmax(0, 1fr) auto;
     }
     .sh-title-with-help {
@@ -1666,8 +1691,6 @@
     }
     .sh-meta { font-size: var(--text-sm); color: var(--muted); }
     .table-note { font-size: var(--text-xs); }
-    .section-subheading { margin-top: var(--section-gap); }
-    #ranking-profile-main > #final-four-ranking-section:first-child .section-subheading,
     #league-calculator[hidden] + #final-four-calculator .section-subheading { margin-top: 0; }
     .toggle {
       display: inline-flex;
@@ -1678,7 +1701,7 @@
     }
     .toggle button {
       border: 0;
-      border-radius: var(--dropdown-radius);
+      border-radius: calc(var(--dropdown-radius)/2);
       background: transparent;
       color: var(--text);
       font-family: var(--font-body);
@@ -1920,10 +1943,6 @@
     .statistics-load-error[hidden],
     [data-season-only-statistic][hidden] { display: none; }
     .widget h2 { margin-bottom: 0.5rem; }
-    :where(.info-sections) .widget h2 {
-      line-height: 1;
-      margin-bottom: 0.85rem;
-    }
     .clean-list { display: grid; gap: 0.65rem; list-style: none; color: var(--dim); line-height: 1.42; }
     .clean-list li { position: relative; padding-left: 1rem; }
     .clean-list li::before { content: ""; position: absolute; left: 0; top: 0.62em; width: 5px; height: 5px; border-radius: var(--radius-full); background: var(--accent2); }
@@ -2056,6 +2075,7 @@
     .stat-main {
       font-family: var(--font-heading);
       font-size: calc(var(--text-heading) * 2);
+      font-weight: var(--heading-font-weight);
       line-height: 0.9;
       color: var(--accent2);
       letter-spacing: 0.02em;
@@ -2098,9 +2118,9 @@
       font-family: var(--font-heading);
       font-size: var(--text-heading);
       line-height: 0.9;
-      color: var(--accent2);
       letter-spacing: var(--heading-letter-spacing);
       white-space: nowrap;
+      font-weight: var(--heading-font-weight);
     }
     .stat-shift-groups {
       display: grid;
@@ -2345,8 +2365,8 @@
       align-items: center;
       justify-content: center;
     }
-    .prediction-achievement-icon--winner { color: var(--gold); }
-    .prediction-achievement-icon--final-four { color: var(--silver); }
+    .prediction-achievement-icon--winner { color: var(--achievement-gold); }
+    .prediction-achievement-icon--final-four { color: var(--achievement-silver); }
     .prediction-achievement-icon svg {
       display: block;
       width: 100%;
@@ -2484,7 +2504,6 @@
     }
     .mini-match-status-action:hover :is(.mini-match-prob, .mini-match-label),
     .mini-match-status-action:focus-visible :is(.mini-match-prob, .mini-match-label) { color: var(--accent); }
-    .mini-match-status-action:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .mini-match-prob {
       font-size: var(--text-sm);
     }
@@ -2635,7 +2654,6 @@
     /* ── RANKING TABLE ── */
     .ranking-wrap { overflow-x: auto; overflow-y: hidden; margin-bottom: 0.75rem; }
     .ranking-main-wrap[data-ranking-view="compact"] { overflow: visible; }
-    .ranking-note { margin-bottom: var(--section-gap); }
     .ranking-absence-note { display: block; margin-top: 0.4rem; }
     table.rt { width: 100%; border-collapse: collapse; margin-bottom: 1rem;}
     .ranking-wrap > table.rt { margin-bottom: 0; }
@@ -2672,7 +2690,9 @@
       text-transform: inherit;
     }
     .ranking-sort-header:hover,
-    .ranking-sort-header:focus-visible { color: var(--accent); }
+    .ranking-sort-header:focus-visible,
+    .calculator-probability-button:hover,
+    .prediction-match-center-link:hover { color: var(--accent); }
     .ranking-sort-header:focus-visible {
       border-radius: 2px;
       outline: 2px solid var(--accent);
@@ -3135,7 +3155,6 @@
       background: var(--surface2); color: var(--dim); cursor: pointer;
       transition: all 0.15s; white-space: nowrap;
     }
-    .fb-toggle:hover { border-color: var(--accent); color: var(--accent); }
     .fb-company-Envidual   { --company-color: var(--envidual); }
     .fb-company-Hanako     { --company-color: var(--hanako); }
     .fb-company-Headsquare { --company-color: var(--headsquare); }
@@ -3219,7 +3238,7 @@
     }
 
     /* ── MATCHES ── */
-    .match-group { margin-bottom: var(--section-gap); }
+    .match-group { margin-bottom: 4rem; }
     .match-group > h3 {
       display: flex;
       width: 100%;
@@ -3335,7 +3354,14 @@
       justify-content: center;
     }
     .mc-result-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
-    .mc-score-main { font-family: var(--font-heading); font-size: var(--text-heading); letter-spacing: 0.05em; color: var(--text); line-height: 1; }
+    .mc-score-main { 
+      font-family: var(--font-heading); 
+      font-size: var(--text-heading); 
+      letter-spacing: 0.05em; 
+      color: var(--text); 
+      line-height: 1; 
+      font-weight: 600;
+    }
     .mc-score-detail { 
       position: absolute;
       width: max-content;
@@ -4573,7 +4599,6 @@
       padding: 5px 3px;
       touch-action: manipulation;
     }
-    .calculator-probability-button:hover { color: var(--accent); }
     .calculator-probability-button:focus-visible {
       border-radius: 4px;
       outline: 2px solid var(--accent);
@@ -4804,7 +4829,7 @@
         align-items: flex-start;
         gap: 0.8rem;
       }
-      #ranking-profile-main > .sh-with-control,
+      #ranking-profile-main > .widget-group > .sh-with-control,
       #match-statistics-list-pane > .sh-with-control,
       #prediction-statistics-list-pane > .sh-with-control {
         grid-template-columns: minmax(0, 1fr) auto;
