@@ -3106,13 +3106,13 @@
       width: 14px;
       height: 14px;
       flex: 0 0 14px;
-      padding-right: 2px;
+      margin-right: 2px;
     }
     .firma-icon.firma-Hanako {
       width: 18px;
       height: 18px;
       flex-basis: 18px;
-      padding-right: 0;
+      margin-right: 0;
     }
     .firma-icon.firma-Envidual   { --firma-mask: url("assets/logos/envidual-icon.svg"); }
     .firma-icon.firma-Hanako     { --firma-mask: url("assets/logos/hanako-icon.svg"); }
