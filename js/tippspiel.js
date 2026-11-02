@@ -815,7 +815,7 @@
       return `
         <div class="mini-rank-row r${index + 1}${isOwn ? ' viewer-highlight' : ''}${separated}">
           <span class="rank-position">${index + 1}</span>
-          <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionCompanyBadge(entry)}${renderPreviousPredictionWinnerIcon(entry)}</span></span>
+          <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPreviousPredictionWinnerIcon(entry)}</span></span>
           <span class="rank-score">${formatCount(entry.points)} Pkt.</span>
         </div>
       `;

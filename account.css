@@ -156,6 +156,7 @@
     .player-invite-preview ul { margin: 0 0 1rem; padding-left: 1.2rem; }
     .player-invite-preview a { color: var(--accent); pointer-events: none; }
     .player-invite-expiry { color: var(--dim); font-size: 0.75rem; line-height: 1.45; margin: 0; }
+    .auth-mail-hint { margin: 0; color: var(--dim); font-size: 0.8rem; line-height: 1.4; }
     .auth-message { min-height: 1.25rem; color: var(--dim); font-size: 0.82rem; margin-top: 0.8rem; }
     #auth-dialog #auth-message { min-height: 2.5rem; line-height: 1.5; }
     .auth-message.error { color: var(--negativ); }

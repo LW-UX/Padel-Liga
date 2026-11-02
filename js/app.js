@@ -5685,7 +5685,7 @@ function renderHomePredictionLeaderboard() {
   target.innerHTML = leaderboardEntries.map(({ entry, rank, separated }) => `
     <div class="mini-rank-row r${rank}${entry.user_id === authenticatedUserId ? ' viewer-highlight' : ''}${separated ? ' home-ranking-selected-row' : ''}">
       <span class="rank-position">${rank}</span>
-      <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionCompanyBadge(entry)}${renderPreviousPredictionWinnerIcon(entry)}</span></span>
+      <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPreviousPredictionWinnerIcon(entry)}</span></span>
       <span class="rank-score">${Number(entry.points) || 0} Pkt.</span>
     </div>
   `).join('');

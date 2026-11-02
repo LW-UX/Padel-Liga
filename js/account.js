@@ -1,5 +1,7 @@
 (function () {
   const ACCOUNT_SUCCESS_MESSAGE_DURATION = 5000;
+  const AUTH_MAIL_COOLDOWN_MS = 10 * 60 * 1000;
+  const AUTH_MAIL_COOLDOWN_KEY = 'padel-auth-mail-sent-at';
   const initialSearch = String(window.location?.search || '');
   const initialHash = String(window.location?.hash || '');
   const readInitialUrlParam = (source, name) => {
@@ -62,6 +64,7 @@
     bound: false
   };
   let initPromise = null;
+  let authMailCooldownTimer = null;
   let playerToolsPromise = null;
   let playerToolsTimer = null;
   let unscheduleTrigger = null;
@@ -1910,6 +1913,7 @@
   function openAuthDialog() {
     const dialog = document.getElementById('auth-dialog');
     renderAuthState();
+    updateAuthMailCooldown();
     setAuthMessage(state.authMode === 'signup' ? 'Die Registrierung ist nur mit einer freigegebenen Firmen-E-Mail möglich.' : '');
     if (!dialog.open) dialog.showModal();
     void init().then(() => {
@@ -1937,6 +1941,10 @@
     const email = String(formData.get('email') || '').trim();
     const password = String(formData.get('password') || '');
     const submit = document.getElementById('auth-submit');
+    if (state.authMode === 'signup' && getAuthMailCooldownRemaining() > 0) {
+      setAuthMessage(`Du hast gerade schon eine Mail angefordert. Bitte warte noch ${formatAuthMailCooldown(getAuthMailCooldownRemaining())} Minuten; ein neuer Link würde den ersten ungültig machen.`, 'error');
+      return;
+    }
     submit.disabled = true;
     setAuthMessage(state.authMode === 'signup' ? 'Konto wird erstellt …' : 'Login läuft …');
 
@@ -1949,7 +1957,8 @@
         });
         if (error) throw error;
         if (!data.session) {
-          setAuthMessage('Bitte bestätige deine E-Mail und logge dich danach ein. Schau bitte auch in deinem Spam-Ordner nach.', 'success');
+          startAuthMailCooldown();
+          setAuthMessage('Bitte bestätige deine E-Mail und logge dich danach ein. Schau bitte auch in deinem Spam-Ordner nach. Die Mail kann durch den Firmenfilter einige Minuten brauchen; fordere keinen zweiten Link an.', 'success');
           return;
         }
       } else {
@@ -2019,6 +2028,42 @@
     return redirectUrl.href;
   }
 
+  function getAuthMailCooldownRemaining() {
+    try {
+      const sentAt = Number(window.localStorage.getItem(AUTH_MAIL_COOLDOWN_KEY));
+      return Number.isFinite(sentAt) ? Math.max(0, sentAt + AUTH_MAIL_COOLDOWN_MS - Date.now()) : 0;
+    } catch (_error) {
+      return 0;
+    }
+  }
+
+  function formatAuthMailCooldown(remainingMs) {
+    const seconds = Math.ceil(remainingMs / 1000);
+    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  }
+
+  function startAuthMailCooldown() {
+    try {
+      window.localStorage.setItem(AUTH_MAIL_COOLDOWN_KEY, String(Date.now()));
+    } catch (_error) {
+      // Ohne Speicher gilt die Sperre nur bis zum Neuladen.
+    }
+    updateAuthMailCooldown();
+  }
+
+  function updateAuthMailCooldown() {
+    window.clearTimeout(authMailCooldownTimer);
+    const remaining = getAuthMailCooldownRemaining();
+    const resetButton = document.getElementById('auth-password-reset');
+    if (resetButton) {
+      resetButton.disabled = remaining > 0;
+      resetButton.textContent = remaining > 0
+        ? `Neuer Link in ${formatAuthMailCooldown(remaining)} möglich`
+        : 'Passwort vergessen?';
+    }
+    if (remaining > 0) authMailCooldownTimer = window.setTimeout(updateAuthMailCooldown, 1000);
+  }
+
   async function requestPasswordReset() {
     const emailInput = document.querySelector('#auth-form [name="email"]');
     const email = String(emailInput?.value || '').trim();
@@ -2028,12 +2073,19 @@
       return;
     }
 
+    if (getAuthMailCooldownRemaining() > 0) {
+      setAuthMessage(`Du hast gerade schon einen Link angefordert. Bitte warte noch ${formatAuthMailCooldown(getAuthMailCooldownRemaining())} Minuten; ein neuer Link würde den ersten ungültig machen.`, 'error');
+      return;
+    }
     setAuthMessage('Link wird gesendet …');
     const { error } = await state.client.auth.resetPasswordForEmail(email, {
       redirectTo: getAuthRedirectUrl('recovery')
     });
     if (error) setAuthMessage(getFriendlyAuthError(error), 'error');
-    else setAuthMessage('Du erhältst eine E-Mail zum Zurücksetzen deines Passworts. Durch den Firmen-Mailfilter kann die Zustellung ein paar Minuten dauern. Schau bitte auch in deinem Spam-Ordner nach.', 'success');
+    else {
+      startAuthMailCooldown();
+      setAuthMessage('Du erhältst eine E-Mail zum Zurücksetzen deines Passworts. Durch den Firmen-Mailfilter kann die Zustellung ein paar Minuten dauern. Schau bitte auch in deinem Spam-Ordner nach. Fordere bitte keinen zweiten Link an, sonst wird der erste ungültig.', 'success');
+    }
   }
 
   function setAccountSettingsMessage(message, type = '') {
@@ -3455,7 +3507,7 @@ Dein Hanako-Leben-Squad`;
     } else if (state.session && ['invite', 'recovery'].includes(state.passwordFlow)) openAuthDialog();
     else if (!state.session && (['invite', 'recovery'].includes(state.passwordFlow) || initialAuthError)) {
       openAuthDialog();
-      setAuthMessage(initialAuthError || 'Dieser Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.', 'error');
+      setAuthMessage(initialAuthError || 'Dieser Link ist ungültig, abgelaufen oder wurde durch einen neueren Link ersetzt. Bitte nutze die zuletzt gesendete Mail oder fordere einen neuen Link an.', 'error');
     } else if (shouldOpenAccountFromLink) {
       consumeRequestedAccountOpen();
       openAuthDialog();

@@ -107,7 +107,8 @@ Treffen mehr optionale Punkte zu, als verwendet werden dürfen, entscheiden dies
    - Pro Partie die vorgesehenen Punkte mit den konkreten Zahlen, getrennt nach Pflichtpunkten und gewählten optionalen Punkten, jeweils mit kurzer Begründung der Auswahl.
    - Pro Partie zusätzlich 2–3 weitere Fakten, die spannend sein könnten, aber nicht vorgesehen sind, jeweils mit dem Grund, warum sie nicht enthalten sind, etwa eine erreichte Saisongrenze oder das Limit pro Partie.
 3. **Nachsteuern:** Der Nutzer kann Punkte tauschen, streichen oder ergänzen. Seine Vorgaben haben Vorrang vor den Auswahlkriterien und Grenzen dieser Richtlinie.
-4. **Fließtext:** Erst nach der ausdrücklichen und eindeutigen Freigabe des Stichpunkt-Entwurfs durch den Nutzer wird der Artikel ausformuliert und in die Saisondatei eingetragen. Wie bei Datenbank-Schreibaktionen gilt nur eine klare Zustimmung als Freigabe. Beantwortete Rückfragen, Korrekturen am Entwurf oder Fragen des Nutzers sind keine Freigabe; nach ihnen wird der überarbeitete Entwurf erneut vorgelegt.
+4. **Fließtext:** Erst nach der ausdrücklichen und eindeutigen Freigabe des Stichpunkt-Entwurfs durch den Nutzer wird der Artikel ausformuliert. Wie bei Datenbank-Schreibaktionen gilt nur eine klare Zustimmung als Freigabe. Beantwortete Rückfragen, Korrekturen am Entwurf oder Fragen des Nutzers sind keine Freigabe; nach ihnen wird der überarbeitete Entwurf erneut vorgelegt.
+5. **Fließtext im Chat prüfen:** Der ausformulierte Artikel wird zuerst im Chat angezeigt. Erst nach einer erneuten, ausdrücklichen und eindeutigen Freigabe des Fließtexts wird er in die Saisondatei eingetragen. Korrekturen am Fließtext sind keine Freigabe; danach wird der überarbeitete Text erneut gezeigt.
 
 
 ## Datenformat

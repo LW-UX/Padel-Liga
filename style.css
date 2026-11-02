@@ -2308,7 +2308,7 @@
     .mini-rank-row .rank-position,
     .mini-rank-row .rank-score {
       font-family: var(--font-mono);
-      font-size: var(--text-sm);
+      font-size: var(--text-base);
     }
     .mini-rank-row .rank-position,
     .mini-match-meta {
@@ -2400,7 +2400,7 @@
     .mini-rank-diff {
       font-family: var(--font-mono);
       color: var(--dim);
-      font-size: var(--text-sm);
+      font-size: var(--text-base);
       font-weight: 700;
     }
     .mini-rank-row.r4 .rank-position { color: var(--dim); font-weight: 500; }
