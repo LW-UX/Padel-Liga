@@ -154,6 +154,11 @@ h2 {
   text-transform: uppercase;
 }
 
+/* Der Titel im Seitenkopf liegt in einem Button, der die Großschreibung nicht erbt. */
+html:root .hero-home-button {
+  text-transform: uppercase;
+}
+
 /* Artikeltitel setzt style.css sonst in die Fließtextschrift. */
 html:root .article-card h2 {
   font-family: var(--font-heading);
