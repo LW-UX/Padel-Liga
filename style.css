@@ -154,6 +154,9 @@
       border-radius: var(--container-radius-base);
       padding: var(--widget-padding);
     }
+    @media (max-width: 768px) {
+      .widget {padding: calc(var(--widget-padding)/2);}
+    }
     /* Hält eine Überschrift und ihr Widget als einen Bereich zusammen. */
     .widget-group { min-width: 0; }
     .sr-only {
