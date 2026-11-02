@@ -2846,7 +2846,6 @@
       align-items: center;
       gap: 2px;
     }
-    .ranking-player-achievement { margin-left: 6px; }
     .player-cell-inner > .ranking-player-achievement {
       box-sizing: content-box;
       padding-left: 6px;

@@ -69,9 +69,11 @@ Diese Informationen werden nicht systematisch geprüft, sondern genannt, wenn si
 
 ### Feste Beziehungen zwischen Spielern
 
-Dauerhafte Verbindungen zwischen Spielern, die nicht in der Datenbank stehen, etwa Verwandtschaften, werden hier gesammelt und bei jeder Partie geprüft. Sie stammen vom Nutzer, werden nicht erfunden und können zu Geschichten führen. Neue Beziehungen ergänzt der Nutzer. Sie zählen wie die Punkte zum Einstreuen nicht zur Obergrenze optionaler Punkte.
+Dauerhafte Verbindungen zwischen Spielern, die nicht in der Datenbank stehen, etwa Verwandtschaften, werden hier gesammelt und bei jeder Partie geprüft. Sie stammen vom Nutzer, werden nicht erfunden und können zu Geschichten führen. Eine Beziehung wird nur genannt, wenn mindestens zwei der Beteiligten in derselben Partie spielen, nie partieübergreifend, etwa weil ein weiteres Familienmitglied in einer anderen Partie desselben Spieltags antritt. Neue Beziehungen ergänzt der Nutzer. Sie zählen wie die Punkte zum Einstreuen nicht zur Obergrenze optionaler Punkte.
 
-- Chris M. und Marcel M. sind Brüder (die „Mayr-Brüder“).
+- Marco M., Chris M. und Marcel M. sind drei Brüder und heißen Mayr („Mayr-Brüder“).
+- Lukas T., Marcel M., Ludwig W. und Luca W. sind die vier UX-Designer von Envidual.
+- Florian Z., Ludwig W., Luca W., Lukas P. und Niklas K. bilden das Hanako-Leben-Squad, das die Liga organisiert. Diese Zugehörigkeit dient nur dem Hintergrundwissen: Die Rolle als Organisator wird im Artikel nicht hervorgehoben (siehe Grundsätze).
 
 ### Versetzt gespielte Partien
 

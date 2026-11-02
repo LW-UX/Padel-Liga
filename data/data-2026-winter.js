@@ -662,6 +662,7 @@ window.PADEL_SEASON = {
   ],
   homeAnnouncement: {
     label: "Saisonstart Winter 2026",
+    expiresAt: "2026-11-02T00:00:00+01:00",
     title: "Die Liga startet!",
     body: [
       {
