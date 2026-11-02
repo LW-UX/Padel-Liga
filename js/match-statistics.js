@@ -1,4 +1,4 @@
-/* Partiestatistik: fresh RPCs per opening, no live subscription. Neighbours in the browsing order are prefetched while the view stays open. */
+/* Partiestatistik: no live subscription. Opened and prefetched matches are reused for ten minutes; neighbours in the browsing order are prefetched while the view stays open. */
 (function () {
   'use strict';
   const eloForecast = typeof module !== 'undefined' ? require('./elo-forecast.js') : window.PadelEloForecast;
@@ -576,9 +576,9 @@
   let presentation = 'modal', presentationPreference = null, panelContextActive = false, embeddedPanelAvailable = false, sharedDetailFlow = false;
   let lastTrigger = null;
   const routeContexts = new Map();
-  // Vorgeladene Nachbarpartien gelten nur, solange die Detailansicht geöffnet bleibt.
+  // Geöffnete und vorgeladene Partien werden zehn Minuten wiederverwendet.
   const prefetched = new Map();
-  const PREFETCH_MAX_AGE = 2 * 60 * 1000;
+  const PREFETCH_MAX_AGE = 10 * 60 * 1000;
   const PREFETCH_DELAY = 300;
   const panelLayout = window.PadelLigaPanelLayout;
   const presentationStore = panelLayout.createPresentationPreference('padel-liga-match-statistics-presentation');
@@ -738,7 +738,7 @@
   }
   function takePrefetched(matchId) {
     const entry = prefetched.get(matchId);
-    prefetched.delete(matchId);
+    if (entry && Date.now() - entry.time >= PREFETCH_MAX_AGE) prefetched.delete(matchId);
     return entry && Date.now() - entry.time < PREFETCH_MAX_AGE ? entry : null;
   }
   async function loadDetail(client, matchId, cached) {
@@ -847,7 +847,7 @@
     const closingReturnState = returnState;
     ++request; active = null; activeData = null; activeForecast = null; currentRoute = null;
     forecastSelectionOpen = false; forecastSubmitting = false; forecastMessage = '';
-    sequence = []; prefetched.clear(); updatePager();
+    sequence = []; updatePager();
     if (dialog()?.dataset.mode !== 'statistics') return;
     const profile = document.getElementById('player-profile-dialog');
     profileOnTop = false;
@@ -1031,6 +1031,7 @@
         routeContexts.set(currentRoute, returnState);
         window.history.pushState({ ...window.history.state, matchStatistics: matchId, statisticsRoute: currentRoute, statisticsProfile: null, statisticsTop: 'match' }, '', route);
       }
+      if (!cached) prefetched.set(matchId, { time: Date.now(), detail: Promise.resolve(detailResult), forecast: Promise.resolve(null) });
       document.getElementById('detail-view-title').textContent = data.label;
       setPlayedOrder(data);
       document.getElementById('detail-view-context').textContent = headerMeta(data);
@@ -1042,6 +1043,8 @@
       if (token !== request) return;
       activeForecast = forecast;
       forecastMessage = '';
+      const stored = prefetched.get(matchId);
+      if (stored && !forecast?.error) stored.forecast = Promise.resolve(forecast);
       renderActiveContent();
       schedulePrefetch(token);
     } catch (error) {
@@ -1130,6 +1133,8 @@
       return;
     }
     activeForecast = data;
+    const storedEntry = prefetched.get(matchId);
+    if (storedEntry) storedEntry.forecast = Promise.resolve(data);
     forecastSelectionOpen = false;
     forecastMessage = '';
     renderActiveContent();
@@ -1213,6 +1218,8 @@
     const button = event.target.closest('[data-match-statistics]');
     if (button && !event.target.closest('[data-player-profile-id]')) { event.preventDefault(); void open(button.dataset.matchStatistics, { trigger: button }); }
   });
+  ['padel:official-result-changed', 'padel:profile-data-changed', 'padel:training-data-changed']
+    .forEach(name => window.addEventListener(name, () => prefetched.clear()));
   window.addEventListener('padel:auth-state-changed', () => {
     // Prognosen enthalten den eigenen Tipp und dürfen kontoübergreifend nicht wiederverwendet werden.
     prefetched.clear();

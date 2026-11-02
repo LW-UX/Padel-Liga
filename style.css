@@ -608,6 +608,9 @@
       overscroll-behavior: contain;
       padding: 1.5rem;
     }
+    /* Das Konto lädt seine Inhalte nach dem Öffnen nach; feste Höhe verhindert das Springen. */
+    #auth-dialog:has(#auth-account-view:not([hidden])) { height: min(calc(100vh - 64px), 900px); }
+    #auth-dialog:has(#auth-account-view:not([hidden])) .dialog-card { height: 100%; }
     .dialog-card h2 { margin: 0.25rem 0 1rem; }
     .dialog-copy { color: var(--dim); font-size: 0.88rem; line-height: 1.5; margin: -0.35rem 0 1rem; }
     @media (max-width: 768px) {
@@ -1777,8 +1780,8 @@
       gap: var(--section-gap);
       align-items: start;
     }
-    .home-side { display: grid; gap: var(--section-gap); }
-    .home-main { display: grid; gap: var(--section-gap); align-content: start; }
+    .home-side { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--section-gap); }
+    .home-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--section-gap); align-content: start; }
     .home-season-podium {
       overflow: hidden;
       margin-bottom: var(--section-gap);
@@ -1891,14 +1894,14 @@
       .home-season-podium-place--3 .home-season-podium-step { min-height: 46px; }
       .home-season-podium-step span { font-size: calc(var(--text-heading) * 1.2); }
     }
-    .home-app-hint {
+    .home-notice {
       position: relative;
       border: 1px solid var(--accent2) !important;
       padding-right: 3.25rem;
     }
-    .home-app-hint h3 { color: var(--accent2); margin-bottom: 0.4rem; }
-    .home-app-hint-text { color: var(--dim); line-height: 1.5; font-size: 0.92rem; margin: 0; }
-    .home-app-hint-close {
+    .home-notice h3 { color: var(--accent2); margin-bottom: 0.4rem; }
+    .home-notice-text { color: var(--dim); line-height: 1.5; font-size: 0.92rem; margin: 0; }
+    .home-notice-close {
       position: absolute;
       top: 0.55rem;
       right: 0.6rem;
@@ -1915,15 +1918,15 @@
       font-size: 1.35rem;
       line-height: 1;
     }
-    .home-app-hint-close:hover {
+    .home-notice-close:hover {
       background: color-mix(in srgb, var(--accent2) 12%, transparent);
       color: var(--accent2);
     }
-    .home-app-hint-close:focus-visible {
+    .home-notice-close:focus-visible {
       outline: 2px solid var(--accent2);
       outline-offset: 1px;
     }
-    .is-standalone .home-app-hint { display: none; }
+    .is-standalone .home-notice { display: none; }
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -4886,7 +4889,7 @@
       }
       .home-grid,
       .stats-grid,
-      .info-layout { grid-template-columns: 1fr; }
+      .info-layout { grid-template-columns: minmax(0, 1fr); }
       .qualification-flow {
         grid-template-columns: minmax(48px, 0.72fr) 16px minmax(92px, 1.35fr) 16px minmax(82px, 0.9fr);
         gap: 5px;
@@ -5424,8 +5427,10 @@
         font-family: var(--font-mono);
         font-size: var(--text-xs);
         font-weight: 400;
-        justify-self: center;
+        justify-self: stretch;
+        text-align: center;
         min-width: 0;
+        padding-left: 6px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;

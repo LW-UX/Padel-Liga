@@ -16,6 +16,13 @@ Diese Datei ist die kanonische Quelle für Saisonidentitäten, Datenquellen, Sai
 - Eine reguläre Nachfolgesaison übernimmt für bestätigte Teilnehmer den letzten offiziellen globalen Elo-Wert als Saisonstartwert. Teilnehmer werden erst nach fachlicher Bestätigung der tatsächlichen Besetzung angelegt.
 - `players.initial_elo` ist der einmalige globale Ausgangswert eines offiziellen Spielers. `season_players.start_elo` friert den Saisonstart ein; `season_players.end_elo` entsteht erst beim offiziellen Saisonabschluss.
 
+## Hinweisarten auf der Startseite
+
+- Die Startseite kennt drei Arten, Informationen einzublenden:
+  - **Ligaartikel** sind redaktionelle Texte im PadelPost-Archiv. Sie besitzen keine Zeitsteuerung und sind nicht wegklickbar.
+  - **Startseitenankündigungen** sind saisonbezogene Kurzmeldungen im Repository, erscheinen nicht im Archiv, können einen festen Ablaufzeitpunkt besitzen und sind nicht wegklickbar.
+  - Der **Hinweisbanner** ist ein hervorgehobener, saisonunabhängiger Hinweis mit Schließen-Kreuz, derzeit der Hinweis zur Nutzung als App. Das Ausblenden wird nur für die laufende Browsersitzung gemerkt, in der auf dem Home-Bildschirm installierten App erscheint er nie. Er ist fest im HTML hinterlegt und derzeit abgeschaltet.
+
 ## Saisonwechsel und Seitenphasen
 
 - Eine aktive Standardsaison bleibt bis zu ihrem offiziellen Abschluss die Voreinstellung. Eine vorbereitete Nachfolgesaison kann bereits auswählbar sein, ohne automatisch Standard zu werden.

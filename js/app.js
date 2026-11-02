@@ -1,6 +1,6 @@
 // ── VIEWER ────────────────────────────────────────────────────────
 const VIEWER_STORAGE_KEY_PREFIX = 'padel-liga-viewer';
-const APP_HINT_DISMISSED_SESSION_KEY = 'padel-liga-app-hint-dismissed';
+const NOTICE_DISMISSED_SESSION_KEY = 'padel-liga-notice-dismissed';
 const LEGACY_DATABASE_SEASON_IDS = Object.freeze({
   '2026-sommer': '2026',
   '2026-winter': 'winter-2026',
@@ -40,7 +40,7 @@ let playerProfileCompareId = null;
 const playerProfileCompareElos = new Map();
 let playerProfileRequestId = 0;
 let playerProfileSeasonPayloadCache = new Map();
-const PLAYER_PROFILE_CACHE_TTL = 30000;
+const PLAYER_PROFILE_CACHE_TTL = 10 * 60 * 1000;
 const playerProfileCache = new Map();
 let chartLibraryPromise = null;
 let appReady = false;
@@ -126,27 +126,27 @@ function storeViewerId(id) {
   }
 }
 
-function isAppHintDismissed() {
+function isNoticeDismissed() {
   try {
-    return sessionStorage.getItem(APP_HINT_DISMISSED_SESSION_KEY) === 'true';
+    return sessionStorage.getItem(NOTICE_DISMISSED_SESSION_KEY) === 'true';
   } catch (error) {
     return false;
   }
 }
 
-function dismissAppHint() {
-  const hint = document.querySelector('.home-app-hint');
-  if (hint) hint.hidden = true;
+function dismissNotice() {
+  const notice = document.querySelector('.home-notice');
+  if (notice) notice.hidden = true;
   try {
-    sessionStorage.setItem(APP_HINT_DISMISSED_SESSION_KEY, 'true');
+    sessionStorage.setItem(NOTICE_DISMISSED_SESSION_KEY, 'true');
   } catch (error) {
-    // The hint still stays hidden for the current page load if storage is blocked.
+    // The notice still stays hidden for the current page load if storage is blocked.
   }
 }
 
-function applyAppHintVisibility() {
-  const hint = document.querySelector('.home-app-hint');
-  if (hint && isAppHintDismissed()) hint.hidden = true;
+function applyNoticeVisibility() {
+  const notice = document.querySelector('.home-notice');
+  if (notice && isNoticeDismissed()) notice.hidden = true;
 }
 
 function orderSeasonOptions(seasons = []) {
@@ -1544,6 +1544,7 @@ window.addEventListener('padel:official-result-changed', () => {
   void refreshActiveSeasonView();
 });
 window.addEventListener('padel:profile-data-changed', invalidatePlayerProfileCache);
+window.addEventListener('padel:training-data-changed', invalidatePlayerProfileCache);
 window.addEventListener('padel:live-status-changed', () => {
   invalidateSections(['start', 'partien']);
   renderActiveSection();
@@ -3590,9 +3591,9 @@ document.addEventListener('click', event => {
     return;
   }
 
-  const appHintDismissControl = event.target.closest('[data-dismiss-app-hint]');
-  if (appHintDismissControl) {
-    dismissAppHint();
+  const noticeDismissControl = event.target.closest('[data-dismiss-notice]');
+  if (noticeDismissControl) {
+    dismissNotice();
     return;
   }
 
@@ -9168,5 +9169,5 @@ detailViewDialog?.addEventListener('cancel', event => {
   closeLiveTicker();
 });
 
-applyAppHintVisibility();
+applyNoticeVisibility();
 initApp();

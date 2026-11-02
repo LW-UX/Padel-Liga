@@ -24,7 +24,7 @@ test('home article fallback uses the latest published article instead of the fir
 test('home announcement stays separate from the article archive and appears before the current article', () => {
   assert.match(appSource, /homeAnnouncement: staticSeason\?\.homeAnnouncement \|\| null/);
   assert.match(appSource, /getElementById\('home-announcement'\)/);
-  assert.match(htmlSource, /id="home-announcement"[\s\S]*home-app-hint[\s\S]*widget-articles/);
+  assert.match(htmlSource, /id="home-announcement"[\s\S]*home-notice[\s\S]*widget-articles/);
   assert.doesNotMatch(appSource, /home-articles'\)\.innerHTML = `[\s\S]*home-announcement/);
 });
 

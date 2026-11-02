@@ -167,8 +167,8 @@ html:root :is(.hero h1, .site-footer-brand, #whats-new-dialog h2) em {
 html:root :is(.hero h1, .site-footer-brand, #whats-new-dialog h2) em::after {
   content: '';
   display: inline-block;
-  width: 0.18em;
-  height: 0.18em;
+  width: 0.22em;
+  height: 0.22em;
   margin-left: 0.07em;
   background: var(--accent);
 }
@@ -184,15 +184,40 @@ h2:not(dialog h2)::before {
   position: absolute;
   top: 0;
   left: -0.15em;
-  width: 0.36em;
-  height: 0.36em;
+  width: 0.40em;
+  height: 0.40em;
   background: var(--accent);
   z-index: -1;
   pointer-events: none;
+}
+
+/* Der Titel des Saison-Siegers steht zentriert auf der Bühne und bekommt kein Viereck. */
+html:root .home-season-podium h2::before {
+  content: none;
+}
+
+/* Zentrierte Artikeltitel: das Viereck steht wie bei der Wortmarke als Punkt am Ende statt links davor. */
+html:root .article-card h2::before {
+  content: none;
+}
+
+html:root .article-card h2::after {
+  content: '';
+  display: inline-block;
+  width: 0.22em;
+  height: 0.22em;
+  margin-left: 0.07em;
+  background: var(--accent);
 }
 
 /* Roter Balken links neben den Spieltagslabels */
 .match-group h3 {
   border-left: 0.45em solid var(--accent);
   padding-left: 0.6em;
+}
+
+/* Container mit Rangliste ohne Rahmen und Innenabstand; Startseite und Statistik behalten ihre Karten. */
+html:root .widget:has(.ranking-wrap):not(#start *, #verlauf *) {
+  border: 0;
+  padding: 0;
 }

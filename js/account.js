@@ -57,6 +57,7 @@
     extendedPlayerFeatures: true,
     playerToolsVersion: 0,
     playerToolsReady: false,
+    playerToolsLoadedAt: 0,
     playerToolsLoading: false,
     playerToolsError: null,
     ready: false,
@@ -67,6 +68,7 @@
   let authMailCooldownTimer = null;
   let playerToolsPromise = null;
   let playerToolsTimer = null;
+  const PLAYER_TOOLS_MAX_AGE = 10 * 60 * 1000;
   let unscheduleTrigger = null;
   let unrateTrigger = null;
   let accountMessageTimer = null;
@@ -1791,7 +1793,10 @@
     render();
     const request = Promise.all([loadPlayerTools(), window.PadelLiveTicker?.refreshAccount()])
       .then(() => {
-        if (state.playerToolsVersion === version) state.playerToolsReady = true;
+        if (state.playerToolsVersion === version) {
+          state.playerToolsReady = true;
+          state.playerToolsLoadedAt = Date.now();
+        }
       })
       .catch(error => {
         if (state.playerToolsVersion !== version) return;
@@ -1906,7 +1911,7 @@
     const resetButton = document.getElementById('auth-password-reset');
     if (resetButton) resetButton.hidden = state.authMode === 'signup';
     document.getElementById('auth-dialog-title').textContent = state.authMode === 'signup' ? 'Konto erstellen' : 'Einloggen';
-    document.getElementById('auth-submit').textContent = state.authMode === 'signup' ? 'Konto erstellen' : 'Einloggen';
+    updateAuthMailCooldown();
     setAuthMessage(state.authMode === 'signup' ? 'Die Registrierung ist nur mit einer freigegebenen Firmen-E-Mail möglich.' : '');
   }
 
@@ -1917,7 +1922,8 @@
     setAuthMessage(state.authMode === 'signup' ? 'Die Registrierung ist nur mit einer freigegebenen Firmen-E-Mail möglich.' : '');
     if (!dialog.open) dialog.showModal();
     void init().then(() => {
-      if (dialog.open) return refreshPlayerTools({ force: true });
+      // Konto-Spielkarten werden zehn Minuten wiederverwendet; Aktionen und Fehler-Retry laden weiterhin sofort neu.
+      if (dialog.open) return refreshPlayerTools({ force: Date.now() - state.playerToolsLoadedAt >= PLAYER_TOOLS_MAX_AGE });
     });
   }
 
@@ -1971,6 +1977,7 @@
       setAuthMessage(getFriendlyAuthError(error), 'error');
     } finally {
       submit.disabled = false;
+      updateAuthMailCooldown();
     }
   }
 
@@ -2060,6 +2067,14 @@
       resetButton.textContent = remaining > 0
         ? `Neuer Link in ${formatAuthMailCooldown(remaining)} möglich`
         : 'Passwort vergessen?';
+    }
+    const submitButton = document.getElementById('auth-submit');
+    if (submitButton) {
+      const blocked = state.authMode === 'signup' && remaining > 0;
+      submitButton.disabled = blocked;
+      submitButton.textContent = blocked
+        ? `Neue Mail in ${formatAuthMailCooldown(remaining)} möglich`
+        : (state.authMode === 'signup' ? 'Konto erstellen' : 'Einloggen');
     }
     if (remaining > 0) authMailCooldownTimer = window.setTimeout(updateAuthMailCooldown, 1000);
   }
