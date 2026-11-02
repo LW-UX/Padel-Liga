@@ -308,7 +308,13 @@ function relationship(id, partnerId, opponentIds) {
     });
   }
   candidates.sort((a, b) => Math.abs(b.winRate - 0.5) - Math.abs(a.winRate - 0.5) || b.matches - a.matches);
-  return candidates.map(entry => `${entry.label} ${entry.name}: ${entry.wins} von ${entry.matches} gewonnen (${percent(entry.winRate)})`);
+  // Eindeutige Richtung: Die Bilanz gehört immer dem Spieler, dessen Profil die Beziehung enthält.
+  const own = name(id);
+  const decimal = value => String(value).replace('.', ',');
+  return candidates.map(entry => {
+    const preposition = entry.label.endsWith('partner') ? 'mit' : 'gegen';
+    return `${own} hat ${entry.name} als ${entry.label}: ${own} gewann ${decimal(entry.wins)} von ${decimal(entry.matches)} ${preposition} ${entry.name} (${percent(entry.winRate)})`;
+  });
 }
 
 function peakOutlook(id, opponentIds, format) {
