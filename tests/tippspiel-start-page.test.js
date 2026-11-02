@@ -120,9 +120,8 @@ test('prediction rankings reuse company badges with short labels only', () => {
   assert.match(script, /const COMPANY_SHORT_LABELS = Object\.freeze\(\{[\s\S]*Headsquare: 'HSQ'/);
   assert.match(script, /function renderPredictionCompanyBadge\(entry\)/);
   assert.match(script, /class="firma-icon firma-\$\{escapeHtml\(company\)\} prediction-company-badge"/);
-  assert.match(script, /renderPredictionAccountTypeIcon\(entry\)\}\$\{renderPredictionCompanyBadge\(entry\)\}\$\{renderPreviousPredictionWinnerIcon\(entry\)/);
+  assert.match(script, /renderPredictionAccountTypeIcon\(entry\)\}\$\{renderPredictionCompanyBadge\(entry\)\}<\/span><\/td>/);
   assert.match(ligaScript, /function renderPredictionCompanyBadge\(entry\)/);
-  assert.match(ligaScript, /renderPredictionAccountTypeIcon\(entry\)\}\$\{renderPredictionCompanyBadge\(entry\)\}\$\{renderPreviousPredictionWinnerIcon\(entry\)/);
   assert.match(style, /\.prediction-rank-account \.prediction-company-badge \{[\s\S]*margin-left: 4px;/);
   assert.match(decisions, /Firmen-Icon/);
 });
@@ -137,28 +136,46 @@ test('prediction rankings show only the previous PadelTipp winner achievement', 
   assert.match(previousWinnerMigration, /cross join lateral private\.get_prediction_leaderboard_rows\(previous_season\.id\)/);
   assert.match(previousWinnerMigration, /previous_entry\.points desc,[\s\S]*previous_entry\.exact_count desc,[\s\S]*previous_entry\.tendency_count desc/);
   assert.doesNotMatch(previousWinnerMigration, /player_achievements|previous_league_achievement|final_four/);
-  assert.match(script, /function renderPreviousPredictionWinnerIcon\(entry\)/);
-  assert.match(script, /entry\?\.previous_prediction_winner !== true/);
-  assert.match(script, /`Tippsieger\$\{seasonLabel/);
-  assert.match(script, /renderPredictionCompanyBadge\(entry\)\}\$\{renderPreviousPredictionWinnerIcon\(entry\)/);
-  assert.match(ligaScript, /function renderPreviousPredictionWinnerIcon\(entry\)/);
-  assert.match(ligaScript, /renderPredictionCompanyBadge\(entry\)\}\$\{renderPreviousPredictionWinnerIcon\(entry\)/);
-  assert.match(style, /\.prediction-achievement-icon--winner \{ color: var\(--achievement-gold\); \}/);
-  assert.match(style, /\.prediction-achievement-icon--final-four \{ color: var\(--achievement-silver\); \}/);
+  assert.match(script, /previous_prediction_rank/);
+  assert.match(script, /prediction-account-type-icon\$\{podiumClass\}/);
+  assert.doesNotMatch(script, /renderPreviousPredictionWinnerIcon/);
+  assert.match(style, /\.prediction-account-type-icon\.r1 \{ color: var\(--gold\); \}/);
+  assert.match(style, /\.prediction-account-type-icon\.r2 \{ color: var\(--silver\); \}/);
+  assert.match(style, /\.prediction-account-type-icon\.r3 \{ color: var\(--bronze\); \}/);
+  assert.match(style, /\.prediction-rank-account \.prediction-company-badge \{[\s\S]*margin-left: 4px;/);
+  assert.match(decisions, /Firmen-Icon/);
+});
+
+test('prediction rankings show only the previous PadelTipp winner achievement', () => {
+  assert.match(previousWinnerMigration, /previous_prediction_winner boolean/);
+  assert.match(previousWinnerMigration, /previous_prediction_season_label text/);
+  assert.match(previousWinnerMigration, /season\.completed_at is not null/);
+  assert.match(previousWinnerMigration, /season\.counts_for_profile/);
+  assert.match(previousWinnerMigration, /season\.visual_theme <> 'cup'/);
+  assert.match(previousWinnerMigration, /order by season\.starts_on desc nulls last, season\.completed_at desc, season\.id[\s\S]*limit 1/);
+  assert.match(previousWinnerMigration, /cross join lateral private\.get_prediction_leaderboard_rows\(previous_season\.id\)/);
+  assert.match(previousWinnerMigration, /previous_entry\.points desc,[\s\S]*previous_entry\.exact_count desc,[\s\S]*previous_entry\.tendency_count desc/);
+  assert.doesNotMatch(previousWinnerMigration, /player_achievements|previous_league_achievement|final_four/);
+  assert.match(script, /previous_prediction_rank/);
+  assert.doesNotMatch(script, /renderPreviousPredictionWinnerIcon/);
+  assert.match(style, /\.prediction-account-type-icon\.r1 \{ color: var\(--gold\); \}/);
+  assert.match(style, /\.prediction-account-type-icon\.r2 \{ color: var\(--silver\); \}/);
+  assert.match(style, /\.prediction-account-type-icon\.r3 \{ color: var\(--bronze\); \}/);
   assert.match(style, /\.prediction-rank-account \{[\s\S]*gap: 4px;/);
   assert.doesNotMatch(script, /prediction-achievement-laurel|previous_league_achievement|previous_league_season_label/);
-  assert.match(decisions, /ausschließlich der Tippsieger[\s\S]*goldenen Pokal/);
-  assert.match(decisions, /ohne Tippwertung[\s\S]*kein Pokal/);
+  assert.match(decisions, /Plätze 1 bis 3[\s\S]*Gold[\s\S]*Silber[\s\S]*Bronze/);
   assert.match(decisions, /Champion- und Final-Four-Auszeichnungen sowie Lorbeeren[\s\S]*nicht/);
 
-  const renderWinnerIcon = script.match(/  function renderPreviousPredictionWinnerIcon\(entry\) \{[\s\S]*?\n  \}/)?.[0] || '';
-  const context = vm.createContext({ escapeHtml: value => String(value) });
-  vm.runInContext(renderWinnerIcon, context);
-  assert.equal(context.renderPreviousPredictionWinnerIcon({ previous_prediction_winner: false }), '');
-  assert.match(context.renderPreviousPredictionWinnerIcon({
-    previous_prediction_winner: true,
+  const renderIcon = script.match(/  function renderPredictionAccountTypeIcon\(entry\) \{[\s\S]*?\n  \}/)?.[0] || '';
+  const context = vm.createContext({ RACKET_ICON_SVG: '', escapeHtml: value => String(value) });
+  vm.runInContext(renderIcon, context);
+  assert.doesNotMatch(context.renderPredictionAccountTypeIcon({ is_player: false }), /is-podium/);
+  assert.match(context.renderPredictionAccountTypeIcon({
+    is_player: false,
+    previous_prediction_rank: 2,
     previous_prediction_season_label: 'Winter 2026'
-  }), /aria-label="Tippsieger Winter 2026"/);
+  }), /is-podium r2[\s\S]*Platz 2 im Tippspiel Winter 2026/);
+  assert.match(context.renderPredictionAccountTypeIcon({ is_player: true, previous_prediction_winner: true }), /is-podium r1[\s\S]*Tippsieger/);
 });
 
 test('the current PadelPost article reuses the collapsible league-home structure', () => {

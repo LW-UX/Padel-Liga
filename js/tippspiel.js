@@ -94,11 +94,16 @@
 
   function renderPredictionAccountTypeIcon(entry) {
     if (typeof entry?.is_player !== 'boolean') return '';
-    const label = entry.is_player ? 'Spieler' : 'Tipper';
+    const baseLabel = entry.is_player ? 'Spieler' : 'Tipper';
+    const podiumRank = [1, 2, 3].includes(Number(entry.previous_prediction_rank)) ? Number(entry.previous_prediction_rank)
+      : entry.previous_prediction_winner === true ? 1 : 0;
+    const seasonLabel = String(entry.previous_prediction_season_label || '').trim();
+    const label = podiumRank ? `${baseLabel} · ${podiumRank === 1 ? 'Tippsieger' : `Platz ${podiumRank} im Tippspiel`}${seasonLabel ? ` ${seasonLabel}` : ''}` : baseLabel;
+    const podiumClass = podiumRank ? ` is-podium r${podiumRank}` : '';
     const icon = entry.is_player
       ? RACKET_ICON_SVG
       : '<path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="m9 12 2 2 4-4"/>';
-    return `<span class="prediction-account-type-icon" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icon}</svg></span>`;
+    return `<span class="prediction-account-type-icon${podiumClass}" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icon}</svg></span>`;
   }
 
   function renderPredictionCompanyBadge(entry) {
@@ -107,12 +112,6 @@
     return `<span class="firma-icon firma-${escapeHtml(company)} prediction-company-badge" role="img" aria-label="Firma ${escapeHtml(company)}" title="${escapeHtml(company)}"></span>`;
   }
 
-  function renderPreviousPredictionWinnerIcon(entry) {
-    if (entry?.previous_prediction_winner !== true) return '';
-    const seasonLabel = String(entry.previous_prediction_season_label || '').trim();
-    const label = `Tippsieger${seasonLabel ? ` ${seasonLabel}` : ''}`;
-    return `<span class="prediction-achievement-icon prediction-achievement-icon--winner" role="img" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}"><svg viewBox="0 0 28 32" aria-hidden="true" focusable="false"><path d="M8 3h12v5c0 5-2.4 8.5-6 10-3.6-1.5-6-5-6-10V3Z"/><path d="M8 6H4v2c0 4 2 6 5.3 6.7M20 6h4v2c0 4-2 6-5.3 6.7"/><path d="M14 18v6M11 24h6v4M9 28h10"/></svg></span>`;
-  }
 
   function getPredictionLocalMatches() {
     if (!state.season) return [];
@@ -815,7 +814,7 @@
       return `
         <div class="mini-rank-row r${index + 1}${isOwn ? ' viewer-highlight' : ''}${separated}">
           <span class="rank-position">${index + 1}</span>
-          <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPreviousPredictionWinnerIcon(entry)}</span></span>
+          <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}</span></span>
           <span class="rank-score">${formatCount(entry.points)} Pkt.</span>
         </div>
       `;
@@ -1184,7 +1183,7 @@
     body.innerHTML = sortedEntries.map(({ entry, canonicalRank }, index) => `
       <tr class="ranking-row r${Math.min(index + 1, 4)} ${state.session?.user?.id === entry.user_id ? 'authenticated-player-highlight' : ''}" data-ranking-entry="${escapeHtml(entry.user_id)}">
         <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${index + 1}</span>${renderPredictionRankReference(index + 1, canonicalRank)}</span></td>
-        <td class="col-name"><span class="prediction-rank-account"><span class="pname">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionCompanyBadge(entry)}${renderPreviousPredictionWinnerIcon(entry)}</span></td>
+        <td class="col-name"><span class="prediction-rank-account"><span class="pname">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionCompanyBadge(entry)}</span></td>
         <td class="col-games">${Number(entry.predictions_count) || 0}</td>
         <td class="col-wins">${Number(entry.exact_count) || 0}</td>
         <td class="col-passive" title="Automatisch gutgeschriebene Punkte aus eigenen Partien">${getLeaderboardPassivePoints(entry)}</td>
@@ -1292,7 +1291,7 @@
   }
 
   function renderPredictionTableAccountCell(entry, index) {
-    return `<th scope="row" class="prediction-table-account r${Math.min(index + 1, 4)}"><span class="prediction-table-account-inner"><span class="prediction-table-rank rank-position">${index + 1}</span><span class="prediction-rank-account"><span class="pname">${escapeHtml(entry.display_name)}</span><span class="pname-short" title="${escapeHtml(entry.display_name)}">${escapeHtml(getPredictionAccountShortLabel(entry))}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionCompanyBadge(entry)}${renderPreviousPredictionWinnerIcon(entry)}</span></span></th>`;
+    return `<th scope="row" class="prediction-table-account r${Math.min(index + 1, 4)}"><span class="prediction-table-account-inner"><span class="prediction-table-rank rank-position">${index + 1}</span><span class="prediction-rank-account"><span class="pname">${escapeHtml(entry.display_name)}</span><span class="pname-short" title="${escapeHtml(entry.display_name)}">${escapeHtml(getPredictionAccountShortLabel(entry))}</span>${renderPredictionAccountTypeIcon(entry)}</span></span></th>`;
   }
 
   function renderPredictionTableTotals(entry) {

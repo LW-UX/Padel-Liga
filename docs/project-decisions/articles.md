@@ -15,7 +15,7 @@ Redaktionelle Richtlinien für Saisonartikel. Wo Artikel gespeichert werden und 
 
 ## Aufbau von Spieltagsartikeln
 
-1. **Meta-Zeile:** `SPIELTAG n  ·  T. MONAT - T. MONAT JJJJ`, in Großbuchstaben. Angegeben wird das Spielfenster von Montag bis Freitag der zweiten Woche. `startDate` und `endDate` des Artikels reichen dagegen von Montag bis Sonntag.
+1. **Meta-Zeile:** `SPIELTAG n  ·  T. MONAT - T. MONAT JJJJ`, in Großbuchstaben. Angegeben wird das Spielfenster von Montag bis Freitag der zweiten Woche. `startDate` und `endDate` des Artikels reichen dagegen vom Montag der ersten bis zum Sonntag der zweiten Woche, bei Spieltag 1 von Winter 2026 also vom 2. bis zum 15. November 2026.
 2. **Titel:** kurz und pointiert, oft mit einer Wendung am Ende, zum Beispiel „Absolute Firmendominanz - noch“ oder „Neuer König, alte Kämpfer“. Der Titel greift die wichtigste Entwicklung seit dem letzten Spieltag auf.
 3. **Einstieg (1–3 Absätze):** Was ist seit dem letzten Artikel passiert? Nachgeholte Partien, Überraschungen, neue Tabellenführung, erste Siege und Firmenduelle.
 4. **Optional, Ankündigung:** eine eigene Zwischenüberschrift für Ligaleitungs-Neuigkeiten, etwa neue Funktionen der Webseite oder den Modus des Final Four.
@@ -41,22 +41,23 @@ Vor dem Schreiben wird jede vorgestellte oder bereits gespielte Partie mit dem D
    - Firmenduell: Beide Spieler von Team 1 gehören derselben Firma an, beide Spieler von Team 2 ebenfalls, und die beiden Firmen sind verschieden. Eine solche Partie wird als Firmenduell betitelt, in der Regel im Untertitel der Zwischenüberschrift, zum Beispiel `Partie N - Firmenduell` oder `Partie N - Firmenduell: …`. Die bisherige Bilanz der beiden Firmen gegeneinander wird dabei aufgegriffen.
    - Firmeninternes Duell: Alle vier Spieler gehören derselben Firma an. Die Partie wird als firmeninternes Duell erzählt und nicht als Firmenduell.
 4. **Erster Saisonsieg nach Durststrecke:** War das letzte Spiel eines Spielers sein erster Saisonsieg und hatte er davor in dieser Saison mindestens zwei Niederlagen, wird das erwähnt. So fallen die vielen ersten Siege der ersten Spieltage nicht darunter.
+5. **Einziger richtiger Tipper (nur bei vorgespielten Partien):** Wurde die Partie bereits gespielt und hat in der Rückschau genau ein Tipper das Siegerteam getippt, alle anderen aber das Verliererteam (mindestens fünf Tipps insgesamt), wird das erwähnt. Der Tipper wird mit dem Kontonamen genannt.
 
 ### Optionale Punkte
 
 Die Nummerierung dient nur der Übersicht und ist keine Rangfolge.
 
-5. **Beziehungen aus den Spielerprofilen:** Für jeden der vier Spieler wird geprüft, ob sein Partner sein Erfolgspartner oder Angstpartner ist und ob einer der Gegner sein Lieblingsgegner oder Angstgegner ist.
+6. **Beziehungen aus den Spielerprofilen:** Für jeden der vier Spieler wird geprüft, ob sein Partner sein Erfolgspartner oder Angstpartner ist und ob einer der Gegner sein Lieblingsgegner oder Angstgegner ist.
    - Erfolgspartner, Angstpartner, Lieblingsgegner und Angstgegner werden genau so bestimmt wie im öffentlichen Spielerprofil (siehe [Ranglisten, Statistik und Profile](rankings-statistics-and-profiles.md)).
    - Pro Spieler wird höchstens eine Beziehung je Artikel und höchstens drei je Saison erwähnt. Treffen mehrere zu, wird die Beziehung genommen, deren Siegquote am weitesten von 50 Prozent entfernt ist. Bei Gleichstand gewinnt die Beziehung mit mehr gemeinsamen Partien.
    - Die Richtung ist eindeutig: Die Bilanz gehört dem Spieler, dessen Profil die Beziehung enthält. „Luca W. hat Ludwig W. als Angstgegner, 1 von 4,5 gewonnen“ heißt, dass Luca W. nur selten gegen Ludwig W. gewinnt. Im Stichpunkt-Entwurf stehen immer beide Namen mit Rolle („X hat Y als Angstgegner“); vor dem Fließtext wird jede erwähnte Beziehung erneut mit der Skriptausgabe abgeglichen.
    - Die zugrunde liegende Bilanz wird im Fließtext genannt, etwa „drei von vier gemeinsamen Partien gewonnen“. Angstpartner und Angstgegner werden wie alle Schwächephasen mit Sympathie erzählt.
-6. **Elo-Höchstwert:** Würde ein Spieler mit einem Sieg in dieser Partie einen neuen Elo-Höchstwert erreichen, wird das erwähnt. Wurde im vorherigen Artikel bereits berichtet, dass er einen neuen Elo-Höchstwert erreicht hat, wird die erneute Möglichkeit nicht erwähnt.
-7. **Klatsche oder Dominanz im letzten Spiel:** Hat ein Spieler sein letztes Spiel mit mindestens 12:3 Spielen gewonnen oder verloren, kann von Dominanz beziehungsweise einer Klatsche oder Ähnlichem die Rede sein. Gezählt werden die Spiele der regulären Sätze, ein Match-Tie-Break zählt nicht.
-8. **Serien:** Hat ein Spieler seine letzten drei gewerteten Partien alle gewonnen, kann das als Gewinnsträhne erwähnt werden. Hat er seine letzten drei gewerteten Partien alle verloren, kann das als Negativlauf erwähnt werden. Gezählt werden bestätigte offizielle Partien über Saisongrenzen hinweg, aber keine Trainings.
-9. **Ranglistenlage:** Erwähnt werden kann, wenn ein Spieler allein durch das Ergebnis dieser Partie den ersten Platz übernehmen oder in die Top 8 hinein- beziehungsweise aus ihnen herausrutschen kann. Alle anderen Ergebnisse, auch noch offene Partien, bleiben dabei unberücksichtigt. Angegeben wird, ob dafür jeder Sieg beziehungsweise jede Niederlage reicht oder nur ein deutliches Ergebnis. Das geschieht höchstens zweimal pro Spieler und Saison. Der Abschluss „Blick auf die Rangliste“ zählt dabei nicht mit. Wie in der Partiestatistik gilt das erst, sobald vor der Partie mindestens zehn Spieler der Liga, in kleineren Ligen alle Teilnehmer, mindestens zwei gewertete Partien bestritten haben; vorher werden Tabellenführung und Top 8 bei einzelnen Partien nicht erwähnt.
-10. **Früher Vogel und Langschläfer:** Ist ein Spieler der Partie der All-Time-Früher-Vogel oder All-Time-Langschläfer, wie in der All-Time-Statistik nach durchschnittlicher Anstoßzeit bestimmt, kann das erwähnt werden. Das geschieht höchstens zweimal pro Saison. Wechselt der Titel seit dem letzten Artikel auf einen anderen Spieler, kann der Wechsel zusätzlich erwähnt werden.
-11. **Ergebnis des vergangenen Spiels:** als letzte Möglichkeit, wenn zu einem Spieler sonst nichts zu erzählen ist.
+7. **Elo-Höchstwert:** Würde ein Spieler mit einem Sieg in dieser Partie einen neuen Elo-Höchstwert erreichen, wird das erwähnt. Wurde im vorherigen Artikel bereits berichtet, dass er einen neuen Elo-Höchstwert erreicht hat, wird die erneute Möglichkeit nicht erwähnt.
+8. **Klatsche oder Dominanz im letzten Spiel:** Hat ein Spieler sein letztes Spiel mit mindestens 12:3 Spielen gewonnen oder verloren, kann von Dominanz beziehungsweise einer Klatsche oder Ähnlichem die Rede sein. Gezählt werden die Spiele der regulären Sätze, ein Match-Tie-Break zählt nicht.
+9. **Serien:** Hat ein Spieler seine letzten drei gewerteten Partien alle gewonnen, kann das als Gewinnsträhne erwähnt werden. Hat er seine letzten drei gewerteten Partien alle verloren, kann das als Negativlauf erwähnt werden. Gezählt werden bestätigte offizielle Partien über Saisongrenzen hinweg, aber keine Trainings.
+10. **Ranglistenlage:** Erwähnt werden kann, wenn ein Spieler allein durch das Ergebnis dieser Partie den ersten Platz übernehmen oder in die Top 8 hinein- beziehungsweise aus ihnen herausrutschen kann. Alle anderen Ergebnisse, auch noch offene Partien, bleiben dabei unberücksichtigt. Angegeben wird, ob dafür jeder Sieg beziehungsweise jede Niederlage reicht oder nur ein deutliches Ergebnis. Das geschieht höchstens zweimal pro Spieler und Saison. Der Abschluss „Blick auf die Rangliste“ zählt dabei nicht mit. Wie in der Partiestatistik gilt das erst, sobald vor der Partie mindestens zehn Spieler der Liga, in kleineren Ligen alle Teilnehmer, mindestens zwei gewertete Partien bestritten haben; vorher werden Tabellenführung und Top 8 bei einzelnen Partien nicht erwähnt.
+11. **Früher Vogel und Langschläfer:** Ist ein Spieler der Partie der All-Time-Früher-Vogel oder All-Time-Langschläfer, wie in der All-Time-Statistik nach durchschnittlicher Anstoßzeit bestimmt, kann das erwähnt werden. Das geschieht höchstens zweimal pro Saison. Wechselt der Titel seit dem letzten Artikel auf einen anderen Spieler, kann der Wechsel zusätzlich erwähnt werden.
+12. **Ergebnis des vergangenen Spiels:** als letzte Möglichkeit, wenn zu einem Spieler sonst nichts zu erzählen ist.
 
 ### Zum Einstreuen
 
@@ -65,6 +66,12 @@ Diese Informationen werden nicht systematisch geprüft, sondern genannt, wenn si
 - Ein Spieler war Final-Four-Teilnehmer der letzten Saison.
 - Ein Spieler ist Champion der letzten Liga- oder Cup-Saison. Auch saisonübergreifende Titel können genannt werden, etwa „zweimaliger Champion“. Grundlage sind die Auszeichnungen in der Datenbank.
 - Spieler in Ranglistennähe haben unterschiedlich viele Partien gespielt, zum Beispiel „er führt, hat aber auch schon eine Partie mehr“ oder „mit einem Spiel in der Hinterhand“. Im Abschluss „Blick auf die Rangliste“ gehört das in der Regel dazu.
+
+### Feste Beziehungen zwischen Spielern
+
+Dauerhafte Verbindungen zwischen Spielern, die nicht in der Datenbank stehen, etwa Verwandtschaften, werden hier gesammelt und bei jeder Partie geprüft. Sie stammen vom Nutzer, werden nicht erfunden und können zu Geschichten führen. Neue Beziehungen ergänzt der Nutzer. Sie zählen wie die Punkte zum Einstreuen nicht zur Obergrenze optionaler Punkte.
+
+- Chris M. und Marcel M. sind Brüder (die „Mayr-Brüder“).
 
 ### Versetzt gespielte Partien
 

@@ -5619,11 +5619,16 @@ function renderTop8QualificationFlow() {
 
 function renderPredictionAccountTypeIcon(entry) {
   if (typeof entry?.is_player !== 'boolean') return '';
-  const label = entry.is_player ? 'Spieler' : 'Tipper';
+  const baseLabel = entry.is_player ? 'Spieler' : 'Tipper';
+  const podiumRank = [1, 2, 3].includes(Number(entry.previous_prediction_rank)) ? Number(entry.previous_prediction_rank)
+    : entry.previous_prediction_winner === true ? 1 : 0;
+  const seasonLabel = String(entry.previous_prediction_season_label || '').trim();
+  const label = podiumRank ? `${baseLabel} · ${podiumRank === 1 ? 'Tippsieger' : `Platz ${podiumRank} im Tippspiel`}${seasonLabel ? ` ${seasonLabel}` : ''}` : baseLabel;
+  const podiumClass = podiumRank ? ` is-podium r${podiumRank}` : '';
   const icon = entry.is_player
     ? '<g transform="rotate(40 12 12)"><path d="M12 1.5c3.4 0 5.6 2.7 5.6 6.2 0 3.6-2.4 6.6-5.6 6.6s-5.6-3-5.6-6.6c0-3.5 2.2-6.2 5.6-6.2Z"/><path d="M9.6 13.6 11 16.6h2l1.4-3"/><rect x="10.8" y="16.6" width="2.4" height="5.6" rx="1.1"/><path d="M10 6h.01M14 6h.01M12 8h.01M10 10h.01M14 10h.01"/></g>'
     : '<path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="m9 12 2 2 4-4"/>';
-  return `<span class="prediction-account-type-icon" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icon}</svg></span>`;
+  return `<span class="prediction-account-type-icon${podiumClass}" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icon}</svg></span>`;
 }
 
 function renderPredictionCompanyBadge(entry) {
@@ -5636,11 +5641,6 @@ function renderTrophyIcon(label, additionalClass = '') {
   return `<span class="prediction-achievement-icon prediction-achievement-icon--winner${extraClass}" role="img" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}"><svg viewBox="0 0 28 32" aria-hidden="true" focusable="false"><path d="M8 3h12v5c0 5-2.4 8.5-6 10-3.6-1.5-6-5-6-10V3Z"/><path d="M8 6H4v2c0 4 2 6 5.3 6.7M20 6h4v2c0 4-2 6-5.3 6.7"/><path d="M14 18v6M11 24h6v4M9 28h10"/></svg></span>`;
 }
 
-function renderPreviousPredictionWinnerIcon(entry) {
-  if (entry?.previous_prediction_winner !== true) return '';
-  const seasonLabel = String(entry.previous_prediction_season_label || '').trim();
-  return renderTrophyIcon(`Tippsieger${seasonLabel ? ` ${seasonLabel}` : ''}`);
-}
 
 function renderLeagueRankingAchievementIcon(player) {
   const achievement = previousLeagueRankingAchievements.get(player?.id);
@@ -5685,7 +5685,7 @@ function renderHomePredictionLeaderboard() {
   target.innerHTML = leaderboardEntries.map(({ entry, rank, separated }) => `
     <div class="mini-rank-row r${rank}${entry.user_id === authenticatedUserId ? ' viewer-highlight' : ''}${separated ? ' home-ranking-selected-row' : ''}">
       <span class="rank-position">${rank}</span>
-      <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPreviousPredictionWinnerIcon(entry)}</span></span>
+      <span class="mini-rank-name"><span class="prediction-rank-account"><span class="prediction-rank-account-name">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}</span></span>
       <span class="rank-score">${Number(entry.points) || 0} Pkt.</span>
     </div>
   `).join('');

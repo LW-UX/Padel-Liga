@@ -691,7 +691,7 @@ window.PADEL_SEASON = {
     {
       spieltag: 1,
       startDate: "2026-11-02",
-      endDate: "2026-11-13",
+      endDate: "2026-11-15",
       title: "Die PadelLiga geht in die zweite Saison",
       meta: "SPIELTAG 1  ·  2. NOVEMBER - 13. NOVEMBER 2026",
       body: [

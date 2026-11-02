@@ -2347,6 +2347,9 @@
       justify-content: center;
       color: var(--dim);
     }
+    .prediction-account-type-icon.r1 { color: var(--gold); }
+    .prediction-account-type-icon.r2 { color: var(--silver); }
+    .prediction-account-type-icon.r3 { color: var(--bronze); }
     .prediction-account-type-icon svg {
       display: block;
       width: 100%;

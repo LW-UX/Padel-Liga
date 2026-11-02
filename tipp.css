@@ -453,7 +453,7 @@
       .prediction-table .prediction-table-label-full { display: none; }
       .prediction-table .pname-short,
       .prediction-table .prediction-table-label-short { display: inline; }
-      .prediction-table .prediction-account-type-icon,
+      .prediction-table .prediction-account-type-icon:not(.is-podium),
       .prediction-table .prediction-company-badge,
       .prediction-table .prediction-achievement-icon { display: none; }
     }

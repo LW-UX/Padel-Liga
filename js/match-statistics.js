@@ -178,7 +178,7 @@
       ${options.message ? `<div class="match-forecast-message" role="status">${esc(options.message)}</div>` : ''}
     </section>`;
   }
-  function historyFacts(data) {
+  function historyFacts(data, forecast) {
     const facts = [];
     const company = data.company;
     const companyText = !company ? '' : company.kind === 'internal' ? `Firmeninternes Duell · ${company.company}`
@@ -204,6 +204,8 @@
         : `Team ${resultTeam} bestätigt Favoritenrolle bei zuvor ${Math.round(resultProbability * 100)} % Gewinnchance.`;
       facts.push(`<p class="match-statistics-context-fact">${resultText}</p>`);
     }
+    const loneTipper = data.availability === 'analysis' ? String(forecast?.loneWinnerTipper || '').trim() : '';
+    if (loneTipper) facts.push(`<p class="match-statistics-context-fact">Nur ${esc(loneTipper)} hat auf das Siegerteam getippt.</p>`);
     return facts;
   }
   function relationshipPlayerLink(playerId, displayName, selectedPlayerId) {
@@ -213,9 +215,9 @@
     if (clauses.length < 2) return clauses[0] || '';
     return `${clauses.slice(0, -1).join(', ')} und ${clauses.at(-1)}`;
   }
-  function renderContext(data, selectedPlayerId) {
+  function renderContext(data, selectedPlayerId, forecast = null) {
     const seen = new Set();
-    const facts = historyFacts(data);
+    const facts = historyFacts(data, forecast);
     (data.players || []).forEach(player => {
       const clauses = [];
       (player.relationships || []).forEach(relationship => {
@@ -554,7 +556,7 @@
       ? renderMatchForecast(data, forecastOptions.forecast, forecastOptions)
       : '';
     return head + forecast
-      + renderContext(data, selectedPlayerId) + renderForm(data, selectedPlayerId) + renderPlayersAndImpacts(data, groupImpacts(data), selectedPlayerId) + renderGraph(data, selectedPlayerId)
+      + renderContext(data, selectedPlayerId, forecastOptions.forecast) + renderForm(data, selectedPlayerId) + renderPlayersAndImpacts(data, groupImpacts(data), selectedPlayerId) + renderGraph(data, selectedPlayerId)
       + (data.availability === 'preview' ? '<p class="match-statistics-note">Werte und Prognosen können sich durch weitere bestätigte Partien bis zum Spielbeginn verändern.</p>' : '');
   }
   function skeleton() {
