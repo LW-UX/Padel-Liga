@@ -65,6 +65,7 @@ const {
   formatStatDiff,
   renderDiffValue
 } = window.PadelTable;
+const PLAYER_PROFILE_SKELETON_HTML = `<div class="player-profile-skeleton loading-skeleton" aria-hidden="true"><div class="player-profile-skeleton-identity"><span class="player-profile-skeleton-avatar"></span><span class="player-profile-skeleton-name"></span></div><div class="player-profile-skeleton-stats"><span></span><span></span><span></span><span></span></div><span class="player-profile-skeleton-block player-profile-skeleton-chart"></span><span class="player-profile-skeleton-block"></span><span class="player-profile-skeleton-block"></span></div>`;
 const PLAYER_PROFILE_ROW_SELECTOR = 'tr[data-player-profile-id], #home-ranking .mini-rank-row[data-player-profile-id]';
 const PROFILE_SEASON_COLOR_VARIABLES = Object.freeze({
   summer: '--season-summer',
@@ -1855,7 +1856,13 @@ function setPlayerProfileState(message, { error = false } = {}) {
   const state = document.getElementById('player-profile-state');
   const content = document.getElementById('player-profile-content');
   if (!state || !content) return;
-  state.textContent = message;
+  if (error) {
+    state.textContent = message;
+    state.removeAttribute('aria-label');
+  } else {
+    state.innerHTML = PLAYER_PROFILE_SKELETON_HTML;
+    state.setAttribute('aria-label', message);
+  }
   state.classList.toggle('error', error);
   state.hidden = false;
   content.hidden = true;

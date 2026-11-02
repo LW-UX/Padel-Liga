@@ -734,6 +734,19 @@
       padding: 3rem 4.5rem;
       text-align: center;
     }
+    .player-profile-state:has(.player-profile-skeleton) {
+      display: block;
+      padding: var(--player-profile-shell-padding, 1.5rem);
+      text-align: left;
+    }
+    .player-profile-skeleton { display: grid; gap: var(--section-gap); }
+    .player-profile-skeleton-identity { display: flex; align-items: center; gap: 1rem; }
+    .player-profile-skeleton-avatar { flex: none; width: 4.5rem; height: 4.5rem; border-radius: 50%; }
+    .player-profile-skeleton-name { width: min(60%, 14rem); height: 1.75rem; border-radius: var(--radius-full); }
+    .player-profile-skeleton-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .player-profile-skeleton-stats span { height: 4.5rem; border-radius: var(--container-radius-base); }
+    .player-profile-skeleton-block { display: block; height: 9rem; border-radius: var(--container-radius-base); }
+    .player-profile-skeleton-chart { height: 14rem; }
     .player-profile-state[hidden],
     .player-profile-content[hidden] { display: none; }
     .player-profile-avatar {
