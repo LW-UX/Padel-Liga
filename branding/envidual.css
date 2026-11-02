@@ -149,3 +149,8 @@ html:root .player-profile-match-group:not(.training) .player-profile-match-outco
 html:root .global-actions .auth-button.global-action:not(.is-authenticated) {
   color: var(--surface);
 }
+
+/* Der Titel im Seitenkopf liegt in einem Button, der die Großschreibung nicht erbt. */
+html:root .hero-home-button {
+  text-transform: uppercase;
+}
