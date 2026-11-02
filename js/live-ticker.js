@@ -655,7 +655,7 @@
           <table class="rt rt--dense rt--fit">
             <thead><tr>
               <th class="col-rank">#</th><th class="col-name">Spieler</th>
-              <th class="col-wins">Siege</th><th class="col-gv">G:V</th><th class="col-diff">Diff.</th>
+              <th class="col-wins"><span class="th-label-full">Siege</span><span class="th-label-short">S</span></th><th class="col-gv">G:V</th><th class="col-diff">Diff</th>
             </tr></thead>
             <tbody>${stats.map((player, index) => {
               return `<tr class="r${index + 1}"${window.PadelTable.renderPlayerProfileRowAttributes({ id: player.playerId, name: player.displayName })}>

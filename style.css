@@ -1703,6 +1703,8 @@
       gap: 0.45rem;
     }
     .sh-meta { font-size: var(--text-sm); color: var(--muted); }
+    /* Der Zähler bleibt einzeilig; die Überschrift gibt stattdessen Platz ab. */
+    #fr-meta { flex-shrink: 0; white-space: nowrap; }
     .table-note { font-size: var(--text-xs); }
     #league-calculator[hidden] + #final-four-calculator .section-subheading { margin-top: 0; }
     .toggle {
@@ -2878,6 +2880,11 @@
     .player-cell-inner > .ranking-player-achievement {
       box-sizing: content-box;
       padding-left: 6px;
+    }
+    @media (max-width: 786px) {
+    .player-cell-inner > .ranking-player-achievement {
+      padding-left: 0px;
+    }
     }
     .ranking-player-achievement + .firma-icon { margin-left: auto; }
     .ranking-absence-mark {
@@ -5076,8 +5083,8 @@
         min-width: 46px;
       }
       #all-time-ranking-table.compact .firma-icon { display: none; }
-      :is(#ranking-table, #all-time-ranking-table).compact .th-label-full { display: none; }
-      :is(#ranking-table, #all-time-ranking-table).compact .th-label-short { display: inline; }
+      table.rt:not(.expanded) .th-label-full { display: none; }
+      table.rt:not(.expanded) .th-label-short { display: inline; }
       #all-time-ranking-table.compact th { white-space: nowrap; }
       #ranking-table.compact .col-diff {
         width: 48px;

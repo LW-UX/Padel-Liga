@@ -293,7 +293,7 @@
       </tr>`);
     });
     return `<div class="ranking-wrap match-statistics-ranking-wrap"><table class="rt match-statistics-ranking${analysis ? ' has-rank-change' : ''}">
-      <thead><tr>${hasRanking ? `<th class="col-rank"><span aria-hidden="true">#</span><span class="sr-only">Platz</span></th>${analysis ? '<th class="col-rank-change"><span class="sr-only">Platzänderung</span></th>' : ''}` : ''}<th class="col-name">Spieler</th><th class="col-games">Partien</th>${hasRanking ? '<th class="col-wins">Siege</th><th class="col-points">Punkte</th>' : ''}<th class="col-diff">Diff.</th></tr></thead>
+      <thead><tr>${hasRanking ? `<th class="col-rank"><span aria-hidden="true">#</span><span class="sr-only">Platz</span></th>${analysis ? '<th class="col-rank-change"><span class="sr-only">Platzänderung</span></th>' : ''}` : ''}<th class="col-name">Spieler</th><th class="col-games"><span class="th-label-full">Partien</span><span class="th-label-short">Ptn</span></th>${hasRanking ? '<th class="col-wins"><span class="th-label-full">Siege</span><span class="th-label-short">S</span></th><th class="col-points"><span class="th-label-full">Punkte</span><span class="th-label-short">Pkt</span></th>' : ''}<th class="col-diff">Diff</th></tr></thead>
       <tbody>${rows.join('')}</tbody></table></div>`;
   }
   function renderPlayersAndImpacts(data, impactGroups, selectedPlayerId) {
