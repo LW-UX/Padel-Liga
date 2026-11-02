@@ -76,10 +76,10 @@
 
   /* Akzente und Zustände */
   --accent:     #1B719C;
-  --accent2:    #4384B8; /* abgeleitet: Blau aus den Diagrammen der Vorlage */
+  --accent2:    #7E3FC9; /* Violett als zweiter Akzent */
   --positiv:    #1F7A4D; /* abgeleitet */
-  --negativ:    #B3362F; /* abgeleitet */
-  --team-one:   #5F3FA6; /* abgeleitet */
+  --negativ:    #c33831; /* abgeleitet */
+  --team-one:   #d83995; /* Pink */
   --team-two:   #D9722A; /* abgeleitet */
 
   /* Auszeichnungen und Saisons; alle abgeleitet und für hellen Grund abgedunkelt */
@@ -89,7 +89,7 @@
   --cup-silver: #5F7888;
   --bronze:     #A8641F;
   --season-summer: #F28C38;
-  --season-winter: #5F3FA6;
+  --season-winter: #d83995;
   --season-cup:    #2E8FC4;
 
   /* Firmen der Spieler */
@@ -129,4 +129,23 @@ h2:not(.article-card h2) {
   color: var(--accent);
   letter-spacing: 0;
   text-transform: none;
+}
+/* Text auf gefüllten Flächen (Kreise, Buttons) in --surface statt --bg; Trainings bleiben unberührt */
+html:root .primary-button,
+html:root .danger-button,
+html:root .help-icon,
+html:root .global-actions-toggle-badge,
+html:root .auth-task-badge,
+html:root .form-chip:not(.form-training),
+html:root .live-overview-prematch-history-result.loss.form-tiebreak,
+html:root .prediction-option.active,
+html:root .prediction-option.is-own-floor,
+html:root .live-point-team-button.active,
+html:root .fb.on,
+html:root .fb-company.on,
+html:root .player-profile-match-group:not(.training) .player-profile-match-outcome:is(.win, .loss) {
+  color: var(--surface);
+}
+html:root .global-actions .auth-button.global-action:not(.is-authenticated) {
+  color: var(--surface);
 }

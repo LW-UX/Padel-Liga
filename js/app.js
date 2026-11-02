@@ -1092,7 +1092,7 @@ function applySeasonMetadata() {
 
   const heroButton = document.getElementById('hero-home-button');
   if (heroButton) {
-    heroButton.innerHTML = cupSeason ? 'PADEL<em>CUP</em>' : 'PADEL<em>LIGA</em>';
+    heroButton.innerHTML = cupSeason ? 'Padel<em>Cup</em>' : 'Padel<em>Liga</em>';
     heroButton.dataset.navTarget = cupSeason ? 'partien' : 'start';
     heroButton.setAttribute('aria-label', cupSeason ? 'Zum Turnierbaum' : 'Zur Startseite');
   }
@@ -1112,7 +1112,7 @@ function applySeasonMetadata() {
   const matchesNavButton = document.getElementById('partien-nav-button');
   const matchesTitle = document.getElementById('partien-title');
   if (matchesNavButton) matchesNavButton.textContent = cupSeason ? 'Turnierbaum' : 'Partien';
-  if (matchesTitle) matchesTitle.textContent = cupSeason ? 'TURNIERBAUM' : 'PARTIEN';
+  if (matchesTitle) matchesTitle.textContent = cupSeason ? 'Turnierbaum' : 'Partien';
 
   const viewerPicker = document.getElementById('viewer-picker');
   if (viewerPicker) viewerPicker.hidden = cupSeason;
@@ -6617,7 +6617,7 @@ function renderInfos() {
 
   const articleSection = `<section class="widget-group info-anchor" id="artikel">
     <div class="sh">
-      <h2>PADELPOST</h2>
+      <h2>PadelPost</h2>
       <div class="sh-meta">Archiv</div>
     </div>
     <div class="info-articles-stack">
@@ -6788,7 +6788,7 @@ function renderTournamentGroup(matches, fallbackTitle, className) {
   return `<div class="match-group ${className}">
     <div class="sh final-four-heading">
       <div class="heading-row">
-        <h2>${title.toUpperCase()}</h2>
+        <h2>${title}</h2>
         <div class="sh-meta">${played}/${matches.length}</div>
       </div>
       ${detailLink}

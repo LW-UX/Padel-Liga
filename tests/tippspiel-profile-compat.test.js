@@ -113,6 +113,7 @@ test('legacy profiles without app_role still publish their player id', async () 
     addEventListener() {},
     dispatchEvent() {},
     setTimeout(callback) { callback(); },
+    clearTimeout() {},
     PadelLigaSetAuthenticatedPlayer(playerId) { publishedPlayerIds.push(playerId); }
   };
   const context = vm.createContext({ console, CustomEvent: class {}, document, window });

@@ -77,11 +77,11 @@
   --widget-padding: 1.5rem;
 
   /* Eckenradien nach Rolle. Mit Einheit, weil die Stylesheets mit den Werten rechnen. */
-  --button-radius: 0px;
-  --dropdown-radius: 0px;
-  --menu-radius: 0px;
-  --input-radius: 0px;
-  --control-radius: 0px;
+  --button-radius: 4px;
+  --dropdown-radius: 4px;
+  --menu-radius: 4px;
+  --input-radius: 4px;
+  --control-radius: 4px;
 
   /* Inhaltscontainer: base für Dialoge, sm für Karten, xs für Hinweise, lg nur für Ausnahmen. Die Stufen rechnen sich aus base und lassen sich einzeln überschreiben. */
   --container-radius-base: 0px;
@@ -107,7 +107,7 @@
 
   /* Akzente und Zustände */
   --accent:     #FF0000;
-  --accent2:    #5B8DEF; /* abgeleitet */
+  --accent2:    #4AC1C9; /* Türkis aus dem Farbverlauf der Headsquare-Website */
   --positiv:    #3AF5B4; /* abgeleitet */
   --negativ:    #FF0000;
   --team-one:   #B58CFF; /* abgeleitet */
@@ -220,4 +220,41 @@ html:root .article-card h2::after {
 html:root .widget:has(.ranking-wrap):not(#start *, #verlauf *) {
   border: 0;
   padding: 0;
+}
+
+/* Secondary-Buttons, Dropdowns, Auswahlschalter, Zähler und der Split-Button der Spielerauswahl: Fläche --surface2 statt Rahmen. */
+:root :is(.datetime-input-shell input, .auth-form input, .player-invite-output input, .secondary-button, .global-action),
+:root .global-actions .auth-button.is-authenticated.secondary-button,
+:root .toggle:not(.toggle--sort),
+:root .viewer-split-button,
+:root .viewer-combobox,
+:root .viewer-profile-button {
+  border: 0;
+  background: var(--surface2);
+}
+
+/* Die Auswahlbox der Einladung zeichnet ihren Pfeil als Hintergrundbild; nur die Farbe setzen, damit er erhalten bleibt. */
+:root .auth-form select {
+  border: 0;
+  background-color: var(--surface2);
+}
+
+:root .global-actions .viewer-split-button {
+  background: var(--surface2);
+}
+
+/* Der Split-Button besteht aus einer Fläche; die Hälften teilen sich keine Trennlinie mehr. */
+:root .viewer-split-button .secondary-button,
+:root .viewer-profile-button {
+  background: transparent;
+}
+
+:root .viewer-profile-button + .viewer-combobox {
+  margin-left: 0;
+}
+
+/* Zähler: kein Rand; der Rahmen der aktiven Eingabe bleibt erhalten. */
+:root .score-counter-field {
+  box-shadow: none;
+  background: var(--surface2);
 }

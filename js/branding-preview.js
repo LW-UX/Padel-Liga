@@ -1,5 +1,5 @@
-// Admins können auf ihrem Gerät ein anderes Branding als Vorschau einschalten; alle anderen sehen
-// das mit tools/apply-branding.mjs veröffentlichte Branding. Ein kleines Inline-Skript im Seitenkopf
+// Angemeldete Konten können auf ihrem Gerät ein anderes Branding wählen; ohne Auswahl gilt das
+// mit tools/apply-branding.mjs gesetzte Standard-Branding. Ein kleines Inline-Skript im Seitenkopf
 // schaltet die gespeicherte Auswahl schon vor dem ersten Zeichnen ein und merkt sich den ursprünglichen Link.
 // Die Farben je Branding dienen nur der Webseiten-Skizze auf den Designkarten im Konto und müssen zur Branding-Datei passen.
 (function () {

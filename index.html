@@ -13,9 +13,9 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest?v=2026-10-28-brand-names">
-  <link rel="stylesheet" href="branding/og-design.css?v=e92e66d668">
+  <link rel="stylesheet" href="branding/og-design.css?v=dc44dc1166">
   <script>
-    // Die Admin-Design-Vorschau greift vor dem ersten Zeichnen; alles Weitere steht in js/branding-preview.js.
+    // Die gespeicherte Designauswahl greift vor dem ersten Zeichnen; alles Weitere steht in js/branding-preview.js.
     (function () {
       try {
         var name = window.localStorage.getItem('padel-branding-preview');
@@ -64,6 +64,7 @@
   <script defer src="js/account.js?v=2026-11-02-ten-minute-cache"></script>
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
+  <script defer src="js/headline-split.js?v=2026-11-03-headline-split-2"></script>
   <script defer src="js/panel-layout.js?v=2026-10-29-shared-panel-layout"></script>
   <script defer src="js/match-statistics.js?v=2026-11-02-ten-minute-cache"></script>
   <script defer src="js/app.js?v=2026-11-02-ten-minute-cache"></script>
@@ -122,7 +123,7 @@
       </div>
     </div>
     <div class="hero-title-row">
-      <h1><button class="hero-home-button" id="hero-home-button" type="button" data-nav-target="start" aria-label="Zur Startseite">PADEL<em>LIGA</em></button></h1>
+      <h1><button class="hero-home-button" id="hero-home-button" type="button" data-nav-target="start" aria-label="Zur Startseite">Padel<em>Liga</em></button></h1>
       <div class="hero-actions">
         <div class="viewer-picker" id="viewer-picker">
           <div class="viewer-split-button">
@@ -257,7 +258,7 @@
     <div class="widget-group">
       <div class="sh sh-with-control">
         <div class="heading-row">
-          <h2>RANGLISTE</h2>
+          <h2>Rangliste</h2>
           <div class="sh-meta" id="rl-meta"></div>
         </div>
         <div class="toggle" id="ranking-view-toggle" aria-label="Ranglistenansicht">
@@ -307,7 +308,7 @@
     </div>
     <div class="widget-group">
       <div class="sh">
-        <h2>FIRMEN-RANGLISTE</h2>
+        <h2>Firmen-Rangliste</h2>
         <div class="sh-meta" id="fr-meta"></div>
       </div>
       <article class="widget">
@@ -334,7 +335,7 @@
     <div class="widget-group" id="final-four-ranking-section">
       <div class="sh final-four-heading">
         <div class="heading-row">
-          <h2>FINAL FOUR</h2>
+          <h2>Final Four</h2>
           <div class="sh-meta" id="ff-meta"></div>
         </div>
         <button type="button" class="text-link inline-link final-four-detail-link" id="final-four-ranking-detail-link" data-live-view="overview" hidden>Zur Übersicht</button>
@@ -367,7 +368,7 @@
   <!-- STATISTIK -->
   <section id="verlauf" class="section">
     <div class="sh sh-with-control stats-heading">
-      <h2>STATISTIK</h2>
+      <h2>Statistik</h2>
       <div class="toggle" id="statistics-mode-toggle" aria-label="Statistikzeitraum auswählen">
         <button type="button" class="active" aria-pressed="true" data-statistics-mode="season">Saison</button>
         <button type="button" aria-pressed="false" data-statistics-mode="all-time">All-Time</button>
@@ -443,7 +444,7 @@
     <div class="all-time-ranking">
       <div class="sh sh-with-control section-subheading">
         <div class="heading-row">
-          <h2>EWIGE RANGLISTE</h2>
+          <h2>Ewige Rangliste</h2>
           <div class="sh-meta" id="all-time-ranking-meta"></div>
         </div>
         <div class="ranking-controls all-time-ranking-controls">
@@ -491,7 +492,7 @@
         <div id="final-four-spielplan" hidden></div>
         <div class="sh sh-with-control">
           <div class="heading-row">
-            <h2 id="partien-title">PARTIEN</h2>
+            <h2 id="partien-title">Partien</h2>
             <div class="sh-meta" id="sp-meta"></div>
           </div>
           <div class="toggle toggle--sort" id="match-sort-toggle" data-sort-direction="ascending" aria-label="Partien sortieren">
@@ -516,7 +517,7 @@
     <div id="league-calculator">
       <div class="sh">
         <div class="heading-row">
-          <h2 class="sh-title-with-help">LIGARECHNER
+          <h2 class="sh-title-with-help">Ligarechner
             <span class="th-help-wrap">
               <span class="help-icon" tabindex="0" aria-label="Turnierrechner erklären">?</span>
               <span class="help-tooltip">Ergebnisse gibst du satzweise als 6:x oder x:6 ein.<br>Ein Klick auf die Wahrscheinlichkeit eines Teams setzt es direkt mit 6:2, 6:2 als Sieger ein.<br>Ein Klick auf einen Namen öffnet das Spielerprofil.</span>
@@ -564,7 +565,7 @@
     </div>
     <div id="final-four-calculator" hidden>
       <div class="sh sh-with-control section-subheading">
-        <h2 class="sh-title-with-help">FINAL4-RECHNER
+        <h2 class="sh-title-with-help">Final4-Rechner
           <span class="th-help-wrap">
             <span class="help-icon" tabindex="0" aria-label="Final4-Rechner erklären">?</span>
             <span class="help-tooltip">Jede der drei Partien besteht aus einem Satz. Trage die Ergebnisse ein, um die Final4-Rangliste live zu berechnen.<br>Nach zwei gültigen Sätzen siehst du, welcher Endstand im verbleibenden Satz welchen Gesamtsieger ergibt.<br>Alle Eingaben sind Simulationen. Zurücksetzen stellt die bestätigten Ergebnisse wieder her.</span>
@@ -605,7 +606,7 @@
   <!-- INFOS -->
   <section id="infos" class="section">
     <div class="sh">
-      <h2>INFOS</h2>
+      <h2>Infos</h2>
       <div class="sh-meta">Regeln & Informationen</div>
     </div>
     <div class="info-layout">
@@ -626,7 +627,7 @@
 <footer class="site-footer">
   <p class="site-footer-line">
     <span class="site-footer-partnership">
-      <span class="site-footer-brand">PADEL<em>LIGA</em></span>
+      <span class="site-footer-brand">Padel<em>Liga</em></span>
       <span class="site-footer-credit"><span>sponsored by</span> <strong>HEADSQUARE GROUP</strong></span>
     </span>
     <span class="site-footer-service site-footer-credit"><span>Ein Service des</span> <strong>HANAKO-LEBEN-SQUADS</strong></span>
@@ -638,7 +639,7 @@
   <div class="detail-view-shell">
     <header class="detail-view-header">
       <div class="heading-row detail-view-heading">
-        <h2 id="detail-view-title">FINAL FOUR</h2>
+        <h2 id="detail-view-title">Final Four</h2>
         <div class="sh-meta" id="detail-view-context"></div>
         <div class="detail-view-played-order" id="match-statistics-played-order" hidden></div>
       </div>
@@ -806,7 +807,7 @@
       <img class="whats-new-app-icon" src="data/icon-192.png" alt="" width="76" height="76">
       <div>
         <div class="eyebrow">Was ist neu</div>
-        <h2 id="whats-new-title">PADEL<em>LIGA</em></h2>
+        <h2 id="whats-new-title">Padel<em>Liga</em></h2>
         <p class="whats-new-version">Version 2.2.0.9 · Okt 2026</p>
       </div>
     </header>

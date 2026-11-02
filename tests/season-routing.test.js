@@ -201,9 +201,9 @@ test('deployment generation creates direct entry pages with the correct base pat
   assert.match(match, /<base href="\.\.\/\.\.\/\.\.\/">/);
   assert.match(liveOverview, /<base href="\.\.\/\.\.\/">/);
   assert.match(liveMatch, /<base href="\.\.\/\.\.\/\.\.\/">/);
-  assert.match(league, /PADEL<em>LIGA<\/em>/);
-  assert.match(match, /PADEL<em>LIGA<\/em>/);
-  assert.match(liveOverview, /PADEL<em>LIGA<\/em>/);
-  assert.match(liveMatch, /PADEL<em>LIGA<\/em>/);
-  assert.match(tipping, /PADEL<em>TIPP<\/em>/);
+  assert.match(league, /Padel<em>Liga<\/em>/);
+  assert.match(match, /Padel<em>Liga<\/em>/);
+  assert.match(liveOverview, /Padel<em>Liga<\/em>/);
+  assert.match(liveMatch, /Padel<em>Liga<\/em>/);
+  assert.match(tipping, /Padel<em>Tipp<\/em>/);
 });

@@ -623,7 +623,7 @@
     const section = document.querySelector('[data-account-branding]');
     const options = document.querySelector('[data-account-branding-options]');
     if (!section || !options) return;
-    section.hidden = !preview || state.profile?.app_role !== 'admin';
+    section.hidden = !preview;
     if (section.hidden) return;
     const current = preview.current();
     if (options.childElementCount) {
@@ -645,16 +645,11 @@
           </span>
         </span>
         <span class="account-branding-caption">
-          <span><strong>${escapeHtml(branding.label)}</strong>${branding.name === preview.publishedName ? '<small>Veröffentlicht</small>' : ''}</span>
+          <span><strong>${escapeHtml(branding.label)}</strong></span>
           <input type="radio" name="account-branding" value="${escapeHtml(branding.name)}" data-account-branding-choice${branding.name === current ? ' checked' : ''}>
         </span>
       </label>`;
     }).join('');
-  }
-
-  // Die Design-Vorschau ist Admins vorbehalten; für alle anderen Konten gilt wieder das veröffentlichte Branding.
-  function syncBrandingPreviewAccess() {
-    if (state.profile?.app_role !== 'admin') window.PadelBrandingPreview?.reset();
   }
 
   function formatTaskDate(dateValue, timeValue) {
@@ -1840,7 +1835,6 @@
     try {
       await loadProfile();
       if (state.session?.user?.id !== userId) return;
-      syncBrandingPreviewAccess();
       await loadNotificationPreferences();
       if (state.session?.user?.id !== userId) return;
       publishAuthState();
@@ -3387,7 +3381,7 @@ Dein Hanako-Leben-Squad`;
         return;
       }
       if (event.target.matches('[data-account-branding-choice]')) {
-        if (state.profile?.app_role === 'admin') window.PadelBrandingPreview?.select(event.target.value);
+        window.PadelBrandingPreview?.select(event.target.value);
         return;
       }
       if (event.target.matches('.match-schedule-form :is(input[type="date"], input[type="time"], [data-schedule-time-field])')) {

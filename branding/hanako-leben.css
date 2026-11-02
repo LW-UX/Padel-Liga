@@ -118,3 +118,23 @@
   --player-17: #1F64ED;
   --player-18: #DB1212;
 }
+
+/* Text auf gefüllten Flächen (Kreise, Buttons) in --surface statt --bg; Trainings bleiben unberührt */
+html:root .primary-button,
+html:root .danger-button,
+html:root .help-icon,
+html:root .global-actions-toggle-badge,
+html:root .auth-task-badge,
+html:root .form-chip:not(.form-training),
+html:root .live-overview-prematch-history-result.loss.form-tiebreak,
+html:root .prediction-option.active,
+html:root .prediction-option.is-own-floor,
+html:root .live-point-team-button.active,
+html:root .fb.on,
+html:root .fb-company.on,
+html:root .player-profile-match-group:not(.training) .player-profile-match-outcome:is(.win, .loss) {
+  color: var(--surface);
+}
+html:root .global-actions .auth-button.global-action:not(.is-authenticated) {
+  color: var(--surface);
+}

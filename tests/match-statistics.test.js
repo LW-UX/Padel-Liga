@@ -311,7 +311,7 @@ test('match header and full ranking follow ticker and ranking conventions',()=>{
  assert.match(statisticsStyleSource,/\.match-statistics-ranking \.player-profile-link \{[\s\S]*?text-overflow: ellipsis;/);
 });
 test('completed league order is rendered below title and season metadata in text-xs',()=>{
- assert.match(indexSource,/<h2 id="detail-view-title">FINAL FOUR<\/h2>\s*<div class="sh-meta" id="detail-view-context"><\/div>\s*<div class="detail-view-played-order" id="match-statistics-played-order" hidden><\/div>/);
+ assert.match(indexSource,/<h2 id="detail-view-title">Final Four<\/h2>\s*<div class="sh-meta" id="detail-view-context"><\/div>\s*<div class="detail-view-played-order" id="match-statistics-played-order" hidden><\/div>/);
  assert.match(styleSource,/\.detail-view-played-order \{[\s\S]*?font-size: var\(--text-xs\);/);
  assert.match(source,/function restore\(\) \{[\s\S]*?setPlayedOrder\(\);/);
 });

@@ -10,6 +10,14 @@
 */
 
 @font-face {
+  font-family: 'Caladea';
+  src: url('../fonts/Caladea-Bold.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'The Queen';
   src: url('../fonts/TheQueen-Regular.otf') format('opentype');
   font-weight: 400;
@@ -85,9 +93,9 @@
   /* Akzente und Zustände */
   --accent:     #D9672C;
   --accent2:    #2B6D88;
-  --positiv:    #2F7D4F; /* abgeleitet */
+  --positiv:    #20b49b; /* abgeleitet */
   --negativ:    #B3362B; /* abgeleitet */
-  --team-one:   #5F3FA6; /* abgeleitet */
+  --team-one:   #665ba2; /* abgeleitet */
   --team-two:   #00897B; /* abgeleitet */
 
   /* Auszeichnungen und Saisons; alle abgeleitet und für hellen Grund abgedunkelt */
@@ -97,7 +105,7 @@
   --cup-silver: #5F7888;
   --bronze:     #A8641F;
   --season-summer: #D9672C;
-  --season-winter: #5F3FA6;
+  --season-winter: #665ba2;
   --season-cup:    #2B6D88;
 
   /* Firmen der Spieler */
@@ -128,16 +136,40 @@
 
 
 
-/* Kurzer oranger Balken unter den Abschnittstiteln, als Hintergrund, damit kein Titel seine Anordnung ändert. Dialogtitel bleiben ohne Balken. */
+/* Titel stehen zentriert. Nur in den Abschnitten der Infoseite, auf den Startseiten und bei Artikeln haben sie darunter einen blauen Balken (ein Viertel der Titelbreite, mindestens 2,5rem), als Hintergrund, damit kein Titel seine Anordnung ändert. Dialogtitel bleiben ohne Balken. */
 html:root:root h2:not(dialog h2) {
-  padding-bottom: 0.65rem;
-  background: linear-gradient(var(--accent), var(--accent)) center bottom / 2.5rem 2px no-repeat;
   text-align: center;
 }
 
-/* Artikeltitel stehen zentriert, ihr Balken auch. Nur die Ankündigung auf der Startseite ist linksbündig. */
-html:root:root .article-card h2:not(.home-announcement *) {
-  background-position: center bottom;
+html:root:root :where(#infos, #tippinfos, #start, #tippstart, .article-card) h2:not(:where(dialog h2, #infos > .sh h2, #tippinfos > .sh h2)) {
+  width: fit-content;
+  max-width: 100%;
+  padding-bottom: 1.2rem;
+  margin-bottom: .75rem;
+  background: linear-gradient(var(--hanako), var(--hanako)) center bottom / max(25%, 2.5rem) 2px no-repeat;
+}
+
+/* Der Balken misst sich an der Titelbreite, deshalb schließt der Titel dort bündig mit seinem Text ab und steht in der Mitte. */
+html:root:root :where(#infos, #tippinfos, #start, #tippstart, .article-card) h2:not(:where(dialog h2, .heading-row h2, .sh h2, .home-announcement h2)) {
+  margin-inline: auto;
+}
+
+/* Nur die Ankündigung auf der Startseite ist linksbündig, ihr Balken auch. */
+html:root:root .home-announcement .article-card h2 {
+  background-position: left bottom;
+  text-align: left;
+}
+
+/* Titel und Wortmarke stehen in normaler Schreibweise statt in Großbuchstaben */
+html:root :is(h1, h2, .site-footer-brand) {
+  text-transform: none;
+}
+
+/* Wortmarke: LIGA und TIPP in Hanako-Blau statt Orange */
+html:root .hero h1 em,
+html:root .site-footer-brand em,
+html:root #whats-new-title em {
+  color: var(--hanako);
 }
 
 /* Schwebende Karten wie auf der Vorlage */
@@ -172,4 +204,175 @@ html:root .text-link:is(:hover, :focus-visible) {
   html:root .text-link {
     transition: none;
   }
+}
+
+/* Text auf gefüllten Flächen (Kreise, Buttons) in --surface statt --bg; Trainings bleiben unberührt */
+html:root .primary-button,
+html:root .danger-button,
+html:root .help-icon,
+html:root .global-actions-toggle-badge,
+html:root .auth-task-badge,
+html:root .form-chip:not(.form-training),
+html:root .live-overview-prematch-history-result.loss.form-tiebreak,
+html:root .prediction-option.active,
+html:root .prediction-option.is-own-floor,
+html:root .live-point-team-button.active,
+html:root .fb.on,
+html:root .fb-company.on,
+html:root .player-profile-match-group:not(.training) .player-profile-match-outcome:is(.win, .loss) {
+  color: var(--surface);
+}
+html:root .global-actions .auth-button.global-action:not(.is-authenticated) {
+  color: var(--surface);
+}
+
+html:root .primary-button:hover,
+html:root .danger-button:hover {
+  background: var(--accent2);
+  border: 1px solid var(--accent2);
+  opacity: 1;
+}
+/* Menüpunkte bleiben schwarz; Hover und aktiver Punkt nur mit grauem Hintergrund */
+html:root .site-nav button {
+  color: var(--text);
+}
+html:root .site-nav button:hover,
+html:root .site-nav button.active {
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+/* Secondary-Buttons, Dropdowns, Auswahlschalter, Zähler und der Split-Button der Spielerauswahl: kein Rahmen, Fläche --surface mit Schatten.*/
+html:root :is(.secondary-button, .global-action, .datetime-input-shell input),
+html:root .global-actions .auth-button.is-authenticated.secondary-button,
+html:root .toggle:not(.toggle--sort),
+html:root .viewer-split-button,
+html:root .viewer-combobox,
+html:root .viewer-profile-button,
+html:root .score-counter-field,
+html:root:root .auth-button.is-authenticated {
+  /*border: 0;*/
+  background: transparent;
+  color: var(--text);
+  /*box-shadow: 0 2px 8px var(--shadow-color);*/
+}
+
+/* Die Hälften des Split-Buttons teilen sich Fläche und Schatten. */
+html:root .viewer-split-button .secondary-button,
+html:root .viewer-profile-button,
+html:root .viewer-combobox {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Beim Überfahren füllt sich die Fläche mit dem blauen Akzent; Zähler bleiben ohne Hover. */
+html:root :is(.secondary-button, .global-action, .datetime-input-shell input):is(:hover, :focus, :focus-visible),
+html:root .toggle:not(.toggle--sort) button:is(:hover, :focus-visible),
+html:root .viewer-profile-button:is(:hover, :focus-visible),
+html:root .viewer-combobox:has(> .secondary-button:enabled):hover,
+html:root .viewer-combobox:has(:focus-visible) {
+  background: var(--hanako);
+  color: var(--surface);
+  border: 1px solid var(--accent2);
+}
+
+/* Auswahlschalter haben keinen Rahmen; der Hover-Rahmen wird als Inset-Linie gezeichnet, damit der Button nicht wächst und springt. */
+html:root .toggle:not(.toggle--sort) button:is(:hover, :focus-visible) {
+  border: 0;
+  box-shadow: inset 0 0 0 1px var(--accent2);
+}
+
+/* Eingabefelder: Rahmen bleibt, Fläche --bg; beim Überfahren --surface und oranger Rahmen. */
+html:root :is(.auth-form input, .auth-form select, .player-invite-output input) {
+  background-color: var(--bg);
+  box-shadow: none;
+}
+
+html:root :is(.auth-form input, .auth-form select, .player-invite-output input):is(:hover, :focus) {
+  border-color: var(--accent);
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+html:root:root .auth-button.is-authenticated:is(:hover, :focus-visible) {
+  background: var(--hanako);
+  color: var(--surface);
+}
+
+html:root:root .auth-button.primary-button:not(.is-authenticated):is(:hover, :focus-visible) {
+  background: var(--hanako);
+  border-color: var(--hanako);
+  color: var(--surface);
+}
+
+/* Geöffnete Spielerauswahl: das Suchfeld ist ein Eingabefeld, also --surface mit orangem Rahmen statt blauer Fläche. Der Rahmen behält seine Breite, damit sich nichts verschiebt. */
+html:root:root .viewer-picker.open .viewer-combobox {
+  border-color: var(--accent);
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Kontobereiche stehen frei ohne Schatten. */
+html:root .account-section {
+  box-shadow: none;
+}
+
+/* Artikel: erste Hälfte des Titels, Balken darunter, Zitatlinie und Zitatname in Orange (--accent). */
+html:root .article-card h2 .article-title-start {
+  color: var(--accent);
+}
+
+/* PadelPost-Kopf und Champion-Podium in --accent2 statt Orange. */
+html:root .article-newspaper-masthead span:last-child {
+  color: var(--accent2);
+}
+
+html:root .home-season-podium {
+  --accent: var(--accent2);
+}
+
+html:root:root .article-card h2:not(dialog h2) {
+  background-image: linear-gradient(var(--accent), var(--accent));
+}
+
+html:root .article-body blockquote {
+  border-left-color: var(--accent);
+}
+
+html:root .article-body cite {
+  color: var(--accent2);
+}
+
+/* Große Zahlen in Caladea wie auf der Hanako-Seite: Spielerprofil, Statistik, Tippseite. */
+html:root :is(
+  .player-profile-stat-value,
+  .player-profile-participation-phase-result.player-profile-participation-placement,
+  .stat-main,
+  .stat-split-value,
+  .prediction-overview-stats strong,
+  .prediction-rule-grid strong
+) {
+  font-family: 'Caladea', Georgia, serif;
+}
+
+/* Die Hälften des Split-Buttons behalten beim Überfahren ihre Rahmenbreite, sonst springt der Nachbar. */
+html:root .viewer-split-button .secondary-button:is(:hover, :focus, :focus-visible) {
+  border: 0;
+}
+
+/* Dropdowns (Saison-, Spieler-, Datums- und Uhrzeitauswahl) verhalten sich beim Überfahren wie Eingabefelder: Fläche --surface und oranger Rahmen statt blauer Fläche. Der Profilbild-Knopf des Split-Buttons ist ein Button und wird blau. */
+html:root :is(.secondary-button--dropdown, .datetime-input-shell input):is(:hover, :focus, :focus-visible),
+html:root .viewer-combobox:has(> .secondary-button:enabled):hover,
+html:root .viewer-combobox:has(:focus-visible) {
+  border-color: var(--accent);
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Primärbuttons behalten ihre orange Fläche, auch wenn sie wie der Login-Button zugleich .global-action sind. */
+html:root .primary-button:not(.secondary-button, :hover, :focus-visible) {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--surface);
+  box-shadow: none;
 }

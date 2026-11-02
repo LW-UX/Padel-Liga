@@ -62,7 +62,7 @@ test('pages and manifest follow the active branding', async () => {
   assert.equal(manifest.theme_color, variables['--bg']);
 });
 
-test('the admin design preview offers every branding with matching wireframe colors', async () => {
+test('the design selection offers every branding with matching wireframe colors', async () => {
   const { readBrandingVariables } = await loadTool();
   const source = read('js/branding-preview.js');
   const offered = [...source.matchAll(/name: '([a-z0-9-]+)',\s*label: '[^']+',\s*colors: \{([^}]*)\}/g)]

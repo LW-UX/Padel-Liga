@@ -880,8 +880,19 @@
       overflow: hidden;
     }
     .training-picker-option[data-training-guest-option] {
-      border-top: 1px solid var(--border);
       color: var(--accent);
+      margin-top: 9px;
+      position: relative;
+    }
+    .training-picker-option[data-training-guest-option]::before {
+      content: "";
+      position: absolute;
+      top: -5px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--border);
+      pointer-events: none;
     }
     .training-guest-control {
       display: grid;

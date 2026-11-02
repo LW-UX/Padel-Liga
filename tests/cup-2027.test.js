@@ -78,7 +78,7 @@ test('Cup mode renders its own navigation and responsive knockout funnel', () =>
   assert.match(html, /id="hero-home-button"/);
   assert.match(html, /id="partien-nav-button"/);
   assert.match(app, /tournamentMode === 'knockout-redraw'/);
-  assert.match(app, /heroButton\.innerHTML = cupSeason \? 'PADEL<em>CUP<\/em>'/);
+  assert.match(app, /heroButton\.innerHTML = cupSeason \? 'Padel<em>Cup<\/em>'/);
   assert.match(app, /!\['partien', 'infos'\]\.includes\(button\.dataset\.section\)/);
   assert.match(app, /if \(cupSeason\) nav\('partien', matchesNavButton\)/);
   assert.match(app, /renderCupRound\(matches, 'final',[\s\S]*renderCupTrophy\(\)/);
