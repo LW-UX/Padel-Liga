@@ -289,14 +289,13 @@ test('the Final Four overview adds aligned neutral Prematch facts without changi
     assert.ok(index > lastIndex, `${label} must follow the preceding fact`);
     return index;
   }, -1);
-  assert.match(prematch, /help-tooltip">Die Titelprognose basiert auf den Siegchancen in den drei wechselnden Teams\./);
+  assert.match(prematch, /help-block">Die Titelprognose basiert auf den Siegchancen in den drei wechselnden Teams\./);
   assert.match(prematch, /const replacementPlayer = activePlayers\.find\(player => player\.participationStatus === 'replacement'\)/);
   assert.match(prematch, /player\.participationStatus === 'replacement' \? '<span aria-hidden="true">\*<\/span><span class="sr-only">, nachgerückt<\/span>'/);
   assert.doesNotMatch(prematch, /live-overview-prematch-note/);
-  assert.match(prematch, /wechselnden Teams\.<br>Stand vor Beginn des Final Four\./);
-  assert.match(prematch, /live-overview-prematch-tooltip-paragraph">\$\{escapeHtml\(replacementPlayer\.displayName\)\} ist für \$\{escapeHtml\(replacementPlayer\.replacesDisplayName\)\} nachgerückt\.<\/span>/);
+  assert.match(prematch, /wechselnden Teams\.<\/span><span class="help-block">Stand vor Beginn des Final Four\./);
+  assert.match(prematch, /help-block">\$\{escapeHtml\(replacementPlayer\.displayName\)\} ist für \$\{escapeHtml\(replacementPlayer\.replacesDisplayName\)\} nachgerückt\.<\/span>/);
   assert.doesNotMatch(prematch, /live-overview-prematch-participation">Nachgerückt für/);
-  assert.match(style, /\.live-overview-prematch-tooltip-paragraph \{[\s\S]*display: block;[\s\S]*margin-top: 0\.65rem;/);
   assert.match(overview, /\$\{renderPrematchFacts\(\)\}/);
   assert.match(overview, /replacementPlayer\?\.playerId === player\.playerId/);
   assert.match(overview, /\*\$\{escapeHtml\(replacementPlayer\.displayName\)\} ist für \$\{escapeHtml\(replacementPlayer\.replacesDisplayName\)\} nachgerückt\./);
@@ -321,7 +320,7 @@ test('the Final Four overview adds aligned neutral Prematch facts without changi
   assert.match(style, /@media \(max-width: 768px\)[\s\S]*\.live-overview-prematch-grid \{[\s\S]*grid-template-columns: minmax\(0, 1fr\);/);
   assert.doesNotMatch(prematch, /renderPrematchForm|>Form</);
   assert.doesNotMatch(prematch, /is-training|trainingAware/);
-  assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome \{[\s\S]*border: 2px solid currentColor;[\s\S]*background: transparent;/);
+  assert.match(style, /\.form-chip\.form-training \{ border: 2px solid var\(--form-color\); background: var\(--surface\); color: var\(--form-color\); \}/);
 });
 
 test('Prematch facts load independently and degrade without breaking the live overview', () => {
@@ -378,8 +377,9 @@ test('Final Four Prematch history marks match-tiebreak results with the shared s
   const renderHistory = ticker.match(/function renderPrematchHistoryResults\(items\) \{[\s\S]*?(?=\n  function renderPrematchLeagueHistory)/)?.[0] || '';
   assert.match(renderHistory, /item\.decidedByMatchTiebreak \? ' form-tiebreak' : ''/);
   assert.match(renderHistory, /matchTiebreakLabel = item\.decidedByMatchTiebreak \? ' im Match-Tie-Break' : ''/);
-  assert.match(style, /\.live-overview-prematch-history-result\.win\.form-tiebreak \{ background: color-mix\(in srgb, var\(--positiv\) 35%, orange\); \}/);
-  assert.match(style, /\.live-overview-prematch-history-result\.loss\.form-tiebreak \{ background: color-mix\(in srgb, var\(--negativ\) 35%, orange\); color: var\(--bg\); \}/);
+  assert.match(renderHistory, /class="form-chip form-\$\{/);
+  assert.match(style, /\.form-win\.form-tiebreak \{ --form-color: color-mix\(in srgb, var\(--positiv\) \d+%, orange\); \}/);
+  assert.match(style, /\.form-loss\.form-tiebreak \{ --form-color: color-mix\(in srgb, var\(--negativ\) \d+%, orange\); color: var\(--bg\); \}/);
 });
 
 test('only Final Four detail views use the split probability score', () => {

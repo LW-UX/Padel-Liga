@@ -2418,10 +2418,10 @@ function renderPlayerProfileRelationships(matches = []) {
   if (!target) return;
   const leaders = getPlayerProfileRelationshipLeaders(matches);
   const relationships = [
-    ['Erfolgspartner', leaders.favoritePartners, 'pos', 'Ab 3 gemeinsamen Partien: höchste Siegquote als Team über 50 %. Trainings werden mitgezählt.'],
-    ['Angstpartner', leaders.fearedPartners, 'neg', 'Ab 3 gemeinsamen Partien: niedrigste Siegquote als Team unter 50 %. Trainings werden mitgezählt.'],
-    ['Lieblingsgegner', leaders.favoriteOpponents, 'pos', 'Ab 3 Partien gegeneinander: höchste Siegquote über 50 %. Trainings werden mitgezählt.'],
-    ['Angstgegner', leaders.fearedOpponents, 'neg', 'Ab 3 Partien gegeneinander: niedrigste Siegquote unter 50 %. Trainings werden mitgezählt.']
+    ['Erfolgspartner', leaders.favoritePartners, 'pos', ['Ab 3 gemeinsamen Partien: höchste Siegquote als Team über 50 %.', 'Trainings werden mitgezählt.']],
+    ['Angstpartner', leaders.fearedPartners, 'neg', ['Ab 3 gemeinsamen Partien: niedrigste Siegquote als Team unter 50 %.', 'Trainings werden mitgezählt.']],
+    ['Lieblingsgegner', leaders.favoriteOpponents, 'pos', ['Ab 3 Partien gegeneinander: höchste Siegquote über 50 %.', 'Trainings werden mitgezählt.']],
+    ['Angstgegner', leaders.fearedOpponents, 'neg', ['Ab 3 Partien gegeneinander: niedrigste Siegquote unter 50 %.', 'Trainings werden mitgezählt.']]
   ].filter(([, records]) => records.length);
 
   if (heading) heading.hidden = relationships.length > 0;
@@ -2447,7 +2447,7 @@ function renderPlayerProfileRelationships(matches = []) {
       return `<div class="stat-shift-group">
       <h3><span class="th-help-wrap">${escapeHtml(label)}
         <span class="help-icon" tabindex="0" role="button" aria-label="${escapeHtml(label)} erklären" aria-describedby="${tooltipId}" aria-expanded="false" data-help-tooltip-anchor>?</span>
-        <span class="help-tooltip" id="${tooltipId}" role="tooltip">${escapeHtml(helpText)}</span>
+        <span class="help-tooltip" id="${tooltipId}" role="tooltip">${helpText.map(text => `<span class="help-block">${escapeHtml(text)}</span>`).join('')}</span>
       </span></h3>
       <div class="stat-shift-list">
         ${records.map(record => `<div class="stat-shift-item">
@@ -2818,6 +2818,8 @@ function renderPlayerProfilePastMatches() {
         const outcome = hasWeightedResult && ['win', 'loss', 'draw'].includes(match.outcome)
           ? match.outcome
           : 'unfinished';
+        const isTraining = group.kind === 'training';
+        const decidedByMatchTiebreak = /[–-]/.test(match.resultDetails || '');
         const outcomeLabel = outcome === 'win' ? 'S' : outcome === 'loss' ? 'N' : outcome === 'draw' ? 'U' : '–';
         const outcomeAriaLabel = outcome === 'win'
           ? 'Sieg'
@@ -2831,7 +2833,7 @@ function renderPlayerProfilePastMatches() {
           : index === group.matches.length - 1;
         return `<article class="player-profile-match ${outcome}">
           <div class="player-profile-match-date">${showDate ? escapeHtml(formatProfileDate(match.date)) : ''}</div>
-          <div class="player-profile-match-outcome ${outcome}" aria-label="${outcomeAriaLabel}">${outcomeLabel}</div>
+          <div class="player-profile-match-outcome form-chip form-${outcome}${isTraining ? ' form-training' : ''}${decidedByMatchTiebreak ? ' form-tiebreak' : ''}" aria-label="${outcomeAriaLabel}">${outcomeLabel}</div>
           <div class="player-profile-match-teams">
             <div class="player-profile-match-team-line"><span>mit</span> ${partner}</div>
             <div class="player-profile-match-team-line"><span>vs.</span> ${opponents}</div>
@@ -2910,7 +2912,7 @@ function renderPlayerProfileUpcomingMatch({ match, season, team }, playerId) {
   const statistics = window.PadelMatchStatistics?.entry(match, season);
   return `<article class="player-profile-match upcoming">
     <div class="player-profile-match-date">${escapeHtml(formatPlayerProfileUpcomingDate(match, season))}</div>
-    <div class="player-profile-match-outcome unfinished" aria-label="Noch nicht gespielt">–</div>
+    <div class="player-profile-match-outcome form-chip form-unfinished" aria-label="Noch nicht gespielt">–</div>
     <div class="player-profile-match-teams">
       <div class="player-profile-match-team-line"><span>mit</span> ${renderPlayerProfileNames(partnerNames, 'ohne Partner')}</div>
       <div class="player-profile-match-team-line"><span>vs.</span> ${renderPlayerProfileNames(opponentTeam.spieler)}</div>
@@ -4864,7 +4866,7 @@ function renderRanking() {
       : '';
     return `<tr class="ranking-row r${Math.min(currentRank,4)} ${isTopFourQualifier ? 'top-four-highlight' : ''} ${isSelectedPlayer(p.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(p.id || p.name)}"${renderPlayerProfileRowAttributes(p)}>
       <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${currentRank}</span>${rankingSortMode === 'points' ? renderRankingAvatar(p) : renderPointsRankReference(currentRank, pointsRank)}</span></td>
-      <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}${absenceMark}</span>${renderLeagueRankingAchievementIcon(p)}${renderRankingCompanyBadge(p)}</span></td>
+      <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(p, 'pname', rankingPlayerLabel)}${absenceMark}</span>${rankingSortMode === 'points' ? renderLeagueRankingAchievementIcon(p) : ''}${renderRankingCompanyBadge(p)}</span></td>
       <td class="col-games">${renderRankingMatchCount(p)}</td>
       <td class="col-wins">${p.stats.siege}</td>
       <td class="col-points rank-score">${p.stats.punkte}</td>

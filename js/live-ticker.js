@@ -364,7 +364,7 @@
         .filter(Boolean)
         .join(' · ');
       const description = `${outcomeLabel}${matchTiebreakLabel}${context ? ` · ${context}` : ''}`;
-      return `<span class="player-profile-match-outcome live-overview-prematch-history-result ${escapeHtml(item.outcome || 'unfinished')}${item.decidedByMatchTiebreak ? ' form-tiebreak' : ''}" aria-label="${escapeHtml(description)}" title="${escapeHtml(description)}">${shortLabel}</span>`;
+      return `<span class="form-chip form-${['win', 'loss'].includes(item.outcome) ? item.outcome : 'unfinished'}${item.decidedByMatchTiebreak ? ' form-tiebreak' : ''}" aria-label="${escapeHtml(description)}" title="${escapeHtml(description)}">${shortLabel}</span>`;
     }).join('')}</div>`;
   }
 
@@ -422,7 +422,7 @@
         <h3>Prematch-Fakten</h3>
         <span class="th-help-wrap">
           <span class="help-icon" tabindex="0" aria-label="Titelprognose erklären">?</span>
-          <span class="help-tooltip">Die Titelprognose basiert auf den Siegchancen in den drei wechselnden Teams.<br>Stand vor Beginn des Final Four.${replacementPlayer ? `<span class="live-overview-prematch-tooltip-paragraph">${escapeHtml(replacementPlayer.displayName)} ist für ${escapeHtml(replacementPlayer.replacesDisplayName)} nachgerückt.</span>` : ''}</span>
+          <span class="help-tooltip"><span class="help-block">Die Titelprognose basiert auf den Siegchancen in den drei wechselnden Teams.</span><span class="help-block">Stand vor Beginn des Final Four.</span>${replacementPlayer ? `<span class="help-block">${escapeHtml(replacementPlayer.displayName)} ist für ${escapeHtml(replacementPlayer.replacesDisplayName)} nachgerückt.</span>` : ''}</span>
         </span>
       </div>
       <div class="live-overview-prematch-grid${showRelationships ? ' has-relationships' : ''}">${activePlayers.map((player, index) => `<article class="live-overview-prematch-player live-overview-prematch-player-${index + 1}">

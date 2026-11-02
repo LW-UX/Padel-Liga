@@ -853,7 +853,7 @@
               <span>${formatCount(passivePoints)}</span>
               <span class="th-help-wrap prediction-passive-points-help">
                 <span class="help-icon" tabindex="0" role="button" aria-label="Passive Punkte erklären" aria-describedby="prediction-passive-points-help" data-help-tooltip-anchor>?</span>
-                <span class="help-tooltip" id="prediction-passive-points-help" role="tooltip">Deine eigenen Partien kannst du nicht tippen. Sobald sie gewertet werden, erhältst du automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Tipp der anderen. Hat niemand getippt, gibt es keine automatische Gutschrift.</span>
+                <span class="help-tooltip" id="prediction-passive-points-help" role="tooltip"><span class="help-block">Deine eigenen Partien kannst du nicht tippen.</span><span class="help-block">Sobald sie gewertet werden, erhältst du automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Tipp der anderen.</span><span class="help-block">Hat niemand getippt, gibt es keine automatische Gutschrift.</span></span>
               </span>
             </div>
             <div class="hint">Passive Punkte</div>

@@ -77,7 +77,7 @@ test('content order, exclusions, escaped data and empty sections',()=>{
  assert.ok(html.indexOf('Elo-Entwicklung')<html.indexOf('Werte und Prognosen können sich'));assert.doesNotMatch(html,/Stand:/);
  assert.doesNotMatch(html,/<title>|Dominanz|Auszeichnungen|Lieblingspartner/);
  assert.match(html,/<h3><span class="heading-row heading-row--center match-statistics-heading">Elo-Entwicklung<span class="th-help-wrap match-statistics-heading-help">/);
- assert.match(html,/data-help-tooltip-anchor>\?<\/span>[\s\S]*Die Fächer zeigen die Bereiche der möglichen Elo-Werte nach der Partie: grün bei einem Sieg und rot bei einer Niederlage\. Die gestrichelte Linie zeigt die Elo-Prognose des wahrscheinlichsten Ergebnisses\./);
+ assert.match(html,/data-help-tooltip-anchor>\?<\/span>[\s\S]*Die Fächer zeigen die Bereiche der möglichen Elo-Werte nach der Partie: grün bei einem Sieg und rot bei einer Niederlage\.[\s\S]*Die gestrichelte Linie zeigt die Elo-Prognose des wahrscheinlichsten Ergebnisses\./);
  assert.doesNotMatch(html,/Auto-Tipp/);
  d.rematches=[];d.company=null;d.impacts=[];d.countsForElo=false;d.players.forEach(player=>{player.relationships=[];});const empty=render(d);
  assert.doesNotMatch(empty,/match-statistics-context|Vorgeschichte|Elo-Entwicklung/);assert.match(empty,/Keine bedeutenden Auswirkungen/);
@@ -98,6 +98,17 @@ test('multiple pairings of one training overlap but occupy one of five form grou
  assert.match(player,/match-statistics-form-group is-multi-match/);
  assert.match(player,/data-form-competition="Training"[\s\S]*?data-form-partner="Agnes K\."[\s\S]*?data-form-opponents="Christoph L\. &amp; Marco M\."/);
  assert.match(statisticsStyleSource,/\.match-statistics-form-group\.is-multi-match \.form-chip \+ \.form-chip \{ margin-left: -7\.33px; \}/);
+});
+test('every set of a training pairing becomes its own overlapping form circle',()=>{
+ const d=fixture();
+ d.players[0].form[4]={groupId:'training-8',kind:'training',date:'2026-07-02T16:00:00Z',competition:'Training',matches:[
+  {matchId:'training-8-1',label:'Training · Paarung 1',result:'6:3, 4:6, 6:2',outcome:'win',partnerNames:['Agnes K.'],opponentNames:['Christoph L.','Marco M.']}
+ ]};
+ const player=render(d).match(/<div class="match-statistics-form-player match-statistics-team-1">[\s\S]*?<\/div>/)?.[0]||'';
+ assert.equal((player.match(/match-statistics-form-group/g)||[]).length,5);
+ assert.equal((player.match(/data-form-match-id="training-8-1-s\d"/g)||[]).length,3);
+ assert.match(player,/match-statistics-form-group is-multi-match/);
+ assert.match(player,/form-loss form-training[^>]*data-form-match-id="training-8-1-s2"/);
 });
 test('relationship facts combine each player\'s statements in one centered sentence',()=>{
  const d=fixture();

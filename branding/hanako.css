@@ -10,14 +10,6 @@
 */
 
 @font-face {
-  font-family: 'Caladea';
-  src: url('../fonts/Caladea-Bold.ttf') format('truetype');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
   font-family: 'The Queen';
   src: url('../fonts/TheQueen-Regular.otf') format('opentype');
   font-weight: 400;
@@ -212,14 +204,12 @@ html:root .danger-button,
 html:root .help-icon,
 html:root .global-actions-toggle-badge,
 html:root .auth-task-badge,
-html:root .form-chip:not(.form-training),
-html:root .live-overview-prematch-history-result.loss.form-tiebreak,
+html:root .form-chip:not(.form-training, .form-draw, .form-unfinished),
 html:root .prediction-option.active,
 html:root .prediction-option.is-own-floor,
 html:root .live-point-team-button.active,
 html:root .fb.on,
-html:root .fb-company.on,
-html:root .player-profile-match-group:not(.training) .player-profile-match-outcome:is(.win, .loss) {
+html:root .fb-company.on {
   color: var(--surface);
 }
 html:root .global-actions .auth-button.global-action:not(.is-authenticated) {
@@ -341,18 +331,6 @@ html:root .article-body blockquote {
 
 html:root .article-body cite {
   color: var(--accent2);
-}
-
-/* Große Zahlen in Caladea wie auf der Hanako-Seite: Spielerprofil, Statistik, Tippseite. */
-html:root :is(
-  .player-profile-stat-value,
-  .player-profile-participation-phase-result.player-profile-participation-placement,
-  .stat-main,
-  .stat-split-value,
-  .prediction-overview-stats strong,
-  .prediction-rule-grid strong
-) {
-  font-family: 'Caladea', Georgia, serif;
 }
 
 /* Die Hälften des Split-Buttons behalten beim Überfahren ihre Rahmenbreite, sonst springt der Nachbar. */

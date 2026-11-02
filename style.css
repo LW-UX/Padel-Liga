@@ -679,9 +679,13 @@
       min-width: 0;
       margin: 0 calc(-1 * var(--player-profile-shell-padding)) calc(-1 * var(--section-gap));
       padding: 0 var(--player-profile-shell-padding);
+      background: transparent;
+      transition: padding 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
+    }
+    /* Erst wenn der Kopf beim Scrollen oben einrastet, bekommt er einen Hintergrund; davor schneidet er die Schatten der Karten nicht ab. */
+    .player-profile-hero.is-condensed {
       background: color-mix(in srgb, var(--bg) 92%, transparent);
       backdrop-filter: blur(14px);
-      transition: padding 220ms ease, box-shadow 220ms ease;
     }
     .player-profile-content > .player-profile-widget {
       min-width: 0;
@@ -1018,29 +1022,7 @@
       letter-spacing: 0.04em;
     }
     .player-profile-match-date { white-space: nowrap; }
-    .player-profile-match-outcome {
-      display: grid;
-      width: 32px;
-      height: 32px;
-      border-radius: var(--radius-full);
-      background: var(--positiv);
-      color: var(--bg);
-      font-family: var(--font-mono);
-      font-size: var(--text-sm);
-      font-weight: 600;
-      place-items: center;
-    }
-    .player-profile-match-outcome.loss { background: var(--negativ); color: var(--bg); }
-    .player-profile-match-outcome.draw { border: 2px dashed var(--positiv); background: transparent; color: var(--positiv); }
-    .player-profile-match-outcome.unfinished { border: 2px dashed var(--dim); background: transparent; color: var(--dim); }
-    .player-profile-match-group.training .player-profile-match-outcome {
-      border: 2px solid currentColor;
-      background: transparent;
-    }
-    .player-profile-match-group.training .player-profile-match-outcome.win { color: var(--positiv); }
-    .player-profile-match-group.training .player-profile-match-outcome.loss { color: var(--negativ); }
-    .player-profile-match-group.training .player-profile-match-outcome.draw,
-    .player-profile-match-group.training .player-profile-match-outcome.unfinished { color: var(--dim); }
+    .player-profile-match .form-chip { margin-left: 0; cursor: default; }
     .player-profile-match-teams {
       display: flex;
       align-items: baseline;
@@ -1151,12 +1133,12 @@
       .player-profile-relationships { order: 1; }
       .modal-close-button { top: 16px; right: 16px; width: 32px; height: 32px; }
       .player-profile-identity-row {
-        grid-template-columns: 116px minmax(0, 1fr);
-        gap: 20px;
+        grid-template-columns: 100px minmax(0, 1fr);
+        gap: 12px;
         min-height: 0;
         padding: 40px 0 12px;
       }
-      .player-profile-avatar { width: 116px; border-radius: var(--container-radius-base); }
+      .player-profile-avatar { width: 100px; border-radius: var(--container-radius-base); }
       .player-profile-avatar-placeholder { font-size: 4.5rem; }
       .player-profile-achievements {
         gap: 8px;
@@ -2962,7 +2944,7 @@
       padding: 0.65rem 0.75rem;
       border: 1px solid var(--border);
       border-radius: var(--container-radius-xs);
-      background: var(--bg);
+      background: var(--surface);
       color: var(--dim);
       box-shadow: 0 14px 36px var(--shadow-color);
       font-family: var(--font-body);
@@ -2975,6 +2957,14 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.12s ease;
+    }
+    .help-block { display: block; }
+    .help-block + .help-block { margin-top: 0.65rem; }
+    .help-block strong {
+      display: block;
+      margin-bottom: 0.15rem;
+      color: var(--text);
+      font-weight: 600;
     }
     .ranking-games-value {
       display: inline-flex;
@@ -3055,28 +3045,33 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 22px;
-      height: 22px;
+      width: 32px;
+      height: 32px;
       border-radius: var(--radius-full);
+      background: var(--form-color);
       color: var(--bg);
       font-family: var(--font-body);
-      font-size: 0.72rem;
+      font-size: var(--text-sm);
       font-weight: 700;
       margin-left: 4px;
       cursor: help;
       outline: none;
     }
+    .ranking-table .form-chip { width: 22px; height: 22px; font-size: var(--text-xs); }
     .form-chip:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
     .form-chip:first-child { margin-left: 0; }
-    .form-win { background: var(--positiv); }
-    .form-loss { background: var(--negativ); color: var(--text); }
-    .form-win.form-tiebreak { background: color-mix(in srgb, var(--positiv) 35%, orange); }
-    .form-loss.form-tiebreak { background: color-mix(in srgb, var(--negativ) 35%, orange); color: var(--bg); }
-    .live-overview-prematch-history-result.win.form-tiebreak { background: color-mix(in srgb, var(--positiv) 35%, orange); }
-    .live-overview-prematch-history-result.loss.form-tiebreak { background: color-mix(in srgb, var(--negativ) 35%, orange); color: var(--bg); }
+    .form-win { --form-color: var(--positiv); }
+    .form-loss { --form-color: var(--negativ); color: var(--text); }
+    .form-draw { --form-color: var(--positiv); }
+    .form-unfinished { --form-color: var(--dim); }
+    .form-win.form-tiebreak { --form-color: color-mix(in srgb, var(--positiv) 60%, orange); }
+    .form-loss.form-tiebreak { --form-color: color-mix(in srgb, var(--negativ) 60%, orange); color: var(--bg); }
+    .form-chip:is(.form-draw, .form-unfinished) { border: 2px dashed var(--form-color); background: transparent; color: var(--form-color); }
+    .form-chip.form-training { border: 2px solid var(--form-color); background: var(--surface); color: var(--form-color); }
+    .form-training:is(.form-draw, .form-unfinished) { --form-color: var(--dim); }
     .form-recency-0 { opacity: 1; }
-    .form-recency-1 { opacity: 0.68; }
-    .form-recency-2 { opacity: 0.42; }
+    .form-recency-1 { opacity: 0.8; }
+    .form-recency-2 { opacity: 0.6; }
 
     .rn { font-family: var(--font-mono); font-size: var(--text-base); color: var(--text); width: 36px; text-align: left !important; }
     .rank-score {
@@ -3165,6 +3160,12 @@
       height: 18px;
       flex-basis: 18px;
       margin-right: 0;
+    }
+    .is-file-protocol .firma-icon,
+    .is-file-protocol .firma-logo {
+      background: var(--firma-mask) center / contain no-repeat;
+      -webkit-mask: none;
+      mask: none;
     }
     .firma-icon.firma-Envidual   { --firma-mask: url("assets/logos/envidual-icon.svg"); }
     .firma-icon.firma-Hanako     { --firma-mask: url("assets/logos/hanako-icon.svg"); }
@@ -3822,10 +3823,6 @@
       right: auto;
       left: 0;
     }
-    .live-overview-prematch-tooltip-paragraph {
-      display: block;
-      margin-top: 0.65rem;
-    }
     .live-overview-prematch-grid {
       --prematch-row-count: 5;
       display: grid;
@@ -3911,6 +3908,7 @@
       justify-content: center;
       gap: 0.35rem;
     }
+    .live-overview-prematch-history .form-chip { margin-left: 0; }
     .live-overview-prematch-withdrawn .live-overview-prematch-history {
       grid-template-columns: repeat(3, 32px);
     }
@@ -4895,6 +4893,8 @@
         grid-column: 1;
         grid-row: 1;
       }
+      /* Passt der Umschalter nicht neben die Überschrift, rutscht er in die nächste Zeile. */
+      #tipptabelle > .sh-with-control { flex-wrap: wrap; }
       #ranking-view-toggle {
         grid-column: 2;
         grid-row: 1;
@@ -5042,9 +5042,11 @@
         width: auto;
         overflow: hidden;
       }
-      table.rt.rt--fit .col-wins,
+      table.rt.rt--fit .col-wins {
+        width: 44px;
+      }
       table.rt.rt--fit .col-diff {
-        width: 54px;
+        width: 52px;
       }
       table.rt.rt--fit .col-gv {
         width: 62px;
@@ -5078,30 +5080,30 @@
       .prediction-ranking-table.compact .col-passive,
       .prediction-ranking-table.compact .col-wins,
       .ranking-table.compact .col-points {
-        width: 58px;
-        min-width: 58px;
+        width: 44px;
+        min-width: 44px;
       }
       #ranking-table.compact .col-games {
-        width: 50px;
-        min-width: 50px;
+        width: 42px;
+        min-width: 42px;
       }
       #ranking-table.compact .col-points {
-        width: 46px;
-        min-width: 46px;
+        width: 40px;
+        min-width: 40px;
       }
       #all-time-ranking-table.compact .col-games,
       #all-time-ranking-table.compact .col-points,
       #all-time-ranking-table.compact .col-average-points {
-        width: 46px;
-        min-width: 46px;
+        width: 42px;
+        min-width: 42px;
       }
       #all-time-ranking-table.compact .firma-icon { display: none; }
-      table.rt:not(.expanded) .th-label-full { display: none; }
-      table.rt:not(.expanded) .th-label-short { display: inline; }
+      table.rt .th-label-full { display: none; }
+      table.rt .th-label-short { display: inline; }
       #all-time-ranking-table.compact th { white-space: nowrap; }
       #ranking-table.compact .col-diff {
-        width: 48px;
-        min-width: 48px;
+        width: 52px;
+        min-width: 52px;
       }
       .ranking-table.expanded {
         width: max-content;
@@ -5124,12 +5126,16 @@
       table.rt .col-passive,
       table.rt .col-bonus,
       table.rt .col-points,
-      table.rt .col-elo { min-width: 64px; }
+      table.rt .col-elo { min-width: 44px; }
+      table.rt th.col-elo,
+      table.rt td.col-elo { padding-left: 16px; }
+      table.rt th.col-diff:not(.col-rank):not(.col-name),
+      table.rt td.col-diff:not(.col-rank):not(.col-name) { padding-left: 12px; }
       table.rt .col-form { min-width: 80px; }
-      table.rt .col-wins { min-width: 60px; }
+      table.rt .col-wins { min-width: 36px; }
       table.rt .col-diff { min-width: 40px;}
       table.rt .col-winrate { min-width: 84px; }
-      table.rt .col-gv { min-width: 76px; }
+      table.rt .col-gv { min-width: 60px; }
       table.rt .col-draw-factor { min-width: 150px; }
       .ranking-table.compact th,
       .ranking-table.compact td {
@@ -5181,12 +5187,13 @@
         padding-top: 7px !important;
         padding-bottom: 7px !important;
       }
-      .form-chip {
+      .ranking-table .form-chip {
         width: 18px;
         height: 18px;
         font-size: 0.64rem;
         margin-left: 2px;
       }
+      .ranking-table .form-chip:first-child { margin-left: 0; }
       .ranking-table .col-rank {
         width: var(--mobile-rank-col-width);
         min-width: var(--mobile-rank-col-width);

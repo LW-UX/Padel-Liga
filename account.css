@@ -380,14 +380,6 @@
       width: min(340px, calc(100vw - 48px));
       transform: none;
     }
-    .account-games-help-block { display: block; }
-    .account-games-help-block + .account-games-help-block { margin-top: 0.65rem; }
-    .account-games-help-block strong {
-      display: block;
-      margin-bottom: 0.15rem;
-      color: var(--text);
-      font-weight: 600;
-    }
     [data-account-result-scope-toggle] { justify-self: start; }
     .account-task-list { display: grid; gap: 1rem; }
     #result-task-list { gap: var(--section-gap); }

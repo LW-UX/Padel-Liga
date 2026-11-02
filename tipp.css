@@ -753,7 +753,24 @@
       .prediction-overview-grid.is-guest .prediction-overview-community { order: 3; }
       .prediction-overview-grid.is-guest .prediction-overview-leaders { order: 4; }
       .prediction-overview-grid.is-guest .prediction-overview-article { order: 5; }
-      .prediction-overview-personal-stand { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      /* Liegt über den folgenden Karten, damit der Tooltip der passiven Punkte nicht verdeckt wird. */
+      .prediction-overview-personal-stand {
+        position: relative;
+        z-index: 5;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: start;
+      }
+      .prediction-overview-personal-stand .prediction-overview-scoreline > div {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .prediction-overview-personal-stand .stat-main {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 1.2em;
+      }
       .prediction-overview-stand-copy { grid-column: 1 / -1; }
       .prediction-overview-scoreline { gap: 2.5rem; }
       .prediction-overview-stats {

@@ -296,7 +296,7 @@ test('public player profile is a separate accessible dialog', () => {
   assert.match(app, /\['Erfolgspartner', leaders\.favoritePartners/);
   assert.match(app, /\['Lieblingsgegner', leaders\.favoriteOpponents/);
   assert.match(app, /\['Angstgegner', leaders\.fearedOpponents/);
-  assert.match(app, /relationships\.map\(\(\[label, records, valueClass, helpText\], index\)[\s\S]*data-help-tooltip-anchor>[?]<\/span>[\s\S]*escapeHtml\(helpText\)/);
+  assert.match(app, /relationships\.map\(\(\[label, records, valueClass, helpText\], index\)[\s\S]*data-help-tooltip-anchor>[?]<\/span>[\s\S]*helpText\.map/);
   assert.equal((app.match(/Trainings werden mitgezählt\./g) || []).length, 4);
   assert.match(app, /records\.map\(record =>/);
   assert.match(html, /<dialog class="dialog" id="auth-dialog"/);
@@ -722,12 +722,13 @@ test('profile results use consistent separators and de-emphasize set tiebreaks',
   assert.match(style, /\.player-profile-set-tiebreak \{ font-size: var\(--text-xs\); \}/);
 });
 
-test('only training result circles use outcome-colored outlines', () => {
-  assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome \{[^}]*border: 2px solid currentColor;[^}]*background: transparent;/);
-  assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome\.win \{ color: var\(--positiv\); \}/);
-  assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome\.loss \{ color: var\(--negativ\); \}/);
-  assert.match(style, /\.player-profile-match-group\.training \.player-profile-match-outcome\.draw,[\s\S]*\.player-profile-match-group\.training \.player-profile-match-outcome\.unfinished \{ color: var\(--dim\); \}/);
-  assert.match(style, /\.player-profile-match-outcome \{[\s\S]*background: var\(--positiv\);[\s\S]*color: var\(--bg\);/);
+test('profile result circles use the shared form chip', () => {
+  assert.match(app, /player-profile-match-outcome form-chip form-\$\{outcome\}\$\{isTraining \? ' form-training' : ''\}\$\{decidedByMatchTiebreak \? ' form-tiebreak' : ''\}/);
+  assert.match(app, /player-profile-match-outcome form-chip form-unfinished/);
+  assert.match(app, /decidedByMatchTiebreak = \/\[–-\]\/\.test\(match\.resultDetails \|\| ''\)/);
+  assert.match(style, /\.form-chip\.form-training \{ border: 2px solid var\(--form-color\); background: var\(--surface\); color: var\(--form-color\); \}/);
+  assert.match(style, /\.form-training:is\(\.form-draw, \.form-unfinished\) \{ --form-color: var\(--dim\); \}/);
+  assert.match(style, /\.player-profile-match \.form-chip \{ margin-left: 0; cursor: default; \}/);
 });
 
 test('historical trainings preserve sessions, match tiebreaks, and the unfinished round', () => {

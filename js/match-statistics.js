@@ -33,11 +33,11 @@
     favoriteOpponent: ['Lieblingsgegner', 'Lieblingsgegnerin'],
     fearedOpponent: ['Angstgegner', 'Angstgegnerin']
   };
-  function section(title, body, helpText = '') {
+  function section(title, body, helpText = []) {
     const helpId = title === 'Elo-Entwicklung' ? 'match-statistics-elo-help' : 'match-statistics-form-help';
-    const help = !helpText ? '' : `<span class="th-help-wrap match-statistics-heading-help">
+    const help = !helpText.length ? '' : `<span class="th-help-wrap match-statistics-heading-help">
       <span class="help-icon" tabindex="0" role="button" aria-label="${esc(title)} erklären" aria-describedby="${helpId}" aria-expanded="false" data-help-tooltip-anchor>?</span>
-      <span class="help-tooltip" id="${helpId}" role="tooltip">${esc(helpText)}</span>
+      <span class="help-tooltip" id="${helpId}" role="tooltip">${helpText.map(([heading, text]) => `<span class="help-block"><strong>${esc(heading)}</strong>${esc(text)}</span>`).join('')}</span>
     </span>`;
     return body ? `<section class="widget match-statistics-section"><h3><span class="heading-row heading-row--center match-statistics-heading">${esc(title)}${help}</span></h3>${body}</section>` : '';
   }
@@ -311,17 +311,34 @@
       </div>
     </div>`;
   }
+  // Zerlegt eine Trainingspaarung in ihre abgeschlossenen Sätze, damit jeder Satz ein eigener Kreis wird.
+  function trainingSets(match) {
+    const regular = String(match.result || '').replace(/\([^)]*\)/g, '').split(/\s*[–-]\s*/)[0];
+    const sets = [...regular.matchAll(/(\d+)\s*:\s*(\d+)/g)].map(m => [Number(m[1]), Number(m[2])])
+      .filter(([a, b]) => (Math.max(a, b) === 6 && Math.min(a, b) <= 4) || (Math.max(a, b) === 7 && Math.min(a, b) >= 5));
+    const oneWins = sets.filter(([a, b]) => a > b).length;
+    const twoWins = sets.filter(([a, b]) => b > a).length;
+    if (sets.length < 2 || oneWins === twoWins) return [match];
+    const playerIsOne = (match.outcome === 'win') === (oneWins > twoWins);
+    return sets.map(([a, b], index) => {
+      const own = playerIsOne ? a : b;
+      const other = playerIsOne ? b : a;
+      return { ...match, matchId: `${match.matchId}-s${index + 1}`, label: `${match.label || 'Training'} · Satz ${index + 1}`, result: `${own}:${other}`,
+        outcome: own > other ? 'win' : 'loss', decidedByMatchTiebreak: index === sets.length - 1 && Boolean(match.decidedByMatchTiebreak) };
+    });
+  }
   function renderForm(data, selectedPlayerId) {
     const renderPlayer = player => {
       const form = Array.isArray(player.form) ? player.form.slice(-5) : [];
       const groups = form.map(item => Array.isArray(item?.matches)
         ? item
-        : { groupId: item?.matchId, kind: item?.kind || 'official', date: item?.date, competition: item?.competition, matches: [item] });
+        : { groupId: item?.matchId, kind: item?.kind || 'official', date: item?.date, competition: item?.competition, matches: [item] })
+        .map(group => group.kind === 'training' ? { ...group, matches: (group.matches || []).filter(Boolean).flatMap(trainingSets) } : group);
       const chips = groups.length ? groups.map((group, index) => {
         const matches = (group.matches || []).filter(Boolean);
         const recency = Math.max(0, groups.length - index - 1);
         const groupClass = matches.length > 1 ? ' is-multi-match' : '';
-        const groupLabel = group.kind === 'training' ? `Training mit ${matches.length} Paarungen` : matches[0]?.label || 'Partie';
+        const groupLabel = group.kind === 'training' ? `Training mit ${matches.length} ${matches.length === 1 ? 'Satz' : 'Sätzen'}` : matches[0]?.label || 'Partie';
         return `<span class="match-statistics-form-group${groupClass}" aria-label="${esc(groupLabel)}">${matches.map(match => {
           const won = match.outcome === 'win';
           const matchTiebreak = Boolean(match.decidedByMatchTiebreak);
@@ -346,7 +363,11 @@
       return players ? `<div class="match-statistics-form-team match-statistics-team-${team}" data-form-team="${team}">${players}</div>` : '';
     }).join('');
     return teams ? section('Form der letzten 5 Partien', `<div class="match-statistics-form-scroll"><div class="match-statistics-form-row">${teams}</div></div>`,
-      'S steht für Sieg, N für Niederlage. Trainings erscheinen mit Kontur; mehrere überlappende Kreise gehören zu demselben Training und zählen gemeinsam als eine Partie. Orange markierte Kreise kennzeichnen Entscheidungen im Match-Tiebreak. Links steht die älteste, rechts die jüngste Partie.') : '';
+      [
+        ['Kreise', 'S steht für Sieg, N für Niederlage. Links steht die älteste, rechts die jüngste Partie.'],
+        ['Trainings', 'Trainings erscheinen mit Kontur. Mehrere überlappende Kreise gehören zu demselben Training, jeder Kreis steht für einen Satz, und das Training zählt gemeinsam als eine Partie.'],
+        ['Match-Tiebreak', 'Orange markierte Kreise kennzeichnen Entscheidungen im Match-Tiebreak.']
+      ]) : '';
   }
   function eloPathForecast(data) {
     if (data.probability == null) return null;
@@ -509,8 +530,14 @@
         ${g.ticks.map(t => `<path d="M60 ${g.y(t)} H995" class="match-statistics-grid"/>`).join('')}${selectedTeamLast}
       </svg><div class="match-statistics-axis" aria-hidden="true">${g.ticks.map(t => `<span style="top:${g.y(t)}px">${number(Math.round(t))}</span>`).join('')}</div></div>`,
       analysis
-        ? 'Die Flächen zeigen, welche Elo-Werte bei dieser Partie möglich waren: grün bei einem Sieg und rot bei einer Niederlage. Die durchgezogene Linie zeigt die tatsächliche Elo-Entwicklung. Am Endwert steht die Veränderung durch diese Partie.'
-        : 'Die Fächer zeigen die Bereiche der möglichen Elo-Werte nach der Partie: grün bei einem Sieg und rot bei einer Niederlage. Die gestrichelte Linie zeigt die Elo-Prognose des wahrscheinlichsten Ergebnisses.');
+        ? [
+          ['Flächen', 'Die Flächen zeigen, welche Elo-Werte bei dieser Partie möglich waren: grün bei einem Sieg und rot bei einer Niederlage.'],
+          ['Linie', 'Die durchgezogene Linie zeigt die tatsächliche Elo-Entwicklung. Am Endwert steht die Veränderung durch diese Partie.']
+        ]
+        : [
+          ['Fächer', 'Die Fächer zeigen die Bereiche der möglichen Elo-Werte nach der Partie: grün bei einem Sieg und rot bei einer Niederlage.'],
+          ['Linie', 'Die gestrichelte Linie zeigt die Elo-Prognose des wahrscheinlichsten Ergebnisses.']
+        ]);
   }
   function impactText(impact, data) {
     const condition = impact.onWin ? 'bei einem Sieg' : 'bei einer Niederlage';
