@@ -2483,6 +2483,7 @@
     #home-next-matches,
     #home-recent-matches {
       display: grid;
+      grid-template-columns: minmax(0, 1fr);
       gap: 10px;
     }
     .mini-match-team {
