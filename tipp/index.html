@@ -22,7 +22,7 @@
     })();
   </script>
   <link rel="stylesheet" href="../achievements.css?v=2026-10-31">
-  <link rel="stylesheet" href="../style.css?v=2026-11-02-form-chip">
+  <link rel="stylesheet" href="../style.css?v=2026-11-03-compare-labels">
   <link rel="stylesheet" href="../tipp.css?v=2026-10-31-class-names">
   <link rel="stylesheet" href="../match-statistics.css?v=2026-11-02-form-chip">
   <link rel="stylesheet" href="../account.css?v=2026-10-31-design-grid">
@@ -30,18 +30,18 @@
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="../data/players.js?v=2026-10-20-test-net-emoji"></script>
   <script defer src="../data/seasons.js?v=2026-10-30-test-match-ten"></script>
-  <script defer src="../js/season-routing.js?v=2026-10-30-keep-base"></script>
+  <script defer src="../js/season-routing.js?v=2026-11-03-profile-routes"></script>
   <script defer src="../data/supabase-config.js"></script>
   <script defer src="../js/global-actions.js?v=2026-10-20-speed-dial-player"></script>
   <script defer src="../js/score-input.js?v=2026-09-22-unified-score-counters"></script>
-  <script defer src="../js/mobile-dialog-pages.js?v=2026-10-30-whats-new-page"></script>
+  <script defer src="../js/mobile-dialog-pages.js?v=2026-11-03-profile-routes"></script>
   <script defer src="../js/branding-preview.js?v=2026-10-31-centre-court"></script>
   <script defer src="../js/account.js?v=2026-11-02-ten-minute-cache"></script>
   <script defer src="../js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="../js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="../js/headline-split.js?v=2026-11-03-headline-split-2"></script>
   <script defer src="../js/table-core.js?v=2026-10-30-diff-zero"></script>
-  <script defer src="../js/panel-layout.js?v=2026-10-29-shared-panel-layout"></script>
+  <script defer src="../js/panel-layout.js?v=2026-11-03-split-left-sync"></script>
   <script defer src="../js/tipp-page.js?v=2026-10-31-class-names"></script>
 </head>
 <body class="tip-page">
@@ -108,8 +108,14 @@
   </section>
 
   <section id="tippuebersicht" class="section">
-    <div class="sh">
-      <h2>Tipprangliste</h2>
+    <div class="sh sh-with-control">
+      <div class="heading-row">
+        <h2>Tipprangliste</h2>
+      </div>
+      <div class="toggle" id="prediction-ranking-view-toggle" aria-label="Tipprangliste umschalten">
+        <button type="button" class="active" data-prediction-ranking-view="compact" aria-pressed="true">Kompakt</button>
+        <button type="button" data-prediction-ranking-view="expanded" aria-pressed="false">Erweitert</button>
+      </div>
     </div>
     <article class="widget">
       <div class="ranking-wrap">

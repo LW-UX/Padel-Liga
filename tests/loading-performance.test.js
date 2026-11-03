@@ -81,7 +81,7 @@ test('profile cache coalesces requests, expires, invalidates, and retries failur
   });
   vm.runInContext(`
     const PLAYER_PROFILE_CACHE_TTL = 30000;
-    const playerProfileCache = new Map(), playerProfileSeasonPayloadCache = new Map(), playerProfileCompareElos = new Map();
+    const playerProfileCache = new Map(), playerProfileSeasonPayloadCache = new Map(), playerProfileCompareProfiles = new Map();
     ${fn(app, 'fetchPlayerProfile')}
     ${fn(app, 'invalidatePlayerProfileCache')}
   `, context);

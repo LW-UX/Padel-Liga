@@ -603,6 +603,20 @@
   let presentation = 'modal', presentationPreference = null, panelContextActive = false, embeddedPanelAvailable = false, sharedDetailFlow = false;
   let lastTrigger = null;
   const routeContexts = new Map();
+  const routeSequences = new Map();
+  // Jeder Wechsel zwischen Partie und Profil ist ein Verlaufsschritt; Schließen springt bis vor den Detailverlauf zurück.
+  let flowBaseDepth = 0;
+  const detailHistoryState = fields => ({
+    ...window.history.state,
+    playerProfile: null,
+    profileRoute: null,
+    mobileDialogPage: null,
+    statisticsProfile: null,
+    statisticsTop: 'match',
+    ...fields,
+    detailBase: flowBaseDepth,
+    detailDepth: (window.history.state?.detailDepth || 0) + 1
+  });
   // Geöffnete und vorgeladene Partien werden zehn Minuten wiederverwendet.
   const prefetched = new Map();
   const PREFETCH_MAX_AGE = 10 * 60 * 1000;
@@ -863,6 +877,7 @@
       preserveHash: true
     });
     url.searchParams.delete('partie');
+    url.searchParams.delete('spielerprofil');
     return url;
   }
   function getRequestedMatchId() {
@@ -922,7 +937,10 @@
   function close() {
     if (!active) return;
     // Eingebettet teilt der Rahmen den Verlauf der Tippseite; ein Zurück könnte die Tippseite verlassen.
-    if (!isDetailEmbed && window.history.state?.matchStatistics) window.history.back();
+    const state = window.history.state;
+    if (!isDetailEmbed && state?.matchStatistics) {
+      window.history.go(-Math.max(1, (state.detailDepth || 1) - (state.detailBase || 0)));
+    }
     else { window.history.replaceState(window.history.state, '', getSeasonBaseUrl()); restore(); }
   }
   function notice(message) {
@@ -962,9 +980,17 @@
       panelContextActive = true;
       embeddedPanelAvailable = Boolean(panelAvailable);
     }
+    if (openingFresh && updateUrl && !direct) {
+      const state = window.history.state || {};
+      // Ersetzt die Partie ein eigenständiges Profil, gehört sie zu dessen Verlauf; sonst beginnt der Verlauf hier.
+      flowBaseDepth = standaloneProfileContext?.returnContext && state.playerProfile
+        ? (state.detailBase || 0)
+        : (state.detailDepth || 0);
+    }
     if (standaloneProfileContext?.returnContext) {
       returnContext = returnContext || standaloneProfileContext.returnContext;
       sharedDetailFlow = true;
+      window.PadelLigaRememberPlayerProfile?.();
       window.PadelLigaBeginDetailPanelSwitch?.();
       window.PadelLigaClosePlayerProfile?.({ fromHistory: true, restoreFocus: false });
       postEmbedMessage({ type: 'padel:detail-active-view', view: 'match', matchId });
@@ -1025,18 +1051,27 @@
     updateActiveMatchHighlights();
     postEmbedMessage({ type: 'padel:detail-active-match', matchId: active });
     if (updateUrl) {
-      const replacing = isDetailEmbed || Boolean(getRequestedMatchId()) || Boolean(currentRoute);
+      // Blättern ersetzt den Eintrag, der Wechsel aus einem Profil wird ein eigener Zurück-Schritt.
+      const replacing = isDetailEmbed || Boolean(stepDirection)
+        || (!fromProfileAbove && !standaloneProfileContext?.returnContext
+          && (Boolean(getRequestedMatchId()) || Boolean(currentRoute)));
       const url = window.PadelSeasonRouting?.getMatchUrl(season?.id, seasonMatch || matchId, {
         preserveSearch: true,
         preserveHash: true
       }) || new URL(window.location.href);
-      url.searchParams.delete('live'); url.searchParams.delete('liveView');
+      url.searchParams.delete('live'); url.searchParams.delete('liveView'); url.searchParams.delete('spielerprofil');
       if (!window.PadelSeasonRouting) url.searchParams.set('partie', matchId);
       currentRoute = replacing && currentRoute ? currentRoute : `statistics-${++routeNumber}`;
       routeContexts.set(currentRoute, returnState);
-      window.history[replacing ? 'replaceState' : 'pushState']({ ...window.history.state, matchStatistics: matchId, statisticsRoute: currentRoute, statisticsProfile: null, statisticsTop: 'match' }, '', url);
+      routeSequences.set(currentRoute, sequence);
+      window.PadelSeasonRouting?.ensureDocumentBase(url);
+      if (replacing) window.history.replaceState({ ...window.history.state, matchStatistics: matchId, statisticsRoute: currentRoute, statisticsProfile: null, statisticsTop: 'match' }, '', url);
+      else window.history.pushState(detailHistoryState({ matchStatistics: matchId, statisticsRoute: currentRoute }), '', url);
     }
-    if (!updateUrl) currentRoute = window.history.state?.statisticsRoute || null;
+    if (!updateUrl) {
+      currentRoute = window.history.state?.statisticsRoute || null;
+      flowBaseDepth = window.history.state?.detailBase || 0;
+    }
     if (retainedActiveData) {
       schedulePrefetch(token);
       return;
@@ -1053,10 +1088,12 @@
       // Direct links get an in-page return destination only after successful validation.
       if (direct && !isDetailEmbed) {
         const route = new URL(window.location.href), base = getSeasonBaseUrl();
-        window.history.replaceState({ ...window.history.state, matchStatistics: null }, '', base);
+        window.history.replaceState({ matchStatistics: null }, '', base);
         currentRoute = `statistics-${++routeNumber}`;
         routeContexts.set(currentRoute, returnState);
-        window.history.pushState({ ...window.history.state, matchStatistics: matchId, statisticsRoute: currentRoute, statisticsProfile: null, statisticsTop: 'match' }, '', route);
+        routeSequences.set(currentRoute, sequence);
+        flowBaseDepth = 0;
+        window.history.pushState(detailHistoryState({ matchStatistics: matchId, statisticsRoute: currentRoute }), '', route);
       }
       if (!cached) prefetched.set(matchId, { time: Date.now(), detail: Promise.resolve(detailResult), forecast: Promise.resolve(null) });
       document.getElementById('detail-view-title').textContent = data.label;
@@ -1082,7 +1119,7 @@
   }
   function prepareProfileOpen(trigger, playerId, fromHistory = false, sharedDetail = false) {
     const fromStatistics = Boolean(trigger?.closest('#detail-view-dialog'));
-    const withinReplacingProfile = Boolean(profileOnTop && profileReplacesDetail && trigger?.closest('#player-profile-dialog'));
+    const withinReplacingProfile = Boolean(profileOnTop && trigger?.closest('#player-profile-dialog'));
     const fromSharedList = Boolean(sharedDetail || (sharedDetailFlow && trigger?.closest('#partien')));
     if (!active || (!fromHistory && !fromStatistics && !withinReplacingProfile && !fromSharedList)) return false;
     profileOnTop = true;
@@ -1095,7 +1132,19 @@
     }
     updateActiveMatchHighlights();
     postEmbedMessage({ type: 'padel:detail-active-view', view: 'profile', matchId: active, playerId });
-    if (!fromHistory) window.history.replaceState({ ...window.history.state, statisticsProfile: playerId, statisticsTop: 'profile' }, '', window.location.href);
+    if (!fromHistory && isDetailEmbed) window.history.replaceState({ ...window.history.state, statisticsProfile: playerId, statisticsTop: 'profile' }, '', window.location.href);
+    else if (!fromHistory) {
+      const season = window.PadelLigaGetSeasonData?.();
+      const url = window.PadelSeasonRouting?.getPlayerProfileUrl(season?.id, playerId, { preserveSearch: true, preserveHash: true })
+        || new URL(window.location.href);
+      window.PadelSeasonRouting?.ensureDocumentBase(url);
+      window.history.pushState(detailHistoryState({
+        matchStatistics: active,
+        statisticsRoute: currentRoute,
+        statisticsProfile: playerId,
+        statisticsTop: 'profile'
+      }), '', url);
+    }
     return {
       active: true,
       replacesDetail: profileReplacesDetail,
@@ -1128,7 +1177,8 @@
       return true;
     }
     profileOnTop = false;
-    window.history.replaceState({ ...window.history.state, statisticsProfile: null, statisticsTop: 'match' }, '', window.location.href);
+    if (!isDetailEmbed && window.history.state?.statisticsProfile) window.history.back();
+    else window.history.replaceState({ ...window.history.state, statisticsProfile: null, statisticsTop: 'match' }, '', window.location.href);
     return false;
   }
   async function submitQuickPrediction(prediction) {
@@ -1278,22 +1328,36 @@
     resizeFrame = requestAnimationFrame(reconcilePresentation);
   });
   window.addEventListener('popstate', async () => {
-    const id = getRequestedMatchId();
-    const route = window.history.state?.statisticsRoute;
-    const profileId = window.history.state?.statisticsProfile;
-    if (profileOnTop && !profileId) {
-      profileOnTop = false;
-      profileReplacesDetail = false;
-      window.PadelLigaClosePlayerProfile?.({ fromHistory: true });
+    const state = window.history.state || {};
+    // Profilpfade tragen keine Partie in der Adresse; maßgeblich ist deshalb der Verlaufseintrag.
+    const id = state.matchStatistics
+      || (state.playerProfile || Object.prototype.hasOwnProperty.call(state, 'matchStatistics') ? null : getRequestedMatchId());
+    const route = state.statisticsRoute;
+    const profileId = state.statisticsProfile;
+    if (!id || !active) {
+      if (profileOnTop) {
+        profileOnTop = false;
+        profileReplacesDetail = false;
+        window.PadelLigaClosePlayerProfile?.({ fromHistory: true });
+      }
+      if (!id) { if (active) restore(); return; }
+      await open(id, { updateUrl: false, returnContext: routeContexts.get(route), sequence: routeSequences.get(route) || null });
+    } else {
+      // Innerhalb eines laufenden Detailverlaufs bleiben Darstellung und Rückweg erhalten.
+      const leavesProfile = profileOnTop && !profileId;
+      if (leavesProfile && !profileReplacesDetail) {
+        profileOnTop = false;
+        window.PadelLigaClosePlayerProfile?.({ fromHistory: true });
+      }
+      if (id !== active || route !== currentRoute || (leavesProfile && profileReplacesDetail)) {
+        const storedSequence = routeSequences.get(route);
+        await open(id, { updateUrl: false, keepSequence: !storedSequence, sequence: storedSequence || null });
+      }
     }
-    if (!id) { if (active) restore(); return; }
-    if (id !== active || route !== currentRoute) {
-      if (active) restore();
-      await open(id, { updateUrl: false, returnContext: routeContexts.get(route) });
-    }
-    if (active === id && currentRoute === route && profileId && !profileOnTop) {
-      const trigger = dialog().querySelector(`[data-player-profile-id="${CSS.escape(profileId)}"]`);
-      void window.PadelLigaOpenPlayerProfile?.(profileId, trigger, { fromHistory: true });
-    }
+    if (active !== id || currentRoute !== route || !profileId) return;
+    const shownProfile = profileOnTop ? window.PadelLigaCapturePlayerProfile?.().activeId : null;
+    if (shownProfile === profileId) return;
+    const trigger = dialog().querySelector(`[data-player-profile-id="${CSS.escape(profileId)}"]`);
+    void window.PadelLigaOpenPlayerProfile?.(profileId, trigger, { fromHistory: true });
   });
 })();

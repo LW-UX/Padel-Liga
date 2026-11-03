@@ -11,6 +11,7 @@ const context = {
   URL,
   URLSearchParams
 };
+vm.runInNewContext(fs.readFileSync(path.join(projectRoot, 'data/players.js'), 'utf8'), context);
 vm.runInNewContext(fs.readFileSync(path.join(projectRoot, 'data/seasons.js'), 'utf8'), context);
 vm.runInNewContext(fs.readFileSync(path.join(projectRoot, 'js/season-routing.js'), 'utf8'), context);
 
@@ -32,6 +33,19 @@ for (const season of context.window.PADEL_SEASONS || []) {
   if (!season.route) continue;
   for (const page of pages) {
     writePage(page.source, page.destination(season.route), page.baseHref);
+  }
+
+  const playerIds = new Set();
+  for (const player of context.window.PADEL_PLAYERS || []) {
+    const id = String(player?.id || '');
+    if (!id) continue;
+    if (playerIds.has(id)) throw new Error(`Doppelter Spielerpfad ${season.route}/spieler/${id}/`);
+    playerIds.add(id);
+    writePage(
+      'index.html',
+      path.join(outputRoot, season.route, 'spieler', id, 'index.html'),
+      '../../../'
+    );
   }
 
   const seasonFile = String(season.file || '').split('?')[0];

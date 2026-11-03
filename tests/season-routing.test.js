@@ -188,6 +188,38 @@ test('legacy live overview queries normalize to the short live route', () => {
   assert.equal(history.replaced, '/Padel-Liga/so26/live/');
 });
 
+test('player profiles use short season paths and keep query links locally', () => {
+  const { routing } = loadRouting(
+    'https://lw-ux.github.io/Padel-Liga/wi26/partie/7/?ref=x',
+    'https://lw-ux.github.io/Padel-Liga/'
+  );
+  const players = [{ id: 'agnes_k' }, { id: 'chris_m' }];
+  assert.equal(
+    routing.getPlayerProfileUrl('2026-winter', 'agnes_k', { preserveSearch: true }).href,
+    'https://lw-ux.github.io/Padel-Liga/wi26/spieler/agnes_k/?ref=x'
+  );
+  assert.equal(routing.getPlayerIdFromPath(players, '/Padel-Liga/wi26/spieler/chris_m/'), 'chris_m');
+  assert.equal(routing.getPlayerIdFromPath(players, '/Padel-Liga/wi26/spieler/unbekannt/'), null);
+  assert.equal(routing.getRequestedPlayerProfileId(players), null);
+
+  const local = loadRouting('http://localhost:8765/?saison=2026-winter', 'http://localhost:8765/');
+  assert.equal(
+    local.routing.getPlayerProfileUrl('2026-winter', 'agnes_k').href,
+    'http://localhost:8765/?saison=2026-winter&spielerprofil=agnes_k'
+  );
+});
+
+test('legacy profile queries normalize to the short profile route', () => {
+  const { routing, history } = loadRouting(
+    'https://lw-ux.github.io/Padel-Liga/wi26/?spielerprofil=agnes_k',
+    'https://lw-ux.github.io/Padel-Liga/'
+  );
+  const players = [{ id: 'agnes_k' }];
+  assert.equal(routing.getRequestedPlayerProfileId(players), 'agnes_k');
+  assert.equal(routing.normalizeCurrentPlayerProfileUrl('2026-winter', players), true);
+  assert.equal(history.replaced, '/Padel-Liga/wi26/spieler/agnes_k/');
+});
+
 test('deployment generation creates direct entry pages with the correct base paths', () => {
   const output = fs.mkdtempSync(path.join(os.tmpdir(), 'padel-season-routes-'));
   execFileSync(process.execPath, [path.join(root, 'tools/generate-season-routes.mjs'), output], { cwd: root });
@@ -196,6 +228,8 @@ test('deployment generation creates direct entry pages with the correct base pat
   const liveOverview = fs.readFileSync(path.join(output, 'so26', 'live', 'index.html'), 'utf8');
   const liveMatch = fs.readFileSync(path.join(output, 'so26', 'live', '28', 'index.html'), 'utf8');
   const tipping = fs.readFileSync(path.join(output, 'tipp', 'wi26', 'index.html'), 'utf8');
+  const profile = fs.readFileSync(path.join(output, 'wi26', 'spieler', 'agnes_k', 'index.html'), 'utf8');
+  assert.match(profile, /<base href="\.\.\/\.\.\/\.\.\/">/);
   assert.match(league, /<base href="\.\.\/">/);
   assert.match(tipping, /<base href="\.\.\/">/);
   assert.match(match, /<base href="\.\.\/\.\.\/\.\.\/">/);

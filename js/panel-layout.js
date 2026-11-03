@@ -107,8 +107,39 @@
 
   let updateFrame = 0;
 
+  // Sicherheitsnetz: Solange ein Seitenpanel offen ist, entspricht der linke Listenrand immer dem aktuellen Viewport,
+  // auch wenn sich Öffnen und Schließen verschiedener Panels überschneiden und ein Abschluss den Wert entfernt hat.
+  function syncSplitLeft(property, layout) {
+    const style = global.document.body.style;
+    if (!layout) {
+      if (style.getPropertyValue(property)) style.removeProperty(property);
+      return;
+    }
+    const value = `${getSplitLeft(layout)}px`;
+    if (style.getPropertyValue(property) !== value) style.setProperty(property, value);
+  }
+
+  function syncSplitLefts() {
+    if (global.document.documentElement.classList.contains('is-detail-embed')) return;
+    const body = global.document.body;
+    syncSplitLeft(
+      '--match-statistics-split-left',
+      body.classList.contains('match-statistics-panel-open') ? layouts.matchList : null
+    );
+    const profileContext = body.classList.contains('player-profile-panel-open')
+      ? body.dataset.playerProfilePanelContext
+      : null;
+    syncSplitLeft(
+      '--ranking-profile-split-left',
+      profileContext === 'ranking'
+        ? layouts.ranking
+        : profileContext === 'all-time-ranking' ? layouts.allTimeRanking : null
+    );
+  }
+
   function updateNow() {
     updateFrame = 0;
+    syncSplitLefts();
     const viewportHeight = global.innerHeight || global.document.documentElement.clientHeight;
     global.document.querySelectorAll(PANEL_HOST_SELECTOR).forEach(host => {
       const height = getPanelHostHeight(viewportHeight, host.getBoundingClientRect().top);
@@ -127,7 +158,7 @@
   global.addEventListener('pageshow', update);
   new MutationObserver(update).observe(global.document.body, {
     attributes: true,
-    attributeFilter: ['class', 'data-player-profile-panel-context']
+    attributeFilter: ['class', 'style', 'data-player-profile-panel-context']
   });
 
   global.PadelLigaPanelLayout = Object.freeze({ ...api, applySplitLeft, update, updateNow });

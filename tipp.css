@@ -84,6 +84,7 @@
     .prediction-ranking-passive-help { justify-content: flex-end; }
     @media (min-width: 769px) {
       .tip-page #tippuebersicht .ranking-wrap { overflow: visible; }
+      #prediction-ranking-view-toggle { display: none; }
     }
     .prediction-overview-action {
       display: flex;
@@ -242,10 +243,11 @@
     table.prediction-ranking-table tbody tr.authenticated-player-highlight td:first-child {
       box-shadow: inset 3px 0 0 var(--accent2);
     }
-    table.prediction-ranking-table tbody tr.authenticated-player-highlight .pname {
+    table.prediction-ranking-table tbody tr.authenticated-player-highlight :is(.pname, .pname-short) {
       color: var(--accent2);
       font-weight: 700;
     }
+    .prediction-ranking-table .pname-short { display: none; }
     table.prediction-ranking-table tbody td.col-bonus {
       color: var(--accent2);
       font-weight: 400;
@@ -736,7 +738,18 @@
     @media (max-width: 768px) {
       .prediction-ranking-table.compact .col-passive { display: none; }
       .prediction-ranking-table.compact .col-bonus { display: none; }
-      .prediction-ranking-table.compact .col-wins { display: table-cell; }
+      .prediction-ranking-table.compact .col-games { width: 64px; }
+      .prediction-ranking-table.compact .col-points { width: 74px; }
+      /* Erweitert zeigt alle Spalten; Kürzel ersetzen Namen, Konto- und Firmen-Icons entfallen. */
+      .prediction-ranking-table.expanded .pname,
+      .prediction-ranking-table.expanded .prediction-account-type-icon,
+      .prediction-ranking-table.expanded .prediction-company-badge { display: none; }
+      .prediction-ranking-table.expanded .pname-short { display: inline; }
+      /* Platz für das Sortier-Chevron, das links neben dem Spaltentitel steht. */
+      table.prediction-ranking-table :is(th, td):is(.col-games, .col-wins, .col-passive, .col-bonus, .col-points) { padding-left: 18px; }
+      table.prediction-ranking-table.expanded tbody tr.authenticated-player-highlight :is(.col-rank, .col-name) {
+        background: color-mix(in srgb, var(--accent2) 20%, var(--bg));
+      }
       .prediction-overview-grid {
         grid-template-columns: minmax(0, 1fr);
         gap: var(--section-gap);

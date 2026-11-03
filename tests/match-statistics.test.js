@@ -342,23 +342,24 @@ test('completed rankings align historical movement in a dedicated column',()=>{
  assert.match(statisticsStyleSource,/\.match-statistics-rank-change\.up \{ color: var\(--positiv\); \}/);
  assert.match(statisticsStyleSource,/\.match-statistics-rank-change\.down \{ color: var\(--negativ\); \}/);
 });
-test('alternating between match and profile reuses one browser history entry',()=>{
- assert.match(source,/prepareProfileOpen[\s\S]*?history\.replaceState\(\{ \.\.\.window\.history\.state, statisticsProfile: playerId/);
- assert.doesNotMatch(source,/prepareProfileOpen[\s\S]*?history\.pushState\(\{ \.\.\.window\.history\.state, statisticsProfile: playerId/);
+test('every switch between match and profile becomes its own back step',()=>{
+ assert.match(source,/prepareProfileOpen[\s\S]*?history\.pushState\(detailHistoryState\(\{[\s\S]*?statisticsProfile: playerId/);
+ assert.match(source,/getPlayerProfileUrl\(season\?\.id, playerId/);
+ assert.match(source,/const replacing = isDetailEmbed \|\| Boolean\(stepDirection\)[\s\S]*?!fromProfileAbove/);
+ assert.match(source,/detailDepth: \(window\.history\.state\?\.detailDepth \|\| 0\) \+ 1/);
  assert.match(source,/profileReplacesDetail = sharedDetailFlow;[\s\S]*?dialog\(\)\?\.open\) dialog\(\)\.close\(\)/);
  assert.match(source,/function syncProfilePresentation[\s\S]*?type: 'padel:detail-presentation'[\s\S]*?view: 'profile'/);
  assert.match(source,/if \(profileReplacesDetail\) \{\s*close\(\);\s*return true;/);
  assert.match(source,/if \(replacedDetail\) \{[\s\S]*?PadelLigaClosePlayerProfile\?\.\(\{ fromHistory: true, restoreFocus: false \}\)/);
  assert.match(source,/profile\?\.querySelector\('\.player-profile-shell'\)\?\.scrollTop \|\| 0/);
  assert.match(source,/const profileShell = document\.querySelector\('#player-profile-dialog \.player-profile-shell'\)/);
- assert.match(source,/const replacing = isDetailEmbed \|\| Boolean\(getRequestedMatchId\(\)\) \|\| Boolean\(currentRoute\)/);
  assert.match(source,/PadelSeasonRouting\?\.getMatchUrl\(season\?\.id, seasonMatch \|\| matchId/);
  assert.match(source,/detail-view-title'\)\.textContent = retainedActiveData\?\.label \|\| 'PARTIE'/);
  assert.match(source,/detail-view-context'\)\.textContent = retainedActiveData[\s\S]*?headerMeta\(retainedActiveData\)/);
  assert.match(source,/setPlayedOrder\(retainedActiveData\)/);
 });
 test('embedded detail view closes without leaving the tipp page through shared history',()=>{
- assert.match(source,/function close\(\) \{\s*if \(!active\) return;[\s\S]*?if \(!isDetailEmbed && window\.history\.state\?\.matchStatistics\) window\.history\.back\(\);/);
+ assert.match(source,/function close\(\) \{\s*if \(!active\) return;[\s\S]*?if \(!isDetailEmbed && state\?\.matchStatistics\) \{\s*window\.history\.go\(-Math\.max\(1, \(state\.detailDepth \|\| 1\) - \(state\.detailBase \|\| 0\)\)\);/);
  assert.match(source,/if \(direct && !isDetailEmbed\) \{[\s\S]*?history\.pushState/);
 });
 test('homepage match cards link only their center values without a details icon',()=>{

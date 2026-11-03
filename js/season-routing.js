@@ -24,12 +24,16 @@
   }
 
   // Ohne <base> würden relative Skripte und Links nach dem Pfadwechsel unter dem Kurzpfad gesucht.
-  function replaceCurrentUrl(url) {
+  function ensureDocumentBase(url) {
     if (url.pathname !== window.location.pathname && !document.querySelector('base')) {
       const base = document.createElement('base');
       base.href = new URL('./', document.baseURI).href;
       document.head.prepend(base);
     }
+  }
+
+  function replaceCurrentUrl(url) {
+    ensureDocumentBase(url);
     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
   }
 
@@ -128,6 +132,44 @@
     return true;
   }
 
+  function getPlayerIdFromPath(players = [], pathname = window.location.pathname) {
+    const segments = String(pathname).split('/').filter(Boolean).map(segment => decodeURIComponent(segment).toLowerCase());
+    const detailIndex = segments.lastIndexOf('spieler');
+    const slug = detailIndex === -1 ? null : segments[detailIndex + 1];
+    if (!slug) return null;
+    return players.find(player => String(player?.id || '').toLowerCase() === slug)?.id || null;
+  }
+
+  function getRequestedPlayerProfileId(players = []) {
+    return new URLSearchParams(window.location.search).get('spielerprofil') || getPlayerIdFromPath(players);
+  }
+
+  function getPlayerProfileUrl(seasonId, playerId, options = {}) {
+    const seasonUrl = getSeasonUrl(seasonId, 'league', options);
+    ['partie', 'live', 'liveView', 'spielerprofil'].forEach(parameter => seasonUrl.searchParams.delete(parameter));
+    if (!playerId) return seasonUrl;
+    const season = getSeasonById(seasonId);
+    if (usesQueryRoutes(seasonUrl) || !season?.route) {
+      seasonUrl.searchParams.set('spielerprofil', playerId);
+      return seasonUrl;
+    }
+    const url = new URL(`spieler/${encodeURIComponent(playerId)}/`, seasonUrl);
+    url.search = seasonUrl.search;
+    url.hash = seasonUrl.hash;
+    return url;
+  }
+
+  function normalizeCurrentPlayerProfileUrl(seasonId, players = []) {
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get('spielerprofil');
+    if (!requested || params.has('partie') || params.has('live')) return false;
+    if (!players.some(player => player.id === requested)) return false;
+    const url = getPlayerProfileUrl(seasonId, requested, { preserveSearch: true, preserveHash: true });
+    if (url.searchParams.has('spielerprofil')) return false;
+    replaceCurrentUrl(url);
+    return true;
+  }
+
   function getLiveSlug(match) {
     const record = typeof match === 'string' ? { id: match } : match;
     const id = String(record?.id || '').toLowerCase();
@@ -196,6 +238,7 @@
   }
 
   window.PadelSeasonRouting = Object.freeze({
+    ensureDocumentBase,
     getRequestedSeasonId,
     getRequestedMatchId,
     getMatchIdFromPath,
@@ -205,10 +248,14 @@
     getLiveSlug,
     getLiveUrl,
     getRequestedLiveRoute,
+    getPlayerIdFromPath,
+    getPlayerProfileUrl,
+    getRequestedPlayerProfileId,
     getSeasonIdFromPath,
     getSeasonUrl,
     normalizeCurrentMatchUrl,
     normalizeCurrentLiveUrl,
+    normalizeCurrentPlayerProfileUrl,
     normalizeCurrentUrl,
     normalizeSeasonId
   });

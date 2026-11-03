@@ -38,8 +38,8 @@ test('shared panel layout checks breakpoint, split width and list position', () 
 });
 
 test('all side panels end at the viewport and grow until they reach the sticky navigation', () => {
-  assert.match(index, /js\/panel-layout\.js\?v=2026-10-29-shared-panel-layout"><\/script>\s*<script defer src="js\/match-statistics\.js/);
-  assert.match(tippIndex, /js\/panel-layout\.js\?v=2026-10-29-shared-panel-layout"><\/script>\s*<script defer src="\.\.\/js\/tipp-page\.js/);
+  assert.match(index, /js\/panel-layout\.js\?v=2026-11-03-split-left-sync"><\/script>\s*<script defer src="js\/match-statistics\.js/);
+  assert.match(tippIndex, /js\/panel-layout\.js\?v=2026-11-03-split-left-sync"><\/script>\s*<script defer src="\.\.\/js\/tipp-page\.js/);
   assert.match(style, /body\.match-statistics-panel-open \.match-statistics-panel-host \{[\s\S]*?height: var\(--panel-host-height, calc\(100dvh - 94px\)\);/);
   assert.match(style, /body\.player-profile-panel-open \.ranking-profile-host,[\s\S]*?height: var\(--panel-host-height, calc\(100dvh - 94px\)\);/);
   assert.equal(panelLayout.getPanelHostHeight(900, 390), 494);

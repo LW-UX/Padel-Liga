@@ -464,7 +464,7 @@ test('profile participation overview ends with weighted training statistics', ()
   assert.match(participationStatsRenderer, /const matches = escapeHtml\(formatProfileMatchCount\(participation\.matches\)\)/);
   assert.match(participationStatsRenderer, /const middle = escapeHtml\(formatProfileMatchCount\(middleValue\)\)/);
   assert.doesNotMatch(participationStatsRenderer, /renderProfileMatchCount/);
-  assert.match(app, /renderPlayerProfileParticipationStats\(participation, 'Punkte', participation\.points\)/);
+  assert.match(app, /renderPlayerProfileParticipationStats\(participation, 'Pkt', participation\.points\)/);
   assert.match(app, /const trainingRow = training\.matches > 0 \? `[\s\S]*?Trainings[\s\S]*?renderPlayerProfileParticipationStats\(training, 'Siege', training\.wins\)[\s\S]*?` : ''/);
   assert.match(app, /target\.innerHTML = seasonRows \+ trainingRow/);
   assert.match(style, /\.player-profile-training-participation \{ --profile-season-color: var\(--dim\); \}/);
@@ -484,14 +484,14 @@ test('profile participation overview ends with weighted training statistics', ()
 
 test('profile season overview separates league and qualified final-round results', () => {
   assert.match(app, /const leagueRank = participation\.rank \? `\$\{participation\.rank\}\.` : '—'/);
-  assert.match(app, /player-profile-participation-phase-content">[\s\S]*?player-profile-participation-phase-heading">Ligaphase<\/div>[\s\S]*?renderPlayerProfileParticipationStats\(participation, 'Punkte', participation\.points\)[\s\S]*?player-profile-participation-phase-result player-profile-participation-placement \$\{leagueRankClass\}">\$\{leagueRank\}/);
+  assert.match(app, /player-profile-participation-phase-content">[\s\S]*?player-profile-participation-phase-heading">Ligaphase<\/div>[\s\S]*?renderPlayerProfileParticipationStats\(participation, 'Pkt', participation\.points\)[\s\S]*?player-profile-participation-phase-result player-profile-participation-placement \$\{leagueRankClass\}">\$\{leagueRank\}/);
   assert.match(app, /const finalRoundLabel = finalRound\?\.placement \? `\$\{finalRound\.label\}\.` : finalRound\?\.label/);
   assert.match(app, /player-profile-participation-phase-heading">Finalrunde<\/div>[\s\S]*?renderPlayerProfileParticipationStats\(finalRound, 'Siege', finalRound\.wins\)[\s\S]*?player-profile-participation-phase-result[\s\S]*?\$\{escapeHtml\(finalRoundLabel\)\}/);
   assert.match(app, /participation\.isActive \? '<em class="player-profile-participation-status">Laufend<\/em>' : ''/);
   assert.match(style, /\.player-profile-participation-status \{[\s\S]*?color: var\(--dim\);[\s\S]*?font-size: var\(--text-sm\);[\s\S]*?font-style: italic;/);
   assert.match(style, /\.player-profile-participation-phase \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto;[\s\S]*?align-items: center;/);
   assert.match(style, /\.player-profile-participation-phase-result\.player-profile-participation-placement \{[\s\S]*?font-family: var\(--font-heading\);[\s\S]*?font-size: var\(--text-heading\);[\s\S]*?line-height: 1;/);
-  assert.match(app, /renderPlayerProfileParticipationStats\(participation, 'Punkte', participation\.points\)/);
+  assert.match(app, /renderPlayerProfileParticipationStats\(participation, 'Pkt', participation\.points\)/);
   assert.match(app, /renderPlayerProfileParticipationStats\(finalRound, 'Siege', finalRound\.wins\)/);
   assert.match(app, /getPlayerProfileSeasonPayload\(participation\.seasonId\)/);
   assert.match(app, /isActive: isPlayerProfileParticipationActive\(participation, payloads\[index\]\)/);
@@ -831,4 +831,31 @@ test('jedes Profilbild besitzt ein Vorschaubild für die Ranglisten', () => {
     .filter(id => fs.existsSync(path.join(playersDir, id, 'profile.webp')))
     .filter(id => !fs.existsSync(path.join(playersDir, id, 'thumb.jpg')));
   assert.deepEqual(withoutThumbnail, []);
+});
+
+test('Spielervergleich trennt Duell und gemeinsames Team samt Tiebreaks und Zu-Null-Sätzen', () => {
+  const helpers = ['getPlayerProfileMatchWeight', 'getProfileRegularGameTotals', 'getProfileCompletedSets',
+    'getProfileSetTotals', 'getProfileSetFeatureTotals', 'getPlayerProfileComparison']
+    .map(name => app.match(new RegExp(`function ${name}\\([^)]*\\) \\{[\\s\\S]*?\\n\\}`))?.[0]);
+  assert.ok(helpers.every(Boolean), 'comparison helpers should be present');
+  const context = { window: {}, result: null };
+  vm.createContext(context);
+  vm.runInContext(scoreInput, context);
+  vm.runInContext(`${helpers.join('\n')}
+    result = getPlayerProfileComparison([
+      { team: 2, opponentNames: ['Ben'], partnerNames: [], outcome: 'win', resultDetails: '0:6, 7:6 (7:4), 8:10' },
+      { team: 1, partnerNames: ['Ben'], opponentNames: [], outcome: 'loss', resultDetails: '6:0, 6:7, 10:12' },
+      { team: 1, partnerNames: ['Ben'], opponentNames: [], matchWeight: 0.5, winWeight: 0.5, lossWeight: 0, resultDetails: '6:4' },
+      { team: 1, partnerNames: ['Cleo'], opponentNames: ['Dan'], outcome: 'win', resultDetails: '6:0, 6:0' }
+    ], 'Ben');`, context);
+
+  const plain = JSON.parse(JSON.stringify(context.result));
+  assert.equal(plain.against, 1);
+  assert.equal(plain.together, 1.5);
+  assert.deepEqual(plain.duel, {
+    wins: [1, 0], sets: [2, 1], games: [12, 7], tiebreaks: [1, 1], bagels: [1, 0]
+  });
+  assert.deepEqual(plain.team, {
+    wins: [0.5, 1], sets: [2, 2], games: [18, 11], tiebreaks: [0, 2], bagels: [1, 0]
+  });
 });

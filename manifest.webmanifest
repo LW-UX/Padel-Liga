@@ -1,6 +1,7 @@
 {
-  "name": "PadelLiga Sommer 2026",
+  "name": "PadelLiga",
   "short_name": "PadelLiga",
+  "description": "Rangliste, Spielplan, Ergebnisse und Tippspiel der PadelLiga.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

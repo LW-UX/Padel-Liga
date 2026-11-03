@@ -40,6 +40,7 @@
     sortMode: 'status',
     sortDescending: false,
     leaderboardSortMode: 'points',
+    leaderboardView: 'compact',
     articleExpanded: false,
     tableView: 'matches',
     tableEntries: new Map(),
@@ -1178,12 +1179,21 @@
     const previousPositions = window.PadelTable.getRankingRowPositions(body, '.ranking-row');
     const sortedEntries = getSortedPredictionLeaderboard();
     const table = document.getElementById('prediction-ranking-table');
-    if (table) table.dataset.rankingSort = state.leaderboardSortMode;
+    if (table) {
+      table.dataset.rankingSort = state.leaderboardSortMode;
+      table.classList.toggle('compact', state.leaderboardView === 'compact');
+      table.classList.toggle('expanded', state.leaderboardView === 'expanded');
+    }
+    document.getElementById('prediction-ranking-view-toggle')?.querySelectorAll('[data-prediction-ranking-view]').forEach(button => {
+      const active = button.dataset.predictionRankingView === state.leaderboardView;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
     window.PadelTable.updateSortHeaders('[data-prediction-ranking-sort]', 'predictionRankingSort', state.leaderboardSortMode);
     body.innerHTML = sortedEntries.map(({ entry, canonicalRank }, index) => `
       <tr class="ranking-row r${Math.min(index + 1, 4)} ${state.session?.user?.id === entry.user_id ? 'authenticated-player-highlight' : ''}" data-ranking-entry="${escapeHtml(entry.user_id)}">
         <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${index + 1}</span>${renderPredictionRankReference(index + 1, canonicalRank)}</span></td>
-        <td class="col-name"><span class="prediction-rank-account"><span class="pname">${escapeHtml(entry.display_name)}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionCompanyBadge(entry)}</span></td>
+        <td class="col-name"><span class="prediction-rank-account"><span class="pname">${escapeHtml(entry.display_name)}</span><span class="pname-short" title="${escapeHtml(entry.display_name)}">${escapeHtml(getPredictionAccountShortLabel(entry))}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionCompanyBadge(entry)}</span></td>
         <td class="col-games">${Number(entry.predictions_count) || 0}</td>
         <td class="col-wins">${Number(entry.exact_count) || 0}</td>
         <td class="col-passive" title="Automatisch gutgeschriebene Punkte aus eigenen Partien">${getLeaderboardPassivePoints(entry)}</td>
@@ -1842,6 +1852,14 @@
         const nextMode = rankingSortButton.dataset.predictionRankingSort;
         if (nextMode === state.leaderboardSortMode) return;
         state.leaderboardSortMode = nextMode;
+        renderLeaderboard();
+        return;
+      }
+      const rankingViewButton = event.target.closest('[data-prediction-ranking-view]');
+      if (rankingViewButton) {
+        const nextView = rankingViewButton.dataset.predictionRankingView === 'expanded' ? 'expanded' : 'compact';
+        if (nextView === state.leaderboardView) return;
+        state.leaderboardView = nextView;
         renderLeaderboard();
         return;
       }

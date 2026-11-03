@@ -37,7 +37,7 @@ let playerProfileData = null;
 let playerProfileExpanded = false;
 let playerProfileMatchScope = 'past';
 let playerProfileCompareId = null;
-const playerProfileCompareElos = new Map();
+const playerProfileCompareProfiles = new Map();
 let playerProfileRequestId = 0;
 let playerProfileSeasonPayloadCache = new Map();
 const PLAYER_PROFILE_CACHE_TTL = 10 * 60 * 1000;
@@ -91,6 +91,12 @@ let playerProfileCloseTimer = null;
 let playerProfilePanelOrigin = null;
 let playerProfileReturnContext = null;
 let playerProfileEmbeddedPanelAvailable = false;
+// Jedes eigenständig geöffnete Profil erhält einen Verlaufseintrag; zurückgekehrte Profile werden ohne Neuladen wiederhergestellt.
+let playerProfileRouteNumber = 0;
+let playerProfileHistoryClose = null;
+let playerProfileShownRoute = null;
+const playerProfileHistoryEntries = new Map();
+const playerProfileRouteIds = new Map();
 let detailPanelSwitchFrame = 0;
 const isDetailEmbed = document.documentElement.classList.contains('is-detail-embed');
 
@@ -1570,7 +1576,7 @@ window.addEventListener('padel:match-forecast-changed', event => {
 function invalidatePlayerProfileCache() {
   playerProfileCache.clear();
   playerProfileSeasonPayloadCache.clear();
-  playerProfileCompareElos.clear();
+  playerProfileCompareProfiles.clear();
 }
 
 function isMissingPlayerProfileRpc(error) {
@@ -2286,7 +2292,7 @@ function getPlayerProfileTrainingParticipation(matches = []) {
 function renderPlayerProfileParticipationStats(participation, middleLabel, middleValue) {
   const matches = escapeHtml(formatProfileMatchCount(participation.matches));
   const middle = escapeHtml(formatProfileMatchCount(middleValue));
-  return `Partien: ${matches} · ${middleLabel}: ${middle} · Diff.: ${formatProfileSignedValue(participation.gameDiff)}`;
+  return `Ptn: ${matches} · ${middleLabel}: ${middle} · Diff: ${formatProfileSignedValue(participation.gameDiff)}`;
 }
 
 function configurePlayerProfileResponsiveGrid(target, itemCount) {
@@ -2328,7 +2334,7 @@ function renderPlayerProfileParticipations(participations = [], matches = []) {
           <div class="player-profile-participation-phase-content">
             <div class="player-profile-participation-phase-heading">Ligaphase</div>
             <div class="hint stat-meta-line">
-              ${renderPlayerProfileParticipationStats(participation, 'Punkte', participation.points)}
+              ${renderPlayerProfileParticipationStats(participation, 'Pkt', participation.points)}
             </div>
           </div>
           <strong class="player-profile-participation-phase-result player-profile-participation-placement ${leagueRankClass}">${leagueRank}</strong>
@@ -2452,7 +2458,7 @@ function renderPlayerProfileRelationships(matches = []) {
       <div class="stat-shift-list">
         ${records.map(record => `<div class="stat-shift-item">
           <div class="stat-shift-head">
-            <span class="stat-shift-name">${escapeHtml(record.name)}</span>
+            <span class="stat-shift-name">${renderPlayerProfileNameLink(record.name)}</span>
             <span class="stat-shift-value ${valueClass}">${Math.round(record.winRate * 100)} %</span>
           </div>
           <div class="hint stat-meta-line">${escapeHtml(formatRecord(record))}</div>
@@ -2490,43 +2496,108 @@ function getPlayerProfileCompareOptions(profile) {
   })).sort((left, right) => right.matches - left.matches || left.name.localeCompare(right.name, 'de'));
 }
 
-function getProfileSetTotals(resultDetails) {
+// Vollständige Sätze samt Art; Match-Tiebreaks erkennt man an Werten über 7.
+function getProfileCompletedSets(resultDetails) {
   const withoutSetTiebreaks = String(resultDetails || '').replace(/\([^)]*\)/g, '');
   return [...withoutSetTiebreaks.matchAll(/(\d+)\s*:\s*(\d+)/g)]
     .map(score => [Number(score[1]), Number(score[2])])
-    .reduce((totals, [teamOne, teamTwo]) => {
-      const classification = Math.max(teamOne, teamTwo) > 7
+    .map(([teamOne, teamTwo]) => {
+      const isMatchTiebreak = Math.max(teamOne, teamTwo) > 7;
+      const classification = isMatchTiebreak
         ? window.PadelScoreInput.classifyTiebreak(teamOne, teamTwo, 10)
         : window.PadelScoreInput.classifyRegularSet(teamOne, teamTwo);
-      if (classification.state !== 'complete') return totals;
-      return teamOne > teamTwo ? [totals[0] + 1, totals[1]] : [totals[0], totals[1] + 1];
-    }, [0, 0]);
+      return { teamOne, teamTwo, isMatchTiebreak, complete: classification.state === 'complete' };
+    })
+    .filter(set => set.complete);
 }
 
+function getProfileSetTotals(resultDetails) {
+  return getProfileCompletedSets(resultDetails)
+    .reduce((totals, { teamOne, teamTwo }) =>
+      teamOne > teamTwo ? [totals[0] + 1, totals[1]] : [totals[0], totals[1] + 1], [0, 0]);
+}
+
+function getProfileSetFeatureTotals(resultDetails) {
+  const totals = { tiebreaks: [0, 0], bagels: [0, 0] };
+  getProfileCompletedSets(resultDetails).forEach(({ teamOne, teamTwo, isMatchTiebreak }) => {
+    const winnerIndex = teamOne > teamTwo ? 0 : 1;
+    const isSetTiebreak = Math.max(teamOne, teamTwo) === 7 && Math.min(teamOne, teamTwo) === 6;
+    if (isMatchTiebreak || isSetTiebreak) totals.tiebreaks[winnerIndex] += 1;
+    if (!isMatchTiebreak && Math.max(teamOne, teamTwo) === 6 && Math.min(teamOne, teamTwo) === 0) {
+      totals.bagels[winnerIndex] += 1;
+    }
+  });
+  return totals;
+}
+
+// Duell vergleicht beide Spieler gegeneinander, Team vergleicht beide zusammen mit ihren Gegnern.
 function getPlayerProfileComparison(matches, otherName) {
-  const comparison = { together: 0, against: 0, wins: [0, 0], sets: [0, 0], games: [0, 0] };
+  const createSide = () => ({ wins: [0, 0], sets: [0, 0], games: [0, 0], tiebreaks: [0, 0], bagels: [0, 0] });
+  const comparison = { together: 0, against: 0, duel: createSide(), team: createSide() };
   const orient = (totals, team) => Number(team) === 2 ? [totals[1], totals[0]] : totals;
+  const add = (side, key, values) => {
+    side[key] = [side[key][0] + values[0], side[key][1] + values[1]];
+  };
   matches.forEach(match => {
     const weight = getPlayerProfileMatchWeight(match);
     if (!weight) return;
+    let side;
     if ((match.partnerNames || []).includes(otherName)) {
       comparison.together += weight;
+      side = comparison.team;
+    } else if ((match.opponentNames || []).includes(otherName)) {
+      comparison.against += weight;
+      side = comparison.duel;
+    } else {
       return;
     }
-    if (!(match.opponentNames || []).includes(otherName)) return;
-    comparison.against += weight;
-    comparison.wins[0] += Number.isFinite(Number(match.winWeight))
-      ? Number(match.winWeight)
-      : match.outcome === 'win' ? weight : 0;
-    comparison.wins[1] += Number.isFinite(Number(match.lossWeight))
-      ? Number(match.lossWeight)
-      : match.outcome === 'loss' ? weight : 0;
-    const sets = orient(getProfileSetTotals(match.resultDetails), match.team);
-    const games = orient(getProfileRegularGameTotals(match.resultDetails), match.team);
-    comparison.sets = [comparison.sets[0] + sets[0], comparison.sets[1] + sets[1]];
-    comparison.games = [comparison.games[0] + games[0], comparison.games[1] + games[1]];
+    add(side, 'wins', [
+      Number.isFinite(Number(match.winWeight)) ? Number(match.winWeight) : match.outcome === 'win' ? weight : 0,
+      Number.isFinite(Number(match.lossWeight)) ? Number(match.lossWeight) : match.outcome === 'loss' ? weight : 0
+    ]);
+    const features = getProfileSetFeatureTotals(match.resultDetails);
+    add(side, 'sets', orient(getProfileSetTotals(match.resultDetails), match.team));
+    add(side, 'games', orient(getProfileRegularGameTotals(match.resultDetails), match.team));
+    add(side, 'tiebreaks', orient(features.tiebreaks, match.team));
+    add(side, 'bagels', orient(features.bagels, match.team));
   });
   return comparison;
+}
+
+// Elo vor der Partie: gespeicherter Wert der Partie, sonst der letzte Stand vor dem Partietag, weil Trainings das Elo nicht verändern.
+function getProfileEloBeforeMatch(eloSeries, match) {
+  const series = (eloSeries || []).filter(item => Number.isFinite(Number(item.elo)));
+  const matchEntry = series.find(item => item.matchId && item.matchId === match.id && Number.isFinite(Number(item.oldElo)));
+  if (matchEntry) return Number(matchEntry.oldElo);
+  const previous = series.filter(item => item.date && item.date < match.date).at(-1);
+  if (previous) return Number(previous.elo);
+  const first = series[0];
+  if (!first) return null;
+  return Number.isFinite(Number(first.oldElo ?? NaN)) ? Number(first.oldElo) : Number(first.elo);
+}
+
+// Ø Team-Elo (70 % schwächerer, 30 % stärkerer Spieler) über die gemeinsamen Partien, gewichtet wie die übrigen Vergleichswerte.
+function getPlayerProfileTeamEloAverages(profile, togetherMatches, partnerId, playersByName) {
+  const ownId = profile.identity?.id;
+  const seriesFor = playerId => playerId === ownId
+    ? profile.eloSeries
+    : playerProfileCompareProfiles.get(playerId)?.eloSeries;
+  const sums = [0, 0];
+  let weightTotal = 0;
+  for (const match of togetherMatches) {
+    const opponentIds = (match.opponentNames || []).map(name => playersByName.get(name)?.id);
+    if (opponentIds.length !== 2 || opponentIds.some(playerId => !playerId)) continue;
+    const playerIds = [ownId, partnerId, ...opponentIds];
+    // Solange noch Profile laden, bleibt der Wert offen statt kurz einen Teilschnitt zu zeigen.
+    if (playerIds.some(playerId => playerId !== ownId && playerProfileCompareProfiles.get(playerId) === undefined)) return [null, null];
+    const elos = playerIds.map(playerId => getProfileEloBeforeMatch(seriesFor(playerId), match));
+    if (elos.some(elo => elo === null || !Number.isFinite(elo))) continue;
+    const weight = getPlayerProfileMatchWeight(match);
+    sums[0] += getWeightedTeamElo(elos.slice(0, 2)) * weight;
+    sums[1] += getWeightedTeamElo(elos.slice(2)) * weight;
+    weightTotal += weight;
+  }
+  return weightTotal ? sums.map(sum => sum / weightTotal) : [null, null];
 }
 
 function renderPlayerProfileCompareRow(label, leftValue, rightValue, format = formatProfileMatchCount) {
@@ -2553,31 +2624,64 @@ function renderPlayerProfileCompareResult() {
     target.innerHTML = '';
     return;
   }
-  if (!playerProfileCompareElos.has(otherId)) {
-    playerProfileCompareElos.set(otherId, undefined);
-    fetchPlayerProfile(otherId)
-      .then(otherProfile => playerProfileCompareElos.set(otherId, otherProfile?.summary?.currentElo ?? null))
+  const playersByName = new Map((window.PADEL_PLAYERS || []).map(player => [player.name, player]));
+  const togetherMatches = (profile.matches || []).filter(match =>
+    getPlayerProfileMatchWeight(match) && (match.partnerNames || []).includes(other.name)
+  );
+  const opponentIds = togetherMatches.flatMap(match =>
+    (match.opponentNames || []).map(name => playersByName.get(name)?.id).filter(Boolean)
+  );
+  [...new Set([otherId, ...opponentIds])].forEach(playerId => {
+    if (playerProfileCompareProfiles.has(playerId)) return;
+    playerProfileCompareProfiles.set(playerId, undefined);
+    fetchPlayerProfile(playerId)
+      .then(loadedProfile => playerProfileCompareProfiles.set(playerId, loadedProfile || null))
       .catch(error => {
-        playerProfileCompareElos.set(otherId, null);
+        playerProfileCompareProfiles.set(playerId, null);
         console.error(error);
       })
       .finally(() => {
         if (playerProfileData === profile && playerProfileCompareId === otherId) renderPlayerProfileCompareResult();
       });
-  }
+  });
   const comparison = getPlayerProfileComparison(profile.matches || [], other.name);
   const ownElo = profile.summary?.currentElo ?? null;
-  const otherElo = playerProfileCompareElos.get(otherId) ?? null;
+  const otherElo = playerProfileCompareProfiles.get(otherId)?.summary?.currentElo ?? null;
+  const teamElos = getPlayerProfileTeamEloAverages(profile, togetherMatches, otherId, playersByName);
+  const formatElo = value => String(Math.round(Number(value)));
   const sharedMatches = comparison.together + comparison.against;
-  target.innerHTML = `<div class="hint stat-meta-line">${escapeHtml(`${formatProfileMatchCount(sharedMatches)} gemeinsame Partien`)}<br>${escapeHtml([
-    `${formatProfileMatchCount(comparison.together)} miteinander`,
-    `${formatProfileMatchCount(comparison.against)} gegeneinander`
-  ].join(' · '))}</div>
-    <div class="match-forecast-percentages player-profile-compare-names"><span>${escapeHtml(profile.identity?.displayName || '')}</span><span>${escapeHtml(other.name)}</span></div>
-    ${renderPlayerProfileCompareRow('Siege im Duell', comparison.wins[0], comparison.wins[1])}
-    ${renderPlayerProfileCompareRow('Sätze im Duell', comparison.sets[0], comparison.sets[1])}
-    ${renderPlayerProfileCompareRow('Spiele im Duell', comparison.games[0], comparison.games[1])}
-    ${renderPlayerProfileCompareRow('Aktuelles Elo', ownElo, otherElo, value => String(Math.round(Number(value))))}`;
+  const renderSideRows = side => [
+    renderPlayerProfileCompareRow('Siege', side.wins[0], side.wins[1]),
+    renderPlayerProfileCompareRow('Sätze', side.sets[0], side.sets[1]),
+    renderPlayerProfileCompareRow('Spiele', side.games[0], side.games[1]),
+    renderPlayerProfileCompareRow('Tiebreaks', side.tiebreaks[0], side.tiebreaks[1]),
+    renderPlayerProfileCompareRow('Zu-Null', side.bagels[0], side.bagels[1])
+  ].join('');
+  // Das Elo bleibt auch ohne direktes Duell sichtbar.
+  // Die Blockbezeichnung steht wie die Wertebezeichnungen mittig zwischen beiden Seiten.
+  const renderTable = (title, matchCount, names, rows, emptyText, extraRows = '') => `<div class="player-profile-compare-table">
+    ${matchCount || extraRows ? `<div class="match-forecast-percentages player-profile-compare-names"><span>${escapeHtml(names[0])}</span><span class="player-profile-compare-label">${escapeHtml(title)}</span><span>${escapeHtml(names[1])}</span></div>` : ''}
+    ${matchCount ? rows : `<div class="hint">${escapeHtml(emptyText)}</div>`}
+    ${extraRows}
+  </div>`;
+  target.innerHTML = `<div class="hint stat-meta-line">${escapeHtml(`${formatProfileMatchCount(sharedMatches)} gemeinsame Partien`)}</div>
+    <div class="player-profile-compare-tables">
+      ${renderTable(
+        `Im Duell (${formatProfileMatchCount(comparison.against)})`,
+        comparison.against,
+        [profile.identity?.displayName || '', other.name],
+        renderSideRows(comparison.duel),
+        'Noch nie gegeneinander gespielt.',
+        renderPlayerProfileCompareRow('Akt. Elo', ownElo, otherElo, formatElo)
+      )}
+      ${renderTable(
+        `Im Team (${formatProfileMatchCount(comparison.together)})`,
+        comparison.together,
+        ['Zusammen', 'Gegner'],
+        renderSideRows(comparison.team) + renderPlayerProfileCompareRow('Ø Elo', teamElos[0], teamElos[1], formatElo),
+        'Noch nie zusammen gespielt.'
+      )}
+    </div>`;
 }
 
 function renderPlayerProfileCompare(profile) {
@@ -2631,6 +2735,25 @@ function filterPlayerProfileCompareOptions(query = '') {
   if (emptyState) emptyState.hidden = visibleOptions > 0;
 }
 
+// Die Liste öffnet nach oben, wenn sie unten aus dem sichtbaren Profilbereich ragen würde.
+function updatePlayerProfileComparePickerDirection(picker) {
+  picker.classList.remove('opens-up');
+  const menu = picker.querySelector('.picker-menu');
+  if (!menu) return;
+  let top = 0;
+  let bottom = window.innerHeight;
+  for (let element = picker.parentElement; element; element = element.parentElement) {
+    if (getComputedStyle(element).overflowY === 'visible') continue;
+    const rect = element.getBoundingClientRect();
+    top = Math.max(top, rect.top);
+    bottom = Math.min(bottom, rect.bottom);
+  }
+  const menuRect = menu.getBoundingClientRect();
+  const pickerRect = picker.getBoundingClientRect();
+  const spaceAbove = pickerRect.top - top;
+  if (menuRect.bottom > bottom && spaceAbove > bottom - pickerRect.bottom) picker.classList.add('opens-up');
+}
+
 function setPlayerProfileComparePickerOpen(open) {
   const picker = document.querySelector('[data-profile-compare-picker]');
   if (!picker) return;
@@ -2641,6 +2764,7 @@ function setPlayerProfileComparePickerOpen(open) {
   searchInput.setAttribute('aria-expanded', String(open));
   searchInput.value = '';
   filterPlayerProfileCompareOptions();
+  if (open) updatePlayerProfileComparePickerDirection(picker);
   searchInput.disabled = !open;
   if (open) searchInput.focus({ preventScroll: true });
   else searchInput.blur();
@@ -2659,10 +2783,17 @@ function formatProfileDate(value) {
     : '—';
 }
 
+// Namen echter Spieler öffnen deren Profil; Gäste und der Profilinhaber bleiben Text.
+function renderPlayerProfileNameLink(name) {
+  const player = (window.PADEL_PLAYERS || []).find(item => item.name === name);
+  if (!player || player.id === playerProfileData?.identity?.id) return escapeHtml(name);
+  return `<button type="button" class="player-profile-link" data-player-profile-id="${escapeHtml(player.id)}" aria-label="Profil von ${escapeHtml(name)} öffnen">${escapeHtml(name)}</button>`;
+}
+
 function renderPlayerProfileNames(names = [], fallback = '—') {
   if (!names.length) return escapeHtml(fallback);
   return names
-    .map(name => escapeHtml(name))
+    .map(renderPlayerProfileNameLink)
     .join('<span class="team-sep">&amp;</span>');
 }
 
@@ -2831,19 +2962,26 @@ function renderPlayerProfilePastMatches() {
         const showSeason = showGroupLabelFirst
           ? index === 0
           : index === group.matches.length - 1;
-        return `<article class="player-profile-match ${outcome}">
+        const hasLiveHistory = !isCancelled && isComplete && window.PadelLiveTicker?.hasHistory(match.id);
+        const hasStatistics = !isCancelled && isComplete && match.hasMatchStatistics && window.PadelMatchStatistics;
+        const detailAttributes = hasLiveHistory
+          ? `data-live-open-match="${escapeHtml(match.id)}" data-live-season-id="${escapeHtml(match.seasonId || '')}"`
+          : hasStatistics ? `data-match-statistics="${escapeHtml(match.id)}"` : '';
+        const detailLabel = hasLiveHistory ? 'Spielverlauf öffnen' : 'Partieanalyse öffnen';
+        const chipClass = `player-profile-match-outcome form-chip form-${outcome}${isTraining ? ' form-training' : ''}${decidedByMatchTiebreak ? ' form-tiebreak' : ''}`;
+        return `<article class="player-profile-match ${outcome}${detailAttributes ? ' has-details' : ''}">
           <div class="player-profile-match-date">${showDate ? escapeHtml(formatProfileDate(match.date)) : ''}</div>
-          <div class="player-profile-match-outcome form-chip form-${outcome}${isTraining ? ' form-training' : ''}${decidedByMatchTiebreak ? ' form-tiebreak' : ''}" aria-label="${outcomeAriaLabel}">${outcomeLabel}</div>
+          ${detailAttributes
+            ? `<button type="button" class="${chipClass}" ${detailAttributes} tabindex="-1" aria-label="${outcomeAriaLabel}, ${detailLabel}">${outcomeLabel}</button>`
+            : `<div class="${chipClass}" aria-label="${outcomeAriaLabel}">${outcomeLabel}</div>`}
           <div class="player-profile-match-teams">
             <div class="player-profile-match-team-line"><span>mit</span> ${partner}</div>
             <div class="player-profile-match-team-line"><span>vs.</span> ${opponents}</div>
           </div>
           ${isCancelled
             ? '<div class="player-profile-match-score player-profile-unrated-result">ohne Wertung</div>'
-            : isComplete && window.PadelLiveTicker?.hasHistory(match.id)
-            ? `<button type="button" class="player-profile-match-score" data-live-open-match="${escapeHtml(match.id)}" data-live-season-id="${escapeHtml(match.seasonId || '')}" aria-label="Spielverlauf öffnen">${renderProfileResultDetails(match)}</button>`
-            : isComplete && match.hasMatchStatistics && window.PadelMatchStatistics
-            ? `<button type="button" class="player-profile-match-score" data-match-statistics="${escapeHtml(match.id)}" aria-label="Partieanalyse öffnen">${renderProfileResultDetails(match)}</button>`
+            : detailAttributes
+            ? `<button type="button" class="player-profile-match-score" ${detailAttributes} aria-label="${detailLabel}">${renderProfileResultDetails(match)}</button>`
             : `<div class="player-profile-match-score"${isComplete ? '' : ' title="Vollständige Sätze werden einzeln gewertet"'}>${renderProfileResultDetails(match)}</div>`}
           <div class="player-profile-match-season">${showSeason ? escapeHtml(getPlayerProfileMatchLabel(match)) : ''}</div>
         </article>`;
@@ -3232,6 +3370,7 @@ function cancelPlayerProfileCloseTransition() {
   document.getElementById('player-profile-dialog')?.classList.remove('is-closing');
   if (playerProfilePresentation === 'panel') {
     document.body.classList.add('player-profile-panel-open');
+    if (playerProfilePanelOrigin === 'match-list') document.body.classList.add('match-statistics-panel-open');
     updatePlayerProfilePanelMetrics();
   }
 }
@@ -3300,6 +3439,10 @@ async function openPlayerProfile(playerId, trigger = null, options = {}) {
     options.sharedDetail
   );
   const replacesStatistics = Boolean(statisticsTransition?.replacesDetail);
+  if (!options.fromHistory && !statisticsTransition && !window.PadelMatchStatistics?.active
+    && !(profileWasOpen && playerProfileActiveId === playerId)) {
+    pushPlayerProfileHistory(playerId, profileWasOpen);
+  }
   if (replacesStatistics) {
     playerProfilePresentationPreference = statisticsTransition.presentationPreference
       || statisticsTransition.presentation;
@@ -3386,7 +3529,89 @@ async function openPlayerProfile(playerId, trigger = null, options = {}) {
   }
 }
 
+function pushPlayerProfileHistory(playerId, profileWasOpen) {
+  if (isDetailEmbed || !window.PadelSeasonRouting || !selectedSeason) return;
+  const state = window.history.state || {};
+  const continues = Boolean(profileWasOpen && state.playerProfile);
+  if (continues) rememberPlayerProfileHistoryEntry();
+  const profileRoute = `profile-${++playerProfileRouteNumber}`;
+  playerProfileShownRoute = profileRoute;
+  playerProfileRouteIds.set(profileRoute, playerId);
+  const url = window.PadelSeasonRouting.getPlayerProfileUrl(selectedSeason.id, playerId, {
+    preserveSearch: true,
+    preserveHash: true
+  });
+  window.PadelSeasonRouting.ensureDocumentBase(url);
+  const depth = continues ? (state.detailDepth || 0) : 0;
+  // Eine gerade geschlossene mobile Dialogseite gibt ihren Zurück-Schritt an das Profil ab.
+  const takesOverMobilePage = Boolean(state.mobileDialogPage)
+    && !document.querySelector('#auth-dialog[open], #whats-new-dialog[open]');
+  window.history[takesOverMobilePage ? 'replaceState' : 'pushState']({
+    ...state,
+    matchStatistics: null,
+    statisticsRoute: null,
+    statisticsProfile: null,
+    mobileDialogPage: null,
+    playerProfile: playerId,
+    profileRoute,
+    detailBase: continues ? (state.detailBase || 0) : 0,
+    detailDepth: depth + 1
+  }, '', url);
+}
+
+function rememberPlayerProfileHistoryEntry(route = window.history.state?.profileRoute) {
+  const dialog = document.getElementById('player-profile-dialog');
+  // Nur das zum Eintrag gehörende Profil wird gemerkt, nicht etwa ein Profil aus einem Partieverlauf.
+  if (!route || !dialog?.open || !playerProfileData || playerProfileData.identity?.id !== playerProfileRouteIds.get(route)) return;
+  playerProfileHistoryEntries.set(route, {
+    snapshot: window.PadelLigaCapturePlayerProfile(),
+    panelOrigin: playerProfilePanelOrigin,
+    returnContext: playerProfileReturnContext,
+    lastTrigger: playerProfileLastTrigger
+  });
+}
+
+function getPlayerProfileHistorySteps() {
+  const state = window.history.state;
+  if (isDetailEmbed || !state?.playerProfile || state.matchStatistics) return 0;
+  return Math.max(0, (state.detailDepth || 0) - (state.detailBase || 0));
+}
+
+function syncPlayerProfileWithHistory() {
+  if (isDetailEmbed) return;
+  const state = window.history.state || {};
+  if (state.matchStatistics) return;
+  const dialog = document.getElementById('player-profile-dialog');
+  // Der verlassene Eintrag merkt sich sein Profil, damit Vorwärts es unverändert wiederherstellt.
+  if (playerProfileShownRoute && playerProfileShownRoute !== state.profileRoute) {
+    rememberPlayerProfileHistoryEntry(playerProfileShownRoute);
+  }
+  playerProfileShownRoute = state.playerProfile ? state.profileRoute : null;
+  if (!state.playerProfile) {
+    const closing = playerProfileHistoryClose;
+    playerProfileHistoryClose = null;
+    if (dialog?.open && !window.PadelMatchStatistics?.active) {
+      closePlayerProfile({ fromHistory: true, animate: Boolean(closing), restoreFocus: closing?.restoreFocus !== false });
+    }
+    return;
+  }
+  if (dialog?.open && playerProfileActiveId === state.playerProfile) return;
+  const entry = playerProfileHistoryEntries.get(state.profileRoute);
+  if (!dialog?.open && entry?.snapshot?.data?.identity?.id === state.playerProfile) {
+    playerProfilePanelOrigin = entry.panelOrigin;
+    playerProfileReturnContext = entry.returnContext;
+    playerProfileLastTrigger = entry.lastTrigger?.isConnected ? entry.lastTrigger : null;
+    window.PadelLigaRestorePlayerProfile(entry.snapshot);
+    return;
+  }
+  void openPlayerProfile(state.playerProfile, null, {
+    fromHistory: true,
+    forceModal: dialog?.open ? playerProfileForceModal : !getPlayerProfilePanelContext()
+  });
+}
+
 window.PadelLigaOpenPlayerProfile = openPlayerProfile;
+window.PadelLigaRememberPlayerProfile = rememberPlayerProfileHistoryEntry;
 window.PadelLigaCapturePlayerProfile = () => ({
   data: playerProfileData,
   expanded: playerProfileExpanded,
@@ -3487,9 +3712,17 @@ function closePlayerProfile(options = {}) {
   const dialog = document.getElementById('player-profile-dialog');
   if (!dialog?.open) return;
   if (playerProfileCloseTimer) return;
+  // Schließen beendet den gesamten Profilverlauf; den sichtbaren Abschluss übernimmt der Verlaufs-Handler.
+  const historySteps = options.fromHistory ? 0 : getPlayerProfileHistorySteps();
+  if (historySteps && !options.immediate) {
+    playerProfileHistoryClose = { restoreFocus: options.restoreFocus };
+    window.history.go(-historySteps);
+    return;
+  }
+  if (historySteps) window.history.go(-historySteps);
   ++playerProfileRequestId;
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (playerProfilePresentation !== 'panel' || options.immediate || options.fromHistory || reduceMotion) {
+  if (playerProfilePresentation !== 'panel' || options.immediate || (options.fromHistory && !options.animate) || reduceMotion) {
     finalizePlayerProfileClose({ restoreFocus: options.restoreFocus !== false });
     return;
   }
@@ -8985,6 +9218,7 @@ async function initApp() {
     await loadActiveSeason();
     window.PadelSeasonRouting.normalizeCurrentMatchUrl(selectedSeason.id, PADEL_DATA.matches);
     window.PadelSeasonRouting.normalizeCurrentLiveUrl(selectedSeason.id, PADEL_DATA.matches);
+    if (!isDetailEmbed) window.PadelSeasonRouting.normalizeCurrentPlayerProfileUrl(selectedSeason.id, window.PADEL_PLAYERS || []);
     applySeasonMetadata();
     resetSeasonState();
     updateViewerPicker();
@@ -9010,7 +9244,7 @@ async function initApp() {
   const requestedStatistics = window.PadelSeasonRouting.getRequestedMatchId(PADEL_DATA.matches);
   const requestedLive = requestedStatistics ? null : window.PadelSeasonRouting.getRequestedLiveRoute(PADEL_DATA.matches);
   const requestedLiveMatch = requestedLive?.matchId || null;
-  const requestedPlayerProfile = url.searchParams.get('spielerprofil');
+  const requestedPlayerProfile = window.PadelSeasonRouting.getRequestedPlayerProfileId(window.PADEL_PLAYERS || []);
   let liveTickerInitialized = false;
 
   try {
@@ -9033,10 +9267,26 @@ async function initApp() {
         view: requestedLive.view
       });
     }
-    if (requestedPlayerProfile && !requestedStatistics) {
+    if (requestedPlayerProfile && !requestedStatistics && isDetailEmbed) {
       url.searchParams.delete('spielerprofil');
       window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
       await openPlayerProfile(requestedPlayerProfile, null, { forceModal: true });
+    } else if (requestedPlayerProfile && !requestedStatistics) {
+      // Direkt verlinkte Profile erhalten wie Partien die Liga als Rückweg.
+      const baseUrl = window.PadelSeasonRouting.getPlayerProfileUrl(selectedSeason.id, null, {
+        preserveSearch: true,
+        preserveHash: true
+      });
+      window.history.replaceState({}, '', `${baseUrl.pathname}${baseUrl.search}${baseUrl.hash}`);
+      playerProfileShownRoute = `profile-${++playerProfileRouteNumber}`;
+      playerProfileRouteIds.set(playerProfileShownRoute, requestedPlayerProfile);
+      window.history.pushState({
+        playerProfile: requestedPlayerProfile,
+        profileRoute: playerProfileShownRoute,
+        detailBase: 0,
+        detailDepth: 1
+      }, '', `${url.pathname}${url.search}${url.hash}`);
+      await openPlayerProfile(requestedPlayerProfile, null, { forceModal: true, fromHistory: true });
     }
   } catch (error) {
     console.error('Die verlinkte Detailansicht konnte nicht initialisiert werden:', error);
@@ -9146,6 +9396,8 @@ window.PadelSwipeGesture?.attach(document.querySelector('main'), {
     window.PadelSwipeGesture.animateIn(document.getElementById(targetId), step);
   }
 });
+
+window.addEventListener('popstate', syncPlayerProfileWithHistory);
 
 const playerProfileDialog = document.getElementById('player-profile-dialog');
 playerProfileDialog?.addEventListener('cancel', event => {

@@ -62,7 +62,9 @@ test('ranking exposes passive own-match points as a separate blue value', () => 
   assert.doesNotMatch(page, /Teilnehmer mit Tippwertung/);
   assert.match(style, /\.prediction-ranking-table\.compact \.col-passive \{ display: none; \}/);
   assert.match(style, /\.prediction-ranking-table\.compact \.col-bonus \{ display: none; \}/);
-  assert.match(style, /\.prediction-ranking-table\.compact \.col-wins \{ display: table-cell; \}/);
+  assert.doesNotMatch(style, /\.prediction-ranking-table\.compact \.col-wins \{ display: table-cell; \}/);
+  assert.match(page, /data-prediction-ranking-view="compact"[\s\S]*?data-prediction-ranking-view="expanded"/);
+  assert.match(style, /\.prediction-ranking-table\.expanded \.pname-short \{ display: inline; \}/);
   assert.match(style, /table\.prediction-ranking-table tbody td\.col-passive \{[\s\S]*color: var\(--accent2\);/);
   assert.match(source, /getLeaderboardPassivePoints\(entry\)/);
   const context = vm.createContext({});

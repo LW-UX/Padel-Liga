@@ -26,6 +26,7 @@ function setup({ search = '', mobile = true } = {}) {
     get state() { return stack[index].state; },
     get length() { return stack.length; },
     pushState(state) { stack.splice(index + 1); stack.push({ state }); index += 1; },
+    replaceState(state) { stack[index] = { state }; },
     back() {
       index -= 1;
       listeners.popstate();
@@ -89,43 +90,31 @@ test('Zurück-Geste schließt auch „Was ist neu?“ und der Wechsel ins Konto 
 
 test('Schließen per Button entfernt den Verlaufseintrag wieder', () => {
   const { nodes, flush, entries } = setup();
-  nodes['player-profile-dialog'].open = true;
+  nodes['auth-dialog'].open = true;
   flush();
   assert.equal(entries(), 1);
-  nodes['player-profile-dialog'].open = false;
+  nodes['auth-dialog'].open = false;
   flush();
   assert.equal(entries(), 0);
 });
 
-test('Der Wechsel vom Konto ins Profil bleibt ein einziger Zurück-Schritt', () => {
+test('Spielerprofile führen ihren Verlauf selbst und legen keine mobile Seite an', () => {
+  const { nodes, flush, entries } = setup();
+  nodes['player-profile-dialog'].open = true;
+  flush();
+  assert.equal(entries(), 0);
+});
+
+test('Ein aus dem Konto geöffnetes Profil übernimmt dessen Zurück-Schritt', () => {
   const { nodes, flush, history, entries } = setup();
   nodes['auth-dialog'].open = true;
   flush();
+  assert.equal(entries(), 1);
+  history.replaceState({ playerProfile: 'spieler-a', mobileDialogPage: null });
   nodes['auth-dialog'].open = false;
-  nodes['player-profile-dialog'].open = true;
   flush();
   assert.equal(entries(), 1);
-  history.back();
-  flush();
-  assert.equal(nodes['player-profile-dialog'].open, false);
-  assert.equal(entries(), 0);
-});
-
-test('Eine über dem Profil geöffnete Partie behält ihren eigenen Zurück-Schritt', () => {
-  const { window, nodes, flush, history, entries } = setup();
-  nodes['player-profile-dialog'].open = true;
-  flush();
-  window.PadelMatchStatistics = { active: true };
-  history.pushState({ ...history.state, matchStatistics: 'partie' });
-  nodes['player-profile-dialog'].open = false;
-  flush();
-  assert.equal(entries(), 2);
-  window.PadelMatchStatistics.active = false;
-  nodes['player-profile-dialog'].open = true;
-  history.back();
-  flush();
-  assert.equal(nodes['player-profile-dialog'].open, true);
-  assert.equal(entries(), 1);
+  assert.equal(history.state.playerProfile, 'spieler-a');
 });
 
 test('Eine Partie aus dem Profil hinterlässt nach dem Schließen keinen toten Zurück-Schritt', () => {

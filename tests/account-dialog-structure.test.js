@@ -134,7 +134,7 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(accountScript, /closeAuthDialog\(\);[\s\S]*window\.PadelLigaOpenPlayerProfile\(playerId, document\.querySelector\('\[data-auth-open\]'\)\)/);
   assert.match(accountScript, /searchParams\.set\('spielerprofil', playerId\)/);
   assert.match(appScript, /window\.PadelLigaOpenPlayerProfile = openPlayerProfile/);
-  assert.match(appScript, /searchParams\.get\('spielerprofil'\)[\s\S]*openPlayerProfile\(requestedPlayerProfile, null, \{ forceModal: true \}\)/);
+  assert.match(appScript, /getRequestedPlayerProfileId\(window\.PADEL_PLAYERS \|\| \[\]\)[\s\S]*openPlayerProfile\(requestedPlayerProfile, null, \{ forceModal: true, fromHistory: true \}\)/);
   assert.match(style, /#result-task-list > \.match-group \{[^}]*margin: 2rem 0 0;[^}]*\}/);
   assert.match(style, /\.account-task-card\.is-actionable \{[\s\S]*border-color: var\(--accent\);/);
   assert.match(style, /\.account-task-card\.is-waiting[\s\S]*opacity: 0\.58/);

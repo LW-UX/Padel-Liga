@@ -1,14 +1,13 @@
-// Konto, Spielerprofil und „Was ist neu?“ wirken auf dem Handy wie eigene Seiten; die Zurück-Geste schließt sie deshalb auch wie eine Seite.
+// Konto und „Was ist neu?“ wirken auf dem Handy wie eigene Seiten; die Zurück-Geste schließt sie deshalb auch wie eine Seite.
+// Spielerprofile führen überall einen eigenen Verlaufseintrag und gehören deshalb nicht hierher.
 (() => {
   // Eingebettet teilt der Rahmen den Verlauf der Tippseite; dort führt die Tippseite den Zurück-Schritt.
   if (document.documentElement.classList.contains('is-detail-embed')) return;
 
   const authDialog = document.getElementById('auth-dialog');
-  const profileDialog = document.getElementById('player-profile-dialog');
   const whatsNewDialog = document.getElementById('whats-new-dialog');
   const pages = [
     { isOpen: () => Boolean(authDialog?.open), close: () => authDialog?.close() },
-    { isOpen: () => Boolean(profileDialog?.open), close: () => window.PadelLigaClosePlayerProfile?.({ fromHistory: true }) },
     { isOpen: () => Boolean(whatsNewDialog?.open), close: () => whatsNewDialog?.close() }
   ];
   const mobile = window.matchMedia('(max-width: 768px)');
@@ -31,12 +30,14 @@
       entryId = String(Date.now());
       window.history.pushState({ ...window.history.state, mobileDialogPage: entryId }, '', window.location.href);
     } else if (!anyOpen && entryId) {
+      // Hat ein Folgeziel wie ein Spielerprofil den Eintrag übernommen, bleibt dessen Zurück-Schritt erhalten.
+      const ownsCurrentEntry = window.history.state?.mobileDialogPage === entryId;
       entryId = null;
-      window.history.back();
+      if (ownsCurrentEntry) window.history.back();
     }
   }
 
-  [authDialog, profileDialog, whatsNewDialog].filter(Boolean).forEach(dialog => {
+  [authDialog, whatsNewDialog].filter(Boolean).forEach(dialog => {
     new MutationObserver(sync).observe(dialog, { attributes: true, attributeFilter: ['open'] });
   });
   window.addEventListener('popstate', () => {
