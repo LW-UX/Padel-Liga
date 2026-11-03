@@ -351,15 +351,17 @@ async function loadDatabasePredictionLeaderboard(seasonReference) {
   if (!client) throw new Error('Supabase ist nicht konfiguriert.');
   const seasonId = seasonReference?.databaseId || seasonReference?.id;
   if (!seasonId) return [];
+  // Benchmark-Konten erscheinen nur in der vollständigen Tipprangliste, nicht in Kurzranglisten.
+  const officialEntries = rows => (Array.isArray(rows) ? rows : []).filter(entry => !entry.is_benchmark);
   const { data, error } = await client.rpc('get_prediction_leaderboard', { p_season_id: seasonId });
   if (error) throw error;
-  if (Array.isArray(data) && data.length) return data;
+  if (Array.isArray(data) && data.length) return officialEntries(data);
 
   const legacySeasonId = LEGACY_DATABASE_SEASON_IDS[seasonId];
   if (!legacySeasonId) return [];
   const fallback = await client.rpc('get_prediction_leaderboard', { p_season_id: legacySeasonId });
   if (fallback.error) throw fallback.error;
-  return Array.isArray(fallback.data) ? fallback.data : [];
+  return officialEntries(fallback.data);
 }
 
 function getPreviousCompletedLeagueSeason(seasonReference = selectedSeason) {

@@ -14,7 +14,7 @@ const tokenFile = resolve(repositoryRoot, '.codex-secrets/supabase-access-token'
 const [command, argument] = process.argv.slice(2);
 
 if (!command) {
-  fail('Aufruf: supabase-mcp.mjs <list-tools|list-migrations|apply-migration|execute-sql|list-functions|get-function|deploy-function|get-logs|store-notification-service-key|get-auth-email-settings|update-recovery-template|update-account-email-templates> [Datei oder Function]');
+  fail('Aufruf: supabase-mcp.mjs <list-tools|list-migrations|apply-migration|execute-sql|list-functions|get-function|deploy-function|delete-function|get-logs|store-notification-service-key|get-auth-email-settings|update-recovery-template|update-account-email-templates> [Datei oder Function]');
 }
 
 let accessToken;
@@ -91,7 +91,8 @@ async function managementRequest(path, options = {}) {
     fail(`Supabase-Management-API fehlgeschlagen (HTTP ${response.status}): ${detail}`);
   }
 
-  return response.json();
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
 }
 
 function requireFilePath(path, { migration = false } = {}) {
@@ -184,6 +185,10 @@ if (command === 'list-tools') {
       files
     }
   }));
+} else if (command === 'delete-function') {
+  requireFunctionPath(argument);
+  await managementRequest(`/functions/${argument}`, { method: 'DELETE' });
+  console.log(`Function ${argument} wurde gelöscht.`);
 } else if (command === 'store-notification-service-key') {
   // Die Function vergleicht mit SUPABASE_SERVICE_ROLE_KEY, und das ist in diesem Projekt der neue Secret Key.
   // Der Schlüssel wird nie ausgegeben; auch Fehlermeldungen geben die Abfrage nicht wieder.

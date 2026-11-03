@@ -227,8 +227,9 @@ html:root .widget:has(.ranking-wrap):not(#start *, #verlauf *) {
   padding: 0;
 }
 
-/* Secondary-Buttons, Dropdowns, Auswahlschalter, Zähler und der Split-Button der Spielerauswahl: Fläche --surface2 statt Rahmen. */
-:root :is(.datetime-input-shell input, .auth-form input, .player-invite-output input, .secondary-button, .global-action),
+/* Secondary-Buttons, Dropdowns, Auswahlschalter, Zähler und der Split-Button der Spielerauswahl: Fläche --surface2 statt Rahmen.
+   Textlinks unter den Schnellzugriffen wie „Zurück zur Liga“ bleiben ohne Fläche. */
+:root :is(.datetime-input-shell input, .auth-form input, .player-invite-output input, .secondary-button, .global-action:not(.text-link)),
 :root .global-actions .auth-button.is-authenticated.secondary-button,
 :root .toggle:not(.toggle--sort),
 :root .viewer-split-button,

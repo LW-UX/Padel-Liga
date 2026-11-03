@@ -40,6 +40,7 @@
     confirmationUrl: requestedConfirmationUrl,
     confirmationPurpose: requestedConfirmationPurpose,
     settingsOpen: false,
+    settingsToggled: false,
     profileImageBusy: false,
     profileImageDeleteArmed: false,
     notificationPreferences: {
@@ -381,6 +382,12 @@
     return capitalize(localPart) || 'Konto';
   }
 
+  function isSettingsOpen() {
+    // Tipper haben im Konto sonst nichts zu tun und sehen die Einstellungen daher zunächst aufgeklappt.
+    if (!state.settingsToggled && state.profile?.app_role === 'tipper') return true;
+    return state.settingsOpen;
+  }
+
   function isPlayerAccount() {
     return ['player', 'admin'].includes(state.profile?.app_role) && Boolean(state.profile?.player_id);
   }
@@ -604,8 +611,8 @@
       }
       const settingsButton = document.querySelector('[data-account-settings]');
       const settingsPanel = document.querySelector('[data-account-settings-panel]');
-      if (settingsButton) settingsButton.setAttribute('aria-expanded', String(state.settingsOpen));
-      if (settingsPanel) settingsPanel.hidden = !state.settingsOpen;
+      if (settingsButton) settingsButton.setAttribute('aria-expanded', String(isSettingsOpen()));
+      if (settingsPanel) settingsPanel.hidden = !isSettingsOpen();
       document.querySelectorAll('[data-email-notification]').forEach(input => {
         const key = input.dataset.emailNotification;
         input.checked = Boolean(state.notificationPreferences[key]);
@@ -1961,7 +1968,7 @@
         if (error) throw error;
         if (!data.session) {
           startAuthMailCooldown();
-          setAuthMessage('Bitte bestätige deine E-Mail und logge dich danach ein. Schau bitte auch in deinem Spam-Ordner nach. Die Mail kann durch den Firmenfilter einige Minuten brauchen; fordere keinen zweiten Link an.', 'success');
+          setAuthMessage('Bitte bestätige deine E-Mail und logge dich danach ein. Schau bitte auch in deinem Spam-Ordner nach. Durch den Firmen-Mailfilter kann die Zustellung ein paar Minuten dauern.', 'success');
           return;
         }
       } else {
@@ -1978,12 +1985,53 @@
     }
   }
 
+  const AUTH_ERROR_TEXTS = {
+    invalid_credentials: 'E-Mail oder Passwort stimmen nicht.',
+    email_not_confirmed: 'Deine E-Mail-Adresse ist noch nicht bestätigt. Bitte klicke zuerst auf den Link in der Bestätigungsmail.',
+    user_already_exists: 'Für diese E-Mail gibt es bereits ein Konto.',
+    email_exists: 'Für diese E-Mail gibt es bereits ein Konto.',
+    weak_password: 'Das Passwort ist zu schwach. Bitte wähle ein Passwort mit mindestens 8 Zeichen.',
+    same_password: 'Das neue Passwort muss sich vom bisherigen unterscheiden.',
+    email_address_invalid: 'Diese E-Mail-Adresse ist ungültig.',
+    over_email_send_rate_limit: 'Es wurden gerade zu viele E-Mails verschickt. Bitte warte einige Minuten und versuche es dann erneut.',
+    over_request_rate_limit: 'Zu viele Versuche in kurzer Zeit. Bitte warte einen Moment und versuche es dann erneut.',
+    otp_expired: 'Der Link ist abgelaufen oder wurde bereits verwendet. Bitte fordere einen neuen an.',
+    user_not_found: 'Zu dieser E-Mail gibt es kein Konto.',
+    signup_disabled: 'Neue Registrierungen sind derzeit nicht möglich.',
+    session_not_found: 'Deine Sitzung ist abgelaufen. Bitte ausloggen und erneut einloggen.',
+    session_expired: 'Deine Sitzung ist abgelaufen. Bitte ausloggen und erneut einloggen.',
+    refresh_token_not_found: 'Deine Sitzung ist abgelaufen. Bitte ausloggen und erneut einloggen.'
+  };
+
+  const AUTH_ERROR_PATTERNS = [
+    [/invalid login credentials/i, AUTH_ERROR_TEXTS.invalid_credentials],
+    [/email not confirmed/i, AUTH_ERROR_TEXTS.email_not_confirmed],
+    [/already (been )?registered|already exists/i, AUTH_ERROR_TEXTS.user_already_exists],
+    [/should be different from the old/i, AUTH_ERROR_TEXTS.same_password],
+    [/password/i, null],
+    [/rate limit|too many requests|security purposes.*after/i, AUTH_ERROR_TEXTS.over_request_rate_limit],
+    [/link is invalid|has expired|otp.*(expired|invalid)/i, AUTH_ERROR_TEXTS.otp_expired],
+    [/refresh token|jwt.*expired|invalid.*token|session.*(missing|not found|expired)/i, AUTH_ERROR_TEXTS.session_expired],
+    [/(invalid|unable to validate).*email|email.*invalid/i, AUTH_ERROR_TEXTS.email_address_invalid],
+    [/user not found/i, AUTH_ERROR_TEXTS.user_not_found],
+    [/signups? not allowed/i, AUTH_ERROR_TEXTS.signup_disabled],
+    [/failed to fetch|network ?error|load failed/i, 'Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung und versuche es erneut.']
+  ];
+
   function getFriendlyAuthError(error) {
     const message = String(error?.message || 'Anmeldung fehlgeschlagen.');
-    if (/invalid login credentials/i.test(message)) return 'E-Mail oder Passwort stimmen nicht.';
-    if (/refresh token|jwt.*expired|invalid.*token/i.test(message)) return 'Deine Sitzung ist abgelaufen. Bitte ausloggen und erneut einloggen.';
-    if (/already registered/i.test(message)) return 'Für diese E-Mail gibt es bereits ein Konto.';
-    if (/password/i.test(message) && /characters/i.test(message)) return 'Das Passwort muss mindestens 8 Zeichen lang sein.';
+    const codeText = AUTH_ERROR_TEXTS[String(error?.code || '')];
+    if (codeText) return codeText;
+    for (const [pattern, text] of AUTH_ERROR_PATTERNS) {
+      if (!pattern.test(message)) continue;
+      if (text) return text;
+      if (/characters|at least|short/i.test(message)) return 'Das Passwort muss mindestens 8 Zeichen lang sein.';
+      if (/weak|pwned|easy to guess/i.test(message)) return AUTH_ERROR_TEXTS.weak_password;
+    }
+    // Eigene Datenbankmeldungen sind bereits deutsch; nur englische Supabase-Texte werden ersetzt.
+    if (!/[äöüß]/i.test(message) && /\b(the|is|not|invalid|failed|error|unable|must|should|please|request|user|could|unexpected|something|occurred)\b/i.test(message)) {
+      return 'Das hat leider nicht geklappt. Bitte versuche es erneut.';
+    }
     return message;
   }
 
@@ -3218,7 +3266,8 @@ Dein Hanako-Leben-Squad`;
         renderProfileImageSettings();
       }
       if (event.target.closest('[data-account-settings]')) {
-        state.settingsOpen = !state.settingsOpen;
+        state.settingsOpen = !isSettingsOpen();
+        state.settingsToggled = true;
         setAccountSettingsMessage('');
         renderAuthState();
         return;
@@ -3265,6 +3314,7 @@ Dein Hanako-Leben-Squad`;
       if (event.target.closest('[data-auth-logout]')) {
         await state.client.auth.signOut();
         state.settingsOpen = false;
+        state.settingsToggled = false;
         closeAuthDialog();
         return;
       }
@@ -3615,7 +3665,7 @@ Dein Hanako-Leben-Squad`;
     setAuthMode('login');
     const { data: { session }, error } = await state.client.auth.getSession();
     if (error) {
-      state.error = error.message;
+      state.error = getFriendlyAuthError(error);
       render();
       return;
     }

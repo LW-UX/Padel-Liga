@@ -79,3 +79,11 @@ Diese Datei ist die kanonische Quelle für Tippabgabe, Fristen, Wertung und die 
 - Tipps auf eigene Partien werden nicht gespeichert; vorhandene Altbestände werden entfernt. Sollte dennoch ein eigener Tipp vorliegen, wird er weder gewertet noch zur Ermittlung der automatischen Gutschrift herangezogen.
 - Tipps auf eine später aus der Wertung genommene Partie bleiben sichtbar, werden als „Nicht gewertet“ gekennzeichnet und zählen weder als gewerteter Tipp noch für Treffer oder Punkte.
 - Ob eine Saison ein Tippspiel anbietet, ist Saisonkonfiguration und kein aus dem Datenbestand abgeleiteter Automatismus.
+
+## Benchmark-Konto
+
+- Ein als Benchmark gekennzeichnetes Konto ohne Spielerzuordnung dient als Messlatte für alle Tipper. Die Kennzeichnung ist eine Datenbankeigenschaft des Kontos, nicht an den Namen gebunden und vom Konto selbst nicht änderbar.
+- Die Datenbank tippt für dieses Konto jede Partie automatisch nach der Auto-Tipp-Regel des Rechners: Teamstärke aus 70 % schwächerer und 30 % stärkerer aktueller Elo, Favorit ab 54 % Siegwahrscheinlichkeit mit glattem Sieg (`2:0`), darunter mit knappem Sieg (`2:1`); bei 50:50 gewinnt das Team mit dem höchsten Einzel-Elo. Im Ein-Satz-Format gilt der erste Satz der Auto-Tipp-Prognose (6:0 bis 6:4).
+- Der Tipp entsteht erst, wenn die Partie auch auf der Tippseite tippbar ist: terminierte Partien sofort, Partien ohne Termin erst mit Eintritt in das Tippfenster. Partien unter „Demnächst tippbar“ erhalten noch keinen Benchmark-Tipp. Bis zum Tippschluss wird der Tipp regelmäßig an die aktuelle Elo-Prognose angepasst.
+- Benchmark-Tipps werden normal gewertet, gehen aber weder in die automatische Eigene-Partie-Gutschrift noch in die öffentliche Tippverteilung, den Rückschau-Hinweis auf den einzigen richtigen Tipper oder das Podium der Vorsaison ein.
+- In der vollständigen Tipprangliste und der Tippübersicht steht das Benchmark-Konto gedimmt an der Position seiner Punkte hinter Gleichständen, ohne Platznummer und ohne andere Konten zu verdrängen. Platzierungen, Abstände, Spitzenfeld, Kurzranglisten, Startseitenstand und Teilnehmerzahlen lassen es unberücksichtigt. Statt Kontotyp- und Firmen-Icon zeigt es ein Auto-Tipp-Symbol; Symbol und Name erklären per Tooltip, dass es automatisch nach dem Auto-Tipp tippt und nicht zur Wertung zählt.
