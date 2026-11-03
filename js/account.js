@@ -40,6 +40,8 @@
     confirmationUrl: requestedConfirmationUrl,
     confirmationPurpose: requestedConfirmationPurpose,
     settingsOpen: false,
+    profileImageBusy: false,
+    profileImageDeleteArmed: false,
     notificationPreferences: {
       resultEntry: true,
       resultConfirmation: true,
@@ -610,6 +612,7 @@
         input.disabled = !state.notificationPreferencesReady || !state.notificationPreferencesAvailable;
       });
       renderBrandingPreview();
+      renderProfileImageSettings();
       const settingsMessage = document.querySelector('[data-account-settings-message]');
       if (settingsMessage && !state.notificationPreferencesAvailable) {
         settingsMessage.textContent = 'Die E-Mail-Einstellungen sind gerade nicht verfügbar.';
@@ -2104,6 +2107,110 @@
     target.className = `auth-message account-settings-message${type ? ` ${type}` : ''}`;
   }
 
+  // Eigene Profilbilder liegen unter <spieler-id>/ im Bildspeicher; ohne Bild erscheint das Emoji.
+  const PROFILE_IMAGE_BUCKET = 'player-images';
+  const PROFILE_IMAGE_FILES = ['profile.webp', 'thumb.jpg'];
+
+  function renderProfileImageSettings() {
+    const section = document.querySelector('[data-account-profile-image]');
+    if (!section) return;
+    const playerId = isPlayerAccount() ? state.profile?.player_id : '';
+    section.hidden = !playerId || !window.PadelPlayerImages || !window.PadelProfileImageEditor;
+    if (section.hidden) return;
+    const preview = section.querySelector('[data-account-profile-image-preview]');
+    const emoji = section.querySelector('[data-account-profile-image-emoji]');
+    const profileEmoji = (window.PADEL_PLAYERS || []).find(player => player.id === playerId)?.profileEmoji;
+    emoji.textContent = ['👨', '👩'].includes(profileEmoji) ? profileEmoji : '👤';
+    if (preview.dataset.playerImage !== playerId) {
+      preview.dataset.playerImage = playerId;
+      preview.dataset.playerImageVariant = 'profile';
+    }
+    window.PadelPlayerImages.apply(section);
+    const hasImage = window.PadelPlayerImages.has(playerId);
+    const uploadButton = section.querySelector('[data-account-profile-image-upload]');
+    const deleteButton = section.querySelector('[data-account-profile-image-delete]');
+    uploadButton.textContent = hasImage ? 'Bild ändern' : 'Bild hochladen';
+    uploadButton.disabled = state.profileImageBusy;
+    deleteButton.hidden = !hasImage;
+    deleteButton.disabled = state.profileImageBusy;
+    deleteButton.textContent = state.profileImageDeleteArmed ? 'Wirklich löschen?' : 'Bild löschen';
+    deleteButton.classList.toggle('is-armed', state.profileImageDeleteArmed);
+  }
+
+  async function uploadProfileImage(file) {
+    const playerId = state.profile?.player_id;
+    if (!file || !playerId || state.profileImageBusy) return;
+    if (!file.type.startsWith('image/')) {
+      setAccountSettingsMessage('Bitte wähle eine Bilddatei aus.', 'error');
+      return;
+    }
+    state.profileImageDeleteArmed = false;
+    let images;
+    try {
+      images = await window.PadelProfileImageEditor.open(file);
+    } catch (error) {
+      console.error('Profilbild konnte nicht geöffnet werden:', error);
+      setAccountSettingsMessage('Das Bild konnte nicht geöffnet werden. Bitte versuche ein anderes Bild.', 'error');
+      return;
+    }
+    if (!images) return;
+
+    state.profileImageBusy = true;
+    renderProfileImageSettings();
+    setAccountSettingsMessage('Profilbild wird gespeichert …');
+    try {
+      const bucket = state.client.storage.from(PROFILE_IMAGE_BUCKET);
+      for (const [name, blob] of [['profile.webp', images.profile], ['thumb.jpg', images.thumb]]) {
+        const { error } = await bucket.upload(`${playerId}/${name}`, blob, {
+          upsert: true,
+          contentType: blob.type,
+          cacheControl: '31536000'
+        });
+        if (error) throw error;
+      }
+      const { data: version, error } = await state.client.rpc('set_my_profile_image');
+      if (error) throw error;
+      window.PadelPlayerImages.setVersion(playerId, version);
+      setAccountSettingsMessage('Profilbild gespeichert.', 'success');
+    } catch (error) {
+      console.error('Profilbild konnte nicht gespeichert werden:', error);
+      setAccountSettingsMessage('Das Profilbild konnte nicht gespeichert werden. Bitte versuche es erneut.', 'error');
+    } finally {
+      state.profileImageBusy = false;
+      renderProfileImageSettings();
+    }
+  }
+
+  async function deleteProfileImage() {
+    const playerId = state.profile?.player_id;
+    if (!playerId || state.profileImageBusy) return;
+    if (!state.profileImageDeleteArmed) {
+      state.profileImageDeleteArmed = true;
+      renderProfileImageSettings();
+      return;
+    }
+    state.profileImageDeleteArmed = false;
+    state.profileImageBusy = true;
+    renderProfileImageSettings();
+    setAccountSettingsMessage('Profilbild wird gelöscht …');
+    try {
+      const { error: removeError } = await state.client.rpc('remove_my_profile_image');
+      if (removeError) throw removeError;
+      window.PadelPlayerImages.setVersion(playerId, null);
+      const { error } = await state.client.storage
+        .from(PROFILE_IMAGE_BUCKET)
+        .remove(PROFILE_IMAGE_FILES.map(name => `${playerId}/${name}`));
+      if (error) console.error('Profilbild-Dateien konnten nicht entfernt werden:', error);
+      setAccountSettingsMessage('Profilbild gelöscht.', 'success');
+    } catch (error) {
+      console.error('Profilbild konnte nicht gelöscht werden:', error);
+      setAccountSettingsMessage('Das Profilbild konnte nicht gelöscht werden. Bitte versuche es erneut.', 'error');
+    } finally {
+      state.profileImageBusy = false;
+      renderProfileImageSettings();
+    }
+  }
+
   async function saveNotificationPreferences(changedInput) {
     if (!state.session?.user || !state.notificationPreferencesReady) return;
     const key = changedInput?.dataset?.emailNotification;
@@ -3096,6 +3203,20 @@ Dein Hanako-Leben-Squad`;
         openPasswordChange();
         return;
       }
+      if (event.target.closest('[data-account-profile-image-upload]')) {
+        state.profileImageDeleteArmed = false;
+        renderProfileImageSettings();
+        document.querySelector('[data-account-profile-image-input]')?.click();
+        return;
+      }
+      if (event.target.closest('[data-account-profile-image-delete]')) {
+        await deleteProfileImage();
+        return;
+      }
+      if (state.profileImageDeleteArmed) {
+        state.profileImageDeleteArmed = false;
+        renderProfileImageSettings();
+      }
       if (event.target.closest('[data-account-settings]')) {
         state.settingsOpen = !state.settingsOpen;
         setAccountSettingsMessage('');
@@ -3374,8 +3495,15 @@ Dein Hanako-Leben-Squad`;
         else updateResultSummary(event.target.closest('[data-result-submit]'));
       }
     });
+    document.addEventListener('padel:player-images-changed', renderProfileImageSettings);
     document.addEventListener('change', event => {
       syncDateTimeHint(event.target);
+      if (event.target.matches('[data-account-profile-image-input]')) {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        void uploadProfileImage(file);
+        return;
+      }
       if (event.target.matches('[data-email-notification]')) {
         void saveNotificationPreferences(event.target);
         return;

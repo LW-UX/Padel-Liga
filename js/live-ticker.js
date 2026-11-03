@@ -52,6 +52,9 @@
     image.nextElementSibling?.removeAttribute('hidden');
   }, true);
 
+  const playerImageAttributes = playerId => window.PadelPlayerImages?.attributes(playerId) || 'hidden';
+  const playerImageFallbackAttribute = playerId => window.PadelPlayerImages ? window.PadelPlayerImages.fallbackAttribute(playerId) : '';
+
   function getClient() {
     if (state.client) return state.client;
     const config = window.PADEL_SUPABASE_CONFIG;
@@ -197,8 +200,8 @@
     return `<button class="match-detail-player player-profile-link" type="button" data-player-profile-id="${escapeHtml(player.playerId)}">
       ${serving ? '<span class="live-ticker-serve" title="Aufschlag" aria-label="hat Aufschlag">◉</span>' : ''}
       <span class="match-detail-player-photo" aria-hidden="true">
-        <img class="match-detail-player-image" src="assets/players/${encodeURIComponent(player.playerId)}/profile.webp" alt="" data-detail-player-image>
-        <span class="match-detail-player-emoji" hidden>${escapeHtml(profileEmoji(player.playerId))}</span>
+        <img class="match-detail-player-image" ${playerImageAttributes(player.playerId)} alt="" data-detail-player-image>
+        <span class="match-detail-player-emoji"${playerImageFallbackAttribute(player.playerId)}>${escapeHtml(profileEmoji(player.playerId))}</span>
       </span>
       <span class="match-detail-player-name">${escapeHtml(player.displayName)}</span>
       <small class="hint match-detail-player-elo">${Number.isFinite(Number(player.currentElo)) ? `${Math.round(Number(player.currentElo))} Elo` : 'Elo –'}</small>
@@ -428,8 +431,8 @@
       <div class="live-overview-prematch-grid${showRelationships ? ' has-relationships' : ''}">${activePlayers.map((player, index) => `<article class="live-overview-prematch-player live-overview-prematch-player-${index + 1}">
         <button type="button" class="match-detail-player live-overview-prematch-card player-profile-link" data-player-profile-id="${escapeHtml(player.playerId)}">
           <span class="match-detail-player-photo" aria-hidden="true">
-            <img class="match-detail-player-image" src="assets/players/${encodeURIComponent(player.playerId)}/profile.webp" alt="" data-detail-player-image>
-            <span class="match-detail-player-emoji" hidden>${escapeHtml(profileEmoji(player.playerId))}</span>
+            <img class="match-detail-player-image" ${playerImageAttributes(player.playerId)} alt="" data-detail-player-image>
+            <span class="match-detail-player-emoji"${playerImageFallbackAttribute(player.playerId)}>${escapeHtml(profileEmoji(player.playerId))}</span>
           </span>
           <span class="match-detail-player-name">${escapeHtml(player.displayName)}${player.participationStatus === 'replacement' ? '<span aria-hidden="true">*</span><span class="sr-only">, nachgerückt</span>' : ''}</span>
           <small class="hint match-detail-player-elo">${Number.isFinite(Number(player.elo)) ? `${Math.round(Number(player.elo))} Elo` : 'Elo –'}</small>
@@ -470,8 +473,8 @@
         <div class="live-overview-prematch-withdrawn-identity">
           <button type="button" class="match-detail-player live-overview-prematch-card player-profile-link" data-player-profile-id="${escapeHtml(withdrawnPlayer.playerId)}">
             <span class="match-detail-player-photo" aria-hidden="true">
-              <img class="match-detail-player-image" src="assets/players/${encodeURIComponent(withdrawnPlayer.playerId)}/profile.webp" alt="" data-detail-player-image>
-              <span class="match-detail-player-emoji" hidden>${escapeHtml(profileEmoji(withdrawnPlayer.playerId))}</span>
+              <img class="match-detail-player-image" ${playerImageAttributes(withdrawnPlayer.playerId)} alt="" data-detail-player-image>
+              <span class="match-detail-player-emoji"${playerImageFallbackAttribute(withdrawnPlayer.playerId)}>${escapeHtml(profileEmoji(withdrawnPlayer.playerId))}</span>
             </span>
             <span class="match-detail-player-name">${escapeHtml(withdrawnPlayer.displayName)}</span>
             <small class="hint match-detail-player-elo">${Number.isFinite(Number(withdrawnPlayer.elo)) ? `${Math.round(Number(withdrawnPlayer.elo))} Elo` : 'Elo –'}</small>

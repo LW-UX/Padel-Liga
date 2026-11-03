@@ -825,14 +825,6 @@ test('Sommer 2026 label and confirmed profile achievements stay explicit', () =>
   assert.match(winnerAchievementMigration, /'Padel-Liga Sommer 2026'/);
 });
 
-test('jedes Profilbild besitzt ein Vorschaubild für die Ranglisten', () => {
-  const playersDir = path.join(root, 'assets/players');
-  const withoutThumbnail = fs.readdirSync(playersDir)
-    .filter(id => fs.existsSync(path.join(playersDir, id, 'profile.webp')))
-    .filter(id => !fs.existsSync(path.join(playersDir, id, 'thumb.jpg')));
-  assert.deepEqual(withoutThumbnail, []);
-});
-
 test('Spielervergleich trennt Duell und gemeinsames Team samt Tiebreaks und Zu-Null-Sätzen', () => {
   const helpers = ['getPlayerProfileMatchWeight', 'getProfileRegularGameTotals', 'getProfileCompletedSets',
     'getProfileSetTotals', 'getProfileSetFeatureTotals', 'getPlayerProfileComparison']

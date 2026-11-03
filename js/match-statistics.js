@@ -4,6 +4,7 @@
   const eloForecast = typeof module !== 'undefined' ? require('./elo-forecast.js') : window.PadelEloForecast;
   const tableCore = typeof module !== 'undefined' ? require('./table-core.js') : window.PadelTable;
   const previewWindow = typeof module !== 'undefined' ? require('./preview-window.js') : window.PadelPreviewWindow;
+  const playerImages = typeof module !== 'undefined' ? require('./player-images.js') : window.PadelPlayerImages;
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const number = value => value == null || !Number.isFinite(Number(value)) ? '—' : Number(value).toLocaleString('de-DE', { maximumFractionDigits: 1 });
   const signed = value => value == null ? '—' : `${value > 0 ? '+' : ''}${number(value)}`;
@@ -66,7 +67,7 @@
   const viewerClass = (player, selectedPlayerId) => player?.playerId === selectedPlayerId ? ' viewer-player' : '';
   function playerBlock(p, selectedPlayerId) {
     return `<button type="button" class="match-detail-player player-profile-link" data-player-profile-id="${esc(p.playerId)}">
-      <span class="match-detail-player-photo" aria-hidden="true"><img class="match-detail-player-image" src="assets/players/${encodeURIComponent(p.playerId)}/profile.webp" alt="" data-detail-player-image><span class="match-detail-player-emoji" hidden>${esc(playerEmoji(p))}</span></span>
+      <span class="match-detail-player-photo" aria-hidden="true"><img class="match-detail-player-image" ${playerImages.attributes(p.playerId)} alt="" data-detail-player-image><span class="match-detail-player-emoji"${playerImages.fallbackAttribute(p.playerId)}>${esc(playerEmoji(p))}</span></span>
       <span class="match-detail-player-name${viewerClass(p, selectedPlayerId)}">${esc(p.displayName)}</span>${p.elo ? `<small class="hint match-detail-player-elo">${number(p.elo.before)} Elo</small>` : ''}</button>`;
   }
   function renderHead(data, selectedPlayerId) {

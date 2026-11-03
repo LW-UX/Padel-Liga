@@ -25,18 +25,20 @@
   <link rel="stylesheet" href="../style.css?v=2026-11-03-compare-labels">
   <link rel="stylesheet" href="../tipp.css?v=2026-10-31-class-names">
   <link rel="stylesheet" href="../match-statistics.css?v=2026-11-02-form-chip">
-  <link rel="stylesheet" href="../account.css?v=2026-10-31-design-grid">
+  <link rel="stylesheet" href="../account.css?v=2026-11-03-player-images">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="../data/players.js?v=2026-10-20-test-net-emoji"></script>
   <script defer src="../data/seasons.js?v=2026-10-30-test-match-ten"></script>
   <script defer src="../js/season-routing.js?v=2026-11-03-profile-routes"></script>
   <script defer src="../data/supabase-config.js"></script>
+  <script defer src="../js/player-images.js?v=2026-11-03-player-images"></script>
+  <script defer src="../js/profile-image-editor.js?v=2026-11-03-player-images"></script>
   <script defer src="../js/global-actions.js?v=2026-10-20-speed-dial-player"></script>
   <script defer src="../js/score-input.js?v=2026-09-22-unified-score-counters"></script>
   <script defer src="../js/mobile-dialog-pages.js?v=2026-11-03-profile-routes"></script>
   <script defer src="../js/branding-preview.js?v=2026-10-31-centre-court"></script>
-  <script defer src="../js/account.js?v=2026-11-02-ten-minute-cache"></script>
+  <script defer src="../js/account.js?v=2026-11-03-player-images"></script>
   <script defer src="../js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="../js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="../js/headline-split.js?v=2026-11-03-headline-split-2"></script>
@@ -338,9 +340,19 @@
       <section class="account-settings" id="account-settings-panel" data-account-settings-panel hidden>
         <div class="account-settings-account">
           <h3>Konto</h3>
-          <div class="account-settings-actions">
-            <button class="secondary-button" type="button" data-password-change>Passwort ändern</button>
-            <button class="secondary-button" type="button" data-auth-logout>Ausloggen</button>
+          <div class="account-settings-account-row">
+            <div class="account-settings-actions">
+              <button class="secondary-button" type="button" data-password-change>Passwort ändern</button>
+              <button class="secondary-button" type="button" data-auth-logout>Ausloggen</button>
+            </div>
+            <div class="account-profile-image" data-account-profile-image hidden>
+              <span class="account-profile-image-preview" aria-hidden="true"><img alt="" data-account-profile-image-preview hidden><span data-account-profile-image-emoji>👤</span></span>
+              <div class="account-settings-actions">
+                <button class="secondary-button" type="button" data-account-profile-image-upload>Bild hochladen</button>
+                <button class="secondary-button" type="button" data-account-profile-image-delete hidden>Bild löschen</button>
+              </div>
+              <input type="file" accept="image/*" data-account-profile-image-input hidden>
+            </div>
           </div>
         </div>
         <div class="account-settings-mail">

@@ -351,6 +351,49 @@
     .account-settings-message { min-height: 0; margin: -6px 0 0; }
     .account-settings-message:empty { display: none; }
     .account-settings-actions { display: flex; gap: 8px; }
+    .account-settings-account-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .account-profile-image { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+    .account-profile-image[hidden] { display: none; }
+    .account-profile-image-preview {
+      display: grid;
+      place-items: center;
+      flex: none;
+      width: 40px;
+      height: 40px;
+      overflow: hidden;
+      border-radius: var(--radius-full);
+      background: var(--surface2);
+      font-size: 1.2rem;
+    }
+    .account-profile-image-preview img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .account-profile-image-preview :is(img, span)[hidden] { display: none; }
+    [data-account-profile-image-delete].is-armed { border-color: var(--negativ); color: var(--negativ); }
+    #profile-image-editor { --dialog-width: 420px; }
+    .profile-image-editor-frame {
+      position: relative;
+      width: min(100%, 320px);
+      aspect-ratio: 1;
+      margin: 0 auto;
+      overflow: hidden;
+      border-radius: var(--container-radius-xs);
+      background: var(--surface2);
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+    }
+    .profile-image-editor-frame:active { cursor: grabbing; }
+    .profile-image-editor-frame canvas { display: block; width: 100%; height: 100%; }
+    .profile-image-editor-frame::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius-full);
+      box-shadow: 0 0 0 999px color-mix(in srgb, var(--bg) 55%, transparent);
+      pointer-events: none;
+    }
+    .profile-image-editor-zoom { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 1rem; }
+    .profile-image-editor-zoom input { width: 100%; accent-color: var(--accent); }
+    .profile-image-editor-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1.25rem; }
     .account-games-empty {
       border: 1px solid var(--border);
       border-radius: var(--container-radius-sm);
@@ -981,6 +1024,11 @@
       .account-header h2 { font-size: 1.65rem; }
       .account-settings-actions { justify-content: stretch; }
       .account-settings-actions .secondary-button { flex: 1 1 0; }
+      .account-settings-account-row { flex-direction: column; align-items: stretch; }
+      .account-profile-image { margin-left: 0; }
+      .account-profile-image .account-settings-actions { flex: 1 1 auto; }
+      .profile-image-editor-actions .secondary-button,
+      .profile-image-editor-actions .primary-button { flex: 1 1 0; }
       .account-branding-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .account-section { min-width: 0; }
       .account-section-heading { min-width: 0; }

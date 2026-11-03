@@ -109,7 +109,7 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(appScript, /function keepViewerSearchVisible\(searchInput\)[\s\S]*targetOffset = Math\.min\(200,[\s\S]*window\.setTimeout\(alignInput, 350\)/);
   assert.match(appScript, /searchInput\.focus\(\{ preventScroll: true \}\);\s*keepViewerSearchVisible\(searchInput\);/);
   assert.match(appScript, /function updateViewerProfileImage\(playerId = '', profileEmoji = '👤'\)/);
-  assert.match(appScript, /assets\/players\/\$\{encodeURIComponent\(playerId\)\}\/profile\.webp/);
+  assert.match(appScript, /const imageUrl = window\.PadelPlayerImages\?\.url\(playerId\) \|\| '';/);
   assert.match(appScript, /searchInput\.setAttribute\('aria-expanded', 'false'\);\s*searchInput\.blur\(\);\s*searchInput\.disabled = true;/);
   assert.match(appScript, /data-viewer-search-text="\$\{escapeHtml\(option\.name\)\}/);
   assert.match(accountScript, /searchInput\.setAttribute\('aria-expanded', 'false'\);\s*searchInput\.blur\(\);\s*searchInput\.disabled = true;/);

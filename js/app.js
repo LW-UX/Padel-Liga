@@ -1487,7 +1487,8 @@ function updateViewerProfileImage(playerId = '', profileEmoji = '👤') {
   emoji.textContent = ['👨', '👩'].includes(profileEmoji) ? profileEmoji : '👤';
   emoji.removeAttribute('hidden');
   image.dataset.playerId = playerId;
-  if (!playerId) return;
+  const imageUrl = window.PadelPlayerImages?.url(playerId) || '';
+  if (!imageUrl) return;
 
   image.onload = () => {
     if (image.dataset.playerId !== playerId) return;
@@ -1499,7 +1500,7 @@ function updateViewerProfileImage(playerId = '', profileEmoji = '👤') {
     image.hidden = true;
     emoji.removeAttribute('hidden');
   };
-  image.src = `assets/players/${encodeURIComponent(playerId)}/profile.webp`;
+  image.src = imageUrl;
 }
 
 function updateViewerPicker() {
@@ -1874,12 +1875,18 @@ function setPlayerProfileState(message, { error = false } = {}) {
   content.hidden = true;
 }
 
-function configurePlayerProfileImage(image, placeholder, path, alt, profileEmoji) {
+function configurePlayerProfileImage(image, placeholder, playerId, alt, profileEmoji) {
   if (!image || !placeholder) return;
   image.hidden = true;
   image.alt = alt;
+  image.dataset.profileImagePlayerId = playerId;
   placeholder.textContent = ['👨', '👩'].includes(profileEmoji) ? profileEmoji : '👤';
   placeholder.hidden = false;
+  image.onload = null;
+  image.onerror = null;
+  image.removeAttribute('src');
+  const path = window.PadelPlayerImages?.url(playerId) || '';
+  if (!path) return;
   image.onload = () => {
     image.hidden = false;
     placeholder.hidden = true;
@@ -3399,7 +3406,7 @@ function renderPlayerProfile(profile) {
   configurePlayerProfileImage(
     document.getElementById('player-profile-avatar-image'),
     document.getElementById('player-profile-avatar-placeholder'),
-    `assets/players/${encodeURIComponent(identity.id)}/profile.webp`,
+    identity.id,
     `Profilbild von ${identity.displayName}`,
     identity.profileEmoji || knownPlayer?.profileEmoji
   );
@@ -4772,6 +4779,19 @@ document.addEventListener('error', event => {
   image.nextElementSibling?.removeAttribute('hidden');
 }, true);
 
+// Nachgeladene oder im Konto geänderte Bilder erscheinen auch in Kopfzeile und offenem Profil.
+document.addEventListener('padel:player-images-changed', event => {
+  (event.detail?.playerIds || []).forEach(playerId => playersWithoutRankingAvatar.delete(playerId));
+  const viewerImage = document.getElementById('viewer-profile-image');
+  const viewerEmoji = document.getElementById('viewer-profile-emoji');
+  if (viewerImage?.dataset.playerId) updateViewerProfileImage(viewerImage.dataset.playerId, viewerEmoji?.textContent);
+  const profileImage = document.getElementById('player-profile-avatar-image');
+  const profilePlaceholder = document.getElementById('player-profile-avatar-placeholder');
+  if (profileImage?.dataset.profileImagePlayerId) {
+    configurePlayerProfileImage(profileImage, profilePlaceholder, profileImage.dataset.profileImagePlayerId, profileImage.alt, profilePlaceholder?.textContent);
+  }
+});
+
 // Das Bild belegt in der Punktesortierung die Lücke, die sonst der Punkte-Rang füllt.
 const COMPANIES_WITH_LOGO = Object.freeze(['Envidual', 'Hanako', 'Headsquare']);
 
@@ -4787,10 +4807,11 @@ function renderRankingCompanyBadge(player) {
 function renderRankingAvatar(player) {
   const playerId = player.id || '';
   const emoji = ['👨', '👩'].includes(player.profileEmoji) ? player.profileEmoji : '👤';
-  const hasImage = playerId && !playersWithoutRankingAvatar.has(playerId);
-  return `<span class="ranking-avatar" aria-hidden="true">${hasImage
-    ? `<img class="ranking-avatar-image" src="assets/players/${encodeURIComponent(playerId)}/thumb.jpg" alt="" loading="lazy" data-ranking-avatar-image="${escapeHtml(playerId)}">`
-    : ''}<span class="ranking-avatar-emoji"${hasImage ? ' hidden' : ''}>${emoji}</span></span>`;
+  if (!playerId || playersWithoutRankingAvatar.has(playerId)) {
+    return `<span class="ranking-avatar" aria-hidden="true"><span class="ranking-avatar-emoji">${emoji}</span></span>`;
+  }
+  // Das Bild-Element bleibt auch ohne Bild bestehen, damit nachgeladene oder neu hochgeladene Bilder ohne Neurendern erscheinen.
+  return `<span class="ranking-avatar" aria-hidden="true"><img class="ranking-avatar-image" ${window.PadelPlayerImages.attributes(playerId, 'thumb')} alt="" loading="lazy" data-ranking-avatar-image="${escapeHtml(playerId)}"><span class="ranking-avatar-emoji"${window.PadelPlayerImages.fallbackAttribute(playerId)}>${emoji}</span></span>`;
 }
 
 function renderPointsRankReference(currentRank, pointsRank) {

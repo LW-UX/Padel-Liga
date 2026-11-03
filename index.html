@@ -32,7 +32,7 @@
   </script>
   <link rel="stylesheet" href="achievements.css?v=2026-10-31">
   <link rel="stylesheet" href="style.css?v=2026-11-03-compare-labels">
-  <link rel="stylesheet" href="account.css?v=2026-10-31-design-grid">
+  <link rel="stylesheet" href="account.css?v=2026-11-03-player-images">
   <link rel="stylesheet" href="whats-new.css?v=2026-10-30-with-icon">
   <script>
     (function () {
@@ -56,22 +56,24 @@
   <script defer src="data/training-matches.js"></script>
   <script defer src="data/info.js"></script>
   <script defer src="data/supabase-config.js"></script>
+  <script defer src="js/player-images.js?v=2026-11-03-player-images"></script>
+  <script defer src="js/profile-image-editor.js?v=2026-11-03-player-images"></script>
   <script defer src="js/global-actions.js?v=2026-10-20-speed-dial-player"></script>
   <script defer src="js/tipp-invitation.js?v=2026-10-27-first-visit"></script>
   <script defer src="js/whats-new.js?v=2026-10-30-mobile-page"></script>
   <script defer src="js/elo-forecast.js?v=2026-10-14-shared-auto-tip"></script>
   <script defer src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
   <script defer src="js/table-core.js?v=2026-10-30-diff-zero"></script>
-  <script defer src="js/live-ticker.js?v=2026-11-02-form-chip"></script>
+  <script defer src="js/live-ticker.js?v=2026-11-03-player-images"></script>
   <script defer src="js/mobile-dialog-pages.js?v=2026-11-03-profile-routes"></script>
   <script defer src="js/branding-preview.js?v=2026-10-31-centre-court"></script>
-  <script defer src="js/account.js?v=2026-11-02-ten-minute-cache"></script>
+  <script defer src="js/account.js?v=2026-11-03-player-images"></script>
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/headline-split.js?v=2026-11-03-headline-split-2"></script>
   <script defer src="js/panel-layout.js?v=2026-11-03-split-left-sync"></script>
-  <script defer src="js/match-statistics.js?v=2026-11-03-profile-routes"></script>
-  <script defer src="js/app.js?v=2026-11-03-profile-routes"></script>
+  <script defer src="js/match-statistics.js?v=2026-11-03-player-images"></script>
+  <script defer src="js/app.js?v=2026-11-03-player-images"></script>
 </head>
 <body>
 
@@ -936,9 +938,19 @@
       <section class="account-settings" id="account-settings-panel" data-account-settings-panel hidden>
         <div class="account-settings-account">
           <h3>Konto</h3>
-          <div class="account-settings-actions">
-            <button class="secondary-button" type="button" data-password-change>Passwort ändern</button>
-            <button class="secondary-button" type="button" data-auth-logout>Ausloggen</button>
+          <div class="account-settings-account-row">
+            <div class="account-settings-actions">
+              <button class="secondary-button" type="button" data-password-change>Passwort ändern</button>
+              <button class="secondary-button" type="button" data-auth-logout>Ausloggen</button>
+            </div>
+            <div class="account-profile-image" data-account-profile-image hidden>
+              <span class="account-profile-image-preview" aria-hidden="true"><img alt="" data-account-profile-image-preview hidden><span data-account-profile-image-emoji>👤</span></span>
+              <div class="account-settings-actions">
+                <button class="secondary-button" type="button" data-account-profile-image-upload>Bild hochladen</button>
+                <button class="secondary-button" type="button" data-account-profile-image-delete hidden>Bild löschen</button>
+              </div>
+              <input type="file" accept="image/*" data-account-profile-image-input hidden>
+            </div>
           </div>
         </div>
         <div class="account-settings-mail">

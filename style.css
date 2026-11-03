@@ -591,6 +591,13 @@
       text-decoration: none;
     }
     .player-profile-link:hover { color: var(--accent) !important; }
+    /* Nur direktes Hovern unterstreicht; Spielerkarten färben nur den Namen, auch den hervorgehobenen. */
+    .player-profile-link:not(.match-detail-player):hover {
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+    .match-detail-player.player-profile-link:is(:hover, :focus-visible) .match-detail-player-name { color: var(--accent) !important; }
     .player-profile-link:focus-visible {
       border-radius: 3px;
       outline: 2px solid var(--accent);
@@ -1076,8 +1083,8 @@
       padding: 0;
       transition: transform 0.15s ease;
     }
-    .player-profile-match.has-details:has(button:hover, button:focus-visible) button.player-profile-match-score { text-decoration-color: currentColor; }
-    .player-profile-match.has-details:has(button:hover, button:focus-visible) button.player-profile-match-outcome { transform: scale(1.1); }
+    .player-profile-match.has-details:has(:is(button.player-profile-match-score, button.player-profile-match-outcome):is(:hover, :focus-visible)) button.player-profile-match-score { text-decoration-color: currentColor; }
+    .player-profile-match.has-details:has(:is(button.player-profile-match-score, button.player-profile-match-outcome):is(:hover, :focus-visible)) button.player-profile-match-outcome { transform: scale(1.1); }
     .player-profile-score-set { white-space: nowrap; }
     .player-profile-score-divider { color: var(--dim); }
     .player-profile-set-tiebreak { font-size: var(--text-xs); }
@@ -2723,7 +2730,7 @@
     .ranking-table .col-form { min-width: 114px; }
     table.rt th {
       text-align: right; font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.12em;
-      text-transform: uppercase; color: var(--dim); padding: 10px 16px;
+      text-transform: uppercase; color: var(--dim); padding: 0px 16px 10px;
       border-bottom: 1px solid var(--border);
     }
     .ranking-sort-header {
