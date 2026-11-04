@@ -366,9 +366,10 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
   width: 22px;
   padding-right: 2px;
 }
+/* Breit genug, damit „Partien“ und „Punkte“ samt Laufweite sichtbaren Abstand behalten. */
 #detail-view-dialog[data-presentation="panel"] .match-statistics-ranking .col-games,
-#detail-view-dialog[data-presentation="panel"] .match-statistics-ranking .col-points { width: 58px; }
-#detail-view-dialog[data-presentation="panel"] .match-statistics-ranking .col-diff { width: 48px; }
+#detail-view-dialog[data-presentation="panel"] .match-statistics-ranking .col-points { width: 76px; }
+#detail-view-dialog[data-presentation="panel"] .match-statistics-ranking .col-diff { width: 56px; }
 #detail-view-dialog[data-presentation="panel"] .match-statistics-ranking .col-wins { display: none; }
 #detail-view-dialog[data-presentation="panel"] .match-statistics-graph {
   overflow-x: hidden;

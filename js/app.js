@@ -2740,11 +2740,11 @@ function renderPlayerProfileCompareResult() {
     renderPlayerProfileCompareRow('Tiebreaks', side.tiebreaks[0], side.tiebreaks[1]),
     renderPlayerProfileCompareRow('Zu-Null', side.bagels[0], side.bagels[1])
   ].join('');
-  // Das Elo bleibt auch ohne direktes Duell sichtbar.
+  // Das Elo und die Namenszeile bleiben auch ohne gemeinsame Partien sichtbar.
   // Die Blockbezeichnung steht wie die Wertebezeichnungen mittig zwischen beiden Seiten.
   const renderTable = (title, matchCount, names, rows, emptyText, extraRows = '') => `<div class="player-profile-compare-table">
-    ${matchCount || extraRows ? `<div class="match-forecast-percentages player-profile-compare-names"><span>${escapeHtml(names[0])}</span><span class="player-profile-compare-label">${escapeHtml(title)}</span><span>${escapeHtml(names[1])}</span></div>` : ''}
-    ${matchCount ? rows : `<div class="hint">${escapeHtml(emptyText)}</div>`}
+    <div class="match-forecast-percentages player-profile-compare-names"><span>${escapeHtml(names[0])}</span><span class="player-profile-compare-label">${escapeHtml(title)}</span><span>${escapeHtml(names[1])}</span></div>
+    ${matchCount ? rows : `<div class="hint player-profile-compare-empty">${escapeHtml(emptyText)}</div>`}
     ${extraRows}
   </div>`;
   target.innerHTML = `<div class="hint stat-meta-line">${escapeHtml(`${formatProfileMatchCount(sharedMatches)} gemeinsame Partien`)}</div>
