@@ -344,7 +344,6 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.25rem;
 }
-#detail-view-dialog[data-presentation="panel"] .match-statistics-section { padding: 1rem .7rem; }
 #detail-view-dialog[data-presentation="panel"] .match-statistics-form-row {
   gap: .75rem;
 }
@@ -414,7 +413,6 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
   }
-  #detail-view-dialog[data-presentation="panel"] .match-statistics-section { padding: 0; }
   #detail-view-dialog[data-presentation="panel"] .match-statistics-form-row { gap: 1rem; }
   #detail-view-dialog[data-presentation="panel"] .match-statistics-ranking th,
   #detail-view-dialog[data-presentation="panel"] .match-statistics-ranking td {
@@ -452,7 +450,6 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
   .live-point-team-button.match-forecast-choice { min-height: 54px; padding: .5rem; }
   .match-statistics-heading-help .help-tooltip { right: auto; left: 0; }
   .match-statistics-players { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
-  .match-statistics-section { padding: 1rem .7rem; }
   .match-statistics-context { gap:.7rem; }
   .match-statistics-form-row { grid-template-columns: minmax(0, 1fr); gap: 1rem; min-width: 0; }
   .match-statistics-form-group.is-multi-match .form-chip + .form-chip { margin-left: -6px; }
