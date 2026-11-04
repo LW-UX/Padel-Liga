@@ -5,11 +5,16 @@ export type ClearoomsBooking = {
   date: string;
   end_date: string;
   checkin_status?: string | null;
+  user?: { email?: string | null } | null;
+  user_email?: string | null;
+  email?: string | null;
 };
+export type Participant = { name: string; email: string };
 export type SlotPlan =
   | { state: "free" | "partial"; date: string; from: string; until: string; openFrom: string; openUntil: string }
   | { state: "outside_hours"; date: string; openFrom: string | null; openUntil: string | null };
 export type BusyWindow = { from: string; until: string };
+export type CoveringBooking = BusyWindow & { name: string };
 
 export const BOOKING_MINUTES = 60;
 export const BOOKING_STEP_MINUTES = 30;
@@ -70,25 +75,56 @@ function clipToDate(value: string, date: string, fallback: string) {
 
 // Clearooms liefert Buchungszeiten als lokale Bürozeit im Format "YYYY-MM-DD HH:MM:SS",
 // deshalb genügt ein lexikografischer Vergleich.
-export function findBusyWindow(
+function overlappingBookings(
   bookings: ClearoomsBooking[],
   deskId: string,
   slot: { date: string; from: string; until: string },
-  ownBookingId: string | null = null,
-): BusyWindow | null {
+  ownBookingId: string | null,
+) {
   const slotStart = `${slot.date} ${slot.from}:00`;
   const slotEnd = `${slot.date} ${slot.until === "24:00" ? "23:59:59" : `${slot.until}:00`}`;
-  const overlapping = bookings.filter((booking) =>
+  return bookings.filter((booking) =>
     booking.desk_id === deskId
     && booking.id !== ownBookingId
     && booking.checkin_status !== "cancelled"
     && booking.date < slotEnd
     && booking.end_date > slotStart
   );
-  if (!overlapping.length) return null;
-  const from = overlapping.map((booking) => booking.date).sort()[0];
-  const until = overlapping.map((booking) => booking.end_date).sort().at(-1) as string;
-  return { from: clipToDate(from, slot.date, "00:00"), until: clipToDate(until, slot.date, "24:00") };
+}
+
+function windowOf(bookings: ClearoomsBooking[], date: string): BusyWindow {
+  const from = bookings.map((booking) => booking.date).sort()[0];
+  const until = bookings.map((booking) => booking.end_date).sort().at(-1) as string;
+  return { from: clipToDate(from, date, "00:00"), until: clipToDate(until, date, "24:00") };
+}
+
+export function findBusyWindow(
+  bookings: ClearoomsBooking[],
+  deskId: string,
+  slot: { date: string; from: string; until: string },
+  ownBookingId: string | null = null,
+): BusyWindow | null {
+  const overlapping = overlappingBookings(bookings, deskId, slot, ownBookingId);
+  return overlapping.length ? windowOf(overlapping, slot.date) : null;
+}
+
+export function bookingEmail(booking: ClearoomsBooking) {
+  const email = booking.user?.email ?? booking.user_email ?? booking.email;
+  return typeof email === "string" ? email.trim().toLowerCase() : "";
+}
+
+// Hat ein Spieler des Termins die Schläger selbst gebucht, gilt der Termin als versorgt.
+export function findCoveringBooking(
+  bookings: ClearoomsBooking[],
+  deskId: string,
+  slot: { date: string; from: string; until: string },
+  participants: Participant[],
+  ownBookingId: string | null = null,
+): CoveringBooking | null {
+  const byEmail = new Map(participants.map((participant) => [participant.email.trim().toLowerCase(), participant.name]));
+  const covering = overlappingBookings(bookings, deskId, slot, ownBookingId).filter((booking) => byEmail.has(bookingEmail(booking)));
+  if (!covering.length) return null;
+  return { ...windowOf(covering, slot.date), name: byEmail.get(bookingEmail(covering[0])) as string };
 }
 
 export function berlinParts(value: string | Date) {

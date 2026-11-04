@@ -62,5 +62,32 @@
     return Math.round(oldElo + Number(pointFactor) * 50 * ((won ? 1 : 0) - expected));
   }
 
-  return { getAutoTipForecast, getEloPointFactor, projectElo };
+  // Rechnet Partien nacheinander durch: Jede Partie startet mit dem Elo, den die vorherigen
+  // Ergebnisse ergeben. getOutcome(match, elosBefore) liefert { winner, score } oder null.
+  function projectEloChain(matches, startElos, getOutcome) {
+    const elos = new Map(startElos);
+    const elosBeforeByMatch = new Map();
+    matches.forEach(match => {
+      const elosBefore = new Map(elos);
+      elosBeforeByMatch.set(match.id, elosBefore);
+      const outcome = getOutcome(match, elosBefore);
+      if (!outcome) return;
+      const teams = [match.team1.spieler, match.team2.spieler];
+      const teamElos = teams.map(names => names.map(name => elosBefore.get(name)));
+      if (teamElos.flat().some(value => !Number.isFinite(value))) return;
+      const pointFactor = getEloPointFactor(outcome.score);
+      teams.forEach((names, teamIndex) => names.forEach((name, playerIndex) => {
+        const value = projectElo(
+          teamElos[teamIndex][playerIndex],
+          teamElos[1 - teamIndex],
+          outcome.winner === teamIndex + 1,
+          pointFactor
+        );
+        if (value !== null) elos.set(name, value);
+      }));
+    });
+    return elosBeforeByMatch;
+  }
+
+  return { getAutoTipForecast, getEloPointFactor, projectElo, projectEloChain };
 });

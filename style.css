@@ -1000,6 +1000,8 @@
       gap: 12px;
       min-width: 0;
     }
+    .player-profile-compare-skeleton-value .skeleton-pill { width: 2.5rem; }
+    .player-profile-compare-skeleton-bar > span { left: 0; right: 0; }
     #player-profile-compare-menu { max-height: 200px; }
     .training-picker.opens-up #player-profile-compare-menu {
       top: auto;

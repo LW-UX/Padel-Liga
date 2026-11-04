@@ -2585,6 +2585,54 @@ function getProfileEloBeforeMatch(eloSeries, match) {
   return Number.isFinite(Number(first.oldElo ?? NaN)) ? Number(first.oldElo) : Number(first.elo);
 }
 
+// Der Vergleich braucht von den anderen Spielern nur Elo-Verlauf und aktuelles Elo.
+// Statt vollständiger Profile lädt eine gemeinsame Abfrage alle fehlenden Spieler auf einmal.
+async function loadPlayerProfileCompareElo(playerIds) {
+  const client = getSupabaseClient();
+  if (!client) {
+    const profiles = await Promise.all(playerIds.map(playerId => fetchPlayerProfile(playerId).catch(() => null)));
+    return new Map(playerIds.map((playerId, index) => [playerId, profiles[index] || null]));
+  }
+  const [changes, players, seasons] = await Promise.all([
+    client.from('match_elo_changes')
+      .select('match_id,player_id,old_elo,new_elo,match:matches!inner(match_at,season_id,counts_for_elo)')
+      .in('player_id', playerIds)
+      .eq('match.counts_for_elo', true),
+    client.from('players').select('id,initial_elo').in('id', playerIds),
+    client.from('seasons').select('id,counts_for_profile')
+  ]);
+  const error = changes.error || players.error || seasons.error;
+  if (error) throw error;
+  const profileSeasons = new Set((seasons.data || []).filter(season => season.counts_for_profile).map(season => season.id));
+  const toBerlinDate = value => new Date(value).toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' });
+  const result = new Map();
+  (players.data || []).forEach(player => {
+    const eloSeries = (changes.data || [])
+      .filter(change => change.player_id === player.id && change.match?.match_at && profileSeasons.has(change.match.season_id))
+      .sort((left, right) => String(left.match.match_at).localeCompare(String(right.match.match_at))
+        || String(left.match_id).localeCompare(String(right.match_id)))
+      .map(change => ({
+        matchId: change.match_id,
+        date: toBerlinDate(change.match.match_at),
+        oldElo: change.old_elo,
+        elo: change.new_elo
+      }));
+    const initialElo = Number.isFinite(Number(player.initial_elo)) ? Number(player.initial_elo) : null;
+    result.set(player.id, {
+      summary: { currentElo: eloSeries.at(-1)?.elo ?? initialElo },
+      eloSeries: eloSeries.length || initialElo === null ? eloSeries : [{ elo: initialElo }]
+    });
+  });
+  playerIds.forEach(playerId => {
+    if (!result.has(playerId)) result.set(playerId, null);
+  });
+  return result;
+}
+
+function isPlayerProfileCompareEloLoading(playerIds) {
+  return playerIds.some(playerId => playerProfileCompareProfiles.has(playerId) && playerProfileCompareProfiles.get(playerId) === undefined);
+}
+
 // Ø Team-Elo (70 % schwächerer, 30 % stärkerer Spieler) über die gemeinsamen Partien, gewichtet wie die übrigen Vergleichswerte.
 function getPlayerProfileTeamEloAverages(profile, togetherMatches, partnerId, playersByName) {
   const ownId = profile.identity?.id;
@@ -2607,6 +2655,16 @@ function getPlayerProfileTeamEloAverages(profile, togetherMatches, partnerId, pl
     weightTotal += weight;
   }
   return weightTotal ? sums.map(sum => sum / weightTotal) : [null, null];
+}
+
+// Noch ladende Werte erscheinen als Skeleton, damit sichtbar bleibt, dass sie nachkommen.
+function renderPlayerProfileCompareLoadingRow(label, leftValue = null, format = formatProfileMatchCount) {
+  const skeletonValue = '<span class="loading-skeleton player-profile-compare-skeleton-value"><span class="skeleton-pill"></span></span>';
+  const leftCell = leftValue === null || leftValue === undefined ? skeletonValue : escapeHtml(format(leftValue));
+  return `<div class="match-forecast-result player-profile-compare-row is-loading" aria-label="${escapeHtml(`${label}: wird geladen`)}" aria-busy="true">
+    <div class="match-forecast-percentages"><span>${leftCell}</span><span class="player-profile-compare-label">${escapeHtml(label)}</span><span>${skeletonValue}</span></div>
+    <div class="match-forecast-bar loading-skeleton player-profile-compare-skeleton-bar"><span></span></div>
+  </div>`;
 }
 
 function renderPlayerProfileCompareRow(label, leftValue, rightValue, format = formatProfileMatchCount) {
@@ -2640,19 +2698,29 @@ function renderPlayerProfileCompareResult() {
   const opponentIds = togetherMatches.flatMap(match =>
     (match.opponentNames || []).map(name => playersByName.get(name)?.id).filter(Boolean)
   );
-  [...new Set([otherId, ...opponentIds])].forEach(playerId => {
-    if (playerProfileCompareProfiles.has(playerId)) return;
+  const comparePlayerIds = [...new Set([otherId, ...opponentIds])].filter(playerId => playerId !== profile.identity?.id);
+  const missingPlayerIds = comparePlayerIds.filter(playerId => {
+    if (playerProfileCompareProfiles.has(playerId)) return false;
+    // Bereits geladene Profile werden synchron übernommen, damit kein Skeleton aufblitzt.
+    const cachedProfile = getCachedPlayerProfile(playerId);
+    if (cachedProfile) {
+      playerProfileCompareProfiles.set(playerId, cachedProfile);
+      return false;
+    }
     playerProfileCompareProfiles.set(playerId, undefined);
-    fetchPlayerProfile(playerId)
-      .then(loadedProfile => playerProfileCompareProfiles.set(playerId, loadedProfile || null))
+    return true;
+  });
+  if (missingPlayerIds.length) {
+    loadPlayerProfileCompareElo(missingPlayerIds)
+      .then(loaded => loaded.forEach((entry, playerId) => playerProfileCompareProfiles.set(playerId, entry)))
       .catch(error => {
-        playerProfileCompareProfiles.set(playerId, null);
+        missingPlayerIds.forEach(playerId => playerProfileCompareProfiles.set(playerId, null));
         console.error(error);
       })
       .finally(() => {
         if (playerProfileData === profile && playerProfileCompareId === otherId) renderPlayerProfileCompareResult();
       });
-  });
+  }
   const comparison = getPlayerProfileComparison(profile.matches || [], other.name);
   const ownElo = profile.summary?.currentElo ?? null;
   const otherElo = playerProfileCompareProfiles.get(otherId)?.summary?.currentElo ?? null;
@@ -2681,13 +2749,17 @@ function renderPlayerProfileCompareResult() {
         [profile.identity?.displayName || '', other.name],
         renderSideRows(comparison.duel),
         'Noch nie gegeneinander gespielt.',
-        renderPlayerProfileCompareRow('Akt. Elo', ownElo, otherElo, formatElo)
+        isPlayerProfileCompareEloLoading([otherId])
+          ? renderPlayerProfileCompareLoadingRow('Akt. Elo', ownElo, formatElo)
+          : renderPlayerProfileCompareRow('Akt. Elo', ownElo, otherElo, formatElo)
       )}
       ${renderTable(
         `Im Team (${formatProfileMatchCount(comparison.together)})`,
         comparison.together,
         ['Zusammen', 'Gegner'],
-        renderSideRows(comparison.team) + renderPlayerProfileCompareRow('Ø Elo', teamElos[0], teamElos[1], formatElo),
+        renderSideRows(comparison.team) + (isPlayerProfileCompareEloLoading(comparePlayerIds)
+          ? renderPlayerProfileCompareLoadingRow('Ø Elo')
+          : renderPlayerProfileCompareRow('Ø Elo', teamElos[0], teamElos[1], formatElo)),
         'Noch nie zusammen gespielt.'
       )}
     </div>`;
@@ -2697,8 +2769,9 @@ function renderPlayerProfileCompare(profile) {
   const target = document.getElementById('player-profile-compare');
   if (!target) return;
   const options = getPlayerProfileCompareOptions(profile);
-  const selected = options.find(option => option.id === playerProfileCompareId) || null;
-  if (!selected) playerProfileCompareId = null;
+  // Ohne gültige Wahl ist sofort der Spieler mit den meisten gemeinsamen Partien gewählt, damit der Bereich nicht nachträglich aufklappt.
+  const selected = options.find(option => option.id === playerProfileCompareId) || options[0] || null;
+  playerProfileCompareId = selected?.id || null;
   if (!options.length) {
     target.innerHTML = '<h3>Vergleich</h3><div class="hint">Noch keine gemeinsamen Partien mit anderen Spielern.</div>';
     return;

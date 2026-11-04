@@ -7,6 +7,7 @@ const root = path.join(__dirname, '..');
 const slotModule = import(path.join(root, 'supabase', 'functions', 'racket-booking', 'slot.ts'));
 const migration = fs.readFileSync(path.join(root, 'supabase', 'migrations', '20261029160000_racket_bookings.sql'), 'utf8');
 const edgeFunction = fs.readFileSync(path.join(root, 'supabase', 'functions', 'racket-booking', 'index.ts'), 'utf8');
+const coveredMigration = fs.readFileSync(path.join(root, 'supabase', 'migrations', '20261104120000_racket_booking_covered.sql'), 'utf8');
 const subjectMigration = fs.readFileSync(path.join(root, 'supabase', 'migrations', '20261029170000_racket_booking_subject.sql'), 'utf8');
 
 const officeHours = Array.from({ length: 7 }, (_, index) => ({ weekday: index + 1, from: '07:00', to: '20:00', all_day: false }));
@@ -53,6 +54,20 @@ test('Belegungen anderer zählen, die eigene und stornierte nicht', async () => 
   assert.equal(findBusyWindow([booking('a', '18:00', '19:00', { desk_id: 'other' })], desk, slot), null);
 });
 
+test('eine eigene Clearooms-Buchung eines Spielers gilt als bereits gebuchte Schläger', async () => {
+  const { findCoveringBooking } = await slotModule;
+  const slot = { date: '2026-11-04', from: '12:00', until: '13:00' };
+  const participants = [{ name: 'Jonas L.', email: 'jonas.loehr@envidual.com' }, { name: 'Agnes K.', email: 'agnes.koehler@headsquare.group' }];
+  assert.deepEqual(
+    findCoveringBooking([booking('a', '12:00', '13:00', { user: { email: 'Jonas.Loehr@envidual.com' } })], desk, slot, participants),
+    { from: '12:00', until: '13:00', name: 'Jonas L.' }
+  );
+  assert.equal(findCoveringBooking([booking('a', '12:00', '13:00', { user_email: 'agnes.koehler@headsquare.group' })], desk, slot, participants).name, 'Agnes K.');
+  assert.equal(findCoveringBooking([booking('a', '12:00', '13:00', { user: { email: 'fremd@envidual.com' } })], desk, slot, participants), null);
+  assert.equal(findCoveringBooking([booking('a', '12:00', '13:00', { user: { email: 'jonas.loehr@envidual.com' }, checkin_status: 'cancelled' })], desk, slot, participants), null);
+  assert.equal(findCoveringBooking([booking('a', '14:00', '15:00', { user: { email: 'jonas.loehr@envidual.com' } })], desk, slot, participants), null);
+});
+
 test('Gastname und Partiebezeichnung folgen der Liga-Benennung', async () => {
   const { matchLabel } = await slotModule;
   assert.equal(matchLabel({ id: 'winter-2026-partie-7', competition_stage: 'league' }), 'Partie 7');
@@ -71,6 +86,9 @@ test('die Edge Function liest Partien und Trainings nur über die abgesicherte D
   const tables = [...edgeFunction.matchAll(/\.from\("([a-z_]+)"\)/g)].map(match => match[1]);
   assert.deepEqual([...new Set(tables)], ['racket_bookings']);
   assert.match(edgeFunction, /admin\.rpc\("get_racket_booking_subject"/);
+  assert.match(edgeFunction, /admin\.rpc\("get_racket_booking_participants"/);
+  assert.match(coveredMigration, /security definer/);
+  assert.match(coveredMigration, /revoke execute on function public\.get_racket_booking_participants\(text, text, uuid\) from public, anon, authenticated/);
   assert.match(subjectMigration, /security definer/);
   assert.match(subjectMigration, /revoke execute on function public\.get_racket_booking_subject\(text, text, uuid\) from public, anon, authenticated/);
   assert.match(subjectMigration, /grant execute on function public\.get_racket_booking_subject\(text, text, uuid\) to service_role/);

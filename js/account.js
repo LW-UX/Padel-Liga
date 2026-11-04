@@ -220,6 +220,7 @@
       case 'checking': return { text: 'Schläger werden geprüft …', tone: 'is-pending' };
       case 'free': return { text: `✓ Schläger frei${slot}`, tone: 'is-free' };
       case 'partial': return { text: `✓ Schläger frei, wegen der Bürozeiten nur ${result.from}–${result.until}`, tone: 'is-free' };
+      case 'covered': return { text: `✓ Schläger bereits gebucht von ${result.coveredBy} · ${result.busyFrom}–${result.busyUntil}`, tone: 'is-free' };
       case 'busy': return { text: `⚠ Schläger ${result.busyFrom}–${result.busyUntil} schon belegt. Der Termin lässt sich trotzdem speichern.`, tone: 'is-busy' };
       case 'outside_hours': return {
         text: result.openFrom
@@ -236,6 +237,7 @@
     switch (result?.state) {
       case 'booked': return { text: `✓ Schläger reserviert · ${result.from}–${result.until}`, tone: 'is-free' };
       case 'partial': return { text: `✓ Schläger reserviert · ${result.from}–${result.until} (Bürozeiten)`, tone: 'is-free' };
+      case 'covered': return { text: `✓ Schläger bereits gebucht von ${result.coveredBy} · ${result.busyFrom}–${result.busyUntil}`, tone: 'is-free' };
       case 'busy': return { text: `⚠ Keine Schläger reserviert – ${result.busyFrom}–${result.busyUntil} schon belegt`, tone: 'is-busy' };
       case 'outside_hours': return { text: '⚠ Keine Schläger reserviert – außerhalb der Bürozeiten', tone: 'is-busy' };
       case 'failed': return { text: '⚠ Schlägerbuchung fehlgeschlagen', tone: 'is-busy' };
@@ -356,9 +358,10 @@
     const response = await invokeRacketBooking({ action: 'status', matchIds: ids('match'), trainingIds: ids('training') });
     (response?.bookings || []).forEach(row => racketStatusCache.set(`${row.subjectType}:${row.subjectId}`, row));
     applyRacketStatuses();
-    // Termine ohne oder mit fehlgeschlagener Buchung werden einmal je Seitenaufruf nachgebucht.
+    // Termine ohne eigene Buchung werden einmal je Seitenaufruf nachgebucht; so fällt auf, wenn ein Spieler
+    // die Schläger selbst gebucht oder eine fremde Belegung storniert wurde.
     const pending = keys.filter(key => !racketSyncAttempted.has(key)
-      && (!racketStatusCache.has(key) || racketStatusCache.get(key)?.state === 'failed'));
+      && (!racketStatusCache.has(key) || ['failed', 'busy', 'covered'].includes(racketStatusCache.get(key)?.state)));
     for (const key of pending.slice(0, RACKET_AUTO_SYNC_LIMIT)) {
       const [type, ...idParts] = key.split(':');
       await syncRacketBooking(type, idParts.join(':'));
@@ -613,8 +616,12 @@
       const settingsPanel = document.querySelector('[data-account-settings-panel]');
       if (settingsButton) settingsButton.setAttribute('aria-expanded', String(isSettingsOpen()));
       if (settingsPanel) settingsPanel.hidden = !isSettingsOpen();
+      // Tipper bekommen nur die Tipp-Erinnerung; Ergebnis- und Kalendermails betreffen eigene Partien.
+      const isTipperAccount = state.profile?.app_role === 'tipper';
       document.querySelectorAll('[data-email-notification]').forEach(input => {
         const key = input.dataset.emailNotification;
+        const row = input.closest('.account-setting-row');
+        if (row) row.hidden = isTipperAccount && key !== 'predictionReminder';
         input.checked = Boolean(state.notificationPreferences[key]);
         input.disabled = !state.notificationPreferencesReady || !state.notificationPreferencesAvailable;
       });

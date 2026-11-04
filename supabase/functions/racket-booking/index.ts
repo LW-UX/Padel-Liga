@@ -3,9 +3,11 @@ import {
   berlinParts,
   type ClearoomsBooking,
   findBusyWindow,
+  findCoveringBooking,
   isDateValue,
   isTimeValue,
   matchLabel,
+  type Participant,
   planSlot,
   type WorkingHour,
 } from "./slot.ts";
@@ -20,17 +22,18 @@ type Subject = { type: SubjectType; id: string };
 type BookingRow = {
   subject_type: SubjectType;
   subject_id: string;
-  state: "booked" | "partial" | "busy" | "outside_hours" | "failed";
+  state: "booked" | "partial" | "covered" | "busy" | "outside_hours" | "failed";
   clearooms_booking_id: string | null;
   booked_from: string | null;
   booked_until: string | null;
   busy_from: string | null;
   busy_until: string | null;
+  covered_by: string | null;
 };
 type Desired =
   | { kind: "none" }
   | { kind: "frozen" }
-  | { kind: "slot"; date: string; time: string; guestName: string };
+  | { kind: "slot"; date: string; time: string; guestName: string; participants: Participant[] };
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -122,7 +125,7 @@ function describeRow(row: BookingRow | null) {
   const busy = row.busy_from && row.busy_until
     ? { busyFrom: berlinParts(row.busy_from).time, busyUntil: berlinParts(row.busy_until).time }
     : {};
-  return { state: row.state, ...booked, ...busy };
+  return { state: row.state, ...booked, ...busy, ...(row.covered_by ? { coveredBy: row.covered_by } : {}) };
 }
 
 async function readRow(admin: SupabaseClient, subject: Subject) {
@@ -144,6 +147,7 @@ async function writeRow(admin: SupabaseClient, subject: Subject, values: Partial
     booked_until: null,
     busy_from: null,
     busy_until: null,
+    covered_by: null,
     ...values,
     updated_at: new Date().toISOString(),
   };
@@ -173,7 +177,22 @@ async function resolveSubject(admin: SupabaseClient, subject: Subject, userId: s
   if (resolved?.kind !== "slot") return { kind: resolved?.kind === "frozen" ? "frozen" : "none" };
   if (!isDateValue(resolved.date) || !isTimeValue(resolved.time)) return { kind: "frozen" };
   const guestName = resolved.match ? `${matchLabel(resolved.match)} – PadelLiga` : "Training – PadelLiga";
-  return { kind: "slot", date: resolved.date, time: resolved.time, guestName };
+  return { kind: "slot", date: resolved.date, time: resolved.time, guestName, participants: await readParticipants(admin, subject, userId) };
+}
+
+async function readParticipants(admin: SupabaseClient, subject: Subject, userId: string) {
+  const { data, error } = await admin.rpc("get_racket_booking_participants", {
+    p_subject_type: subject.type,
+    p_subject_id: subject.id,
+    p_user_id: userId,
+  });
+  if (error) throw error;
+  return (Array.isArray(data) ? data : []) as Participant[];
+}
+
+// Belegungen ohne erkannten Spieler protokollieren nur Feldnamen, damit sich die Clearooms-Antwort ohne Personendaten prüfen lässt.
+function logForeignBookingFields(bookings: ClearoomsBooking[]) {
+  console.info("Schläger fremd belegt; Clearooms-Buchungsfelder", [...new Set(bookings.flatMap((booking) => Object.keys(booking)))].join(", "));
 }
 
 async function reconcile(admin: SupabaseClient, subject: Subject, desired: Desired) {
@@ -208,8 +227,19 @@ async function reconcile(admin: SupabaseClient, subject: Subject, desired: Desir
   }
 
   const busy = findBusyWindow(dayBookings, RACKET_DESK_ID, plan, ownBookingId);
+  const covering = busy ? findCoveringBooking(dayBookings, RACKET_DESK_ID, plan, desired.participants, ownBookingId) : null;
   if (ownBookingId) await deleteBooking(ownBookingId);
+  if (covering) {
+    await writeRow(admin, subject, {
+      state: "covered",
+      busy_from: berlinTimestamp(plan.date, covering.from),
+      busy_until: berlinTimestamp(plan.date, covering.until),
+      covered_by: covering.name,
+    });
+    return { state: "covered", ...result, busyFrom: covering.from, busyUntil: covering.until, coveredBy: covering.name };
+  }
   if (busy) {
+    logForeignBookingFields(dayBookings);
     await writeRow(admin, subject, {
       state: "busy",
       busy_from: berlinTimestamp(plan.date, busy.from),
@@ -235,15 +265,22 @@ async function reconcile(admin: SupabaseClient, subject: Subject, desired: Desir
   }
 }
 
-async function check(admin: SupabaseClient, body: Record<string, unknown>) {
+async function check(admin: SupabaseClient, body: Record<string, unknown>, userId: string) {
   const { date, time } = body;
   if (!isDateValue(date) || !isTimeValue(time)) return jsonResponse({ error: "Datum und Uhrzeit sind erforderlich." }, 400);
   const subject = readSubject(body);
   const row = subject ? await readRow(admin, subject) : null;
   const plan = planSlot(date, time, await getWorkingHours());
   if (plan.state === "outside_hours") return jsonResponse({ ...plan });
-  const busy = findBusyWindow(await listDayBookings(date), RACKET_DESK_ID, plan, row?.clearooms_booking_id ?? null);
-  return jsonResponse(busy ? { ...plan, state: "busy", busyFrom: busy.from, busyUntil: busy.until } : { ...plan });
+  const dayBookings = await listDayBookings(date);
+  const ownBookingId = row?.clearooms_booking_id ?? null;
+  const busy = findBusyWindow(dayBookings, RACKET_DESK_ID, plan, ownBookingId);
+  if (!busy) return jsonResponse({ ...plan });
+  const participants = subject ? await readParticipants(admin, subject, userId) : [];
+  const covering = findCoveringBooking(dayBookings, RACKET_DESK_ID, plan, participants, ownBookingId);
+  return jsonResponse(covering
+    ? { ...plan, state: "covered", busyFrom: covering.from, busyUntil: covering.until, coveredBy: covering.name }
+    : { ...plan, state: "busy", busyFrom: busy.from, busyUntil: busy.until });
 }
 
 async function status(admin: SupabaseClient, body: Record<string, unknown>) {
@@ -294,7 +331,7 @@ Deno.serve(async (request) => {
   const body = await request.json().catch(() => ({})) as Record<string, unknown>;
 
   try {
-    if (body.action === "check") return await check(admin, body);
+    if (body.action === "check") return await check(admin, body, userData.user.id);
     if (body.action === "status") return await status(admin, body);
     if (body.action === "sync") {
       const subject = readSubject(body);

@@ -8,7 +8,11 @@ const appSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'u
 const styleSource = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
 
 test('result overview neither loads nor renders per-match Elo adjustments', () => {
-  assert.doesNotMatch(appSource, /\.from\(['"]match_elo_changes['"]\)/);
+  // Nur der Profilvergleich liest Elo-Stände direkt, um Elo vor der Partie und aktuelles Elo zu bestimmen.
+  const eloChangeQueries = appSource.match(/\.from\(['"]match_elo_changes['"]\)/g) || [];
+  assert.equal(eloChangeQueries.length, 1);
+  const compareLoader = appSource.slice(appSource.indexOf('async function loadPlayerProfileCompareElo('));
+  assert.match(compareLoader.slice(0, compareLoader.indexOf('\n}\n')), /\.from\(['"]match_elo_changes['"]\)/);
   assert.doesNotMatch(appSource, /mc-elo-changes/);
   assert.doesNotMatch(styleSource, /mc-elo-changes/);
 });
