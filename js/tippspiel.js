@@ -1221,7 +1221,7 @@
       const rowClass = rank ? `r${Math.min(rank, 4)}` : 'is-benchmark';
       const rankHtml = rank
         ? `<span class="rank-main">${rank}</span>${renderPredictionRankReference(rank, canonicalRank)}`
-        : '<span class="rank-main">–</span>';
+        : '';
       const nameTitle = entry.is_benchmark ? ` title="${BENCHMARK_LABEL}"` : '';
       return `
       <tr class="ranking-row ${rowClass} ${state.session?.user?.id === entry.user_id ? 'authenticated-player-highlight' : ''}" data-ranking-entry="${escapeHtml(entry.user_id)}">
@@ -1338,7 +1338,7 @@
     const rank = entry.is_benchmark ? null : state.leaderboard.indexOf(entry) + 1;
     const rankClass = rank ? `r${Math.min(rank, 4)}` : 'is-benchmark';
     const nameTitle = entry.is_benchmark ? ` title="${BENCHMARK_LABEL}"` : '';
-    return `<th scope="row" class="prediction-table-account ${rankClass}"><span class="prediction-table-account-inner"><span class="prediction-table-rank rank-position">${rank || '–'}</span><span class="prediction-rank-account"${nameTitle}><span class="pname">${escapeHtml(entry.display_name)}</span><span class="pname-short" title="${escapeHtml(entry.display_name)}">${escapeHtml(getPredictionAccountShortLabel(entry))}</span>${renderPredictionAccountBadges(entry, { company: false })}</span></span></th>`;
+    return `<th scope="row" class="prediction-table-account ${rankClass}"><span class="prediction-table-account-inner"><span class="prediction-table-rank rank-position">${rank || ''}</span><span class="prediction-rank-account"${nameTitle}><span class="pname">${escapeHtml(entry.display_name)}</span><span class="pname-short" title="${escapeHtml(entry.display_name)}">${escapeHtml(getPredictionAccountShortLabel(entry))}</span>${renderPredictionAccountBadges(entry, { company: false })}</span></span></th>`;
   }
 
   function getPredictionTableRowClass(entry) {

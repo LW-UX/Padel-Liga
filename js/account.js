@@ -148,7 +148,8 @@
       name,
       value,
       menuId: `schedule-time-menu-${scheduleTimePickerCount}`,
-      options: [{ value: '', label: '--' }, ...values.map(option => ({ value: option, label: option }))]
+      // Der Platzhalter zeigt nur den leeren Anfangszustand und ist im Menü nicht wählbar.
+      options: [{ value: '', label: '--', isPlaceholder: true }, ...values.map(option => ({ value: option, label: option }))]
     });
   }
 
@@ -1231,6 +1232,7 @@
           data-training-picker-value="${escapeHtml(option.value)}"
           data-training-picker-search-text="${escapeHtml(option.label)} ${escapeHtml(option.meta || '')}"
           ${option.isGuestAction ? 'data-training-guest-option' : ''}
+          ${option.isPlaceholder ? 'hidden' : ''}
         ><span class="training-picker-option-label">${renderTrainingPickerText(option, true)}</span>${option.meta ? `<span>${escapeHtml(option.meta)}</span>` : ''}</button>`).join('')}
         ${searchable ? '<div class="picker-search-empty" data-training-picker-search-empty hidden>Kein Spieler gefunden.</div>' : ''}
       </div>

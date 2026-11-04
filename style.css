@@ -2380,7 +2380,6 @@
       gap: 6px;
       vertical-align: top;
       width: 100%;
-      justify-content: space-between;
     }
     .prediction-rank-account-name {
       min-width: 0;
@@ -2388,6 +2387,7 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    /* Icons stehen direkt hinter dem Namen; nur das Firmen-Icon rückt an den rechten Rand, damit die Logos untereinander stehen. */
     .prediction-rank-account .prediction-company-badge {
       flex: 0 0 auto;
       margin-left: auto;
