@@ -356,3 +356,26 @@ test('forecast SQL shares exact tips, supports quick changes, cutoffs and archiv
     await db.exec('reset role');
   }
 });
+
+test('fortlaufende Elo-Kette rechnet jede Partie mit dem Elo nach den vorherigen Ergebnissen', () => {
+  const { projectEloChain, getAutoTipForecast } = require('../js/elo-forecast.js');
+  const matches = [
+    { id: 'm1', team1: { spieler: ['A', 'B'] }, team2: { spieler: ['C', 'D'] } },
+    { id: 'm2', team1: { spieler: ['A', 'C'] }, team2: { spieler: ['B', 'D'] } }
+  ];
+  const startElos = new Map([['A', 1000], ['B', 1000], ['C', 1000], ['D', 1000]]);
+  const winFirstMatch = match => match.id === 'm1'
+    ? { winner: 1, score: getAutoTipForecast(60).score }
+    : null;
+
+  const elosBefore = projectEloChain(matches, startElos, winFirstMatch);
+
+  assert.equal(elosBefore.get('m1').get('A'), 1000);
+  assert.ok(elosBefore.get('m2').get('A') > 1000);
+  assert.ok(elosBefore.get('m2').get('C') < 1000);
+  assert.equal(elosBefore.get('m2').get('A'), elosBefore.get('m2').get('B'));
+  assert.equal(startElos.get('A'), 1000);
+
+  const unplayed = projectEloChain(matches, startElos, () => null);
+  assert.equal(unplayed.get('m2').get('A'), 1000);
+});

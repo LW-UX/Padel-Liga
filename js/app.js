@@ -22,6 +22,10 @@ let calculatorResults = new Map();
 let finalFourCalculatorResults = new Map();
 let activeCalculatorMatchId = null;
 let calculatorAutoTip = false;
+// 'current' rechnet jede Partie mit dem aktuellen Elo, 'progressive' mit dem Elo nach den vorherigen Ergebnissen.
+let calculatorEloMode = 'current';
+let calculatorManualMatchIds = new Set();
+let calculatorElosBeforeByMatch = new Map();
 let ownPredictionMatchIds = new Set();
 let ownPredictionRequest = 0;
 let homePredictionLeaderboard = [];
@@ -1183,6 +1187,7 @@ function resetSeasonState() {
   finalFourCalculatorResults = new Map();
   activeCalculatorMatchId = null;
   calculatorAutoTip = false;
+  calculatorManualMatchIds = new Set();
   statisticsMode = 'season';
   allTimeStatisticsData = null;
   allTimeStatisticsPromise = null;
@@ -1217,6 +1222,7 @@ async function refreshActiveSeasonView() {
       finalFourCalculatorResults = new Map();
       activeCalculatorMatchId = null;
       calculatorAutoTip = false;
+      calculatorManualMatchIds = new Set();
       allTimeStatisticsData = null;
       allTimeStatisticsPromise = null;
       playerProfileSeasonPayloadCache.clear();
@@ -4093,6 +4099,12 @@ document.addEventListener('click', event => {
   const calculatorAutoTipControl = event.target.closest('[data-calculator-autotip]');
   if (calculatorAutoTipControl) {
     setCalculatorAutoTip(!calculatorAutoTip);
+    return;
+  }
+
+  const calculatorEloModeControl = event.target.closest('[data-calculator-elo-mode]');
+  if (calculatorEloModeControl) {
+    setCalculatorEloMode(calculatorEloModeControl.dataset.calculatorEloMode);
     return;
   }
 
@@ -7397,13 +7409,14 @@ function getOpenMatches() {
     .sort(compareMatchesByNumber);
 }
 
-function getAutoTipEntryForMatch(match) {
-  const probability = getMatchWinProbability(match);
+function getAutoTipEntryForMatch(match, eloByName = null) {
+  const getElo = player => eloByName ? eloByName.get(player.name) ?? null : getLatestPlayerEloValue(player);
+  const probability = getMatchWinProbabilityFromElos(match, getElo);
   if (!probability) return null;
   const playersByName = new Map(PADEL_DATA.players.map(p => [p.name, p]));
   const teamElos = names => names.map(name => {
     const player = playersByName.get(name);
-    const elo = player ? getLatestPlayerEloValue(player) : null;
+    const elo = player ? getElo(player) : null;
     return Number.isFinite(elo) ? elo : -Infinity;
   });
   return window.PadelEloForecast.getAutoTipForecast(
@@ -7413,11 +7426,72 @@ function getAutoTipEntryForMatch(match) {
   )?.entry || null;
 }
 
-function applyCalculatorAutoTip() {
-  getOpenMatches().forEach(match => {
-    const entry = getAutoTipEntryForMatch(match);
-    if (entry) calculatorResults.set(match.id, entry);
+// Vollständig eingegebene Rechner-Ergebnisse als Grundlage für die fortlaufende Elo-Kette.
+function getCalculatorEloOutcome(match) {
+  const result = parseCalculatorResult(match);
+  if (!result.match) return null;
+  const entry = getCalculatorEntry(match.id);
+  const toNumbers = part => getCalculatorPair(entry, part).map(Number);
+  const singleSet = isSingleSetMatch(match) || getMatchStage(match) === 'final-four';
+  const splitSets = !singleSet && ['2:1', '1:2'].includes(result.match.saetze);
+  return {
+    winner: result.match.sieger,
+    score: {
+      regularSets: singleSet ? [toNumbers('set1')] : [toNumbers('set1'), toNumbers('set2')],
+      matchTiebreak: splitSets ? toNumbers('tb') : null
+    }
+  };
+}
+
+function isSameCalculatorEntry(left, right) {
+  return ['set1', 'set2', 'tb'].every(part =>
+    getCalculatorPair(left, part).join(':') === getCalculatorPair(right, part).join(':'));
+}
+
+// Fortlaufend: Partien nach Termin durchrechnen; bei aktivem Auto-Tipp werden nicht manuell
+// geänderte Partien mit dem jeweils fortgeschriebenen Elo getippt. Liefert geänderte Partien.
+function updateCalculatorEloChain() {
+  calculatorElosBeforeByMatch = new Map();
+  if (calculatorEloMode !== 'progressive') return [];
+  const changedMatchIds = [];
+  const startElos = new Map(PADEL_DATA.players.map(player => [player.name, getLatestPlayerEloValue(player)]));
+  const orderedMatches = [...getOpenMatches()]
+    .sort((left, right) => getMatchOrderKey(left).localeCompare(getMatchOrderKey(right)));
+  calculatorElosBeforeByMatch = window.PadelEloForecast.projectEloChain(orderedMatches, startElos, (match, elosBefore) => {
+    if (calculatorAutoTip && !calculatorManualMatchIds.has(match.id)) {
+      const entry = getAutoTipEntryForMatch(match, elosBefore);
+      if (entry && !isSameCalculatorEntry(calculatorResults.get(match.id), entry)) {
+        calculatorResults.set(match.id, entry);
+        changedMatchIds.push(match.id);
+      }
+    }
+    return getCalculatorEloOutcome(match);
   });
+  return changedMatchIds;
+}
+
+// Nach einer Eingabe nur Prozente und geänderte Auto-Tipps nachziehen, ohne die Eingabefelder neu aufzubauen.
+function refreshCalculatorEloChain() {
+  if (calculatorEloMode !== 'progressive') return;
+  updateCalculatorEloChain().forEach(syncCalculatorScoreInputs);
+  getOpenMatches().forEach(match => renderCalculatorMatchStatus(match.id));
+}
+
+function getCalculatorMatchWinProbability(match) {
+  const elosBefore = calculatorElosBeforeByMatch.get(match.id);
+  if (calculatorEloMode !== 'progressive' || !elosBefore) return getMatchWinProbability(match);
+  return getMatchWinProbabilityFromElos(match, player => elosBefore.get(player.name) ?? null);
+}
+
+function applyCalculatorAutoTip() {
+  calculatorManualMatchIds = new Set();
+  // Fortlaufend setzt renderCalculator die Tipps über die Elo-Kette.
+  if (calculatorEloMode !== 'progressive') {
+    getOpenMatches().forEach(match => {
+      const entry = getAutoTipEntryForMatch(match);
+      if (entry) calculatorResults.set(match.id, entry);
+    });
+  }
   activeCalculatorMatchId = null;
   renderCalculator();
 }
@@ -7428,8 +7502,16 @@ function updateCalculatorAutoTipUi() {
     control.classList.toggle('is-on', calculatorAutoTip);
     control.setAttribute('aria-checked', calculatorAutoTip ? 'true' : 'false');
   }
+  const hasOpenMatches = getOpenMatches().length > 0;
   const bar = document.getElementById('calculator-autotip-bar');
-  if (bar) bar.hidden = getOpenMatches().length === 0;
+  if (bar) bar.hidden = !hasOpenMatches;
+  const modeToggle = document.getElementById('calculator-elo-mode-toggle');
+  if (modeToggle) modeToggle.hidden = !hasOpenMatches;
+  document.querySelectorAll('[data-calculator-elo-mode]').forEach(button => {
+    const isActive = button.dataset.calculatorEloMode === calculatorEloMode;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-pressed', String(isActive));
+  });
 }
 
 function setCalculatorAutoTip(on) {
@@ -7439,15 +7521,28 @@ function setCalculatorAutoTip(on) {
   } else {
     // Manuelles Abschalten des Switch: alle Ergebnisse löschen, Default herstellen
     calculatorResults = new Map();
+    calculatorManualMatchIds = new Set();
     activeCalculatorMatchId = null;
     renderCalculator();
   }
   updateCalculatorAutoTipUi();
 }
 
+function setCalculatorEloMode(mode) {
+  if (!['current', 'progressive'].includes(mode) || mode === calculatorEloMode) return;
+  calculatorEloMode = mode;
+  if (calculatorAutoTip) applyCalculatorAutoTip();
+  else renderCalculator();
+}
+
 function deactivateCalculatorAutoTip(matchId) {
   if (getMatchStage(PADEL_DATA.matches.find(match => match.id === matchId)) === 'final-four') return;
   if (!calculatorAutoTip) return;
+  // Fortlaufend bleibt der Auto-Tipp aktiv; die Partie gilt als manuell und die übrigen werden neu getippt.
+  if (calculatorEloMode === 'progressive') {
+    calculatorManualMatchIds.add(matchId);
+    return;
+  }
   calculatorAutoTip = false;
   updateCalculatorAutoTipUi();
 }
@@ -7632,6 +7727,7 @@ function updateCalculatorScore(input) {
   entry[part][teamIndex] = value;
   initializeCalculatorPairDefaults(input.dataset.calculatorMatchId, part, teamIndex);
   renderCalculatorMatchStatus(input.dataset.calculatorMatchId);
+  refreshCalculatorEloChain();
   renderCalculatorRanking();
 }
 
@@ -7646,6 +7742,7 @@ function clearCalculatorScoreInput(input) {
   input.value = '';
   entry[part][teamIndex] = '';
   renderCalculatorMatchStatus(input.dataset.calculatorMatchId);
+  refreshCalculatorEloChain();
   renderCalculatorRanking();
 }
 
@@ -7679,6 +7776,7 @@ function stepCalculatorScore(button) {
   if (input) input.value = value;
   initializeCalculatorPairDefaults(matchId, part, teamIndex);
   renderCalculatorMatchStatus(matchId);
+  refreshCalculatorEloChain();
   renderCalculatorRanking();
 }
 
@@ -7709,6 +7807,7 @@ function applyCalculatorStraightSetsPreset(matchId, winnerTeamIndex) {
   setActiveCalculatorMatch(matchId, false);
   syncCalculatorScoreInputs(matchId);
   renderCalculatorMatchStatus(matchId);
+  refreshCalculatorEloChain();
   renderCalculatorRanking();
 }
 
@@ -7716,6 +7815,7 @@ function resetCalculator() {
   calculatorResults = new Map();
   activeCalculatorMatchId = null;
   calculatorAutoTip = false;
+  calculatorManualMatchIds = new Set();
   renderCalculator();
 }
 
@@ -7837,7 +7937,7 @@ function renderCalculatorProbabilityButton(match, teamIndex, probability) {
 }
 
 function renderCalculatorLiveInner(match) {
-  const probability = getMatchWinProbability(match);
+  const probability = getCalculatorMatchWinProbability(match);
 
   // Sobald getippt wird: durchgehend laufender Satzstand (0:0 → 1:0/0:1 → …),
   // Wahrscheinlichkeit links/rechts daneben (wie die Partien-Cards).
@@ -7987,6 +8087,7 @@ function renderCalculator() {
   if (leagueCalculator) leagueCalculator.hidden = displayPhase !== 'league';
 
   const openMatches = getOpenMatches();
+  updateCalculatorEloChain();
   matchContainer.innerHTML = openMatches.length
     ? openMatches.map(renderCalculatorMatchCard).join('')
     : '<div class="hint">Keine offenen Partien.</div>';

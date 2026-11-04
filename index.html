@@ -31,7 +31,7 @@
     })();
   </script>
   <link rel="stylesheet" href="achievements.css?v=2026-10-31">
-  <link rel="stylesheet" href="style.css?v=2026-11-03-compare-labels">
+  <link rel="stylesheet" href="style.css?v=2026-11-04-elo-chain">
   <link rel="stylesheet" href="account.css?v=2026-11-03-player-images">
   <link rel="stylesheet" href="whats-new.css?v=2026-10-30-with-icon">
   <script>
@@ -61,7 +61,7 @@
   <script defer src="js/global-actions.js?v=2026-10-20-speed-dial-player"></script>
   <script defer src="js/tipp-invitation.js?v=2026-10-27-first-visit"></script>
   <script defer src="js/whats-new.js?v=2026-10-30-mobile-page"></script>
-  <script defer src="js/elo-forecast.js?v=2026-10-14-shared-auto-tip"></script>
+  <script defer src="js/elo-forecast.js?v=2026-11-04-elo-chain"></script>
   <script defer src="js/score-input.js?v=2026-09-22-unified-score-counters"></script>
   <script defer src="js/table-core.js?v=2026-10-30-diff-zero"></script>
   <script defer src="js/live-ticker.js?v=2026-11-03-player-images"></script>
@@ -73,7 +73,7 @@
   <script defer src="js/headline-split.js?v=2026-11-03-headline-split-2"></script>
   <script defer src="js/panel-layout.js?v=2026-11-03-split-left-sync"></script>
   <script defer src="js/match-statistics.js?v=2026-11-03-player-images"></script>
-  <script defer src="js/app.js?v=2026-11-03-player-images"></script>
+  <script defer src="js/app.js?v=2026-11-04-elo-chain"></script>
 </head>
 <body>
 
@@ -535,13 +535,19 @@
         <div class="calculator-mobile-game-area">
           <div class="calculator-match-column">
             <div class="calculator-controls-row">
-              <div class="calculator-autotip-bar" id="calculator-autotip-bar">
-                <button type="button" class="secondary-button calculator-autotip-switch" data-calculator-autotip role="switch" aria-checked="false" aria-label="Auto-Tipp: alle Partien nach Siegwahrscheinlichkeit tippen">
-                  <span class="calculator-autotip-track"><span class="calculator-autotip-knob"></span></span>
-                  <span class="calculator-autotip-text">Auto-Tipp</span>
-                </button>
+              <div class="calculator-controls-start">
+                <div class="calculator-autotip-bar" id="calculator-autotip-bar">
+                  <button type="button" class="secondary-button calculator-autotip-switch" data-calculator-autotip role="switch" aria-checked="false" aria-label="Auto-Tipp: alle Partien nach Siegwahrscheinlichkeit tippen">
+                    <span class="calculator-autotip-track"><span class="calculator-autotip-knob"></span></span>
+                    <span class="calculator-autotip-text">Auto-Tipp</span>
+                  </button>
+                </div>
+                <button type="button" class="secondary-button" data-calculator-reset>Zurücksetzen</button>
               </div>
-              <button type="button" class="secondary-button" data-calculator-reset>Zurücksetzen</button>
+              <div class="toggle calculator-elo-mode-toggle" id="calculator-elo-mode-toggle" aria-label="Elo-Berechnung im Rechner">
+                <button type="button" class="active" data-calculator-elo-mode="current" aria-pressed="true" title="Alle Partien mit dem aktuellen Elo rechnen">Aktuell</button>
+                <button type="button" data-calculator-elo-mode="progressive" aria-pressed="false" title="Jede Partie mit dem Elo rechnen, der sich aus den vorherigen Ergebnissen ergibt">Fortlaufend</button>
+              </div>
             </div>
             <div id="calculator-matches" class="calculator-match-list"></div>
           </div>

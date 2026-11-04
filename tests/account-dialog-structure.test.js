@@ -158,7 +158,7 @@ test('date and time hints are dimmed while Safari and iOS receive controlled tex
     assert.match(source, /class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="TT\.MM\.JJJJ"><input type="date"/);
     assert.match(source, /<div class="schedule-time-label" role="group" aria-label="Uhrzeit"><span>Uhrzeit<\/span><span class="schedule-time-field" data-schedule-time-field="displayTime"><\/span><\/div>/);
   });
-  assert.match(accountScript, /SCHEDULE_HOUR_OPTIONS = Array\.from\(\{ length: 20 - 6 \+ 1 \}/);
+  assert.match(accountScript, /SCHEDULE_HOUR_OPTIONS = Array\.from\(\{ length: 20 - 7 \+ 1 \}/);
   assert.match(accountScript, /SCHEDULE_MINUTE_OPTIONS = \['00', '15', '30', '45'\]/);
   assert.match(accountScript, /renderScheduleTimeField\('scheduledTime', matchTime\.time\)/);
   assert.match(accountScript, /renderScheduleTimeField\('displayTime', task\.display_time\)/);

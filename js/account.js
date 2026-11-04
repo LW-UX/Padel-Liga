@@ -134,8 +134,8 @@
     root?.querySelectorAll?.('[data-schedule-time-field]').forEach(syncScheduleTimeField);
   }
 
-  // Termine liegen auf Viertelstunden zwischen 06:00 und 20:45 Uhr; ein abweichender gespeicherter Wert bleibt wählbar.
-  const SCHEDULE_HOUR_OPTIONS = Array.from({ length: 20 - 6 + 1 }, (_, index) => String(6 + index).padStart(2, '0'));
+  // Termine liegen auf Viertelstunden zwischen 07:00 und 20:45 Uhr; ein abweichender gespeicherter Wert bleibt wählbar.
+  const SCHEDULE_HOUR_OPTIONS = Array.from({ length: 20 - 7 + 1 }, (_, index) => String(7 + index).padStart(2, '0'));
   const SCHEDULE_MINUTE_OPTIONS = ['00', '15', '30', '45'];
 
   let scheduleTimePickerCount = 0;
@@ -160,6 +160,14 @@
   function renderScheduleTimeField(name, value = '') {
     const time = String(value || '').slice(0, 5);
     return `<span class="schedule-time-field" data-schedule-time-field="${name}" data-schedule-time-default="${escapeHtml(time)}">${renderScheduleTimeControls(name, time)}</span>`;
+  }
+
+  // Ohne gespeicherten Termin übernimmt die erste Stundenwahl volle Stunde; beim Ändern bleibt die Minute stehen.
+  function presetScheduleMinute(picker, inputName) {
+    const field = picker?.closest('[data-schedule-time-field]');
+    if (!field || field.dataset.scheduleTimeDefault || inputName !== `${field.dataset.scheduleTimeField}Hour`) return;
+    const minutePicker = field.querySelector(`[name="${field.dataset.scheduleTimeField}Minute"]`)?.closest('[data-training-picker]');
+    if (minutePicker && !minutePicker.querySelector('input[type="hidden"]')?.value) setTrainingPickerValue(minutePicker, '00');
   }
 
   function resetScheduleTimeFields(root = document) {
@@ -1567,6 +1575,7 @@
     }
     setTrainingPickerValue(picker, option.dataset.trainingPickerValue);
     closeTrainingPickerMenus();
+    presetScheduleMinute(picker, inputName);
     picker?.closest('[data-schedule-time-field]')?.dispatchEvent(new Event('change', { bubbles: true }));
     if (form && (inputName === 'resultFormat' || inputName === 'playerId')) {
       const preserved = readTrainingRoundValues(form);
