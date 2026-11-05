@@ -1,9 +1,9 @@
-.not-found-page .hero { padding-bottom: 0; }
+.not-found-page .hero-home-button { text-decoration: none; }
 
 .not-found-main {
   display: grid;
   align-items: center;
-  padding-top: clamp(1.5rem, 7vh, 5rem);
+  padding-top: 0.5rem;
 }
 
 .not-found-card {
@@ -11,6 +11,9 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 0.9fr);
   align-items: center;
+  justify-self: center;
+  width: 100%;
+  max-width: 960px;
   min-height: clamp(390px, 55vh, 560px);
   overflow: hidden;
 }
@@ -26,6 +29,11 @@
   max-width: 9em;
   font-size: clamp(calc(var(--text-heading) * 1.25), 6vw, calc(var(--text-heading) * 2));
   line-height: 0.95;
+}
+
+.not-found-title-line {
+  display: block;
+  white-space: nowrap;
 }
 
 .not-found-copy p {
@@ -107,7 +115,7 @@
 .not-found-ball path { fill: none; }
 
 @media (max-width: 768px) {
-  .not-found-main { padding-top: 1rem; }
+  .not-found-main { padding-top: 0.25rem; }
 
   .not-found-card {
     grid-template-columns: 1fr;
