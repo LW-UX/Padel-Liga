@@ -1,9 +1,37 @@
 .not-found-page .hero-home-button { text-decoration: none; }
-.not-found-page .hero-topbar { min-height: 39px; }
+
+.not-found-header-spacers {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.not-found-header-spacer {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-width: 84px;
+  min-height: 38px;
+  padding: 0.45rem 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.not-found-header-spacer svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
 
 .not-found-main {
   display: grid;
   align-items: center;
+  min-width: 0;
   padding-top: 0.5rem;
 }
 
@@ -13,8 +41,8 @@
   grid-template-columns: minmax(0, 1fr) minmax(280px, 0.9fr);
   align-items: center;
   justify-self: center;
-  width: 100%;
-  max-width: 960px;
+  width: min(100%, 960px);
+  min-width: 0;
   min-height: clamp(390px, 55vh, 560px);
   overflow: hidden;
 }
@@ -116,6 +144,7 @@
 .not-found-ball path { fill: none; }
 
 @media (max-width: 768px) {
+  .not-found-header-spacers { display: none; }
   .not-found-main { padding-top: 0.25rem; }
 
   .not-found-card {
