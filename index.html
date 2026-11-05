@@ -738,10 +738,10 @@
     <div class="player-profile-content" id="player-profile-content" hidden>
       <header class="player-profile-hero" id="player-profile-hero">
         <div class="player-profile-identity-row">
-          <div class="player-profile-avatar">
+          <button class="player-profile-avatar" id="player-profile-avatar-button" type="button" aria-label="Profilbild vergrößern" disabled>
             <img id="player-profile-avatar-image" alt="" hidden>
             <span class="player-profile-avatar-placeholder" id="player-profile-avatar-placeholder" aria-hidden="true">👤</span>
-          </div>
+          </button>
           <div class="player-profile-identity">
             <h2 id="player-profile-name"></h2>
             <span class="player-profile-company" id="player-profile-company" role="img" hidden></span>
@@ -792,6 +792,10 @@
   </div>
 </dialog>
 </div>
+
+<dialog class="player-profile-image-zoom" id="player-profile-image-zoom" aria-label="Vergrößertes Profilbild">
+  <img id="player-profile-image-zoom-image" alt="">
+</dialog>
 
 <dialog class="dialog" id="tipp-invitation-dialog" aria-labelledby="tipp-invitation-title" aria-describedby="tipp-invitation-copy">
   <button class="secondary-button modal-close-button" type="button" data-tipp-invitation-close aria-label="Tipp-Hinweis schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>

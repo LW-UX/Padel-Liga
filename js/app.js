@@ -1812,15 +1812,19 @@ function configurePlayerProfileImage(image, placeholder, playerId, alt, profileE
   image.onload = null;
   image.onerror = null;
   image.removeAttribute('src');
+  const zoomButton = image.closest('button.player-profile-avatar');
+  if (zoomButton) zoomButton.disabled = true;
   const path = window.PadelPlayerImages?.url(playerId) || '';
   if (!path) return;
   image.onload = () => {
     image.hidden = false;
     placeholder.hidden = true;
+    if (zoomButton) zoomButton.disabled = false;
   };
   image.onerror = () => {
     image.hidden = true;
     placeholder.hidden = false;
+    if (zoomButton) zoomButton.disabled = true;
   };
   image.src = path;
 }
@@ -3719,6 +3723,8 @@ function closePlayerProfile(options = {}) {
   const dialog = document.getElementById('player-profile-dialog');
   if (!dialog?.open) return;
   if (playerProfileCloseTimer) return;
+  const imageZoom = document.getElementById('player-profile-image-zoom');
+  if (imageZoom?.open) imageZoom.close();
   // Schließen beendet den gesamten Profilverlauf; den sichtbaren Abschluss übernimmt der Verlaufs-Handler.
   const historySteps = options.fromHistory ? 0 : getPlayerProfileHistorySteps();
   if (historySteps && !options.immediate) {
@@ -9582,6 +9588,74 @@ playerProfileDialog?.addEventListener('click', event => {
   if (event.target === playerProfileDialog && playerProfilePresentation === 'modal') closePlayerProfile();
 });
 playerProfileDialog?.querySelector('.player-profile-shell')?.addEventListener('scroll', updatePlayerProfileHeroCondensed, { passive: true });
+
+// Das Profilbild fährt beim Anklicken aus seiner Position auf höchstens 600 × 600 Pixel auf.
+const playerProfileAvatarButton = document.getElementById('player-profile-avatar-button');
+const playerProfileImageZoom = document.getElementById('player-profile-image-zoom');
+const playerProfileImageZoomImage = document.getElementById('player-profile-image-zoom-image');
+let playerProfileImageZoomClosing = false;
+
+function getPlayerProfileImageZoomOffset() {
+  const from = playerProfileAvatarButton.getBoundingClientRect();
+  const to = playerProfileImageZoomImage.getBoundingClientRect();
+  if (!from.width || !to.width) return null;
+  return {
+    transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${from.width / to.width})`,
+    borderRadius: getComputedStyle(playerProfileAvatarButton).borderRadius
+  };
+}
+
+function shouldAnimatePlayerProfileImageZoom() {
+  return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function openPlayerProfileImageZoom() {
+  const source = document.getElementById('player-profile-avatar-image');
+  if (!source?.src || source.hidden || !playerProfileImageZoom) return;
+  playerProfileImageZoomImage.src = source.src;
+  playerProfileImageZoomImage.alt = source.alt;
+  playerProfileImageZoomClosing = false;
+  playerProfileImageZoom.showModal();
+  const offset = getPlayerProfileImageZoomOffset();
+  if (!offset || !shouldAnimatePlayerProfileImageZoom()) return;
+  const finalRadius = getComputedStyle(playerProfileImageZoomImage).borderRadius;
+  playerProfileImageZoomImage.animate(
+    [offset, { transform: 'none', borderRadius: finalRadius }],
+    { duration: 260, easing: 'cubic-bezier(.2, .8, .2, 1)' }
+  );
+  playerProfileImageZoom.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 180, pseudoElement: '::backdrop' });
+}
+
+function closePlayerProfileImageZoom() {
+  if (!playerProfileImageZoom?.open || playerProfileImageZoomClosing) return;
+  const offset = getPlayerProfileImageZoomOffset();
+  if (!offset || !shouldAnimatePlayerProfileImageZoom()) {
+    playerProfileImageZoom.close();
+    return;
+  }
+  playerProfileImageZoomClosing = true;
+  const finalRadius = getComputedStyle(playerProfileImageZoomImage).borderRadius;
+  playerProfileImageZoom.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, pseudoElement: '::backdrop', fill: 'forwards' });
+  playerProfileImageZoomImage.animate(
+    [{ transform: 'none', borderRadius: finalRadius }, offset],
+    { duration: 220, easing: 'cubic-bezier(.4, 0, .6, 1)', fill: 'forwards' }
+  ).finished.catch(() => {}).then(() => {
+    playerProfileImageZoomClosing = false;
+    playerProfileImageZoom.close();
+    playerProfileImageZoomImage.getAnimations().forEach(animation => animation.cancel());
+    playerProfileImageZoom.getAnimations({ subtree: true }).forEach(animation => animation.cancel());
+  });
+}
+
+playerProfileAvatarButton?.addEventListener('click', openPlayerProfileImageZoom);
+playerProfileImageZoom?.addEventListener('click', closePlayerProfileImageZoom);
+playerProfileImageZoom?.addEventListener('cancel', event => {
+  event.preventDefault();
+  closePlayerProfileImageZoom();
+});
+playerProfileImageZoom?.addEventListener('close', () => {
+  if (playerProfileDialog?.open) playerProfileAvatarButton?.focus({ preventScroll: true });
+});
 
 window.addEventListener('padel:branding-change', refreshThemeDependentCharts);
 

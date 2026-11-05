@@ -142,6 +142,9 @@ table.rt.match-statistics-ranking { width: 100%; min-width: 0; margin: 0; table-
 #detail-view-dialog[data-mode="statistics"] .match-detail-team .match-detail-player-photo {
   border: 2px solid var(--statistics-team-color);
 }
+#detail-view-dialog[data-mode="statistics"] .match-detail-team .match-detail-player:is(:hover, :focus-visible) .match-detail-player-photo {
+  border-color: var(--accent);
+}
 table.rt.match-statistics-ranking tbody tr { background: transparent; }
 table.rt.match-statistics-ranking tbody tr.match-statistics-ranking-player {
   background: color-mix(in srgb, var(--statistics-team-color) 10%, transparent);

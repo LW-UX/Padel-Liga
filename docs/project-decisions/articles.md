@@ -74,6 +74,13 @@ Dauerhafte Verbindungen zwischen Spielern, die nicht in der Datenbank stehen, et
 - Marco M., Chris M. und Marcel M. sind drei Brüder und heißen Mayr („Mayr-Brüder“).
 - Lukas T., Marcel M., Ludwig W. und Luca W. sind die vier UX-Designer von Envidual.
 - Florian Z., Ludwig W., Luca W., Lukas P. und Niklas K. bilden das Hanako-Leben-Squad, das die Liga organisiert. Diese Zugehörigkeit dient nur dem Hintergrundwissen: Die Rolle als Organisator wird im Artikel nicht hervorgehoben (siehe Grundsätze).
+- Greta L., Agnes L., Jonas L., Andreas L. und Leonie R. bilden das Zurückgeben-Squad.
+
+Für Squads gilt bei der Erwähnung diese Rangfolge:
+
+- **Gut geeignet:** Alle vier Spieler gehören demselben Squad an (squadinternes Duell), oder beide Spieler von Team 1 gehören einem Squad an und beide Spieler von Team 2 einem anderen (Squad-Duell).
+- **Nur notfalls:** Beide Spieler eines Teams gehören demselben Squad an, die Gegner aber keinem gemeinsamen Squad.
+- **Nicht geeignet:** Je ein Mitglied desselben Squads steht in beiden Teams. Das ist kein Squad-Duell und wird nicht als Squad-Geschichte erzählt.
 
 ### Versetzt gespielte Partien
 
