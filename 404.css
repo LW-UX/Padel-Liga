@@ -1,4 +1,5 @@
 .not-found-page .hero-home-button { text-decoration: none; }
+.not-found-page .hero-topbar { min-height: 40px; }
 
 .not-found-main {
   display: grid;
