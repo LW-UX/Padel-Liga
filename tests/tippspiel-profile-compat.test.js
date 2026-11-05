@@ -434,7 +434,7 @@ test('result counters start empty, initialize their pair, and highlight only whi
   assert.match(tippspielSource, /event\.key === 'Enter' && event\.target\.matches\('\[data-result-score\]'\)[\s\S]*?event\.preventDefault\(\)/);
   assert.match(styleSource, /\.score-counter-pair\.score-counter-pair-active \.score-counter-field/);
   assert.match(styleSource, /\.score-counter-field input \{[\s\S]*?min-width: 0;[\s\S]*?min-height: 0;[\s\S]*?padding: 0;/);
-  assert.match(styleSource, /\.score-counter-step:disabled \{[\s\S]*?cursor: not-allowed;/);
+  assert.match(styleSource, /\.score-counter-step:disabled \{[\s\S]*?cursor: var\(--cursor-not-allowed\);/);
   assert.match(styleSource, /@media \(max-width: 768px\)[\s\S]*?\.score-counter-pair \{[\s\S]*?display: grid;[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto minmax\(0, 1fr\);/);
   assert.match(styleSource, /@media \(max-width: 768px\)[\s\S]*?\.score-counter-field \{[\s\S]*?grid-template-columns: 30% 40% 30%;[\s\S]*?width: 100%;/);
   const counterSources = [tippspielSource, appSource, styleSource].join('\n');

@@ -4,6 +4,7 @@
 // Die Farben je Branding dienen nur der Webseiten-Skizze auf den Designkarten im Konto und müssen zur Branding-Datei passen.
 (function () {
   var STORAGE_KEY = 'padel-branding-preview';
+  var MODE_KEY = 'padel-branding-mode';
   var BRANDINGS = [
     {
       name: 'og-design',
@@ -61,6 +62,27 @@
     } catch (error) { /* Ohne Speicher gilt die Vorschau nur bis zum Neuladen. */ }
   }
 
+  function readRandomMode() {
+    try { return window.localStorage.getItem(MODE_KEY) === 'random'; } catch (error) { return false; }
+  }
+
+  function writeRandomMode(name) {
+    try {
+      // Im Random-Modus wird auch das veröffentlichte Design gespeichert, damit es beim Navigieren erhalten bleibt.
+      window.localStorage.setItem(STORAGE_KEY, name);
+      window.localStorage.setItem(MODE_KEY, 'random');
+    } catch (error) { /* Ohne Speicher gilt der Modus nur bis zum Neuladen. */ }
+  }
+
+  function clearRandomMode() {
+    try { window.localStorage.removeItem(MODE_KEY); } catch (error) { /* Der lokale Zustand gilt trotzdem. */ }
+  }
+
+  function pickDifferent(name) {
+    var choices = BRANDINGS.filter(function (branding) { return branding.name !== name; });
+    return choices[Math.floor(Math.random() * choices.length)].name;
+  }
+
   function apply(name) {
     var target = isKnown(name) ? name : publishedName;
     var href = target === publishedName ? publishedHref : basePath + target + '.css';
@@ -86,25 +108,36 @@
 
   // Andere Tabs und die eingebettete Detailansicht der Tippseite folgen der Auswahl ohne Neuladen.
   window.addEventListener('storage', function (event) {
-    if (event.key !== STORAGE_KEY && event.key !== null) return;
+    if (event.key !== STORAGE_KEY && event.key !== MODE_KEY && event.key !== null) return;
+    randomMode = readRandomMode();
     current = readCurrent();
     apply(current);
   });
 
   var current = readCurrent();
+  var randomMode = readRandomMode();
   apply(current);
 
   window.PadelBrandingPreview = {
     brandings: BRANDINGS,
     publishedName: publishedName,
     current: function () { return current; },
+    isRandom: function () { return randomMode; },
     select: function (name) {
       current = isKnown(name) ? name : publishedName;
+      randomMode = false;
+      clearRandomMode();
       writeStored(current);
       apply(current);
     },
+    selectRandom: function () {
+      current = pickDifferent(current);
+      randomMode = true;
+      writeRandomMode(current);
+      apply(current);
+    },
     reset: function () {
-      if (current === publishedName && !readStored()) return;
+      if (!randomMode && current === publishedName && !readStored()) return;
       this.select(publishedName);
     }
   };

@@ -58,7 +58,7 @@
       border-radius: var(--container-radius-sm);
       background: transparent;
       color: inherit;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font: inherit;
       padding: 0;
       text-align: left;

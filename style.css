@@ -8,6 +8,49 @@
 
       /* Form für Kreise und Pillen, unabhängig vom Branding. */
       --radius-full: 999px;
+
+      /* Schwarze Mauszeiger, in jedem Branding gleich. Hände und Bälle in der Akzentfarbe
+         (--cursor-pointer, --cursor-grab, --cursor-grabbing, --cursor-help, --cursor-not-allowed, --cursor-move, --cursor-wait-1 bis -8, --cursor-progress-1 bis -8)
+         erzeugt tools/build-cursors.mjs in jeder Branding-Datei. */
+      --cursor-default: url('assets/cursors/racket.svg?v=3') 5 2, default;
+      --cursor-text: url('assets/cursors/text.svg?v=3') 10 10, text;
+      --cursor-zoom-in: url('assets/cursors/zoom-in.svg?v=3') 8 8, zoom-in;
+      --cursor-zoom-out: url('assets/cursors/zoom-out.svg?v=3') 8 8, zoom-out;
+    }
+    html { cursor: var(--cursor-default); }
+    :where(a[href], input[type="range"]) { cursor: var(--cursor-pointer); }
+    /* Der Browser setzt bei diesen Formularelementen selbst den System-Pfeil; Bereichsregeln können sie weiter überschreiben. */
+    :where(button, select, label, input[type="file"]) { cursor: var(--cursor-default); }
+    :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="button"], [type="submit"], [type="reset"], [type="color"], [type="file"], [type="image"]), textarea, [contenteditable]:not([contenteditable="false"])) { cursor: var(--cursor-text); }
+    /* Ladezustände: Der Ball dreht sich, indem der Zeiger durch acht Einzelbilder läuft.
+       cursor-progress-spin steht für Stellen bereit, an denen man während des Ladens weiterklicken kann. */
+    [aria-busy="true"],
+    .liga-detail-frame.is-loading,
+    .live-point-team-button:disabled { cursor: var(--cursor-wait-1); animation: cursor-wait-spin 0.72s steps(1, end) infinite; }
+    @keyframes cursor-wait-spin {
+      0% { cursor: var(--cursor-wait-1); }
+      12.5% { cursor: var(--cursor-wait-2); }
+      25% { cursor: var(--cursor-wait-3); }
+      37.5% { cursor: var(--cursor-wait-4); }
+      50% { cursor: var(--cursor-wait-5); }
+      62.5% { cursor: var(--cursor-wait-6); }
+      75% { cursor: var(--cursor-wait-7); }
+      87.5% { cursor: var(--cursor-wait-8); }
+    }
+    @keyframes cursor-progress-spin {
+      0% { cursor: var(--cursor-progress-1); }
+      12.5% { cursor: var(--cursor-progress-2); }
+      25% { cursor: var(--cursor-progress-3); }
+      37.5% { cursor: var(--cursor-progress-4); }
+      50% { cursor: var(--cursor-progress-5); }
+      62.5% { cursor: var(--cursor-progress-6); }
+      75% { cursor: var(--cursor-progress-7); }
+      87.5% { cursor: var(--cursor-progress-8); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      [aria-busy="true"],
+      .liga-detail-frame.is-loading,
+      .live-point-team-button:disabled { animation: none; }
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     [hidden] { display: none !important; }
@@ -62,7 +105,7 @@
       border-radius: var(--button-radius);
       background: var(--surface);
       color: var(--text);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font-family: var(--font-body);
       font-size: var(--text-sm);
       font-weight: 500;
@@ -87,7 +130,7 @@
     .danger-button:disabled,
     .primary-button:disabled,
     .account-setting-row input:disabled,
-    .live-point-team-button:disabled { cursor: wait; opacity: 0.55; }
+    .live-point-team-button:disabled { opacity: 0.55; }
     /* Links im Button-Aussehen: niedrige Gewichtung, damit Aktions- und Zustandsregeln sie überschreiben. */
     :where(a).secondary-button {
       display: inline-flex;
@@ -142,7 +185,7 @@
       font-family: var(--font-body);
       font-size: var(--text-sm);
       font-weight: 600;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       text-decoration: none;
       transition: opacity 160ms ease;
     }
@@ -354,7 +397,7 @@
       border: 0;
       background: transparent;
       color: inherit;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font: inherit;
       letter-spacing: inherit;
       line-height: inherit;
@@ -394,7 +437,7 @@
       border-radius: var(--menu-radius);
       background: transparent;
       color: var(--dim);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font-family: var(--font-body);
       font-size: var(--text-sm);
       font-weight: 500;
@@ -497,7 +540,7 @@
       border-radius: var(--dropdown-radius) 0 0 var(--dropdown-radius);
       background: transparent;
       color: var(--text);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       transition: border-color 0.15s, color 0.15s;
     }
     .viewer-profile-emoji { font-size: 1.1rem; line-height: 1; }
@@ -519,7 +562,7 @@
     }
     .viewer-profile-button:disabled {
       color: var(--dim);
-      cursor: default;
+      cursor: var(--cursor-default);
     }
     .viewer-profile-button:disabled > * { opacity: 0.45; }
     .training-picker { display: grid; position: relative; gap: 4px; min-width: 0; }
@@ -558,7 +601,7 @@
       font-size: var(--text-sm);
       text-align: left;
       padding: 0.55rem 0.65rem;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
     }
     .picker-option:hover:not(:disabled),
     .picker-option.active {
@@ -581,7 +624,7 @@
       border: 0;
       background: transparent;
       color: inherit;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font: inherit;
       font-weight: inherit;
       line-height: inherit;
@@ -780,9 +823,9 @@
       margin: 0;
       padding: 0;
       font-size: inherit;
-      cursor: default;
+      cursor: var(--cursor-default);
     }
-    button.player-profile-avatar:enabled { cursor: zoom-in; }
+    button.player-profile-avatar:enabled { cursor: var(--cursor-zoom-in); }
     button.player-profile-avatar:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
     /* Vergrößertes Profilbild: fährt aus der Position des kleinen Bildes auf höchstens 600 × 600 Pixel auf. */
     .player-profile-image-zoom {
@@ -795,7 +838,7 @@
       padding: 16px;
       box-sizing: border-box;
       background: transparent;
-      cursor: zoom-out;
+      cursor: var(--cursor-zoom-out);
       overflow: hidden;
     }
     .player-profile-image-zoom[open] { display: grid; place-items: center; }
@@ -1082,8 +1125,8 @@
       letter-spacing: 0.04em;
     }
     .player-profile-match-date { white-space: nowrap; }
-    .player-profile-match .form-chip { margin-left: 0; cursor: default; }
-    .player-profile-match button.form-chip { cursor: pointer; }
+    .player-profile-match .form-chip { margin-left: 0; cursor: var(--cursor-default); }
+    .player-profile-match button.form-chip { cursor: var(--cursor-pointer); }
     .player-profile-match-teams {
       display: flex;
       align-items: baseline;
@@ -1106,7 +1149,7 @@
       appearance: none;
       border: 0;
       background: transparent;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font: inherit;
       font-weight: 600;
       padding: 0;
@@ -1523,7 +1566,7 @@
       min-height: 38px;
       border: 1px solid var(--accent);
       border-radius: var(--button-radius);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font-family: var(--font-body);
       font-size: var(--text-sm);
       font-weight: 500;
@@ -1537,7 +1580,7 @@
       border-radius: var(--button-radius);
       background: var(--negativ);
       color: color-mix(in srgb, var(--bg) 50%, var(--surface));
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font-family: var(--font-body);
       font-size: var(--text-sm);
       font-weight: 500;
@@ -1792,7 +1835,7 @@
       font-size: var(--text-sm);
       font-weight: 500;
       padding: 0.35rem 0.75rem;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       transition: color 0.15s ease;
     }
     .toggle:not(.disabled) button:not(:disabled):hover {
@@ -1804,13 +1847,13 @@
     }
     .toggle button:disabled {
       opacity: 0.45;
-      cursor: default;
+      cursor: var(--cursor-default);
     }
     .toggle.disabled {
       opacity: 0.55;
     }
     .toggle.disabled button {
-      cursor: default;
+      cursor: var(--cursor-default);
     }
     .toggle--sort {
       justify-self: center;
@@ -1936,7 +1979,7 @@
       background: color-mix(in srgb, var(--surface) 70%, transparent);
     }
     button.home-season-podium-step {
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       transition: background-color 0.15s, border-color 0.15s;
     }
     button.home-season-podium-step:hover {
@@ -1995,7 +2038,7 @@
       border-radius: var(--button-radius);
       background: transparent;
       color: var(--dim);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font-family: var(--font-body);
       font-size: 1.35rem;
       line-height: 1;
@@ -2523,7 +2566,7 @@
       margin-right: -0.45rem;
       padding-left: 0.45rem;
       padding-right: 0.45rem;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       transition: background 0.1s, box-shadow 0.1s;
     }
     #home-ranking .mini-rank-row[data-player-profile-id]:hover .player-profile-link { color: var(--accent); }
@@ -2601,7 +2644,7 @@
       padding: .3rem;
       background: transparent;
       color: inherit;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font: inherit;
     }
     .mini-match-status-action:hover :is(.mini-match-prob, .mini-match-label),
@@ -2785,7 +2828,7 @@
       border: 0;
       background: transparent;
       color: inherit;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font: inherit;
       letter-spacing: inherit;
       line-height: inherit;
@@ -2850,7 +2893,7 @@
     table.rt th.col-rank {padding-left: 20px;}
     table.rt tr:last-child td { border-bottom: none; }
     table.rt tbody tr { transition: background 0.1s; }
-    table.rt tbody tr[data-player-profile-id] { cursor: pointer; }
+    table.rt tbody tr[data-player-profile-id] { cursor: var(--cursor-pointer); }
     table.rt tbody tr:nth-child(odd) { background: var(--bg); }
     table.rt tbody tr:hover { background: color-mix(in srgb, var(--dim) 10%, transparent); }
     /* Gelber Hover kündigt Zeilen an, die das Profil öffnen; nicht klickbare Zeilen behalten den grauen Hover. */
@@ -3012,7 +3055,7 @@
       font-family: var(--font-body);
       font-size: 0.68rem;
       font-weight: 700;
-      cursor: help;
+      cursor: var(--cursor-help);
       outline: none;
       text-transform: none;
       letter-spacing: 0;
@@ -3062,7 +3105,7 @@
       border: 0;
       background: transparent;
       color: var(--dim);
-      cursor: help;
+      cursor: var(--cursor-help);
       font-family: var(--font-mono);
       font-size: var(--text-xs);
       font-weight: 500;
@@ -3137,7 +3180,7 @@
       font-size: var(--text-sm);
       font-weight: 700;
       margin-left: 4px;
-      cursor: help;
+      cursor: var(--cursor-help);
       outline: none;
     }
     .ranking-table .form-chip { width: 22px; height: 22px; font-size: var(--text-xs); }
@@ -3273,7 +3316,7 @@
     .fb {
       font-family: var(--font-body); font-size: var(--text-sm); font-weight: 500;
       padding: 2px 8px; border-radius: var(--radius-full); border: 1px solid var(--border);
-      background: transparent; color: var(--muted); cursor: pointer; transition: all 0.15s;
+      background: transparent; color: var(--muted); cursor: var(--cursor-pointer); transition: all 0.15s;
     }
     .fb.on { background: var(--player-color); color: var(--bg); border-color: transparent; }
     @media (hover: hover) {
@@ -3288,7 +3331,7 @@
     .fb-toggle {
       font-family: var(--font-body); font-size: var(--text-sm); font-weight: 500;
       padding: 4px 12px; border-radius: var(--button-radius); border: 1px solid var(--border);
-      background: var(--surface2); color: var(--dim); cursor: pointer;
+      background: var(--surface2); color: var(--dim); cursor: var(--cursor-pointer);
       transition: all 0.15s; white-space: nowrap;
     }
     .fb-company-Envidual   { --company-color: var(--envidual); }
@@ -3473,7 +3516,7 @@
       border: 0;
       background: transparent;
       color: inherit;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font: inherit;
       padding: 0;
     }
@@ -3659,7 +3702,7 @@
       stroke-linecap: round;
       stroke-linejoin: round;
     }
-    .detail-view-step:disabled { opacity: 0.3; cursor: default; }
+    .detail-view-step:disabled { opacity: 0.3; cursor: var(--cursor-default); }
     .detail-view-actions {
       grid-column: 3;
       justify-self: end;
@@ -3819,7 +3862,7 @@
       border-radius: var(--container-radius-sm);
       background: transparent;
       color: inherit;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font: inherit;
       text-align: left;
     }
@@ -3959,7 +4002,7 @@
       height: 100%;
       align-self: stretch;
       color: inherit;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font: inherit;
     }
     .live-overview-prematch-fact {
@@ -4010,7 +4053,7 @@
       border: 0;
       background: transparent;
       color: var(--text);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font: inherit;
       font-weight: 600;
       padding: 0;
@@ -4739,7 +4782,7 @@
       border: 0;
       background: transparent;
       color: inherit;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font: inherit;
       font-weight: 600;
       margin: 0;
@@ -4810,7 +4853,7 @@
       font-size: 1.02rem;
       font-weight: 700;
       line-height: 1;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       touch-action: manipulation;
       user-select: none;
       -webkit-user-select: none;
@@ -4827,7 +4870,7 @@
       color: var(--accent);
     }
     .score-counter-step:disabled {
-      cursor: not-allowed;
+      cursor: var(--cursor-not-allowed);
     }
     .score-counter-separator {
       color: var(--dim);
@@ -5086,7 +5129,7 @@
         border: 0;
         background: transparent;
         color: var(--text);
-        cursor: pointer;
+        cursor: var(--cursor-pointer);
         font-family: var(--font-body);
         font-size: var(--text-sm);
         font-weight: 600;
@@ -5748,7 +5791,7 @@
         height: 100%;
         border: 0;
         background: var(--shadow-color);
-        cursor: default;
+        cursor: var(--cursor-default);
         opacity: 0;
         pointer-events: none;
         transition: opacity 160ms ease;
@@ -5909,7 +5952,7 @@
         background: var(--surface2);
         color: var(--text);
         box-shadow: 0 12px 34px var(--shadow-color);
-        cursor: pointer;
+        cursor: var(--cursor-pointer);
         padding: 0;
         place-items: center;
         pointer-events: auto;

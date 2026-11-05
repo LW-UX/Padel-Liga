@@ -30,6 +30,23 @@ test('every branding defines the same variables as the OG-Design', async () => {
   }
 });
 
+test('every branding carries ball cursors in its own accent color', async () => {
+  const { readBrandingVariables } = await loadTool();
+  const { buildCursorBlock, readCursorBlock, buildFixedCursorFiles } = await import(pathToFileURL(path.join(root, 'tools/build-cursors.mjs')).href);
+  for (const file of fs.readdirSync(path.join(root, 'branding')).filter(name => name.endsWith('.css'))) {
+    const css = read(`branding/${file}`);
+    assert.equal(readCursorBlock(css), buildCursorBlock(readBrandingVariables(css)['--accent']).trim(), `${file}: Mauszeiger veraltet, tools/apply-branding.mjs ausführen`);
+  }
+  for (const [name, markup] of Object.entries(buildFixedCursorFiles())) {
+    assert.equal(read(`assets/cursors/${name}`), `${markup}\n`, `assets/cursors/${name} veraltet`);
+  }
+  // Alle Zeigervariablen, die die Stylesheets verwenden, sind auch definiert.
+  const defined = new Set([...read('style.css').matchAll(/(--cursor-[a-z0-9-]+):/g), ...read('branding/og-design.css').matchAll(/(--cursor-[a-z0-9-]+):/g)].map(([, name]) => name));
+  for (const file of ['style.css', 'tipp.css', 'account.css', 'match-statistics.css', 'whats-new.css']) {
+    for (const [, name] of read(file).matchAll(/var\((--cursor-[a-z0-9-]+)\)/g)) assert.ok(defined.has(name), `${file}: ${name} fehlt`);
+  }
+});
+
 test('shared stylesheets keep no brand values', () => {
   for (const file of ['style.css', 'tipp.css', 'account.css', 'match-statistics.css', 'whats-new.css']) {
     const css = read(file);
@@ -81,9 +98,13 @@ test('the design selection offers every branding with matching wireframe colors'
     const html = read(file);
     const branding = html.search(/branding\/[a-z0-9-]+\.css/);
     const earlyPreview = html.indexOf("localStorage.getItem('padel-branding-preview')");
+    const bootstrapBrandings = html.match(/var brandings = \[([^\]]+)\]/)[1]
+      .match(/[a-z0-9-]+/g);
+    assert.deepEqual(bootstrapBrandings.sort(), files.slice().sort(), `${file}: Brandings im frühen Random-Start`);
     assert.ok(branding < earlyPreview && earlyPreview < html.indexOf('style.css'), `${file}: Vorschau direkt nach dem Branding anwenden`);
     assert.ok(html.indexOf('js/branding-preview.js') < html.indexOf('js/account.js'), `${file}: Vorschau vor dem Konto laden`);
-    assert.match(html, /data-account-branding hidden/);
+    assert.match(html, /data-account-branding[^>]+hidden/);
+    assert.match(html, /class="account-branding-random"[\s\S]*data-account-branding-random/);
   }
 });
 
@@ -117,6 +138,56 @@ test('the design preview announces a switch once the stylesheet applies and foll
   listeners.window.storage({ key: 'padel-branding-preview' });
   assert.equal(attributes.href, 'branding/og-design.css?v=abc');
   assert.equal(window.PadelBrandingPreview.current(), 'og-design');
+
+  window.PadelBrandingPreview.selectRandom();
+  assert.notEqual(window.PadelBrandingPreview.current(), 'og-design');
+  assert.equal(window.PadelBrandingPreview.isRandom(), true);
+  assert.equal(stored.get('padel-branding-mode'), 'random');
+  assert.equal(stored.get('padel-branding-preview'), window.PadelBrandingPreview.current());
+
+  window.PadelBrandingPreview.select('envidual');
+  assert.equal(window.PadelBrandingPreview.isRandom(), false);
+  assert.equal(stored.has('padel-branding-mode'), false);
+  assert.equal(stored.get('padel-branding-preview'), 'envidual');
+});
+
+test('random design changes only on a real reload and never repeats the visible design', () => {
+  const runBootstrap = (file, navigationType, current) => {
+    const html = read(file);
+    const source = html.match(/<script>\s*(\/\/ Die gespeicherte Designauswahl[\s\S]*?)<\/script>/)[1];
+    const stored = new Map([
+      ['padel-branding-mode', 'random'],
+      ['padel-branding-preview', current]
+    ]);
+    const attributes = { href: file === 'index.html' ? 'branding/og-design.css?v=abc' : '../branding/og-design.css?v=abc' };
+    const link = {
+      dataset: {},
+      getAttribute: name => attributes[name],
+      setAttribute: (name, value) => { attributes[name] = value; }
+    };
+    const window = {
+      localStorage: {
+        getItem: key => stored.get(key) ?? null,
+        setItem: (key, value) => stored.set(key, value)
+      },
+      performance: { getEntriesByType: () => [{ type: navigationType }] }
+    };
+    const document = { querySelector: () => link };
+    const deterministicMath = Object.create(Math);
+    deterministicMath.random = () => 0;
+    vm.runInNewContext(source, { window, document, Math: deterministicMath });
+    return { stored, attributes };
+  };
+
+  for (const file of ['index.html', 'tipp/index.html']) {
+    const reloaded = runBootstrap(file, 'reload', 'og-design');
+    assert.equal(reloaded.stored.get('padel-branding-preview'), 'hanako-leben', file);
+    assert.match(reloaded.attributes.href, /branding\/hanako-leben\.css$/, file);
+
+    const navigated = runBootstrap(file, 'navigate', 'centre-court');
+    assert.equal(navigated.stored.get('padel-branding-preview'), 'centre-court', file);
+    assert.match(navigated.attributes.href, /branding\/centre-court\.css$/, file);
+  }
 });
 
 test('every branding offers readable, distinct player colors and lines without a match keep them', async () => {

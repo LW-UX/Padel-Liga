@@ -52,6 +52,43 @@ test('own-match protection and automatic floor scoring are part of the database 
   assert.match(migration, /count\(entry\.match_id\) filter \(where entry\.is_prediction\)/);
 });
 
+test('own matches are scored with a winner-share tip per team', () => {
+  const shareMigration = fs.readFileSync(
+    path.join(root, 'supabase', 'migrations', '20261105150000_own_match_tip_from_winner_share.sql'),
+    'utf8'
+  );
+  assert.match(shareMigration, /count\(\*\) filter \(where source\.predicted_team_one\) as team_one_count/);
+  assert.match(shareMigration, /4 \* share\.team_one_count >= 3 \* share\.tip_count then 'team-one-clear'/);
+  assert.match(shareMigration, /2 \* share\.team_one_count = share\.tip_count\s+then case when side\.team = 1 then 'team-one-narrow' else 'team-two-narrow' end/);
+  assert.match(shareMigration, /when 'team-one-narrow' then case when tip\.format = 'single-set' then '6:4' else '2:1' end/);
+  assert.match(shareMigration, /not private\.is_benchmark_account\(prediction\.user_id\)/);
+  const gradedMigration = fs.readFileSync(
+    path.join(root, 'supabase', 'migrations', '20261105160000_single_set_goal_difference_points.sql'),
+    'utf8'
+  );
+  for (const [tenths, score] of [[6, '6:4'], [7, '6:3'], [8, '6:2'], [9, '6:1']]) {
+    assert.match(gradedMigration, new RegExp(`10 \\* tip\\.majority_count < ${tenths} \\* tip\\.tip_count then '${score}'`));
+  }
+  assert.match(gradedMigration, /else '6:0'/);
+  assert.doesNotMatch(gradedMigration, /then '7:[56]'/);
+  const crowdMigration = fs.readFileSync(
+    path.join(root, 'supabase', 'migrations', '20261105140000_own_match_crowd_average_tip.sql'),
+    'utf8'
+  );
+  assert.equal((crowdMigration.match(/and member\.team = own_tip\.team/g) || []).length, 2);
+
+  const state = {
+    profile: { player_id: 'c' },
+    matchFloorPredictions: new Map([['m1', new Map([[1, '2:1'], [2, '1:2']])]])
+  };
+  const context = vm.createContext({ state });
+  vm.runInContext(fn('getOwnMatchAutoTip'), context);
+  const match = { id: 'm1', team1: { playerIds: ['a', 'b'] }, team2: { playerIds: ['c', 'd'] } };
+  assert.equal(context.getOwnMatchAutoTip(match), '1:2');
+  state.profile.player_id = 'x';
+  assert.equal(context.getOwnMatchAutoTip(match), null);
+});
+
 test('ranking exposes passive own-match points as a separate blue value', () => {
   const page = fs.readFileSync(path.join(root, 'tipp', 'index.html'), 'utf8');
 
@@ -174,4 +211,23 @@ test('database awards participants the lowest submitted score and ignores non-su
     db.exec("insert into public.predictions values ('00000000-0000-0000-0000-000000000001','open','2:0',now())"),
     /row-level security policy/
   );
+});
+
+test('single-set tips with the right winner and game difference earn three points', () => {
+  const context = vm.createContext({});
+  vm.runInContext([fn('getPredictionWinner'), fn('getPredictionPoints')].join('\n'), context);
+  assert.equal(context.getPredictionPoints('6:4', '6:4', 'single-set'), 4);
+  assert.equal(context.getPredictionPoints('7:5', '6:4', 'single-set'), 3);
+  assert.equal(context.getPredictionPoints('4:6', '5:7', 'single-set'), 3);
+  assert.equal(context.getPredictionPoints('6:2', '6:4', 'single-set'), 2);
+  assert.equal(context.getPredictionPoints('4:6', '6:4', 'single-set'), 0);
+  assert.equal(context.getPredictionPoints('2:1', '2:0'), 2);
+
+  const migration = fs.readFileSync(
+    path.join(root, 'supabase', 'migrations', '20261105160000_single_set_goal_difference_points.sql'),
+    'utf8'
+  );
+  assert.equal((migration.match(/::integer then 3/g) || []).length, 3);
+  assert.match(migration, /awarded_points in \(2, 3\) as is_tendency/);
+  assert.match(source, /\(Number\(entry\?\.near_count\) \|\| 0\)/);
 });

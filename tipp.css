@@ -65,6 +65,8 @@
       margin: 1.35rem 0 1rem;
     }
     .prediction-overview-personal-stand {
+      position: relative;
+      z-index: 5;
       display: grid;
       grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr));
       align-items: end;
@@ -544,13 +546,13 @@
       border-radius: var(--container-radius-xs);
       background: var(--surface);
       color: var(--dim);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font-size: var(--text-base);
       font-weight: 600;
     }
     .prediction-option:hover { border-color: var(--accent); color: var(--text); }
     .prediction-option.active { border-color: var(--accent); background: var(--accent); color: var(--bg); }
-    .prediction-option:disabled { cursor: not-allowed; opacity: 0.46; }
+    .prediction-option:disabled { cursor: var(--cursor-not-allowed); opacity: 0.46; }
     .prediction-option.is-own-floor { border-color: var(--muted); background: var(--muted); color: var(--bg); }
     .prediction-option.active:disabled,
     .prediction-option.is-own-floor:disabled,
@@ -668,7 +670,7 @@
       width: max(100%, 190px);
     }
     .prediction-bonus-picker .picker-option:disabled {
-      cursor: not-allowed;
+      cursor: var(--cursor-not-allowed);
       opacity: 0.35;
     }
     .prediction-bonus-result { color: var(--positiv); }
@@ -810,10 +812,7 @@
       .prediction-overview-grid.is-guest .prediction-overview-community { order: 3; }
       .prediction-overview-grid.is-guest .prediction-overview-leaders { order: 4; }
       .prediction-overview-grid.is-guest .prediction-overview-article { order: 5; }
-      /* Liegt über den folgenden Karten, damit der Tooltip der passiven Punkte nicht verdeckt wird. */
       .prediction-overview-personal-stand {
-        position: relative;
-        z-index: 5;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         align-items: start;
       }

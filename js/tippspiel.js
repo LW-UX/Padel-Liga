@@ -236,6 +236,16 @@
     ].includes(authenticatedPlayerId));
   }
 
+  // Passiv-Tipp aus der Siegerverteilung der Fremdtipps für das eigene Team.
+  function getOwnMatchAutoTip(match) {
+    const authenticatedPlayerId = state.profile?.player_id;
+    if (!authenticatedPlayerId) return null;
+    const team = (match?.team1?.playerIds || []).includes(authenticatedPlayerId) ? 1
+      : (match?.team2?.playerIds || []).includes(authenticatedPlayerId) ? 2
+      : null;
+    return team ? state.matchFloorPredictions.get(match.id)?.get(team) || null : null;
+  }
+
   function getPredictionWinner(value, format) {
     if (format !== 'single-set') return value?.startsWith('2') ? 1 : 2;
     const [teamOne, teamTwo] = String(value || '').split(':').map(Number);
@@ -248,7 +258,15 @@
     if (prediction === actualValue) return 4;
     const predictedTeam = getPredictionWinner(prediction, format);
     const actualTeam = getPredictionWinner(actualValue, format);
-    return predictedTeam === actualTeam ? 2 : 0;
+    if (predictedTeam !== actualTeam) return 0;
+    if (format === 'single-set') {
+      const gameDifference = value => {
+        const [first, second] = String(value).split(':').map(Number);
+        return first - second;
+      };
+      if (gameDifference(prediction) === gameDifference(actualValue)) return 3;
+    }
+    return 2;
   }
 
   function formatMatchDate(match) {
@@ -568,6 +586,7 @@
     };
     if (actualValue && selected) {
       if (points === 4) return { label: 'Exakt · +4', classes: 'is-locked points-4' };
+      if (points === 3) return { label: 'Sieger · +3', classes: 'is-locked points-2' };
       if (points === 2) return { label: 'Sieger · +2', classes: 'is-locked points-2' };
       return { label: 'Falsch · 0', classes: 'is-locked points-0' };
     }
@@ -790,12 +809,10 @@
       let points = getPredictionPoints(selected, actualValue, format);
       let automatic = false;
       if (points === null && isOwnMatch(match)) {
-        const floorValues = [...(state.matchFloorPredictions.get(match.id) || [])];
-        const floorPoints = floorValues
-          .map(value => getPredictionPoints(value, actualValue, format))
-          .filter(value => value !== null);
-        if (floorPoints.length) {
-          points = Math.min(...floorPoints);
+        const autoTip = getOwnMatchAutoTip(match);
+        const autoPoints = autoTip ? getPredictionPoints(autoTip, actualValue, format) : null;
+        if (autoPoints !== null) {
+          points = autoPoints;
           automatic = true;
         }
       }
@@ -830,7 +847,7 @@
       label: getMatchdayTitle(latest.match),
       points: group.reduce((total, item) => total + item.points, 0),
       exact: group.filter(item => !item.automatic && item.points === 4).length,
-      tendency: group.filter(item => !item.automatic && item.points === 2).length,
+      tendency: group.filter(item => !item.automatic && (item.points === 2 || item.points === 3)).length,
       wrong: group.filter(item => !item.automatic && item.points === 0).length,
       automatic: group.filter(item => item.automatic).length
     };
@@ -889,7 +906,7 @@
               <span>${formatCount(passivePoints)}</span>
               <span class="th-help-wrap prediction-passive-points-help">
                 <span class="help-icon" tabindex="0" role="button" aria-label="Passive Punkte erklären" aria-describedby="prediction-passive-points-help" data-help-tooltip-anchor>?</span>
-                <span class="help-tooltip" id="prediction-passive-points-help" role="tooltip"><span class="help-block">Deine eigenen Partien kannst du nicht tippen.</span><span class="help-block">Sobald sie gewertet werden, erhältst du automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Tipp der anderen.</span><span class="help-block">Hat niemand getippt, gibt es keine automatische Gutschrift.</span></span>
+                <span class="help-tooltip" id="prediction-passive-points-help" role="tooltip"><span class="help-block">Spieler können ihre eigenen Partien nicht tippen.</span><span class="help-block">Nach der Wertung bekommen sie automatisch einen Tipp aus der Siegerverteilung der Tipps der anderen: Ab 75 % für ein Team gilt 2:0, über 50 % 2:1, bei 50:50 ein 2:1 für das eigene Team.</span><span class="help-block">Hat niemand getippt, gibt es keine automatische Gutschrift.</span></span>
               </span>
             </div>
             <div class="hint">Passive Punkte</div>
@@ -1097,7 +1114,7 @@
       const actualPredictionValue = getActualPredictionValue(match);
       const points = getPredictionPoints(selected, actualPredictionValue, matchFormat);
       const isCancelled = isCancelledMatch(match);
-      const floorPredictions = isOwn ? state.matchFloorPredictions.get(match.id) : null;
+      const ownAutoTip = isOwn ? getOwnMatchAutoTip(match) : null;
       const scheduledDateLabel = formatMatchDate(match);
       const statusChip = getStatusChip({
         isCancelled,
@@ -1124,11 +1141,11 @@
               <button
                 type="button"
                 ${matchFormat === 'single-set' ? `style="${getSingleSetOptionPlacement(index)}"` : ''}
-                class="prediction-option ${selected === prediction ? 'active' : ''} ${floorPredictions?.has(prediction) ? 'is-own-floor' : ''} ${actualPredictionValue === prediction ? 'is-result' : ''}"
+                class="prediction-option ${selected === prediction ? 'active' : ''} ${ownAutoTip === prediction ? 'is-own-floor' : ''} ${actualPredictionValue === prediction ? 'is-result' : ''}"
                 data-prediction-match="${escapeHtml(match.id)}"
                 data-prediction-value="${prediction}"
                 aria-pressed="${selected === prediction}"
-                ${floorPredictions?.has(prediction) ? 'title="Schlechtester Fremdtipp – deine automatische Wertung"' : ''}
+                ${ownAutoTip === prediction ? 'title="Passiv-Tipp aus der Siegerverteilung – deine automatische Wertung"' : ''}
                 ${isSaving || !isOpen ? 'disabled' : ''}
               >${prediction}</button>
             `).join('')}
@@ -1266,7 +1283,8 @@
     const totalPoints = Number(entry?.points) || 0;
     const bonusPoints = Number(entry?.bonus_points) || 0;
     const activeTipPoints = ((Number(entry?.exact_count) || 0) * 4)
-      + ((Number(entry?.tendency_count) || 0) * 2);
+      + ((Number(entry?.tendency_count) || 0) * 2)
+      + (Number(entry?.near_count) || 0);
     return Math.max(0, totalPoints - bonusPoints - activeTipPoints);
   }
 
@@ -1741,18 +1759,18 @@
     }
   }
 
-  // Werte des schlechtesten Fremdtipps zeigen Beteiligten ihre automatische Gutschrift.
+  // Passiv-Tipps je Partie und Team zeigen Beteiligten ihre automatische Gutschrift.
   async function loadMatchFloorPredictions(seasonIds) {
     const floors = new Map();
     for (const seasonId of seasonIds) {
       const { data, error } = await state.client.rpc('get_prediction_match_floors', { p_season_id: seasonId });
       if (error) {
-        console.warn('Schlechteste Fremdtipps nicht verfügbar:', error.message);
+        console.warn('Passiv-Tipps eigener Partien nicht verfügbar:', error.message);
         break;
       }
       (data || []).forEach(row => {
-        if (!floors.has(row.match_id)) floors.set(row.match_id, new Set());
-        floors.get(row.match_id).add(row.prediction);
+        if (!floors.has(row.match_id)) floors.set(row.match_id, new Map());
+        floors.get(row.match_id).set(Number(row.team), row.prediction);
       });
     }
     state.matchFloorPredictions = floors;

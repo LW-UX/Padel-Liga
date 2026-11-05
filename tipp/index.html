@@ -8,24 +8,36 @@
   <link rel="icon" href="../favicon.ico" sizes="32x32">
   <link rel="icon" type="image/svg+xml" href="../data/favicon.svg?v=2026-10-26-rounded">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-  <link rel="stylesheet" href="../branding/og-design.css?v=e630ab7273">
+  <link rel="stylesheet" href="../branding/og-design.css?v=3e1ae49adc">
   <script>
     // Die gespeicherte Designauswahl greift vor dem ersten Zeichnen; alles Weitere steht in js/branding-preview.js.
     (function () {
       try {
+        var brandings = ['og-design', 'hanako-leben', 'centre-court', 'envidual', 'hanako', 'headsquare'];
         var name = window.localStorage.getItem('padel-branding-preview');
+        var randomMode = window.localStorage.getItem('padel-branding-mode') === 'random';
+        var navigation = window.performance && window.performance.getEntriesByType
+          ? window.performance.getEntriesByType('navigation')[0]
+          : null;
+        if (randomMode && (navigation && navigation.type === 'reload' || !brandings.includes(name))) {
+          var choices = brandings.filter(function (branding) { return branding !== name; });
+          name = choices[Math.floor(Math.random() * choices.length)];
+          window.localStorage.setItem('padel-branding-preview', name);
+        }
         var link = document.querySelector('link[rel="stylesheet"][href*="branding/"]');
-        if (!link || !/^[a-z0-9-]+$/.test(name || '')) return;
+        if (!link || !brandings.includes(name)) return;
         link.dataset.publishedHref = link.getAttribute('href');
-        link.setAttribute('href', link.getAttribute('href').replace(/branding\/.*$/, 'branding/' + name + '.css'));
+        if (!link.getAttribute('href').includes('branding/' + name + '.css')) {
+          link.setAttribute('href', link.getAttribute('href').replace(/branding\/.*$/, 'branding/' + name + '.css'));
+        }
       } catch (error) { /* Ohne Speicher bleibt das veröffentlichte Branding. */ }
     })();
   </script>
   <link rel="stylesheet" href="../achievements.css?v=2026-10-31">
-  <link rel="stylesheet" href="../style.css?v=2026-11-05-widget-cards">
-  <link rel="stylesheet" href="../tipp.css?v=2026-11-05-bonus-font">
-  <link rel="stylesheet" href="../match-statistics.css?v=2026-11-05-widget-cards">
-  <link rel="stylesheet" href="../account.css?v=2026-11-03-player-images">
+  <link rel="stylesheet" href="../style.css?v=2026-11-05-cursors-6">
+  <link rel="stylesheet" href="../tipp.css?v=2026-11-05-cursors-6">
+  <link rel="stylesheet" href="../match-statistics.css?v=2026-11-05-cursors-6">
+  <link rel="stylesheet" href="../account.css?v=2026-11-05-cursors-6">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="../data/players.js?v=2026-10-20-test-net-emoji"></script>
@@ -37,8 +49,8 @@
   <script defer src="../js/global-actions.js?v=2026-10-20-speed-dial-player"></script>
   <script defer src="../js/score-input.js?v=2026-09-22-unified-score-counters"></script>
   <script defer src="../js/mobile-dialog-pages.js?v=2026-11-03-profile-routes"></script>
-  <script defer src="../js/branding-preview.js?v=2026-10-31-centre-court"></script>
-  <script defer src="../js/account.js?v=2026-11-03-player-images"></script>
+  <script defer src="../js/branding-preview.js?v=2026-11-05-random-design"></script>
+  <script defer src="../js/account.js?v=2026-11-05-random-design"></script>
   <script defer src="../js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="../js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="../js/headline-split.js?v=2026-11-03-headline-split-2"></script>
@@ -133,7 +145,7 @@
                   <button type="button" class="ranking-sort-header" data-prediction-ranking-sort="passive"><span class="sort-chevron" aria-hidden="true"></span><span>Passiv</span></button>
                   <span class="th-help-wrap">
                     <span class="help-icon" tabindex="0" role="button" aria-label="Passive Punkte erklären" aria-describedby="prediction-ranking-passive-help" data-help-tooltip-anchor>?</span>
-                    <span class="help-tooltip" id="prediction-ranking-passive-help" role="tooltip"><span class="help-block">Deine eigenen Partien kannst du nicht tippen.</span><span class="help-block">Sobald sie gewertet werden, erhältst du automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Tipp der anderen.</span><span class="help-block">Hat niemand getippt, gibt es keine automatische Gutschrift.</span></span>
+                    <span class="help-tooltip" id="prediction-ranking-passive-help" role="tooltip"><span class="help-block">Spieler können ihre eigenen Partien nicht tippen.</span><span class="help-block">Nach der Wertung bekommen sie automatisch einen Tipp aus der Siegerverteilung der Tipps der anderen: Ab 75 % für ein Team gilt 2:0, über 50 % 2:1, bei 50:50 ein 2:1 für das eigene Team.</span><span class="help-block">Hat niemand getippt, gibt es keine automatische Gutschrift.</span></span>
                   </span>
                 </span>
               </th>
@@ -241,7 +253,7 @@
           <h4>Was gilt bei meiner eigenen Partie?</h4>
           <ul class="clean-list">
             <li>Deine eigene Partie kannst du nicht tippen.</li>
-            <li>Nach der Wertung erhältst du dafür automatisch so viele Punkte wie der schlechteste tatsächlich abgegebene Fremdtipp auf diese Partie.</li>
+            <li>Nach der Wertung erhältst du dafür automatisch einen Passiv-Tipp aus der Siegerverteilung der Fremdtipps, wie sie in der Tippanzeige steht: Ab 75 % für ein Team gilt 2:0, über 50 % 2:1 und bei genau 50 % ein 2:1 für dein Team. Im Final Four gilt für das Team mit der Mehrheit: unter 60 % 6:4, unter 70 % 6:3, unter 80 % 6:2, unter 90 % 6:1 und ab 90 % 6:0; bei genau 50 % ein 6:4 für dein Team. Dieser Passiv-Tipp wird normal gewertet.</li>
             <li>Nicht abgegebene Tipps zählen dabei nicht mit.</li>
             <li>Wurde gar kein Tipp abgegeben, gibt es keine Gutschrift.</li>
           </ul>
@@ -374,9 +386,16 @@
             <input type="checkbox" role="switch" data-email-notification="calendarInvitation" checked>
           </label>
         </div>
-        <div class="account-settings-design" data-account-branding hidden>
-          <h3>Design</h3>
-          <div class="account-branding-options" role="radiogroup" aria-label="Design auswählen" data-account-branding-options></div>
+        <div class="account-settings-design" data-account-branding role="radiogroup" aria-labelledby="account-branding-title" hidden>
+          <div class="account-branding-heading">
+            <h3 id="account-branding-title">Design</h3>
+            <label class="account-branding-random">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3.5c4.5 0 6.5 10 11 10H21"/><path d="m18 14 3 3-3 3"/><path d="M3 17h3.5c1.7 0 3.1-1.5 4.4-3.3M13.1 9.9C14.4 8.3 15.8 7 17.5 7H21"/><path d="m18 4 3 3-3 3"/></svg>
+              <span>Random</span>
+              <input class="account-branding-check" type="radio" name="account-branding" value="random" data-account-branding-random>
+            </label>
+          </div>
+          <div class="account-branding-options" data-account-branding-options></div>
         </div>
         <div class="auth-message account-settings-message" data-account-settings-message role="status" aria-live="polite"></div>
       </section>

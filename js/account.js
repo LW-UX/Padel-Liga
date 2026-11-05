@@ -648,13 +648,16 @@
     const preview = window.PadelBrandingPreview;
     const section = document.querySelector('[data-account-branding]');
     const options = document.querySelector('[data-account-branding-options]');
+    const randomChoice = document.querySelector('[data-account-branding-random]');
     if (!section || !options) return;
     section.hidden = !preview;
     if (section.hidden) return;
     const current = preview.current();
+    const isRandom = preview.isRandom();
+    if (randomChoice) randomChoice.checked = isRandom;
     if (options.childElementCount) {
       options.querySelectorAll('[data-account-branding-choice]').forEach(input => {
-        input.checked = input.value === current;
+        input.checked = !isRandom && input.value === current;
       });
       return;
     }
@@ -672,7 +675,7 @@
         </span>
         <span class="account-branding-caption">
           <span><strong>${escapeHtml(branding.label)}</strong></span>
-          <input type="radio" name="account-branding" value="${escapeHtml(branding.name)}" data-account-branding-choice${branding.name === current ? ' checked' : ''}>
+          <input class="account-branding-check" type="radio" name="account-branding" value="${escapeHtml(branding.name)}" data-account-branding-choice${!isRandom && branding.name === current ? ' checked' : ''}>
         </span>
       </label>`;
     }).join('');
@@ -2193,6 +2196,8 @@
     }
     window.PadelPlayerImages.apply(section);
     const hasImage = window.PadelPlayerImages.has(playerId);
+    const zoomButton = section.querySelector('[data-account-profile-image-zoom]');
+    if (zoomButton) zoomButton.disabled = !hasImage;
     const uploadButton = section.querySelector('[data-account-profile-image-upload]');
     const deleteButton = section.querySelector('[data-account-profile-image-delete]');
     uploadButton.textContent = hasImage ? 'Bild ändern' : 'Bild hochladen';
@@ -3574,6 +3579,10 @@ Dein Hanako-Leben-Squad`;
       }
       if (event.target.matches('[data-email-notification]')) {
         void saveNotificationPreferences(event.target);
+        return;
+      }
+      if (event.target.matches('[data-account-branding-random]')) {
+        window.PadelBrandingPreview?.selectRandom();
         return;
       }
       if (event.target.matches('[data-account-branding-choice]')) {

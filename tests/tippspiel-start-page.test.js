@@ -224,7 +224,7 @@ test('personal and guest dashboard states remain distinct', () => {
   assert.match(script, /const passivePoints = getPersonalContributions\(\)[\s\S]*?\.filter\(item => item\.automatic\)[\s\S]*?\.reduce\(\(total, item\) => total \+ item\.points, 0\)/);
   assert.match(script, /<div class="hint">Passive Punkte<\/div>/);
   assert.match(script, /class="stat-main prediction-passive-points-value"[\s\S]*?aria-label="Passive Punkte erklären"[\s\S]*?id="prediction-passive-points-help" role="tooltip"/);
-  assert.match(script, /Deine eigenen Partien kannst du nicht tippen\.[\s\S]*?schlechteste tatsächlich abgegebene Tipp der anderen\.[\s\S]*?keine automatische Gutschrift\./);
+  assert.match(script, /Spieler können ihre eigenen Partien nicht tippen\.[\s\S]*?Siegerverteilung der Tipps der anderen:[\s\S]*?keine automatische Gutschrift\./);
   assert.match(script, /class="prediction-overview-stand-copy">[\s\S]*?Dein Stand[\s\S]*?prediction-overview-account[\s\S]*?<p>\$\{escapeHtml\(context\)\}<\/p>/);
   assert.match(style, /\.prediction-overview-personal-stand \{[\s\S]*?grid-template-columns: minmax\(0, 1\.6fr\) repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(style, /\.prediction-overview-personal-stand \.prediction-overview-scoreline \{ display: contents; \}/);

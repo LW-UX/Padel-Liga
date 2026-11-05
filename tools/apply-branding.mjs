@@ -1,11 +1,13 @@
 // Aktiviert ein Branding aus branding/<name>.css und überträgt dessen Werte an alle Stellen,
 // die keine CSS-Variablen lesen können: Browserleiste, Safari-Tab-Symbol und App-Manifest.
+// Außerdem erneuert es über tools/build-cursors.mjs die Mauszeiger aller Brandings.
 // Die E-Mails verwenden vorerst fest die Farben des OG-Designs.
 // Aufruf: node tools/apply-branding.mjs [name]   (ohne Name wird das aktive Branding neu übertragen)
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildCursors } from './build-cursors.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
@@ -37,6 +39,8 @@ function main() {
   const name = process.argv[2] || activeName;
   if (!name) throw new Error('Kein aktives Branding in index.html gefunden.');
 
+  // Zuerst die Mauszeiger aller Brandings erneuern, damit die Versionskennung den aktuellen Stand enthält.
+  buildCursors({ readAccent: brandingCss => readBrandingVariables(brandingCss)['--accent'] });
   const css = read(`branding/${name}.css`);
   const variables = readBrandingVariables(css);
   const reference = readBrandingVariables(read('branding/og-design.css'));

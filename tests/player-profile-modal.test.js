@@ -363,7 +363,7 @@ test('wide ranking views host the same player profile as a non-modal side panel'
   assert.match(style, /@container player-profile-panel \(min-width: 1100px\) \{[\s\S]*?\.player-profile-relationships \{[\s\S]*?grid-column: 1;[\s\S]*?\.player-profile-history \{[\s\S]*?grid-column: 2 \/ 4;/);
   assert.match(style, /@container player-profile-panel \(min-width: 1100px\) \{[\s\S]*?\.player-profile-stats \{[\s\S]*?grid-template-columns: repeat\(8, minmax\(0, 1fr\)\);/);
   assert.match(style, /tr\.profile-open-highlight td \{[\s\S]*?var\(--accent\)/);
-  assert.match(style, /table\.rt tbody tr\[data-player-profile-id\] \{ cursor: pointer; \}/);
+  assert.match(style, /table\.rt tbody tr\[data-player-profile-id\] \{ cursor: var\(--cursor-pointer\); \}/);
   assert.match(style, /\.player-profile-presentation-toggle \{ right: 68px; \}/);
   assert.match(style, /\.player-profile-dialog\[data-presentation="panel"\] \.player-profile-presentation-toggle \{ right: 60px; \}/);
   assert.match(style, /html\.is-detail-embed body > :not\(dialog\):not\(#player-profile-modal-host\)/);
@@ -728,7 +728,7 @@ test('profile result circles use the shared form chip', () => {
   assert.match(app, /decidedByMatchTiebreak = \/\[–-\]\/\.test\(match\.resultDetails \|\| ''\)/);
   assert.match(style, /\.form-chip\.form-training \{ border: 2px solid var\(--form-color\); background: var\(--surface\); color: var\(--form-color\); \}/);
   assert.match(style, /\.form-training:is\(\.form-draw, \.form-unfinished\) \{ --form-color: var\(--dim\); \}/);
-  assert.match(style, /\.player-profile-match \.form-chip \{ margin-left: 0; cursor: default; \}/);
+  assert.match(style, /\.player-profile-match \.form-chip \{ margin-left: 0; cursor: var\(--cursor-default\); \}/);
 });
 
 test('historical trainings preserve sessions, match tiebreaks, and the unfinished round', () => {

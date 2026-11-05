@@ -9589,19 +9589,24 @@ playerProfileDialog?.addEventListener('click', event => {
 });
 playerProfileDialog?.querySelector('.player-profile-shell')?.addEventListener('scroll', updatePlayerProfileHeroCondensed, { passive: true });
 
-// Das Profilbild fährt beim Anklicken aus seiner Position auf höchstens 600 × 600 Pixel auf.
+// Profilbilder im Spielerprofil und im Konto fahren beim Anklicken aus ihrer Position auf höchstens 600 × 600 Pixel auf.
 const playerProfileAvatarButton = document.getElementById('player-profile-avatar-button');
 const playerProfileImageZoom = document.getElementById('player-profile-image-zoom');
 const playerProfileImageZoomImage = document.getElementById('player-profile-image-zoom-image');
 let playerProfileImageZoomClosing = false;
+let playerProfileImageZoomOrigin = null;
 
 function getPlayerProfileImageZoomOffset() {
-  const from = playerProfileAvatarButton.getBoundingClientRect();
+  if (!playerProfileImageZoomOrigin?.isConnected) return null;
+  const from = playerProfileImageZoomOrigin.getBoundingClientRect();
   const to = playerProfileImageZoomImage.getBoundingClientRect();
   if (!from.width || !to.width) return null;
+  const scale = from.width / to.width;
+  // Der Eckenradius wird vor der Skalierung angewendet und deshalb auf die große Bildgröße umgerechnet.
+  const originRadius = parseFloat(getComputedStyle(playerProfileImageZoomOrigin).borderTopLeftRadius) || 0;
   return {
-    transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${from.width / to.width})`,
-    borderRadius: getComputedStyle(playerProfileAvatarButton).borderRadius
+    transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${scale})`,
+    borderRadius: `${Math.min(originRadius / scale, to.width / 2)}px`
   };
 }
 
@@ -9609,11 +9614,12 @@ function shouldAnimatePlayerProfileImageZoom() {
   return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-function openPlayerProfileImageZoom() {
-  const source = document.getElementById('player-profile-avatar-image');
-  if (!source?.src || source.hidden || !playerProfileImageZoom) return;
+function openPlayerProfileImageZoom(origin) {
+  const source = origin?.querySelector('img');
+  if (!source?.src || source.hidden || !playerProfileImageZoom || playerProfileImageZoom.open) return;
+  playerProfileImageZoomOrigin = origin;
   playerProfileImageZoomImage.src = source.src;
-  playerProfileImageZoomImage.alt = source.alt;
+  playerProfileImageZoomImage.alt = source.alt || 'Profilbild';
   playerProfileImageZoomClosing = false;
   playerProfileImageZoom.showModal();
   const offset = getPlayerProfileImageZoomOffset();
@@ -9639,22 +9645,30 @@ function closePlayerProfileImageZoom() {
   playerProfileImageZoomImage.animate(
     [{ transform: 'none', borderRadius: finalRadius }, offset],
     { duration: 220, easing: 'cubic-bezier(.4, 0, .6, 1)', fill: 'forwards' }
-  ).finished.catch(() => {}).then(() => {
+  );
+  // Ein Zeitgeber statt des Animationsendes schließt auch dann, wenn der Browser Animationen pausiert.
+  setTimeout(() => {
     playerProfileImageZoomClosing = false;
     playerProfileImageZoom.close();
     playerProfileImageZoomImage.getAnimations().forEach(animation => animation.cancel());
     playerProfileImageZoom.getAnimations({ subtree: true }).forEach(animation => animation.cancel());
-  });
+  }, 220);
 }
 
-playerProfileAvatarButton?.addEventListener('click', openPlayerProfileImageZoom);
+playerProfileAvatarButton?.addEventListener('click', () => openPlayerProfileImageZoom(playerProfileAvatarButton));
+document.addEventListener('click', event => {
+  const accountPreview = event.target.closest?.('button[data-account-profile-image-zoom]');
+  if (accountPreview) openPlayerProfileImageZoom(accountPreview);
+});
 playerProfileImageZoom?.addEventListener('click', closePlayerProfileImageZoom);
 playerProfileImageZoom?.addEventListener('cancel', event => {
   event.preventDefault();
   closePlayerProfileImageZoom();
 });
 playerProfileImageZoom?.addEventListener('close', () => {
-  if (playerProfileDialog?.open) playerProfileAvatarButton?.focus({ preventScroll: true });
+  const origin = playerProfileImageZoomOrigin;
+  playerProfileImageZoomOrigin = null;
+  if (origin?.isConnected && origin.closest('dialog')?.open) origin.focus({ preventScroll: true });
 });
 
 window.addEventListener('padel:branding-change', refreshThemeDependentCharts);

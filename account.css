@@ -52,7 +52,7 @@
       border-radius: var(--menu-radius);
       background: transparent;
       color: var(--dim);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font-family: var(--font-body);
       font-size: var(--text-sm);
       font-weight: 500;
@@ -71,7 +71,7 @@
       outline: none;
     }
     .auth-form input,
-    .player-invite-output input { cursor: text; }
+    .player-invite-output input { cursor: var(--cursor-text); }
     /* Der Pfeil folgt wie bei .secondary-button--dropdown der Textfarbe. */
     .auth-form select {
       appearance: none;
@@ -193,7 +193,7 @@
       border-radius: var(--button-radius);
       background: transparent;
       color: var(--dim);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font: var(--text-base)/1 var(--font-body);
       padding: 0 0 2px;
       place-items: center;
@@ -223,6 +223,26 @@
     }
     .account-settings[hidden] { display: none; }
     .account-settings-design[hidden] { display: none; }
+    .account-settings-design { display: grid; gap: 1rem; }
+    .account-branding-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .account-branding-heading h3 { margin: 0; }
+    .account-branding-random {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--control-radius);
+      background: var(--bg);
+      color: var(--text);
+      cursor: var(--cursor-pointer);
+      font-size: var(--text-sm);
+      font-weight: 700;
+      padding: 6px 8px;
+      transition: border-color 160ms ease, color 160ms ease;
+    }
+    .account-branding-random:hover,
+    .account-branding-random:has(input:checked) { border-color: var(--accent); color: var(--accent); }
+    .account-branding-random svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
     .account-branding-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
     .account-branding-option {
       display: grid;
@@ -230,12 +250,13 @@
       border: 1px solid var(--border);
       border-radius: var(--container-radius-xs);
       background: var(--bg);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       padding: 8px 8px 10px;
       transition: border-color 160ms ease;
     }
     .account-branding-option:has(input:checked) { border-color: var(--accent); }
     .account-branding-option:has(input:focus-visible),
+    .account-branding-random:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
     .account-branding-wireframe {
       display: grid;
       align-content: start;
@@ -283,7 +304,7 @@
     .account-branding-caption small { color: var(--dim); font-size: var(--text-xs); }
     .account-branding-caption { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .account-branding-caption strong { color: var(--text); font-size: var(--text-sm); }
-    .account-branding-caption input {
+    .account-branding-check {
       appearance: none;
       display: grid;
       place-items: center;
@@ -294,10 +315,10 @@
       border: 1px solid var(--border);
       border-radius: 4px;
       background: var(--surface2);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       outline: none;
     }
-    .account-branding-caption input::after {
+    .account-branding-check::after {
       content: '';
       width: 5px;
       height: 10px;
@@ -307,15 +328,15 @@
       transform: rotate(45deg);
       opacity: 0;
     }
-    .account-branding-caption input:checked { border-color: var(--accent); background: var(--accent); }
-    .account-branding-caption input:checked::after { opacity: 1; }
+    .account-branding-check:checked { border-color: var(--accent); background: var(--accent); }
+    .account-branding-check:checked::after { opacity: 1; }
     .account-settings-mail { display: grid; }
     .account-setting-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
       gap: 16px;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       padding-bottom: 0.75rem;
       margin-bottom: 0.75rem;
       border-bottom: 1px solid var(--border);
@@ -331,7 +352,7 @@
       border: 1px solid var(--border);
       border-radius: var(--control-radius);
       background: var(--surface2);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       outline: none;
       transition: border-color 160ms ease, background 160ms ease;
     }
@@ -366,6 +387,16 @@
       background: var(--surface2);
       font-size: 1.2rem;
     }
+    button.account-profile-image-preview {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      color: inherit;
+      font-family: inherit;
+      cursor: var(--cursor-default);
+    }
+    button.account-profile-image-preview:enabled { cursor: var(--cursor-zoom-in); }
+    button.account-profile-image-preview:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
     .account-profile-image-preview img { display: block; width: 100%; height: 100%; object-fit: cover; }
     .account-profile-image-preview :is(img, span)[hidden] { display: none; }
     [data-account-profile-image-delete].is-armed { border-color: var(--negativ); color: var(--negativ); }
@@ -378,11 +409,11 @@
       overflow: hidden;
       border-radius: var(--container-radius-xs);
       background: var(--surface2);
-      cursor: grab;
+      cursor: var(--cursor-grab);
       touch-action: none;
       user-select: none;
     }
-    .profile-image-editor-frame:active { cursor: grabbing; }
+    .profile-image-editor-frame:active { cursor: var(--cursor-grabbing); }
     .profile-image-editor-frame canvas { display: block; width: 100%; height: 100%; }
     .profile-image-editor-frame::after {
       content: '';
@@ -561,7 +592,7 @@
       width: 14px;
       height: 14px;
       background: currentColor;
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat;
       mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat;
     }
@@ -683,7 +714,7 @@
       border-radius: var(--dropdown-radius);
       background: transparent;
       color: var(--dim);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font: inherit;
       padding: 0.7rem;
       text-align: center;
@@ -716,7 +747,7 @@
       border-radius: var(--container-radius-sm);
       background: var(--surface2);
       color: var(--text);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font-family: var(--font-body);
       padding: 0.85rem;
       text-align: center;
@@ -967,7 +998,7 @@
       border-radius: var(--button-radius);
       background: transparent;
       color: var(--dim);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       font: 1rem/1 var(--font-body);
       place-items: center;
     }
@@ -988,7 +1019,7 @@
       border-radius: var(--button-radius);
       background: var(--surface);
       color: var(--text);
-      cursor: pointer;
+      cursor: var(--cursor-pointer);
       padding: 0;
       place-items: center;
     }
@@ -1030,6 +1061,7 @@
       .account-profile-image .account-settings-actions { flex: 1 1 auto; }
       .profile-image-editor-actions .secondary-button,
       .profile-image-editor-actions .primary-button { flex: 1 1 0; }
+      .account-branding-heading { flex-wrap: wrap; }
       .account-branding-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .account-section { min-width: 0; }
       .account-section-heading { min-width: 0; }

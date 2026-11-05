@@ -33,7 +33,7 @@ test('every player ranking opens the profile through the whole row', () => {
 
 test('row behavior is not tied to a list of individual tables', () => {
   const style = read('style.css');
-  assert.match(style, /table\.rt tbody tr\[data-player-profile-id\] \{ cursor: pointer; \}/);
+  assert.match(style, /table\.rt tbody tr\[data-player-profile-id\] \{ cursor: var\(--cursor-pointer\); \}/);
   assert.match(style, /table\.rt tbody tr\[data-player-profile-id\]:hover td \.player-profile-link \{ color: var\(--accent\); \}/);
   assert.doesNotMatch(style, /:is\(#ranking-table, #all-time-ranking-table, /);
   assert.doesNotMatch(`${style}\n${read('index.html')}\n${read('js/live-ticker.js')}`, /calculator-ranking-table|final-four-table|live-overview-table/);
