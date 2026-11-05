@@ -139,25 +139,59 @@
 .not-found-ball path { fill: none; }
 
 @media (max-width: 768px) {
+  .not-found-page {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+
   .not-found-header-spacers { display: none; }
-  .not-found-main { padding-top: 0.25rem; }
+  .not-found-main {
+    align-items: stretch;
+    min-height: 0;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    overflow: hidden;
+  }
 
   .not-found-card {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+    height: 100%;
+    max-height: 100%;
     min-height: 0;
   }
 
   .not-found-copy {
-    padding: 1.25rem 0.75rem 0.5rem;
+    padding: 0.75rem;
   }
 
   .not-found-visual {
-    min-height: 230px;
+    order: -1;
+    min-height: 0;
   }
 
   .not-found-number { font-size: clamp(8rem, 42vw, 11rem); }
 
-  .not-found-visual svg { width: min(86%, 330px); }
+  .not-found-visual svg {
+    width: min(86%, 330px);
+    max-height: 92%;
+  }
+
+  .not-found-copy p {
+    margin-top: 0.65rem;
+    line-height: 1.4;
+  }
+
+  .not-found-actions { margin-top: 1rem; }
+
+  .not-found-page .site-footer {
+    flex: none;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
 }
 
 @media (max-width: 430px) {

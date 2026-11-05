@@ -104,7 +104,7 @@ window.PADEL_INFO = {
         "Abendzeiten sind sehr beliebt und mindestens eine Woche im Voraus ausgebucht. Daher rechtzeitig einen Platz buchen oder morgens beziehungsweise mittags spielen.",
         "Den Wunschtermin mit Datum, Uhrzeit und Partienummer bitte an das Hanako Leben Squad oder direkt an Ludwig übermitteln. Der Platz wird für euch gebucht.",
         "Die Kosten der Platzbuchung werden von der Firma übernommen.",
-        "Vergesst nicht, die Schläger in Clearooms zu buchen. Um Bälle muss sich selbst gekümmert werden.",
+        "Tragt den gebuchten Termin anschließend auf der Webseite bei der Partie ein. Beim Terminieren werden die Schläger automatisch in Clearooms gebucht und alle beteiligten Personen erhalten automatisch eine Kalendereinladung. Um Bälle muss sich selbst gekümmert werden.",
         "Gebt Bescheid, wenn ihr eure Playtomic-Profile samt Ergebnis eintragen wollt. Hierfür Headsquare United auf Playtomic folgen."
       ]
     },
