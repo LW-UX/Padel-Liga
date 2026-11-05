@@ -429,7 +429,7 @@
     .prediction-table-value { position: relative; display: inline-block; color: var(--text); }
     .prediction-table-points {
       position: absolute;
-      bottom: -4px;
+      bottom: -2px;
       left: calc(100% + 1px);
       color: var(--silver);
       font-size: var(--text-xs);
@@ -454,8 +454,8 @@
     .prediction-table-cell.is-own-match { color: var(--muted); }
     .prediction-table-racket {
       display: inline-block;
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       color: var(--dim);
       vertical-align: -2px;
     }
