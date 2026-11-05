@@ -108,7 +108,7 @@
   position: absolute;
   color: color-mix(in srgb, var(--surface2) 78%, transparent);
   font-family: var(--font-heading);
-  font-size: clamp(10rem, 24vw, 19rem);
+  font-size: clamp(8rem, 20vw, 15rem);
   font-weight: var(--heading-font-weight);
   letter-spacing: -0.03em;
   line-height: 0.8;
@@ -160,7 +160,7 @@
     min-height: 230px;
   }
 
-  .not-found-number { font-size: clamp(9rem, 48vw, 14rem); }
+  .not-found-number { font-size: clamp(8rem, 42vw, 11rem); }
 
   .not-found-visual svg { width: min(86%, 330px); }
 }
