@@ -471,13 +471,15 @@
     const disabled = !isOpen || state.bonusSaving.has(question.question_id);
     const selectionCount = Number(question.max_selections) || 1;
     const presentation = getBonusQuestionPresentation(question);
-    const selectedValues = question.resolved
-      ? []
-      : [...answers, ...Array(Math.max(0, selectionCount - answers.length)).fill('')]
-        .slice(0, selectionCount);
+    // Ab dem Tippschluss ersetzt der eigene Tipp als Text die Auswahlfelder.
+    const showsSelection = isOpen && !question.resolved;
+    const selectedValues = showsSelection
+      ? [...answers, ...Array(Math.max(0, selectionCount - answers.length)).fill('')]
+        .slice(0, selectionCount)
+      : [];
     const status = getBonusStatusChip(question);
     const correctAnswers = Array.isArray(question.correct_answers) ? question.correct_answers : [];
-    const ownAnswer = question.resolved && answers.length
+    const ownAnswer = !showsSelection && answers.length
       ? `<div class="prediction-bonus-answer">Dein Tipp: ${answers.map(getBonusOptionLabel).map(escapeHtml).join(', ')}</div>`
       : '';
     const result = question.resolved && correctAnswers.length
@@ -906,7 +908,7 @@
               <span>${formatCount(passivePoints)}</span>
               <span class="th-help-wrap prediction-passive-points-help">
                 <span class="help-icon" tabindex="0" role="button" aria-label="Passive Punkte erklären" aria-describedby="prediction-passive-points-help" data-help-tooltip-anchor>?</span>
-                <span class="help-tooltip" id="prediction-passive-points-help" role="tooltip"><span class="help-block">Spieler können ihre eigenen Partien nicht tippen.</span><span class="help-block">Nach der Wertung bekommen sie automatisch einen Tipp aus der Siegerverteilung der Tipps der anderen: Ab 75 % für ein Team gilt 2:0, über 50 % 2:1, bei 50:50 ein 2:1 für das eigene Team.</span><span class="help-block">Hat niemand getippt, gibt es keine automatische Gutschrift.</span></span>
+                <span class="help-tooltip" id="prediction-passive-points-help" role="tooltip"><span class="help-block">Eigene Partien kann man nicht tippen.</span><span class="help-block">Stattdessen zählt automatisch die Mehrheit der Tipps der anderen. Details stehen unter Infos.</span><span class="help-block">Ohne fremde Tipps gibt es keine Gutschrift.</span></span>
               </span>
             </div>
             <div class="hint">Passive Punkte</div>
@@ -1092,13 +1094,22 @@
     const upcomingMatches = matches
       .filter(isPredictionUpcoming)
       .sort(compareMatchesByNumber);
-    const lockedMatches = matches
+    const closedMatches = matches
       .filter(match => !isPredictionOpen(match) && !isPredictionUpcoming(match))
-      .sort((first, second) => compareMatchesByNumber(second, first));
+      .sort(compareMatchesByNumber);
+    // Gewertet: Ergebnis steht fest und das Konto hat selbst getippt
+    // beziehungsweise für die eigene Partie eine automatische Gutschrift erhalten.
+    const isCompletedMatch = match => !isCancelledMatch(match)
+      && Boolean(getActualPredictionValue(match))
+      && Boolean(isOwnMatch(match) ? getOwnMatchAutoTip(match) : state.predictions.get(match.id));
+    const completedMatches = closedMatches.filter(isCompletedMatch);
+    const lockedMatches = closedMatches.filter(match => !isCompletedMatch(match));
     const openBonusQuestions = bonusQuestions.filter(isBonusQuestionOpen);
-    const incompleteBonusQuestions = openBonusQuestions.filter(question => !isBonusQuestionComplete(question));
-    const completeBonusQuestions = openBonusQuestions.filter(isBonusQuestionComplete);
-    const lockedBonusQuestions = bonusQuestions.filter(question => !isBonusQuestionOpen(question));
+    const closedBonusQuestions = bonusQuestions.filter(question => !isBonusQuestionOpen(question));
+    const isCompletedBonusQuestion = question => Boolean(question.resolved)
+      && getBonusAnswers(question.question_id).length > 0;
+    const completedBonusQuestions = closedBonusQuestions.filter(isCompletedBonusQuestion);
+    const lockedBonusQuestions = closedBonusQuestions.filter(question => !isCompletedBonusQuestion(question));
     if (!matches.length && !bonusQuestions.length) {
       target.innerHTML = '<div class="widget hint">Für diese Saison sind noch keine Spiele im Tippspiel hinterlegt.</div>';
       return;
@@ -1145,10 +1156,12 @@
                 data-prediction-match="${escapeHtml(match.id)}"
                 data-prediction-value="${prediction}"
                 aria-pressed="${selected === prediction}"
-                ${ownAutoTip === prediction ? 'title="Passiv-Tipp aus der Siegerverteilung – deine automatische Wertung"' : ''}
-                ${isSaving || !isOpen ? 'disabled' : ''}
+                ${ownAutoTip === prediction
+                  ? `aria-disabled="true" aria-describedby="own-tip-help-${escapeHtml(match.id)}" data-own-tip-help`
+                  : (isSaving || !isOpen ? 'disabled' : '')}
               >${prediction}</button>
             `).join('')}
+            ${ownAutoTip ? `<span class="help-tooltip prediction-own-tip-tooltip" id="own-tip-help-${escapeHtml(match.id)}" role="tooltip"><span class="help-block">Passiv-Tipp aus den Tipps der anderen.</span><span class="help-block">Deine automatische Wertung</span></span>` : ''}
           </div>`}
           <span class="prediction-status ${statusChip.classes}">${statusChip.label}</span>
         </article>
@@ -1165,20 +1178,25 @@
       return;
     }
 
+    // Bonuskarten stehen in jeder Gruppe fest am Ende, damit sie beim Tippen nicht springen.
     const openCards = [
-      ...incompleteBonusQuestions.map(renderBonusQuestion),
-      ...openMatches.map(renderMatch),
-      ...completeBonusQuestions.map(renderBonusQuestion)
+      ...applyPredictionSortDirection(openMatches.map(renderMatch)),
+      ...openBonusQuestions.map(renderBonusQuestion)
     ];
-    const upcomingCards = upcomingMatches.map(renderMatch);
+    const upcomingCards = applyPredictionSortDirection(upcomingMatches.map(renderMatch));
     const lockedCards = [
-      ...lockedMatches.map(renderMatch),
+      ...applyPredictionSortDirection(lockedMatches.map(renderMatch)),
       ...lockedBonusQuestions.map(renderBonusQuestion)
     ];
+    const completedCards = [
+      ...applyPredictionSortDirection(completedMatches.map(renderMatch)),
+      ...completedBonusQuestions.map(renderBonusQuestion)
+    ];
     target.innerHTML = applyPredictionSortDirection([
-      renderPredictionHtmlGroup(`<h3><span>Offene Tipps (${openCards.length})</span></h3>`, applyPredictionSortDirection(openCards)),
-      renderPredictionHtmlGroup(`<h3><span>Demnächst tippbar (${upcomingCards.length})</span></h3>`, applyPredictionSortDirection(upcomingCards)),
-      renderPredictionHtmlGroup(`<h3><span>Gesperrte Tipps (${lockedCards.length})</span></h3>`, applyPredictionSortDirection(lockedCards))
+      renderPredictionHtmlGroup(`<h3><span>Offene Tipps (${openCards.length})</span></h3>`, openCards),
+      renderPredictionHtmlGroup(`<h3><span>Gewertete Tipps (${completedCards.length})</span></h3>`, completedCards),
+      renderPredictionHtmlGroup(`<h3><span>Demnächst tippbar (${upcomingCards.length})</span></h3>`, upcomingCards),
+      renderPredictionHtmlGroup(`<h3><span>Gesperrte Tipps (${lockedCards.length})</span></h3>`, lockedCards)
     ]).join('');
   }
 
@@ -2041,6 +2059,15 @@
       renderMatches();
     });
     document.addEventListener('click', event => {
+      const ownTipHelp = event.target.closest('[data-own-tip-help]');
+      document.querySelectorAll('[data-own-tip-help].is-open').forEach(button => {
+        if (button !== ownTipHelp) button.classList.remove('is-open');
+      });
+      // Der Passiv-Tipp ist nicht wählbar; ein Tipp darauf blendet nur den Hinweis ein.
+      if (ownTipHelp) {
+        ownTipHelp.classList.toggle('is-open');
+        return;
+      }
       const prediction = event.target.closest('[data-prediction-match]');
       if (!prediction) return;
       savePrediction(prediction.dataset.predictionMatch, prediction.dataset.predictionValue);

@@ -12,10 +12,10 @@
       /* Schwarze Mauszeiger, in jedem Branding gleich. Hände und Bälle in der Akzentfarbe
          (--cursor-pointer, --cursor-grab, --cursor-grabbing, --cursor-help, --cursor-not-allowed, --cursor-move, --cursor-wait-1 bis -8, --cursor-progress-1 bis -8)
          erzeugt tools/build-cursors.mjs in jeder Branding-Datei. */
-      --cursor-default: url('assets/cursors/racket.svg?v=3') 5 2, default;
-      --cursor-text: url('assets/cursors/text.svg?v=3') 10 10, text;
-      --cursor-zoom-in: url('assets/cursors/zoom-in.svg?v=3') 8 8, zoom-in;
-      --cursor-zoom-out: url('assets/cursors/zoom-out.svg?v=3') 8 8, zoom-out;
+      --cursor-default: url('assets/cursors/racket.svg?v=5') 5 2, default;
+      --cursor-text: url('assets/cursors/text.svg?v=5') 10 10, text;
+      --cursor-zoom-in: url('assets/cursors/zoom-in.svg?v=5') 8 8, zoom-in;
+      --cursor-zoom-out: url('assets/cursors/zoom-out.svg?v=5') 8 8, zoom-out;
     }
     html { cursor: var(--cursor-default); }
     :where(a[href], input[type="range"]) { cursor: var(--cursor-pointer); }

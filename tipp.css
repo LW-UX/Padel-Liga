@@ -551,9 +551,26 @@
       font-weight: 600;
     }
     .prediction-option:hover { border-color: var(--accent); color: var(--text); }
-    .prediction-option.active { border-color: var(--accent); background: var(--accent); color: var(--bg); }
+    /* Der gewählte Tipp sieht aus wie ein Primärbutton; Brandings, die dessen Schrift ändern, nehmen ihn in dieselbe Regel auf. */
+    .prediction-option.active { border-color: var(--accent); background: var(--accent); color: color-mix(in srgb, var(--bg) 50%, var(--surface)); }
     .prediction-option:disabled { cursor: var(--cursor-not-allowed); opacity: 0.46; }
     .prediction-option.is-own-floor { border-color: var(--muted); background: var(--muted); color: var(--bg); }
+    .prediction-option.is-own-floor[aria-disabled="true"] { cursor: var(--cursor-help); }
+    .prediction-option.is-own-floor[aria-disabled="true"]:not(.is-result):hover { border-color: var(--muted); color: var(--bg); }
+    .prediction-options:has(.prediction-own-tip-tooltip) { position: relative; }
+    .prediction-options .prediction-own-tip-tooltip {
+      top: auto;
+      right: auto;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      width: max-content;
+      max-width: calc(100vw - 32px);
+      transform: translateX(-50%);
+    }
+    .prediction-options .prediction-own-tip-tooltip .help-block { white-space: nowrap; }
+    .prediction-option.is-own-floor:hover ~ .prediction-own-tip-tooltip,
+    .prediction-option.is-own-floor:focus-visible ~ .prediction-own-tip-tooltip,
+    .prediction-option.is-own-floor.is-open ~ .prediction-own-tip-tooltip { opacity: 1; }
     .prediction-option.active:disabled,
     .prediction-option.is-own-floor:disabled,
     .prediction-option.is-result:disabled { opacity: 1; }

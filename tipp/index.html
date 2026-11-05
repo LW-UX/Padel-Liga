@@ -8,7 +8,7 @@
   <link rel="icon" href="../favicon.ico" sizes="32x32">
   <link rel="icon" type="image/svg+xml" href="../data/favicon.svg?v=2026-10-26-rounded">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-  <link rel="stylesheet" href="../branding/og-design.css?v=3e1ae49adc">
+  <link rel="stylesheet" href="../branding/og-design.css?v=332ce73c9d">
   <script>
     // Die gespeicherte Designauswahl greift vor dem ersten Zeichnen; alles Weitere steht in js/branding-preview.js.
     (function () {
@@ -34,10 +34,10 @@
     })();
   </script>
   <link rel="stylesheet" href="../achievements.css?v=2026-10-31">
-  <link rel="stylesheet" href="../style.css?v=2026-11-05-cursors-6">
-  <link rel="stylesheet" href="../tipp.css?v=2026-11-05-cursors-6">
-  <link rel="stylesheet" href="../match-statistics.css?v=2026-11-05-cursors-6">
-  <link rel="stylesheet" href="../account.css?v=2026-11-05-cursors-6">
+  <link rel="stylesheet" href="../style.css?v=2026-11-05-cursors-11">
+  <link rel="stylesheet" href="../tipp.css?v=2026-11-05-own-tip-tooltip">
+  <link rel="stylesheet" href="../match-statistics.css?v=2026-11-05-cursors-11">
+  <link rel="stylesheet" href="../account.css?v=2026-11-05-cursors-11">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="../data/players.js?v=2026-10-20-test-net-emoji"></script>
@@ -145,7 +145,7 @@
                   <button type="button" class="ranking-sort-header" data-prediction-ranking-sort="passive"><span class="sort-chevron" aria-hidden="true"></span><span>Passiv</span></button>
                   <span class="th-help-wrap">
                     <span class="help-icon" tabindex="0" role="button" aria-label="Passive Punkte erklären" aria-describedby="prediction-ranking-passive-help" data-help-tooltip-anchor>?</span>
-                    <span class="help-tooltip" id="prediction-ranking-passive-help" role="tooltip"><span class="help-block">Spieler können ihre eigenen Partien nicht tippen.</span><span class="help-block">Nach der Wertung bekommen sie automatisch einen Tipp aus der Siegerverteilung der Tipps der anderen: Ab 75 % für ein Team gilt 2:0, über 50 % 2:1, bei 50:50 ein 2:1 für das eigene Team.</span><span class="help-block">Hat niemand getippt, gibt es keine automatische Gutschrift.</span></span>
+                    <span class="help-tooltip" id="prediction-ranking-passive-help" role="tooltip"><span class="help-block">Eigene Partien kann man nicht tippen.</span><span class="help-block">Stattdessen zählt automatisch die Mehrheit der Tipps der anderen. Details stehen unter Infos.</span><span class="help-block">Ohne fremde Tipps gibt es keine Gutschrift.</span></span>
                   </span>
                 </span>
               </th>
@@ -253,7 +253,7 @@
           <h4>Was gilt bei meiner eigenen Partie?</h4>
           <ul class="clean-list">
             <li>Deine eigene Partie kannst du nicht tippen.</li>
-            <li>Nach der Wertung erhältst du dafür automatisch einen Passiv-Tipp aus der Siegerverteilung der Fremdtipps, wie sie in der Tippanzeige steht: Ab 75 % für ein Team gilt 2:0, über 50 % 2:1 und bei genau 50 % ein 2:1 für dein Team. Im Final Four gilt für das Team mit der Mehrheit: unter 60 % 6:4, unter 70 % 6:3, unter 80 % 6:2, unter 90 % 6:1 und ab 90 % 6:0; bei genau 50 % ein 6:4 für dein Team. Dieser Passiv-Tipp wird normal gewertet.</li>
+            <li>Nach der Wertung erhältst du dafür automatisch einen Passiv-Tipp aus den Tipps der anderen. Bei zwei Gewinnsätzen zählt die Siegerverteilung, wie sie in der Tippanzeige steht: Ab 75 % für ein Team gilt 2:0, über 50 % 2:1 und bei genau 50 % ein 2:1 für dein Team. Im Final Four zählt das durchschnittlich getippte Ergebnis, umgerechnet auf 6 Spiele für den Sieger und gerundet; bei Gleichstand gilt ein 6:4 für dein Team. Dieser Passiv-Tipp wird normal gewertet.</li>
             <li>Nicht abgegebene Tipps zählen dabei nicht mit.</li>
             <li>Wurde gar kein Tipp abgegeben, gibt es keine Gutschrift.</li>
           </ul>

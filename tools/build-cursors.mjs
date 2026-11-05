@@ -11,7 +11,6 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const W = '#ffffff';
 const K = '#111111';
-const HALO = 3.4;
 const SPIN_ANGLES = [0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5];
 export const CURSOR_BLOCK_START = '/* Mauszeiger in der Akzentfarbe: erzeugt von tools/build-cursors.mjs, nicht von Hand ändern. */';
 const CURSOR_BLOCK_PATTERN = /\n*\/\* Mauszeiger in der Akzentfarbe:[^\n]*\*\/\n:root \{[\s\S]*?\n\}\n?/;
@@ -19,7 +18,9 @@ const CURSOR_BLOCK_PATTERN = /\n*\/\* Mauszeiger in der Akzentfarbe:[^\n]*\*\/\n
 const n = (v) => Number(v.toFixed(2));
 const svg = (inner) => `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32">${inner}</svg>`;
 
-// Form einmal weiß mit breitem Rand, darüber schwarz: so bleibt jeder Zeiger auf hellem und dunklem Grund sichtbar.
+// Form einmal weiß mit breitem Rand, darüber schwarz: so bleiben Schläger, Textnetz und Pfeile auf hellem und
+// dunklem Grund sichtbar. Bälle und Hände haben keinen weißen Rand.
+const HALO = 3.4;
 const outlined = (shapes, width = HALO) => shapes.replace(/FILL/g, W).replace(/SW/g, width) + shapes.replace(/FILL/g, K).replace(/SW/g, 0.3);
 const rect = (x, y, w, h, r) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="FILL" stroke="FILL" stroke-width="SW" stroke-linejoin="round"/>`;
 const shape = (d) => `<path d="${d}" fill="FILL" stroke="FILL" stroke-width="SW" stroke-linejoin="round" stroke-linecap="round"/>`;
@@ -40,47 +41,63 @@ function textNet() {
   const knots = [8.5, 11.7, 14.9, 18.1, 21.3].map((y) => `<rect x="15.2" y="${y}" width="1.6" height="1" fill="${W}"/>`).join('');
   return svg(outlined(rect(10, 3, 12, 3.4, 1.2) + rect(14.6, 5, 2.8, 22, 0.6) + rect(11.5, 26, 9, 3, 1)) + knots);
 }
-// Hände in der Form des System-Zeigers: weiße Fläche, Kontur in der Akzentfarbe.
+// Hände in der Form des System-Zeigers: Fläche in der Akzentfarbe, Kontur nach der Farbregel unten.
+// Die Fingerlinien beginnen jeweils oben an der Spitze des kürzeren Nachbarfingers, damit sie genau
+// in die Kontur übergehen, und haben dieselbe Stärke wie die Kontur.
 const HANDS = {
   pointer: {
     outline: 'M10 17V4.5a2 2 0 0 1 4 0V13V11.5a2 2 0 0 1 4 0V13V12.3a2 2 0 0 1 4 0V13.8V13.6a1.9 1.9 0 0 1 3.8 0V21C25.8 25 24 27.5 21.5 28.5H13.5C11.5 27 9.5 24.5 7.5 21.5L4.6 17.4a1.9 1.9 0 0 1 2.9-2.4L10 17Z',
-    fingers: 'M14 13.2V17M18 13.2V17M22 14V17.5',
+    fingers: 'M14 11.5V17M18 12.3V17.2M22 13.6V17.6',
   },
   grab: {
     outline: 'M8 17V7.5a2 2 0 0 1 4 0V13V5a2 2 0 0 1 4 0V13V5.8a2 2 0 0 1 4 0V13.5V8.5a1.9 1.9 0 0 1 3.8 0V20C23.8 25 22 28 19.5 28.5H12.5C10.5 27.5 8.5 25 6.5 22L3.6 17.6a1.9 1.9 0 0 1 2.9-2.4L8 17Z',
-    fingers: 'M12 9V15M16 8V15M20 9V15.5',
+    fingers: 'M12 7.5V15M16 5.8V15M20 8.5V15.5',
   },
   grabbing: {
     outline: 'M8 18V13a2 2 0 0 1 4 0V12a2 2 0 0 1 4 0V12.4a2 2 0 0 1 4 0V13.6a1.9 1.9 0 0 1 3.8 0V20C23.8 25 22 28 19.5 28.5H12.5C10.5 27.5 8.5 25 6.5 22.5L4.8 19.6a1.9 1.9 0 0 1 2.9-2.4L8 18Z',
-    fingers: 'M12 13V16M16 12.5V16M20 13V16.5',
+    fingers: 'M12 13V16.5M16 12.4V16.5M20 13.6V17',
   },
 };
-function hand(kind, color) {
+// Auf dunklen Akzentfarben wie Blau und Rot werden Linien auf der Akzentfläche weiß (Kontur und Fingerlinien
+// der Hände, Rand und Nähte der Bälle); auf helleren wie Gelb und Orange bleiben sie schwarz.
+const WHITE_LINES_BELOW = 0.23;
+const lineColor = (accent) => (luminance(accent) < WHITE_LINES_BELOW ? W : K);
+// Die Zeigehand steht im selben Winkel wie der Standard-Schläger; Klickstelle ist die Fingerspitze.
+const POINTER_HAND = 'translate(5 2) rotate(-25) scale(1.1) translate(-12 -2.5)';
+function hand(kind, color, transform = '') {
   const { outline, fingers } = HANDS[kind];
-  return svg(`<path d="${outline}" fill="${W}" stroke="${W}" stroke-width="4" stroke-linejoin="round"/><path d="${outline}" fill="${W}" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/><path d="${fingers}" stroke="${K}" stroke-width="1.2" stroke-linecap="round"/>`);
+  const line = lineColor(color);
+  return svg(`<g transform="${transform}"><path d="${outline}" fill="${color}" stroke="${line}" stroke-width="1.5" stroke-linejoin="round"/><path d="${fingers}" stroke="${line}" stroke-width="1.5" stroke-linecap="round"/></g>`);
 }
 
-function seams(cx, cy, r, angle, width) {
-  const side = (s) => `M${n(cx + s * r * 0.9)} ${n(cy - r * 0.5)}C${n(cx + s * r * 0.3)} ${n(cy - r * 0.25)} ${n(cx + s * r * 0.3)} ${n(cy + r * 0.25)} ${n(cx + s * r * 0.9)} ${n(cy + r * 0.5)}`;
-  return `<g transform="rotate(${angle} ${cx} ${cy})"><path d="${side(-1)}${side(1)}" fill="none" stroke="${W}" stroke-width="${width}" stroke-linecap="round"/></g>`;
+// end und bend legen fest, wo die Naht am Rand ansetzt und wie weit sie sich zur Mitte wölbt (Anteile des Radius).
+function seams(cx, cy, r, angle, width, color, { end = [0.9, 0.5], bend = [0.3, 0.25] } = {}) {
+  const side = (s) => `M${n(cx + s * r * end[0])} ${n(cy - r * end[1])}C${n(cx + s * r * bend[0])} ${n(cy - r * bend[1])} ${n(cx + s * r * bend[0])} ${n(cy + r * bend[1])} ${n(cx + s * r * end[0])} ${n(cy + r * end[1])}`;
+  // Die Nähte werden auf die Ballfläche zugeschnitten; der Rand wird danach darübergezeichnet und deckt ihre Enden ab.
+  return `<clipPath id="seam-clip"><circle cx="${cx}" cy="${cy}" r="${r}"/></clipPath><g clip-path="url(#seam-clip)"><g transform="rotate(${angle} ${cx} ${cy})"><path d="${side(-1)}${side(1)}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round"/></g></g>`;
 }
-function ball(cx, cy, r, color, angle, halo, outline) {
-  return `<circle cx="${cx}" cy="${cy}" r="${n(r + halo)}" fill="${W}"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" stroke="${K}" stroke-width="${outline}"/>${seams(cx, cy, r, angle, n(r / 5))}`;
+function ballShape(cx, cy, r, color, outline, seamMarkup) {
+  return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}"/>${seamMarkup}<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${lineColor(color)}" stroke-width="${outline}"/>`;
+}
+function ball(cx, cy, r, color, angle, outline) {
+  return ballShape(cx, cy, r, color, outline, seams(cx, cy, r, angle, n(r / 5), lineColor(color)));
 }
 function luminance(hex) {
   const channels = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
     .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
   return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 }
-const bigBall = (color, angle, extra = '') => svg(ball(16, 16, 12, color, angle, 2.6, 1.8) + extra);
+const bigBall = (color, angle, extra = '') => svg(ball(16, 16, 12, color, angle, 1.8) + extra);
 function helpBall(color) {
-  const mark = luminance(color) > 0.35 ? K : W;
-  return bigBall(color, 0, `<path d="M13 13 A3.2 3.1 0 1 1 17.7 15.8 C16.5 16.5 16 17.2 16 18.6" fill="none" stroke="${mark}" stroke-width="2.8" stroke-linecap="round"/><circle cx="16" cy="22.4" r="1.75" fill="${mark}"/>`);
+  const mark = lineColor(color);
+  // Flachere Nähte nahe am Rand lassen dem Fragezeichen mehr Platz.
+  const ballWithFlatSeams = ballShape(16, 16, 12, color, 1.8, seams(16, 16, 12, 0, 2.4, lineColor(color), { end: [0.8, 0.62], bend: [0.6, 0.3] }));
+  return svg(ballWithFlatSeams + `<path d="M13 13 A3.2 3.1 0 1 1 17.7 15.8 C16.5 16.5 16 17.2 16 18.6" fill="none" stroke="${mark}" stroke-width="2.8" stroke-linecap="round"/><circle cx="16" cy="22.4" r="1.75" fill="${mark}"/>`);
 }
-const progressRacket = (color, angle) => svg(racket(PROGRESS_RACKET) + ball(22.4, 22.4, 7.4, color, angle, 2, 1.5));
+const progressRacket = (color, angle) => svg(racket(PROGRESS_RACKET) + ball(22.4, 22.4, 7.4, color, angle, 1.5));
 function moveBall(color) {
   const arrows = [0, 90, 180, 270].map((a) => `<g transform="rotate(${a} 16 16)"><path d="M16 1.5 L21 7.5 H11 Z" fill="FILL" stroke="FILL" stroke-width="SW" stroke-linejoin="round"/></g>`).join('');
-  return svg(outlined(arrows, 3) + ball(16, 16, 6.6, color, 0, 2, 1.5));
+  return svg(outlined(arrows, 3) + ball(16, 16, 6.6, color, 0, 1.5));
 }
 function ballInNet(color) {
   const cx = 16, cy = 17.8, R = 8.8, top = 9, bottom = 28, left = 2, right = 30, mesh = 6.2;
@@ -92,7 +109,7 @@ function ballInNet(color) {
   let d = '';
   for (let x = left + 1; x <= right; x += mesh) { const p = []; for (let y = top; y <= bottom; y += 2) p.push(push(x, y)); d += line(p); }
   for (let y = top + mesh; y < bottom; y += mesh) { const p = []; for (let x = left; x <= right; x += 2) p.push(push(x, y)); d += line(p); }
-  return svg(`<circle cx="${cx + 1.3}" cy="${cy + 1.8}" r="${R}" fill="${K}" opacity="0.25"/>${ball(cx, cy, R, color, 25, 2.4, 1.4)}`
+  return svg(`<circle cx="${cx + 1.3}" cy="${cy + 1.8}" r="${R}" fill="${K}" opacity="0.25"/>${ball(cx, cy, R, color, 25, 1.4)}`
     + `<path d="${d}" fill="none" stroke="${W}" stroke-width="3" stroke-linejoin="round" opacity="0.9"/><path d="${d}" fill="none" stroke="${K}" stroke-width="1" stroke-linejoin="round"/>`
     + `<rect x="1.4" y="${bottom - 0.6}" width="29.2" height="1.8" fill="${K}" stroke="${W}" stroke-width="1.6"/>`
     + `<rect x="0.6" y="3.6" width="30.8" height="6.4" rx="1.2" fill="${W}"/><rect x="1.6" y="4.6" width="28.8" height="4.4" rx="0.8" fill="${W}" stroke="${K}" stroke-width="1.4"/>`);
@@ -114,7 +131,7 @@ const dataUri = (markup) => `url("data:image/svg+xml,${markup.replace(/"/g, "'")
 export function buildCursorBlock(accent) {
   if (!/^#[0-9a-fA-F]{6}$/.test(accent || '')) throw new Error(`Akzentfarbe "${accent}" ist keine sechsstellige Hex-Farbe.`);
   const lines = [
-    `  --cursor-pointer: ${dataUri(hand('pointer', accent))} 7 1, pointer;`,
+    `  --cursor-pointer: ${dataUri(hand('pointer', accent, POINTER_HAND))} 3 1, pointer;`,
     `  --cursor-grab: ${dataUri(hand('grab', accent))} 10 10, grab;`,
     `  --cursor-grabbing: ${dataUri(hand('grabbing', accent))} 10 10, grabbing;`,
     `  --cursor-help: ${dataUri(helpBall(accent))} 10 10, help;`,

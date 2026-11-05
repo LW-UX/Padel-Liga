@@ -129,7 +129,7 @@ test('the save RPC rejects duplicates, limits selections and validates season op
 });
 
 test('bonus cards share the regular tipping lists and preserve the requested ordering', () => {
-  assert.match(tipping, /const openCards = \[[\s\S]*incompleteBonusQuestions\.map\(renderBonusQuestion\)[\s\S]*openMatches\.map\(renderMatch\)[\s\S]*completeBonusQuestions\.map\(renderBonusQuestion\)/);
+  assert.match(tipping, /const openCards = \[\s*\.\.\.applyPredictionSortDirection\(openMatches\.map\(renderMatch\)\),\s*\.\.\.openBonusQuestions\.map\(renderBonusQuestion\)\s*\]/);
   assert.match(tipping, /Bonustipps \(\$\{bonusQuestions\.length\}\)/);
   assert.match(tipping, /data-bonus-question=/);
   assert.match(tipping, /const disabled = !isOpen \|\| state\.bonusSaving\.has\(question\.question_id\)/);
@@ -145,8 +145,8 @@ test('bonus cards share the regular tipping lists and preserve the requested ord
   assert.match(tipping, /data-bonus-picker-search[\s\S]*role="combobox"[\s\S]*placeholder="Spieler suchen …"/);
   assert.match(tipping, /placeholder: isCompanyPicker \? 'Firma auswählen' : 'Spieler auswählen'/);
   assert.match(tipping, /searchable: !isCompanyPicker/);
-  assert.match(tipping, /const selectedValues = question\.resolved\s*\? \[\]/);
-  assert.match(tipping, /const ownAnswer = question\.resolved && answers\.length[\s\S]*Dein Tipp: \$\{answers\.map\(getBonusOptionLabel\)\.map\(escapeHtml\)\.join\(', '\)\}/);
+  assert.match(tipping, /const showsSelection = isOpen && !question\.resolved;[\s\S]*const ownAnswer = !showsSelection && answers\.length/);
+  assert.match(tipping, /const ownAnswer = !showsSelection && answers\.length[\s\S]*Dein Tipp: \$\{answers\.map\(getBonusOptionLabel\)\.map\(escapeHtml\)\.join\(', '\)\}/);
   assert.match(tipping, /const selectionControls = selects\s*\? `<div class="prediction-bonus-selects">\$\{selects\}<\/div>`\s*: '';/);
   assert.match(tipping, /<div class="prediction-bonus-options">\s*\$\{selectionControls\}\s*\$\{ownAnswer\}\s*\$\{result\}/);
   assert.doesNotMatch(tipping, /Zum Tippen einloggen/);

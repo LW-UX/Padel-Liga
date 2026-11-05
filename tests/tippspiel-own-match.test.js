@@ -62,15 +62,14 @@ test('own matches are scored with a winner-share tip per team', () => {
   assert.match(shareMigration, /2 \* share\.team_one_count = share\.tip_count\s+then case when side\.team = 1 then 'team-one-narrow' else 'team-two-narrow' end/);
   assert.match(shareMigration, /when 'team-one-narrow' then case when tip\.format = 'single-set' then '6:4' else '2:1' end/);
   assert.match(shareMigration, /not private\.is_benchmark_account\(prediction\.user_id\)/);
-  const gradedMigration = fs.readFileSync(
-    path.join(root, 'supabase', 'migrations', '20261105160000_single_set_goal_difference_points.sql'),
+  const averageMigration = fs.readFileSync(
+    path.join(root, 'supabase', 'migrations', '20261105170000_single_set_passive_tip_from_average_score.sql'),
     'utf8'
   );
-  for (const [tenths, score] of [[6, '6:4'], [7, '6:3'], [8, '6:2'], [9, '6:1']]) {
-    assert.match(gradedMigration, new RegExp(`10 \\* tip\\.majority_count < ${tenths} \\* tip\\.tip_count then '${score}'`));
-  }
-  assert.match(gradedMigration, /else '6:0'/);
-  assert.doesNotMatch(gradedMigration, /then '7:[56]'/);
+  assert.match(averageMigration, /sum\(source\.team_one_games\) as team_one_games/);
+  assert.match(averageMigration, /when 12 \* tip\.loser_games >= 11 \* tip\.winner_games then '7:6'/);
+  assert.match(averageMigration, /least\(4, \(\(12 \* tip\.loser_games \+ tip\.winner_games\) \/ \(2 \* tip\.winner_games\)\)/);
+  assert.match(averageMigration, /when tip\.winner_games = tip\.loser_games then '6:4'/);
   const crowdMigration = fs.readFileSync(
     path.join(root, 'supabase', 'migrations', '20261105140000_own_match_crowd_average_tip.sql'),
     'utf8'
