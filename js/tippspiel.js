@@ -1140,7 +1140,7 @@
       return `
         <article class="prediction-match-card ${matchFormat === 'single-set' ? 'is-single-set' : ''} ${selected ? 'has-prediction' : ''} ${isOpen ? '' : 'is-locked'} ${points !== null ? `points-${points}` : ''}">
           <div class="prediction-match-meta">
-            <span class="mc-nr prediction-match-number">Partie ${escapeHtml(match.id.match(/\d+$/)?.[0] || match.id)}${scheduledDateLabel ? ` – ${escapeHtml(scheduledDateLabel)}` : ''}</span>
+            <span class="mc-nr prediction-match-number">${escapeHtml(getPredictionMatchLabel(match))}${scheduledDateLabel ? ` – ${escapeHtml(scheduledDateLabel)}` : ''}</span>
           </div>
           <div class="prediction-teams">
             <div class="prediction-team prediction-team-1">${renderTeam(match.team1)}</div>
@@ -1816,7 +1816,7 @@
     const [{ data: matches, error: matchesError }, participants] = await Promise.all([
       state.client
         .from('matches')
-        .select('id, season_id, format, competition_stage, betting_open, actual_sets, result_details, match_at, cancelled_at')
+        .select('id, season_id, display_label, format, competition_stage, betting_open, actual_sets, result_details, match_at, cancelled_at')
         .in('season_id', seasonIds),
       participantsPromise,
       loadLeaderboard(seasonId, legacySeasonId),
@@ -1826,6 +1826,12 @@
     state.databaseMatches = new Map((matches || []).map(match => [match.id, match]));
     state.seasonParticipants = participants;
     applyPlayerElos(participants);
+  }
+
+  function getPredictionMatchLabel(match) {
+    const label = state.databaseMatches?.get(match.id)?.display_label || match.displayLabel;
+    if (label) return label;
+    return `Partie ${match.id.match(/\d+$/)?.[0] || match.id}`;
   }
 
   async function savePrediction(matchId, prediction) {

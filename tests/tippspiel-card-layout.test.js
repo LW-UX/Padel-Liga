@@ -38,6 +38,22 @@ test('desktop tipping cards use date-only metadata and the league Elo probabilit
   );
 });
 
+test('tipping cards prefer the public match label over the technical match id', () => {
+  const state = {
+    databaseMatches: new Map([[
+      'test-2026-statistics-history',
+      { display_label: 'Partie 0' }
+    ]])
+  };
+  const context = vm.createContext({ state });
+  vm.runInContext(fn('getPredictionMatchLabel'), context);
+
+  assert.equal(
+    context.getPredictionMatchLabel({ id: 'test-2026-statistics-history' }),
+    'Partie 0'
+  );
+});
+
 test('the card center links probability and result to preview or analysis without extra result copy', () => {
   const state = {
     season: { id: '2026-test' },
