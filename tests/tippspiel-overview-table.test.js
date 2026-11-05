@@ -6,6 +6,7 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'js', 'tippspiel.js'), 'utf8');
+const style = fs.readFileSync(path.join(root, 'tipp.css'), 'utf8');
 const migration = fs.readFileSync(path.join(root, 'supabase', 'migrations', '20261030100000_prediction_overview.sql'), 'utf8');
 
 function fn(name) {
@@ -134,4 +135,39 @@ test('overview group sums become active as soon as one match of the group is act
   const table = fn('renderPredictionMatchTable');
   assert.match(table, /groupMatches\.some\(isPredictionTableMatchActive\)/);
   assert.match(table, /<td class="\$\{group\.totalClass\}">/);
+});
+
+test('completed overview groups accent every shared best score but exclude the benchmark', () => {
+  const completedMatches = [
+    { id: 'partie-1' },
+    { id: 'partie-2' }
+  ];
+  const context = createContext(new Map([
+    ['partie-1', { actual_sets: '2:0' }],
+    ['partie-2', { cancelled_at: '2026-11-05T18:00:00Z' }]
+  ]));
+  const points = new Map([
+    ['tipper-1:partie-1', { points: 4 }],
+    ['tipper-1:partie-2', { points: 0 }],
+    ['tipper-2:partie-1', { points: 4 }],
+    ['tipper-2:partie-2', { points: 0 }],
+    ['benchmark:partie-1', { points: 8 }]
+  ]);
+  context.getPredictionTableEntry = (userId, type, itemId) => points.get(`${userId}:${itemId}`) || null;
+  vm.runInContext([
+    fn('getPredictionTableGroupPoints'),
+    fn('isPredictionTableGroupComplete'),
+    fn('getPredictionTableGroupBestPoints')
+  ].join('\n'), context);
+
+  const entries = [
+    { user_id: 'tipper-1' },
+    { user_id: 'tipper-2' },
+    { user_id: 'benchmark', is_benchmark: true }
+  ];
+  assert.equal(context.isPredictionTableGroupComplete(completedMatches), true);
+  assert.equal(context.getPredictionTableGroupBestPoints(entries, completedMatches), 4);
+  assert.equal(context.getPredictionTableGroupBestPoints(entries, [...completedMatches, { id: 'partie-3' }]), null);
+  assert.match(fn('renderPredictionMatchTable'), /prediction-table-group-score\$\{isBest \? ' is-best' : ''\}/);
+  assert.match(style, /\.prediction-table-group-score\.is-best \{ color: var\(--accent\); font-weight: 600; \}/);
 });

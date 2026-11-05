@@ -643,6 +643,13 @@
     return { entry: index >= 0 ? state.leaderboard[index] : null, index };
   }
 
+  function getHighestTiedPlace(leaderboard, index) {
+    if (index <= 0 || index >= leaderboard.length) return null;
+    const points = Number(leaderboard[index]?.points || 0);
+    const highestTiedIndex = leaderboard.findIndex(entry => Number(entry.points || 0) === points);
+    return highestTiedIndex >= 0 && highestTiedIndex < index ? highestTiedIndex + 1 : null;
+  }
+
   function formatCount(value) {
     return new Intl.NumberFormat('de-DE').format(Number(value) || 0);
   }
@@ -881,24 +888,14 @@
     const passivePoints = getPersonalContributions()
       .filter(item => item.automatic)
       .reduce((total, item) => total + item.points, 0);
-    let context = 'Mit deiner ersten Wertung erscheinst du in der Tipprangliste.';
-    if (entry && index === 0) {
-      const lead = Number(entry.points) - Number(state.leaderboard[1]?.points || 0);
-      context = state.leaderboard.length > 1
-        ? lead > 0 ? `${formatCount(lead)} ${lead === 1 ? 'Punkt' : 'Punkte'} Vorsprung auf Platz 2.` : 'Die Spitze ist punktgleich.'
-        : 'Du führst die Tipprangliste an.';
-    } else if (entry && index > 0) {
-      const gap = Math.max(0, Number(state.leaderboard[index - 1]?.points || 0) - Number(entry.points || 0));
-      context = gap > 0
-        ? `${formatCount(gap)} ${gap === 1 ? 'Punkt' : 'Punkte'} bis zum nächsten Platz.`
-        : `Punktgleich mit Platz ${index}.`;
-    }
+    const highestTiedPlace = entry ? getHighestTiedPlace(state.leaderboard, index) : null;
+    const context = highestTiedPlace ? `Punktgleich mit Platz ${highestTiedPlace}.` : '';
     return `
       <article class="widget prediction-overview-block prediction-overview-stand prediction-overview-personal-stand">
         <div class="prediction-overview-stand-copy">
           <h3>Dein Stand</h3>
           <div class="prediction-overview-account">${escapeHtml(displayName)}</div>
-          <p>${escapeHtml(context)}</p>
+          ${context ? `<p>${escapeHtml(context)}</p>` : ''}
         </div>
         <div class="prediction-overview-scoreline">
           <div><div class="stat-main">${entry ? index + 1 : '–'}</div><div class="hint">Platz</div></div>
@@ -1436,6 +1433,25 @@
     return `<td class="prediction-table-bonus-total">${Number(entry.bonus_points) || 0}</td><td class="prediction-table-total">${Number(entry.points) || 0}</td>`;
   }
 
+  function getPredictionTableGroupPoints(entry, matches) {
+    return matches.reduce((total, match) => {
+      const tableEntry = getPredictionTableEntry(entry.user_id, 'match', match.id);
+      return total + (Number.isFinite(Number(tableEntry?.points)) ? Number(tableEntry.points) : 0);
+    }, 0);
+  }
+
+  function isPredictionTableGroupComplete(matches) {
+    return matches.length > 0 && matches.every(match => getActualSets(match) || isCancelledMatch(match));
+  }
+
+  function getPredictionTableGroupBestPoints(entries, matches) {
+    if (!isPredictionTableGroupComplete(matches)) return null;
+    const eligibleEntries = entries.filter(entry => !entry.is_benchmark);
+    return eligibleEntries.length
+      ? Math.max(...eligibleEntries.map(entry => getPredictionTableGroupPoints(entry, matches)))
+      : null;
+  }
+
   // Gespielte, begonnene und aktuell tippbare Partien gelten als aktiv; eigene Partien zählen wie für alle anderen.
   function isPredictionTableMatchActive(match) {
     const databaseMatch = state.databaseMatches.get(match.id);
@@ -1472,6 +1488,7 @@
       return {
         spieltag,
         matches: groupMatches,
+        bestPoints: getPredictionTableGroupBestPoints(entries, groupMatches),
         totalClass: groupMatches.some(isPredictionTableMatchActive) ? 'prediction-table-group-total' : 'prediction-table-group-total is-not-open'
       };
     });
@@ -1493,13 +1510,13 @@
       const isOwnRow = state.session?.user?.id === entry.user_id;
       const accountPlayerId = getPredictionAccountPlayerId(entry, isOwnRow);
       const cells = groups.map(group => {
-        let groupPoints = 0;
+        const groupPoints = getPredictionTableGroupPoints(entry, group.matches);
         const matchCells = group.matches.map(match => {
           const tableEntry = getPredictionTableEntry(entry.user_id, 'match', match.id);
-          if (Number.isFinite(Number(tableEntry?.points))) groupPoints += Number(tableEntry.points);
           return renderPredictionTableMatchCell(tableEntry, match, isOwnRow, accountPlayerId);
         }).join('');
-        return `${matchCells}<td class="${group.totalClass}">${groupPoints}</td>`;
+        const isBest = !entry.is_benchmark && group.bestPoints !== null && groupPoints === group.bestPoints;
+        return `${matchCells}<td class="${group.totalClass}"><span class="prediction-table-group-score${isBest ? ' is-best' : ''}">${groupPoints}</span></td>`;
       }).join('');
       return `<tr class="${getPredictionTableRowClass(entry)}">${renderPredictionTableAccountCell(entry)}${cells}${renderPredictionTableTotals(entry)}</tr>`;
     }).join('');

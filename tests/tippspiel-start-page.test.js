@@ -225,7 +225,7 @@ test('personal and guest dashboard states remain distinct', () => {
   assert.match(script, /<div class="hint">Passive Punkte<\/div>/);
   assert.match(script, /class="stat-main prediction-passive-points-value"[\s\S]*?aria-label="Passive Punkte erklären"[\s\S]*?id="prediction-passive-points-help" role="tooltip"/);
   assert.match(script, /Eigene Partien kann man nicht tippen\.[\s\S]*?Mehrheit der Tipps der anderen\. Details stehen unter Infos\.[\s\S]*?Ohne fremde Tipps gibt es keine Gutschrift\./);
-  assert.match(script, /class="prediction-overview-stand-copy">[\s\S]*?Dein Stand[\s\S]*?prediction-overview-account[\s\S]*?<p>\$\{escapeHtml\(context\)\}<\/p>/);
+  assert.match(script, /class="prediction-overview-stand-copy">[\s\S]*?Dein Stand[\s\S]*?prediction-overview-account[\s\S]*?\$\{context \? `<p>\$\{escapeHtml\(context\)\}<\/p>` : ''\}/);
   assert.match(style, /\.prediction-overview-personal-stand \{[\s\S]*?grid-template-columns: minmax\(0, 1\.6fr\) repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(style, /\.prediction-overview-personal-stand \.prediction-overview-scoreline \{ display: contents; \}/);
   assert.match(style, /\.prediction-passive-points-value \{[\s\S]*?display: flex;[\s\S]*?justify-content: center;/);
@@ -240,6 +240,21 @@ test('personal and guest dashboard states remain distinct', () => {
   assert.match(script, /class="mini-rank-name"/);
   assert.match(script, /class="rank-score"/);
   assert.doesNotMatch(style, /\.prediction-overview-rank-row \{/);
+});
+
+test('personal stand names the highest place in the complete points tie', () => {
+  const helper = script.match(/function getHighestTiedPlace\([^]*?\n  \}/)?.[0] || '';
+  assert.ok(helper);
+  const context = vm.createContext({});
+  vm.runInContext(`${helper}\nthis.getHighestTiedPlace = getHighestTiedPlace;`, context);
+  const leaderboard = [8, 8, 8, 8, 8, 8, 8, 8, 6, 6].map(points => ({ points }));
+
+  assert.equal(context.getHighestTiedPlace(leaderboard, 7), 1);
+  assert.equal(context.getHighestTiedPlace(leaderboard, 9), 9);
+  assert.equal(context.getHighestTiedPlace([{ points: 10 }, { points: 8 }], 1), null);
+  assert.equal(context.getHighestTiedPlace(leaderboard, 0), null);
+  assert.match(script, /const highestTiedPlace = entry \? getHighestTiedPlace\(state\.leaderboard, index\) : null;/);
+  assert.match(script, /const context = highestTiedPlace \? `Punktgleich mit Platz \$\{highestTiedPlace\}\.` : '';/);
 });
 
 test('dashboard uses independent left and right columns and keeps the start page in swipe order', () => {

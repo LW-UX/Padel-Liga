@@ -422,6 +422,7 @@
       font-size: var(--text-xs);
     }
     table.rt.prediction-table .prediction-table-group-total.is-not-open { color: var(--border); }
+    .prediction-table-group-score.is-best { color: var(--accent); font-weight: 600; }
     table.rt.prediction-table .prediction-table-bonus-total { color: var(--accent2); }
     .prediction-table-cell {
       position: relative;

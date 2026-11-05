@@ -65,7 +65,7 @@ test('pages and manifest follow the active branding', async () => {
   const variables = readBrandingVariables(css);
   const version = getBrandingVersion(css);
 
-  for (const file of ['index.html', 'tipp/index.html']) {
+  for (const file of ['index.html', 'tipp/index.html', '404.html']) {
     const html = read(file);
     assert.equal(getActiveBrandingName(html), name, file);
     assert.ok(html.includes(`branding/${name}.css?v=${version}"`), `${file}: Branding-Version veraltet, tools/apply-branding.mjs ausführen`);

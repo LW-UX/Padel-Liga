@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seite nicht gefunden – PadelLiga</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#07080C">
+  <script id="site-base-bootstrap">
+    // GitHub Pages behaelt bei einer 404-Antwort die angeforderte URL. Die Basis sorgt dafuer,
+    // dass Assets und Startseiten-Link auch von beliebig tiefen, unbekannten Pfaden aus funktionieren.
+    (function () {
+      var href = '/';
+      if (window.location.protocol === 'file:') {
+        href = new URL('./', window.location.href).href;
+      } else if (/\.github\.io$/i.test(window.location.hostname)) {
+        var project = window.location.pathname.split('/').filter(Boolean)[0];
+        href = project ? '/' + project + '/' : '/';
+      }
+      var base = document.createElement('base');
+      base.href = href;
+      document.head.appendChild(base);
+    })();
+  </script>
+  <link rel="icon" href="favicon.ico" sizes="32x32">
+  <link rel="icon" type="image/svg+xml" href="data/favicon.svg?v=2026-10-26-rounded">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
+  <link rel="stylesheet" href="branding/og-design.css?v=332ce73c9d">
+  <script>
+    // Die gespeicherte Designauswahl greift vor dem ersten Zeichnen.
+    (function () {
+      try {
+        var brandings = ['og-design', 'hanako-leben', 'centre-court', 'envidual', 'hanako', 'headsquare'];
+        var name = window.localStorage.getItem('padel-branding-preview');
+        var randomMode = window.localStorage.getItem('padel-branding-mode') === 'random';
+        var navigation = window.performance && window.performance.getEntriesByType
+          ? window.performance.getEntriesByType('navigation')[0]
+          : null;
+        if (randomMode && (navigation && navigation.type === 'reload' || !brandings.includes(name))) {
+          var choices = brandings.filter(function (branding) { return branding !== name; });
+          name = choices[Math.floor(Math.random() * choices.length)];
+          window.localStorage.setItem('padel-branding-preview', name);
+        }
+        var link = document.querySelector('link[rel="stylesheet"][href*="branding/"]');
+        if (!link || !brandings.includes(name)) return;
+        link.dataset.publishedHref = link.getAttribute('href');
+        if (!link.getAttribute('href').includes('branding/' + name + '.css')) {
+          link.setAttribute('href', link.getAttribute('href').replace(/branding\/.*$/, 'branding/' + name + '.css'));
+        }
+      } catch (error) { /* Ohne Speicher bleibt das veroeffentlichte Branding. */ }
+    })();
+  </script>
+  <link rel="stylesheet" href="style.css?v=2026-11-05-cursors-11">
+  <link rel="stylesheet" href="404.css?v=2026-11-05">
+</head>
+<body class="not-found-page">
+  <header class="site-header">
+    <div class="hero">
+      <div class="hero-topbar">
+        <div class="hero-eyebrow">Headsquare × Hanako × Envidual</div>
+      </div>
+      <div class="hero-title-row">
+        <h1><a class="hero-home-button" href="./" aria-label="Zur Startseite">Padel<em>Liga</em></a></h1>
+      </div>
+    </div>
+  </header>
+
+  <main class="not-found-main">
+    <section class="widget not-found-card" aria-labelledby="not-found-title">
+      <div class="not-found-copy">
+        <div class="eyebrow">Fehler 404</div>
+        <h2 id="not-found-title">Diese Seite ist im Aus.</h2>
+        <p>Die aufgerufene Adresse gibt es nicht oder sie ist nicht mehr im Spiel.</p>
+        <div class="not-found-actions">
+          <a class="primary-button" href="./">Zur Startseite</a>
+          <button class="secondary-button" id="not-found-back" type="button">Eine Seite zurück</button>
+        </div>
+      </div>
+
+      <div class="not-found-visual" aria-hidden="true">
+        <span class="not-found-number">404</span>
+        <svg viewBox="0 0 360 280" focusable="false">
+          <rect x="44" y="24" width="272" height="232" rx="8"></rect>
+          <path d="M180 24v232M44 140h272M44 88h272M44 192h272"></path>
+          <path class="not-found-net" d="M36 140h288"></path>
+          <g class="not-found-ball">
+            <circle cx="285" cy="55" r="24"></circle>
+            <path d="M268 42c12 8 17 19 15 36M302 39c-12 8-18 20-16 39"></path>
+          </g>
+        </svg>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p class="site-footer-line">
+      <span class="site-footer-partnership">
+        <span class="site-footer-brand">Padel<em>Liga</em></span>
+        <span class="site-footer-credit"><span>sponsored by</span> <strong>HEADSQUARE GROUP</strong></span>
+      </span>
+      <span class="site-footer-service site-footer-credit"><span>Ein Service des</span> <strong>HANAKO-LEBEN-SQUADS</strong></span>
+    </p>
+  </footer>
+
+  <script>
+    (function () {
+      var back = document.getElementById('not-found-back');
+      if (window.history.length <= 1) back.hidden = true;
+      else back.addEventListener('click', function () { window.history.back(); });
+
+      var theme = document.querySelector('meta[name="theme-color"]');
+      var updateTheme = function () {
+        var background = window.getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+        if (background) theme.setAttribute('content', background);
+      };
+      window.addEventListener('load', updateTheme, { once: true });
+    })();
+  </script>
+</body>
+</html>

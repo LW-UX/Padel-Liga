@@ -1,0 +1,133 @@
+.not-found-page .hero { padding-bottom: 0; }
+
+.not-found-main {
+  display: grid;
+  align-items: center;
+  padding-top: clamp(1.5rem, 7vh, 5rem);
+}
+
+.not-found-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.9fr);
+  align-items: center;
+  min-height: clamp(390px, 55vh, 560px);
+  overflow: hidden;
+}
+
+.not-found-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 34rem;
+  padding: clamp(1.5rem, 5vw, 4rem);
+}
+
+.not-found-copy h2 {
+  max-width: 9em;
+  font-size: clamp(calc(var(--text-heading) * 1.25), 6vw, calc(var(--text-heading) * 2));
+  line-height: 0.95;
+}
+
+.not-found-copy p {
+  max-width: 30rem;
+  margin-top: 1rem;
+  color: var(--dim);
+  font-size: var(--text-base);
+  line-height: 1.55;
+}
+
+.not-found-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.75rem;
+}
+
+.not-found-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.not-found-actions .primary-button:hover,
+.not-found-actions .primary-button:focus-visible { opacity: 0.72; }
+
+.not-found-actions .primary-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.not-found-visual {
+  position: relative;
+  display: grid;
+  min-height: 360px;
+  align-self: stretch;
+  place-items: center;
+  overflow: hidden;
+}
+
+.not-found-number {
+  position: absolute;
+  color: color-mix(in srgb, var(--surface2) 78%, transparent);
+  font-family: var(--font-heading);
+  font-size: clamp(10rem, 24vw, 19rem);
+  font-weight: var(--heading-font-weight);
+  letter-spacing: -0.03em;
+  line-height: 0.8;
+  transform: rotate(-5deg);
+  white-space: nowrap;
+}
+
+.not-found-visual svg {
+  position: relative;
+  z-index: 1;
+  width: min(92%, 410px);
+  overflow: visible;
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 52%, var(--border));
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  transform: rotate(-5deg);
+}
+
+.not-found-net {
+  stroke: var(--text);
+  stroke-dasharray: 3 6;
+  stroke-width: 3;
+}
+
+.not-found-ball {
+  fill: var(--accent);
+  stroke: color-mix(in srgb, var(--accent) 35%, var(--bg));
+  stroke-width: 2.5;
+}
+
+.not-found-ball path { fill: none; }
+
+@media (max-width: 768px) {
+  .not-found-main { padding-top: 1rem; }
+
+  .not-found-card {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .not-found-copy {
+    padding: 1.25rem 0.75rem 0.5rem;
+  }
+
+  .not-found-visual {
+    min-height: 230px;
+  }
+
+  .not-found-number { font-size: clamp(9rem, 48vw, 14rem); }
+
+  .not-found-visual svg { width: min(86%, 330px); }
+}
+
+@media (max-width: 430px) {
+  .not-found-actions { display: grid; }
+  .not-found-actions > * { width: 100%; }
+}

@@ -3,6 +3,7 @@
 Diese Datei ist die kanonische Quelle für Saisonidentitäten, Datenquellen, Saisonphasen, Navigation und saisonabhängige Seitenbereiche.
 
 - Die sichtbaren Produktnamen werden durchgängig ohne Bindestrich und in Binnenmajuskel geschrieben: `PadelLiga`, `PadelTipp` und `PadelPong`. Technische Bestandsadressen wie der GitHub-Pages-Pfad `/Padel-Liga/` bleiben davon unberührt.
+- Nicht vorhandene öffentliche URLs führen auf eine eigene, gebrandete 404-Seite mit Rückweg zur Startseite. Sie lädt keine Saison-, Konto- oder Datenbanklogik und funktioniert unabhängig von der Tiefe des angeforderten Pfads.
 
 ## Saison- und Datenmodell
 

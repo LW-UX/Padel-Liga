@@ -13,7 +13,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const write = (file, content) => fs.writeFileSync(path.join(root, file), content);
 
-const PAGES = ['index.html', 'tipp/index.html'];
+const PAGES = ['index.html', 'tipp/index.html', '404.html'];
 const BRANDING_LINK = /(<link rel="stylesheet" href="(?:\.\.\/)?)branding\/([a-z0-9-]+)\.css\?v=[^"]*(">)/;
 
 export function readBrandingVariables(css) {
