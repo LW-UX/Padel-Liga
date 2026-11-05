@@ -150,12 +150,11 @@ Die beiden Flags müssen bei Trainingsspielen immer `false` sein. Die Anwendung 
 
 ## Weitere Saison anlegen
 
-1. Eine neue Saisondatei nach dem Muster von `data/data-2026-sommer.js` erstellen.
-2. Nur die Teilnehmer dieser Saison samt eingefrorenem `startElo` eintragen.
-3. Alle Spiele mit neuen, global eindeutigen Match-IDs und Spieler-IDs anlegen.
-4. Die Saison in `data/seasons.js` registrieren und bei Bedarf als Standard markieren.
+1. Saison, Teilnehmer samt eingefrorenem `startElo`, Spieltage und alle Partien per Migration in der Datenbank anlegen. Partien stehen ausschließlich dort.
+2. Eine Saisondatei nach dem Muster von `data/data-2026-winter.js` nur mit redaktionellen Inhalten wie Artikeln anlegen.
+3. Die Saison in `data/seasons.js` samt `databaseId` registrieren und bei Bedarf als Standard markieren.
 
-Alte Saisondateien bleiben erhalten. Dadurch können frühere Saisonstände weiterhin über die URL geladen und später in saisonübergreifenden Ansichten zusammengeführt werden:
+Frühere Saisons bleiben über die URL erreichbar. Partie- und Livepfade erzeugt der Deploy aus den Datenbankpartien:
 
 ```text
 so26/
@@ -177,7 +176,7 @@ Die Datenbank trennt Spieler, Saisons, Ligen, Saison-Teilnahmen, Spiele, Turnier
 
 ## Spielergebnisse und Rollen
 
-Die Datenbank ist die aktive Quelle für strukturierte Saison- und Ergebnisdaten; die statischen Saisondateien dienen als kontrollierter Fallback. Die temporäre Saison `2026-test` erprobt die Ergebnisabläufe:
+Die Datenbank ist die einzige Quelle für strukturierte Saison- und Ergebnisdaten; die Saisondateien enthalten nur redaktionelle Inhalte. Die temporäre Saison `2026-test` erprobt die Ergebnisabläufe:
 
 - Neue Konten erhalten zunächst die Rolle `tipper`.
 - Vorab hinterlegte und bestätigte E-Mail-Adressen werden automatisch einem Spielerprofil zugeordnet.
@@ -238,7 +237,7 @@ Bis es eine eigene Ergebnis-Eingabemaske gibt, werden abgeschlossene Partien kon
 - `actual_sets`: `2:0`, `2:1`, `1:2` oder `0:2`,
 - `winner`: `1` oder `2`.
 
-Das Setzen von `actual_sets` stellt `betting_open` automatisch auf `false`. Die statischen Saisondaten bleiben während der Übergangsphase ebenfalls die Quelle für Rangliste und Elo; Spielresultate sollten deshalb an beiden Stellen gleich gepflegt werden.
+Das Setzen von `actual_sets` stellt `betting_open` automatisch auf `false`.
 
 ## Auf GitHub Pages veröffentlichen
 

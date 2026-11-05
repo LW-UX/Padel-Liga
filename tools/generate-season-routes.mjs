@@ -14,6 +14,26 @@ const context = {
 vm.runInNewContext(fs.readFileSync(path.join(projectRoot, 'data/players.js'), 'utf8'), context);
 vm.runInNewContext(fs.readFileSync(path.join(projectRoot, 'data/seasons.js'), 'utf8'), context);
 vm.runInNewContext(fs.readFileSync(path.join(projectRoot, 'js/season-routing.js'), 'utf8'), context);
+vm.runInNewContext(fs.readFileSync(path.join(projectRoot, 'data/supabase-config.js'), 'utf8'), context);
+
+// Partien liegen ausschließlich in der Datenbank; die öffentliche Saisonabfrage liefert sie für die Unterseiten.
+async function loadDatabaseMatches(season) {
+  const config = context.window.PADEL_SUPABASE_CONFIG;
+  if (!config?.url || !config?.publishableKey) throw new Error('Supabase ist nicht konfiguriert.');
+  const response = await fetch(new URL('/rest/v1/rpc/get_public_season', config.url), {
+    method: 'POST',
+    headers: {
+      apikey: config.publishableKey,
+      authorization: `Bearer ${config.publishableKey}`,
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({ p_season_id: season.databaseId || season.id })
+  });
+  if (!response.ok) throw new Error(`Saison ${season.id} konnte nicht geladen werden (HTTP ${response.status}).`);
+  const payload = await response.json();
+  if (!Array.isArray(payload?.matches)) throw new Error(`Saison ${season.id} liefert keine Partien.`);
+  return payload.matches;
+}
 
 function addBase(html, href) {
   return html.replace('<head>', `<head>\n  <base href="${href}">`);
@@ -48,12 +68,9 @@ for (const season of context.window.PADEL_SEASONS || []) {
     );
   }
 
-  const seasonFile = String(season.file || '').split('?')[0];
-  if (!seasonFile) continue;
-  context.window.PADEL_SEASON = null;
-  vm.runInNewContext(fs.readFileSync(path.join(projectRoot, seasonFile), 'utf8'), context);
+  const matches = await loadDatabaseMatches(season);
   const slugs = new Set();
-  for (const match of context.window.PADEL_SEASON?.matches || []) {
+  for (const match of matches) {
     const slug = context.window.PadelSeasonRouting.getMatchSlug(match);
     if (!slug) continue;
     if (slugs.has(slug)) throw new Error(`Doppelter Partiepfad ${season.route}/partie/${slug}/`);
@@ -65,7 +82,7 @@ for (const season of context.window.PADEL_SEASONS || []) {
     );
   }
 
-  const liveMatches = (context.window.PADEL_SEASON?.matches || [])
+  const liveMatches = matches
     .map(match => ({ match, slug: context.window.PadelSeasonRouting.getLiveSlug(match) }))
     .filter(item => item.slug);
   if (liveMatches.length) {

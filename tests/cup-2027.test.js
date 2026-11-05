@@ -36,42 +36,17 @@ test('Cup 2027 is selectable without replacing Winter 2026 as default', () => {
   );
   assert.deepEqual(JSON.parse(JSON.stringify(cupOption)), {
     id: '2027-cup',
+    databaseId: 'cup-2027',
     label: 'Cup 2027',
     shortLabel: 'Cup27',
     route: 'cup27',
     visualTheme: 'cup',
     qualificationPlaces: 0,
-    file: 'data/data-2027-cup.js',
+    file: 'data/data-2027-cup.js?v=2026-11-05-database-seasons',
     default: false
   });
   assert.match(app, /const staticFallbacks = \[\.\.\.staticOptions\.values\(\)\]/);
   assert.match(app, /window\.PADEL_SEASONS = orderSeasonOptions\(\[\.\.\.databaseOptions, \.\.\.staticFallbacks\]\)/);
-});
-
-test('Cup 2027 prepares seven knockout matches and sixteen open quarterfinal places', () => {
-  const { PADEL_SEASON: season } = loadWindowScript('data/data-2027-cup.js');
-  const quarterfinals = season.matches.filter(match => match.stage === 'quarterfinal');
-  const semifinals = season.matches.filter(match => match.stage === 'semifinal');
-  const finals = season.matches.filter(match => match.stage === 'final');
-  const quarterfinalLabels = quarterfinals.flatMap(match => [
-    ...match.team1.qualifierLabels,
-    ...match.team2.qualifierLabels
-  ]);
-
-  assert.equal(season.startDate, '2027-01-01');
-  assert.equal(season.competition.tournamentMode, 'knockout-redraw');
-  assert.equal(season.participants.length, 0);
-  assert.equal(season.matches.length, 7);
-  assert.equal(quarterfinals.length, 4);
-  assert.equal(semifinals.length, 2);
-  assert.equal(finals.length, 1);
-  assert.deepEqual(
-    JSON.parse(JSON.stringify(quarterfinalLabels)),
-    Array.from({ length: 16 }, (_, index) => `Teilnehmer ${String(index + 1).padStart(2, '0')}`)
-  );
-  assert.ok(season.matches.every(match => match.format === 'best-of-three'));
-  assert.ok(season.matches.every(match => match.countsForRanking === false));
-  assert.ok(season.matches.every(match => match.countsForElo === true));
 });
 
 test('Cup mode renders its own navigation and responsive knockout funnel', () => {

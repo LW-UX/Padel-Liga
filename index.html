@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest?v=2026-11-03-timeless">
-  <link rel="stylesheet" href="branding/og-design.css?v=dc44dc1166">
+  <link rel="stylesheet" href="branding/og-design.css?v=e630ab7273">
   <script>
     // Browser laden CSS-Masken von file:// nicht; lokal geöffnet werden die Firmenlogos daher ohne Maske gezeigt.
     if (location.protocol === 'file:') document.documentElement.classList.add('is-file-protocol');
@@ -31,7 +31,7 @@
     })();
   </script>
   <link rel="stylesheet" href="achievements.css?v=2026-10-31">
-  <link rel="stylesheet" href="style.css?v=2026-11-04-elo-chain">
+  <link rel="stylesheet" href="style.css?v=2026-11-05-widget-cards">
   <link rel="stylesheet" href="account.css?v=2026-11-03-player-images">
   <link rel="stylesheet" href="whats-new.css?v=2026-10-30-with-icon">
   <script>
@@ -47,11 +47,11 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="match-statistics.css?v=2026-11-02-form-chip">
+  <link rel="stylesheet" href="match-statistics.css?v=2026-11-05-widget-cards">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="data/players.js?v=2026-10-20-test-net-emoji"></script>
-  <script defer src="data/seasons.js?v=2026-10-30-test-match-ten"></script>
+  <script defer src="data/seasons.js?v=2026-11-05-database-seasons"></script>
   <script defer src="js/season-routing.js?v=2026-11-03-profile-routes"></script>
   <script defer src="data/training-matches.js"></script>
   <script defer src="data/info.js"></script>
@@ -72,8 +72,8 @@
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/headline-split.js?v=2026-11-03-headline-split-2"></script>
   <script defer src="js/panel-layout.js?v=2026-11-03-split-left-sync"></script>
-  <script defer src="js/match-statistics.js?v=2026-11-03-player-images"></script>
-  <script defer src="js/app.js?v=2026-11-04-elo-chain"></script>
+  <script defer src="js/match-statistics.js?v=2026-11-05-widget-cards"></script>
+  <script defer src="js/app.js?v=2026-11-05-database-seasons"></script>
 </head>
 <body>
 
@@ -242,7 +242,7 @@
           <a class="text-link" id="home-prediction-ranking-link" href="tipp/#tippuebersicht">Zur Tipprangliste</a>
         </article>
 
-        <article class="widget widget-short">
+        <article class="widget">
           <div class="eyebrow">Kurzinfos</div>
           <h2>So funktioniert die Liga</h2>
           <ul id="home-short-info" class="clean-list loading-skeleton skeleton-short-info" aria-hidden="true">
@@ -319,7 +319,7 @@
       </div>
       <article class="widget">
         <div class="ranking-wrap">
-          <table class="rt company-ranking-table">
+          <table class="rt ranking-table company-ranking-table" data-ranking-sort="points">
             <thead>
               <tr>
                 <th class="col-rank">#</th>
@@ -348,7 +348,7 @@
       </div>
       <article class="widget">
         <div class="ranking-wrap ranking-wrap--fit">
-          <table class="rt rt--fit">
+          <table class="rt rt--fit ranking-table final-four-ranking-table" data-ranking-sort="points">
             <thead>
               <tr>
                 <th class="col-rank">#</th>
@@ -382,7 +382,7 @@
     </div>
     <div class="statistics-load-error" id="statistics-load-error" role="status" hidden></div>
     <div class="stats-grid">
-      <article class="widget favorite-check-widget">
+      <article class="widget">
         <h3>
           <span class="sh-title-with-help">Favoriten-Check
             <span class="th-help-wrap">
@@ -558,7 +558,7 @@
         </div>
         <div class="widget calculator-ranking-panel">
           <h3>Simulierte Rangliste</h3>
-          <div class="ranking-wrap calculator-ranking-wrap">
+          <div class="ranking-wrap">
             <table class="rt rt--dense">
               <thead>
                 <tr>
@@ -597,7 +597,7 @@
         </div>
         <div class="widget calculator-ranking-panel">
           <h3>Simulierte Final4-Rangliste</h3>
-          <div class="ranking-wrap calculator-ranking-wrap">
+          <div class="ranking-wrap">
             <table class="rt rt--dense rt--fit">
               <thead><tr><th class="col-rank">#</th><th class="col-name">Spieler</th><th class="col-wins"><span class="th-label-full">Siege</span><span class="th-label-short">S</span></th><th class="col-gv">G:V</th><th class="col-diff">Diff</th></tr></thead>
               <tbody id="final-four-calculator-ranking-body"></tbody>

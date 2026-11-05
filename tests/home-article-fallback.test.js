@@ -5,7 +5,6 @@ const test = require('node:test');
 
 const appSource = fs.readFileSync(path.join(__dirname, '..', 'js', 'app.js'), 'utf8');
 const htmlSource = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-const seasonSource = fs.readFileSync(path.join(__dirname, '..', 'data', 'data-2026-sommer.js'), 'utf8');
 const scheduleMigrationSource = fs.readFileSync(
   path.join(__dirname, '..', 'supabase', 'migrations', '20260928130000_schedule_summer_2026_final_four.sql'),
   'utf8'
@@ -22,7 +21,7 @@ test('home article fallback uses the latest published article instead of the fir
 });
 
 test('home announcement stays separate from the article archive and appears before the current article', () => {
-  assert.match(appSource, /homeAnnouncement: staticSeason\?\.homeAnnouncement \|\| null/);
+  assert.match(appSource, /homeAnnouncement: editorialSeason\.homeAnnouncement \|\| null/);
   assert.match(appSource, /getElementById\('home-announcement'\)/);
   assert.match(htmlSource, /id="home-announcement"[\s\S]*home-notice[\s\S]*widget-articles/);
   assert.doesNotMatch(appSource, /home-articles'\)\.innerHTML = `[\s\S]*home-announcement/);
@@ -46,12 +45,6 @@ test('home announcement expires exactly at the configured Berlin start time', ()
     null
   );
   assert.match(appSource, /window\.setTimeout\([\s\S]*?renderHomeAnnouncement/);
-});
-
-test('summer Final Four fallback contains the three approved start times', () => {
-  assert.match(seasonSource, /"id": "partie28"[\s\S]*?"datum": "2026-10-08"[\s\S]*?"uhrzeit": "18\.00"/);
-  assert.match(seasonSource, /"id": "partie29"[\s\S]*?"datum": "2026-10-08"[\s\S]*?"uhrzeit": "18\.30"/);
-  assert.match(seasonSource, /"id": "partie30"[\s\S]*?"datum": "2026-10-08"[\s\S]*?"uhrzeit": "19\.00"/);
 });
 
 test('summer Final Four migration schedules exactly the three open matches', () => {

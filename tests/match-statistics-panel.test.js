@@ -159,7 +159,7 @@ test('panel content uses compact match, prediction and statistics layouts', () =
   assert.match(statisticsStyle, /#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-ranking-layout \{\s*grid-template-columns: 1fr;/);
   assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \{[\s\S]*?max-width: var\(--match-detail-panel-max-width\);[\s\S]*?container: match-detail-panel \/ inline-size;/);
   assert.match(style, /@container match-detail-panel \(min-width: 1100px\) \{[\s\S]*?detail-view-dialog\[data-presentation="panel"\] \.detail-view-content \{[\s\S]*?width: min\(calc\(100% - 2rem\), 1100px\);/);
-  assert.match(statisticsStyle, /@container match-detail-panel \(min-width: 900px\) \{[\s\S]*?#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-ranking-layout \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
+  assert.match(statisticsStyle, /@container match-detail-panel \(min-width: 760px\) \{[\s\S]*?#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-ranking-layout \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
   assert.match(statisticsStyle, /\.match-statistics-form-row \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
   assert.match(statisticsStyle, /\.match-statistics-form-team \{[\s\S]*?display: grid;[\s\S]*?gap: 1\.5rem;/);
   assert.match(statisticsStyle, /#detail-view-dialog\[data-presentation="panel"\] \[data-statistics-graph-picker="team"\] \{[\s\S]*?display: grid;[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);

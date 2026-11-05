@@ -229,7 +229,7 @@ html:root .widget:has(.ranking-wrap):not(#start *, #verlauf *) {
 
 /* Secondary-Buttons, Dropdowns, Auswahlschalter, Zähler und der Split-Button der Spielerauswahl: Fläche --surface2 statt Rahmen.
    Textlinks unter den Schnellzugriffen wie „Zurück zur Liga“ bleiben ohne Fläche. */
-:root :is(.datetime-input-shell input, .auth-form input, .player-invite-output input, .secondary-button, .global-action:not(.text-link)),
+:root :is(.datetime-input-shell input, .auth-form input, .player-invite-output input, .secondary-button, .global-action:not(.text-link, .primary-button)),
 :root .global-actions .auth-button.is-authenticated.secondary-button,
 :root .toggle:not(.toggle--sort),
 :root .viewer-split-button,
@@ -263,4 +263,10 @@ html:root .widget:has(.ranking-wrap):not(#start *, #verlauf *) {
 :root .score-counter-field {
   box-shadow: none;
   background: var(--surface2);
+}
+
+/* Primärbuttons: weiße Schrift auf dem roten Akzent, auch der abgemeldete Login-Button. */
+:root .primary-button,
+:root .global-actions .auth-button.global-action:not(.is-authenticated) {
+  color: var(--text);
 }

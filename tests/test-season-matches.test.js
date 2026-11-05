@@ -2,10 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
-const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const source = fs.readFileSync(path.join(root, 'data', 'data-2026-test.js'), 'utf8');
 const migration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20260922130000_reset_test_season_roster.sql'),
   'utf8'
@@ -35,32 +33,10 @@ const matchStatisticsShowcaseMigration = fs.readFileSync(
   'utf8'
 );
 
-const context = { window: {} };
-vm.runInNewContext(source, context);
-const season = context.window.PADEL_SEASON;
-
-test('test season contains ten interactive matches plus a separate statistics history fixture', () => {
-  assert.equal(season.id, '2026-test');
-  assert.equal(season.competition.qualificationPlaces, 3);
-  assert.match(season.shortInfo.join(' '), /isoliertes Test-Elo/);
-  assert.deepEqual(
-    JSON.parse(JSON.stringify(season.matches.map(match => match.id))),
-    Array.from({ length: 10 }, (_, index) => `test-2026-partie-${index + 1}`)
-  );
-  assert.ok(season.matches.every(match => (
-    match.result === null && match.sets === null && match.winner === null
-  )));
+test('test season migrations keep the interactive matches and the separate statistics history fixture', () => {
   assert.match(migration, /delete from public\.matches[\s\S]*id not in/);
   assert.match(migration, /delete from public\.result_proposals/);
   assert.match(migration, /delete from public\.match_elo_changes/);
-  assert.deepEqual(
-    JSON.parse(JSON.stringify(season.matchdays.slice(-3))),
-    [
-      { spieltag: 3, startDate: '2026-10-05', endDate: '2026-11-12' },
-      { spieltag: 4, startDate: '2026-11-15', endDate: '2026-12-15' },
-      { spieltag: 5, startDate: '2027-01-01', endDate: '2027-01-21' }
-    ]
-  );
   assert.match(openMatchMigration, /values \('test-2026', 3, null, null, null\)/);
   assert.match(openMatchMigration, /'test-2026-partie-5'[\s\S]*'league'[\s\S]*'best-of-three'[\s\S]*null/);
   assert.match(openMatchMigration, /public\.profiles[\s\S]*profile\.player_id = any\(expected_players\)/);
@@ -78,27 +54,5 @@ test('test season contains ten interactive matches plus a separate statistics hi
   assert.match(matchStatisticsMigration, /not season\.counts_for_profile/);
   assert.match(matchStatisticsShowcaseMigration, /test-2026-statistics-history/);
   assert.match(matchStatisticsShowcaseMigration, /Testbetrieb Nord/);
-  assert.equal(season.matches.find(match => match.id === 'test-2026-partie-6').date, '2026-10-20');
 });
 
-test('all test matches use only the test players with GMX and Gmail opposing', () => {
-  const testNetMatchIds = [3, 4, 5, 6, 7, 8, 9].map(number => `test-2026-partie-${number}`);
-  const participantIds = JSON.parse(JSON.stringify(
-    season.participants.map(participant => participant.playerId).sort()
-  ));
-
-  assert.deepEqual(participantIds, ['ludi_gmail', 'ludi_gmx', 'ludi_ionos', 'ludwig_w', 'test_net']);
-
-  season.matches.forEach(match => {
-    const fourthPlayer = testNetMatchIds.includes(match.id) ? 'test_net' : 'ludwig_w';
-    const expectedPlayers = ['ludi_gmail', 'ludi_gmx', 'ludi_ionos', fourthPlayer].sort();
-    const playerIds = JSON.parse(JSON.stringify(
-      [...match.team1.playerIds, ...match.team2.playerIds].sort()
-    ));
-    const gmxTeam = match.team1.playerIds.includes('ludi_gmx') ? 1 : 2;
-    const gmailTeam = match.team1.playerIds.includes('ludi_gmail') ? 1 : 2;
-
-    assert.deepEqual(playerIds, expectedPlayers, match.id);
-    assert.notEqual(gmxTeam, gmailTeam, match.id);
-  });
-});

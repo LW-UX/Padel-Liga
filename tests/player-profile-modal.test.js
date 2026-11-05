@@ -787,19 +787,7 @@ test('profile data excludes the test season and includes confirmed training roun
   assert.match(profileMigration, /when .* = .* then 'draw'/s);
 });
 
-test('Sommer 2026 import matches the current static source dimensions', () => {
-  const context = { window: {} };
-  vm.createContext(context);
-  vm.runInContext(fs.readFileSync(path.join(root, 'data/data-2026-sommer.js'), 'utf8'), context);
-  const season = context.window.PADEL_SEASON;
-
-  assert.equal(season.players.length, 18);
-  assert.equal(season.matches.length, 30);
-  assert.equal(season.matches.filter(match => match.sieger !== null).length, 22);
-  assert.equal(
-    season.players.reduce((total, player) => total + Math.max(0, player.history.length - 1), 0),
-    88
-  );
+test('Sommer 2026 import checks the expected database dimensions', () => {
   assert.match(importMigration, /<> 18/);
   assert.match(importMigration, /<> 30/);
   assert.match(importMigration, /<> 22/);
@@ -814,7 +802,6 @@ test('Sommer 2026 label and confirmed profile achievements stay explicit', () =>
 
   assert.equal(context.window.PADEL_SEASON.id, '2026-sommer');
   assert.equal(context.window.PADEL_SEASON.label, 'Sommer 2026');
-  assert.equal(context.window.PADEL_SEASON.title, 'PadelLiga Sommer 2026');
   assert.match(importMigration, /'Sommer 2026'/);
   assert.match(achievementMigration, /from \(values \('luca_w'\), \('marco_m'\)\)/);
   assert.match(achievementMigration, /'Final 4 Teilnehmer'/);

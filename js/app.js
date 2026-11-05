@@ -243,39 +243,6 @@ function getBerlinDateTimeParts(value) {
   };
 }
 
-async function mergeDatabaseResults(rawSeason) {
-  if (!rawSeason.databaseResults) return rawSeason;
-  const client = getSupabaseClient();
-  if (!client) throw new Error('Supabase ist für die Test-Saison nicht konfiguriert.');
-  const matchIds = rawSeason.matches.map(match => match.id);
-  const { data: databaseMatches, error: matchError } = await client
-    .from('matches')
-    .select('id, match_at, result_details, actual_sets, winner, cancelled_at')
-    .in('id', matchIds);
-  if (matchError) throw matchError;
-
-  const matchesById = new Map((databaseMatches || []).map(match => [match.id, match]));
-
-  return {
-    ...rawSeason,
-    matches: rawSeason.matches.map(match => {
-      const stored = matchesById.get(match.id);
-      if (!stored) throw new Error(`Die Datenbank-Partie ${match.id} fehlt.`);
-      const matchTime = getBerlinDateTimeParts(stored.match_at);
-      return {
-        ...match,
-        matchAt: stored.match_at,
-        date: matchTime.date,
-        time: matchTime.time,
-        result: stored.result_details,
-        sets: stored.actual_sets,
-        winner: stored.winner,
-        cancelledAt: stored.cancelled_at
-      };
-    })
-  };
-}
-
 async function loadDatabaseSeasonOptions() {
   const client = getSupabaseClient();
   if (!client) return;
@@ -494,50 +461,6 @@ async function loadDatabaseAllTimeStatisticsPayload() {
   if (error) throw error;
   if (!data?.players || !data?.matches) throw new Error('Die All-Time-Daten sind unvollständig.');
   return data;
-}
-
-function normalizeLegacySeason(rawSeason) {
-  if (Array.isArray(rawSeason?.participants)) return rawSeason;
-  if (!Array.isArray(rawSeason?.players) || !Array.isArray(rawSeason?.matches)) return rawSeason;
-  const centralPlayers = new Map((window.PADEL_PLAYERS || []).map(player => [player.name, player.id]));
-  const qualifierRanks = new Map([['Erster', 1], ['Zweiter', 2], ['Dritter', 3], ['Vierter', 4]]);
-  const normalizeTeam = team => {
-    const names = Array.isArray(team?.spieler) ? team.spieler : [];
-    const playerIds = names.map(name => centralPlayers.get(name)).filter(Boolean);
-    return playerIds.length === names.length
-      ? { playerIds }
-      : {
-          qualifierRanks: names.map(name => qualifierRanks.get(name)).filter(Boolean),
-          qualifierLabels: names
-        };
-  };
-
-  return {
-    ...rawSeason,
-    participants: rawSeason.players.map(player => ({
-      playerId: player.id,
-      startElo: Number(player.history?.[0]?.elo)
-    })),
-    matches: rawSeason.matches.map(match => ({
-      id: `${rawSeason.matchIdPrefix || `season-${rawSeason.id}`}-partie-${String(match.id).match(/\d+$/)?.[0] || match.id}`,
-      type: 'season',
-      stage: match.stage || (match.countsForRanking === false ? 'final-four' : 'league'),
-      seasonId: rawSeason.id,
-      format: match.format || 'best-of-three',
-      countsForRanking: match.countsForRanking !== false,
-      countsForElo: match.countsForElo !== false,
-      matchday: match.spieltag,
-      date: match.datum,
-      time: match.uhrzeit,
-      result: match.ergebnis,
-      sets: match.saetze,
-      winner: match.sieger,
-      cancelledAt: match.cancelledAt || null,
-      displayLabel: match.displayLabel,
-      team1: normalizeTeam(match.team1),
-      team2: normalizeTeam(match.team2)
-    }))
-  };
 }
 
 function countsForRanking(match) {
@@ -1001,21 +924,17 @@ async function loadSeasonData(season) {
     season.file ? loadScript(season.file) : Promise.resolve(),
     loadDatabaseSeasonPayload(season)
   ]);
-  const staticSeason = window.PADEL_SEASON ? normalizeLegacySeason(window.PADEL_SEASON) : null;
-  const databaseSeasonIsComplete = Boolean(
-    databaseSeason
-    && (!staticSeason || databaseSeason.matches?.length >= staticSeason.matches?.length)
-  );
-  const rawSeason = databaseSeasonIsComplete
-    ? {
-        ...databaseSeason,
-        articles: staticSeason?.articles || [],
-        homeAnnouncement: staticSeason?.homeAnnouncement || null,
-        matchdayBreaks: staticSeason?.matchdayBreaks || [],
-        shortInfo: databaseSeason.shortInfo?.length ? databaseSeason.shortInfo : staticSeason?.shortInfo || [],
-        organizations: databaseSeason.organizations?.length ? databaseSeason.organizations : staticSeason?.organizations || []
-      }
-    : await mergeDatabaseResults(staticSeason);
+  // Partien, Teilnehmer und Elo stammen ausschließlich aus der Datenbank; die Saisondatei liefert nur Redaktionelles.
+  const editorialSeason = window.PADEL_SEASON || {};
+  if (!databaseSeason) throw new Error(`Saison ${season.id} ist in der Datenbank nicht verfügbar.`);
+  const rawSeason = {
+    ...databaseSeason,
+    articles: editorialSeason.articles || [],
+    homeAnnouncement: editorialSeason.homeAnnouncement || null,
+    matchdayBreaks: editorialSeason.matchdayBreaks || [],
+    shortInfo: databaseSeason.shortInfo?.length ? databaseSeason.shortInfo : editorialSeason.shortInfo || [],
+    organizations: databaseSeason.organizations?.length ? databaseSeason.organizations : editorialSeason.organizations || []
+  };
 
   if (!rawSeason?.participants || !rawSeason?.matches) {
     throw new Error(`Saison ${season.id} ist unvollständig.`);
@@ -4687,8 +4606,8 @@ function renderFirmenRanking() {
   document.getElementById('fr-meta').textContent = '3 Firmen';
   document.getElementById('fr-body').innerHTML = stats.map((f, i) => {
     return `<tr class="r${i+1} ${isSelectedViewerFirma(f.firma) ? 'viewer-highlight' : ''}">
-      <td class="col-rank rank-position">${i+1}</td>
-      <td class="col-company"><span class="pname">${f.firma}</span></td>
+      <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${i+1}</span></span></td>
+      <td class="col-company"><span class="player-cell-inner"><span class="ranking-player-name"><span class="pname">${escapeHtml(f.firma)}</span></span>${COMPANIES_WITH_LOGO.includes(f.firma) ? renderCompanyIcon(f.firma) : ''}</span></td>
       <td class="col-participants">${f.teilnehmer}</td>
       <td class="col-games">${f.partien}</td>
       <td class="col-points-per-player rank-score">${f.pktPerTN.toFixed(2)}</td>
@@ -4833,8 +4752,8 @@ function renderFinalFourRanking() {
     const profilePlayerId = eloPlayer?.id || getPlayerIdByName(player.name);
 
     return `<tr class="r${index + 1} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}"${renderPlayerProfileRowAttributes({ id: profilePlayerId, name: player.name })}>
-      <td class="col-rank rank-position">${index + 1}</td>
-      <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(player, 'pname')}${replacementMark}</span></span></td>
+      <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${index + 1}</span>${renderRankingAvatar(eloPlayer || { id: profilePlayerId })}</span></td>
+      <td class="col-name"><span class="player-cell-inner"><span class="ranking-player-name">${renderPlayerProfileLink(player, 'pname')}${replacementMark}</span>${eloPlayer ? renderRankingCompanyBadge(eloPlayer) : ''}</span></td>
       <td class="col-wins rank-score">${player.siege}</td>
       <td class="col-gv">${player.spieleGV}</td>
       <td class="col-diff">${renderDiffValue(player.diff)}</td>
@@ -6548,10 +6467,9 @@ function renderRankingDeviationFact(targetId, fromMode, toMode, topDirection = '
 
   const modeLabels = {
     points: 'Punkte',
-    elo: 'Elo',
-    'draw-factor': 'Losfaktor'
+    elo: 'Elo'
   };
-  const labels = getRankingDeviationLabels(targetId);
+  const labels = getRankingDeviationLabels();
   const { up, down } = getRankingDeviationGroups(fromMode, toMode, topDirection);
   const renderShiftItem = item => `<div class="stat-shift-item">
     <div class="stat-shift-head">
@@ -6572,6 +6490,67 @@ function renderRankingDeviationFact(targetId, fromMode, toMode, topDirection = '
       <div class="stat-shift-group">
         <h3>${escapeHtml(labels.bottom)}</h3>
         <div class="stat-shift-list">${down.length ? down.map(renderShiftItem).join('') : '<div class="hint">Keine Absteiger.</div>'}</div>
+      </div>
+    </div>
+  `;
+}
+
+// Lospech/Losglück: Team-Elo gegen Gegner-Team-Elo über alle Ligapartien der Saison,
+// jeweils mit dem eingefrorenen Start-Elo vor Saisonbeginn und der Team-Elo-Formel der Auslosung.
+function getPlayerDrawLuckElo(player, matches = PADEL_DATA.matches, data = PADEL_DATA) {
+  const startElos = new Map(data.players.map(entry => [entry.name, Number(entry.startElo)]));
+  const teamElos = [];
+  const opponentElos = [];
+
+  getPlayerMatches(player, matches)
+    .filter(match => countsForRanking(match) && !isCancelledMatch(match))
+    .forEach(match => {
+      const teamIndex = getPlayerMatchTeamIndex(player, match);
+      if (!teamIndex) return;
+
+      const team = (teamIndex === 1 ? match.team1 : match.team2).spieler.map(name => startElos.get(name));
+      const opponents = (teamIndex === 1 ? match.team2 : match.team1).spieler.map(name => startElos.get(name));
+      if (team.length !== 2 || opponents.length !== 2) return;
+      if ([...team, ...opponents].some(elo => !Number.isFinite(elo))) return;
+
+      teamElos.push(getWeightedTeamElo(team));
+      opponentElos.push(getWeightedTeamElo(opponents));
+    });
+
+  if (!teamElos.length) return null;
+
+  const teamAverage = Math.round(average(teamElos));
+  const opponentAverage = Math.round(average(opponentElos));
+  return { teamAverage, opponentAverage, diff: teamAverage - opponentAverage };
+}
+
+function renderDrawLuckFact(targetId) {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+
+  const items = PADEL_DATA.players
+    .map(player => ({ player, ...getPlayerDrawLuckElo(player) }))
+    .filter(item => Number.isFinite(item.diff));
+  const byName = (a, b) => a.player.name.localeCompare(b.player.name, 'de');
+  const unlucky = items.filter(item => item.diff < 0).sort((a, b) => a.diff - b.diff || byName(a, b)).slice(0, 2);
+  const lucky = items.filter(item => item.diff > 0).sort((a, b) => b.diff - a.diff || byName(a, b)).slice(0, 2);
+  const renderItem = item => `<div class="stat-shift-item">
+    <div class="stat-shift-head">
+      ${renderPlayerProfileLink(item.player, `stat-shift-name ${isSelectedPlayer(item.player.name) ? 'viewer-player' : ''}`)}
+      <span class="stat-shift-value ${getDeltaClass(item.diff)}">${formatSignedInteger(item.diff)}</span>
+    </div>
+    <div class="hint stat-meta-line">Team-Elo Ø ${item.teamAverage} · Gegner-Elo Ø ${item.opponentAverage}</div>
+  </div>`;
+
+  target.innerHTML = `
+    <div class="stat-shift-groups">
+      <div class="stat-shift-group">
+        <h3>Lospech</h3>
+        <div class="stat-shift-list">${unlucky.length ? unlucky.map(renderItem).join('') : '<div class="hint">Kein Lospech.</div>'}</div>
+      </div>
+      <div class="stat-shift-group">
+        <h3>Losglück</h3>
+        <div class="stat-shift-list">${lucky.length ? lucky.map(renderItem).join('') : '<div class="hint">Kein Losglück.</div>'}</div>
       </div>
     </div>
   `;
@@ -6850,7 +6829,7 @@ function renderStatistik() {
   renderAverageSetScoreFact();
   if (!isAllTimeStatistics()) {
     renderRankingDeviationFact('stats-elo-points-deviation', 'points', 'elo', 'positive');
-    renderRankingDeviationFact('stats-points-draw-factor-deviation', 'points', 'draw-factor', 'positive');
+    renderDrawLuckFact('stats-points-draw-factor-deviation');
     renderFinalFourForecast();
   } else {
     renderAllTimeRanking();
@@ -8599,10 +8578,8 @@ function getPlayerMatchEloTooltipData(playerName, match) {
   };
 }
 
-function getRankingDeviationLabels(targetId) {
-  return targetId === 'stats-elo-points-deviation'
-    ? { top: 'Überperformt', bottom: 'Underperformt' }
-    : { top: 'Lospech', bottom: 'Losglück' };
+function getRankingDeviationLabels() {
+  return { top: 'Überperformt', bottom: 'Underperformt' };
 }
 
 function formatResultForPlayer(result, isTeam1) {

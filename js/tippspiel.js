@@ -163,6 +163,19 @@
       : BEST_OF_THREE_PREDICTIONS;
   }
 
+  // Einsatz-Tipps: Siege von Team 1 links, Siege von Team 2 gespiegelt rechts.
+  // Desktop füllt je Hälfte zeilenweise (4 + 3), mobil spaltenweise (4 + 3).
+  function getSingleSetOptionPlacement(index) {
+    const half = SINGLE_SET_PREDICTIONS.length / 2;
+    const isTeam2 = index >= half;
+    const sideIndex = isTeam2 ? index - half : index;
+    const major = sideIndex < 4 ? 1 : 2;
+    const minor = sideIndex < 4 ? sideIndex : sideIndex - 4;
+    const desktopColumn = isTeam2 ? 8 - minor : minor + 1;
+    const mobileColumn = isTeam2 ? 5 - major : major;
+    return `--tip-col:${desktopColumn};--tip-row:${major};--tip-mobile-col:${mobileColumn};--tip-mobile-row:${minor + 1}`;
+  }
+
   function getActualPredictionValue(match) {
     if (getMatchFormat(match) !== 'single-set') return getActualSets(match);
     const resultDetails = state.databaseMatches.get(match.id)?.result_details || match.ergebnis;
@@ -1107,9 +1120,10 @@
             <div class="prediction-team prediction-team-2">${renderTeam(match.team2)}</div>
           </div>
           ${isUpcoming ? `<div class="prediction-options prediction-options--upcoming">${escapeHtml(formatPredictionOpensOn(match))}</div>` : `<div class="prediction-options" role="group" aria-label="Satzergebnis für Partie ${escapeHtml(match.id)} tippen">
-            ${getPredictionOptions(match).map(prediction => `
+            ${getPredictionOptions(match).map((prediction, index) => `
               <button
                 type="button"
+                ${matchFormat === 'single-set' ? `style="${getSingleSetOptionPlacement(index)}"` : ''}
                 class="prediction-option ${selected === prediction ? 'active' : ''} ${floorPredictions?.has(prediction) ? 'is-own-floor' : ''} ${actualPredictionValue === prediction ? 'is-result' : ''}"
                 data-prediction-match="${escapeHtml(match.id)}"
                 data-prediction-value="${prediction}"
@@ -1279,6 +1293,17 @@
     return playerIds.length ? playerIds.map(getPlayerShortLabel).join('/') : 'offen';
   }
 
+  // Beim Hovern einer Spalte fährt über den Kürzeln ein Feld mit den vollen Teamnamen aus.
+  // Es liegt absolut über dem Kopf, damit sich die Spaltenbreite nicht ändert.
+  function renderPredictionTableTeams(match) {
+    const shortLabels = [match.team1, match.team2].map(getPredictionTableTeamLabel);
+    const fullLabels = [match.team1, match.team2].map(team => team?.spieler?.length ? team.spieler.join(' / ') : '');
+    const teams = shortLabels.map(label => `<span class="prediction-table-team">${escapeHtml(label)}</span>`).join('');
+    const hasFullLabels = fullLabels.every(Boolean) && fullLabels.some((label, index) => label !== shortLabels[index]);
+    if (!hasFullLabels) return teams;
+    return `${teams}<span class="prediction-table-teams-full" aria-hidden="true">${fullLabels.map(label => `<span class="prediction-table-team">${escapeHtml(label)}</span>`).join('')}</span>`;
+  }
+
   // Der Fokus liegt auf dem zuletzt gespielten bestätigten Ergebnis.
   function getLastConfirmedMatchId(matches) {
     const confirmed = matches.filter(match => getActualSets(match) && !isCancelledMatch(match));
@@ -1292,22 +1317,45 @@
     return `<span class="prediction-table-value">${escapeHtml(value)}${extraSuffix}${pointsHtml}</span>`;
   }
 
+  // Vor dem Tippschluss: der eigene Tipp zeigt einen Haken, fremde Tipps einen Strich.
   function renderPredictionTableHiddenCell(isOwnRow) {
     return isOwnRow
       ? '<td class="prediction-table-cell is-hidden" title="Getippt – sichtbar ab Tippschluss" aria-label="Getippt">✓</td>'
-      : '<td class="prediction-table-cell is-hidden"></td>';
+      : '<td class="prediction-table-cell is-hidden" title="Getippt – sichtbar ab Tippschluss" aria-label="Getippt">–</td>';
   }
 
-  function renderPredictionTableMatchCell(entry, match, isOwnRow = false) {
+  function renderPredictionTableRacket() {
+    return `<span class="prediction-table-racket" role="img" aria-label="Eigene Partie"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${RACKET_ICON_SVG}</svg></span>`;
+  }
+
+  // Spieler des Kontos: beim eigenen Konto aus dem Profil, sonst über den Namen wie beim Kürzel.
+  function getPredictionAccountPlayerId(entry, isOwnRow) {
+    if (isOwnRow) return state.profile?.player_id || null;
+    if (!entry?.is_player) return null;
+    const normalize = value => String(value || '').replace(/[.\s]+/g, ' ').trim().toLocaleLowerCase('de');
+    const displayName = normalize(entry.display_name);
+    return displayName
+      ? (window.PADEL_PLAYERS || []).find(player => normalize(player.name) === displayName)?.id || null
+      : null;
+  }
+
+  function isMatchOfPlayer(match, playerId) {
+    return Boolean(playerId && [
+      ...(match?.team1?.playerIds || []),
+      ...(match?.team2?.playerIds || [])
+    ].includes(playerId));
+  }
+
+  function renderPredictionTableMatchCell(entry, match, isOwnRow = false, accountPlayerId = null) {
     const isCancelled = isCancelledMatch(match);
-    // Die eigene, nicht tippbare Partie erhält bis zur automatischen Gutschrift einen Strich.
-    if (isOwnRow && !entry?.is_passive && isOwnMatch(match)) {
-      return '<td class="prediction-table-cell is-own-match" title="Eigene Partie – kein Tipp möglich" aria-label="Eigene Partie">–</td>';
+    // Eigene, bereits geöffnete Partien des Kontos zeigen bis zur automatischen Gutschrift den Schläger ohne Punkte.
+    if (!entry?.is_passive && isMatchOfPlayer(match, accountPlayerId) && isPredictionTableMatchActive(match)) {
+      return `<td class="prediction-table-cell is-own-match" title="Eigene Partie – kein Tipp möglich">${renderPredictionTableRacket()}</td>`;
     }
     if (!entry) return '<td class="prediction-table-cell is-empty" aria-label="Kein Tipp"></td>';
     if (entry.is_passive) {
       const points = Number(entry.points) || 0;
-      const icon = `<span class="prediction-table-racket" role="img" aria-label="Eigene Partie"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${RACKET_ICON_SVG}</svg></span>`;
+      const icon = renderPredictionTableRacket();
       return `<td class="prediction-table-cell is-passive" title="Eigene Partie: automatisch ${points} Punkte">${renderPredictionTableCellContent('', points, icon, true)}</td>`;
     }
     if (entry.prediction === null || entry.prediction === undefined) return renderPredictionTableHiddenCell(isOwnRow);
@@ -1370,7 +1418,7 @@
     const title = hasTeams
       ? `Partie ${number}: ${match.team1.spieler.join(' & ')} vs. ${match.team2.spieler.join(' & ')}`
       : `Partie ${number}: Teilnehmer stehen noch nicht fest`;
-    const content = `<span class="prediction-table-team">${escapeHtml(getPredictionTableTeamLabel(match.team1))}</span><span class="prediction-table-team">${escapeHtml(getPredictionTableTeamLabel(match.team2))}</span><span class="prediction-table-result${actualValue && !isCancelled ? ' has-result' : ''}">${escapeHtml(result)}</span>`;
+    const content = `${renderPredictionTableTeams(match)}<span class="prediction-table-result${actualValue && !isCancelled ? ' has-result' : ''}">${escapeHtml(result)}</span>`;
     // Noch nicht geöffnete Partien haben keine Vorschau und bleiben deshalb unverlinkt.
     const isActive = isPredictionTableMatchActive(match);
     const inner = hasTeams && isActive
@@ -1407,12 +1455,13 @@
     </thead>`;
     const body = entries.map(entry => {
       const isOwnRow = state.session?.user?.id === entry.user_id;
+      const accountPlayerId = getPredictionAccountPlayerId(entry, isOwnRow);
       const cells = groups.map(group => {
         let groupPoints = 0;
         const matchCells = group.matches.map(match => {
           const tableEntry = getPredictionTableEntry(entry.user_id, 'match', match.id);
           if (Number.isFinite(Number(tableEntry?.points))) groupPoints += Number(tableEntry.points);
-          return renderPredictionTableMatchCell(tableEntry, match, isOwnRow);
+          return renderPredictionTableMatchCell(tableEntry, match, isOwnRow, accountPlayerId);
         }).join('');
         return `${matchCells}<td class="${group.totalClass}">${groupPoints}</td>`;
       }).join('');
@@ -1426,21 +1475,29 @@
     return getPlayerShortLabel(answer);
   }
 
+  function getBonusAnswerFullLabel(question, answer) {
+    return question.question_type === 'company_winner' ? answer : getBonusOptionLabel(answer);
+  }
+
   function renderPredictionTableBonusCell(entry, question, isOwnRow = false) {
     if (!entry) return '<td class="prediction-table-cell is-empty" aria-label="Kein Tipp"></td>';
     if (!Array.isArray(entry.answers)) return renderPredictionTableHiddenCell(isOwnRow);
     const points = entry.points === null || entry.points === undefined ? null : Number(entry.points);
-    const fullLabel = entry.answers.map(answer => question.question_type === 'company_winner' ? answer : getBonusOptionLabel(answer)).join(', ');
-    let value = entry.answers.map(answer => getBonusAnswerShortLabel(question, answer)).join('/');
+    const fullLabel = entry.answers.map(answer => getBonusAnswerFullLabel(question, answer)).join(', ');
+    // Final Four: alle Kürzel nebeneinander, jeder Treffer mit eigener kleiner Punktzahl.
     if (question.question_type === 'final_four_players') {
       const correct = new Set(question.correct_answers || []);
-      value = question.resolved
-        ? `${entry.answers.filter(answer => correct.has(answer)).length}/${entry.answers.length}`
-        : `${entry.answers.length} Sp.`;
+      const pointsPerCorrect = Number(question.points_per_correct) || 4;
+      const picks = entry.answers.map(answer => {
+        const pickPoints = question.resolved ? (correct.has(answer) ? pointsPerCorrect : 0) : null;
+        const zeroClass = pickPoints === 0 ? ' is-zero' : '';
+        return `<span class="prediction-table-pick${zeroClass}" title="${escapeHtml(getBonusAnswerFullLabel(question, answer))}">${renderPredictionTableCellContent(getBonusAnswerShortLabel(question, answer), pickPoints)}</span>`;
+      }).join('');
+      return `<td class="prediction-table-cell is-visible is-final-four-picks" title="${escapeHtml(fullLabel)}"><span class="prediction-table-picks">${picks}</span></td>`;
     }
-    const classes = ['prediction-table-cell', 'is-visible'];
+    const classes = ['prediction-table-cell', 'is-visible', 'is-bonus-name'];
     if (points === 0) classes.push('is-zero');
-    return `<td class="${classes.join(' ')}" title="${escapeHtml(fullLabel)}">${renderPredictionTableCellContent(value, points)}</td>`;
+    return `<td class="${classes.join(' ')}" title="${escapeHtml(fullLabel)}">${renderPredictionTableCellContent(fullLabel, points)}</td>`;
   }
 
   // Der Bonuskopf folgt dem Partienkopf: Gruppentitel, weißer Fragentitel und Status in der Datumszeile.
@@ -1457,8 +1514,10 @@
         ${questions.map(question => {
           const presentation = getBonusQuestionPresentation(question);
           const status = question.resolved
-            ? (question.correct_answers || []).map(answer => getBonusAnswerShortLabel(question, answer)).join('/')
-            : isBonusQuestionOpen(question) ? 'offen' : 'gesperrt';
+            ? question.question_type === 'final_four_players'
+              ? (question.correct_answers || []).map(answer => getBonusAnswerShortLabel(question, answer)).join('/')
+              : (question.correct_answers || []).map(answer => getBonusAnswerFullLabel(question, answer)).join(', ')
+            : isBonusQuestionOpen(question) ? 'offen' : '–';
           return `<th scope="col" class="prediction-table-question" title="${escapeHtml(presentation.question)}"><span class="prediction-table-match-link"><span class="prediction-table-question-title">${escapeHtml(presentation.title)}</span><span class="prediction-table-result">${escapeHtml(status)}</span></span></th>`;
         }).join('')}
       </tr>
@@ -1515,9 +1574,35 @@
     if (!table) return;
     table.querySelectorAll('.is-column-hover').forEach(node => node.classList.remove('is-column-hover'));
     if (!cell || cell.classList.contains('prediction-table-account')) return;
-    const columnIndex = cell.cellIndex;
+    // Ein Partiekopf aktiviert seine eigene Spalte, damit Kopf und Spalte nie auseinanderlaufen.
+    const columnIndex = cell.closest('thead')
+      ? [...(table.tBodies[0]?.rows[0]?.cells || [])].findIndex((_, index) => getPredictionTableHeaderCell(table, index) === cell)
+      : cell.cellIndex;
+    if (columnIndex < 0) return;
     [...(table.tBodies[0]?.rows || [])].forEach(row => row.cells[columnIndex]?.classList.add('is-column-hover'));
-    getPredictionTableHeaderCell(table, columnIndex)?.classList.add('is-column-hover');
+    const headerCell = getPredictionTableHeaderCell(table, columnIndex);
+    headerCell?.classList.add('is-column-hover');
+    positionPredictionTableTeams(headerCell);
+  }
+
+  // Das Namensfeld wird so verschoben, dass es weder unter den fixierten Namens- und
+  // Gesamtspalten noch am Rand der Tabelle abgeschnitten wird.
+  function positionPredictionTableTeams(headerCell) {
+    const overlay = headerCell?.querySelector('.prediction-table-teams-full');
+    const table = document.getElementById('prediction-table');
+    const wrap = table?.closest('.prediction-table-wrap');
+    if (!overlay || !wrap) return;
+    const wrapRect = wrap.getBoundingClientRect();
+    const accountRight = table.querySelector('thead .prediction-table-account')?.getBoundingClientRect().right;
+    const totalLeft = table.querySelector('thead .prediction-table-total')?.getBoundingClientRect().left;
+    const margin = 4;
+    const minLeft = Math.max(wrapRect.left, accountRight ?? wrapRect.left) + margin;
+    const maxRight = Math.min(wrapRect.right, totalLeft ?? wrapRect.right) - margin;
+    const anchor = overlay.parentElement.getBoundingClientRect();
+    const width = overlay.offsetWidth;
+    const centeredLeft = anchor.left + anchor.width / 2 - width / 2;
+    const left = Math.max(minLeft, Math.min(centeredLeft, maxRight - width));
+    overlay.style.setProperty('--teams-shift', `${Math.round(left - centeredLeft)}px`);
   }
 
   function renderPredictionTable() {
@@ -1944,7 +2029,7 @@
     });
     const predictionTable = document.getElementById('prediction-table');
     predictionTable?.addEventListener('mouseover', event => {
-      highlightPredictionTableColumn(event.target.closest('tbody :is(td, th)'));
+      highlightPredictionTableColumn(event.target.closest('thead th.prediction-table-match, tbody :is(td, th)'));
     });
     predictionTable?.addEventListener('mouseleave', () => highlightPredictionTableColumn(null));
     document.addEventListener('input', event => {

@@ -182,3 +182,20 @@
 table.rt tbody tr:nth-child(even):not(:hover) {
   background: var(--surface);
 }
+
+/* Ligaartikel und Einordnung der Partie behalten ihre eigene Fläche, obwohl die Inhaltsbereiche frei stehen. */
+:root .article-card {
+  border-color: var(--border);
+  padding: 1rem;
+  background: var(--surface);
+}
+:root .match-statistics-context {
+  padding: 1rem 1.2rem;
+  border-color: var(--border);
+  border-radius: var(--container-radius-sm);
+  background: var(--surface);
+}
+:root .home-article-preview::after,
+:root .prediction-overview-article .home-article-preview::after {
+  background: linear-gradient(to bottom, transparent, var(--surface));
+}

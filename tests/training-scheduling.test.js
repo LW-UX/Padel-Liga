@@ -113,7 +113,7 @@ test('completed seasons stop the home training feed at their Berlin completion d
   assert.match(app, /getSeasonTrainingCutoffDate\(selectedSeason\?\.completedAt\)/);
   assert.match(app, /get_public_training_feed', \{ p_test_mode: testMode, p_until: cutoffDate \}/);
 
-  const berlinDateHelper = app.match(/function getBerlinDateTimeParts\([^]*?(?=\n\nasync function mergeDatabaseResults)/)?.[0] || '';
+  const berlinDateHelper = app.match(/function getBerlinDateTimeParts\([^]*?(?=\n\nasync function loadDatabaseSeasonOptions)/)?.[0] || '';
   const cutoffHelper = app.match(/function getSeasonTrainingCutoffDate\([^]*?(?=\nfunction filterPublicTrainingFeedForSeason)/)?.[0] || '';
   const filterHelper = app.match(/function filterPublicTrainingFeedForSeason\([^]*?(?=\nasync function loadDatabasePublicTrainingFeed)/)?.[0] || '';
   const filterForSeason = Function(`

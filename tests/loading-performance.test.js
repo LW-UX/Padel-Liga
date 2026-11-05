@@ -26,9 +26,7 @@ test('season file and database start together and hydrate before PadelTipp forec
     window: {},
     loadScript: () => { calls.push('script'); return script.promise; },
     loadDatabaseSeasonPayload: () => { calls.push('database'); return database.promise; },
-    normalizeLegacySeason: value => value,
-    hydrateSeasonData: value => { calls.push('hydrate'); return value; },
-    mergeDatabaseResults: value => value
+    hydrateSeasonData: value => { calls.push('hydrate'); return value; }
   });
   vm.runInContext(fn(app, 'loadSeasonData'), context);
   const request = context.loadSeasonData({ id: 'summer', file: 'summer.js' });
@@ -172,7 +170,7 @@ test('a closed season keeps historical matches visible without reopening submiss
 
 test('PadelTipp starts season, module and account together without blocking on account startup', async () => {
   const calls = [];
-  const accountReady = deferred(), seasonReady = deferred(), moduleReady = deferred();
+  const accountReady = deferred(), seasonReady = deferred(), moduleReady = deferred(), databaseReady = deferred();
   const season = { id: '2026-sommer', label: 'Sommer 2026' };
   const window = {
     PADEL_SEASON: null,
@@ -188,7 +186,13 @@ test('PadelTipp starts season, module and account together without blocking on a
     },
     console,
     normalizeLegacySeasonUrl() {},
-    getSelectedSeason: () => ({ file: 'data/season.js' }),
+    getSelectedSeason: () => ({ id: '2026-sommer', file: 'data/season.js' }),
+    async loadDatabaseSeason() {
+      calls.push('database');
+      await databaseReady.promise;
+      return { matches: [], participants: [] };
+    },
+    mergeEditorialSeason: (selected, databaseSeason, editorialSeason) => ({ ...databaseSeason, ...editorialSeason }),
     renderSeasonPicker() {},
     bindNavigation() {},
     hydrateSeason: value => value,
@@ -212,13 +216,14 @@ test('PadelTipp starts season, module and account together without blocking on a
     fn(tippingPage, 'init', '  ')
   ].join('\n'), context);
   const request = context.init();
-  assert.deepEqual(calls, ['account', 'season', 'tippspiel-module']);
+  assert.deepEqual(calls, ['account', 'database', 'season', 'tippspiel-module']);
   moduleReady.resolve();
-  await new Promise(resolve => setImmediate(resolve));
-  assert.equal(calls.length, 3);
   seasonReady.resolve();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls.length, 4);
+  databaseReady.resolve();
   await request;
-  assert.deepEqual(calls, ['account', 'season', 'tippspiel-module', 'tippspiel:2026-sommer']);
+  assert.deepEqual(calls, ['account', 'database', 'season', 'tippspiel-module', 'tippspiel:2026-sommer']);
   accountReady.resolve();
 });
 
@@ -320,26 +325,26 @@ test('personal PadelTipp responses cannot restore tips after logout', async () =
   assert.equal(state.predictions.size, 0);
 });
 
-test('the PadelTipp page reuses the legacy season match prefix', () => {
-  const window = {
-    PADEL_PLAYERS: [
-      { id: 'a', name: 'A' }, { id: 'b', name: 'B' },
-      { id: 'c', name: 'C' }, { id: 'd', name: 'D' }
-    ]
-  };
+test('the PadelTipp page takes matches from the database and only editorial content from the season file', () => {
+  const window = { PADEL_PLAYERS: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }] };
   const context = vm.createContext({ window });
-  vm.runInContext(fn(tippingPage, 'hydrateSeason', '  '), context);
-  const season = context.hydrateSeason({
-    id: '2026-sommer',
-    matchIdPrefix: 'season-2026',
-    players: window.PADEL_PLAYERS,
-    matches: [{
-      id: 'partie1', spieltag: 1, datum: null, uhrzeit: null, ergebnis: null, saetze: null, sieger: null,
-      team1: { spieler: ['A', 'B'] }, team2: { spieler: ['C', 'D'] }
-    }]
-  });
-  assert.equal(season.matches[0].id, 'season-2026-partie-1');
-  assert.deepEqual(JSON.parse(JSON.stringify(season.matches[0].team1.playerIds)), ['a', 'b']);
+  vm.runInContext([fn(tippingPage, 'mergeEditorialSeason', '  '), fn(tippingPage, 'hydrateSeason', '  ')].join('\n'), context);
+  const season = context.hydrateSeason(context.mergeEditorialSeason(
+    { id: '2026-test', databaseId: 'test-2026', label: 'Test-Saison' },
+    {
+      id: 'test-2026',
+      shortInfo: [],
+      participants: [],
+      matches: [{ id: 'test-2026-live-1', seasonId: 'test-2026', matchday: 3, stage: 'final-four', team1: { playerIds: ['a'] }, team2: { playerIds: ['b'] } }]
+    },
+    { articles: ['editorial'], shortInfo: ['Info'], matches: [{ id: 'ignored' }] }
+  ));
+  assert.equal(season.id, '2026-test');
+  assert.equal(season.databaseId, 'test-2026');
+  assert.deepEqual(JSON.parse(JSON.stringify(season.matches.map(match => [match.id, match.seasonId, match.spieltag]))), [['test-2026-live-1', '2026-test', 3]]);
+  assert.deepEqual(JSON.parse(JSON.stringify(season.matches[0].team1.spieler)), ['A']);
+  assert.deepEqual(JSON.parse(JSON.stringify(season.articles)), ['editorial']);
+  assert.deepEqual(JSON.parse(JSON.stringify(season.shortInfo)), ['Info']);
 });
 
 test('account startup publishes identity without waiting for private game tasks', async () => {

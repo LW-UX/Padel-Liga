@@ -31,26 +31,35 @@
     });
   }
 
+  // Partien, Teilnehmer und Elo stammen wie auf der Ligaseite ausschließlich aus der Datenbank.
+  async function loadDatabaseSeason(selected) {
+    const client = window.PadelKonto.getClient?.();
+    if (!client) throw new Error('Supabase ist nicht vollständig konfiguriert.');
+    const { data, error } = await client.rpc('get_public_season', { p_season_id: selected.databaseId || selected.id });
+    if (error) throw error;
+    if (!data?.matches || !data?.participants) throw new Error(`Saison ${selected.id} ist in der Datenbank nicht verfügbar.`);
+    return data;
+  }
+
+  // Die Saisondatei liefert nur noch redaktionelle Inhalte wie Artikel und Infotexte.
+  function mergeEditorialSeason(selected, databaseSeason, editorialSeason) {
+    return {
+      ...databaseSeason,
+      id: selected.id,
+      databaseId: selected.databaseId || databaseSeason.id,
+      label: selected.label || databaseSeason.label,
+      articles: editorialSeason.articles || [],
+      shortInfo: databaseSeason.shortInfo?.length ? databaseSeason.shortInfo : editorialSeason.shortInfo || [],
+      organizations: databaseSeason.organizations?.length ? databaseSeason.organizations : editorialSeason.organizations || [],
+      matches: databaseSeason.matches.map(match => ({ ...match, seasonId: selected.id }))
+    };
+  }
+
   function hydrateSeason(rawSeason) {
     const players = new Map((window.PADEL_PLAYERS || []).map(player => [player.id, player]));
-    const playersByName = new Map((window.PADEL_PLAYERS || []).map(player => [player.name, player]));
-    const sourceMatches = Array.isArray(rawSeason.participants)
-      ? rawSeason.matches
-      : rawSeason.matches.map(match => ({
-          ...match,
-          id: `${rawSeason.matchIdPrefix || `season-${rawSeason.id}`}-partie-${String(match.id).match(/\d+$/)?.[0] || match.id}`,
-          matchday: match.spieltag,
-          date: match.datum,
-          time: match.uhrzeit,
-          result: match.ergebnis,
-          sets: match.saetze,
-          winner: match.sieger,
-          team1: { playerIds: (match.team1?.spieler || []).map(name => playersByName.get(name)?.id).filter(Boolean) },
-          team2: { playerIds: (match.team2?.spieler || []).map(name => playersByName.get(name)?.id).filter(Boolean) }
-        }));
     return {
       ...rawSeason,
-      matches: sourceMatches.map(match => ({
+      matches: rawSeason.matches.map(match => ({
         ...match,
         spieltag: match.matchday,
         datum: match.date,
@@ -418,11 +427,12 @@
       }
       window.PADEL_SEASON = null;
       const accountReady = window.PadelKonto.init();
-      await Promise.all([
-        loadScript(`../${selected.file}`),
-        loadScript('../js/tippspiel.js?v=2026-10-31-class-names')
+      const [databaseSeason] = await Promise.all([
+        loadDatabaseSeason(selected),
+        selected.file ? loadScript(`../${selected.file}`) : Promise.resolve(),
+        loadScript('../js/tippspiel.js?v=2026-11-05-bonus-dash')
       ]);
-      const season = hydrateSeason(window.PADEL_SEASON);
+      const season = hydrateSeason(mergeEditorialSeason(selected, databaseSeason, window.PADEL_SEASON || {}));
       selectedSeasonData = season;
       document.querySelectorAll('[data-season-label]').forEach(node => { node.textContent = season.label; });
       renderBonusSeasonInfo(season);

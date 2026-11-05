@@ -155,7 +155,7 @@
       padding: var(--widget-padding);
     }
     @media (max-width: 768px) {
-      .widget {padding: calc(var(--widget-padding)/2);}
+      .widget, .article-card {padding: calc(var(--widget-padding)/2);}
     }
     /* Hält eine Überschrift und ihr Widget als einen Bereich zusammen. */
     .widget-group { min-width: 0; }
@@ -1740,7 +1740,7 @@
     /* Der Zähler bleibt einzeilig; die Überschrift gibt stattdessen Platz ab. */
     #fr-meta { flex-shrink: 0; white-space: nowrap; }
     .table-note { font-size: var(--text-xs); }
-    #league-calculator[hidden] + #final-four-calculator .section-subheading { margin-top: 0; }
+    #league-calculator:has(+ #final-four-calculator:not([hidden])) { margin-bottom: var(--section-gap); }
     .toggle {
       display: inline-flex;
       padding: 2px;
@@ -1940,9 +1940,10 @@
       .home-season-podium-place--3 .home-season-podium-step { min-height: 46px; }
       .home-season-podium-step span { font-size: calc(var(--text-heading) * 1.2); }
     }
+    /* Hinweis im Widget-Aussehen, aber immer mit Akzentrahmen; rechts bleibt Platz für den Schließen-Knopf. */
     .home-notice {
       position: relative;
-      border: 1px solid var(--accent2) !important;
+      border-color: var(--accent2);
       padding-right: 3.25rem;
     }
     .home-notice h3 { color: var(--accent2); margin-bottom: 0.4rem; }
@@ -2250,10 +2251,11 @@
     .home-announcement .article-body p:last-child {
       margin-bottom: 0;
     }
+    /* Ein Ligaartikel ist selbst ein Inhaltsbereich und sieht aus wie .widget. */
     .article-card {
-      border: 1px solid var(--border);
-      padding: 1rem;
-      background: var(--surface);
+      border: 1px solid var(--widget-border);
+      padding: var(--widget-padding);
+      background: var(--widget-bg);
       border-radius: var(--container-radius-base);
     }
     .article-newspaper-header {
@@ -2727,7 +2729,7 @@
     .ranking-table.compact .col-form,
     .ranking-table.compact .col-winrate,
     .ranking-table.compact .col-draw-factor { display: none; }
-    .ranking-table .col-name { width: 180px; }
+    .ranking-table :is(.col-name, .col-company) { width: 180px; }
     .ranking-table .col-winrate { min-width: 110px; }
     .ranking-table .col-draw-factor { min-width: 172px; }
     .ranking-table .col-form { min-width: 114px; }
@@ -2900,7 +2902,7 @@
       background: linear-gradient(to right, var(--shadow-color), transparent);
       pointer-events: none;
     }
-    .ranking-table .col-name {
+    .ranking-table :is(.col-name, .col-company) {
       white-space: nowrap;
       padding-left: 8px;
     }
@@ -4952,7 +4954,8 @@
         grid-row: 1;
       }
       /* Passt der Umschalter nicht neben die Überschrift, rutscht er in die nächste Zeile. */
-      #tipptabelle > .sh-with-control { flex-wrap: wrap; }
+      #tipptabelle > .sh-with-control,
+      #tippuebersicht > .sh-with-control { flex-wrap: wrap; }
       #ranking-view-toggle {
         grid-column: 2;
         grid-row: 1;
@@ -5016,7 +5019,7 @@
         right: 0; 
         bottom: 0;
         height: 96px;
-        background: linear-gradient(to bottom, transparent, var(--surface));
+        background: linear-gradient(to bottom, transparent, var(--bg));
         pointer-events: none;
       }
       .home-article-preview.expanded {
@@ -5179,7 +5182,7 @@
       .ranking-table.expanded td {
         white-space: nowrap;
       }
-      table.rt .col-name { width: auto; }
+      table.rt :is(.col-name, .col-company) { width: auto; }
       table.rt .col-games,
       table.rt .col-passive,
       table.rt .col-bonus,

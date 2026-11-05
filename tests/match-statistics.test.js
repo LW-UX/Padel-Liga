@@ -50,7 +50,7 @@ test('article match blocks link regular statistics and Final Four histories with
 test('content order, exclusions, escaped data and empty sections',()=>{
  const d=fixture();d.players[0].displayName='<img src=x onerror=alert(1)>';
  const html=render(d);assert.doesNotMatch(html,/<img src=x/);assert.match(html,/Erfolgspartner/);
- assert.match(html,/class="match-statistics-context"[\s\S]*?Firmenduell[\s\S]*?<strong>Rematch #1<\/strong>[\s\S]*?6:2, 6:3[\s\S]*?spielt mit ihrer aktuellen Erfolgspartnerin[\s\S]*?\(3 von 4\)/);
+ assert.match(html,/class="widget match-statistics-context"[\s\S]*?Firmenduell[\s\S]*?<strong>Rematch #1<\/strong>[\s\S]*?6:2, 6:3[\s\S]*?spielt mit ihrer aktuellen Erfolgspartnerin[\s\S]*?\(3 von 4\)/);
  assert.doesNotMatch(html,/match-statistics-player-notes/);
  assert.doesNotMatch(html,/Vorgeschichte der Partie/);
  assert.ok(html.indexOf('match-statistics-context')<html.indexOf('Form der letzten 5 Partien'));assert.ok(html.indexOf('Form der letzten 5 Partien')<html.indexOf('Rangliste'));
@@ -125,7 +125,7 @@ test('relationship facts combine each player\'s statements in one centered sente
   {kind:'fearedOpponent',playerId:'agnes_k',name:'Agnes K.',matches:4,wins:1}
  ];
  const html=render(d);
- const context=html.match(/<section class="match-statistics-context"[\s\S]*?<\/section>/)?.[0]||'';
+ const context=html.match(/<section class="widget match-statistics-context"[\s\S]*?<\/section>/)?.[0]||'';
  assert.equal((context.match(/match-statistics-context-fact match-statistics-relationship/g)||[]).length,2);
  assert.match(context,/Firmenduell/);
  assert.match(context,/<strong>Rematch #1<\/strong>/);
@@ -137,7 +137,7 @@ test('relationship facts combine each player\'s statements in one centered sente
 test('two relationship facts are connected with und without a comma',()=>{
  const d=fixture();
  d.players[0].relationships.push({kind:'fearedOpponent',playerId:'marco_m',name:'Marco M.',matches:3,wins:1});
- const context=render(d).match(/<section class="match-statistics-context"[\s\S]*?<\/section>/)?.[0]||'';
+ const context=render(d).match(/<section class="widget match-statistics-context"[\s\S]*?<\/section>/)?.[0]||'';
  assert.match(context,/Greta P\.[\s\S]*spielt mit ihrer aktuellen Erfolgspartnerin[\s\S]*\(3 von 4\)<\/span> und trifft auf ihren aktuellen Angstgegner[\s\S]*\(1 von 3\)<\/span>\.<\/p>/);
  assert.doesNotMatch(context,/<\/span>, und/);
 });
@@ -235,7 +235,7 @@ test('team-wide match outcomes appear once in the general match context',()=>{
   const d=fixture('analysis');
   d.impacts.push(impact);
   const html=render(d);
-  const context=html.match(/<section class="match-statistics-context"[\s\S]*?<\/section>/)?.[0]||'';
+  const context=html.match(/<section class="widget match-statistics-context"[\s\S]*?<\/section>/)?.[0]||'';
   const panel=html.match(/<section class="widget match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
   assert.equal(html.split(text).length-1,1);
   assert.ok(context.includes(text));

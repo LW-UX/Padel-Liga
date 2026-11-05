@@ -31,24 +31,38 @@ test('account cards use tournament labels across seasons and task groups', () =>
     assert.ok(fn, `${name} exists`);
     vm.runInContext(fn[0], context);
   }
-  for (const filename of ['data-2026-sommer.js', 'data-2026-winter.js', 'data-2027-cup.js']) {
-    const seasonContext = vm.createContext({ window: {} });
-    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'data', filename), 'utf8'), seasonContext);
-    for (const match of seasonContext.window.PADEL_SEASON.matches) {
+  // Partien liegen in der Datenbank; die Beispiele decken alle Turnierstufen ab.
+  const samples = [
+    { leagueLabel: 'PadelLiga Sommer 2026', legacyLabels: true, matches: [
+      { id: 'season-2026-partie-1' },
+      { id: 'season-2026-partie-28', stage: 'final-four', displayLabel: 'Final Four 1' }
+    ] },
+    { leagueLabel: 'PadelLiga Winter 2026', matches: [
+      { id: 'winter-2026-partie-7' },
+      { id: 'winter-2026-semifinal-1', stage: 'semifinal', displayLabel: 'Halbfinale 1' },
+      { id: 'winter-2026-final-2', stage: 'final-four', displayLabel: 'Final Four 2' }
+    ] },
+    { leagueLabel: 'Padel-Cup 2027', matches: [
+      { id: 'cup-2027-quarterfinal-3', stage: 'quarterfinal', displayLabel: 'Viertelfinale 3' },
+      { id: 'cup-2027-final-1', stage: 'final', displayLabel: 'Finale' }
+    ] }
+  ];
+  for (const sample of samples) {
+    for (const match of sample.matches) {
       const task = {
         match_id: match.id,
         display_label: match.displayLabel,
         competition_stage: (match.stage || 'league').replaceAll('-', '_'),
-        league_label: seasonContext.window.PADEL_SEASON.title,
+        league_label: sample.leagueLabel,
         task_type: 'enter'
       };
       const label = match.displayLabel || `Partie ${match.id.match(/\d+$/)[0]}`;
       for (const group of ['review', 'past', 'future', 'planned']) {
         assert.ok(context.renderResultTaskCard(task, group).includes(
           `<span class="mc-nr">${task.league_label} · ${label}</span>`
-        ), `${filename}: ${match.id} in ${group} uses ${label}`);
+        ), `${match.id} in ${group} uses ${label}`);
       }
-      if (filename !== 'data-2026-sommer.js') {
+      if (!sample.legacyLabels) {
         assert.equal(context.getTaskMatchLabel({ ...task, display_label: null }), label);
       }
     }

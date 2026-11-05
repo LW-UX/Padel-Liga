@@ -274,7 +274,7 @@ test('favorite check only counts teams with at least 55 percent win probability'
   ]);
 
   assert.deepEqual(stats, { matches: 3, wins: 2, rate: 67 });
-  assert.match(html, /class="widget favorite-check-widget"/);
+  assert.match(html, /<article class="widget">\s*<h3>\s*<span class="sh-title-with-help">Favoriten-Check/);
   assert.match(html, /<h3>[\s\S]*class="sh-title-with-help">Favoriten-Check[\s\S]*data-help-tooltip-anchor>\?<\/span>[\s\S]*Als Favorit zählt ein Team ab 55 % Siegchance\./);
   assert.doesNotMatch(app, /favorite-check-note|Als Favorit zählt ein Team ab/);
   assert.doesNotMatch(style, /\.favorite-check-note/);

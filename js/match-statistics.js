@@ -239,7 +239,7 @@
       facts.push(`<p class="match-statistics-context-fact match-statistics-relationship">${subject} ${joinRelationshipClauses(clauses)}.</p>`);
     });
     return facts.length
-      ? `<section class="match-statistics-context" aria-label="Einordnung der Partie">${facts.join('')}</section>`
+      ? `<section class="widget match-statistics-context" aria-label="Einordnung der Partie">${facts.join('')}</section>`
       : '';
   }
   function getQualificationPlaces(data) {

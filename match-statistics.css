@@ -216,10 +216,6 @@ table.rt.match-statistics-ranking .col-diff { padding-right: 1rem; }
   gap: .5rem;
   text-wrap: balance;
   text-align: center;
-  padding: 1rem 1.2rem;
-  border: 1px solid var(--border);
-  border-radius: var(--container-radius-sm);
-  background: var(--surface);
 }
 .match-statistics-context p { font-size: var(--text-sm); line-height: 1.45; }
 .match-statistics-relationship-name { appearance: none; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
@@ -396,9 +392,6 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
   }
 }
 
-@container match-detail-panel (min-width: 900px) {
-  #detail-view-dialog[data-presentation="panel"] .match-statistics-ranking-layout { gap: var(--section-gap); }
-}
 
 @container match-detail-panel (min-width: 1100px) {
   #detail-view-dialog[data-presentation="panel"] .match-forecast {

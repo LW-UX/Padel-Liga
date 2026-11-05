@@ -23,7 +23,7 @@ function getColumnClasses(source, cellName) {
 }
 
 test('league-page ranking tables use one named class per column without colgroups', () => {
-  const targetTables = [...page.matchAll(/<table class="rt(?: ranking-table compact| company-ranking-table| rt--fit| rt--dense(?: rt--fit)?)"[^]*?<\/table>/g)]
+  const targetTables = [...page.matchAll(/<table class="rt(?: ranking-table compact| ranking-table company-ranking-table| rt--fit ranking-table final-four-ranking-table| rt--fit| rt--dense(?: rt--fit)?)"[^]*?<\/table>/g)]
     .map(match => match[0]);
 
   assert.equal(targetTables.length, 6);
@@ -60,7 +60,9 @@ test('ranking renderers use the same named column classes as their headers', () 
   assert.deepEqual(getColumnClasses(renderers[5], 'td'), ['col-rank', 'col-name', 'col-wins', 'col-gv', 'col-diff']);
   renderers.forEach(renderer => assert.match(renderer, /<td class="col-rank rank-position">/));
   assert.match(renderers[0], /<td class="col-points-per-player rank-score">/);
-  assert.doesNotMatch(renderers[0], /firma-icon/);
+  assert.match(renderers[0], /renderCompanyIcon\(f\.firma\)/);
+  assert.match(renderers[1], /renderRankingAvatar\(/);
+  assert.match(renderers[1], /renderRankingCompanyBadge\(eloPlayer\)/);
   assert.match(renderers[1], /<td class="col-wins rank-score">/);
   assert.match(renderers[2], /<td class="col-points rank-score">/);
   assert.match(renderers[3], /<td class="col-points rank-score">/);

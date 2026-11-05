@@ -36,12 +36,25 @@ test('season IDs and filenames use the sortable year-type schema', () => {
   assert.match(summer.file, /^data\/data-2026-sommer\.js/);
   assert.equal(winter.default, true);
   assert.equal(PADEL_SEASON.id, '2026-sommer');
-  assert.equal(PADEL_SEASON.matchIdPrefix, 'season-2026');
+  assert.equal(summer.databaseId, '2026');
+  assert.equal(winter.databaseId, 'winter-2026');
+  assert.equal(testSeason.databaseId, 'test-2026');
   assert.match(testSeason.file, /^data\/data-2026-test\.js/);
   assert.deepEqual(
     JSON.parse(JSON.stringify(PADEL_SEASONS.filter(season => !season.hidden).map(season => season.id))),
     ['2026-sommer', '2026-winter', '2027-cup']
   );
+});
+
+test('season files contain only editorial content because matches, participants and Elo come from the database', () => {
+  const { PADEL_SEASONS } = loadWindowScript('data/seasons.js');
+  const allowedKeys = new Set(['id', 'label', 'articles', 'homeAnnouncement', 'matchdayBreaks', 'shortInfo', 'organizations']);
+  for (const option of PADEL_SEASONS) {
+    const { PADEL_SEASON } = loadWindowScript(option.file.split('?')[0]);
+    assert.equal(PADEL_SEASON.id, option.id);
+    assert.ok(option.databaseId, option.id);
+    assert.deepEqual(Object.keys(PADEL_SEASON).filter(key => !allowedKeys.has(key)), [], option.id);
+  }
 });
 
 test('old season links are normalized to the year-type schema', () => {

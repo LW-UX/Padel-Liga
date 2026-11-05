@@ -20,8 +20,8 @@ function createContext(databaseMatches = new Map()) {
     Date,
     Number,
     escapeHtml: value => String(value ?? ''),
-    isOwnMatch: match => match.own === true,
-    RACKET_ICON_SVG: '<path d="racket"/>'
+    RACKET_ICON_SVG: '<path d="racket"/>',
+    isPredictionTableMatchActive: match => match.notOpen !== true
   });
   vm.runInContext([
     fn('getActualSets'),
@@ -30,6 +30,8 @@ function createContext(databaseMatches = new Map()) {
     fn('getLastConfirmedMatchId'),
     fn('renderPredictionTableCellContent'),
     fn('renderPredictionTableHiddenCell'),
+    fn('renderPredictionTableRacket'),
+    fn('isMatchOfPlayer'),
     fn('renderPredictionTableMatchCell')
   ].join('\n'), context);
   return context;
@@ -50,14 +52,17 @@ test('overview cells distinguish scored, hidden, passive, cancelled and missing 
   assert.doesNotMatch(zero, /prediction-table-points/);
   const hidden = { prediction: null, is_tipped: true, points: null };
   assert.match(context.renderPredictionTableMatchCell(hidden, match, true), /is-hidden[^>]*>✓/);
-  assert.equal(context.renderPredictionTableMatchCell(hidden, match, false), '<td class="prediction-table-cell is-hidden"></td>');
+  assert.match(context.renderPredictionTableMatchCell(hidden, match, false), /is-hidden[^>]*>–<\/td>/);
   assert.match(context.renderPredictionTableMatchCell({ is_passive: true, points: 2 }, match), /is-passive[^]*prediction-table-racket[^]*prediction-table-points is-passive">2</);
   assert.doesNotMatch(context.renderPredictionTableMatchCell({ prediction: '2:0', points: null }, cancelledMatch), /prediction-table-points/);
   assert.match(context.renderPredictionTableMatchCell(null, match), /is-empty[^>]*><\/td>/);
-  const ownMatch = { id: 'm-3', own: true };
-  assert.match(context.renderPredictionTableMatchCell(null, ownMatch, true), /is-own-match[^>]*>–<\/td>/);
-  assert.match(context.renderPredictionTableMatchCell(null, ownMatch, false), /is-empty/);
-  assert.match(context.renderPredictionTableMatchCell({ is_passive: true, points: 2 }, ownMatch, true), /is-passive/);
+  // Geöffnete eigene Partien des Kontos zeigen bis zur Gutschrift den Schläger – auch in fremden Zeilen.
+  const ownMatch = { id: 'm-3', team1: { playerIds: ['p-1', 'p-2'] }, team2: { playerIds: ['p-3', 'p-4'] } };
+  assert.match(context.renderPredictionTableMatchCell(null, ownMatch, true, 'p-1'), /is-own-match[^>]*><span class="prediction-table-racket"/);
+  assert.match(context.renderPredictionTableMatchCell(null, ownMatch, false, 'p-3'), /is-own-match/);
+  assert.match(context.renderPredictionTableMatchCell(null, ownMatch, false, 'p-9'), /is-empty/);
+  assert.match(context.renderPredictionTableMatchCell(null, { ...ownMatch, notOpen: true }, true, 'p-1'), /is-empty/);
+  assert.match(context.renderPredictionTableMatchCell({ is_passive: true, points: 2 }, ownMatch, true, 'p-1'), /is-passive/);
 });
 
 test('overview focus follows the latest played confirmed result, not the match number', () => {
