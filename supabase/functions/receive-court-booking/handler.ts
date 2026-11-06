@@ -10,6 +10,7 @@ type Dependencies = {
   verify: (body: string, headers: Record<string, string>, secret: string) => unknown;
   parseMime: (raw: Uint8Array) => Promise<MimeMail>;
   record: (params: Record<string, unknown>) => Promise<unknown>;
+  hasRegisteredEmail?: (emails: string[]) => Promise<boolean>;
   fetch: typeof fetch;
 };
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -72,7 +73,7 @@ function originalTimestamp(mail: MimeMail, calendar: string | undefined, direct:
 export function createBookingWebhook(config: Config, deps: Dependencies) {
   return async (request: Request): Promise<Response> => {
     if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
-    if (!config.apiKey || !config.signingSecret || !config.recipient || !config.forwarders.length) {
+    if (!config.apiKey || !config.signingSecret || !config.recipient || (!config.forwarders.length && !deps.hasRegisteredEmail)) {
       return json({ error: "not_configured" }, 503);
     }
     let event: any;
@@ -101,7 +102,13 @@ export function createBookingWebhook(config: Config, deps: Dependencies) {
         return json({ status: "ignored", reason: "recipient" });
       }
       const sender = address(received.from || "");
-      if (!config.forwarders.map(address).includes(sender) || received.authentication?.dmarc !== "pass") {
+      if (received.authentication?.dmarc !== "pass") {
+        return json({ status: "needs_review", reason: "sender_authentication" });
+      }
+      const explicitlyAllowed = config.forwarders.map(address).includes(sender);
+      const registeredSender = !explicitlyAllowed && sender !== "no-reply@playtomic.io" && sender
+        && deps.hasRegisteredEmail ? await deps.hasRegisteredEmail([sender]) : false;
+      if (!explicitlyAllowed && !registeredSender) {
         return json({ status: "needs_review", reason: "sender_authentication" });
       }
       const url = new URL(received.raw?.download_url);
@@ -111,12 +118,18 @@ export function createBookingWebhook(config: Config, deps: Dependencies) {
       let mail = await deps.parseMime(await limitedBody(response, MAX_BYTES));
       if (sender === "no-reply@playtomic.io") {
         // Redirects retain the original recipient. Accept only Playtomic mail
-        // originally addressed to the approved league booker, not any booking
+        // originally addressed to an approved/registered recipient, not mail
         // sent directly to the publicly known Resend address.
         const to = Array.isArray(mail.to) ? mail.to.flatMap(item => item?.group || [item]) : [];
         const allowed = (config.originalRecipients || []).map(address);
-        if (address(mail.from?.address || "") !== sender || !to.some(item =>
-          typeof item?.address === "string" && allowed.includes(address(item.address)))) {
+        const originals = [...new Set(to.filter(item => typeof item?.address === "string")
+          .map(item => address(item.address)))].filter(email => email !== config.recipient.toLowerCase());
+        if (address(mail.from?.address || "") !== sender || !originals.length || originals.length > 50) {
+          return json({ status: "needs_review", reason: "original_recipient" });
+        }
+        const allowedOriginal = originals.some(email => allowed.includes(email))
+          || (deps.hasRegisteredEmail ? await deps.hasRegisteredEmail(originals) : false);
+        if (!allowedOriginal) {
           return json({ status: "needs_review", reason: "original_recipient" });
         }
       }

@@ -16,6 +16,12 @@ Kontositzungen werden abgewiesen.
 
 ## Benötigte Function-Secrets
 
+Zusätzlich verschickt die Function einmalige Hallencode-Betriebswarnungen an
+bestätigte Admins. Die Migration `20261107000000_court_access_health_alerts.sql`
+stellt dafür die private Warteschlange bereit. Dieser Versand ist unabhängig
+von den persönlichen Partie-/Tipp-Mail-Einstellungen und fragt Playtomic nicht
+ab. Details: `../court-access-code/README.md`, Abschnitt Betriebswarnungen.
+
 - `RESEND_API_KEY`: API-Schlüssel des Resend-Kontos
 - `NOTIFICATION_FROM`: verifizierter Absender, zum Beispiel
   `PadelLiga <noreply@padelliga.envidual.com>`

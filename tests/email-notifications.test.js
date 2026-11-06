@@ -96,8 +96,9 @@ test('calendar invitations follow schedule changes and keep one Outlook appointm
   assert.match(calendarMigration, /rename to queue_due_reminder_notifications/);
   assert.match(edgeFunction, /METHOD:\$\{cancelled \? "CANCEL" : "REQUEST"\}/);
   assert.match(edgeFunction, /SEQUENCE:\$\{calendar\.calendar_sequence\}/);
-  assert.match(edgeFunction, /SUMMARY:\$\{escapeIcsText\(\[job\.match_label, getEventLineup\(job\)\]/);
-  assert.match(edgeFunction, /const calendarSubject = training \? "Training – PadelLiga" : `\$\{job\.match_label\} – PadelLiga \$\{job\.season_label\}`;/);
+  assert.match(edgeFunction, /return \[job\.match_label, getEventLineup\(job\)\]\.filter\(Boolean\)\.join\(": "\);/);
+  assert.match(edgeFunction, /SUMMARY:\$\{escapeIcsText\(getCalendarTitle\(job\)\)\}/);
+  assert.match(edgeFunction, /const calendarSubject = training \? "Training – PadelLiga" : `\$\{getCalendarTitle\(job\)\} – PadelLiga \$\{job\.season_label\}`;/);
   assert.match(edgeFunction, /subject: `Abgesagt: \$\{calendarSubject\}`/);
   assert.match(edgeFunction, /const CALENDAR_LOCATION = "Lucky Star Padel";/);
   assert.match(edgeFunction, /"TRIGGER:-PT1H"/);
@@ -141,6 +142,7 @@ test('match mails share the match-card team layout and new invitations explain u
   assert.match(edgeFunction, /const calendarUpdateNotice = "Wird der Termin über die Webseite verschoben oder abgesagt/);
   assert.match(edgeFunction, /body: moved[\s\S]*: "Die Kalendereinladung im Anhang trägt den Termin in deinen Kalender ein\."[\s\S]*afterDetails: moved \? undefined : calendarUpdateNotice/);
   assert.match(edgeFunction, /getTeamMembers\(label\)\.join\(" & "\)/);
+  assert.match(edgeFunction, /const calendarSubject = training \? "Training – PadelLiga" : `\$\{getCalendarTitle\(job\)\}/);
   assert.match(edgeFunction, /<span style=\"color:#7E828B;font-weight:normal;\">&amp;<\/span>/);
   assert.doesNotMatch(edgeFunction, /<br><span style=\"color:#7E828B;font-weight:normal;\">&amp;<\/span><br>/);
   assert.match(edgeFunction, /align=\"left\" valign=\"middle\" width=\"44%\"/);

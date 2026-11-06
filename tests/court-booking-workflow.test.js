@@ -117,8 +117,9 @@ test('our bookings block every overlapping free start and cannot be assigned to 
   assert.doesNotMatch(grid.innerHTML, /Von uns gebucht|court-booking-label/);
   assert.match(grid.innerHTML, /class="is-booked is-assigned is-booked-start"/, 'linked bookings receive the grey assigned state');
   assert.match(grid.innerHTML, /Platz bereits gebucht, Halle, 18:00 bis 19:30, Partie 1/);
-  assert.match(grid.innerHTML, /court-booking-match-number[^>]*>P#<\/span>/);
-  assert.match(grid.innerHTML, /court-booking-match-number[^>]*>1<\/span>/);
+  assert.match(grid.innerHTML, /court-booking-match-number[^>]*>P\.1<\/span>/);
+  assert.equal([...grid.innerHTML.matchAll(/court-booking-match-number/g)].length, 1,
+    'the compact match number stays entirely in the first booking cell');
   assert.doesNotMatch(grid.innerHTML, /data-court-slot="booking-12"/, 'a booking linked elsewhere is visible but cannot be reassigned');
   assert.equal(api.findSelectableSlot('hall-16:00')?.id, 'hall-16:00', 'an hour ending exactly at the reservation stays free');
   assert.equal(api.findSelectableSlot('hall-18:30')?.id, 'hall-18:30', 'an hour starting exactly after the reservation stays free');
@@ -171,7 +172,7 @@ test('booked slots use an accent outline and show structured match choices insid
 });
 
 test('court and racket confirmation share one exact booking message', () => {
-  const source = ['describeRacketCheck', 'describeRacketBooking', 'getCourtBookingWindow', 'describeCourtAndRacket']
+  const source = ['describeRacketCheck', 'describeRacketBooking', 'getBookedCourtNumber', 'getCourtBookingWindow', 'describeCourtAndRacket']
     .map(name => account.match(new RegExp(` {2}function ${name}\\([\\s\\S]*?\\n {2}\\}\\n`))?.[0])
     .join('\n');
   const context = vm.createContext({});
@@ -179,16 +180,43 @@ test('court and racket confirmation share one exact booking message', () => {
   const target = { dataset: { courtBookingFrom: '18:00', courtBookingUntil: '19:00' } };
   assert.equal(
     context.describeCourtAndRacket({ state: 'booked', from: '18:00', until: '19:00' }, target, true).text,
-    '✓ Platz und Schläger sind gebucht von 18:00–19:00 Uhr'
+    '✓ Platz und Schläger gebucht: 18:00–19:00 Uhr'
   );
   assert.equal(
     context.describeCourtAndRacket({ state: 'partial', from: '18:00', until: '18:30' }, target, true).text,
     '✓ Platz gebucht von 18:00–19:00 Uhr · Schläger reserviert · 18:00–18:30 (Bürozeiten)'
   );
+  for (const number of ['H1', 'H2', 'H3', 'H4', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10']) {
+    target.dataset.courtBookingNumber = number;
+    assert.equal(context.describeCourtAndRacket({ state: 'booked', from: '18:00', until: '19:00' }, target, true).text,
+      `✓ Platz ${number} und Schläger gebucht: 18:00–19:00 Uhr`);
+    assert.equal(context.describeCourtAndRacket(null, target, true).text, `✓ Platz ${number} gebucht von 18:00–19:00 Uhr`);
+  }
+  assert.equal(context.getBookedCourtNumber('CUPRA Indoor H1'), 'H1');
+  assert.equal(context.getBookedCourtNumber('DAS ANDERS Court 4'), '4');
+  assert.equal(context.getBookedCourtNumber('Court 10'), '10');
+  for (const name of ['Indoor H5', 'Court 11', 'H10', 'Indoor 1', null]) assert.equal(context.getBookedCourtNumber(name), '');
   assert.match(account, /data-court-booking-from=/);
   assert.match(account, /data-court-booking-until=/);
   assert.match(account, /syncCourtBookingWindow\(form, context\)/);
   assert.match(account, /bookingInput\.value = ''[\s\S]*delete target\.dataset\.courtBookingFrom/);
+});
+
+test('Hallencode-Platzhalter erscheinen ausschließlich bei zugeordneten H1–H4-Buchungen', () => {
+  const helper = account.match(/ {2}function getBookedCourtNumber\([\s\S]*?\n {2}\}\n/)[0];
+  const renderer = account.slice(account.indexOf('  function renderResultTaskCard('), account.indexOf('  function renderResultTaskGroups('));
+  const context = vm.createContext({ state: { courtBookings: [] }, escapeHtml: String,
+    getTaskLeagueLabel: () => 'Liga', getTaskMatchLabel: () => 'Partie', renderResultTaskStatus: () => '',
+    renderTaskMatchup: () => '', renderResultTaskBody: () => '', formatMatchAt: () => '', courtBookingWindowAttributes: () => '' });
+  vm.runInContext(helper + renderer, context);
+  const task = { match_id: 'm1', match_at: '2099-11-13T11:00:00Z', my_team: 1, task_type: 'enter' };
+  for (const name of ['Indoor H1', 'CUPRA Indoor H2', 'Indoor H3', 'Indoor H4',
+    ...Array.from({ length: 10 }, (_, i) => `Court ${i + 1}`), 'Indoor H5', 'H10', 'Unbekannt']) {
+    context.state.courtBookings = [{ match_id: 'm1', court_name: name, ends_at: '2099-11-13T12:00:00Z' }];
+    const html = context.renderResultTaskCard(task, 'future');
+    assert.equal(html.includes('data-hall-code-match='), /\bH[1-4]$/.test(name), name);
+    assert.match(html, /data-racket-status=/, 'Platz-/Schlägerhinweis bleibt auch draußen erhalten');
+  }
 });
 
 test('all affected players receive the same two-action cancellation modal', () => {

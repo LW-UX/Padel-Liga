@@ -20,12 +20,15 @@ Bereitstellungs- und Verbindungsstand steht in `docs/PROJECT_STATUS.md`.
      Lesen empfangener Mails. Ohne diesen wird der vorhandene `RESEND_API_KEY`
      verwendet; ist er auf Versand beschränkt, wird ein Leseschlüssel benötigt.
    - `RESEND_BOOKING_WEBHOOK_SECRET`: Signing Secret dieses Webhooks (`whsec_…`).
-   - `RESEND_BOOKING_FORWARDERS`: ausdrücklich erlaubte Absenderadressen,
-     kommagetrennt. Bei einer Umleitung mit unverändertem Playtomic-Absender
-     muss dieser ausdrücklich freigegeben sein; nicht pauschal Domains erlauben.
-   - `RESEND_BOOKING_ORIGINAL_RECIPIENTS`: bei Umleitung ausdrücklich erlaubte
-     ursprüngliche Mail-Empfänger. Fehlt ein passender ursprünglicher `To`-
-     Empfänger, wird eine Mail von Playtomic nicht automatisch importiert.
+   - `RESEND_BOOKING_FORWARDERS`: zusätzliche ausdrücklich erlaubte
+     Absenderadressen, kommagetrennt. Hier bleibt insbesondere der unveränderte
+     Playtomic-Absender `no-reply@playtomic.io` für Umleitungen stehen.
+     Aktuelle bestätigte Kontoadressen werden automatisch geprüft und müssen
+     hier nicht einzeln ergänzt werden; nicht pauschal Domains erlauben.
+   - `RESEND_BOOKING_ORIGINAL_RECIPIENTS`: zusätzliche ausdrücklich erlaubte
+     ursprüngliche Mail-Empfänger für Umleitungen. Auch hier gelten aktuelle
+     bestätigte Kontoadressen automatisch. Ohne einen passenden ursprünglichen
+     `To`-Empfänger wird eine Mail von Playtomic nicht automatisch importiert.
    - `RESEND_BOOKING_RECIPIENT`: optional, Standard
      `buchungen@kiroimyon.resend.app`.
    `SUPABASE_URL` und `SUPABASE_SERVICE_ROLE_KEY` stellt Supabase bereit.
@@ -57,13 +60,24 @@ normalisierte Buchungswerte und schreibt nichts in die Datenbank. Die permanente
 Umleitungsfreigabe wird dafür nicht verändert. Übernahme und Partiezuordnung
 erfolgen erst nach konkreter Nutzerfreigabe über den Supabase-Projekthelfer.
 
-Für den dauerhaften Umleitungsmodus lautet der Aufruf
-`configure-booking-mail no-reply@playtomic.io <ursprüngliche-Empfänger>`.
-In Outlook bleiben die bisherigen Absender-, Betreff- und Clubfilter erhalten;
-nur die Aktion wird von „Weiterleiten an“ zu „Umleiten an“ geändert. Die neue
-Empfängerprüfung erfordert die aktuelle Empfangsfunktion. Eine tatsächliche
-Umleitung muss anschließend im Resend-Eingang samt DMARC und Originalempfänger
-geprüft werden; die Authentifizierungsprüfung wird dafür nicht gelockert.
+Die Migration `20261107010000_registered_booking_email_forwarders.sql`
+ergänzt mit ausdrücklicher Datenbankfreigabe die ausschließlich für
+`service_role` ausführbare Prüfung `has_registered_court_booking_email`.
+Sie liefert nur einen Wahrheitswert, keine E-Mail-Adressen oder Kontodaten.
+Der Empfangsadapter prüft darüber bei jedem Eingang die aktuellen bestätigten
+Adressen aller Konten mit Liga-Profil, unabhängig von der Rolle. Es wird keine
+Adressliste kopiert oder zwischengespeichert. Ein Datenbankfehler führt zu
+HTTP 503 für eine Wiederholung und erteilt keine Freigabe.
+
+Für die zusätzlichen festen Ausnahmen lautet der Einrichtungsaufruf weiterhin
+`configure-booking-mail no-reply@playtomic.io,<Weiterleitungsabsender> <ursprüngliche-Empfänger>`.
+In Outlook können die bisherigen Absender-, Betreff- und Clubfilter erhalten
+bleiben. Eine tatsächliche Umleitung muss im Resend-Eingang samt DMARC und
+Originalempfänger geprüft werden; bei einer normalen Weiterleitung werden
+stattdessen die Freigabe des äußeren Kontos, dessen DMARC-Prüfung und der
+vollständige Outlook-Originalkopf verlangt. Neu registrierte bestätigte Konten
+sind automatisch dabei; unregistrierte Sonderadressen benötigen weiterhin
+eine ausdrückliche Einzel-Freigabe.
 
 `replay-booking-mail <IDs,kommagetrennt>` verarbeitet ausdrücklich ausgewählte
 bereits empfangene Mails über denselben signaturgeprüften Empfangsendpunkt.

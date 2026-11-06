@@ -29,6 +29,7 @@
     bonusAnswers: new Map(),
     matchFloorPredictions: new Map(),
     leaderboard: [],
+    benchmarkLeaderboard: [],
     leaderboardReady: false,
     leaderboardError: null,
     seasonCompleted: null,
@@ -105,6 +106,26 @@
       ? RACKET_ICON_SVG
       : '<path d="M2 9a3 3 0 0 1 0 6v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3a3 3 0 0 1 0-6V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="m9 12 2 2 4-4"/>';
     return `<span class="prediction-account-type-icon${podiumClass}" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icon}</svg></span>`;
+  }
+
+  const BENCHMARK_LABEL = 'Auto-Tipp: tippt automatisch nach der Elo-Prognose und zählt nicht zur offiziellen Wertung.';
+
+  function renderPredictionAccountBadges(entry, { company = true } = {}) {
+    if (entry?.is_benchmark) {
+      return `<span class="prediction-account-type-icon is-benchmark" role="img" aria-label="${BENCHMARK_LABEL}" title="${BENCHMARK_LABEL}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2Z"/></svg></span>`;
+    }
+    return renderPredictionAccountTypeIcon(entry) + (company ? renderPredictionCompanyBadge(entry) : '');
+  }
+
+  // Auto-Tipp steht an seiner Punkteposition hinter Gleichständen, ohne offizielle Ränge zu verschieben.
+  function insertBenchmarkRows(rows, getValue) {
+    const result = [...rows];
+    state.benchmarkLeaderboard.forEach(entry => {
+      const value = getValue(entry) ?? -Infinity;
+      const position = result.findIndex(row => !row.entry.is_benchmark && (getValue(row.entry) ?? -Infinity) < value);
+      result.splice(position < 0 ? result.length : position, 0, { entry });
+    });
+    return result;
   }
 
   function renderPredictionCompanyBadge(entry) {
@@ -1229,7 +1250,11 @@
     if (!body || !empty) return;
 
     const previousPositions = window.PadelTable.getRankingRowPositions(body, '.ranking-row');
-    const sortedEntries = getSortedPredictionLeaderboard();
+    const sortedEntries = insertBenchmarkRows(
+      getSortedPredictionLeaderboard(),
+      entry => getPredictionLeaderboardSortValue(entry, state.leaderboardSortMode)
+    );
+    let officialRank = 0;
     const table = document.getElementById('prediction-ranking-table');
     if (table) {
       table.dataset.rankingSort = state.leaderboardSortMode;
@@ -1242,12 +1267,17 @@
       button.setAttribute('aria-pressed', String(active));
     });
     window.PadelTable.updateSortHeaders('[data-prediction-ranking-sort]', 'predictionRankingSort', state.leaderboardSortMode);
-    body.innerHTML = sortedEntries.map(({ entry, canonicalRank }, index) => {
-      const rank = index + 1;
+    body.innerHTML = sortedEntries.map(({ entry, canonicalRank }) => {
+      const rank = entry.is_benchmark ? null : ++officialRank;
+      const rowClass = rank ? `r${Math.min(rank, 4)}` : 'is-benchmark';
+      const rankHtml = rank
+        ? `<span class="rank-main">${rank}</span>${renderPredictionRankReference(rank, canonicalRank)}`
+        : '';
+      const nameTitle = entry.is_benchmark ? ` title="${BENCHMARK_LABEL}"` : '';
       return `
-      <tr class="ranking-row r${Math.min(rank, 4)} ${state.session?.user?.id === entry.user_id ? 'authenticated-player-highlight' : ''}" data-ranking-entry="${escapeHtml(entry.user_id)}">
-        <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${rank}</span>${renderPredictionRankReference(rank, canonicalRank)}</span></td>
-        <td class="col-name"><span class="prediction-rank-account"><span class="pname">${escapeHtml(entry.display_name)}</span><span class="pname-short" title="${escapeHtml(entry.display_name)}">${escapeHtml(getPredictionAccountShortLabel(entry))}</span>${renderPredictionAccountTypeIcon(entry)}${renderPredictionCompanyBadge(entry)}</span></td>
+      <tr class="ranking-row ${rowClass} ${state.session?.user?.id === entry.user_id ? 'authenticated-player-highlight' : ''}" data-ranking-entry="${escapeHtml(entry.user_id)}">
+        <td class="col-rank rank-position"><span class="rank-cell-inner">${rankHtml}</span></td>
+        <td class="col-name"><span class="prediction-rank-account"${nameTitle}><span class="pname">${escapeHtml(entry.display_name)}</span><span class="pname-short" title="${escapeHtml(entry.display_name)}">${escapeHtml(getPredictionAccountShortLabel(entry))}</span>${renderPredictionAccountBadges(entry)}</span></td>
         <td class="col-games">${Number(entry.predictions_count) || 0}</td>
         <td class="col-wins">${Number(entry.exact_count) || 0}</td>
         <td class="col-passive" title="Automatisch gutgeschriebene Punkte aus eigenen Partien">${getLeaderboardPassivePoints(entry)}</td>
@@ -1391,12 +1421,17 @@
   }
 
   function renderPredictionTableAccountCell(entry) {
-    const rank = state.leaderboard.indexOf(entry) + 1;
-    return `<th scope="row" class="prediction-table-account r${Math.min(rank, 4)}"><span class="prediction-table-account-inner"><span class="prediction-table-rank rank-position">${rank}</span><span class="prediction-rank-account"><span class="pname">${escapeHtml(entry.display_name)}</span><span class="pname-short" title="${escapeHtml(entry.display_name)}">${escapeHtml(getPredictionAccountShortLabel(entry))}</span>${renderPredictionAccountTypeIcon(entry)}</span></span></th>`;
+    const rank = entry.is_benchmark ? null : state.leaderboard.indexOf(entry) + 1;
+    const rankClass = rank ? `r${Math.min(rank, 4)}` : 'is-benchmark';
+    const nameTitle = entry.is_benchmark ? ` title="${BENCHMARK_LABEL}"` : '';
+    return `<th scope="row" class="prediction-table-account ${rankClass}"><span class="prediction-table-account-inner"><span class="prediction-table-rank rank-position">${rank || ''}</span><span class="prediction-rank-account"${nameTitle}><span class="pname">${escapeHtml(entry.display_name)}</span><span class="pname-short" title="${escapeHtml(entry.display_name)}">${escapeHtml(getPredictionAccountShortLabel(entry))}</span>${renderPredictionAccountBadges(entry, { company: false })}</span></span></th>`;
   }
 
   function getPredictionTableRowClass(entry) {
-    return state.session?.user?.id === entry.user_id ? 'authenticated-player-highlight' : '';
+    return [
+      state.session?.user?.id === entry.user_id ? 'authenticated-player-highlight' : '',
+      entry.is_benchmark ? 'is-benchmark' : ''
+    ].filter(Boolean).join(' ');
   }
 
   function renderPredictionTableTotals(entry) {
@@ -1633,7 +1668,10 @@
     const empty = document.getElementById('prediction-table-empty');
     if (!table || !empty) return;
     renderPredictionTableViewToggle();
-    const entries = state.leaderboard;
+    const entries = insertBenchmarkRows(
+      state.leaderboard.map(entry => ({ entry })),
+      entry => Number(entry.points) || 0
+    ).map(row => row.entry);
     const showTable = state.tableReady && entries.length > 0
       && (state.tableView === 'matches' || state.bonusQuestions.length > 0);
     table.dataset.view = state.tableView;
@@ -1749,6 +1787,7 @@
       }
       // Benchmark-Konten zählen für keine Platzierung, kein Spitzenfeld und keine Abstände.
       state.leaderboard = leaderboard.filter(entry => !entry.is_benchmark);
+      state.benchmarkLeaderboard = leaderboard.filter(entry => entry.is_benchmark);
       state.leaderboardReady = true;
       state.leaderboardError = null;
     } catch (error) {

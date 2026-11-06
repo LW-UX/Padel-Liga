@@ -11,6 +11,9 @@ const config = {
   forwarders: (Deno.env.get("RESEND_BOOKING_FORWARDERS") || "").split(",").map(value => value.trim()).filter(Boolean),
   originalRecipients: (Deno.env.get("RESEND_BOOKING_ORIGINAL_RECIPIENTS") || "").split(",").map(value => value.trim()).filter(Boolean),
 };
+const admin = () => createClient(Deno.env.get("SUPABASE_URL") || "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "", {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
 
 Deno.serve(createBookingWebhook(config, {
   verify: (body, headers, secret) => {
@@ -29,11 +32,13 @@ Deno.serve(createBookingWebhook(config, {
     }), from: mail.from && "address" in mail.from ? { address: mail.from.address } : undefined };
   },
   fetch,
+  hasRegisteredEmail: async emails => {
+    const { data, error } = await admin().rpc("has_registered_court_booking_email", { p_emails: emails });
+    if (error) throw new Error("sender_lookup_unavailable");
+    return data === true;
+  },
   record: async params => {
-    const admin = createClient(Deno.env.get("SUPABASE_URL") || "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "", {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data, error } = await admin.rpc("record_court_booking", params);
+    const { data, error } = await admin().rpc("record_court_booking", params);
     if (error) throw new Error("booking_storage_unavailable");
     return data;
   },

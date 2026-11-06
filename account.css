@@ -229,6 +229,18 @@
     .account-header > div { min-width: 0; }
     .account-header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
     .account-header h2 { margin-bottom: 0.1rem; }
+    .court-access-health {
+      margin: 0 0 1rem;
+      padding: 0.85rem;
+      border: 1px solid var(--negativ);
+      border-radius: var(--container-radius-sm);
+      background: var(--surface);
+      color: var(--text);
+      font-size: var(--text-sm);
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+    .court-access-health[hidden] { display: none; }
     .auth-account-email { color: var(--dim); font-size: 0.88rem; margin: 0; text-wrap: nowrap; }
     .account-settings {
       display: grid;
@@ -520,6 +532,44 @@
     .account-task-status.is-open { border-color: var(--accent); background: transparent; color: var(--accent); }
     .account-task-status.is-complete { border-color: color-mix(in srgb, var(--positiv) 45%, var(--border)); color: var(--positiv); }
     .result-card-timing { letter-spacing: 0.02rem; }
+    .result-card-resources {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.5rem 1rem;
+      min-width: 0;
+    }
+    .result-card-resources:not(:has(> :not([hidden]))) { display: none; }
+    .result-card-resources > .racket-status { flex: 1 1 14rem; min-width: 0; overflow-wrap: anywhere; }
+    .hall-code {
+      margin-left: auto;
+      min-width: 0;
+      max-width: 100%;
+      text-align: right;
+      color: var(--muted);
+      font: var(--text-sm) var(--font-body);
+      letter-spacing: 0.02rem;
+    }
+    .hall-code:not([data-hall-code-surface="home"])[data-hall-code-state="available"] {
+      white-space: nowrap;
+    }
+    .hall-code[data-hall-code-surface="home"] {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1;
+    }
+    .hall-code[data-hall-code-surface="home"][data-hall-code-state="available"] {
+      padding: 0.2rem 0.45rem;
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-full);
+      background: var(--surface);
+      color: var(--text);
+      font: 600 var(--text-sm) var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
     .racket-check, .racket-status { color: var(--muted); font: var(--text-sm) var(--font-body); letter-spacing: 0.02rem; }
     .racket-check.is-free { color: var(--positiv); }
     .racket-check.is-busy { color: var(--negativ); }
@@ -579,6 +629,7 @@
     .match-schedule-form { display: grid; gap: 8px; }
     .match-schedule-actions,
     .scheduled-result-actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .match-schedule-actions { flex-wrap: wrap; }
     .result-entry-form label,
     .match-schedule-form label,
     .training-form label,

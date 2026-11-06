@@ -16,6 +16,31 @@
     return starts.includes(timeLabel(Math.floor(minute(time) / 30) * 30));
   }
 
+  function racketHourHint(time, starts = []) {
+    const first = isRacketBusy(time, starts);
+    const second = isRacketBusy(timeLabel(Math.floor(minute(time) / 30) * 30 + 30), starts);
+    return first && second ? racketHint : first || second ? 'Schläger zum Teil bereits belegt. Platzzeit trotzdem auswählbar.' : '';
+  }
+
+  function renderRacketMarker(selectable, hint = racketHint) {
+    return selectable ? racketIcon : racketIcon.replace('aria-hidden="true"', `tabindex="0" role="img" aria-label="${hint}"`);
+  }
+
+  function courtLabel(court) {
+    const name = String(court?.name || '').trim();
+    const number = Number(name.match(/(10|[1-9])$/)?.[1]);
+    if (court?.location === 'indoor' && number >= 1 && number <= 4) return `H${number}`;
+    if (court?.location === 'outdoor' && number >= 1 && number <= 10) return `C${number}`;
+    return name || 'Platz';
+  }
+
+  function renderCourtLabel(court) {
+    const full = String(court?.name || '').trim() || 'Platz';
+    const short = courtLabel(court);
+    return short === full ? escape(full)
+      : `<span class="court-name-full">${escape(full)}</span><span class="court-name-short">${escape(short)}</span>`;
+  }
+
   function hourBounds(data, hoursFilter = 'office') {
     return { from: Math.max(minute(data.opening.from), hoursFilter === 'office' ? 7 * 60 : 0),
       until: Math.min(minute(data.opening.until), hoursFilter === 'office' ? 20 * 60 : 24 * 60) };
@@ -47,6 +72,35 @@
       }
     }
     return [...times].sort();
+  }
+
+  function renderAppointmentRow(times, appointments = [], skeleton = false) {
+    if (!times.length) return '';
+    const from = minute(times[0]);
+    const until = minute(times.at(-1)) + 30;
+    const position = value => {
+      for (let index = 0; index < times.length; index++) {
+        const start = minute(times[index]);
+        const end = index + 1 < times.length ? minute(times[index + 1]) : until;
+        if (value < end) return index + (value - start) / (end - start);
+      }
+      return times.length;
+    };
+    const lanes = [];
+    const entries = appointments.map(entry => ({ ...entry, from: Math.max(from, minute(entry.time)),
+      until: Math.min(until, minute(entry.time) + entry.duration) }))
+      .filter(entry => entry.until > entry.from)
+      .sort((a, b) => a.from - b.from || a.id.localeCompare(b.id));
+    const blocks = entries.map(entry => {
+      let lane = lanes.findIndex(end => end <= entry.from);
+      if (lane < 0) lane = lanes.length;
+      lanes[lane] = entry.until;
+      const left = position(entry.from) / times.length * 100;
+      const width = (position(entry.until) - position(entry.from)) / times.length * 100;
+      const info = `${entry.label} · ${entry.time}–${timeLabel(minute(entry.time) + entry.duration)} Uhr · Ohne zugeordnete Platzbuchung${entry.participants ? ` · ${entry.participants}` : ''}`;
+      return `<span class="court-appointment" tabindex="0" role="img" aria-label="${escape(info)}" data-court-appointment-info="${escape(info)}" style="left:${left}%;width:${width}%;top:${lane * 16}px">${escape(entry.shortLabel)}</span>`;
+    }).join('');
+    return `<tr class="court-unassigned-row"><th scope="row"><span class="sr-only">Termine ohne zugeordnete Platzbuchung</span></th><td colspan="${times.length}"><div class="court-appointment-track"><div class="court-appointment-lanes" style="height:${Math.max(32, lanes.length * 16)}px">${skeleton ? '' : blocks}</div></div></td></tr>`;
   }
 
   const dialog = document.createElement('dialog');
@@ -87,6 +141,7 @@
   let racketAvailability = null, racketController = null;
   let options = {}, data = null, selected = null, filter = 'outdoor', ownBookings = [];
   let availableBookings = [], hoursFilter = 'office', preview = null;
+  let calendarUserId = null;
   let generation = 0, bookingShortcutVersion = 0, controller = null, interval = null, historyId = null, afterClose = null, trigger = null, revealBookingId = null;
 
   function updateDateControls() {
@@ -106,8 +161,8 @@
     selected = slot;
     const court = data?.courts.find(item => item.id === slot?.courtId);
     const selection = dialog.querySelector('[data-court-selection]');
-    selection.textContent = slot
-      ? `${court?.name || slot.courtName || 'Platz'} · ${dateLabel(data.date)} · ${slot.time}–${clock(slot.end)}${slot.reserved ? ' · Platz bereits gebucht' : ''}` : '';
+    selection.innerHTML = slot
+      ? `${renderCourtLabel(court || { name: slot.courtName })} · ${escape(dateLabel(data.date))} · ${escape(slot.time)}–${escape(clock(slot.end))}${slot.reserved ? ' · Platz bereits gebucht' : ''}` : '';
     selection.setAttribute('aria-invalid', 'false');
     grid.querySelectorAll('[data-court-slot]').forEach(button => {
       const active = button.dataset.courtSlot === slot?.id;
@@ -230,11 +285,11 @@
     const currentHeight = grid.getBoundingClientRect().height;
     const skeletonData = source || { opening: { from: '07:00', until: '20:00' }, slots: [] };
     const times = buildTimes(skeletonData, hoursFilter);
-    const courts = source?.courts.filter(court => court.location === filter) || Array(4).fill(null);
+    const courts = source?.courts.filter(court => court.location === filter) || Array(filter === 'indoor' ? 4 : 10).fill(null);
     if (currentHeight) grid.style.minHeight = `${currentHeight}px`;
     grid.innerHTML = `<table class="court-grid court-grid-skeleton loading-skeleton" aria-hidden="true">
       <thead><tr><th scope="col">Platz</th>${times.map(time => `<th scope="col">${time}</th>`).join('')}</tr></thead>
-      <tbody>${courts.map(court => `<tr><th scope="row">${court ? escape(court.name) : '<span></span>'}</th>${times.map(() => '<td><span></span></td>').join('')}</tr>`).join('')}</tbody>
+      <tbody>${courts.map(() => `<tr><th scope="row"><span></span></th>${times.map(() => '<td><span></span></td>').join('')}</tr>`).join('')}${renderAppointmentRow(times, [], true)}</tbody>
     </table>`;
     grid.scrollTop = scroll.top;
     grid.scrollLeft = scroll.left;
@@ -252,7 +307,8 @@
     preview = null;
     grid.innerHTML = courts.length && times.length ? `<table class="court-grid"><caption class="sr-only">${escape(dateLabel(data.date))}, freie Startzeiten für 60 Minuten</caption>
       <thead><tr><th scope="col">Platz</th>${times.map(time => `<th scope="col">${time}</th>`).join('')}</tr></thead>
-      <tbody>${courts.map(court => `<tr><th scope="row">${escape(court.name)}</th>${times.map(time => {
+      <tbody>${courts.map(court => {
+        return `<tr><th scope="row">${renderCourtLabel(court)}</th>${times.map(time => {
         const slot = slots.get(`${court.id}:${time}`);
         const bookedCover = booked.find(item => item.courtId === court.id && minute(time) >= minute(item.time) && minute(time) < minute(item.time) + item.duration);
         const freeCovered = visible.some(item => item.courtId === court.id && minute(time) >= minute(item.time) && minute(time) < minute(item.time) + 60);
@@ -261,17 +317,19 @@
           ? `Platz bereits gebucht, ${court.name}, ${bookedCover.time} bis ${clock(bookedCover.end)}${bookedCover.matchLabel ? `, ${bookedCover.matchLabel}` : ''}` : '';
         const bookingNumber = bookingMatchNumber(bookedCover);
         const bookingCellIndex = bookedCover ? (minute(time) - minute(bookedCover.time)) / 30 : -1;
-        const bookingMarker = bookingNumber && bookingCellIndex < 2
-          ? `<span class="court-booking-match-number ${bookingCellIndex === 0 ? 'is-prefix' : 'is-number'}" aria-hidden="true">${bookingCellIndex === 0 ? 'P#' : escape(bookingNumber)}</span>` : '';
+        const bookingMarker = bookingNumber && bookingCellIndex === 0
+          ? `<span class="court-booking-match-number" aria-hidden="true">P.${escape(bookingNumber)}</span>` : '';
         const className = bookedCover
           ? `is-booked${bookedCover.matchId ? ' is-assigned' : ''}${minute(time) === minute(bookedCover.time) ? ' is-booked-start' : ''}${minute(time) + 30 >= minute(bookedCover.time) + bookedCover.duration ? ' is-booked-end' : ''}`
           : freeCovered ? 'is-free' : 'is-unavailable';
         const label = choice?.reserved ? bookingLabel : choice ? `${court.name}, ${time} bis ${clock(choice.end)}, frei` : '';
-        const racketBusy = choice && isRacketBusy(choice.time, data.racketBusyStarts);
+        const racketBusy = !bookedCover?.matchId && isRacketBusy(time, data.racketBusyStarts);
+        const racketText = bookedCover?.matchId ? '' : racketHourHint(time, data.racketBusyStarts);
         return `<td data-court-cell="${escape(court.id)}" data-court-time="${time}" class="${className}">${choice
-          ? `<button type="button" class="court-slot" data-court-slot="${escape(choice.id)}" data-court-racket-start="${escape(choice.time)}" data-court-label="${escape(label)}" aria-pressed="false" aria-label="${escape(label + (racketBusy ? `. ${racketHint}` : ''))}">${racketBusy ? racketIcon : ''}</button>`
-          : `<span class="sr-only">${escape(bookingLabel || 'Nicht als Stundenbeginn verfügbar')}</span>`}${bookingMarker}</td>`;
-      }).join('')}</tr>`).join('')}</tbody></table>` : '<p class="hint">Für diese Auswahl sind keine Plätze verfügbar.</p>';
+          ? `<button type="button" class="court-slot" data-court-slot="${escape(choice.id)}" data-court-label="${escape(label)}" aria-pressed="false" aria-label="${escape(label + (racketText ? `. ${racketText}` : ''))}"></button>`
+          : `<span class="sr-only">${escape(bookingLabel || 'Nicht als Stundenbeginn verfügbar')}</span>`}${racketBusy ? renderRacketMarker(Boolean(choice), racketText) : ''}${bookingMarker}</td>`;
+      }).join('')}</tr>`;
+      }).join('')}${renderAppointmentRow(times, data.appointments || [])}</tbody></table>` : '<p class="hint">Für diese Auswahl sind keine Plätze verfügbar.</p>';
     grid.style.minHeight = '';
     grid.scrollTop = scroll.top;
     grid.scrollLeft = scroll.left;
@@ -289,22 +347,34 @@
   }
 
   function showRacketTooltip(event) {
-    const button = event.target.closest('[data-court-racket-start]');
-    if (event.type === 'focusin' && !button?.matches(':focus-visible')) return;
+    if (event.type === 'focusin' && !event.target.matches(':focus-visible')) return;
     hideRacketTooltip();
-    if (!button?.querySelector('.court-racket-icon')
-      || event.type === 'pointerover' && !event.target.closest('.court-racket-icon')) return;
-    const anchor = button.getBoundingClientRect();
+    const appointment = event.target.closest('[data-court-appointment-info]');
+    if (appointment) {
+      showCalendarTooltip(appointment, appointment.dataset.courtAppointmentInfo, appointment);
+      return;
+    }
+    const cell = event.target.closest('[data-court-cell]');
+    if (!cell || cell.classList.contains('is-assigned')) return;
+    const hint = racketHourHint(cell.dataset.courtTime, data?.racketBusyStarts);
+    if (!hint) return;
+    const target = event.type === 'focusin' ? event.target : cell.querySelector('[data-court-slot]') || cell.querySelector('.court-racket-icon') || cell;
+    showCalendarTooltip(cell, hint, target);
+  }
+
+  function showCalendarTooltip(cell, hint, target) {
+    const anchor = cell.getBoundingClientRect();
     const visible = grid.getBoundingClientRect();
     if (anchor.right <= visible.left || anchor.left >= visible.right
       || anchor.bottom <= visible.top || anchor.top >= visible.bottom) return;
     const bounds = dialog.getBoundingClientRect();
+    racketTooltip.textContent = hint;
     racketTooltip.hidden = false;
     const width = racketTooltip.offsetWidth;
     const height = racketTooltip.offsetHeight;
     racketTooltip.style.left = `${Math.max(bounds.left + 8, Math.min(anchor.left + anchor.width / 2 - width / 2, bounds.right - width - 8))}px`;
     racketTooltip.style.top = `${anchor.bottom + height + 8 < bounds.bottom ? anchor.bottom + 6 : anchor.top - height - 6}px`;
-    button.setAttribute('aria-describedby', 'court-racket-tooltip');
+    target.setAttribute('aria-describedby', 'court-racket-tooltip');
   }
 
   // Ein nachgeladener Schlägerstatus verändert weder die Platzwahl noch den Fokus.
@@ -312,10 +382,16 @@
     hideRacketTooltip();
     if (!data) return;
     data.racketBusyStarts = racketAvailability?.date === data.date ? racketAvailability.busyStarts : [];
-    grid.querySelectorAll('[data-court-racket-start]').forEach(button => {
-      const busy = isRacketBusy(button.dataset.courtRacketStart, data.racketBusyStarts);
-      button.innerHTML = busy ? racketIcon : '';
-      button.setAttribute('aria-label', button.dataset.courtLabel + (busy ? `. ${racketHint}` : ''));
+    grid.querySelectorAll('[data-court-cell]').forEach(cell => {
+      const button = cell.querySelector('[data-court-slot]');
+      const assigned = cell.classList.contains('is-assigned');
+      const busy = !assigned && isRacketBusy(cell.dataset.courtTime, data.racketBusyStarts);
+      const hint = assigned ? '' : racketHourHint(cell.dataset.courtTime, data.racketBusyStarts);
+      const marker = cell.querySelector('.court-racket-icon');
+      if (busy && !marker) cell.insertAdjacentHTML('beforeend', renderRacketMarker(Boolean(button), hint));
+      if (!busy) marker?.remove();
+      if (marker?.matches('[role="img"]')) marker.setAttribute('aria-label', hint);
+      button?.setAttribute('aria-label', button.dataset.courtLabel + (hint ? `. ${hint}` : ''));
     });
     if (grid.contains(document.activeElement) && document.activeElement.matches(':focus-visible')) {
       showRacketTooltip({ target: document.activeElement, type: 'focusin' });
@@ -383,18 +459,22 @@
       const config = window.PADEL_SUPABASE_CONFIG;
       const ownBookingsPromise = Promise.resolve(window.PadelKonto?.getCourtBookings?.(date) || [])
         .catch(() => []);
+      const appointmentsPromise = Promise.resolve(window.PadelKonto?.getCourtAppointments?.(date) || [])
+        .catch(() => []);
       const response = await fetch(`${config.url}/functions/v1/court-availability`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', apikey: config.publishableKey },
         body: JSON.stringify({ date }), signal: requestController.signal, cache: 'no-store',
       });
       if (!response.ok) throw new Error('Nicht verfügbar');
       const result = await response.json();
-      const bookings = await ownBookingsPromise;
+      const [bookings, appointments] = await Promise.all([ownBookingsPromise, appointmentsPromise]);
       if (version !== generation || !dialog.open) return;
       if (result.date !== date || !Array.isArray(result.courts) || !Array.isArray(result.slots) || !result.opening) throw new Error('Ungültige Antwort');
       data = result;
       data.racketBusyStarts = racketAvailability?.date === date ? racketAvailability.busyStarts : [];
       ownBookings = Array.isArray(bookings) ? bookings : [];
+      const assignedIds = new Set(ownBookings.map(booking => `match:${booking.match_id}`));
+      data.appointments = (Array.isArray(appointments) ? appointments : []).filter(entry => !assignedIds.has(entry.id));
       const revealRequested = Boolean(revealBookingId);
       const bookingToReveal = requestedBooking();
       if (bookingToReveal) prepareBookedView(bookingToReveal, result);
@@ -444,6 +524,7 @@
   function open(next = {}) {
     if (dialog.open) return;
     options = next;
+    calendarUserId = window.PadelKonto?.getSession?.()?.user?.id || null;
     trigger = next.trigger || document.activeElement;
     filter = defaultFilter(next.seasonId);
     hoursFilter = 'office'; preview = null; revealBookingId = null; availableBookings = [];
@@ -496,7 +577,8 @@
     }
     if (event.target.closest('[data-court-retry]')) { void load(); return; }
     if (event.target.closest('[data-court-account]')) { close(() => window.PadelKonto?.chooseCourtMatch(null)); return; }
-    const slotButton = event.target.closest('[data-court-slot]');
+    const slotButton = event.target.closest('[data-court-slot]')
+      || event.target.closest('.court-racket-icon')?.closest('[data-court-cell]')?.querySelector('[data-court-slot]');
     if (slotButton) {
       const slot = findSelectableSlot(slotButton.dataset.courtSlot);
       if (!slot) { void load(); return; }
@@ -518,7 +600,8 @@
     }
   });
   const previewSlot = event => {
-    const button = event.target.closest('[data-court-slot]');
+    const button = event.target.closest('[data-court-slot]')
+      || event.target.closest('.court-racket-icon')?.closest('[data-court-cell]')?.querySelector('[data-court-slot]');
     preview = button ? findSelectableSlot(button.dataset.courtSlot) : null;
     paintRange();
     showRacketTooltip(event);
@@ -532,11 +615,19 @@
     if (grid.contains(document.activeElement) && document.activeElement.matches(':focus-visible')) {
       showRacketTooltip({ target: document.activeElement, type: 'focusin' });
     }
-  });
+  }, { capture: true });
   window.addEventListener('resize', hideRacketTooltip);
   dateInput.addEventListener('change', () => { if (dateInput.validity.valid) void load(); });
   window.addEventListener('popstate', () => { if (dialog.open && history.state?.courtAvailability !== historyId) finishClose(); });
   document.addEventListener('visibilitychange', () => { if (dialog.open && !document.hidden) void load(true); });
+  window.addEventListener('padel:auth-state-changed', event => {
+    const userId = event.detail?.session?.user?.id || null;
+    if (!dialog.open || userId === calendarUserId) return;
+    calendarUserId = userId;
+    ownBookings = [];
+    if (data) { data.appointments = []; renderGrid(); }
+    void load();
+  });
   document.addEventListener('click', event => {
     const link = event.target.closest('[data-court-info-open]');
     if (link) { event.preventDefault(); open({ seasonId: link.dataset.courtSeason, trigger: link }); }

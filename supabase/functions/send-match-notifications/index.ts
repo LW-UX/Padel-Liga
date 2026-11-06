@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { dispatchCourtAccessAlerts } from "./court-access-alerts.ts";
 
 type NotificationType =
   | "result_entry"
@@ -110,6 +111,10 @@ function getEventLineup(job: NotificationJob) {
     : `${formatTeamLabel(job.team_one_label)} vs. ${formatTeamLabel(job.team_two_label)}`;
 }
 
+function getCalendarTitle(job: NotificationJob) {
+  return [job.match_label, getEventLineup(job)].filter(Boolean).join(": ");
+}
+
 function formatIcsDate(date: Date) {
   return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 }
@@ -170,7 +175,7 @@ function buildCalendar(job: NotificationJob, calendar: CalendarDetails, organize
     `DTSTAMP:${formatIcsDate(new Date())}`,
     `DTSTART:${formatIcsDate(start)}`,
     `DTEND:${formatIcsDate(end)}`,
-    `SUMMARY:${escapeIcsText([job.match_label, getEventLineup(job)].filter(Boolean).join(": "))}`,
+    `SUMMARY:${escapeIcsText(getCalendarTitle(job))}`,
     `DESCRIPTION:${escapeIcsText(description)}`,
     `LOCATION:${escapeIcsText(CALENDAR_LOCATION)}`,
     `ORGANIZER;CN=PadelLiga:mailto:${organizer}`,
@@ -226,7 +231,7 @@ function buildDestination(job: NotificationJob, siteUrl: URL) {
 function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailContent {
   const matchName = getEventHeading(job);
   const training = isTrainingJob(job);
-  const calendarSubject = training ? "Training – PadelLiga" : `${job.match_label} – PadelLiga ${job.season_label}`;
+  const calendarSubject = training ? "Training – PadelLiga" : `${getCalendarTitle(job)} – PadelLiga ${job.season_label}`;
   const calendarUpdateNotice = "Wird der Termin über die Webseite verschoben oder abgesagt, bekommst du automatisch eine Aktualisierung.";
   if (job.notification_type === "calendar_invitation") {
     const moved = calendar?.is_update ?? false;
@@ -471,5 +476,44 @@ Deno.serve(async (request) => {
     }
   }
 
-  return jsonResponse({ claimed: jobs.length, sent, failed });
+  // Use the existing dispatcher after match mail. This only delivers queued
+  // incidents; it never polls Playtomic or tests/renews a Playtomic session.
+  let courtAccessAlerts;
+  try {
+    courtAccessAlerts = await dispatchCourtAccessAlerts({
+      siteUrl: publicSiteUrl,
+      async claim(token) {
+        const { data, error } = await serviceClient.rpc("claim_court_access_alerts", { p_claim_token: token, p_limit: 5 });
+        if (error) throw new Error("alert_queue_unavailable");
+        return data || [];
+      },
+      async current(job, token) {
+        const { data, error } = await serviceClient.rpc("court_access_alert_is_current", {
+          p_incident_id: job.incident_id, p_user_id: job.user_id, p_claim_token: token,
+        });
+        if (error) throw new Error("alert_status_unavailable");
+        return data === true;
+      },
+      async complete(job, token, success) {
+        const { error } = await serviceClient.rpc("complete_court_access_alert", {
+          p_incident_id: job.incident_id, p_user_id: job.user_id, p_claim_token: token, p_success: success,
+        });
+        if (error) throw new Error("alert_completion_unavailable");
+      },
+      async send(job, mail) {
+        const response = await fetch("https://api.resend.com/emails", {
+          method: "POST", headers: { "Content-Type": "application/json",
+            Authorization: `Bearer ${resendApiKey}`, "Idempotency-Key": job.idempotency_key },
+          body: JSON.stringify({ from: sender, to: [job.recipient_email], ...mail }),
+          signal: AbortSignal.timeout(15000),
+        });
+        await response.body?.cancel();
+        return response.ok;
+      },
+    });
+  } catch {
+    console.error("Hallencode-Betriebswarnungen konnten nicht vollständig verarbeitet werden.");
+    courtAccessAlerts = { unavailable: true };
+  }
+  return jsonResponse({ claimed: jobs.length, sent, failed, courtAccessAlerts });
 });

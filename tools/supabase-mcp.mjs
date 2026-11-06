@@ -173,11 +173,21 @@ if (command === 'list-tools') {
     name: 'get_logs',
     arguments: { service: argument || 'edge-function' }
   }));
+} else if (command === 'store-playtomic-session') {
+  const { startSessionSetup } = await import('./playtomic-session-setup.mjs');
+  const { url } = await startSessionSetup({ projectRef, accessToken, bookingId: argument });
+  console.log(url);
 } else if (command === 'deploy-function') {
   const functionPath = requireFunctionPath(argument);
   let files = await readFunctionFiles(functionPath);
   if (!files.some((file) => file.name === 'index.ts')) fail('Der Function-Einstieg index.ts fehlt.');
   let entrypointPath = 'index.ts';
+  if (argument === 'court-access-code') {
+    files = files.map(file => ({ ...file, name: `${argument}/${file.name}` }));
+    files.push({ name: '_shared/playtomic-access-code.ts',
+      content: await readFile(resolve(functionsDirectory, '_shared/playtomic-access-code.ts'), 'utf8') });
+    entrypointPath = `${argument}/index.ts`;
+  }
   if (argument === 'receive-court-booking') {
     files = files.map(file => ({ ...file, name: `${argument}/${file.name}` }));
     files.push({ name: '_shared/playtomic-booking-mail.ts',
@@ -201,6 +211,47 @@ if (command === 'list-tools') {
       files
     }
   }));
+} else if (command === 'probe-court-access-codes') {
+  const matchIds = (argument || '').split(',').filter(Boolean);
+  if (!matchIds.length || matchIds.length > 10 || matchIds.some(id => id.length > 200)) fail('Partie-IDs für die Prüfung fehlen.');
+  const secrets = await managementRequest('/secrets');
+  if (!secrets.some(secret => secret.name === 'PLAYTOMIC_READ_ONLY_SESSION_COOKIE')) {
+    console.log(JSON.stringify({ configured: false }));
+    process.exitCode = 1;
+  } else {
+    const slug = 'court-access-code-probe';
+    const actorResult = await rpc('tools/call', { name: 'execute_sql', arguments: { query:
+      "select profile.id from public.profiles as profile join auth.users as account on account.id = profile.id where profile.app_role = 'admin' and account.email_confirmed_at is not null limit 1" } });
+    if (actorResult?.isError) fail('Der bestätigte Prüf-Admin konnte nicht ermittelt werden.');
+    const actorText = (actorResult.content || []).map(item => item.text || '').join('\n');
+    let actorData;
+    try { actorData = JSON.parse(actorText).result || actorText; } catch { actorData = actorText; }
+    const actorId = String(actorData).match(/"id"\s*:\s*"([0-9a-f-]{36})"/i)?.[1];
+    if (!actorId) fail('Ein bestätigter Prüf-Admin fehlt.');
+    const probeKey = randomUUID();
+    const files = (await readFunctionFiles(requireFunctionPath(slug))).map(file => ({
+      ...file, name: `${slug}/${file.name}`, content: file.content.replace('__COURT_PROBE_KEY__', probeKey),
+    }));
+    for (const path of ['court-access-code/handler.ts', '_shared/playtomic-access-code.ts']) {
+      files.push({ name: path, content: await readFile(resolve(functionsDirectory, path), 'utf8') });
+    }
+    const deployed = await rpc('tools/call', { name: 'deploy_edge_function', arguments: {
+      name: slug, entrypoint_path: `${slug}/index.ts`, verify_jwt: false, files,
+    } });
+    if (deployed?.isError) fail('Der geschützte Prüfer konnte nicht bereitgestellt werden.');
+    try {
+      const response = await fetch(`https://${projectRef}.supabase.co/functions/v1/${slug}`, {
+        method: 'POST', headers: { Authorization: `Bearer ${probeKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matchIds, actorId }), signal: AbortSignal.timeout(60000),
+      });
+      const result = await response.json();
+      // Only sanitized diagnostics are returned by the probe, never codes/keys.
+      console.log(JSON.stringify(result));
+      if (!response.ok || !result.configured || result.results?.some(row => !row.codePresent || !row.cacheConfirmed)) process.exitCode = 1;
+    } finally {
+      await managementRequest(`/functions/${slug}`, { method: 'DELETE' });
+    }
+  }
 } else if (['list-booking-mail', 'inspect-booking-mail', 'inspect-booking-access', 'normalize-booking-mail', 'configure-booking-mail', 'replay-booking-mail'].includes(command)) {
   const slug = 'resend-booking-setup';
   const files = (await readFunctionFiles(requireFunctionPath(slug))).map(file => ({ ...file, name: `${slug}/${file.name}` }));

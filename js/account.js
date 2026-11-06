@@ -52,6 +52,7 @@
     },
     notificationPreferencesReady: false,
     notificationPreferencesAvailable: true,
+    courtAccessHealth: null,
     resultTaskScope: 'relevant',
     resultTasks: [],
     trainingTasks: [],
@@ -82,6 +83,12 @@
   let unrateTrigger = null;
   let accountMessageTimer = null;
   let accountTaskPromptTarget = null;
+  let hallCodeRun = 0;
+  let courtAccessHealthRun = 0;
+  let hallCodeTimer = null;
+  let hallCodeCacheUser = null;
+  const hallCodeCache = new Map();
+  const hallCodeRequests = new Map();
   const shownAccountTaskPromptKeys = new Set();
   let shouldOpenAccountFromLink = requestedAccountOpen;
   let courtAccountRequested = false;
@@ -266,10 +273,17 @@
     }
   }
 
+  function getBookedCourtNumber(name) {
+    const match = String(name || '').trim().match(/(?:^|\s)(H[1-4]|10|[1-9])$/i);
+    if (!match || (/\b(?:indoor|halle)\b/i.test(name) && !/^H/i.test(match[1]))) return '';
+    return match[1].toUpperCase();
+  }
+
   function getCourtBookingWindow(target) {
     const from = target?.dataset.courtBookingFrom;
     const until = target?.dataset.courtBookingUntil;
-    return from && until ? { from, until } : null;
+    const number = getBookedCourtNumber(target?.dataset.courtBookingNumber);
+    return from && until ? { from, until, number } : null;
   }
 
   function describeCourtAndRacket(result, target, saved = false) {
@@ -278,11 +292,12 @@
     if (!court) return racket;
     const racketFrom = result?.state === 'covered' ? result.busyFrom : result?.from;
     const racketUntil = result?.state === 'covered' ? result.busyUntil : result?.until;
+    const place = court.number ? `Platz ${court.number}` : 'Platz';
     if (['booked', 'covered'].includes(result?.state)
       && racketFrom === court.from && racketUntil === court.until) {
-      return { text: `✓ Platz und Schläger sind gebucht von ${court.from}–${court.until} Uhr`, tone: 'is-free' };
+      return { text: `✓ ${place} und Schläger gebucht: ${court.from}–${court.until} Uhr`, tone: 'is-free' };
     }
-    const courtText = `✓ Platz gebucht von ${court.from}–${court.until} Uhr`;
+    const courtText = `✓ ${place} gebucht von ${court.from}–${court.until} Uhr`;
     if (!racket) return { text: courtText, tone: 'is-free' };
     return {
       text: `${courtText} · ${racket.text.replace(/^[✓⚠]\s*/, '')}`,
@@ -329,6 +344,7 @@
     bookingInput.value = '';
     delete target.dataset.courtBookingFrom;
     delete target.dataset.courtBookingUntil;
+    delete target.dataset.courtBookingNumber;
   }
 
   function scheduleRacketCheck(form) {
@@ -429,8 +445,128 @@
     }
   }
 
+  function clearHallAccessCodes() {
+    hallCodeRun++;
+    window.clearTimeout(hallCodeTimer);
+    hallCodeTimer = null;
+    document.querySelectorAll('[data-hall-code-match]').forEach(target => {
+      target.textContent = '';
+      delete target.dataset.hallCodeState;
+      target.hidden = true;
+    });
+  }
+
+  async function loadHallAccessCodes() {
+    const run = ++hallCodeRun;
+    window.clearTimeout(hallCodeTimer);
+    hallCodeTimer = null;
+    const userId = state.session?.user?.id;
+    if (hallCodeCacheUser !== userId) {
+      hallCodeCache.clear();
+      hallCodeRequests.clear();
+      hallCodeCacheUser = userId;
+    }
+    if (!userId || document.hidden) {
+      clearHallAccessCodes();
+      return;
+    }
+    const visible = target => target.dataset.hallCodeSurface === 'home'
+      ? document.getElementById('home-matchday')?.hidden === false && (!target.getClientRects || target.getClientRects().length > 0)
+      : !!document.getElementById('auth-dialog')?.open;
+    const targets = [...document.querySelectorAll('[data-hall-code-match]')].filter(visible);
+    let nextRefresh = Number.POSITIVE_INFINITY;
+    for (const target of targets) {
+      const active = () => run === hallCodeRun && state.session?.user?.id === userId
+        && target.isConnected && visible(target) && !document.hidden;
+      if (!active()) return;
+      if (!(Number(target.dataset.hallCodeUntil) > Date.now())) {
+        target.textContent = '';
+        target.hidden = true;
+        continue;
+      }
+      target.hidden = false;
+      const key = `${target.dataset.hallCodeMatch}:${target.dataset.hallCodeBooking || ''}:${target.dataset.hallCodeUntil}`;
+      let cached = hallCodeCache.get(key);
+      if (!cached || cached.until <= Date.now()) {
+        target.dataset.hallCodeState = 'loading';
+        target.textContent = 'Code wird geladen …';
+        if (!hallCodeRequests.has(key)) {
+          const request = (async () => {
+            let result;
+            try {
+              const response = await state.client.functions.invoke('court-access-code', { body: { matchId: target.dataset.hallCodeMatch } });
+              if (!response.error) result = response.data;
+              if (state.profile?.app_role === 'admin') void loadCourtAccessHealth();
+            } catch (_error) { /* Keine Schlüssel oder Antwortinhalte protokollieren. */ }
+            const until = result?.state === 'available'
+              ? Math.min(Date.parse(result.refreshAt || result.endsAt), Date.parse(result.endsAt))
+              : result?.state === 'pending' ? Math.max(Date.now() + 1000, Date.parse(result.retryAt) || 0)
+              : Math.max(Date.now() + 60000, Date.parse(result?.retryAt) || 0);
+            const entry = { result, until: Number.isFinite(until) ? until : Date.now() + 60000 };
+            if (state.session?.user?.id === userId) hallCodeCache.set(key, entry);
+            return entry;
+          })();
+          hallCodeRequests.set(key, request);
+          void request.finally(() => { if (hallCodeRequests.get(key) === request) hallCodeRequests.delete(key); });
+        }
+        cached = await hallCodeRequests.get(key);
+      }
+      if (!active()) return;
+      const result = cached.result;
+      const until = Math.min(Number(target.dataset.hallCodeUntil), Date.parse(result?.endsAt));
+      if (result?.state === 'none' || !(Number(target.dataset.hallCodeUntil) > Date.now())) {
+        target.textContent = '';
+        delete target.dataset.hallCodeState;
+        target.hidden = true;
+      } else if (result?.state === 'available' && /^\d{4}#$/.test(result.code) && until > Date.now()) {
+        target.dataset.hallCodeState = 'available';
+        target.textContent = `${target.dataset.hallCodeSurface === 'home' ? 'Code' : 'Hallencode'}: ${result.code}`;
+        nextRefresh = Math.min(nextRefresh, until, cached.until);
+      } else if (result?.state === 'pending') {
+        target.dataset.hallCodeState = 'loading';
+        target.textContent = 'Code wird geladen …';
+        nextRefresh = Math.min(nextRefresh, cached.until);
+      } else {
+        target.dataset.hallCodeState = 'unavailable';
+        target.textContent = 'Hallencode gerade nicht verfügbar';
+        // A failure is retried only on a new user view, not by endless polling.
+      }
+    }
+    if (Number.isFinite(nextRefresh) && run === hallCodeRun) {
+      hallCodeTimer = window.setTimeout(() => { void loadHallAccessCodes(); }, Math.min(2 ** 31 - 1, Math.max(100, nextRefresh - Date.now())));
+    }
+  }
+
   function getProfileDisplayName() {
     return deriveDisplayNameFromEmail(state.session?.user?.email);
+  }
+
+  function renderCourtAccessHealth() {
+    const target = document.querySelector('[data-court-access-health]');
+    if (!target) return;
+    const health = state.courtAccessHealth;
+    target.hidden = !state.session?.user || state.profile?.app_role !== 'admin' || !health?.active;
+    target.textContent = target.hidden ? '' : health.reason === 'login_required'
+      ? 'Hallencode-Abruf gestört: Die Playtomic-Anmeldung ist abgelaufen oder ungültig. Bitte neu anmelden und den gespeicherten Cookie ersetzen.'
+      : health.reason === 'configuration'
+      ? 'Hallencode-Abruf gestört: Der Playtomic-Lesezugang fehlt oder ist ungültig. Bitte einen aktuellen Cookie hinterlegen.'
+      : 'Hallencode-Abruf gerade gestört. Bitte den Playtomic-Abruf prüfen. Bei einer vorübergehenden Störung kann ein späterer Aufruf wieder funktionieren.';
+  }
+
+  async function loadCourtAccessHealth() {
+    const run = ++courtAccessHealthRun;
+    const userId = state.session?.user?.id;
+    if (!userId || state.profile?.app_role !== 'admin') {
+      state.courtAccessHealth = null;
+      renderCourtAccessHealth();
+      return;
+    }
+    try {
+      const { data, error } = await state.client.rpc('get_my_court_access_health');
+      if (run !== courtAccessHealthRun || state.session?.user?.id !== userId || state.profile?.app_role !== 'admin') return;
+      if (!error) state.courtAccessHealth = data;
+    } catch (_error) { /* Ein Statusfehler darf weder Konto noch Codeabruf blockieren. */ }
+    renderCourtAccessHealth();
   }
 
   function deriveDisplayNameFromEmail(email) {
@@ -706,6 +842,7 @@
     const passwordView = document.getElementById('auth-password-view');
     const confirmationView = document.getElementById('auth-confirmation-view');
     if (!button || !guestView || !accountView || !passwordView || !confirmationView) return;
+    renderCourtAccessHealth();
 
     const isLoggedIn = Boolean(state.session?.user);
     const isConfirmingLink = Boolean(state.confirmationUrl);
@@ -1074,7 +1211,7 @@
     const from = getBerlinMatchAtParts(booking.starts_at).time;
     const until = getBerlinMatchAtParts(booking.ends_at).time;
     return from && until
-      ? ` data-court-booking-from="${escapeHtml(from)}" data-court-booking-until="${escapeHtml(until)}"`
+      ? ` data-court-booking-from="${escapeHtml(from)}" data-court-booking-until="${escapeHtml(until)}" data-court-booking-number="${escapeHtml(getBookedCourtNumber(booking.court_name))}"`
       : '';
   }
 
@@ -1174,6 +1311,8 @@
     const isWaiting = task.task_type === 'waiting';
     const hasAuthenticatedPlayer = [1, 2].includes(Number(task.my_team));
     const linkedBooking = state.courtBookings.find(booking => booking.match_id === task.match_id);
+    const hasHallBooking = linkedBooking && /^H[1-4]$/.test(getBookedCourtNumber(linkedBooking.court_name))
+      && task.task_type === 'enter' && Date.parse(linkedBooking.ends_at) > Date.now();
     return `<div class="result-task-wrap">
       <article class="account-task-card result-task-card${hasAuthenticatedPlayer ? ' has-authenticated-player' : ''}${isActionable ? ' is-actionable' : ''}${isWaiting ? ' is-waiting' : ''}" data-result-task-match="${escapeHtml(task.match_id)}">
         <div class="account-task-meta">
@@ -1181,8 +1320,11 @@
           ${renderResultTaskStatus(task)}
         </div>
         ${renderTaskMatchup(task)}
-        ${groupKey === 'future' ? `<div class="result-card-timing">${escapeHtml(formatMatchAt(task.proposed_match_at || task.match_at))}</div>
-          <div class="racket-status" data-racket-status="match:${escapeHtml(task.match_id)}" data-racket-starts-at="${Date.parse(task.match_at) || 0}"${courtBookingWindowAttributes(linkedBooking)} hidden></div>` : ''}
+        ${groupKey === 'future' ? `<div class="result-card-timing">${escapeHtml(formatMatchAt(task.proposed_match_at || task.match_at))}</div>` : ''}
+        ${groupKey === 'future' || hasHallBooking ? `<div class="result-card-resources">
+          ${groupKey === 'future' ? `<div class="racket-status" data-racket-status="match:${escapeHtml(task.match_id)}" data-racket-starts-at="${Date.parse(task.match_at) || 0}"${courtBookingWindowAttributes(linkedBooking)} hidden></div>` : ''}
+          ${hasHallBooking ? `<div class="hall-code" data-hall-code-match="${escapeHtml(task.match_id)}" data-hall-code-booking="${linkedBooking.booking_id}" data-hall-code-until="${Date.parse(linkedBooking.ends_at)}" role="status" aria-live="polite" hidden></div>` : ''}
+        </div>` : ''}
         ${renderResultTaskBody(task, groupKey)}
         ${typeof window !== 'undefined' ? window.PadelLiveTicker?.renderGameAssignment(task.match_id) || '' : ''}
       </article>
@@ -1267,6 +1409,7 @@
     });
     syncDateTimeHints(document.getElementById('result-task-list'));
     void loadRacketStatuses();
+    void loadHallAccessCodes();
     maybeShowAccountTaskPrompt();
   }
 
@@ -1395,9 +1538,11 @@
       if (slot.reserved) {
         resourceStatus.dataset.courtBookingFrom = slot.time;
         resourceStatus.dataset.courtBookingUntil = getBerlinMatchAtParts(slot.end).time;
+        resourceStatus.dataset.courtBookingNumber = getBookedCourtNumber(slot.courtName);
       } else {
         delete resourceStatus.dataset.courtBookingFrom;
         delete resourceStatus.dataset.courtBookingUntil;
+        delete resourceStatus.dataset.courtBookingNumber;
       }
     }
     const timeField = form.querySelector('[data-schedule-time-field="scheduledTime"]');
@@ -1439,6 +1584,27 @@
       ];
     } else state.courtBookings = fresh;
     return fresh;
+  }
+
+  async function getCourtAppointments(date) {
+    await init();
+    if (!state.session?.user || !isPlayerAccount() || !state.client) return [];
+    const version = state.playerToolsVersion;
+    await refreshPlayerMatchData({ force: true });
+    if (version !== state.playerToolsVersion || !state.session?.user) return [];
+    const booked = new Set(state.courtBookings.map(booking => booking.match_id).filter(Boolean));
+    const matches = getVisibleResultTasks().filter(task => task.task_type === 'enter' && !booked.has(task.match_id))
+      .map(task => ({ id: `match:${task.match_id}`, kind: 'match', start: getMatchAtTimestamp(task.match_at, NaN),
+        shortLabel: `P.${getTaskNumber(task)}`, label: [getTaskLeagueLabel(task), getTaskMatchLabel(task)].join(' · '),
+        participants: (task.match_players || []).map(member => getPlayerName(member.player_id)).join(', ') }));
+    const trainings = state.trainingTasks.filter(task => task.status === 'scheduled')
+      .map(task => ({ id: `training:${task.session_id}`, kind: 'training', start: getTrainingTaskTimestamp(task, NaN),
+        shortLabel: 'TR', label: 'Training',
+        participants: (task.player_ids || []).map(id => getPlayerName(id, task.guest_names, task.player_ids)).join(', ') }));
+    return [...matches, ...trainings].filter(entry => Number.isFinite(entry.start)
+      && getBerlinMatchAtParts(new Date(entry.start).toISOString()).date === date
+      && entry.start + 60 * 60 * 1000 > Date.now())
+      .map(entry => ({ ...entry, time: getBerlinMatchAtParts(new Date(entry.start).toISOString()).time, duration: 60 }));
   }
 
   function chooseReplacementCourtBooking(target) {
@@ -2333,6 +2499,7 @@
       resultTasks: state.resultTasks,
       trainingTasks: state.trainingTasks,
       courtBookings: state.courtBookings,
+      onHallCodesRendered: loadHallAccessCodes,
       getPlayerName,
       getMatchLabel: getTaskMatchLabel
     });
@@ -2351,6 +2518,7 @@
       await loadProfile();
       if (state.session?.user?.id !== userId) return;
       publishAuthState();
+      void loadCourtAccessHealth();
       if (includeTasks) {
         await Promise.all([loadNotificationPreferences(), refreshPlayerTools({ force: true })]);
       } else {
@@ -2434,7 +2602,9 @@
     updateAuthMailCooldown();
     setAuthMessage(state.authMode === 'signup' ? 'Die Registrierung ist nur mit einer freigegebenen Firmen-E-Mail möglich.' : '');
     if (!dialog.open) dialog.showModal();
+    void loadHallAccessCodes();
     void init().then(() => {
+      void loadCourtAccessHealth();
       // Konto-Spielkarten werden zehn Minuten wiederverwendet; Aktionen und Fehler-Retry laden weiterhin sofort neu.
       if (dialog.open) return refreshPlayerTools({
         force: Date.now() - Math.max(state.playerToolsLoadedAt, state.playerMatchDataLoadedAt) >= PLAYER_TOOLS_MAX_AGE
@@ -4231,11 +4401,17 @@ Dein Hanako-Leben-Squad`;
       window.setTimeout(maybeShowAccountTaskPrompt, 0);
     }, true);
     document.getElementById('auth-dialog')?.addEventListener('close', () => {
+      clearHallAccessCodes();
       pendingCourtSlot = null;
       courtAccountRequested = false;
       replacementCancellationTask = null;
       renderCourtMatchSelection();
       renderCourtBookingInbox();
+      void loadHallAccessCodes();
+    });
+    document.addEventListener('visibilitychange', () => {
+      void loadHallAccessCodes();
+      if (!document.hidden && document.getElementById('auth-dialog')?.open) void loadCourtAccessHealth();
     });
     document.getElementById('player-invite-dialog')?.addEventListener('click', event => {
       if (event.target === event.currentTarget) closePlayerInviteDialog();
@@ -4337,6 +4513,7 @@ Dein Hanako-Leben-Squad`;
     getProfile: () => state.profile,
     getDisplayName: getProfileDisplayName,
     chooseCourtMatch,
-    getCourtBookings
+    getCourtBookings,
+    getCourtAppointments
   };
 })();

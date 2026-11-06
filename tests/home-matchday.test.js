@@ -123,3 +123,14 @@ test('names, match labels and court names are escaped before rendering', () => {
   assert.doesNotMatch(app.target.innerHTML, /<img|<script>/);
   assert.match(app.target.innerHTML, /&lt;img/);
 });
+
+test('Hallencodes erscheinen am Spieltag nur für passende aktive H1–H4-Buchungen', () => {
+  const app = setup();
+  const booking = { booking_id: 1, match_id: 'winter-1', starts_at: '2026-11-06T17:00:00Z', ends_at: '2026-11-06T18:00:00Z', court_name: 'CUPRA Indoor H1' };
+  app.render(data({ courtBookings: [booking] }), now);
+  assert.match(app.target.innerHTML, /data-hall-code-surface="home"/);
+  app.render(data({ courtBookings: [{ ...booking, court_name: 'Court 1' }] }), now);
+  assert.doesNotMatch(app.target.innerHTML, /data-hall-code-match/);
+  app.render(data({ courtBookings: [booking], resultTasks: [match({ task_type: 'waiting' })] }), now);
+  assert.doesNotMatch(app.target.innerHTML, /data-hall-code-match/);
+});

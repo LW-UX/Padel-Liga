@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'js', 'tippspiel.js'), 'utf8');
@@ -10,10 +11,29 @@ const migration = fs.readFileSync(
   'utf8'
 );
 
-test('all public prediction views exclude benchmark accounts', () => {
+function fn(name) {
+  const match = source.match(new RegExp(`  function ${name}\\([^]*?\\n  }`));
+  assert.ok(match, name);
+  return match[0];
+}
+
+test('auto-tip rows sit behind ties at their points position without taking a rank', () => {
+  const benchmark = { user_id: 'b', points: 10, is_benchmark: true };
+  const state = { benchmarkLeaderboard: [benchmark] };
+  const context = vm.createContext({ state });
+  vm.runInContext(fn('insertBenchmarkRows'), context);
+
+  const rows = [{ entry: { user_id: 'x', points: 12 } }, { entry: { user_id: 'y', points: 10 } }, { entry: { user_id: 'z', points: 4 } }];
+  const result = context.insertBenchmarkRows(rows, entry => entry.points);
+  assert.deepEqual(Array.from(result, row => row.entry.user_id), ['x', 'y', 'b', 'z']);
+  assert.deepEqual(Array.from(context.insertBenchmarkRows([], entry => entry.points), row => row.entry.user_id), ['b']);
+});
+
+test('the official leaderboard excludes auto-tip while the full tipping tables include it', () => {
   assert.match(source, /state\.leaderboard = leaderboard\.filter\(entry => !entry\.is_benchmark\)/);
-  assert.match(source, /const entries = state\.leaderboard;/);
-  assert.doesNotMatch(source, /benchmarkLeaderboard|insertBenchmarkRows|BENCHMARK_LABEL|is-benchmark/);
+  assert.match(source, /state\.benchmarkLeaderboard = leaderboard\.filter\(entry => entry\.is_benchmark\)/);
+  assert.match(source, /const rank = entry\.is_benchmark \? null : \+\+officialRank/);
+  assert.match(source, /const entries = insertBenchmarkRows\(/);
 });
 
 test('benchmark tips follow the auto-tip rule and never influence other accounts', () => {

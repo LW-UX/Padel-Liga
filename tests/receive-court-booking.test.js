@@ -200,3 +200,68 @@ test('überlange Anfrage wird vor Signaturprüfung und API-Abruf abgewiesen', as
   assert.equal(verified, false);
   assert.equal(ctx.requests.length, 0);
 });
+
+test('bestätigte Kontoadressen dürfen dynamisch weiterleiten und verlieren die Freigabe bei einer Adressänderung', async () => {
+  const registered = new Set(['member@example.com']);
+  const lookups = [];
+  const ctx = await setup({ config: { forwarders: [] }, deps: {
+    hasRegisteredEmail: async emails => { lookups.push(emails); return emails.some(email => registered.has(email)); },
+    parseMime: async () => ({ ...mail(), from: { address: 'member@example.com' },
+      text: `Von: Playtomic <no-reply@playtomic.io>\nDatum: Donnerstag, 1. Oktober 2026 um 10:56\nAn: Test <member@example.com>\nBetreff: Playtomic - Buchungsbestätigung / Ticket\n\n${text}` }),
+  } });
+  ctx.received.from = 'Member <MEMBER@example.com>';
+  assert.equal((await ctx.send()).body.status, 'processed');
+  assert.deepEqual(lookups, [['member@example.com']]);
+  registered.clear();
+  assert.equal((await ctx.send()).body.reason, 'sender_authentication');
+  assert.equal(ctx.writes.length, 1);
+});
+
+test('neue registrierte Originalempfänger sind bei Umleitungen ohne statischen Eintrag erlaubt', async () => {
+  const ctx = await setup({ config: { forwarders: ['no-reply@playtomic.io'], originalRecipients: [] }, deps: {
+    hasRegisteredEmail: async emails => emails.includes('new@example.com'),
+    parseMime: async () => ({ ...mail(), to: [{ group: [{ address: 'NEW@example.com' }] }] }),
+  } });
+  ctx.received.from = 'no-reply@playtomic.io';
+  assert.equal((await ctx.send()).body.status, 'processed');
+});
+
+test('Kontoprüfung erfolgt erst nach Signatur, Empfangsadresse und DMARC; anonyme Originalempfänger bleiben gesperrt', async () => {
+  for (const change of [ctx => { ctx.received.to = ['elsewhere@example.com']; },
+    ctx => { ctx.received.authentication.dmarc = 'fail'; }]) {
+    const ctx = await setup({ deps: { hasRegisteredEmail: async () => assert.fail('Kein Kontolookup vor Authentifizierung') } });
+    change(ctx);
+    assert.notEqual((await ctx.send()).body.status, 'processed');
+    assert.equal(ctx.writes.length, 0);
+  }
+  const ctx = await setup({ config: { forwarders: ['no-reply@playtomic.io'], originalRecipients: [] }, deps: {
+    hasRegisteredEmail: async () => false,
+    parseMime: async () => ({ ...mail(), to: [{ address: 'stranger@example.com' }] }),
+  } });
+  ctx.received.from = 'no-reply@playtomic.io';
+  assert.equal((await ctx.send()).body.reason, 'original_recipient');
+  assert.equal(ctx.writes.length, 0);
+});
+
+test('Fehler bei der Kontoprüfung führen zur Wiederholung und geben keine privaten Details aus', async () => {
+  const ctx = await setup({ deps: { hasRegisteredEmail: async () => { throw Error('private-account-data'); } } });
+  ctx.received.from = 'member@example.com';
+  const response = await ctx.send();
+  assert.equal(response.status, 503);
+  assert.equal(ctx.writes.length, 0);
+  assert.equal(ctx.requests.length, 1);
+  assert.equal(JSON.stringify(response).includes('private-account-data'), false);
+});
+
+test('eine Kontofreigabe ersetzt weder Playtomic-Mailformat noch die explizite Umleitungsquelle', async () => {
+  const ctx = await setup({ config: { forwarders: [] }, deps: {
+    hasRegisteredEmail: async () => true,
+    parseMime: async () => ({ from: { address: 'member@example.com' }, subject: 'Hallo', text: 'Beliebige Mail', attachments: [] }),
+  } });
+  ctx.received.from = 'member@example.com';
+  assert.equal((await ctx.send()).body.status, 'needs_review');
+  assert.equal(ctx.writes.length, 0);
+  ctx.received.from = 'no-reply@playtomic.io';
+  assert.equal((await ctx.send()).body.reason, 'sender_authentication');
+  assert.equal(ctx.writes.length, 0);
+});

@@ -477,7 +477,7 @@
       .prediction-table .prediction-table-label-full { display: none; }
       .prediction-table .pname-short,
       .prediction-table .prediction-table-label-short { display: inline; }
-      .prediction-table .prediction-account-type-icon:not(.is-podium),
+      .prediction-table .prediction-account-type-icon:not(.is-podium, .is-benchmark),
       .prediction-table .prediction-company-badge,
       .prediction-table .prediction-achievement-icon { display: none; }
     }
@@ -770,7 +770,7 @@
       .prediction-ranking-table.compact .col-points { width: 74px; }
       /* Erweitert zeigt alle Spalten; Kürzel ersetzen Namen, Konto- und Firmen-Icons entfallen. */
       .prediction-ranking-table.expanded .pname,
-      .prediction-ranking-table.expanded .prediction-account-type-icon,
+      .prediction-ranking-table.expanded .prediction-account-type-icon:not(.is-benchmark),
       .prediction-ranking-table.expanded .prediction-company-badge { display: none; }
       .prediction-ranking-table.expanded .pname-short { display: inline; }
       /* Platz für das Sortier-Chevron, das links neben dem Spaltentitel steht. */
@@ -849,3 +849,10 @@
       .site-nav:has([data-tip-nav]) { gap: 4px; }
       .site-nav:has([data-tip-nav]) button { font-size: 0.72rem; }
     }
+
+    /* Auto-Tipp ist ein Vergleichswert ohne offiziellen Rang. */
+    .prediction-ranking-table tr.is-benchmark > td,
+    .prediction-table tr.is-benchmark > :is(th, td) { color: var(--dim); }
+    .prediction-ranking-table tr.is-benchmark > td > *,
+    .prediction-table tr.is-benchmark > :is(th, td) > * { opacity: 0.6; }
+    .prediction-account-type-icon.is-benchmark svg { stroke-width: 1.5; }

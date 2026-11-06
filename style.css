@@ -1974,6 +1974,7 @@
     }
     .home-matchday-list { display: grid; gap: 0.75rem; margin-bottom: 0.5rem; }
     .home-matchday-entry {
+      position: relative;
       display: grid;
       grid-template-columns: 5rem minmax(0, 1fr);
       gap: 2rem;
@@ -1989,6 +1990,7 @@
     }
     .home-matchday-time > :last-child { color: var(--muted); font-size: var(--text-xs); margin-top: 0.25rem; }
     .home-matchday-details { min-width: 0; }
+    .home-matchday-entry:has(.hall-code) .match-meta { padding-right: 7rem; }
     .home-matchday-matchup { margin-top: 0.4rem; font-size: var(--text-base); overflow-wrap: anywhere; }
     .home-matchday-matchup strong { font-weight: 600; }
     .home-matchday-matchup p { margin: 0.2rem 0 0; }
@@ -1998,6 +2000,21 @@
       .widget.home-matchday { padding: 1rem; }
       .home-matchday-header { gap: 0.75rem; }
       .home-matchday-entry { grid-template-columns: 3.5rem minmax(0, 1fr); gap: 1.25rem; padding: 0.85rem 0.65rem; }
+      .home-matchday-entry:has(.hall-code) { row-gap: 0; }
+      .home-matchday-entry:has(.hall-code) .home-matchday-details { display: contents; }
+      .home-matchday-entry:has(.hall-code) .home-matchday-time { grid-column: 1; grid-row: 2 / span 2; }
+      .home-matchday-entry:has(.hall-code) .match-meta {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        min-width: 0;
+        padding: 2rem 0 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .home-matchday-entry:has(.hall-code) .home-matchday-matchup { grid-column: 2; grid-row: 2; }
+      .home-matchday-entry:has(.hall-code) .home-matchday-location { grid-column: 2; grid-row: 3; }
+      .hall-code[data-hall-code-surface="home"] { top: 0.85rem; right: 0.65rem; }
       .home-matchday-time > :first-child { font-size: calc(var(--text-heading) * 0.85); }
     }
     .home-season-podium {

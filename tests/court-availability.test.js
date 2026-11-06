@@ -73,8 +73,8 @@ test('Winterfilter und Zeitspalten bleiben unabhängig vom vorhandenen freien An
   const source = fs.readFileSync(path.join(__dirname, '../js/court-availability.js'), 'utf8');
   const context = { window: {} };
   vm.runInNewContext(source.slice(0, source.indexOf('  const dialog ='))
-    + 'window.helpers = { defaultFilter, buildTimes, visibleSlots }; })();', context);
-  const { defaultFilter, buildTimes, visibleSlots } = context.window.helpers;
+    + 'window.helpers = { defaultFilter, buildTimes, visibleSlots, courtLabel }; })();', context);
+  const { defaultFilter, buildTimes, visibleSlots, courtLabel } = context.window.helpers;
   for (const season of ['2026-winter', 'winter-2026', '2027-winter']) assert.equal(defaultFilter(season), 'indoor');
   for (const season of ['2026-sommer', '2027-cup', '2026-test', null]) assert.equal(defaultFilter(season), 'outdoor');
   const times = Array.from(buildTimes({ opening: { from: '07:00', until: '24:00' }, slots: [{ time: '07:15' }] }));
@@ -86,6 +86,13 @@ test('Winterfilter und Zeitspalten bleiben unabhängig vom vorhandenen freien An
   assert.equal(allTimes.at(-1), '23:30', 'letzte halbe Stunde bleibt als Fortsetzung sichtbar');
   const sample = { opening: { from: '07:00', until: '24:00' }, slots: ['06:30', '07:00', '19:00', '19:30', '22:30'].map(time => ({ time, start: `2099-01-01T${time}:00Z` })) };
   assert.deepEqual(Array.from(visibleSlots(sample), slot => slot.time), ['07:00', '19:00'], 'nur vollständige Stunden innerhalb der Bürozeiten');
+  assert.deepEqual([
+    courtLabel({ name: 'CUPRA Indoor H1', location: 'indoor' }),
+    courtLabel({ name: 'Indoor H4', location: 'indoor' }),
+    courtLabel({ name: 'GEIGER Court 1', location: 'outdoor' }),
+    courtLabel({ name: 'DAS ANDERS Court 4', location: 'outdoor' }),
+    courtLabel({ name: 'Court 10', location: 'outdoor' })
+  ], ['H1', 'H4', 'C1', 'C4', 'C10']);
   assert.deepEqual(Array.from(visibleSlots(sample, 'all'), slot => slot.time), ['07:00', '19:00', '19:30', '22:30']);
 });
 

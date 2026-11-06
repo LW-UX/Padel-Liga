@@ -39,7 +39,9 @@
         label: data.getMatchLabel(task), season: task.season_label,
         partner: partner ? data.getPlayerName(partner.player_id) : '',
         opponents: opponents.map(member => data.getPlayerName(member.player_id)),
-        court: booking?.court_name || ''
+        court: booking?.court_name || '',
+        hallBooking: booking && /(?:^|\s)H[1-4]$/i.test(String(booking.court_name || '').trim())
+          && Date.parse(booking.ends_at) > now.getTime() ? booking : null
       }];
     });
     const trainings = (data.trainingTasks || []).flatMap(task => {
@@ -67,6 +69,7 @@
         <div class="match-meta">${[entry.season, entry.label].filter(Boolean).map(escapeHtml).join(' · ')}</div>
         <div class="home-matchday-matchup">${matchup}</div>
         <div class="home-matchday-location"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span>${escapeHtml(location)}</span></div>
+        ${entry.hallBooking ? `<div class="hall-code" data-hall-code-surface="home" data-hall-code-match="${escapeHtml(entry.id)}" data-hall-code-booking="${entry.hallBooking.booking_id}" data-hall-code-until="${Date.parse(entry.hallBooking.ends_at)}" role="status" aria-live="polite" hidden></div>` : ''}
       </div>
     </article>`;
   }
@@ -88,6 +91,7 @@
       <div class="home-matchday-list">${entries.map(renderEntry).join('')}</div>
       <button class="text-link" type="button" data-home-matchday-open>Zu meiner Partie</button>`;
     }
+    void data?.onHallCodesRendered?.();
     // Auch eine über Mitternacht geöffnete Startseite folgt dem Berliner Spieltag.
     if (data?.session?.user && data.ready) dayTimer = window.setTimeout(() => render(currentData), 60_000);
   }
