@@ -9,6 +9,12 @@
   const minute = time => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
   const timeLabel = value => `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
   const currentSlot = slot => Date.parse(slot.start) > Date.now();
+  const racketHint = 'Schläger bereits belegt. Platzzeit trotzdem auswählbar.';
+  const racketIcon = `<span class="court-racket-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><g transform="rotate(40 12 12)"><path d="M12 1.5c3.4 0 5.6 2.7 5.6 6.2 0 3.6-2.4 6.6-5.6 6.6s-5.6-3-5.6-6.6c0-3.5 2.2-6.2 5.6-6.2Z"/><path d="M9.6 13.6 11 16.6h2l1.4-3"/><rect x="10.8" y="16.6" width="2.4" height="5.6" rx="1.1"/><path d="M10 6h.01M14 6h.01M12 8h.01M10 10h.01M14 10h.01"/></g><path d="m3 3 18 18"/></svg></span>`;
+
+  function isRacketBusy(time, starts = []) {
+    return starts.includes(timeLabel(Math.floor(minute(time) / 30) * 30));
+  }
 
   function hourBounds(data, hoursFilter = 'office') {
     return { from: Math.max(minute(data.opening.from), hoursFilter === 'office' ? 7 * 60 : 0),
@@ -64,16 +70,21 @@
       <div class="court-grid-wrap" data-court-grid tabindex="0" role="region" aria-label="Plätze und Uhrzeiten; freie Stunden auswählen"></div>
     </div>
     <footer class="court-footer">
+      <p class="hint" data-court-racket-status role="status" aria-live="polite" hidden></p>
       <p class="hint">Markierte Felder kennzeichnen bereits offiziell gebuchte Plätze. Du kannst sie hier auswählen und einer Partie zuordnen. Neue Platzbuchungen sind in dieser Ansicht nicht möglich; sie erfolgen weiterhin über das Hanako Leben Squad oder Ludwig. Partien kannst du hier dennoch terminieren, ohne dadurch einen Platz zu buchen.</p>
       <div class="court-footer-actions"><div class="court-selection" data-court-selection role="status" aria-live="polite" aria-invalid="false"></div>
         <button type="button" class="primary-button" data-court-apply hidden>Uhrzeit übernehmen</button>
         <button type="button" class="text-link" data-court-account>Partie auswählen</button></div>
     </footer>
+    <div id="court-racket-tooltip" class="court-racket-tooltip" role="tooltip" hidden>${racketHint}</div>
   </div>`;
   document.body.append(dialog);
   const dateInput = dialog.querySelector('[data-court-date]');
   const grid = dialog.querySelector('[data-court-grid]');
   const status = dialog.querySelector('[data-court-status]');
+  const racketStatus = dialog.querySelector('[data-court-racket-status]');
+  const racketTooltip = dialog.querySelector('#court-racket-tooltip');
+  let racketAvailability = null, racketController = null;
   let options = {}, data = null, selected = null, filter = 'outdoor', ownBookings = [];
   let availableBookings = [], hoursFilter = 'office', preview = null;
   let generation = 0, bookingShortcutVersion = 0, controller = null, interval = null, historyId = null, afterClose = null, trigger = null, revealBookingId = null;
@@ -255,8 +266,10 @@
         const className = bookedCover
           ? `is-booked${bookedCover.matchId ? ' is-assigned' : ''}${minute(time) === minute(bookedCover.time) ? ' is-booked-start' : ''}${minute(time) + 30 >= minute(bookedCover.time) + bookedCover.duration ? ' is-booked-end' : ''}`
           : freeCovered ? 'is-free' : 'is-unavailable';
+        const label = choice?.reserved ? bookingLabel : choice ? `${court.name}, ${time} bis ${clock(choice.end)}, frei` : '';
+        const racketBusy = choice && isRacketBusy(choice.time, data.racketBusyStarts);
         return `<td data-court-cell="${escape(court.id)}" data-court-time="${time}" class="${className}">${choice
-          ? `<button type="button" class="court-slot" data-court-slot="${escape(choice.id)}" aria-pressed="false" aria-label="${escape(choice.reserved ? bookingLabel : `${court.name}, ${time} bis ${clock(choice.end)}, frei`)}"></button>`
+          ? `<button type="button" class="court-slot" data-court-slot="${escape(choice.id)}" data-court-racket-start="${escape(choice.time)}" data-court-label="${escape(label)}" aria-pressed="false" aria-label="${escape(label + (racketBusy ? `. ${racketHint}` : ''))}">${racketBusy ? racketIcon : ''}</button>`
           : `<span class="sr-only">${escape(bookingLabel || 'Nicht als Stundenbeginn verfügbar')}</span>`}${bookingMarker}</td>`;
       }).join('')}</tr>`).join('')}</tbody></table>` : '<p class="hint">Für diese Auswahl sind keine Plätze verfügbar.</p>';
     grid.style.minHeight = '';
@@ -270,19 +283,96 @@
     }
   }
 
+  function hideRacketTooltip() {
+    racketTooltip.hidden = true;
+    grid.querySelectorAll('[aria-describedby="court-racket-tooltip"]').forEach(button => button.removeAttribute('aria-describedby'));
+  }
+
+  function showRacketTooltip(event) {
+    const button = event.target.closest('[data-court-racket-start]');
+    if (event.type === 'focusin' && !button?.matches(':focus-visible')) return;
+    hideRacketTooltip();
+    if (!button?.querySelector('.court-racket-icon')
+      || event.type === 'pointerover' && !event.target.closest('.court-racket-icon')) return;
+    const anchor = button.getBoundingClientRect();
+    const visible = grid.getBoundingClientRect();
+    if (anchor.right <= visible.left || anchor.left >= visible.right
+      || anchor.bottom <= visible.top || anchor.top >= visible.bottom) return;
+    const bounds = dialog.getBoundingClientRect();
+    racketTooltip.hidden = false;
+    const width = racketTooltip.offsetWidth;
+    const height = racketTooltip.offsetHeight;
+    racketTooltip.style.left = `${Math.max(bounds.left + 8, Math.min(anchor.left + anchor.width / 2 - width / 2, bounds.right - width - 8))}px`;
+    racketTooltip.style.top = `${anchor.bottom + height + 8 < bounds.bottom ? anchor.bottom + 6 : anchor.top - height - 6}px`;
+    button.setAttribute('aria-describedby', 'court-racket-tooltip');
+  }
+
+  // Ein nachgeladener Schlägerstatus verändert weder die Platzwahl noch den Fokus.
+  function applyRacketAvailability() {
+    hideRacketTooltip();
+    if (!data) return;
+    data.racketBusyStarts = racketAvailability?.date === data.date ? racketAvailability.busyStarts : [];
+    grid.querySelectorAll('[data-court-racket-start]').forEach(button => {
+      const busy = isRacketBusy(button.dataset.courtRacketStart, data.racketBusyStarts);
+      button.innerHTML = busy ? racketIcon : '';
+      button.setAttribute('aria-label', button.dataset.courtLabel + (busy ? `. ${racketHint}` : ''));
+    });
+    if (grid.contains(document.activeElement) && document.activeElement.matches(':focus-visible')) {
+      showRacketTooltip({ target: document.activeElement, type: 'focusin' });
+    }
+  }
+
+  async function loadRacketAvailability(date, version) {
+    racketController?.abort();
+    const requestController = new AbortController();
+    racketController = requestController;
+    const timeout = setTimeout(() => requestController.abort(), 12000);
+    try {
+      const config = window.PADEL_SUPABASE_CONFIG;
+      const response = await fetch(`${config.url}/functions/v1/racket-availability`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', apikey: config.publishableKey },
+        body: JSON.stringify({ date }), signal: requestController.signal, cache: 'no-store',
+      });
+      if (!response.ok) throw new Error('Nicht verfügbar');
+      const result = await response.json();
+      if (result.date !== date || !Array.isArray(result.busyStarts)
+        || !result.busyStarts.every(time => typeof time === 'string' && /^([01]\d|2[0-3]):(00|30)$/.test(time))) throw new Error('Ungültige Antwort');
+      if (version !== generation || !dialog.open) return;
+      racketAvailability = result;
+      racketStatus.textContent = ''; racketStatus.hidden = true;
+      applyRacketAvailability();
+    } catch {
+      if (version !== generation || !dialog.open) return;
+      racketAvailability = null;
+      applyRacketAvailability();
+      racketStatus.textContent = 'Schlägerbelegung gerade nicht prüfbar.'; racketStatus.hidden = false;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   async function load(background = false) {
     if (!dialog.open || document.hidden) return;
     const version = ++generation;
     controller?.abort();
-    controller = new AbortController();
-    const timeout = setTimeout(() => controller?.abort(), 15000);
+    const requestController = new AbortController();
+    controller = requestController;
+    const timeout = setTimeout(() => requestController.abort(), 15000);
     const date = dateInput.value;
+    hideRacketTooltip();
     updateDateControls();
     if (!date || !dateInput.validity.valid) {
+      racketController?.abort(); racketAvailability = null;
+      racketStatus.textContent = ''; racketStatus.hidden = true;
       clearTimeout(timeout); data = null; setSelection(null); renderGrid();
       status.textContent = 'Bitte ein gültiges zukünftiges Datum wählen.';
       return;
     }
+    if (!background || racketAvailability?.date !== date) {
+      racketAvailability = null;
+      racketStatus.textContent = ''; racketStatus.hidden = true;
+    }
+    void loadRacketAvailability(date, version);
     grid.setAttribute('aria-busy', 'true');
     if (!background) {
       const skeletonSource = data;
@@ -295,7 +385,7 @@
         .catch(() => []);
       const response = await fetch(`${config.url}/functions/v1/court-availability`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', apikey: config.publishableKey },
-        body: JSON.stringify({ date }), signal: controller.signal, cache: 'no-store',
+        body: JSON.stringify({ date }), signal: requestController.signal, cache: 'no-store',
       });
       if (!response.ok) throw new Error('Nicht verfügbar');
       const result = await response.json();
@@ -303,6 +393,7 @@
       if (version !== generation || !dialog.open) return;
       if (result.date !== date || !Array.isArray(result.courts) || !Array.isArray(result.slots) || !result.opening) throw new Error('Ungültige Antwort');
       data = result;
+      data.racketBusyStarts = racketAvailability?.date === date ? racketAvailability.busyStarts : [];
       ownBookings = Array.isArray(bookings) ? bookings : [];
       const revealRequested = Boolean(revealBookingId);
       const bookingToReveal = requestedBooking();
@@ -332,6 +423,7 @@
 
   function finishClose() {
     generation++; controller?.abort(); clearInterval(interval); interval = null;
+    racketController?.abort(); racketAvailability = null; hideRacketTooltip();
     if (dialog.open) dialog.close();
     historyId = null;
     const callback = afterClose;
@@ -393,6 +485,7 @@
     }
     const filterButton = event.target.closest('[data-court-filter]');
     if (filterButton) {
+      hideRacketTooltip();
       filter = filterButton.dataset.courtFilter;
       dialog.querySelectorAll('[data-court-filter]').forEach(button => {
         const active = button === filterButton;
@@ -428,11 +521,19 @@
     const button = event.target.closest('[data-court-slot]');
     preview = button ? findSelectableSlot(button.dataset.courtSlot) : null;
     paintRange();
+    showRacketTooltip(event);
   };
   grid.addEventListener('pointerover', previewSlot);
   grid.addEventListener('focusin', previewSlot);
-  grid.addEventListener('pointerleave', () => { preview = null; paintRange(); });
-  grid.addEventListener('focusout', () => { preview = null; paintRange(); });
+  grid.addEventListener('pointerleave', () => { preview = null; paintRange(); hideRacketTooltip(); });
+  grid.addEventListener('focusout', () => { preview = null; paintRange(); hideRacketTooltip(); });
+  grid.addEventListener('scroll', () => {
+    hideRacketTooltip();
+    if (grid.contains(document.activeElement) && document.activeElement.matches(':focus-visible')) {
+      showRacketTooltip({ target: document.activeElement, type: 'focusin' });
+    }
+  });
+  window.addEventListener('resize', hideRacketTooltip);
   dateInput.addEventListener('change', () => { if (dateInput.validity.valid) void load(); });
   window.addEventListener('popstate', () => { if (dialog.open && history.state?.courtAvailability !== historyId) finishClose(); });
   document.addEventListener('visibilitychange', () => { if (dialog.open && !document.hidden) void load(true); });

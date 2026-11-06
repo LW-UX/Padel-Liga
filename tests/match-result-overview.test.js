@@ -20,6 +20,8 @@ test('result overview neither loads nor renders per-match Elo adjustments', () =
 test('account cards use tournament labels across seasons and task groups', () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'account.js'), 'utf8');
   const context = vm.createContext({
+    state: { courtBookings: [] },
+    courtBookingWindowAttributes: () => '',
     escapeHtml: value => String(value),
     renderResultTaskStatus: () => '',
     renderTaskMatchup: () => '',

@@ -184,6 +184,12 @@ if (command === 'list-tools') {
       content: await readFile(resolve(functionsDirectory, '_shared/playtomic-booking-mail.ts'), 'utf8') });
     entrypointPath = `${argument}/index.ts`;
   }
+  if (argument === 'racket-availability') {
+    files = files.map(file => ({ ...file, name: `${argument}/${file.name}` }));
+    files.push({ name: 'racket-booking/slot.ts',
+      content: await readFile(resolve(functionsDirectory, 'racket-booking/slot.ts'), 'utf8') });
+    entrypointPath = `${argument}/index.ts`;
+  }
   printToolResult(await rpc('tools/call', {
     name: 'deploy_edge_function',
     arguments: {
@@ -191,7 +197,7 @@ if (command === 'list-tools') {
       entrypoint_path: entrypointPath,
       // Verfügbarkeit ist öffentlich; der Empfangs-Webhook prüft stattdessen
       // zwingend seine Resend-/Svix-Signatur vor jedem Zugriff.
-      verify_jwt: !['court-availability', 'receive-court-booking'].includes(argument),
+      verify_jwt: !['court-availability', 'racket-availability', 'receive-court-booking'].includes(argument),
       files
     }
   }));

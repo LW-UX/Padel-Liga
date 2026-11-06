@@ -232,8 +232,8 @@ html:root .site-nav button.active {
   background: color-mix(in srgb, var(--text) 6%, transparent);
 }
 
-/* Secondary-Buttons, Dropdowns, Auswahlschalter, Zähler und der Split-Button der Spielerauswahl: kein Rahmen, Fläche --surface mit Schatten.*/
-html:root :is(.secondary-button, .global-action, .datetime-input-shell input),
+/* Secondary-Buttons, Dropdowns, Auswahlschalter, Zähler und der Split-Button der Spielerauswahl: kein Rahmen, Fläche --surface mit Schatten. Textlinks behalten ihren animierten Balken. */
+html:root :is(.secondary-button, .global-action:not(:where(.text-link)), .datetime-input-shell input),
 html:root .global-actions .auth-button.is-authenticated.secondary-button,
 html:root .toggle:not(.toggle--sort),
 html:root .viewer-split-button,
@@ -256,7 +256,7 @@ html:root .viewer-combobox {
 }
 
 /* Beim Überfahren füllt sich die Fläche mit dem blauen Akzent; Zähler bleiben ohne Hover. */
-html:root :is(.secondary-button, .global-action, .datetime-input-shell input):is(:hover, :focus, :focus-visible),
+html:root :is(.secondary-button, .global-action:not(:where(.text-link)), .datetime-input-shell input):is(:hover, :focus, :focus-visible),
 html:root .toggle:not(.toggle--sort) button:is(:hover, :focus-visible),
 html:root .viewer-profile-button:is(:hover, :focus-visible),
 html:root .viewer-combobox:has(> .secondary-button:enabled):hover,
@@ -372,7 +372,7 @@ html:root .primary-button:not(.secondary-button, :hover, :focus-visible) {
   html:root :is(.global-action, .modal-close-button):not(.primary-button, :hover, :focus, :focus-visible),
   html:root .global-actions .auth-button.is-authenticated.secondary-button:not(:hover, :focus, :focus-visible),
   html:root .global-actions .viewer-split-button {
-    background: var(--surface);
+    background-color: var(--surface);
   }
 }
 

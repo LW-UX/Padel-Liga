@@ -51,6 +51,22 @@ test('season-wide PadelTipp forecasts load only after account startup', () => {
   assert.ok(accountLoad < forecastLoad);
 });
 
+test('account initialization starts without waiting for public live status', async () => {
+  const liveStatus = deferred();
+  const events = [];
+  const block = app.match(/  try \{\n    if \(!liveTickerInitialized\)[^]*?\n  \}\n\n  await loadActiveSeasonForecasts/)[0]
+    .replace(/\n\n  await loadActiveSeasonForecasts$/, '');
+  const context = vm.createContext({ liveTickerInitialized: false, console,
+    window: {
+      PadelLiveTicker: { init: () => { events.push('live'); return liveStatus.promise; } },
+      PadelKonto: { init: async () => events.push('account') }
+    }
+  });
+  await vm.runInContext(`(async () => { ${block} })()`, context);
+  assert.deepEqual(events, ['live', 'account']);
+  liveStatus.resolve();
+});
+
 test('sections render on demand and hidden sections stay invalid until opened', () => {
   const calls = [], context = vm.createContext({ calls });
   vm.runInContext(`
@@ -351,10 +367,11 @@ test('account startup publishes identity without waiting for private game tasks'
   const events = [];
   const context = vm.createContext({ state: { client: {} }, document: { getElementById: () => ({ open: false }) },
     loadProfile: async () => events.push('profile'), loadNotificationPreferences: async () => {}, publishAuthState: () => events.push('identity'),
-    refreshPlayerTools: async () => events.push('tasks'), schedulePlayerTools: () => events.push('background'), syncBrandingPreviewAccess() {}, render() {}, console });
+    refreshPlayerTools: async () => events.push('tasks'), startHomeMatchdayLoad: () => events.push('home'),
+    schedulePlayerTools: () => events.push('background'), syncBrandingPreviewAccess() {}, render() {}, console });
   vm.runInContext(fn(account, 'refresh', '  '), context);
   await context.refresh();
-  assert.deepEqual(events, ['profile', 'identity', 'background']);
+  assert.deepEqual(events, ['profile', 'identity', 'home', 'background']);
   events.length = 0;
   await context.refresh({ includeTasks: true });
   assert.deepEqual(events, ['profile', 'identity', 'tasks']);
@@ -365,7 +382,8 @@ test('opening account prioritizes the same pending task load and a later refresh
   const state = { extendedPlayerFeatures: true, playerToolsVersion: 0, playerToolsReady: false };
   const context = vm.createContext({ state, window: { clearTimeout() {} }, console,
     isPlayerAccount: () => true, renderResultTasks() {}, render() {},
-    loadPlayerTools: () => { calls++; return pending.promise; } });
+    loadCourtCancellationTasks: async () => {},
+    refreshPlayerMatchData: () => { calls++; return pending.promise; } });
   vm.runInContext(`let playerToolsPromise = null, playerToolsTimer = 1; ${fn(account, 'refreshPlayerTools', '  ')}`, context);
   const first = context.refreshPlayerTools();
   assert.equal(context.refreshPlayerTools({ force: true }), first);
@@ -381,6 +399,85 @@ test('opening account prioritizes the same pending task load and a later refresh
   assert.equal(calls, 2);
 });
 
+test('home match data starts before email settings and renders while extra account tasks still load', async () => {
+  const matches = deferred(), preferences = deferred(), cancellations = deferred(), live = deferred();
+  const events = [];
+  let calls = 0;
+  const state = { client: {}, session: { user: { id: 'player' } },
+    playerToolsVersion: 0, playerMatchDataReady: false, extendedPlayerFeatures: true };
+  const context = vm.createContext({
+    state, console, document: { getElementById: () => ({ open: false }) },
+    window: { clearTimeout() {}, PadelHomeMatchday: {}, PadelLiveTicker: { refreshAccount: () => live.promise } },
+    isPlayerAccount: () => true, loadProfile: async () => events.push('profile'),
+    publishAuthState: () => events.push('identity'),
+    loadNotificationPreferences: () => { events.push('preferences'); return preferences.promise; },
+    loadPlayerTools: () => { calls++; events.push('match-data'); return matches.promise; },
+    loadCourtCancellationTasks: () => cancellations.promise,
+    schedulePlayerTools: () => events.push('background-scheduled'),
+    renderHomeMatchday: () => { if (state.playerMatchDataReady) events.push('home-visible'); }, render() {}
+  });
+  vm.runInContext(`let playerMatchDataPromise = null, playerToolsPromise = null, playerToolsTimer = null;
+    ${['refreshPlayerMatchData', 'startHomeMatchdayLoad', 'refreshPlayerTools', 'refresh'].map(name => fn(account, name, '  ')).join('\n')}`, context);
+  let startupDone = false;
+  const startup = context.refresh().then(() => { startupDone = true; });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(events.indexOf('match-data') < events.indexOf('preferences'));
+  assert.equal(calls, 1);
+  const fullAccount = context.refreshPlayerTools();
+  assert.equal(calls, 1, 'opening the account reuses the in-flight match query');
+  matches.resolve();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(state.playerMatchDataReady, true);
+  assert.ok(events.includes('home-visible'));
+  assert.equal(startupDone, false, 'email settings are still pending');
+  assert.equal(state.playerToolsReady, undefined, 'cancellations and live tasks are still pending');
+  preferences.resolve();
+  cancellations.resolve();
+  live.resolve();
+  await Promise.all([startup, fullAccount]);
+  assert.equal(state.playerToolsReady, true);
+});
+
+test('shared home match requests reuse loaded data, retry failures and discard readiness after account changes', async () => {
+  let calls = 0, pending = deferred();
+  const state = { extendedPlayerFeatures: true, playerToolsVersion: 0, playerMatchDataReady: false };
+  const context = vm.createContext({ state, isPlayerAccount: () => true, renderHomeMatchday() {},
+    loadPlayerTools: () => { calls++; return pending.promise; } });
+  vm.runInContext(`let playerMatchDataPromise = null; ${fn(account, 'refreshPlayerMatchData', '  ')}`, context);
+  const first = context.refreshPlayerMatchData();
+  assert.equal(context.refreshPlayerMatchData({ force: true }), first);
+  pending.resolve();
+  await first;
+  await context.refreshPlayerMatchData();
+  assert.equal(calls, 1);
+  pending = deferred();
+  const failed = context.refreshPlayerMatchData({ force: true });
+  pending.reject(new Error('offline'));
+  await assert.rejects(failed, /offline/);
+  assert.equal(state.playerMatchDataReady, false);
+  pending = deferred();
+  const retry = context.refreshPlayerMatchData();
+  state.playerToolsVersion++;
+  pending.resolve();
+  await retry;
+  assert.equal(state.playerMatchDataReady, false, 'old account data cannot make the new account ready');
+  assert.equal(calls, 3);
+});
+
+test('a failed secondary account request leaves successfully loaded home match data available', async () => {
+  const state = { extendedPlayerFeatures: true, playerToolsVersion: 0, playerToolsReady: false };
+  const context = vm.createContext({ state, window: { clearTimeout() {} },
+    console: { error() {} }, isPlayerAccount: () => true, render() {},
+    renderHomeMatchday() {}, loadPlayerTools: async () => {},
+    loadCourtCancellationTasks: async () => { throw new Error('cancellations unavailable'); } });
+  vm.runInContext(`let playerMatchDataPromise = null, playerToolsPromise = null, playerToolsTimer = null;
+    ${fn(account, 'refreshPlayerMatchData', '  ')}
+    ${fn(account, 'refreshPlayerTools', '  ')}`, context);
+  await context.refreshPlayerTools();
+  assert.equal(state.playerMatchDataReady, true);
+  assert.match(state.playerToolsError, /cancellations unavailable/);
+});
+
 test('an old account response cannot fill the next account game overview', async () => {
   const response = deferred();
   const state = { extendedPlayerFeatures: true, playerToolsVersion: 0,
@@ -394,6 +491,19 @@ test('an old account response cannot fill the next account game overview', async
   await request;
   assert.equal(state.players.length, 0);
   assert.equal(state.resultTasks.length, 0);
+});
+
+test('secondary cancellation responses also respect account changes', async () => {
+  const pending = deferred();
+  const state = { extendedPlayerFeatures: true, playerToolsVersion: 0,
+    client: { rpc: () => pending.promise } };
+  const context = vm.createContext({ state, isPlayerAccount: () => true });
+  vm.runInContext(fn(account, 'loadCourtCancellationTasks', '  '), context);
+  const request = context.loadCourtCancellationTasks();
+  state.playerToolsVersion++;
+  pending.resolve({ data: [{ match_id: 'previous-account-match' }] });
+  await request;
+  assert.equal(state.courtCancellationTasks.length, 0);
 });
 
 test('a profile response from before logout cannot restore the previous account identity', async () => {

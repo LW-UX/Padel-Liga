@@ -41,6 +41,8 @@ Diese Datei enthält nur betriebsrelevanten Gegenwartsstand. Dauerhafte Regeln s
 
 ## Noch ausstehend
 
+- Die Schlägerbelegung im Platzkalender ist lokal mit durchgestrichenem Schläger-Icon und ausschließlichem Hover-/Fokushinweis vorbereitet. Die neue öffentliche Lesefunktion `racket-availability` muss vor der Website-Veröffentlichung bereitgestellt werden; sie nutzt das vorhandene `CLEAROOMS_API_TOKEN`, benötigt keine Datenbankmigration und kann über `tools/supabase-mcp.mjs` einschließlich der gemeinsam genutzten Buchungsregeln veröffentlicht werden. Die Oberfläche benötigt anschließend den GitHub-Push des Nutzers.
+
 - Die Outlook-Regel ist laut Nutzer auf „Umleiten an“ geändert. Der Gesamtcheck mit einer tatsächlich neu umgeleiteten zukünftigen Buchung einschließlich Originalempfänger, DMARC und Kalenderanzeige steht noch aus. Bereits zuvor erfolgreich importierte Buchungen bleiben durch die Umstellung verfügbar.
 
 - Die öffentliche Edge Function `court-availability` ist in Version 1 produktiv bereitgestellt und ohne Kontositzung lesend geprüft (Lucky-Star-Plätze, Stundenfenster, CORS und Ablehnung ungültiger Kalendertage). Sie nutzt keine Datenbank und benötigt keine Migration oder neuen Secrets. Das Verfügbarkeitsmodal mit Einstieg über Terminierung und Infos, Indoor-Vorauswahl für Wintersaisons und Zeitübernahme über die Konto-Partieauswahl ist lokal umgesetzt; Desktop- und mobile Ablaufprüfungen sind erfolgreich. Die Website benötigt noch den GitHub-Push des Nutzers.

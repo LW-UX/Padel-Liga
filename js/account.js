@@ -63,6 +63,8 @@
     extendedPlayerFeatures: true,
     playerToolsVersion: 0,
     playerToolsReady: false,
+    playerMatchDataReady: false,
+    playerMatchDataLoadedAt: 0,
     playerToolsLoadedAt: 0,
     playerToolsLoading: false,
     playerToolsError: null,
@@ -73,6 +75,7 @@
   let initPromise = null;
   let authMailCooldownTimer = null;
   let playerToolsPromise = null;
+  let playerMatchDataPromise = null;
   let playerToolsTimer = null;
   const PLAYER_TOOLS_MAX_AGE = 10 * 60 * 1000;
   let unscheduleTrigger = null;
@@ -614,11 +617,11 @@
       return;
     }
 
-    title.textContent = 'Offene Partieaufgaben';
+    title.textContent = 'Ausstehende Ergebnisse';
     const parts = [];
     if (reviewTasks.length) parts.push(`${reviewTasks.length} ${reviewTasks.length === 1 ? 'Ergebnis wartet' : 'Ergebnisse warten'} auf deine Bestätigung`);
-    if (entryTasks.length) parts.push(`für ${entryTasks.length} ${entryTasks.length === 1 ? 'Partie kannst' : 'Partien kannst'} du das Ergebnis eintragen`);
-    copy.textContent = `${parts.join(' und ')}. Du findest alles gesammelt in deinem Konto.`;
+    if (entryTasks.length) parts.push(`Für ${entryTasks.length} ${entryTasks.length === 1 ? 'Partie kannst' : 'Partien kannst'} du das Ergebnis eintragen`);
+    copy.textContent = `${parts.join('. ')}. Du findest alles gesammelt in deinem Konto.`;
     action.textContent = 'Zum Konto';
   }
 
@@ -1305,7 +1308,7 @@
       return '<p class="hint">Partien werden geladen …</p>';
     }
     if (!tasks.length) return '<p class="hint">Für dein Konto ist gerade keine terminierbare Partie verfügbar.</p>';
-    return tasks.map(task => `<button type="button" class="secondary-button match-card" data-court-match-select="${escapeHtml(task.match_id)}">
+    return tasks.map(task => `<button type="button" class="secondary-button match-card${task.match_at ? ' is-already-scheduled' : ''}" data-court-match-select="${escapeHtml(task.match_id)}">
         <span class="account-task-meta">
           <span class="match-meta">${escapeHtml(getTaskLeagueLabel(task))} · ${escapeHtml(getTaskMatchLabel(task))}</span>
           <span class="account-task-status">${task.match_at ? escapeHtml(formatMatchAt(task.match_at)) : 'Nicht terminiert'}</span>
@@ -2170,25 +2173,22 @@
     state.resultTasks = [];
     state.trainingTasks = [];
     state.courtBookings = [];
-    state.courtCancellationTasks = [];
     state.players = [];
     if (!isPlayerAccount() || !state.extendedPlayerFeatures) return;
 
-    const [playersResponse, resultResponse, trainingTaskResponse, courtBookingsResponse, courtCancellationResponse] = await Promise.all([
+    const [playersResponse, resultResponse, trainingTaskResponse, courtBookingsResponse] = await Promise.all([
       state.client.from('players').select('id, display_name, initials, company').order('display_name'),
       state.client.rpc('get_my_result_tasks', { p_season_id: null }),
       state.client.rpc('get_my_training_tasks'),
-      state.client.rpc('get_my_court_bookings', { p_date: null }),
-      state.client.rpc('get_my_court_booking_cancellation_tasks')
+      state.client.rpc('get_my_court_bookings', { p_date: null })
     ]);
     if (state.playerToolsVersion !== version) return;
     const courtRpcMissing = response => response.error && (
       response.error.code === 'PGRST202'
-      || /get_my_court_bookings|get_my_court_booking_cancellation_tasks/i.test(response.error.message || '')
+      || /get_my_court_bookings/i.test(response.error.message || '')
     );
     const error = playersResponse.error || resultResponse.error || trainingTaskResponse.error
-      || (courtRpcMissing(courtBookingsResponse) ? null : courtBookingsResponse.error)
-      || (courtRpcMissing(courtCancellationResponse) ? null : courtCancellationResponse.error);
+      || (courtRpcMissing(courtBookingsResponse) ? null : courtBookingsResponse.error);
     if (error) throw error;
     const resultTasks = resultResponse.data || [];
     let completeResultTasks = [];
@@ -2212,13 +2212,53 @@
     state.resultTasks = completeResultTasks;
     state.trainingTasks = trainingTaskResponse.data || [];
     state.courtBookings = courtBookingsResponse.error ? [] : courtBookingsResponse.data || [];
-    state.courtCancellationTasks = courtCancellationResponse.error ? [] : courtCancellationResponse.data || [];
     renderTrainingForm();
+  }
+
+  function refreshPlayerMatchData({ force = false } = {}) {
+    if (!isPlayerAccount() || !state.extendedPlayerFeatures) return Promise.resolve();
+    if (playerMatchDataPromise) return playerMatchDataPromise;
+    if (state.playerMatchDataReady && !force) return Promise.resolve();
+    const version = state.playerToolsVersion;
+    state.playerMatchDataReady = false;
+    renderHomeMatchday();
+    const request = loadPlayerTools()
+      .then(() => {
+        if (state.playerToolsVersion !== version) return;
+        state.playerMatchDataReady = true;
+        state.playerMatchDataLoadedAt = Date.now();
+        renderHomeMatchday();
+      })
+      .finally(() => {
+        if (playerMatchDataPromise === request) playerMatchDataPromise = null;
+      });
+    playerMatchDataPromise = request;
+    return request;
+  }
+
+  function startHomeMatchdayLoad() {
+    if (!window.PadelHomeMatchday || !document.getElementById('home-matchday')) return;
+    void refreshPlayerMatchData().catch(error => {
+      console.error('Die heutigen Spieltermine konnten nicht geladen werden:', error);
+    });
+  }
+
+  async function loadCourtCancellationTasks() {
+    const version = state.playerToolsVersion;
+    state.courtCancellationTasks = [];
+    if (!isPlayerAccount() || !state.extendedPlayerFeatures) return;
+    const { data, error } = await state.client.rpc('get_my_court_booking_cancellation_tasks');
+    if (state.playerToolsVersion !== version) return;
+    if (error && error.code !== 'PGRST202'
+      && !/get_my_court_booking_cancellation_tasks/i.test(error.message || '')) throw error;
+    state.courtCancellationTasks = error ? [] : data || [];
   }
 
   function resetPlayerTools() {
     state.playerToolsVersion += 1;
     state.playerToolsReady = false;
+    state.playerMatchDataReady = false;
+    state.playerMatchDataLoadedAt = 0;
     state.playerToolsLoading = false;
     state.playerToolsError = null;
     state.resultTaskScope = 'relevant';
@@ -2228,6 +2268,7 @@
     state.courtCancellationTasks = [];
     state.players = [];
     playerToolsPromise = null;
+    playerMatchDataPromise = null;
     window.clearTimeout(playerToolsTimer);
     playerToolsTimer = null;
   }
@@ -2242,7 +2283,11 @@
     state.playerToolsLoading = true;
     state.playerToolsError = null;
     render();
-    const request = Promise.all([loadPlayerTools(), window.PadelLiveTicker?.refreshAccount()])
+    const request = Promise.all([
+      refreshPlayerMatchData({ force }),
+      loadCourtCancellationTasks(),
+      window.PadelLiveTicker?.refreshAccount()
+    ])
       .then(() => {
         if (state.playerToolsVersion === version) {
           state.playerToolsReady = true;
@@ -2266,7 +2311,7 @@
 
   function schedulePlayerTools() {
     if (!isPlayerAccount() || state.playerToolsReady || playerToolsPromise || playerToolsTimer !== null) return;
-    // Keep the header badge current without competing with the initial page load.
+    // Zusatzaufgaben bleiben nachrangig; die Startseitenkarte lädt ihre Spieldaten bereits direkt.
     playerToolsTimer = window.setTimeout(() => {
       playerToolsTimer = null;
       void refreshPlayerTools();
@@ -2284,7 +2329,7 @@
     window.PadelHomeMatchday?.render({
       session: state.session,
       profile: state.profile,
-      ready: state.playerToolsReady && !state.playerToolsError,
+      ready: state.playerMatchDataReady,
       resultTasks: state.resultTasks,
       trainingTasks: state.trainingTasks,
       courtBookings: state.courtBookings,
@@ -2305,11 +2350,15 @@
     try {
       await loadProfile();
       if (state.session?.user?.id !== userId) return;
-      await loadNotificationPreferences();
-      if (state.session?.user?.id !== userId) return;
       publishAuthState();
-      if (includeTasks) await refreshPlayerTools({ force: true });
-      else schedulePlayerTools();
+      if (includeTasks) {
+        await Promise.all([loadNotificationPreferences(), refreshPlayerTools({ force: true })]);
+      } else {
+        startHomeMatchdayLoad();
+        schedulePlayerTools();
+        await loadNotificationPreferences();
+      }
+      if (state.session?.user?.id !== userId) return;
       state.ready = true;
       state.error = null;
     } catch (error) {
@@ -2387,7 +2436,9 @@
     if (!dialog.open) dialog.showModal();
     void init().then(() => {
       // Konto-Spielkarten werden zehn Minuten wiederverwendet; Aktionen und Fehler-Retry laden weiterhin sofort neu.
-      if (dialog.open) return refreshPlayerTools({ force: Date.now() - state.playerToolsLoadedAt >= PLAYER_TOOLS_MAX_AGE });
+      if (dialog.open) return refreshPlayerTools({
+        force: Date.now() - Math.max(state.playerToolsLoadedAt, state.playerMatchDataLoadedAt) >= PLAYER_TOOLS_MAX_AGE
+      });
     });
   }
 

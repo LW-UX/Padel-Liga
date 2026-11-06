@@ -9466,7 +9466,11 @@ async function initApp() {
   if (isDetailEmbed) reportDetailEmbedState();
 
   try {
-    if (!liveTickerInitialized) await window.PadelLiveTicker?.init();
+    if (!liveTickerInitialized) {
+      void window.PadelLiveTicker?.init()?.catch(error => {
+        console.error('Der Liveticker konnte nicht initialisiert werden:', error);
+      });
+    }
     await window.PadelKonto?.init();
   } catch (error) {
     console.error('Das Konto konnte nicht initialisiert werden:', error);

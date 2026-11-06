@@ -935,7 +935,7 @@
       <article class="widget prediction-overview-block prediction-overview-action${allDone ? ' is-complete' : ''}">
         <h2>${allDone ? 'Alles getippt ✓' : 'Gerade nichts zu tun'}</h2>
         <p>${allDone ? `Deine ${openCount === 1 ? 'offene Prognose ist' : `${openCount} offenen Prognosen sind`} gespeichert.` : state.seasonCompleted ? 'Die Tippabgabe dieser Saison ist abgeschlossen.' : 'Neue Tippmöglichkeiten erscheinen automatisch näher am Spieltag.'}</p>
-        <button class="secondary-button" type="button" data-tip-nav="tippen">Tippabgabe ansehen</button>
+        <button class="text-link" type="button" data-tip-nav="tippen">Zur Tippabgabe</button>
       </article>
     `;
   }

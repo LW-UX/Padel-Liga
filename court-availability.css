@@ -38,6 +38,12 @@
 .court-slot { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; cursor: var(--cursor-pointer); }
 .court-slot:hover { background: transparent; }
 .court-slot:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.court-racket-icon { display: inline-flex; width: 20px; height: 20px; color: var(--text); vertical-align: middle; }
+.court-racket-icon svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.court-grid td:is(.is-preview, .is-selected):not(.is-assigned) .court-racket-icon { color: var(--bg); }
+.court-grid td:has(.court-racket-icon) .court-booking-match-number { position: absolute; top: 0; height: 10px; line-height: 10px; }
+.court-grid td:has(.court-booking-match-number) .court-racket-icon { transform: translateY(4px); }
+.court-racket-tooltip { position: fixed; z-index: 5; box-sizing: border-box; width: 230px; max-width: calc(100vw - 32px); padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--container-radius-xs); background: var(--surface); color: var(--text); font: var(--text-sm) var(--font-body); line-height: 1.4; pointer-events: none; }
 .court-footer { display: grid; gap: 8px; }
 .court-footer p, #court-availability-dialog .hint { margin: 0; }
 .court-footer-actions { justify-content: flex-end; flex-wrap: nowrap; }
@@ -57,6 +63,8 @@
 .court-booking-match-selection { display: grid; gap: 10px; padding-top: 12px; }
 .court-booking-match-selection h4 { margin: 0; }
 .court-account-selection-options [data-court-match-select] { display: grid; gap: 10px; width: 100%; padding: 12px 14px; border-radius: var(--container-radius-sm); background: color-mix(in srgb, var(--surface) 33%, transparent); }
+.court-account-selection-options [data-court-match-select].is-already-scheduled { opacity: 0.55; }
+.court-account-selection-options [data-court-match-select].is-already-scheduled:is(:hover, :focus-visible) { opacity: 1; }
 .court-account-selection-options [data-court-match-select]:is(:hover, :focus-visible) { border-color: var(--accent) !important; box-shadow: inset 0 0 0 2px var(--accent) !important; }
 .court-account-selection-options [data-court-match-select] > .account-task-meta,
 .court-account-selection-options [data-court-match-select] > .account-task-matchup { width: 100%; }
