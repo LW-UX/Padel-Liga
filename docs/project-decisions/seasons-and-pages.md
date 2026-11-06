@@ -19,6 +19,7 @@ Diese Datei ist die kanonische Quelle für Saisonidentitäten, Datenquellen, Sai
 
 ## Hinweisarten auf der Startseite
 
+- Oberhalb des Artikels in der linken Startseitenspalte sehen ausschließlich eingeloggte Spieler ihre heute in Berliner Zeit terminierten eigenen offenen Partien und Trainings als Kalenderkarte. Maßgeblich ist das verknüpfte Spielerprofil, unabhängig von der öffentlichen Spielerauswahl und der betrachteten Saison; administrative Fremdpartien bleiben ausgeschlossen. Mehrere Termine erscheinen chronologisch, mit Uhrzeit, Partner und Gegnern beziehungsweise den Trainingsmitspielern. Offizielle Partien nennen Lucky Star Padel und bei passender zugeordneter Buchung den Platz; ohne Buchung bleibt der Platz ausdrücklich offen. Trainings nennen mangels eigenem Ortsfeld „Ort wie vereinbart“. Nach eingereichtem oder bestätigtem Ergebnis entfällt der Termin aus der Karte. Ohne heutigen eigenen Termin bleibt der gesamte Bereich ausgeblendet, auch nach Abmeldung oder Tageswechsel.
 - Die Startseite kennt drei Arten, Informationen einzublenden:
   - **Ligaartikel** sind redaktionelle Texte im PadelPost-Archiv. Sie besitzen keine Zeitsteuerung und sind nicht wegklickbar.
   - **Startseitenankündigungen** sind saisonbezogene Kurzmeldungen im Repository, erscheinen nicht im Archiv, können einen festen Ablaufzeitpunkt besitzen und sind nicht wegklickbar.

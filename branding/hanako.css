@@ -266,6 +266,18 @@ html:root .viewer-combobox:has(:focus-visible) {
   border: 1px solid var(--accent2);
 }
 
+/* Die Partiekarte invertiert beim Überfahren vollständig, auch bei Elementen mit eigener Textfarbe. */
+html:root:root .court-account-selection-options [data-court-match-select]:is(:hover, :focus-visible),
+html:root:root .court-account-selection-options [data-court-match-select]:is(:hover, :focus-visible) :is(
+  .match-meta, .account-task-status, .account-task-matchup, .account-task-matchup > span,
+  .team-sep, .account-task-player-name.is-authenticated
+) {
+  color: var(--surface);
+}
+html:root:root .court-account-selection-options [data-court-match-select]:is(:hover, :focus-visible) .account-task-status {
+  border-color: var(--surface);
+}
+
 /* Auswahlschalter haben keinen Rahmen; der Hover-Rahmen wird als Inset-Linie gezeichnet, damit der Button nicht wächst und springt. */
 html:root .toggle:not(.toggle--sort) button:is(:hover, :focus-visible) {
   border: 0;

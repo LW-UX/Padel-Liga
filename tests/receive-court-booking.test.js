@@ -71,6 +71,35 @@ test('andere Events und ungültige Mail-IDs werden nicht abgerufen', async () =>
   assert.equal(ctx.requests.length, 0);
 });
 
+test('Umleitung übernimmt Originalabsender, Empfänger und sekundengenauen Zeitpunkt', async () => {
+  const ctx = await setup({ config: { forwarders: ['no-reply@playtomic.io'], originalRecipients: ['booker@example.com'] },
+    deps: { parseMime: async () => ({ ...mail(), to: [{ name: 'Test', address: 'Booker@example.com' }] }) } });
+  ctx.received.from = 'Playtomic <no-reply@playtomic.io>';
+  assert.equal((await ctx.send()).body.status, 'processed');
+  assert.equal(ctx.writes[0].p_source_occurred_at, '2026-10-01T08:55:40.000Z');
+  assert.equal(ctx.writes[0].p_source_precision_seconds, 1);
+});
+
+test('Umleitung nimmt keine Buchung für fremde Empfänger oder direkt an Resend an', async () => {
+  for (const recipients of [undefined, [{ address: 'other@example.com' }], [{ address: recipient }]]) {
+    const ctx = await setup({ config: { forwarders: ['no-reply@playtomic.io'], originalRecipients: ['booker@example.com'] },
+      deps: { parseMime: async () => ({ ...mail(), to: recipients }) } });
+    ctx.received.from = 'no-reply@playtomic.io';
+    assert.equal((await ctx.send()).body.reason, 'original_recipient');
+    assert.equal(ctx.writes.length, 0);
+  }
+});
+
+test('Umleitung verlangt weiter DMARC und lehnt normale Weiterleitung im Umleitungsmodus ab', async () => {
+  const ctx = await setup({ config: { forwarders: ['no-reply@playtomic.io'], originalRecipients: ['booker@example.com'] },
+    deps: { parseMime: async () => ({ ...mail(), to: [{ address: 'booker@example.com' }] }) } });
+  assert.equal((await ctx.send()).body.reason, 'sender_authentication');
+  ctx.received.from = 'no-reply@playtomic.io';
+  ctx.received.authentication.dmarc = 'fail';
+  assert.equal((await ctx.send()).body.reason, 'sender_authentication');
+  assert.equal(ctx.writes.length, 0);
+});
+
 test('Originalmail als Anlage liefert ursprüngliches Datum statt Weiterleitungszeit', async () => {
   let parses = 0;
   const ctx = await setup({ deps: { parseMime: async () => ++parses === 1 ? {

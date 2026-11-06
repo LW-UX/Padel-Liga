@@ -183,6 +183,8 @@ test('date and time hints are dimmed while Safari and iOS receive controlled tex
   assert.match(accountScript, /SCHEDULE_HOUR_OPTIONS = Array\.from\(\{ length: 20 - 7 \+ 1 \}/);
   assert.match(accountScript, /SCHEDULE_MINUTE_OPTIONS = \['00', '15', '30', '45'\]/);
   assert.match(accountScript, /renderScheduleTimeField\('scheduledTime', matchTime\.time\)/);
+  assert.match(accountScript, /renderScheduleTimeField\('playedTime', getResultFormTime\(task\)\)/);
+  assert.doesNotMatch(accountScript, /<input type="time" name="playedTime"/);
   assert.match(accountScript, /renderScheduleTimeField\('displayTime', task\.display_time\)/);
   assert.match(accountScript, /function keepTrainingPickerMenuVisible\(picker\)[\s\S]*menu\.getBoundingClientRect\(\)\.bottom - visibleBottom[\s\S]*toggle\.getBoundingClientRect\(\)\.top - visibleTop/);
   assert.match(accountScript, /picker\.closest\('\[data-schedule-time-field\]'\)\) keepTrainingPickerMenuVisible\(picker\)/);

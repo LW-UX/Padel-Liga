@@ -68,7 +68,7 @@ test('Cup mode renders its own navigation and responsive knockout funnel', () =>
   assert.match(style, /\.cup-round-final \{ order: 5; \}/);
   assert.match(style, /\.cup-round-quarterfinal \.cup-round-matches \{ grid-template-columns: 1fr; \}/);
   assert.match(style, /\.cup-redraw \{[\s\S]*flex: 0 0 116px;/);
-  assert.match(style, /\.cup-redraw-line \{[\s\S]*width: 1px;[\s\S]*background: linear-gradient\(180deg/);
+  assert.match(style, /\.cup-redraw-line \{[\s\S]*width: 1px;[\s\S]*background: var\(--border\)/);
   assert.match(style, /\.cup-redraw-label \{[\s\S]*border-radius: var\(--container-radius-sm\);/);
   assert.doesNotMatch(style, /\.cup-redraw-label \{[\s\S]*writing-mode: vertical/);
 });

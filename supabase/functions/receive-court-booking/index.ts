@@ -9,6 +9,7 @@ const config = {
   signingSecret: Deno.env.get("RESEND_BOOKING_WEBHOOK_SECRET") || "",
   recipient: Deno.env.get("RESEND_BOOKING_RECIPIENT") || "buchungen@kiroimyon.resend.app",
   forwarders: (Deno.env.get("RESEND_BOOKING_FORWARDERS") || "").split(",").map(value => value.trim()).filter(Boolean),
+  originalRecipients: (Deno.env.get("RESEND_BOOKING_ORIGINAL_RECIPIENTS") || "").split(",").map(value => value.trim()).filter(Boolean),
 };
 
 Deno.serve(createBookingWebhook(config, {

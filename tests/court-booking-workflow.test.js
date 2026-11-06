@@ -93,14 +93,18 @@ test('selecting a 90-minute booking carries its full duration into the match pic
   assert.deepEqual(cells.filter(cell => cell.classes.has('is-selected')).map(cell => cell.dataset.courtTime), ['18:00', '18:30', '19:00']);
 });
 
-test('booked slots use an accent outline and feed the existing explicit match selection', () => {
+test('booked slots use an accent outline and show structured match choices inside the booking inbox', () => {
   assert.match(availability, /getCourtBookings\?\.\(date\)/);
   assert.match(availability, /className = bookedCover[\s\S]*is-booked-start[\s\S]*is-booked-end/);
   assert.match(availability, /choice\.reserved \? 'bereits gebucht' : 'frei'/);
   assert.match(availabilityStyle, /td\.is-booked[^\n]*var\(--accent\)/);
   assert.match(availabilityStyle, /td\.is-selected \{ background: var\(--accent\); box-shadow: none; \}/);
   assert.match(account, /data-court-booking-select/);
-  assert.match(account, /Für welche Partie möchtest du diese Zeit übernehmen\?/);
+  assert.match(account, /pendingCourtSlot\?\.reserved[\s\S]*renderCourtBookingInbox\(\)/);
+  assert.match(account, /court-booking-match-selection/);
+  assert.match(account, /secondary-button match-card[\s\S]*data-court-match-select/);
+  assert.match(account, /match-meta[\s\S]*account-task-status[\s\S]*account-task-matchup/);
+  assert.match(account, /getTaskMatchLabel\(first\)\.localeCompare\(getTaskMatchLabel\(second\), 'de', \{ numeric: true \}\)/);
 });
 
 test('court and racket confirmation share one exact booking message', () => {

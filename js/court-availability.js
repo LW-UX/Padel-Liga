@@ -46,9 +46,7 @@
       <div class="court-date-controls"><button class="secondary-button detail-view-step" type="button" data-court-day="-1" aria-label="Vorheriger Tag"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 18-6-6 6-6"></path></svg></button>
         <label><span data-court-weekday aria-hidden="true">Wochentag</span><input type="date" data-court-date aria-label="Datum" required></label>
         <button class="secondary-button detail-view-step" type="button" data-court-day="1" aria-label="Nächster Tag"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"></path></svg></button>
-        <div class="toggle court-hours-filter" role="group" aria-label="Stunden filtern">
-          <button type="button" data-court-hours="all">Alle Stunden</button><button type="button" data-court-hours="office">Bürozeiten</button>
-        </div></div>
+        <button class="secondary-button" type="button" data-court-booking-show hidden>Gebuchten Platz anzeigen</button></div>
       <div class="toggle" role="group" aria-label="Plätze filtern">
         <button type="button" data-court-filter="indoor">Indoor</button><button type="button" data-court-filter="outdoor">Outdoor</button>
       </div>
@@ -70,13 +68,20 @@
   const grid = dialog.querySelector('[data-court-grid]');
   const status = dialog.querySelector('[data-court-status]');
   let options = {}, data = null, selected = null, filter = 'outdoor', ownBookings = [];
-  let hoursFilter = 'office', preview = null;
-  let generation = 0, controller = null, interval = null, historyId = null, afterClose = null, trigger = null;
+  let availableBookings = [], hoursFilter = 'office', preview = null;
+  let generation = 0, bookingShortcutVersion = 0, controller = null, interval = null, historyId = null, afterClose = null, trigger = null, revealBookingId = null;
 
   function updateDateControls() {
     const valid = dateInput.value && dateInput.validity.valid;
     dialog.querySelector('[data-court-weekday]').textContent = valid ? dateLabel(dateInput.value).split(',')[0] : 'Wochentag';
     dialog.querySelector('[data-court-day="-1"]').disabled = !valid || dateInput.value <= today();
+  }
+
+  function updateViewControls() {
+    dialog.querySelectorAll('[data-court-filter]').forEach(button => {
+      const active = button.dataset.courtFilter === filter;
+      button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active));
+    });
   }
 
   function setSelection(slot) {
@@ -129,6 +134,51 @@
         reserved: true
       }];
     });
+  }
+
+  function requestedBooking() {
+    if (!revealBookingId) return null;
+    return ownBookings.find(booking => Number(booking.booking_id) === Number(revealBookingId))
+      || availableBookings.find(booking => Number(booking.booking_id) === Number(revealBookingId))
+      || null;
+  }
+
+  async function loadBookingShortcut() {
+    const version = ++bookingShortcutVersion;
+    const bookings = await Promise.resolve(window.PadelKonto?.getCourtBookings?.() || []).catch(() => []);
+    if (version !== bookingShortcutVersion || !dialog.open) return;
+    availableBookings = (Array.isArray(bookings) ? bookings : [])
+      .filter(booking => Date.parse(booking.ends_at) > Date.now()
+        && (!booking.match_id || booking.match_id === options.matchId))
+      .sort((left, right) => Number(right.match_id === options.matchId) - Number(left.match_id === options.matchId)
+        || Date.parse(left.starts_at) - Date.parse(right.starts_at)
+        || Number(left.booking_id) - Number(right.booking_id));
+    dialog.querySelector('[data-court-booking-show]').hidden = !availableBookings.length;
+  }
+
+  function prepareBookedView(booking, nextData) {
+    const court = nextData.courts.find(item => item.id === booking.court_resource_id)
+      || nextData.courts.find(item => normalizeCourtName(item.name) === normalizeCourtName(booking.court_name));
+    if (court) filter = court.location;
+    const start = minute(clock(booking.starts_at));
+    const duration = (Date.parse(booking.ends_at) - Date.parse(booking.starts_at)) / 60000;
+    const office = hourBounds(nextData, 'office');
+    hoursFilter = start >= office.from && start + duration <= office.until ? 'office' : 'all';
+    updateViewControls();
+  }
+
+  function revealBookedSlot(booking) {
+    const slot = visibleBookedSlots(data, hoursFilter)
+      .find(item => Number(item.bookingId) === Number(booking.booking_id));
+    if (!slot) return false;
+    const button = grid.querySelector(`[data-court-slot="booking-${Number(booking.booking_id)}"]`);
+    if (!button) return false;
+    const gridRect = grid.getBoundingClientRect();
+    const cellRect = button.closest('td').getBoundingClientRect();
+    grid.scrollLeft += cellRect.left + cellRect.width / 2 - gridRect.left - gridRect.width / 2;
+    grid.scrollTop += cellRect.top + cellRect.height / 2 - gridRect.top - gridRect.height / 2;
+    button.focus({ preventScroll: true });
+    return true;
   }
 
   function findSelectableSlot(slotId) {
@@ -224,9 +274,18 @@
       if (result.date !== date || !Array.isArray(result.courts) || !Array.isArray(result.slots) || !result.opening) throw new Error('Ungültige Antwort');
       data = result;
       ownBookings = Array.isArray(bookings) ? bookings : [];
+      const revealRequested = Boolean(revealBookingId);
+      const bookingToReveal = requestedBooking();
+      if (bookingToReveal) prepareBookedView(bookingToReveal, result);
       status.textContent = '';
       renderGrid();
-      if (!selected
+      if (revealRequested) {
+        if (!bookingToReveal || !revealBookedSlot(bookingToReveal)) {
+          status.textContent = 'Der gebuchte Platz konnte im Raster nicht gefunden werden.';
+        }
+        revealBookingId = null;
+      }
+      if (!status.textContent && !selected
         && !visibleSlots(result, hoursFilter).some(slot => result.courts.some(court => court.id === slot.courtId && court.location === filter))
         && !visibleBookedSlots(result, hoursFilter).some(slot => result.courts.some(court => court.id === slot.courtId && court.location === filter))) {
         status.textContent = 'Für diese Auswahl sind keine freien Stunden verfügbar.';
@@ -248,7 +307,8 @@
     const callback = afterClose;
     afterClose = null;
     const focus = trigger;
-    options = {}; data = null; ownBookings = []; selected = null;
+    bookingShortcutVersion++;
+    options = {}; data = null; ownBookings = []; availableBookings = []; selected = null; revealBookingId = null;
     if (focus?.isConnected) focus.focus({ preventScroll: true });
     callback?.();
   }
@@ -264,21 +324,15 @@
     options = next;
     trigger = next.trigger || document.activeElement;
     filter = defaultFilter(next.seasonId);
-    hoursFilter = 'office'; preview = null;
-    dialog.querySelectorAll('[data-court-hours]').forEach(button => {
-      const active = button.dataset.courtHours === hoursFilter;
-      button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active));
-    });
+    hoursFilter = 'office'; preview = null; revealBookingId = null; availableBookings = [];
+    updateViewControls();
     dateInput.min = today();
     dateInput.value = next.date && next.date >= today() ? next.date : today();
     updateDateControls();
     dialog.querySelector('[data-court-context]').textContent = next.label || 'Platzverfügbarkeit';
+    dialog.querySelector('[data-court-booking-show]').hidden = true;
     dialog.querySelector('[data-court-apply]').hidden = !next.onSelect;
     dialog.querySelector('[data-court-account]').hidden = Boolean(next.onSelect);
-    dialog.querySelectorAll('[data-court-filter]').forEach(button => {
-      const active = button.dataset.courtFilter === filter;
-      button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active));
-    });
     data = null; ownBookings = []; setSelection(null); renderGrid();
     // Ein bereits geöffnetes mobiles Konto muss seinen Verlaufsschritt vor
     // dem darüberliegenden Modal erhalten, auch bei unmittelbar folgendem Öffnen.
@@ -286,6 +340,7 @@
     dialog.showModal();
     historyId = `court-${Date.now()}`;
     history.pushState({ ...history.state, courtAvailability: historyId }, '', location.href);
+    void loadBookingShortcut();
     void load();
     interval = setInterval(() => { if (!document.hidden) void load(true); }, 60000);
   }
@@ -293,22 +348,18 @@
   dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
   dialog.addEventListener('click', event => {
     if (event.target === dialog || event.target.closest('[data-court-close]')) { close(); return; }
+    if (event.target.closest('[data-court-booking-show]') && availableBookings.length) {
+      const booking = availableBookings[0];
+      revealBookingId = Number(booking.booking_id);
+      dateInput.value = format.format(new Date(booking.starts_at));
+      void load(); return;
+    }
     const day = event.target.closest('[data-court-day]');
     if (day) {
       const date = new Date(`${dateInput.value}T12:00:00Z`);
       date.setUTCDate(date.getUTCDate() + Number(day.dataset.courtDay));
       dateInput.value = date.toISOString().slice(0, 10) < today() ? today() : date.toISOString().slice(0, 10);
       void load(); return;
-    }
-    const hoursButton = event.target.closest('[data-court-hours]');
-    if (hoursButton) {
-      hoursFilter = hoursButton.dataset.courtHours;
-      dialog.querySelectorAll('[data-court-hours]').forEach(button => {
-        const active = button === hoursButton;
-        button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active));
-      });
-      if (selected && !visibleSlots(data, hoursFilter).some(slot => slot.id === selected.id)) setSelection(null);
-      status.textContent = ''; renderGrid(); return;
     }
     const filterButton = event.target.closest('[data-court-filter]');
     if (filterButton) {

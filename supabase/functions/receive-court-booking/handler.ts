@@ -2,10 +2,10 @@ import { parsePlaytomicBookingMail, type BookingMail } from "../_shared/playtomi
 import { readOutlookForward } from "./outlook-forward.ts";
 
 type MimeMail = {
-  subject?: string; text?: string; date?: string; from?: { address?: string };
+  subject?: string; text?: string; date?: string; from?: { address?: string }; to?: unknown;
   attachments?: { filename?: string; mimeType?: string; content: ArrayBuffer | Uint8Array | string }[];
 };
-type Config = { apiKey: string; signingSecret: string; recipient: string; forwarders: string[] };
+type Config = { apiKey: string; signingSecret: string; recipient: string; forwarders: string[]; originalRecipients?: string[] };
 type Dependencies = {
   verify: (body: string, headers: Record<string, string>, secret: string) => unknown;
   parseMime: (raw: Uint8Array) => Promise<MimeMail>;
@@ -109,6 +109,17 @@ export function createBookingWebhook(config: Config, deps: Dependencies) {
       const response = await deps.fetch(url.toString(), { redirect: "error", signal: AbortSignal.timeout(15000) });
       if (!response.ok) throw new Error("raw_unavailable");
       let mail = await deps.parseMime(await limitedBody(response, MAX_BYTES));
+      if (sender === "no-reply@playtomic.io") {
+        // Redirects retain the original recipient. Accept only Playtomic mail
+        // originally addressed to the approved league booker, not any booking
+        // sent directly to the publicly known Resend address.
+        const to = Array.isArray(mail.to) ? mail.to.flatMap(item => item?.group || [item]) : [];
+        const allowed = (config.originalRecipients || []).map(address);
+        if (address(mail.from?.address || "") !== sender || !to.some(item =>
+          typeof item?.address === "string" && allowed.includes(address(item.address)))) {
+          return json({ status: "needs_review", reason: "original_recipient" });
+        }
+      }
       const originals = mail.attachments?.filter(file => file.mimeType === "message/rfc822" || /\.eml$/i.test(file.filename || "")) || [];
       if (originals.length > 1) return json({ status: "needs_review", reason: "multiple_originals" });
       if (originals.length === 1) mail = await deps.parseMime(bytes(originals[0].content));

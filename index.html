@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest?v=2026-11-03-timeless">
-  <link rel="stylesheet" href="branding/og-design.css?v=332ce73c9d">
+  <link rel="stylesheet" href="branding/og-design.css?v=2026-11-06-court-card-hover">
   <script>
     // Browser laden CSS-Masken von file:// nicht; lokal geöffnet werden die Firmenlogos daher ohne Maske gezeigt.
     if (location.protocol === 'file:') document.documentElement.classList.add('is-file-protocol');
@@ -43,9 +43,9 @@
     })();
   </script>
   <link rel="stylesheet" href="achievements.css?v=2026-10-31">
-  <link rel="stylesheet" href="style.css?v=2026-11-06-match-parts">
-  <link rel="stylesheet" href="account.css?v=2026-11-06-result-prompts">
-  <link rel="stylesheet" href="court-availability.css?v=2026-11-06-court-bookings">
+  <link rel="stylesheet" href="style.css?v=2026-11-06-flat-design">
+  <link rel="stylesheet" href="account.css?v=2026-11-06-court-action-row">
+  <link rel="stylesheet" href="court-availability.css?v=2026-11-06-court-bookings-v7">
   <link rel="stylesheet" href="whats-new.css?v=2026-11-05-cursors-11">
   <script>
     (function () {
@@ -60,7 +60,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="match-statistics.css?v=2026-11-05-cursors-11">
+  <link rel="stylesheet" href="match-statistics.css?v=2026-11-06-flat-design">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="data/players.js?v=2026-10-20-test-net-emoji"></script>
@@ -79,9 +79,10 @@
   <script defer src="js/table-core.js?v=2026-10-30-diff-zero"></script>
   <script defer src="js/live-ticker.js?v=2026-11-03-player-images"></script>
   <script defer src="js/mobile-dialog-pages.js?v=2026-11-03-profile-routes"></script>
-  <script defer src="js/branding-preview.js?v=2026-11-05-random-design"></script>
-  <script defer src="js/court-availability.js?v=2026-11-06-court-bookings"></script>
-  <script defer src="js/account.js?v=2026-11-06-court-bookings"></script>
+  <script defer src="js/branding-preview.js?v=2026-11-06-og-outer-border"></script>
+  <script defer src="js/court-availability.js?v=2026-11-06-court-bookings-v3"></script>
+  <script defer src="js/home-matchday.js?v=2026-11-06-home-matchday-4"></script>
+  <script defer src="js/account.js?v=2026-11-06-result-time-picker-v3"></script>
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/headline-split.js?v=2026-11-03-headline-split-2"></script>
@@ -182,6 +183,7 @@
     <section class="home-season-podium" id="home-season-podium" aria-labelledby="home-season-podium-title" hidden></section>
     <div class="home-grid">
       <div class="home-main">
+        <section class="widget home-matchday" id="home-matchday" aria-labelledby="home-matchday-title" hidden></section>
         <article class="widget home-announcement" id="home-announcement" hidden></article>
         <article class="widget home-notice" hidden>
           <button class="home-notice-close" type="button" data-dismiss-notice aria-label="Hinweisbanner schließen">×</button>

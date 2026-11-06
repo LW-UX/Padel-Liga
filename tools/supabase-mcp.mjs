@@ -12,7 +12,7 @@ const migrationsDirectory = resolve(repositoryRoot, 'supabase/migrations');
 const functionsDirectory = resolve(repositoryRoot, 'supabase/functions');
 const tokenFile = resolve(repositoryRoot, '.codex-secrets/supabase-access-token');
 
-const [command, argument] = process.argv.slice(2);
+const [command, argument, originalRecipientsArgument] = process.argv.slice(2);
 
 if (!command) {
   fail('Aufruf: supabase-mcp.mjs <list-tools|list-migrations|apply-migration|execute-sql|list-functions|get-function|deploy-function|delete-function|get-logs|store-notification-service-key|get-auth-email-settings|update-recovery-template|update-account-email-templates> [Datei oder Function]');
@@ -195,19 +195,25 @@ if (command === 'list-tools') {
       files
     }
   }));
-} else if (['inspect-booking-mail', 'configure-booking-mail', 'replay-booking-mail'].includes(command)) {
+} else if (['list-booking-mail', 'inspect-booking-mail', 'inspect-booking-access', 'normalize-booking-mail', 'configure-booking-mail', 'replay-booking-mail'].includes(command)) {
   const slug = 'resend-booking-setup';
-  const files = await readFunctionFiles(requireFunctionPath(slug));
+  const files = (await readFunctionFiles(requireFunctionPath(slug))).map(file => ({ ...file, name: `${slug}/${file.name}` }));
+  for (const name of ['_shared/playtomic-booking-mail.ts', 'receive-court-booking/handler.ts', 'receive-court-booking/outlook-forward.ts']) {
+    files.push({ name, content: await readFile(resolve(functionsDirectory, name), 'utf8') });
+  }
   const deployed = await rpc('tools/call', { name: 'deploy_edge_function', arguments: {
-    name: slug, entrypoint_path: 'index.ts', verify_jwt: false, files
+    name: slug, entrypoint_path: `${slug}/index.ts`, verify_jwt: false, files
   } });
   if (deployed?.isError) fail('Der geschützte Resend-Einrichtungshelfer konnte nicht bereitgestellt werden.');
   try {
     const keys = await managementRequest('/api-keys?reveal=true');
     const serviceKey = keys.find(key => key.type === 'secret')?.api_key;
     if (!serviceKey) throw new Error('Der Projektzugang ist nicht verfügbar.');
-    const inspect = command === 'inspect-booking-mail';
-    const body = inspect ? { mode: 'inspect', emailIds: (argument || '').split(',').filter(Boolean) }
+    const inspect = ['inspect-booking-mail', 'inspect-booking-access', 'list-booking-mail', 'normalize-booking-mail'].includes(command);
+    const body = command === 'list-booking-mail' ? { mode: 'recent' }
+      : command === 'inspect-booking-access' ? { mode: 'access', emailIds: (argument || '').split(',').filter(Boolean) }
+      : command === 'normalize-booking-mail' ? { mode: 'normalize', emailIds: (argument || '').split(',').filter(Boolean) }
+      : inspect ? { mode: 'inspect', emailIds: (argument || '').split(',').filter(Boolean) }
       : { mode: 'configure' };
     const response = await fetch(`https://${projectRef}.supabase.co/functions/v1/${slug}`, {
       method: 'POST', headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey, 'Content-Type': 'application/json' },
@@ -240,12 +246,16 @@ if (command === 'list-tools') {
       if (!/^whsec_[A-Za-z0-9+/=]+$/.test(result.signingSecret || '')) throw new Error('Ungültiger Signing-Schlüssel.');
       const forwarders = (argument || '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean);
       if (!forwarders.length || forwarders.some(value => !/^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/.test(value))) throw new Error('Freigegebene Weiterleitungsabsender fehlen.');
+      const originalRecipients = (originalRecipientsArgument || '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean);
+      if (originalRecipients.some(value => !/^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/.test(value))
+        || forwarders.includes('no-reply@playtomic.io') && !originalRecipients.length) throw new Error('Ursprüngliche Empfänger für die Umleitung fehlen.');
       await managementRequest('/secrets', { method: 'POST', body: JSON.stringify([
         { name: 'RESEND_BOOKING_WEBHOOK_SECRET', value: result.signingSecret },
         { name: 'RESEND_BOOKING_RECIPIENT', value: 'buchungen@kiroimyon.resend.app' },
-        { name: 'RESEND_BOOKING_FORWARDERS', value: forwarders.join(',') }
+        { name: 'RESEND_BOOKING_FORWARDERS', value: forwarders.join(',') },
+        { name: 'RESEND_BOOKING_ORIGINAL_RECIPIENTS', value: originalRecipients.join(',') }
       ]) });
-      console.log(JSON.stringify({ configured: true, webhookId: result.webhookId, recipient: 'buchungen@kiroimyon.resend.app', forwarders }));
+      console.log(JSON.stringify({ configured: true, webhookId: result.webhookId, recipient: 'buchungen@kiroimyon.resend.app', forwarders, originalRecipients }));
     }
   } catch (error) {
     process.exitCode = 1;

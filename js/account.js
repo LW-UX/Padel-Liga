@@ -163,7 +163,7 @@
 
   function renderScheduleTimeControls(name, value = '') {
     const [hour = '', minute = ''] = String(value || '').slice(0, 5).split(':');
-    const hours = name === 'scheduledTime' ? Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0')) : SCHEDULE_HOUR_OPTIONS;
+    const hours = name === 'scheduledTime' || name === 'playedTime' ? Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0')) : SCHEDULE_HOUR_OPTIONS;
     return `<input type="hidden" name="${name}" value="${hour && minute ? `${hour}:${minute}` : ''}">${renderScheduleTimePicker(`${name}Hour`, 'Stunde', hours, hour)}<span aria-hidden="true">:</span>${renderScheduleTimePicker(`${name}Minute`, 'Minute', SCHEDULE_MINUTE_OPTIONS, minute)}`;
   }
 
@@ -1049,10 +1049,10 @@
           <span>Datum</span>
           <span class="datetime-input-shell" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required max="${getTodayInputValue()}" value="${escapeHtml(getResultFormDate(task))}"></span>
         </label>
-        <label>
+        <div class="schedule-time-label" role="group" aria-label="Uhrzeit">
           <span>Uhrzeit</span>
-          <span class="datetime-input-shell" data-datetime-field data-datetime-hint="--:--"><input type="time" name="playedTime" required value="${escapeHtml(getResultFormTime(task))}"></span>
-        </label>
+          ${renderScheduleTimeField('playedTime', getResultFormTime(task))}
+        </div>
       </div>
       ${renderScoreCounters(initialResult, matchFormat)}
       <div class="result-entry-actions">
@@ -1089,11 +1089,11 @@
           <span>Uhrzeit</span>
           ${renderScheduleTimeField('scheduledTime', matchTime.time)}
         </div>
-        <button class="secondary-button court-check-button" type="button" data-court-match-open="${escapeHtml(task.match_id)}">Freie Plätze prüfen</button>
       </div>
       <div class="racket-check" data-racket-check${courtBookingWindowAttributes(linkedBooking)} role="status" aria-live="polite" hidden></div>
       <div class="match-schedule-actions">
         ${allowCancel ? renderCancelMatchButton(task) : ''}
+        <button class="secondary-button" type="button" data-court-match-open="${escapeHtml(task.match_id)}">Freie Plätze prüfen</button>
         <button class="secondary-button" type="submit">${task.match_at ? 'Termin speichern' : 'Terminieren'}</button>
       </div>
     </form>`;
@@ -1177,9 +1177,9 @@
           <span class="mc-nr">${escapeHtml(getTaskLeagueLabel(task))} · ${escapeHtml(getTaskMatchLabel(task))}</span>
           ${renderResultTaskStatus(task)}
         </div>
+        ${renderTaskMatchup(task)}
         ${groupKey === 'future' ? `<div class="result-card-timing">${escapeHtml(formatMatchAt(task.proposed_match_at || task.match_at))}</div>
           <div class="racket-status" data-racket-status="match:${escapeHtml(task.match_id)}" data-racket-starts-at="${Date.parse(task.match_at) || 0}"${courtBookingWindowAttributes(linkedBooking)} hidden></div>` : ''}
-        ${renderTaskMatchup(task)}
         ${renderResultTaskBody(task, groupKey)}
         ${typeof window !== 'undefined' ? window.PadelLiveTicker?.renderGameAssignment(task.match_id) || '' : ''}
       </article>
@@ -1290,6 +1290,34 @@
     };
   }
 
+  function renderCourtMatchOptions() {
+    const tasks = [...courtSelectableTasks()].sort((first, second) =>
+      getTaskLeagueLabel(first).localeCompare(getTaskLeagueLabel(second), 'de', { numeric: true })
+      || getTaskMatchLabel(first).localeCompare(getTaskMatchLabel(second), 'de', { numeric: true })
+      || String(first.match_id).localeCompare(String(second.match_id), 'de', { numeric: true }));
+    const authenticatedPlayerName = state.profile?.player_id
+      ? getPlayerName(state.profile.player_id)
+      : '';
+    if (state.playerToolsError) {
+      return '<p class="hint">Partien konnten nicht geladen werden. <button type="button" class="text-link" data-account-tasks-retry>Erneut versuchen</button></p>';
+    }
+    if (isPlayerAccount() && (state.playerToolsLoading || !state.playerToolsReady)) {
+      return '<p class="hint">Partien werden geladen …</p>';
+    }
+    if (!tasks.length) return '<p class="hint">Für dein Konto ist gerade keine terminierbare Partie verfügbar.</p>';
+    return tasks.map(task => `<button type="button" class="secondary-button match-card" data-court-match-select="${escapeHtml(task.match_id)}">
+        <span class="account-task-meta">
+          <span class="match-meta">${escapeHtml(getTaskLeagueLabel(task))} · ${escapeHtml(getTaskMatchLabel(task))}</span>
+          <span class="account-task-status">${task.match_at ? escapeHtml(formatMatchAt(task.match_at)) : 'Nicht terminiert'}</span>
+        </span>
+        <span class="account-task-matchup">
+          <strong>${renderTaskTeamLabel(task.team_one_label, authenticatedPlayerName)}</strong>
+          <span>vs.</span>
+          <strong>${renderTaskTeamLabel(task.team_two_label, authenticatedPlayerName)}</strong>
+        </span>
+      </button>`).join('');
+  }
+
   function renderCourtBookingInbox() {
     const games = document.getElementById('account-games-panel');
     if (!games) return;
@@ -1301,14 +1329,21 @@
       games.before(panel);
     }
     const bookings = state.courtBookings.filter(booking => !booking.match_id && Date.parse(booking.ends_at) > Date.now());
-    panel.hidden = !state.session?.user || (!bookings.length && !replacementCancellationTask);
+    const isChoosingMatch = Boolean(pendingCourtSlot?.reserved && !replacementCancellationTask);
+    panel.hidden = !state.session?.user || (!bookings.length && !replacementCancellationTask && !isChoosingMatch);
     if (panel.hidden) return;
     panel.innerHTML = `<h3>${replacementCancellationTask ? 'Neue Platzbuchung zuordnen' : 'Gebuchte Plätze'}</h3>
-      ${replacementCancellationTask ? `<p class="hint">Wähle die Ersatzbuchung für ${escapeHtml(getTaskLeagueLabel(replacementCancellationTask))} · ${escapeHtml(getTaskMatchLabel(replacementCancellationTask))}. Erst „Termin speichern“ übernimmt sie für die Partie.</p>` : '<p class="hint">Diese Zeiten wurden durch eine eingegangene Buchungsbestätigung erkannt.</p>'}
-      <div class="court-account-selection-options">${bookings.length ? bookings.map(booking => {
-        const slot = courtBookingSlot(booking);
-        return `<button type="button" class="secondary-button" data-court-booking-select="${booking.booking_id}"><strong>${escapeHtml(booking.court_name)}</strong><br>${escapeHtml(formatMatchAt(booking.starts_at))}–${escapeHtml(getBerlinMatchAtParts(booking.ends_at).time)} Uhr</button>`;
-      }).join('') : '<p class="hint">Noch keine neue Buchungsbestätigung eingegangen.</p>'}</div>
+      ${replacementCancellationTask
+        ? `<p class="hint">Wähle die Ersatzbuchung für ${escapeHtml(getTaskLeagueLabel(replacementCancellationTask))} · ${escapeHtml(getTaskMatchLabel(replacementCancellationTask))}. Erst „Termin speichern“ übernimmt sie für die Partie.</p>`
+        : `<p class="hint">${isChoosingMatch ? 'Wähle jetzt die Partie, zu der die markierte Buchung gehört.' : 'Diese Zeiten wurden durch eine eingegangene Buchungsbestätigung erkannt.'}</p>`}
+      <div class="court-account-selection-options">${bookings.length ? bookings.map(booking => `<button type="button" class="secondary-button" data-court-booking-select="${booking.booking_id}" aria-pressed="${Number(booking.booking_id) === Number(pendingCourtSlot?.bookingId)}"><span class="court-booking-time">${escapeHtml(formatMatchAt(booking.starts_at))}–${escapeHtml(getBerlinMatchAtParts(booking.ends_at).time)} Uhr</span><strong class="court-booking-court">${escapeHtml(booking.court_name)}</strong></button>`).join('') : '<p class="hint">Noch keine neue Buchungsbestätigung eingegangen.</p>'}</div>
+      ${isChoosingMatch ? `<div class="court-booking-match-selection">
+          <div class="heading-row heading-row--between">
+            <h4>Partie auswählen</h4>
+            <button type="button" class="text-link" data-court-selection-cancel>Auswahl verwerfen</button>
+          </div>
+          <div class="court-account-selection-options">${renderCourtMatchOptions()}</div>
+        </div>` : ''}
       ${replacementCancellationTask ? '<button type="button" class="text-link" data-court-replacement-cancel>Abbrechen</button>' : ''}`;
   }
 
@@ -1316,24 +1351,26 @@
     const list = document.getElementById('result-task-list');
     if (!list) return;
     let panel = document.getElementById('court-match-selection');
+    if (!pendingCourtSlot || !state.session?.user) {
+      if (panel) panel.hidden = true;
+      return;
+    }
+    if (pendingCourtSlot?.reserved) {
+      if (panel) panel.hidden = true;
+      renderCourtBookingInbox();
+      return;
+    }
     if (!panel) {
       panel = document.createElement('section');
       panel.id = 'court-match-selection';
       panel.className = 'court-account-selection';
       (document.getElementById('account-games-panel') || list).before(panel);
     }
-    panel.hidden = !pendingCourtSlot || !state.session?.user;
-    if (panel.hidden) return;
-    const tasks = courtSelectableTasks();
+    panel.hidden = false;
     const duration = pendingCourtSlot.duration || 60;
     panel.innerHTML = `<h3>Für welche Partie möchtest du diese Zeit übernehmen?</h3>
       <p class="hint">${escapeHtml(pendingCourtSlot.date.split('-').reverse().join('.'))} · ${escapeHtml(pendingCourtSlot.time)} Uhr · ${escapeHtml(duration)} Minuten. ${pendingCourtSlot.reserved ? `Der Platz ${escapeHtml(pendingCourtSlot.courtName || '')} ist bereits gebucht.` : 'Der Platz ist dadurch nicht reserviert.'}</p>
-      <div class="court-account-selection-options">${state.playerToolsError
-        ? '<p class="hint">Partien konnten nicht geladen werden. <button type="button" class="text-link" data-account-tasks-retry>Erneut versuchen</button></p>'
-        : isPlayerAccount() && (state.playerToolsLoading || !state.playerToolsReady)
-        ? '<p class="hint">Partien werden geladen …</p>'
-        : tasks.length ? tasks.map(task => `<button type="button" class="secondary-button" data-court-match-select="${escapeHtml(task.match_id)}">${escapeHtml(getTaskLeagueLabel(task))} · ${escapeHtml(getTaskMatchLabel(task))}<br>${escapeHtml(task.team_one_label)} vs. ${escapeHtml(task.team_two_label)}${task.match_at ? '<br>Bestehenden Termin ändern' : ''}</button>`).join('')
-          : '<p class="hint">Für dein Konto ist gerade keine terminierbare Partie verfügbar.</p>'}</div>
+      <div class="court-account-selection-options">${renderCourtMatchOptions()}</div>
       <button type="button" class="text-link" data-court-selection-cancel>Auswahl verwerfen</button>`;
   }
 
@@ -2167,7 +2204,8 @@
         .filter(task => hasCompleteMatchLineup(matchesById.get(task.match_id)))
         .map(task => ({
           ...task,
-          display_label: matchesById.get(task.match_id).display_label
+          display_label: matchesById.get(task.match_id).display_label,
+          match_players: matchesById.get(task.match_id).match_players
         }));
     }
     state.players = playersResponse.data || [];
@@ -2239,6 +2277,20 @@
   function render() {
     renderAuthState();
     renderResultTasks();
+    renderHomeMatchday();
+  }
+
+  function renderHomeMatchday() {
+    window.PadelHomeMatchday?.render({
+      session: state.session,
+      profile: state.profile,
+      ready: state.playerToolsReady && !state.playerToolsError,
+      resultTasks: state.resultTasks,
+      trainingTasks: state.trainingTasks,
+      courtBookings: state.courtBookings,
+      getPlayerName,
+      getMatchLabel: getTaskMatchLabel
+    });
   }
 
   function publishAuthState() {
@@ -3208,6 +3260,10 @@ Dein Hanako-Leben-Squad`;
     const data = new FormData(form);
     const playedOn = String(data.get('playedOn') || '');
     const playedTime = String(data.get('playedTime') || '');
+    if (!playedTime) {
+      setAuthMessage('Bitte Stunde und Minute auswählen.', 'error');
+      return;
+    }
     const button = form.querySelector('[type="submit"]');
     const resultIsOfficialImmediately = state.profile?.app_role === 'admin';
     try {
@@ -3650,6 +3706,7 @@ Dein Hanako-Leben-Squad`;
           trigger: courtOpen, date: form.querySelector('[name="scheduledDate"]')?.value,
           seasonId: task.season_id || task.league_id,
           label: `${getTaskLeagueLabel(task)} · ${getTaskMatchLabel(task)}`,
+          matchId,
           onSelect: slot => applyCourtSlot(matchId, slot),
         });
         return;
@@ -3671,7 +3728,11 @@ Dein Hanako-Leben-Squad`;
         return;
       }
       if (event.target.closest('[data-court-selection-cancel]')) {
-        pendingCourtSlot = null; courtAccountRequested = false; renderCourtMatchSelection(); return;
+        pendingCourtSlot = null;
+        courtAccountRequested = false;
+        renderCourtMatchSelection();
+        renderCourtBookingInbox();
+        return;
       }
       const open = event.target.closest('[data-auth-open]');
       if (open) {
@@ -4177,6 +4238,7 @@ Dein Hanako-Leben-Squad`;
       state.session = nextSession;
       if (event === 'TOKEN_REFRESHED') return;
       resetPlayerTools();
+      renderHomeMatchday();
       window.setTimeout(async () => {
         await refresh();
         if (nextSession && ['invite', 'recovery'].includes(state.passwordFlow)) openAuthDialog();

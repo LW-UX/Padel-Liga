@@ -23,6 +23,9 @@ Bereitstellungs- und Verbindungsstand steht in `docs/PROJECT_STATUS.md`.
    - `RESEND_BOOKING_FORWARDERS`: ausdrücklich erlaubte Absenderadressen,
      kommagetrennt. Bei einer Umleitung mit unverändertem Playtomic-Absender
      muss dieser ausdrücklich freigegeben sein; nicht pauschal Domains erlauben.
+   - `RESEND_BOOKING_ORIGINAL_RECIPIENTS`: bei Umleitung ausdrücklich erlaubte
+     ursprüngliche Mail-Empfänger. Fehlt ein passender ursprünglicher `To`-
+     Empfänger, wird eine Mail von Playtomic nicht automatisch importiert.
    - `RESEND_BOOKING_RECIPIENT`: optional, Standard
      `buchungen@kiroimyon.resend.app`.
    `SUPABASE_URL` und `SUPABASE_SERVICE_ROLE_KEY` stellt Supabase bereit.
@@ -38,6 +41,29 @@ hinterlegten API-Schlüssel nicht akzeptiert; dann muss ein gültiger Schlüssel
 als `RESEND_RECEIVING_API_KEY` hinterlegt werden. Für das automatische Einrichten
 von Webhooks wird Full access benötigt. Ein solcher Schlüssel wird niemals im
 Repository oder Chat hinterlegt.
+
+`list-booking-mail` zeigt ausschließlich die jüngsten Buchungs- und
+Stornierungsmails an die konfigurierte Empfangsadresse. Die Ausgabe enthält
+nur ID, Absender, Betreff und Eingangszeit; Rohinhalte werden nicht ausgegeben.
+`inspect-booking-mail` ergänzt bei ausdrücklich gewählten Mails die ursprüngliche
+Datumszeile und die Reservierungsdaten ohne Zahlungsinformationen.
+
+`normalize-booking-mail <IDs,kommagetrennt>` liest ausdrücklich ausgewählte
+bereits weitergeleitete Bestätigungen für eine manuell freigegebene Übernahme.
+Es verlangt den authentifizierten bisherigen Buchenden als Absender, den
+korrekten Resend-Empfänger, einen vollständigen Outlook-Kopf und genau einen
+mit dem Text übereinstimmenden Kalenderanhang. Der Befehl liefert ausschließlich
+normalisierte Buchungswerte und schreibt nichts in die Datenbank. Die permanente
+Umleitungsfreigabe wird dafür nicht verändert. Übernahme und Partiezuordnung
+erfolgen erst nach konkreter Nutzerfreigabe über den Supabase-Projekthelfer.
+
+Für den dauerhaften Umleitungsmodus lautet der Aufruf
+`configure-booking-mail no-reply@playtomic.io <ursprüngliche-Empfänger>`.
+In Outlook bleiben die bisherigen Absender-, Betreff- und Clubfilter erhalten;
+nur die Aktion wird von „Weiterleiten an“ zu „Umleiten an“ geändert. Die neue
+Empfängerprüfung erfordert die aktuelle Empfangsfunktion. Eine tatsächliche
+Umleitung muss anschließend im Resend-Eingang samt DMARC und Originalempfänger
+geprüft werden; die Authentifizierungsprüfung wird dafür nicht gelockert.
 
 `replay-booking-mail <IDs,kommagetrennt>` verarbeitet ausdrücklich ausgewählte
 bereits empfangene Mails über denselben signaturgeprüften Empfangsendpunkt.
