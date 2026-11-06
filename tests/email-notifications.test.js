@@ -135,10 +135,15 @@ test('calendar mail only announces a move when an invitation was really sent', (
   assert.match(edgeFunction, /const moved = calendar\?\.is_update \?\? false;/);
 });
 
-test('a new match invitation announces the match and explains updates below the details', () => {
+test('a new match invitation uses the match-card team layout and explains updates below the button', () => {
   assert.match(edgeFunction, /intro: "Pack deine Sportsachen! Das nächste Padel-Match steht an\."/);
   assert.match(edgeFunction, /body: `Die \$\{matchTitle\} ist terminiert\. Hier sind die Details:`/);
   assert.match(edgeFunction, /afterDetails: "Wird der Termin über die Webseite verschoben oder abgesagt/);
+  assert.match(edgeFunction, /getTeamMembers\(label\)\.join\(" & "\)/);
+  assert.match(edgeFunction, /<span style=\"color:#7E828B;font-weight:normal;\">&amp;<\/span>/);
+  assert.match(edgeFunction, /align=\"left\" valign=\"middle\" width=\"44%\"/);
+  assert.match(edgeFunction, /align=\"right\" valign=\"middle\" width=\"44%\"/);
+  assert.match(edgeFunction, /\$\{escapeHtml\(content\.action\)\}<\/a>\s*\$\{content\.afterDetails \? `<p style=\"margin:16px 0 0;color:#A8ADB7;font-size:12px;/);
 });
 
 test('calendar invitations link to the match preview only when it is available', () => {

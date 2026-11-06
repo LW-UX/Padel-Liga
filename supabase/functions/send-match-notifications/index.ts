@@ -92,11 +92,22 @@ function getEventHeading(job: NotificationJob) {
   return isTrainingJob(job) ? "Training" : `${job.season_label} · ${job.match_label}`;
 }
 
+function getTeamMembers(label: string | null) {
+  return String(label ?? "")
+    .split(/\s*\/\s*/)
+    .map((member) => member.trim())
+    .filter(Boolean);
+}
+
+function formatTeamLabel(label: string | null) {
+  return getTeamMembers(label).join(" & ");
+}
+
 // A deleted training has no participants left, so its line stays empty.
 function getEventLineup(job: NotificationJob) {
   return isTrainingJob(job)
     ? job.training_participants ?? ""
-    : `${job.team_one_label} vs. ${job.team_two_label}`;
+    : `${formatTeamLabel(job.team_one_label)} vs. ${formatTeamLabel(job.team_two_label)}`;
 }
 
 function formatIcsDate(date: Date) {
@@ -282,16 +293,31 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
   };
 }
 
+function renderMailTeam(label: string | null) {
+  return getTeamMembers(label)
+    .map((member, index) => `${index > 0 ? '<br><span style="color:#7E828B;font-weight:normal;">&amp;</span><br>' : ""}${escapeHtml(member)}`)
+    .join("");
+}
+
 function renderMail(job: NotificationJob, destination: string, calendar?: CalendarDetails) {
   const content = getMailContent(job, calendar);
   const greeting = job.recipient_name ? `Hallo ${job.recipient_name},` : "Hallo,";
   const matchAt = formatMatchAt(calendar?.event_start ?? job.match_at);
-  const lineupCell = isTrainingJob(job)
-    ? escapeHtml(job.training_participants)
-    : `${escapeHtml(job.team_one_label)} <span style="color:#7E828B;font-weight:normal;">vs.</span> ${escapeHtml(job.team_two_label)}`;
-  const lineupHtml = lineupCell
-    ? `<tr><td style="padding:2px 16px;color:#F3F4F1;font-size:15px;font-weight:bold;">${lineupCell}</td></tr>`
-    : "";
+  const lineupHtml = isTrainingJob(job)
+    ? job.training_participants
+      ? `<tr><td style="padding:2px 16px;color:#F3F4F1;font-size:15px;font-weight:bold;">${escapeHtml(job.training_participants)}</td></tr>`
+      : ""
+    : `<tr>
+                <td style="padding:2px 16px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td align="left" valign="middle" width="44%" style="color:#F3F4F1;font-size:15px;font-weight:bold;line-height:1.35;">${renderMailTeam(job.team_one_label)}</td>
+                      <td align="center" valign="middle" width="12%" style="color:#7E828B;font-size:13px;font-weight:normal;">vs.</td>
+                      <td align="right" valign="middle" width="44%" style="color:#F3F4F1;font-size:15px;font-weight:bold;line-height:1.35;">${renderMailTeam(job.team_two_label)}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>`;
   const html = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#07080C;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;">
   <tr>
     <td align="center">
@@ -311,12 +337,12 @@ function renderMail(job: NotificationJob, destination: string, calendar?: Calend
               ${lineupHtml}
               <tr><td style="padding:4px 16px 14px;color:#A8ADB7;font-size:13px;">${escapeHtml(matchAt)}</td></tr>
             </table>
-            ${content.afterDetails ? `<p style="margin:0 0 20px;">${escapeHtml(content.afterDetails)}</p>` : ""}
           </td>
         </tr>
         <tr>
           <td align="center" style="padding:0 28px 24px;">
             <a href="${escapeHtml(destination)}" style="display:inline-block;background:#D4F53A;color:#07080C;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 28px;border-radius:8px;">${escapeHtml(content.action)}</a>
+            ${content.afterDetails ? `<p style="margin:16px 0 0;color:#A8ADB7;font-size:12px;line-height:1.5;">${escapeHtml(content.afterDetails)}</p>` : ""}
           </td>
         </tr>
         <tr>
@@ -335,8 +361,8 @@ ${content.intro}
 ${content.body}
 
 ${[content.matchName, getEventLineup(job), matchAt].filter(Boolean).join("\n")}
-${content.afterDetails ? `\n${content.afterDetails}\n` : ""}
 ${content.action}: ${destination}
+${content.afterDetails ? `\n${content.afterDetails}` : ""}
 
 Diese automatische E-Mail kannst du jederzeit in deinem PadelLiga-Konto unter „Einstellungen“ ausschalten.`;
   return { ...content, html, text };
