@@ -118,9 +118,10 @@ test('doppelt gemeldete Datums- und Uhrzeitänderungen beenden die Live-Prüfung
     RACKET_CHECK_DELAY_MS: 450,
     RACKET_CHECK_TIMEOUT_MS: 12000,
     getRacketFormContext: () => ({ subjectType: 'match', subjectId: 'm1', date: '2099-11-04', time: '18:00' }),
+    syncCourtBookingWindow: () => {},
     getMatchAtTimestamp: value => new Date(value).getTime(),
     buildMatchAtValue: (date, time) => `${date}T${time}:00`,
-    describeRacketCheck: result => ({ text: result.state }),
+    describeCourtAndRacket: result => ({ text: result.state }),
     renderRacketNote: (_target, description) => target.notes.push(description?.text ?? null),
     invokeRacketBooking: async () => ({ state: 'free' })
   });
@@ -150,7 +151,7 @@ test('der Schläger-Hinweis verschwindet ab Spielbeginn', () => {
     window: { setTimeout: (callback, delay) => timers.push(delay), clearTimeout() {} },
     racketStatusExpiryTimer: null,
     racketStatusCache: new Map([['match:past', { state: 'booked' }], ['match:next', { state: 'booked' }]]),
-    describeRacketBooking: result => result ? { text: result.state } : null,
+    describeCourtAndRacket: result => result ? { text: result.state } : null,
     renderRacketNote: (target, description) => { target.note = description; }
   });
   vm.runInContext(source, context);

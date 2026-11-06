@@ -5474,10 +5474,10 @@ function renderPlayerProfileLink(player, className = '', displayName = '') {
   >${escapeHtml(visibleName)}</button>`;
 }
 
-function renderTeamPlayers(players) {
+function renderTeamPlayers(players, nameClass = 'match-player') {
   return players.map((player, index) => `
     ${index > 0 ? '<span class="team-sep">&amp;</span>' : ''}
-    ${renderPlayerProfileLink(player, `mc-player-name ${isSelectedPlayer(player) ? 'viewer-player' : ''}`)}
+    ${renderPlayerProfileLink(player, `${nameClass} ${isSelectedPlayer(player) ? 'viewer-player' : ''}`)}
   `).join('');
 }
 
@@ -5592,15 +5592,15 @@ function formatMatchMeta(match, options = {}) {
 
 function renderHomeMatchCard(match, options = {}) {
   if (isCancelledMatch(match)) {
-    return `<div class="mini-match-row is-unrated ${isViewerMatch(match) ? 'viewer-match' : ''}">
-      <div class="mini-match-meta">${formatMatchMeta(match, { relative: options.relative !== false })}</div>
+    return `<div class="mini-match-row match-card is-played is-unrated ${isViewerMatch(match) ? 'viewer-match' : ''}">
+      <div class="mini-match-meta match-meta">${formatMatchMeta(match, { relative: options.relative !== false })}</div>
       <div class="mini-match-grid">
-        <div class="mini-match-team mini-match-team-1">${renderTeamPlayers(match.team1.spieler)}</div>
+        <div class="mini-match-team mini-match-team-1 match-team">${renderTeamPlayers(match.team1.spieler)}</div>
         <div class="mini-match-status mini-match-status-unrated">
-          <div class="mini-match-prob">o.W.</div>
+          <div class="score">o.W.</div>
           <div class="mini-match-label">ohne Wertung</div>
         </div>
-        <div class="mini-match-team mini-match-team-2">${renderTeamPlayers(match.team2.spieler)}</div>
+        <div class="mini-match-team mini-match-team-2 match-team">${renderTeamPlayers(match.team2.spieler)}</div>
       </div>
     </div>`;
   }
@@ -5611,24 +5611,24 @@ function renderHomeMatchCard(match, options = {}) {
     : probability ? `${probability.team1}% : ${probability.team2}%` : '—';
   const centerLabel = isPlayed ? match.ergebnis : '';
   const team1Class = isPlayed
-    ? match.sieger === 1 ? ' mini-match-winner' : ' mini-match-loser'
+    ? match.sieger === 1 ? ' is-winner' : ' is-loser'
     : '';
   const team2Class = isPlayed
-    ? match.sieger === 2 ? ' mini-match-winner' : ' mini-match-loser'
+    ? match.sieger === 2 ? ' is-winner' : ' is-loser'
     : '';
   const statusClass = isPlayed ? ' mini-match-status-played' : '';
   const statistics = window.PadelMatchStatistics?.entry(match, PADEL_DATA);
-  const centerContent = `<div class="mini-match-prob">${centerMain}</div>
+  const centerContent = `<div class="${isPlayed ? 'score' : 'match-prob'}">${centerMain}</div>
         ${centerLabel ? `<div class="mini-match-label">${centerLabel}</div>` : ''}`;
 
-  return `<div class="mini-match-row ${isViewerMatch(match) ? 'viewer-match' : ''}">
-    <div class="mini-match-meta">${formatMatchMeta(match, { relative: options.relative !== false })}</div>
+  return `<div class="mini-match-row match-card${isPlayed ? ' is-played' : ''} ${isViewerMatch(match) ? 'viewer-match' : ''}">
+    <div class="mini-match-meta match-meta">${formatMatchMeta(match, { relative: options.relative !== false })}</div>
     <div class="mini-match-grid">
-      <div class="mini-match-team mini-match-team-1${team1Class}">${renderTeamPlayers(match.team1.spieler)}</div>
+      <div class="mini-match-team mini-match-team-1 match-team${team1Class}">${renderTeamPlayers(match.team1.spieler)}</div>
       ${statistics
         ? `<button type="button" class="mini-match-status${statusClass} mini-match-status-action" ${statistics.attributes}>${centerContent}</button>`
         : `<div class="mini-match-status${statusClass}">${centerContent}</div>`}
-      <div class="mini-match-team mini-match-team-2${team2Class}">${renderTeamPlayers(match.team2.spieler)}</div>
+      <div class="mini-match-team mini-match-team-2 match-team${team2Class}">${renderTeamPlayers(match.team2.spieler)}</div>
     </div>
   </div>`;
 }
@@ -5647,8 +5647,8 @@ function renderHomeTrainingCard(training, { recent = false } = {}) {
   }, `mini-training-player ${isSelectedTrainingParticipant(participant) ? 'viewer-player' : ''}`));
   const roundLabel = `${training.roundCount} ${training.roundCount === 1 ? 'Paarung' : 'Paarungen'}`;
   const setLabel = `${training.completedSetCount} ${training.completedSetCount === 1 ? 'vollständiger Satz' : 'vollständige Sätze'}`;
-  return `<div class="mini-match-row mini-training-row ${isViewerTraining(training) ? 'viewer-match' : ''}">
-    <div class="mini-match-meta">Training – ${escapeHtml(formatRelativeMatchDate(pseudoMatch))}</div>
+  return `<div class="mini-match-row mini-training-row match-card${recent ? ' is-played' : ''} ${isViewerTraining(training) ? 'viewer-match' : ''}">
+    <div class="mini-match-meta match-meta">Training – ${escapeHtml(formatRelativeMatchDate(pseudoMatch))}</div>
     <div class="mini-training-players">${participantLinks.join('')}</div>
     <div class="hint mini-training-summary">${recent ? `${escapeHtml(roundLabel)} · ${escapeHtml(setLabel)}` : '4 Teilnehmer'}</div>
   </div>`;
@@ -6130,7 +6130,7 @@ function renderHome() {
 }
 
 function renderStatTeamPlayers(players) {
-  return `<span class="stat-team-players">${renderTeamPlayers(players)}</span>`;
+  return `<span class="stat-team-players">${renderTeamPlayers(players, 'stat-team-player')}</span>`;
 }
 
 function isAllTimeStatistics() {
@@ -6879,6 +6879,9 @@ function renderInfoSection(section, id) {
     : '';
   const paragraphsAfterTable = (section.paragraphsAfterTable || []).map(p => `<p>${p}</p>`).join('');
   const note = section.note ? `<p class="info-note">${section.note}</p>` : '';
+  const courtLink = id === 'platzbuchung'
+    ? `<p><a class="text-link" href="#platzbuchung" data-court-info-open data-court-season="${escapeHtml(selectedSeason?.id || '')}">Freie Plätze bei Lucky Star ansehen</a></p>`
+    : '';
 
   return `<div class="widget-group info-anchor" id="${id}">
     <div class="sh">
@@ -6887,6 +6890,7 @@ function renderInfoSection(section, id) {
     <article class="widget">
       ${intro}
       ${paragraphs}
+      ${courtLink}
       ${groups}
       ${table}
       ${paragraphsAfterTable}
@@ -7004,41 +7008,33 @@ function renderMatchRow(m) {
   const activeLive = window.PadelLiveTicker?.activeMatch;
   const isLive = activeLive?.matchId === m.id;
   if (isCancelledMatch(m)) {
-    return `<div class="mc played unrated ${isViewerMatch(m) ? 'viewer-match' : ''}" data-match-entry="${escapeHtml(m.id)}">
-      <div class="mc-meta"><span class="mc-nr">${formatMatchMeta(m, { relative: true })}</span></div>
-      <div class="mc-team mc-team-1">
-        <div class="mc-players">${renderTeamPlayers(m.team1.spieler)}</div>
-      </div>
+    return `<div class="mc match-card is-played unrated ${isViewerMatch(m) ? 'viewer-match' : ''}" data-match-entry="${escapeHtml(m.id)}">
+      <div class="mc-meta"><span class="match-meta">${formatMatchMeta(m, { relative: true })}</span></div>
+      <div class="mc-team mc-team-1 match-team">${renderTeamPlayers(m.team1.spieler)}</div>
       <div class="mc-score">
-        <div class="mc-score-main">o.W.</div>
+        <div class="score">o.W.</div>
         <div class="hint mc-score-detail">ohne Wertung</div>
       </div>
-      <div class="mc-team mc-team-2">
-        <div class="mc-players">${renderTeamPlayers(m.team2.spieler)}</div>
-      </div>
+      <div class="mc-team mc-team-2 match-team">${renderTeamPlayers(m.team2.spieler)}</div>
     </div>`;
   }
   const statistics = window.PadelMatchStatistics?.entry(m, PADEL_DATA);
   if (m.sieger === null) {
     const probability = getMatchWinProbability(m);
     const probabilityHtml = probability
-      ? `<div class="hint mc-prob">${probability.team1}% : ${probability.team2}%</div>`
+      ? `<div class="match-prob">${probability.team1}% : ${probability.team2}%</div>`
       : '';
-    return `<div class="mc pending ${isViewerMatch(m) ? 'viewer-match' : ''}" data-match-entry="${escapeHtml(m.id)}">
-      <div class="mc-meta"><span class="mc-nr">${formatMatchMeta(m, { relative: true })}</span></div>
-      <div class="mc-team mc-team-1">
-        <div class="mc-players">${renderTeamPlayers(m.team1.spieler)}</div>
-      </div>
+    return `<div class="mc match-card pending ${isViewerMatch(m) ? 'viewer-match' : ''}" data-match-entry="${escapeHtml(m.id)}">
+      <div class="mc-meta"><span class="match-meta">${formatMatchMeta(m, { relative: true })}</span></div>
+      <div class="mc-team mc-team-1 match-team">${renderTeamPlayers(m.team1.spieler)}</div>
       ${isLive ? `<button type="button" class="mc-score" data-live-open-match="${escapeHtml(m.id)}" aria-label="Liveticker öffnen, Satzstand 0 zu 0, Spielstand ${Number(activeLive.teamOneGames) || 0} zu ${Number(activeLive.teamTwoGames) || 0}">
-        <div class="mc-score-main">0:0</div>
+        <div class="score">0:0</div>
         <div class="hint mc-score-detail mc-score-live">${Number(activeLive.teamOneGames) || 0}:${Number(activeLive.teamTwoGames) || 0} <span class="mc-score-live-dot" aria-hidden="true">●</span>LIVE</div>
       </button>` : `${statistics ? `<button type="button" class="mc-score" ${statistics.attributes}>` : '<div class="mc-score">'}
         ${probabilityHtml}
         ${statistics?.mode === 'preview' ? renderMatchForecastLine(m) : ''}
       ${statistics ? '</button>' : '</div>'}`}
-      <div class="mc-team mc-team-2">
-        <div class="mc-players">${renderTeamPlayers(m.team2.spieler)}</div>
-      </div>
+      <div class="mc-team mc-team-2 match-team">${renderTeamPlayers(m.team2.spieler)}</div>
     </div>`;
   }
 
@@ -7061,24 +7057,20 @@ function renderMatchRow(m) {
   const viewerLost = (viewerInT1 && m.sieger === 2) || (viewerInT2 && m.sieger === 1);
   const viewerResultClass = viewerWon ? 'viewer-win' : viewerLost ? 'viewer-loss' : '';
   const probability = getHistoricalMatchWinProbability(m);
-  const leftProbability = probability ? `<span class="hint mc-result-prob">${probability.team1}%</span>` : '';
-  const rightProbability = probability ? `<span class="hint mc-result-prob">${probability.team2}%</span>` : '';
+  const leftProbability = probability ? `<span class="match-prob mc-result-prob">${probability.team1}%</span>` : '';
+  const rightProbability = probability ? `<span class="match-prob mc-result-prob">${probability.team2}%</span>` : '';
 
-  return `<div class="mc played ${isViewerMatch(m) ? `viewer-match ${viewerResultClass}` : ''}" data-match-entry="${escapeHtml(m.id)}">        <div class="mc-meta"><span class="mc-nr">${formatMatchMeta(m, { relative: true })}</span></div>
-    <div class="mc-team mc-team-1 ${t1w?'win':''}">
-      <div class="mc-players">${renderTeamPlayers(m.team1.spieler)}</div>
-    </div>
+  return `<div class="mc match-card is-played ${isViewerMatch(m) ? `viewer-match ${viewerResultClass}` : ''}" data-match-entry="${escapeHtml(m.id)}">        <div class="mc-meta"><span class="match-meta">${formatMatchMeta(m, { relative: true })}</span></div>
+    <div class="mc-team mc-team-1 match-team ${t1w ? 'is-winner' : 'is-loser'}">${renderTeamPlayers(m.team1.spieler)}</div>
     ${hasLiveHistory ? `<button type="button" class="mc-score" data-live-open-match="${escapeHtml(m.id)}" aria-label="Spielverlauf öffnen">` : statistics ? `<button type="button" class="mc-score" ${statistics.attributes}>` : '<div class="mc-score">'}
       <div class="mc-result-row">
         ${leftProbability}
-        <div class="mc-score-main">${scoreMain}</div>
+        <div class="score">${scoreMain}</div>
         ${rightProbability}
       </div>
       ${scoreDetail}
     ${hasLiveHistory || statistics ? '</button>' : '</div>'}
-    <div class="mc-team mc-team-2 ${t2w?'win':''}">
-      <div class="mc-players">${renderTeamPlayers(m.team2.spieler)}</div>
-    </div>
+    <div class="mc-team mc-team-2 match-team ${t2w ? 'is-winner' : 'is-loser'}">${renderTeamPlayers(m.team2.spieler)}</div>
   </div>`;
 }
 
@@ -7303,11 +7295,11 @@ function renderCupMatchCard(match) {
     ? `<strong>${escapeHtml(match.saetze || '—')}</strong><span>${escapeHtml(match.ergebnis || '')}</span>`
     : `<strong>VS</strong><span>${escapeHtml(hasScheduledDateTime(match) ? formatMatchDate(match) : 'Noch offen')}</span>`;
 
-  return `<article class="cup-match-card${isPlayed ? ' is-played' : ''}">
-    <div class="cup-match-label">${escapeHtml(getMatchDisplayLabel(match))}</div>
-    <div class="cup-match-team${teamOneClass}">${renderTeamPlayers(match.team1.spieler)}</div>
+  return `<article class="cup-match-card match-card${isPlayed ? ' is-played' : ''}">
+    <div class="cup-match-label match-meta">${escapeHtml(getMatchDisplayLabel(match))}</div>
+    <div class="cup-match-team match-team${teamOneClass}">${renderTeamPlayers(match.team1.spieler)}</div>
     ${statistics ? `<button type="button" class="cup-match-status" ${statistics.attributes}>${status}${statistics.icon}</button>` : `<div class="cup-match-status">${status}</div>`}
-    <div class="cup-match-team${teamTwoClass}">${renderTeamPlayers(match.team2.spieler)}</div>
+    <div class="cup-match-team match-team${teamTwoClass}">${renderTeamPlayers(match.team2.spieler)}</div>
   </article>`;
 }
 
@@ -7932,11 +7924,11 @@ function renderCalculatorLiveInner(match) {
       : getCalculatorSetStanding(match);
     const left = probability ? renderCalculatorProbabilityButton(match, 0, probability.team1) : '';
     const right = probability ? renderCalculatorProbabilityButton(match, 1, probability.team2) : '';
-    return `<div class="calculator-probability">${left}<div class="mc-score-main">${escapeHtml(standing)}</div>${right}</div>`;
+    return `<div class="calculator-probability match-prob">${left}<div class="score">${escapeHtml(standing)}</div>${right}</div>`;
   }
 
-  if (!probability) return '<div class="mc-score-main">—</div>';
-  return `<div class="calculator-probability">
+  if (!probability) return '<div class="score">—</div>';
+  return `<div class="calculator-probability match-prob">
     ${renderCalculatorProbabilityButton(match, 0, probability.team1)}
     <span aria-hidden="true">:</span>
     ${renderCalculatorProbabilityButton(match, 1, probability.team2)}
@@ -7960,7 +7952,7 @@ function renderCalculatorMatchStatus(matchId) {
     tiebreakLine?.closest('.calculator-match-card');
 
   if (matchCard) {
-    matchCard.classList.toggle('calculator-match-complete', Boolean(result.match));
+    matchCard.classList.toggle('is-played', Boolean(result.match));
   }
 
   if (statusElement) {
@@ -7985,15 +7977,15 @@ function renderCalculatorMatchCard(match) {
   const result = parseCalculatorResult(match);
   const singleSet = isSingleSetMatch(match) || getMatchStage(match) === 'final-four';
 
-  return `<article class="calculator-match-card ${result.match ? 'calculator-match-complete' : ''} ${isViewerMatch(match) ? 'viewer-match' : ''} ${activeCalculatorMatchId === match.id ? 'calculator-match-active' : ''}" data-calculator-match-card="${escapeHtml(match.id)}">
+  return `<article class="calculator-match-card match-card ${result.match ? 'is-played' : ''} ${isViewerMatch(match) ? 'viewer-match' : ''} ${activeCalculatorMatchId === match.id ? 'calculator-match-active' : ''}" data-calculator-match-card="${escapeHtml(match.id)}">
     <div class="calculator-match-head">
-      <div class="hint calculator-match-meta">${formatMatchNumberLabel(match)}</div>
+      <div class="match-meta calculator-match-meta">${formatMatchNumberLabel(match)}</div>
       ${renderCalculatorMatchStatusHtml(match)}
     </div>
     <div class="calculator-match-teams">
-      <div class="calculator-match-team">${renderTeamPlayers(match.team1.spieler)}</div>
+      <div class="calculator-match-team match-team">${renderTeamPlayers(match.team1.spieler)}</div>
       ${renderCalculatorLiveResultHtml(match)}
-      <div class="calculator-match-team calculator-match-team-2">${renderTeamPlayers(match.team2.spieler)}</div>
+      <div class="calculator-match-team calculator-match-team-2 match-team">${renderTeamPlayers(match.team2.spieler)}</div>
     </div>
     <div class="calculator-score-line ${singleSet ? 'calculator-single-set' : ''}">
       <div class="score-counter-pair">
@@ -9550,7 +9542,7 @@ mobileViewportQuery.addEventListener?.('change', () => {
 document.querySelectorAll('#spielplan, #final-four-spielplan').forEach(matchPlan => {
   matchPlan.addEventListener('click', event => {
     if (!mobileViewportQuery.matches) return;
-    if (!event.target.closest('.mc.played')) return;
+    if (!event.target.closest('.mc.is-played')) return;
     if (event.target.closest('button, a, input, select, textarea')) return;
     matchPlan.classList.toggle('played-details-visible');
   });

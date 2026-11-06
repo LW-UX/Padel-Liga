@@ -542,7 +542,7 @@ test('profile season overview separates league and qualified final-round results
 test('player names open profiles by stable id and team cards no longer apply presets', () => {
   assert.match(app, /data-player-profile-id="\$\{escapeHtml\(playerId\)\}"/);
   assert.match(app, /player\?\.id \|\| getPlayerIdByName\(playerName\)/);
-  assert.match(app, /function renderTeamPlayers\(players\)/);
+  assert.match(app, /function renderTeamPlayers\(players, nameClass = 'match-player'\)/);
   assert.doesNotMatch(app, /class="calculator-match-team" role="button"/);
 });
 
@@ -561,7 +561,7 @@ test('all player names in statistic facts open the public profile', () => {
   assert.match(setDominance, /renderPlayerProfileLink\(item\.player/);
   assert.match(dominantMatches, /renderStatTeamPlayers\(getWinnerTeam\(item\.match\)\)/);
   assert.match(biggestUpsets, /renderStatTeamPlayers\(getWinnerTeam\(item\.match\)\)/);
-  assert.match(statTeamPlayers, /renderTeamPlayers\(players\)/);
+  assert.match(statTeamPlayers, /renderTeamPlayers\(players, 'stat-team-player'\)/);
 });
 
 test('profile relationship leaders require three matches and use win rate', () => {

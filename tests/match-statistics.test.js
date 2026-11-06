@@ -369,8 +369,8 @@ test('homepage match cards link only their center values without a details icon'
  assert.doesNotMatch(renderer,/\.icon|mc-score-details-icon/);
 });
 test('match score hover colors every value and keeps the icon in the lower line',()=>{
- assert.match(styleSource,/button\.mc-score:hover :is\(\.mc-score-main, \.mc-prob, \.mc-result-prob, \.mc-score-detail, \.mc-score-details-icon\)/);
- assert.match(styleSource,/:is\(#spielplan, #final-four-spielplan\) \.mc\.played button\.mc-score \.mc-score-detail \{\s*pointer-events: auto;/);
+ assert.match(styleSource,/button\.mc-score:hover :is\(\.score, \.match-prob, \.mc-score-detail, \.mc-score-details-icon\)/);
+ assert.match(styleSource,/:is\(#spielplan, #final-four-spielplan\) \.mc\.is-played button\.mc-score \.mc-score-detail \{\s*pointer-events: auto;/);
  assert.match(styleSource,/\.mc-score-result-with-details \{[\s\S]*?display: inline-flex/);
  assert.match(styleSource,/\.mc-score-details-icon \{[\s\S]*?position: static;[\s\S]*?margin-left: 5px;[\s\S]*?transform: none/);
 });

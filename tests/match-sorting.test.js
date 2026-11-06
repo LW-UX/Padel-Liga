@@ -26,8 +26,8 @@ test('switching match sorting reuses the ranking movement animation for stable m
 });
 
 test('league and Final Four match plans share score-detail hover and mobile click behavior', () => {
-  assert.match(style, /:is\(#spielplan, #final-four-spielplan\) \.mc\.played \.mc-score-detail/);
-  assert.match(style, /:is\(#spielplan, #final-four-spielplan\):has\(\.mc\.played:hover\)/);
+  assert.match(style, /:is\(#spielplan, #final-four-spielplan\) \.mc\.is-played \.mc-score-detail/);
+  assert.match(style, /:is\(#spielplan, #final-four-spielplan\):has\(\.mc\.is-played:hover\)/);
   assert.match(app, /document\.querySelectorAll\('#spielplan, #final-four-spielplan'\)\.forEach\(matchPlan => \{/);
   assert.match(app, /matchPlan\.classList\.toggle\('played-details-visible'\)/);
 });

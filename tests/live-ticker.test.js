@@ -92,6 +92,9 @@ test('ticker assignment lives inside the scheduled match card and reveals only a
 test('self assignment is accepted immediately and server selection stays in the revealed ticker card', () => {
   assert.match(ticker, /profileId === state\.auth\?\.profile\?\.id/);
   assert.match(ticker, /respond_live_scorer_assignment/);
+  assert.match(ticker, /data-live-account-match="\$\{escapeHtml\(task\.matchId\)\}"/);
+  assert.match(ticker, /function scrollToLiveAccountMatch\(matchId\)[\s\S]*?scrollContainer\.scrollTo\(\{ top: Math\.max\(0, top\), behavior \}\)/);
+  assert.match(ticker, /if \(accepted\) \{[\s\S]*?scrollToLiveAccountMatch\(matchId\)/);
   const writerControls = ticker.match(/function renderWriterControls\(task\) \{[\s\S]*?(?=\n  function renderAccount)/)?.[0] || '';
   const serverPicker = ticker.match(/function renderServerPicker\(task, players[\s\S]*?(?=\n  function renderGameAssignment)/)?.[0] || '';
   assert.match(writerControls, /task\.assignment\?\.status !== 'accepted'/);
@@ -387,7 +390,7 @@ test('only Final Four detail views use the split probability score', () => {
   const overview = ticker.match(/function renderOverview\(\) \{[\s\S]*?(?=\n  function renderPublic)/)?.[0] || '';
   const publicMatch = ticker.match(/function renderPublic\(\) \{[\s\S]*?(?=\n  async function load)/)?.[0] || '';
 
-  assert.match(matchRow, /`<div class="hint mc-prob">\$\{probability\.team1\}% : \$\{probability\.team2\}%<\/div>`/);
+  assert.match(matchRow, /`<div class="match-prob">\$\{probability\.team1\}% : \$\{probability\.team2\}%<\/div>`/);
   assert.doesNotMatch(matchRow, /renderProbabilityScore/);
   assert.match(ticker, /function getPayloadWinProbability\(payload\)[\s\S]*player\.currentElo[\s\S]*elos\[0\] \* 0\.7 \+ elos\[1\] \* 0\.3/);
   assert.match(overview, /renderProbabilityScore\(matchState\.probability, 'live-overview-probability'\)/);
@@ -406,7 +409,7 @@ test('the public match list always leads with sets and keeps games and history b
   assert.match(matchRow, /class="hint mc-score-detail"[\s\S]*m\.ergebnis[\s\S]*liveHistoryIcon/);
   assert.match(matchRow, /hasLiveHistory && getMatchStage\(m\) !== 'final-four'/);
   assert.doesNotMatch(matchRow, /isSingleSetMatch\(m\) \? \(m\.ergebnis/);
-  assert.match(matchRow, /class="mc-score-main">0:0<\/div>/);
+  assert.match(matchRow, /class="score">0:0<\/div>/);
   assert.match(matchRow, /class="hint mc-score-detail mc-score-live">\$\{Number\(activeLive\.teamOneGames\)/);
   assert.match(matchRow, /class="mc-score-result-with-details">\$\{m\.ergebnis\}\$\{liveHistoryIcon\}/);
   assert.match(matchRow, /const probability = getHistoricalMatchWinProbability\(m\)/);

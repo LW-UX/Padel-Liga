@@ -35,7 +35,7 @@ test('PadelTipp uses the authenticated profile player for blue names and own-mat
   assert.equal(context.isOwnMatch({ team1: { playerIds: ['x'] }, team2: { playerIds: ['y'] } }), false);
   assert.match(
     context.renderTeam({ playerIds: ['a', 'b'], spieler: ['Spieler A', 'Spieler B'] }),
-    /class="prediction-player is-authenticated-player player-profile-link" href="\.\.\/\?spielerprofil=a"[^>]*>Spieler A<\/a>/
+    /class="prediction-player match-player is-authenticated-player player-profile-link" href="\.\.\/\?spielerprofil=a"[^>]*>Spieler A<\/a>/
   );
   assert.equal(context.getStatusChip({ isOwn: true }).label, 'Eigene Partie');
   assert.match(source, /state\.session\?\.user\?\.id === entry\.user_id \? 'authenticated-player-highlight'/);

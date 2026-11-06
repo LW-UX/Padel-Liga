@@ -89,6 +89,24 @@
       visibility: hidden;
     }
     #tipp-invitation-dialog { --dialog-width: 460px; }
+    #account-task-prompt-dialog { --dialog-width: 460px; }
+    .account-task-prompt-card {
+      display: grid;
+      justify-items: center;
+      padding: 2.5rem 2rem 2rem;
+      text-align: center;
+    }
+    .account-task-prompt-card .dialog-copy {
+      max-width: 38ch;
+      margin-bottom: 1.35rem;
+      font-size: var(--text-base);
+    }
+    .account-task-prompt-actions {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
     .tipp-invitation-card {
       display: flex;
       flex-direction: column;
@@ -446,6 +464,14 @@
     }
     .account-section-heading { gap: normal; }
     .account-section-heading h2 { margin: 0; }
+    .training-toggle-icon-vertical {
+      transform-origin: center;
+      transition: opacity 140ms ease, transform 140ms ease;
+    }
+    [data-training-toggle][aria-expanded="true"] .training-toggle-icon-vertical {
+      opacity: 0;
+      transform: scaleY(0);
+    }
     .account-section-heading .sh-title-with-help { position: relative; }
     .account-section-heading .account-games-help.th-help-wrap { position: static; }
     .account-section-heading .account-games-help.th-help-wrap .help-tooltip {

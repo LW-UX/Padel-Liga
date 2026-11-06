@@ -179,14 +179,7 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 14px;
-      border: 1px solid var(--border);
-      border-radius: var(--container-radius-sm);
-      background: color-mix(in srgb, var(--surface) 33%, transparent);
       padding: 1rem 1.15rem;
-    }
-    .prediction-match-card.has-prediction {
-      border-color: var(--border);
-      background: var(--surface);
     }
     .prediction-match-meta {
       grid-column: 1;
@@ -194,7 +187,6 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      color: var(--dim);
     }
     .prediction-match-number { min-width: 0; white-space: nowrap; }
     .prediction-status {
@@ -226,17 +218,8 @@
       align-items: center;
       gap: 10px;
     }
-    .prediction-team {
-      color: var(--text);
-      font-size: var(--text-base);
-      font-weight: 600;
-      line-height: 1.25;
-      text-wrap: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .prediction-team-2 { text-align: right; }
-    .prediction-player { text-wrap: nowrap; }
+    .prediction-team { line-height: 1.25; }
+    .prediction-team-2 { justify-content: flex-end; text-align: right; }
     .prediction-player.is-authenticated-player { color: var(--accent2); }
     table.prediction-ranking-table tbody tr.authenticated-player-highlight td {
       background: color-mix(in srgb, var(--accent2) 20%, transparent);
@@ -494,14 +477,11 @@
       .prediction-table .prediction-table-label-full { display: none; }
       .prediction-table .pname-short,
       .prediction-table .prediction-table-label-short { display: inline; }
-      .prediction-table .prediction-account-type-icon:not(.is-podium, .is-benchmark),
+      .prediction-table .prediction-account-type-icon:not(.is-podium),
       .prediction-table .prediction-company-badge,
       .prediction-table .prediction-achievement-icon { display: none; }
     }
     .prediction-match-center {
-      color: var(--dim);
-      font-size: var(--text-sm);
-      font-weight: 500;
       line-height: 1;
       text-align: center;
       white-space: nowrap;
@@ -509,6 +489,7 @@
     .prediction-match-center--result {
       font-family: var(--font-heading);
       font-size: calc(var(--text-heading) * 0.75);
+      font-weight: 500;
       color: var(--text);
     }
     .prediction-match-center-link {
@@ -604,7 +585,6 @@
         grid-template-columns: minmax(0, 1fr) minmax(62px, auto) minmax(0, 1fr);
         gap: 8px;
       }
-      .prediction-match-card:not(.is-single-set) .prediction-team { font-size: var(--text-base); }
       .prediction-match-card:not(.is-single-set) .prediction-options {
         grid-column: 3;
         grid-row: 1;
@@ -734,17 +714,11 @@
       gap: 8px;
     }
     body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-team {
-      display: flex;
       flex-direction: column;
+      align-items: flex-start;
       gap: 2px;
-      min-width: 0;
-      overflow: visible;
     }
-    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-player {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+    body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-team-2 { align-items: flex-end; }
     body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-team .team-sep { display: none; }
     body.match-statistics-panel-open .prediction-statistics-list-pane .prediction-match-card:not(.is-single-set) .prediction-options {
       grid-column: 1 / -1;
@@ -806,7 +780,7 @@
       .prediction-ranking-table.compact .col-points { width: 74px; }
       /* Erweitert zeigt alle Spalten; Kürzel ersetzen Namen, Konto- und Firmen-Icons entfallen. */
       .prediction-ranking-table.expanded .pname,
-      .prediction-ranking-table.expanded .prediction-account-type-icon:not(.is-benchmark),
+      .prediction-ranking-table.expanded .prediction-account-type-icon,
       .prediction-ranking-table.expanded .prediction-company-badge { display: none; }
       .prediction-ranking-table.expanded .pname-short { display: inline; }
       /* Platz für das Sortier-Chevron, das links neben dem Spaltentitel steht. */
@@ -863,11 +837,11 @@
       .prediction-match-meta { align-items: flex-start; }
       .prediction-teams { gap: 5px; }
       .prediction-team {
-        display: flex;
         flex-direction: column;
+        align-items: flex-start;
         gap: 2px;
-        font-size: 0.94rem;
       }
+      .prediction-team-2 { align-items: flex-end; }
       .prediction-team .team-sep { display: none; }
       .prediction-options { gap: 5px; margin-left: 0; }
       .prediction-option { min-height: 40px; font-size: 0.9rem; }
@@ -885,10 +859,3 @@
       .site-nav:has([data-tip-nav]) { gap: 4px; }
       .site-nav:has([data-tip-nav]) button { font-size: 0.72rem; }
     }
-
-    /* Benchmark-Konto: gedimmt wie deaktiviert, ohne Platzierung. Feste Spalten behalten ihren Hintergrund. */
-    .prediction-ranking-table tr.is-benchmark > td,
-    .prediction-table tr.is-benchmark > :is(th, td) { color: var(--dim); }
-    .prediction-ranking-table tr.is-benchmark > td > *,
-    .prediction-table tr.is-benchmark > :is(th, td) > * { opacity: 0.6; }
-    .prediction-account-type-icon.is-benchmark svg { stroke-width: 1.5; }

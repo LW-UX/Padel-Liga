@@ -150,11 +150,10 @@ test('panel content uses compact match, prediction and statistics layouts', () =
   assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \.detail-view-header \{[\s\S]*?min-height: 64px;/);
   assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \.detail-view-played-order:not\(\[hidden\]\) \{[\s\S]*?display: inline-flex;/);
   assert.match(style, /body\.match-statistics-panel-open #partien \.mc \{[\s\S]*?grid-template-areas:[\s\S]*?"team1 score team2"/);
-  assert.match(style, /body\.match-statistics-panel-open #partien \.mc-players \{[\s\S]*?overflow: visible;/);
-  assert.match(style, /body\.match-statistics-panel-open #partien \.mc-player-name \{[\s\S]*?overflow: hidden;[\s\S]*?text-overflow: ellipsis;/);
+  assert.match(style, /body\.match-statistics-panel-open #partien \.mc-team \{[\s\S]*?flex-direction: column;/);
+  assert.match(style, /\.match-player \{[\s\S]*?overflow: hidden;[\s\S]*?text-overflow: ellipsis;/);
   assert.match(tippStyle, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-match-card:not\(\.is-single-set\)/);
-  assert.match(tippStyle, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-team \{[\s\S]*?display: flex;[\s\S]*?flex-direction: column;[\s\S]*?overflow: visible;/);
-  assert.match(tippStyle, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-player \{[\s\S]*?overflow: hidden;[\s\S]*?text-overflow: ellipsis;/);
+  assert.match(tippStyle, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-team \{[\s\S]*?flex-direction: column;/);
   assert.match(tippStyle, /body\.match-statistics-panel-open \.prediction-statistics-list-pane \.prediction-team \.team-sep \{ display: none; \}/);
   assert.match(statisticsStyle, /#detail-view-dialog\[data-presentation="panel"\] \.match-statistics-ranking-layout \{\s*grid-template-columns: 1fr;/);
   assert.match(style, /detail-view-dialog\[data-presentation="panel"\] \{[\s\S]*?max-width: var\(--match-detail-panel-max-width\);[\s\S]*?container: match-detail-panel \/ inline-size;/);

@@ -2,6 +2,7 @@
   const ACCOUNT_SUCCESS_MESSAGE_DURATION = 5000;
   const AUTH_MAIL_COOLDOWN_MS = 10 * 60 * 1000;
   const AUTH_MAIL_COOLDOWN_KEY = 'padel-auth-mail-sent-at';
+  const ACCOUNT_TASK_PROMPT_SESSION_KEY = 'padel-account-task-prompts';
   const initialSearch = String(window.location?.search || '');
   const initialHash = String(window.location?.hash || '');
   const readInitialUrlParam = (source, name) => {
@@ -54,6 +55,8 @@
     resultTaskScope: 'relevant',
     resultTasks: [],
     trainingTasks: [],
+    courtBookings: [],
+    courtCancellationTasks: [],
     players: [],
     invitationPlayers: [],
     invitationDraft: null,
@@ -75,7 +78,12 @@
   let unscheduleTrigger = null;
   let unrateTrigger = null;
   let accountMessageTimer = null;
+  let accountTaskPromptTarget = null;
+  const shownAccountTaskPromptKeys = new Set();
   let shouldOpenAccountFromLink = requestedAccountOpen;
+  let courtAccountRequested = false;
+  let pendingCourtSlot = null;
+  let replacementCancellationTask = null;
   const TRAINING_GUEST_OPTION = '__guest__';
   const TRAINING_GUEST_KEY_PATTERN = /^guest:([1-4])$/;
   const RACKET_CHECK_DELAY_MS = 450;
@@ -155,7 +163,8 @@
 
   function renderScheduleTimeControls(name, value = '') {
     const [hour = '', minute = ''] = String(value || '').slice(0, 5).split(':');
-    return `<input type="hidden" name="${name}" value="${hour && minute ? `${hour}:${minute}` : ''}">${renderScheduleTimePicker(`${name}Hour`, 'Stunde', SCHEDULE_HOUR_OPTIONS, hour)}<span aria-hidden="true">:</span>${renderScheduleTimePicker(`${name}Minute`, 'Minute', SCHEDULE_MINUTE_OPTIONS, minute)}`;
+    const hours = name === 'scheduledTime' ? Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0')) : SCHEDULE_HOUR_OPTIONS;
+    return `<input type="hidden" name="${name}" value="${hour && minute ? `${hour}:${minute}` : ''}">${renderScheduleTimePicker(`${name}Hour`, 'Stunde', hours, hour)}<span aria-hidden="true">:</span>${renderScheduleTimePicker(`${name}Minute`, 'Minute', SCHEDULE_MINUTE_OPTIONS, minute)}`;
   }
 
   function renderScheduleTimeField(name, value = '') {
@@ -254,6 +263,30 @@
     }
   }
 
+  function getCourtBookingWindow(target) {
+    const from = target?.dataset.courtBookingFrom;
+    const until = target?.dataset.courtBookingUntil;
+    return from && until ? { from, until } : null;
+  }
+
+  function describeCourtAndRacket(result, target, saved = false) {
+    const court = getCourtBookingWindow(target);
+    const racket = saved ? describeRacketBooking(result) : describeRacketCheck(result);
+    if (!court) return racket;
+    const racketFrom = result?.state === 'covered' ? result.busyFrom : result?.from;
+    const racketUntil = result?.state === 'covered' ? result.busyUntil : result?.until;
+    if (['booked', 'covered'].includes(result?.state)
+      && racketFrom === court.from && racketUntil === court.until) {
+      return { text: `✓ Platz und Schläger sind gebucht von ${court.from}–${court.until} Uhr`, tone: 'is-free' };
+    }
+    const courtText = `✓ Platz gebucht von ${court.from}–${court.until} Uhr`;
+    if (!racket) return { text: courtText, tone: 'is-free' };
+    return {
+      text: `${courtText} · ${racket.text.replace(/^[✓⚠]\s*/, '')}`,
+      tone: racket.tone
+    };
+  }
+
   function renderRacketNote(target, description) {
     if (!target) return;
     target.hidden = !description;
@@ -281,10 +314,25 @@
     return null;
   }
 
+  function syncCourtBookingWindow(form, context) {
+    if (!form?.matches('.match-schedule-form')) return;
+    const bookingInput = form.querySelector('[name="courtBookingId"]');
+    const target = form.querySelector('[data-racket-check]');
+    if (!bookingInput?.value || !target) return;
+    const booking = state.courtBookings.find(entry => String(entry.booking_id) === bookingInput.value);
+    if (!booking) return;
+    const startsAt = getBerlinMatchAtParts(booking.starts_at);
+    if (startsAt.date === context?.date && startsAt.time === context?.time) return;
+    bookingInput.value = '';
+    delete target.dataset.courtBookingFrom;
+    delete target.dataset.courtBookingUntil;
+  }
+
   function scheduleRacketCheck(form) {
     const target = form?.querySelector('[data-racket-check]');
     if (!target) return;
     const context = getRacketFormContext(form);
+    syncCourtBookingWindow(form, context);
     const timestamp = context?.date && context?.time
       ? getMatchAtTimestamp(buildMatchAtValue(context.date, context.time), NaN)
       : NaN;
@@ -299,13 +347,13 @@
     if (target.dataset.racketRequest === requestKey) return;
     window.clearTimeout(racketCheckTimers.get(form));
     target.dataset.racketRequest = requestKey;
-    renderRacketNote(target, describeRacketCheck({ state: 'checking' }));
+    renderRacketNote(target, describeCourtAndRacket({ state: 'checking' }, target));
     racketCheckTimers.set(form, window.setTimeout(async () => {
       const result = await Promise.race([
         invokeRacketBooking({ action: 'check', ...context }),
         new Promise(resolve => window.setTimeout(() => resolve({ state: 'unavailable' }), RACKET_CHECK_TIMEOUT_MS))
       ]);
-      if (target.dataset.racketRequest === requestKey) renderRacketNote(target, describeRacketCheck(result));
+      if (target.dataset.racketRequest === requestKey) renderRacketNote(target, describeCourtAndRacket(result, target));
     }, RACKET_CHECK_DELAY_MS));
   }
 
@@ -317,8 +365,8 @@
     return result;
   }
 
-  function withRacketNote(message, result) {
-    const note = describeRacketBooking(result)?.text.replace(/^[✓⚠]\s*/, '');
+  function withRacketNote(message, result, target = null) {
+    const note = describeCourtAndRacket(result, target, true)?.text.replace(/^[✓⚠]\s*/, '');
     return note ? `${message} ${note}.` : message;
   }
 
@@ -342,7 +390,7 @@
     root.querySelectorAll('[data-racket-status]').forEach(target => {
       const upcoming = isRacketStatusUpcoming(target, now);
       if (upcoming) nextStart = Math.min(nextStart, Number(target.dataset.racketStartsAt));
-      renderRacketNote(target, upcoming ? describeRacketBooking(racketStatusCache.get(target.dataset.racketStatus)) : null);
+      renderRacketNote(target, upcoming ? describeCourtAndRacket(racketStatusCache.get(target.dataset.racketStatus), target, true) : null);
     });
     window.clearTimeout?.(racketStatusExpiryTimer);
     if (Number.isFinite(nextStart)) {
@@ -481,6 +529,146 @@
     ];
   }
 
+  function getAccountTaskPromptCandidates() {
+    if (!state.session?.user || !isPlayerAccount() || !state.playerToolsReady) return [];
+    const groups = getPlayerResultTaskGroups(state.resultTasks, Date.now(), false);
+    const reviewTasks = groups.find(group => group.key === 'review').tasks
+      .filter(task => task.task_type === 'review' && (
+        state.profile?.app_role !== 'admin'
+        || ([1, 2].includes(Number(task.proposed_by_team))
+          && Number(task.proposed_by_team) !== Number(task.my_team))
+      ));
+    const resultEntryTasks = groups.find(group => group.key === 'past').tasks
+      .filter(task => !window.PadelLiveTicker?.isMatchLive(task.match_id));
+    return [
+      ...state.courtCancellationTasks.map(task => ({
+        task,
+        type: 'court-cancellation',
+        key: `${state.session.user.id}:court-cancellation:${task.booking_id}`
+      })),
+      ...reviewTasks.map(task => ({
+        task,
+        type: 'review',
+        key: `${state.session.user.id}:review:${task.match_id}:${task.proposal_id}`
+      })),
+      ...resultEntryTasks.map(task => ({
+        task,
+        type: 'entry',
+        key: `${state.session.user.id}:entry:${task.match_id}`
+      }))
+    ];
+  }
+
+  function getSeenAccountTaskPromptKeys() {
+    try {
+      const stored = JSON.parse(window.sessionStorage.getItem(ACCOUNT_TASK_PROMPT_SESSION_KEY) || '[]');
+      if (Array.isArray(stored)) stored.forEach(key => shownAccountTaskPromptKeys.add(String(key)));
+    } catch (_error) {
+      // Ohne Session-Speicher verhindert das Laufzeit-Set weiterhin doppelte Hinweise auf derselben Seite.
+    }
+    return shownAccountTaskPromptKeys;
+  }
+
+  function markAccountTaskPromptsSeen(candidates) {
+    candidates.forEach(candidate => shownAccountTaskPromptKeys.add(candidate.key));
+    try {
+      window.sessionStorage.setItem(ACCOUNT_TASK_PROMPT_SESSION_KEY, JSON.stringify([...shownAccountTaskPromptKeys]));
+    } catch (_error) {
+      // Private Browsermodi können Session-Speicher blockieren; der Hinweis bleibt trotzdem nutzbar.
+    }
+  }
+
+  function getTaskPromptLabel(task) {
+    return `${getTaskLeagueLabel(task)} · ${getTaskMatchLabel(task)}`;
+  }
+
+  function renderAccountTaskPrompt(candidates) {
+    const title = document.getElementById('account-task-prompt-title');
+    const copy = document.querySelector('[data-account-task-prompt-copy]');
+    const action = document.querySelector('[data-account-task-prompt-open]');
+    const alternative = document.querySelector('[data-account-task-prompt-alternative]');
+    if (!title || !copy || !action) return;
+    if (alternative) alternative.hidden = true;
+    const cancellation = candidates.find(candidate => candidate.type === 'court-cancellation');
+    if (cancellation) {
+      const task = cancellation.task;
+      title.textContent = 'Platzbuchung aufgehoben';
+      copy.textContent = `Die Platzbuchung für ${getTaskLeagueLabel(task)} · ${getTaskMatchLabel(task)} am ${formatMatchAt(task.starts_at)} wurde storniert. Möchtest du den Termin der Partie aufheben oder eine neue Buchung zuordnen?`;
+      action.textContent = 'Termin aufheben';
+      if (alternative) alternative.hidden = false;
+      return;
+    }
+    const reviewTasks = candidates.filter(candidate => candidate.type === 'review');
+    const entryTasks = candidates.filter(candidate => candidate.type === 'entry');
+
+    if (candidates.length === 1 && reviewTasks.length) {
+      title.textContent = 'Ergebnis bestätigen';
+      copy.textContent = `Das andere Team hat für ${getTaskPromptLabel(reviewTasks[0].task)} ein Ergebnis eingetragen. Bitte prüfe, ob es stimmt.`;
+      action.textContent = 'Im Konto bestätigen';
+      return;
+    }
+    if (candidates.length === 1) {
+      title.textContent = 'Ergebnis eintragen';
+      copy.textContent = `Der Termin für ${getTaskPromptLabel(entryTasks[0].task)} ist vorbei. Du kannst jetzt das Ergebnis eintragen.`;
+      action.textContent = 'Im Konto eintragen';
+      return;
+    }
+
+    title.textContent = 'Offene Partieaufgaben';
+    const parts = [];
+    if (reviewTasks.length) parts.push(`${reviewTasks.length} ${reviewTasks.length === 1 ? 'Ergebnis wartet' : 'Ergebnisse warten'} auf deine Bestätigung`);
+    if (entryTasks.length) parts.push(`für ${entryTasks.length} ${entryTasks.length === 1 ? 'Partie kannst' : 'Partien kannst'} du das Ergebnis eintragen`);
+    copy.textContent = `${parts.join(' und ')}. Du findest alles gesammelt in deinem Konto.`;
+    action.textContent = 'Zum Konto';
+  }
+
+  function maybeShowAccountTaskPrompt() {
+    const dialog = document.getElementById('account-task-prompt-dialog');
+    if (!dialog || dialog.open || state.playerToolsLoading) return;
+    let candidates = getAccountTaskPromptCandidates()
+      .filter(candidate => !getSeenAccountTaskPromptKeys().has(candidate.key));
+    if (!candidates.length) return;
+
+    // Stornierungen werden einzeln bestätigt. So kann nach der ersten Reaktion
+    // eine weitere betroffene Partie in derselben Sitzung folgen.
+    const cancellation = candidates.find(candidate => candidate.type === 'court-cancellation');
+    if (cancellation) candidates = [cancellation];
+
+    const accountDialog = document.getElementById('auth-dialog');
+    if (accountDialog?.open) {
+      if (!cancellation) markAccountTaskPromptsSeen(candidates);
+      return;
+    }
+    if ([...document.querySelectorAll('dialog[open]')].some(openDialog => openDialog !== dialog)) return;
+
+    accountTaskPromptTarget = candidates[0];
+    renderAccountTaskPrompt(candidates);
+    markAccountTaskPromptsSeen(candidates);
+    dialog.showModal();
+  }
+
+  function focusAccountTask(target = accountTaskPromptTarget) {
+    if (!target) return;
+    const card = document.querySelector(`[data-result-task-match="${CSS.escape(String(target.task.match_id))}"]`);
+    if (!card) return;
+    card.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    const control = target.type === 'review'
+      ? card.querySelector('[data-result-confirm]')
+      : card.querySelector('[data-result-score]');
+    control?.focus({ preventScroll: true });
+    accountTaskPromptTarget = null;
+  }
+
+  function openAccountTaskPromptTarget() {
+    if (accountTaskPromptTarget?.type === 'court-cancellation') {
+      void confirmCancelledCourtBooking(accountTaskPromptTarget);
+      return;
+    }
+    document.getElementById('account-task-prompt-dialog')?.close();
+    openAuthDialog();
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => focusAccountTask()));
+  }
+
   function publishAuthenticatedPlayer() {
     const playerId = state.profile?.player_id || null;
     if (typeof window.PadelLigaSetAuthenticatedPlayer === 'function') {
@@ -521,6 +709,7 @@
     const isSettingPassword = isLoggedIn && ['invite', 'recovery', 'change'].includes(state.passwordFlow);
     const displayName = getProfileDisplayName();
     const taskCount = getActionableResultTasks().length
+      + state.courtCancellationTasks.length
       + state.trainingTasks.filter(task => isTrainingTaskVisible(task) && (
         isScheduledTrainingDue(task)
         || (!isScheduledTrainingTask(task) && !task.created_by_me)
@@ -877,9 +1066,20 @@
     </form>`;
   }
 
+  function courtBookingWindowAttributes(booking) {
+    if (!booking) return '';
+    const from = getBerlinMatchAtParts(booking.starts_at).time;
+    const until = getBerlinMatchAtParts(booking.ends_at).time;
+    return from && until
+      ? ` data-court-booking-from="${escapeHtml(from)}" data-court-booking-until="${escapeHtml(until)}"`
+      : '';
+  }
+
   function renderScheduleForm(task, collapsed = false, allowCancel = false) {
     const matchTime = getBerlinMatchAtParts(task.match_at);
+    const linkedBooking = state.courtBookings.find(booking => booking.match_id === task.match_id);
     return `<form class="match-schedule-form" data-match-schedule="${escapeHtml(task.match_id)}" ${collapsed ? 'hidden' : ''}>
+      <input type="hidden" name="courtBookingId" value="${linkedBooking?.booking_id || ''}">
       <div class="result-entry-timing">
         <label>
           <span>Datum</span>
@@ -889,8 +1089,9 @@
           <span>Uhrzeit</span>
           ${renderScheduleTimeField('scheduledTime', matchTime.time)}
         </div>
+        <button class="secondary-button court-check-button" type="button" data-court-match-open="${escapeHtml(task.match_id)}">Freie Plätze prüfen</button>
       </div>
-      <div class="racket-check" data-racket-check role="status" aria-live="polite" hidden></div>
+      <div class="racket-check" data-racket-check${courtBookingWindowAttributes(linkedBooking)} role="status" aria-live="polite" hidden></div>
       <div class="match-schedule-actions">
         ${allowCancel ? renderCancelMatchButton(task) : ''}
         <button class="secondary-button" type="submit">${task.match_at ? 'Termin speichern' : 'Terminieren'}</button>
@@ -969,14 +1170,15 @@
     const isActionable = task.task_type === 'review' || groupKey === 'past';
     const isWaiting = task.task_type === 'waiting';
     const hasAuthenticatedPlayer = [1, 2].includes(Number(task.my_team));
+    const linkedBooking = state.courtBookings.find(booking => booking.match_id === task.match_id);
     return `<div class="result-task-wrap">
-      <article class="account-task-card result-task-card${hasAuthenticatedPlayer ? ' has-authenticated-player' : ''}${isActionable ? ' is-actionable' : ''}${isWaiting ? ' is-waiting' : ''}">
+      <article class="account-task-card result-task-card${hasAuthenticatedPlayer ? ' has-authenticated-player' : ''}${isActionable ? ' is-actionable' : ''}${isWaiting ? ' is-waiting' : ''}" data-result-task-match="${escapeHtml(task.match_id)}">
         <div class="account-task-meta">
           <span class="mc-nr">${escapeHtml(getTaskLeagueLabel(task))} · ${escapeHtml(getTaskMatchLabel(task))}</span>
           ${renderResultTaskStatus(task)}
         </div>
         ${groupKey === 'future' ? `<div class="result-card-timing">${escapeHtml(formatMatchAt(task.proposed_match_at || task.match_at))}</div>
-          <div class="racket-status" data-racket-status="match:${escapeHtml(task.match_id)}" data-racket-starts-at="${Date.parse(task.match_at) || 0}" hidden></div>` : ''}
+          <div class="racket-status" data-racket-status="match:${escapeHtml(task.match_id)}" data-racket-starts-at="${Date.parse(task.match_at) || 0}"${courtBookingWindowAttributes(linkedBooking)} hidden></div>` : ''}
         ${renderTaskMatchup(task)}
         ${renderResultTaskBody(task, groupKey)}
         ${typeof window !== 'undefined' ? window.PadelLiveTicker?.renderGameAssignment(task.match_id) || '' : ''}
@@ -1028,6 +1230,8 @@
   }
 
   function renderResultTasks() {
+    renderCourtMatchSelection();
+    renderCourtBookingInbox();
     const target = document.getElementById('result-task-list');
     if (target && isPlayerAccount() && (state.playerToolsLoading || state.playerToolsError)) {
       target.setAttribute('aria-busy', String(state.playerToolsLoading));
@@ -1060,6 +1264,175 @@
     });
     syncDateTimeHints(document.getElementById('result-task-list'));
     void loadRacketStatuses();
+    maybeShowAccountTaskPrompt();
+  }
+
+  function courtSelectableTasks() {
+    const isAdmin = state.profile?.app_role === 'admin';
+    return getVisibleResultTasks().filter(task => task.task_type === 'enter'
+      && (isAdmin || [1, 2].includes(Number(task.my_team)))
+      && (!task.match_at || getMatchAtTimestamp(task.match_at) > Date.now()));
+  }
+
+  function courtBookingSlot(booking) {
+    const parts = getBerlinMatchAtParts(booking.starts_at);
+    return {
+      id: `booking-${booking.booking_id}`,
+      bookingId: Number(booking.booking_id),
+      courtId: booking.court_resource_id || '',
+      courtName: booking.court_name,
+      date: parts.date,
+      time: parts.time,
+      start: booking.starts_at,
+      end: booking.ends_at,
+      duration: (Date.parse(booking.ends_at) - Date.parse(booking.starts_at)) / 60000,
+      reserved: true
+    };
+  }
+
+  function renderCourtBookingInbox() {
+    const games = document.getElementById('account-games-panel');
+    if (!games) return;
+    let panel = document.getElementById('court-booking-inbox');
+    if (!panel) {
+      panel = document.createElement('section');
+      panel.id = 'court-booking-inbox';
+      panel.className = 'court-account-selection court-booking-inbox';
+      games.before(panel);
+    }
+    const bookings = state.courtBookings.filter(booking => !booking.match_id && Date.parse(booking.ends_at) > Date.now());
+    panel.hidden = !state.session?.user || (!bookings.length && !replacementCancellationTask);
+    if (panel.hidden) return;
+    panel.innerHTML = `<h3>${replacementCancellationTask ? 'Neue Platzbuchung zuordnen' : 'Gebuchte Plätze'}</h3>
+      ${replacementCancellationTask ? `<p class="hint">Wähle die Ersatzbuchung für ${escapeHtml(getTaskLeagueLabel(replacementCancellationTask))} · ${escapeHtml(getTaskMatchLabel(replacementCancellationTask))}. Erst „Termin speichern“ übernimmt sie für die Partie.</p>` : '<p class="hint">Diese Zeiten wurden durch eine eingegangene Buchungsbestätigung erkannt.</p>'}
+      <div class="court-account-selection-options">${bookings.length ? bookings.map(booking => {
+        const slot = courtBookingSlot(booking);
+        return `<button type="button" class="secondary-button" data-court-booking-select="${booking.booking_id}"><strong>${escapeHtml(booking.court_name)}</strong><br>${escapeHtml(formatMatchAt(booking.starts_at))}–${escapeHtml(getBerlinMatchAtParts(booking.ends_at).time)} Uhr</button>`;
+      }).join('') : '<p class="hint">Noch keine neue Buchungsbestätigung eingegangen.</p>'}</div>
+      ${replacementCancellationTask ? '<button type="button" class="text-link" data-court-replacement-cancel>Abbrechen</button>' : ''}`;
+  }
+
+  function renderCourtMatchSelection() {
+    const list = document.getElementById('result-task-list');
+    if (!list) return;
+    let panel = document.getElementById('court-match-selection');
+    if (!panel) {
+      panel = document.createElement('section');
+      panel.id = 'court-match-selection';
+      panel.className = 'court-account-selection';
+      (document.getElementById('account-games-panel') || list).before(panel);
+    }
+    panel.hidden = !pendingCourtSlot || !state.session?.user;
+    if (panel.hidden) return;
+    const tasks = courtSelectableTasks();
+    const duration = pendingCourtSlot.duration || 60;
+    panel.innerHTML = `<h3>Für welche Partie möchtest du diese Zeit übernehmen?</h3>
+      <p class="hint">${escapeHtml(pendingCourtSlot.date.split('-').reverse().join('.'))} · ${escapeHtml(pendingCourtSlot.time)} Uhr · ${escapeHtml(duration)} Minuten. ${pendingCourtSlot.reserved ? `Der Platz ${escapeHtml(pendingCourtSlot.courtName || '')} ist bereits gebucht.` : 'Der Platz ist dadurch nicht reserviert.'}</p>
+      <div class="court-account-selection-options">${state.playerToolsError
+        ? '<p class="hint">Partien konnten nicht geladen werden. <button type="button" class="text-link" data-account-tasks-retry>Erneut versuchen</button></p>'
+        : isPlayerAccount() && (state.playerToolsLoading || !state.playerToolsReady)
+        ? '<p class="hint">Partien werden geladen …</p>'
+        : tasks.length ? tasks.map(task => `<button type="button" class="secondary-button" data-court-match-select="${escapeHtml(task.match_id)}">${escapeHtml(getTaskLeagueLabel(task))} · ${escapeHtml(getTaskMatchLabel(task))}<br>${escapeHtml(task.team_one_label)} vs. ${escapeHtml(task.team_two_label)}${task.match_at ? '<br>Bestehenden Termin ändern' : ''}</button>`).join('')
+          : '<p class="hint">Für dein Konto ist gerade keine terminierbare Partie verfügbar.</p>'}</div>
+      <button type="button" class="text-link" data-court-selection-cancel>Auswahl verwerfen</button>`;
+  }
+
+  function applyCourtSlot(matchId, slot) {
+    if (!courtSelectableTasks().some(task => task.match_id === matchId) || Date.parse(slot.start) <= Date.now()) {
+      setAuthMessage('Die Zeit kann dieser Partie nicht mehr zugewiesen werden. Bitte prüfe die Auswahl erneut.', 'error');
+      return;
+    }
+    const form = document.querySelector(`[data-match-schedule="${CSS.escape(matchId)}"]`);
+    if (!form) return;
+    form.hidden = false;
+    const toggle = form.closest('.result-task-card')?.querySelector('[data-match-schedule-toggle]');
+    if (toggle) toggle.textContent = 'Termin schließen';
+    form.querySelector('[name="scheduledDate"]').value = slot.date;
+    const bookingInput = form.querySelector('[name="courtBookingId"]');
+    if (bookingInput) bookingInput.value = slot.bookingId || '';
+    const resourceStatus = form.querySelector('[data-racket-check]');
+    if (resourceStatus) {
+      if (slot.reserved) {
+        resourceStatus.dataset.courtBookingFrom = slot.time;
+        resourceStatus.dataset.courtBookingUntil = getBerlinMatchAtParts(slot.end).time;
+      } else {
+        delete resourceStatus.dataset.courtBookingFrom;
+        delete resourceStatus.dataset.courtBookingUntil;
+      }
+    }
+    const timeField = form.querySelector('[data-schedule-time-field="scheduledTime"]');
+    timeField.dataset.scheduleTimeDefault = slot.time;
+    timeField.innerHTML = renderScheduleTimeControls('scheduledTime', slot.time);
+    syncDateTimeHints(form);
+    scheduleRacketCheck(form);
+    pendingCourtSlot = null;
+    courtAccountRequested = false;
+    replacementCancellationTask = null;
+    renderCourtMatchSelection();
+    renderCourtBookingInbox();
+    form.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    form.querySelector('[type="submit"]')?.focus({ preventScroll: true });
+    setAuthMessage(slot.reserved
+      ? 'Gebuchte Zeit übernommen. Bitte die Zuordnung mit „Terminieren“ beziehungsweise „Termin speichern“ bestätigen.'
+      : 'Zeit übernommen. Bitte die Partie mit „Terminieren“ beziehungsweise „Termin speichern“ bestätigen. Der Platz ist noch nicht reserviert.');
+  }
+
+  function chooseCourtMatch(slot) {
+    pendingCourtSlot = slot;
+    courtAccountRequested = true;
+    openAuthDialog();
+    renderCourtMatchSelection();
+  }
+
+  async function getCourtBookings(date = null) {
+    await init();
+    if (!state.session?.user || !isPlayerAccount() || !state.client) return [];
+    const cached = state.courtBookings.filter(booking => !date
+      || getBerlinMatchAtParts(booking.starts_at).date === date);
+    const { data, error } = await state.client.rpc('get_my_court_bookings', { p_date: date });
+    if (error) return cached;
+    const fresh = data || [];
+    if (date) {
+      state.courtBookings = [
+        ...state.courtBookings.filter(booking => getBerlinMatchAtParts(booking.starts_at).date !== date),
+        ...fresh
+      ];
+    } else state.courtBookings = fresh;
+    return fresh;
+  }
+
+  function chooseReplacementCourtBooking(target) {
+    replacementCancellationTask = target.task;
+    document.getElementById('account-task-prompt-dialog')?.close();
+    openAuthDialog();
+    renderCourtBookingInbox();
+    window.requestAnimationFrame(() => document.getElementById('court-booking-inbox')?.scrollIntoView({ block: 'center' }));
+  }
+
+  async function confirmCancelledCourtBooking(target) {
+    const task = target?.task;
+    if (!task) return;
+    const dialog = document.getElementById('account-task-prompt-dialog');
+    const button = dialog?.querySelector('[data-account-task-prompt-open]');
+    if (button) button.disabled = true;
+    try {
+      const { data, error } = await state.client.rpc('confirm_court_booking_cancellation', {
+        p_booking_id: Number(task.booking_id)
+      });
+      if (error) throw error;
+      dialog?.close();
+      accountTaskPromptTarget = null;
+      if (data?.status === 'unscheduled') await syncRacketBooking('match', task.match_id);
+      setAuthMessage(data?.status === 'unscheduled'
+        ? 'Der Termin wurde für alle Beteiligten aufgehoben.'
+        : 'Die Platzstornierung wurde bereits bearbeitet.', 'success');
+      await refresh({ includeTasks: true });
+    } catch (error) {
+      setAuthMessage(error.message || 'Der Termin konnte nicht aufgehoben werden.', 'error');
+      openAuthDialog();
+    } finally {
+      if (button) button.disabled = false;
+    }
   }
 
   function isTrainingGuestKey(value) {
@@ -1759,16 +2132,26 @@
     const version = state.playerToolsVersion;
     state.resultTasks = [];
     state.trainingTasks = [];
+    state.courtBookings = [];
+    state.courtCancellationTasks = [];
     state.players = [];
     if (!isPlayerAccount() || !state.extendedPlayerFeatures) return;
 
-    const [playersResponse, resultResponse, trainingTaskResponse] = await Promise.all([
+    const [playersResponse, resultResponse, trainingTaskResponse, courtBookingsResponse, courtCancellationResponse] = await Promise.all([
       state.client.from('players').select('id, display_name, initials, company').order('display_name'),
       state.client.rpc('get_my_result_tasks', { p_season_id: null }),
-      state.client.rpc('get_my_training_tasks')
+      state.client.rpc('get_my_training_tasks'),
+      state.client.rpc('get_my_court_bookings', { p_date: null }),
+      state.client.rpc('get_my_court_booking_cancellation_tasks')
     ]);
     if (state.playerToolsVersion !== version) return;
-    const error = playersResponse.error || resultResponse.error || trainingTaskResponse.error;
+    const courtRpcMissing = response => response.error && (
+      response.error.code === 'PGRST202'
+      || /get_my_court_bookings|get_my_court_booking_cancellation_tasks/i.test(response.error.message || '')
+    );
+    const error = playersResponse.error || resultResponse.error || trainingTaskResponse.error
+      || (courtRpcMissing(courtBookingsResponse) ? null : courtBookingsResponse.error)
+      || (courtRpcMissing(courtCancellationResponse) ? null : courtCancellationResponse.error);
     if (error) throw error;
     const resultTasks = resultResponse.data || [];
     let completeResultTasks = [];
@@ -1790,6 +2173,8 @@
     state.players = playersResponse.data || [];
     state.resultTasks = completeResultTasks;
     state.trainingTasks = trainingTaskResponse.data || [];
+    state.courtBookings = courtBookingsResponse.error ? [] : courtBookingsResponse.data || [];
+    state.courtCancellationTasks = courtCancellationResponse.error ? [] : courtCancellationResponse.data || [];
     renderTrainingForm();
   }
 
@@ -1801,6 +2186,8 @@
     state.resultTaskScope = 'relevant';
     state.resultTasks = [];
     state.trainingTasks = [];
+    state.courtBookings = [];
+    state.courtCancellationTasks = [];
     state.players = [];
     playerToolsPromise = null;
     window.clearTimeout(playerToolsTimer);
@@ -1997,7 +2384,10 @@
         if (error) throw error;
       }
       authForm.reset();
-      closeAuthDialog();
+      if (courtAccountRequested) {
+        renderAuthState();
+        void refresh({ includeTasks: true });
+      } else closeAuthDialog();
     } catch (error) {
       setAuthMessage(getFriendlyAuthError(error), 'error');
     } finally {
@@ -2729,14 +3119,22 @@ Dein Hanako-Leben-Squad`;
       String(data.get('scheduledTime') || '')
     );
     try {
-      const { error } = await state.client.rpc('schedule_match', {
+      const bookingId = data.get('courtBookingId') ? Number(data.get('courtBookingId')) : null;
+      let response = await state.client.rpc('schedule_match', {
         p_match_id: form.dataset.matchSchedule,
-        p_match_at: matchAt
+        p_match_at: matchAt,
+        p_court_booking_id: bookingId
       });
-      if (error) throw error;
+      if (response.error?.code === 'PGRST202' && !bookingId) {
+        response = await state.client.rpc('schedule_match', {
+          p_match_id: form.dataset.matchSchedule,
+          p_match_at: matchAt
+        });
+      }
+      if (response.error) throw response.error;
       setAuthMessage('Partie wurde terminiert. Schläger werden gebucht …');
       const racket = await syncRacketBooking('match', form.dataset.matchSchedule);
-      setAuthMessage(withCalendarNote(withRacketNote('Partie wurde terminiert.', racket), matchAt), 'success');
+      setAuthMessage(withCalendarNote(withRacketNote('Partie wurde terminiert.', racket, form.querySelector('[data-racket-check]')), matchAt), 'success');
       await refresh();
     } catch (error) {
       setAuthMessage(error.message || 'Die Partie konnte nicht terminiert werden.', 'error');
@@ -3044,11 +3442,18 @@ Dein Hanako-Leben-Squad`;
     target.className = `auth-message training-message${type ? ` ${type}` : ''}`;
   }
 
+  function setTrainingToggleState(open) {
+    const trainingToggle = document.querySelector('[data-training-toggle]');
+    trainingToggle?.setAttribute('aria-expanded', String(open));
+    trainingToggle?.setAttribute('aria-label', open ? 'Training schließen' : 'Training hinzufügen');
+  }
+
   function closeTrainingForm(form = document.getElementById('training-form')) {
     if (!form) return;
     form.hidden = true;
     const formGroup = form.closest('[data-training-form-group]');
     if (formGroup) formGroup.hidden = true;
+    if (form.id === 'training-form') setTrainingToggleState(false);
     closeTrainingPickerMenus();
     setTrainingMessage('', '', form);
     if (form.dataset.trainingAlternative) {
@@ -3177,6 +3582,7 @@ Dein Hanako-Leben-Squad`;
     form.hidden = true;
     const formGroup = form.closest('[data-training-form-group]');
     if (formGroup) formGroup.hidden = true;
+    if (form.id === 'training-form') setTrainingToggleState(false);
     setAuthMessage(schedulesFuture
       ? withCalendarNote(
         withRacketNote(scheduledTrainingId ? 'Trainingstermin wurde geändert.' : 'Training wurde terminiert.', racket),
@@ -3234,9 +3640,55 @@ Dein Hanako-Leben-Squad`;
     document.addEventListener('click', async event => {
       if (!event.target.closest('[data-training-picker]')) closeTrainingPickerMenus();
       openDateTimePickerOnTap(event.target);
+      const courtOpen = event.target.closest('[data-court-match-open]');
+      if (courtOpen) {
+        const matchId = courtOpen.dataset.courtMatchOpen;
+        const task = courtSelectableTasks().find(item => item.match_id === matchId);
+        if (!task) return;
+        const form = courtOpen.closest('[data-match-schedule]');
+        window.PadelCourtAvailability?.open({
+          trigger: courtOpen, date: form.querySelector('[name="scheduledDate"]')?.value,
+          seasonId: task.season_id || task.league_id,
+          label: `${getTaskLeagueLabel(task)} · ${getTaskMatchLabel(task)}`,
+          onSelect: slot => applyCourtSlot(matchId, slot),
+        });
+        return;
+      }
+      const courtSelect = event.target.closest('[data-court-match-select]');
+      if (courtSelect && pendingCourtSlot) { applyCourtSlot(courtSelect.dataset.courtMatchSelect, pendingCourtSlot); return; }
+      const bookedCourtSelect = event.target.closest('[data-court-booking-select]');
+      if (bookedCourtSelect) {
+        const booking = state.courtBookings.find(item => Number(item.booking_id) === Number(bookedCourtSelect.dataset.courtBookingSelect));
+        if (!booking) return;
+        const slot = courtBookingSlot(booking);
+        if (replacementCancellationTask) applyCourtSlot(replacementCancellationTask.match_id, slot);
+        else chooseCourtMatch(slot);
+        return;
+      }
+      if (event.target.closest('[data-court-replacement-cancel]')) {
+        replacementCancellationTask = null;
+        renderCourtBookingInbox();
+        return;
+      }
+      if (event.target.closest('[data-court-selection-cancel]')) {
+        pendingCourtSlot = null; courtAccountRequested = false; renderCourtMatchSelection(); return;
+      }
       const open = event.target.closest('[data-auth-open]');
       if (open) {
         openAuthDialog();
+        return;
+      }
+      if (event.target.closest('[data-account-task-prompt-open]')) {
+        openAccountTaskPromptTarget();
+        return;
+      }
+      if (event.target.closest('[data-account-task-prompt-alternative]') && accountTaskPromptTarget?.type === 'court-cancellation') {
+        chooseReplacementCourtBooking(accountTaskPromptTarget);
+        return;
+      }
+      if (event.target.closest('[data-account-task-prompt-close]')) {
+        document.getElementById('account-task-prompt-dialog')?.close();
+        accountTaskPromptTarget = null;
         return;
       }
       if (event.target.closest('[data-account-tasks-retry]')) {
@@ -3432,6 +3884,7 @@ Dein Hanako-Leben-Squad`;
       if (trainingToggle) {
         const form = document.getElementById('training-form');
         const opening = form.hidden;
+        setTrainingToggleState(opening);
         form.hidden = !opening;
         const formGroup = form.closest('[data-training-form-group]');
         if (formGroup) formGroup.hidden = !opening;
@@ -3652,6 +4105,26 @@ Dein Hanako-Leben-Squad`;
     document.getElementById('auth-dialog')?.addEventListener('click', event => {
       if (event.target === event.currentTarget) closeAuthDialog();
     });
+    document.getElementById('account-task-prompt-dialog')?.addEventListener('click', event => {
+      if (event.target === event.currentTarget) {
+        event.currentTarget.close();
+        accountTaskPromptTarget = null;
+      }
+    });
+    document.getElementById('account-task-prompt-dialog')?.addEventListener('close', () => {
+      accountTaskPromptTarget = null;
+    });
+    document.addEventListener('close', event => {
+      if (!event.target.matches?.('dialog') || event.target.id === 'account-task-prompt-dialog') return;
+      window.setTimeout(maybeShowAccountTaskPrompt, 0);
+    }, true);
+    document.getElementById('auth-dialog')?.addEventListener('close', () => {
+      pendingCourtSlot = null;
+      courtAccountRequested = false;
+      replacementCancellationTask = null;
+      renderCourtMatchSelection();
+      renderCourtBookingInbox();
+    });
     document.getElementById('player-invite-dialog')?.addEventListener('click', event => {
       if (event.target === event.currentTarget) closePlayerInviteDialog();
     });
@@ -3699,6 +4172,7 @@ Dein Hanako-Leben-Squad`;
     state.session = session;
     state.client.auth.onAuthStateChange((event, nextSession) => {
       if (event === 'INITIAL_SESSION') return;
+      if (event === 'SIGNED_OUT') { pendingCourtSlot = null; courtAccountRequested = false; replacementCancellationTask = null; }
       if (event === 'PASSWORD_RECOVERY') state.passwordFlow = 'recovery';
       state.session = nextSession;
       if (event === 'TOKEN_REFRESHED') return;
@@ -3748,6 +4222,8 @@ Dein Hanako-Leben-Squad`;
     getClient: () => state.client,
     getSession: () => state.session,
     getProfile: () => state.profile,
-    getDisplayName: getProfileDisplayName
+    getDisplayName: getProfileDisplayName,
+    chooseCourtMatch,
+    getCourtBookings
   };
 })();

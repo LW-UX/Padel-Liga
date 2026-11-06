@@ -11,6 +11,10 @@ const resultMigration = fs.readFileSync(
   path.join(__dirname, '..', 'supabase', 'migrations', '20260909170000_global_elo_match_time.sql'),
   'utf8'
 );
+const resultTaskPromptMigration = fs.readFileSync(
+  path.join(__dirname, '..', 'supabase', 'migrations', '20261106120000_result_task_proposal_team.sql'),
+  'utf8'
+);
 
 test('migration derives and verifies official set results', () => {
   assert.match(migration, /create or replace function private\.derive_official_result/);
@@ -40,4 +44,12 @@ test('admin result entry becomes official immediately without a proposal', () =>
   assert.match(adminBranch, /result_details = trim\(p_result_details\)/);
   assert.match(adminBranch, /perform pg_advisory_xact_lock\(70317, 20270909\)/);
   assert.doesNotMatch(adminBranch, /insert into public\.result_proposals/);
+});
+
+test('result tasks expose the proposing team without changing admin review permissions', () => {
+  assert.match(resultTaskPromptMigration, /proposed_by_team smallint/);
+  assert.match(resultTaskPromptMigration, /task_match\.proposal_id, task_match\.proposed_by_team/);
+  assert.match(resultTaskPromptMigration, /task_match\.app_role = 'admin' or task_match\.proposed_by_team <> task_match\.my_team/);
+  assert.match(resultTaskPromptMigration, /revoke execute on function public\.get_my_result_tasks\(text\) from public, anon/);
+  assert.match(resultTaskPromptMigration, /grant execute on function public\.get_my_result_tasks\(text\) to authenticated/);
 });

@@ -47,8 +47,8 @@ test('account cards expose cancellation only through the admin branch', () => {
 
 test('cancelled matches stay visible but settle progress and leave open surfaces', () => {
   assert.match(app, /function isCancelledMatch\(match\)/);
-  assert.match(app, /class="mc played unrated/);
-  assert.match(app, /<div class="mc-score-main">o\.W\.<\/div>/);
+  assert.match(app, /class="mc match-card is-played unrated/);
+  assert.match(app, /<div class="score">o\.W\.<\/div>/);
   assert.match(app, /<div class="hint mc-score-detail">ohne Wertung<\/div>/);
   assert.doesNotMatch(style, /\.mc\.unrated \.mc-score-detail \{ font-style: italic; \}/);
   assert.match(app, /matchScope === 'open'[\s\S]*!isCancelledMatch\(match\)/);

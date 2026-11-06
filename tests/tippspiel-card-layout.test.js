@@ -89,12 +89,12 @@ test('the card center links probability and result to preview or analysis withou
   };
 
   const preview = context.renderMatchCenter(match, null, false);
-  assert.match(preview, /50 % : 50 %/);
+  assert.match(preview, /50% : 50%/);
   assert.match(preview, /\/Padel-Liga\/test\/partie\/7\//);
   assert.match(preview, /Partievorschau öffnen/);
 
   const distant = context.renderMatchCenter({ ...match, distant: true }, null, false);
-  assert.match(distant, /50 % : 50 %/);
+  assert.match(distant, /50% : 50%/);
   assert.doesNotMatch(distant, /<a |partie=|Partievorschau öffnen/, 'distant matches without a full preview stay unlinked');
 
   const analysis = context.renderMatchCenter(match, '2:1', false);

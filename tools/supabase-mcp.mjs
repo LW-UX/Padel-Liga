@@ -1,6 +1,7 @@
 #!/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node
 
 import { readFile, readdir } from 'node:fs/promises';
+import { createHmac, randomUUID } from 'node:crypto';
 import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -174,17 +175,85 @@ if (command === 'list-tools') {
   }));
 } else if (command === 'deploy-function') {
   const functionPath = requireFunctionPath(argument);
-  const files = await readFunctionFiles(functionPath);
+  let files = await readFunctionFiles(functionPath);
   if (!files.some((file) => file.name === 'index.ts')) fail('Der Function-Einstieg index.ts fehlt.');
+  let entrypointPath = 'index.ts';
+  if (argument === 'receive-court-booking') {
+    files = files.map(file => ({ ...file, name: `${argument}/${file.name}` }));
+    files.push({ name: '_shared/playtomic-booking-mail.ts',
+      content: await readFile(resolve(functionsDirectory, '_shared/playtomic-booking-mail.ts'), 'utf8') });
+    entrypointPath = `${argument}/index.ts`;
+  }
   printToolResult(await rpc('tools/call', {
     name: 'deploy_edge_function',
     arguments: {
       name: argument,
-      entrypoint_path: 'index.ts',
-      verify_jwt: true,
+      entrypoint_path: entrypointPath,
+      // Verfügbarkeit ist öffentlich; der Empfangs-Webhook prüft stattdessen
+      // zwingend seine Resend-/Svix-Signatur vor jedem Zugriff.
+      verify_jwt: !['court-availability', 'receive-court-booking'].includes(argument),
       files
     }
   }));
+} else if (['inspect-booking-mail', 'configure-booking-mail', 'replay-booking-mail'].includes(command)) {
+  const slug = 'resend-booking-setup';
+  const files = await readFunctionFiles(requireFunctionPath(slug));
+  const deployed = await rpc('tools/call', { name: 'deploy_edge_function', arguments: {
+    name: slug, entrypoint_path: 'index.ts', verify_jwt: false, files
+  } });
+  if (deployed?.isError) fail('Der geschützte Resend-Einrichtungshelfer konnte nicht bereitgestellt werden.');
+  try {
+    const keys = await managementRequest('/api-keys?reveal=true');
+    const serviceKey = keys.find(key => key.type === 'secret')?.api_key;
+    if (!serviceKey) throw new Error('Der Projektzugang ist nicht verfügbar.');
+    const inspect = command === 'inspect-booking-mail';
+    const body = inspect ? { mode: 'inspect', emailIds: (argument || '').split(',').filter(Boolean) }
+      : { mode: 'configure' };
+    const response = await fetch(`https://${projectRef}.supabase.co/functions/v1/${slug}`, {
+      method: 'POST', headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body), signal: AbortSignal.timeout(60000)
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(`Resend-Einrichtung: ${/^[a-z_0-9]+$/.test(result.error || '') ? result.error : 'nicht_verfügbar'}`);
+    if (inspect) console.log(JSON.stringify(result));
+    else if (command === 'replay-booking-mail') {
+      if (!/^whsec_[A-Za-z0-9+/=]+$/.test(result.signingSecret || '')) throw new Error('Ungültiger Signing-Schlüssel.');
+      const ids = (argument || '').split(',').filter(Boolean);
+      if (!ids.length || ids.length > 5 || ids.some(id => !/^[0-9a-f-]{36}$/i.test(id))) throw new Error('Ungültige Mail-IDs.');
+      const signatureKey = Buffer.from(result.signingSecret.slice(6), 'base64');
+      for (const emailId of ids) {
+        const messageId = `msg_manual_${randomUUID()}`;
+        const timestamp = String(Math.floor(Date.now() / 1000));
+        const payload = JSON.stringify({ type: 'email.received', data: { email_id: emailId } });
+        const signature = createHmac('sha256', signatureKey).update(`${messageId}.${timestamp}.${payload}`).digest('base64');
+        const replay = await fetch(`https://${projectRef}.supabase.co/functions/v1/receive-court-booking`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'svix-id': messageId,
+            'svix-timestamp': timestamp, 'svix-signature': `v1,${signature}` },
+          body: payload, signal: AbortSignal.timeout(60000)
+        });
+        const outcome = await replay.json();
+        console.log(JSON.stringify({ emailId, http: replay.status, status: outcome.status,
+          bookingStatus: outcome.result?.status, bookingId: outcome.result?.bookingId, reason: outcome.reason }));
+        if (!replay.ok || outcome.status !== 'processed') process.exitCode = 1;
+      }
+    } else {
+      if (!/^whsec_[A-Za-z0-9+/=]+$/.test(result.signingSecret || '')) throw new Error('Ungültiger Signing-Schlüssel.');
+      const forwarders = (argument || '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean);
+      if (!forwarders.length || forwarders.some(value => !/^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/.test(value))) throw new Error('Freigegebene Weiterleitungsabsender fehlen.');
+      await managementRequest('/secrets', { method: 'POST', body: JSON.stringify([
+        { name: 'RESEND_BOOKING_WEBHOOK_SECRET', value: result.signingSecret },
+        { name: 'RESEND_BOOKING_RECIPIENT', value: 'buchungen@kiroimyon.resend.app' },
+        { name: 'RESEND_BOOKING_FORWARDERS', value: forwarders.join(',') }
+      ]) });
+      console.log(JSON.stringify({ configured: true, webhookId: result.webhookId, recipient: 'buchungen@kiroimyon.resend.app', forwarders }));
+    }
+  } catch (error) {
+    process.exitCode = 1;
+    console.error(/^Resend-Einrichtung: [a-z_0-9]+$/.test(error.message || '')
+      ? error.message : 'Die Resend-Einrichtung konnte nicht abgeschlossen werden.');
+  } finally {
+    await managementRequest(`/functions/${slug}`, { method: 'DELETE' });
+  }
 } else if (command === 'delete-function') {
   requireFunctionPath(argument);
   await managementRequest(`/functions/${argument}`, { method: 'DELETE' });

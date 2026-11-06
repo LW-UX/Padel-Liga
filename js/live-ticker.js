@@ -1169,6 +1169,19 @@
     }).join('<span class="team-sep">&amp;</span>');
   }
 
+  function scrollToLiveAccountMatch(matchId) {
+    const card = [...document.querySelectorAll('#live-account-list [data-live-account-match]')]
+      .find(candidate => candidate.dataset.liveAccountMatch === String(matchId));
+    const scrollContainer = card?.closest('.dialog-card');
+    if (!card || !scrollContainer) return;
+    const behavior = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+    const top = scrollContainer.scrollTop
+      + card.getBoundingClientRect().top
+      - scrollContainer.getBoundingClientRect().top
+      - 16;
+    scrollContainer.scrollTo({ top: Math.max(0, top), behavior });
+  }
+
   function renderAccount() {
     const section = document.getElementById('live-account-section');
     const target = document.getElementById('live-account-list');
@@ -1192,7 +1205,7 @@
         <button class="primary-button" type="button" data-live-assignment="${request.assignmentId}" data-live-accept="true">Annehmen</button>
       </div>
     </article>`).join('');
-    const matchHtml = matches.map(task => `<article class="account-task-card${task.session ? ' is-actionable' : ''}">
+    const matchHtml = matches.map(task => `<article class="account-task-card${task.session ? ' is-actionable' : ''}" data-live-account-match="${escapeHtml(task.matchId)}">
       <div class="account-task-meta">
         <span class="eyebrow">${escapeHtml(task.seasonLabel)} · ${escapeHtml(task.displayLabel)}</span>
         <span class="account-task-status ${task.session ? 'is-open' : ''}">${task.session ? 'Live' : task.assignment?.status === 'accepted' ? 'Bereit' : 'Zuweisung offen'}</span>
@@ -1557,7 +1570,10 @@
           const accepted = await runRpc('respond_live_scorer_assignment', {
             p_assignment_id: Number(assignmentId), p_accept: true
           }, 'Der Liveticker wurde dir zugeteilt.');
-          if (accepted) window.PadelKonto?.setMessage('Der Liveticker wurde dir zugeteilt.', 'success');
+          if (accepted) {
+            window.PadelKonto?.setMessage('Der Liveticker wurde dir zugeteilt.', 'success');
+            scrollToLiveAccountMatch(matchId);
+          }
         } else {
           state.accountMessage = 'Die Schreiberanfrage wurde gesendet.';
           window.PadelKonto?.setMessage('Die Schreiberanfrage wurde gesendet.', 'success');

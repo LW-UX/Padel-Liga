@@ -87,13 +87,13 @@ test('both account dialogs expose one four-group game overview', () => {
     assert.doesNotMatch(source, /id="training-task-list"/);
     assert.match(source, /<button class="secondary-button secondary-button--with-icon"[^>]*data-account-settings/);
     assert.match(source, /<button class="secondary-button secondary-button--with-icon"[^>]*data-account-player-profile hidden>[\s\S]*?<span>Spielerprofil<\/span>/);
-    assert.match(source, /<button class="secondary-button"[^>]*data-training-toggle/);
+    assert.match(source, /<button class="secondary-button secondary-button--with-icon"[^>]*data-training-toggle[^>]*aria-expanded="false"[^>]*aria-controls="training-form-group"/);
     assert.match(source, /data-auth-logout>Ausloggen<\/button>/);
     assert.match(source, /data-email-notification="resultEntry"/);
     assert.match(source, /data-email-notification="resultConfirmation"/);
     assert.match(source, /data-email-notification="predictionReminder"/);
-    assert.match(source, /data-training-toggle>Training hinzufügen<\/button>/);
-    assert.match(source, /<div class="match-group" data-training-form-group hidden>[\s\S]*?<h3>[\s\S]*?Training[\s\S]*?<form class="training-form" id="training-form" hidden>/);
+    assert.match(source, /data-training-toggle[\s\S]*?class="training-toggle-icon-vertical"[\s\S]*?<span>Training hinzufügen<\/span>[\s\S]*?<\/button>/);
+    assert.match(source, /<div class="match-group" id="training-form-group" data-training-form-group hidden>[\s\S]*?<h3>[\s\S]*?Training[\s\S]*?<form class="training-form" id="training-form" hidden>/);
     assert.doesNotMatch(source, /picker-toggle-chevron/);
     assert.doesNotMatch(source, /auth-logout-button|compact-button|account-task-count|result-task-count/);
     assert.doesNotMatch(source, /Ligaübergreifend|Saisonunabhängig/);
@@ -131,6 +131,9 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.match(accountScript, /resultScopeToggle\.hidden = state\.profile\?\.app_role !== 'admin'/);
   assert.match(accountScript, /state\.resultTaskScope = resultScopeButton\.dataset\.accountResultScope === 'all' \? 'all' : 'relevant'/);
   assert.match(accountScript, /form\.closest\('\[data-training-form-group\]'\)[\s\S]*formGroup\.hidden = !opening/);
+  assert.match(accountScript, /function setTrainingToggleState\(open\)[\s\S]*aria-expanded[\s\S]*Training schließen/);
+  assert.match(accountScript, /const opening = form\.hidden;\s*setTrainingToggleState\(opening\)/);
+  assert.match(accountScript, /if \(form\.id === 'training-form'\) setTrainingToggleState\(false\)/);
   assert.match(accountScript, /closeAuthDialog\(\);[\s\S]*window\.PadelLigaOpenPlayerProfile\(playerId, document\.querySelector\('\[data-auth-open\]'\)\)/);
   assert.match(accountScript, /searchParams\.set\('spielerprofil', playerId\)/);
   assert.match(appScript, /window\.PadelLigaOpenPlayerProfile = openPlayerProfile/);
@@ -151,6 +154,25 @@ test('both account dialogs expose one four-group game overview', () => {
   assert.doesNotMatch(style, /::-webkit-calendar-picker-indicator \{[^}]*opacity: 0;/);
   assert.doesNotMatch(style, /\.training-form input,\s*\.training-form select \{/);
   assert.doesNotMatch(style, /\.result-entry-actions \{[^}]*border-top:/);
+});
+
+test('involved players receive session-scoped result prompts that lead to the matching account card', () => {
+  pages.forEach(source => {
+    assert.match(source, /id="account-task-prompt-dialog"[^>]*aria-labelledby="account-task-prompt-title"/);
+    assert.match(source, /data-account-task-prompt-copy/);
+    assert.match(source, /data-account-task-prompt-open>Zum Konto<\/button>/);
+  });
+  assert.match(accountScript, /ACCOUNT_TASK_PROMPT_SESSION_KEY = 'padel-account-task-prompts'/);
+  assert.match(accountScript, /getPlayerResultTaskGroups\(state\.resultTasks, Date\.now\(\), false\)/);
+  assert.match(accountScript, /task\.task_type === 'review'/);
+  assert.match(accountScript, /state\.profile\?\.app_role !== 'admin'[\s\S]*task\.proposed_by_team[\s\S]*task\.my_team/);
+  assert.match(accountScript, /group\.key === 'past'/);
+  assert.match(accountScript, /!window\.PadelLiveTicker\?\.isMatchLive\(task\.match_id\)/);
+  assert.match(accountScript, /review:\$\{task\.match_id\}:\$\{task\.proposal_id\}/);
+  assert.match(accountScript, /window\.sessionStorage\.setItem\(ACCOUNT_TASK_PROMPT_SESSION_KEY/);
+  assert.match(accountScript, /data-result-task-match="\$\{escapeHtml\(task\.match_id\)\}"/);
+  assert.match(accountScript, /openAccountTaskPromptTarget\(\)[\s\S]*openAuthDialog\(\)[\s\S]*focusAccountTask/);
+  assert.match(style, /#account-task-prompt-dialog \{ --dialog-width: 460px; \}/);
 });
 
 test('date and time hints are dimmed while Safari and iOS receive controlled text', () => {
