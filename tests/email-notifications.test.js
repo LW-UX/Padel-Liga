@@ -141,6 +141,7 @@ test('a new match invitation uses the match-card team layout and explains update
   assert.match(edgeFunction, /afterDetails: "Wird der Termin über die Webseite verschoben oder abgesagt/);
   assert.match(edgeFunction, /getTeamMembers\(label\)\.join\(" & "\)/);
   assert.match(edgeFunction, /<span style=\"color:#7E828B;font-weight:normal;\">&amp;<\/span>/);
+  assert.doesNotMatch(edgeFunction, /<br><span style=\"color:#7E828B;font-weight:normal;\">&amp;<\/span><br>/);
   assert.match(edgeFunction, /align=\"left\" valign=\"middle\" width=\"44%\"/);
   assert.match(edgeFunction, /align=\"right\" valign=\"middle\" width=\"44%\"/);
   assert.match(edgeFunction, /\$\{escapeHtml\(content\.action\)\}<\/a>\s*\$\{content\.afterDetails \? `<p style=\"margin:16px 0 0;color:#A8ADB7;font-size:12px;/);

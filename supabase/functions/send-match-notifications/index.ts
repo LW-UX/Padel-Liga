@@ -295,7 +295,7 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
 
 function renderMailTeam(label: string | null) {
   return getTeamMembers(label)
-    .map((member, index) => `${index > 0 ? '<br><span style="color:#7E828B;font-weight:normal;">&amp;</span><br>' : ""}${escapeHtml(member)}`)
+    .map((member, index) => `${index > 0 ? ' <span style="color:#7E828B;font-weight:normal;">&amp;</span> ' : ""}${escapeHtml(member)}`)
     .join("");
 }
 
