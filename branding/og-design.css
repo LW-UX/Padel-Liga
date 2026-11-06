@@ -215,13 +215,6 @@ table.rt tbody tr:nth-child(even):not(:hover) {
   .home-matchday, .home-notice, .article-card, .match-statistics-context,
   .ranking-wrap, .match-card, .court-booking-inbox,
   .dialog[data-presentation="panel"]
-) {
-  border-color: var(--accent2) !important;
-}
-:root :is(
-  .home-matchday, .home-notice, .article-card, .match-statistics-context,
-  .ranking-wrap, .match-card, .court-booking-inbox,
-  .dialog[data-presentation="panel"]
 ) :is(
   .home-matchday, .home-notice, .article-card, .match-statistics-context,
   .ranking-wrap, .match-card, .court-booking-inbox,

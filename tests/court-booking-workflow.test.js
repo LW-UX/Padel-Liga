@@ -48,10 +48,11 @@ test('a confirmed booking is atomically matched to the same official start time'
   assert.match(account, /p_court_booking_id: bookingId/);
 });
 
-test('90-minute reservations cover three cells and respect the complete office-hours window', () => {
+test('90-minute reservations cover their full visible window, including a partially visible reservation', () => {
   const booking = { booking_id: 1, court_name: 'Halle', starts_at: '2099-11-04T17:00:00Z', ends_at: '2099-11-04T18:30:00Z' };
   const grid = { innerHTML: '', style: {}, scrollTop: 0, scrollLeft: 0, contains: () => false };
   const context = { window: {}, grid, document: { activeElement: null }, ownBookings: [booking],
+    options: {},
     data: { date: '2099-11-04', opening: { from: '07:00', until: '24:00' }, slots: [],
       courts: [{ id: 'hall', name: 'Halle', location: 'indoor' }] },
     filter: 'indoor', hoursFilter: 'office', selected: null, preview: null };
@@ -69,7 +70,7 @@ test('90-minute reservations cover three cells and respect the complete office-h
   assert.equal(cellClass('19:00'), 'is-booked is-booked-end');
   assert.equal(cellClass('19:30'), 'is-unavailable');
   context.ownBookings = [{ ...booking, starts_at: '2099-11-04T18:00:00Z', ends_at: '2099-11-04T19:30:00Z' }];
-  assert.equal(context.window.visibleBookedSlots(context.data).length, 0, '19:00–20:30 exceeds office hours');
+  assert.equal(context.window.visibleBookedSlots(context.data).length, 1, 'the occupied 19:00–20:00 section stays marked');
   assert.equal(context.window.visibleBookedSlots(context.data, 'all').length, 1);
 });
 
@@ -93,12 +94,74 @@ test('selecting a 90-minute booking carries its full duration into the match pic
   assert.deepEqual(cells.filter(cell => cell.classes.has('is-selected')).map(cell => cell.dataset.courtTime), ['18:00', '18:30', '19:00']);
 });
 
+test('our bookings block every overlapping free start and cannot be assigned to a different match', () => {
+  const booking = { booking_id: 12, court_resource_id: 'hall', court_name: 'Halle',
+    starts_at: '2099-11-04T17:00:00Z', ends_at: '2099-11-04T18:30:00Z',
+    match_id: 'match-one', match_label: 'Partie 1' };
+  const grid = { innerHTML: '', style: {}, scrollTop: 0, scrollLeft: 0, contains: () => false };
+  const context = { window: {}, grid, document: { activeElement: null },
+    ownBookings: [booking], options: { matchId: 'match-two' },
+    data: { date: '2099-11-04', opening: { from: '07:00', until: '24:00' },
+      courts: [{ id: 'hall', name: 'Halle', location: 'indoor' }, { id: 'other', name: 'Nebenplatz', location: 'indoor' }],
+      slots: ['16:00', '16:30', '17:00', '17:30', '18:00', '18:30'].flatMap(time => ['hall', 'other'].map(courtId => ({
+        id: `${courtId}-${time}`, courtId, start: `2099-11-04T${time}:00Z`,
+        end: new Date(Date.parse(`2099-11-04T${time}:00Z`) + 3600000).toISOString(),
+        time: `${Number(time.slice(0, 2)) + 1}:${time.slice(3)}`
+      }))) }, filter: 'indoor', hoursFilter: 'all', selected: null, preview: null };
+  vm.createContext(context);
+  const helpers = availability.slice(0, availability.indexOf('  const dialog ='));
+  const functions = availability.slice(availability.indexOf('  function paintRange()'), availability.indexOf('  async function load('));
+  vm.runInContext(helpers + functions + 'window.helpers = { visibleBookedSlots, visibleSlots, findSelectableSlot, renderGrid }; })();', context);
+  const api = context.window.helpers;
+  api.renderGrid();
+  assert.doesNotMatch(grid.innerHTML, /Von uns gebucht|court-booking-label/);
+  assert.match(grid.innerHTML, /class="is-booked is-assigned is-booked-start"/, 'linked bookings receive the grey assigned state');
+  assert.match(grid.innerHTML, /Platz bereits gebucht, Halle, 18:00 bis 19:30, Partie 1/);
+  assert.match(grid.innerHTML, /court-booking-match-number[^>]*>P#<\/span>/);
+  assert.match(grid.innerHTML, /court-booking-match-number[^>]*>1<\/span>/);
+  assert.doesNotMatch(grid.innerHTML, /data-court-slot="booking-12"/, 'a booking linked elsewhere is visible but cannot be reassigned');
+  assert.equal(api.findSelectableSlot('hall-16:00')?.id, 'hall-16:00', 'an hour ending exactly at the reservation stays free');
+  assert.equal(api.findSelectableSlot('hall-18:30')?.id, 'hall-18:30', 'an hour starting exactly after the reservation stays free');
+  for (const time of ['16:30', '17:00', '17:30', '18:00']) {
+    assert.equal(api.findSelectableSlot(`hall-${time}`), undefined, `overlapping ${time} UTC is blocked`);
+    assert.equal(api.findSelectableSlot(`other-${time}`)?.courtId, 'other', 'other courts stay available');
+  }
+  context.options.matchId = 'match-one';
+  assert.equal(api.findSelectableSlot('booking-12')?.bookingId, 12, 'the linked match can select its own reservation');
+  vm.runInContext('Date.now = () => Date.parse("2099-11-04T17:15:00Z");', context);
+  assert.equal(api.visibleBookedSlots(context.data, 'all').length, 1, 'an ongoing reservation remains occupied');
+  assert.equal(api.findSelectableSlot('booking-12'), undefined, 'an ongoing reservation cannot be selected as a new start');
+  vm.runInContext('Date.now = () => Date.parse("2099-11-04T00:00:00Z");', context);
+  context.options = {};
+  context.ownBookings = [{ ...booking, match_id: null }];
+  api.renderGrid();
+  assert.doesNotMatch(grid.innerHTML, /is-assigned/, 'an unassigned booking keeps only its accent outline');
+  assert.doesNotMatch(grid.innerHTML, /court-booking-match-number/, 'an unassigned booking does not guess a match number');
+  assert.match(grid.innerHTML, /class="is-booked is-booked-start"/);
+  assert.equal([...grid.innerHTML.matchAll(/data-court-slot="booking-12"/g)].length, 3, 'the complete marked booking range stays clickable');
+  assert.equal(api.findSelectableSlot('booking-12')?.bookingId, 12, 'an unassigned booking remains available for explicit assignment');
+  context.ownBookings = [];
+  api.renderGrid();
+  assert.equal(api.findSelectableSlot('hall-17:00')?.id, 'hall-17:00', 'a removed or cancelled reservation no longer blocks the returned availability');
+  context.selected = api.findSelectableSlot('hall-17:00');
+  context.setSelection = slot => { context.selected = slot; };
+  context.status = { textContent: '' };
+  context.ownBookings = [booking];
+  api.renderGrid();
+  assert.equal(context.selected, null, 'a stale free selection is cleared when its reservation arrives');
+  assert.match(context.status.textContent, /nicht mehr verfügbar/);
+  context.ownBookings = [{ ...booking, starts_at: '2099-11-05T17:00:00Z', ends_at: '2099-11-05T18:30:00Z' }];
+  assert.equal(api.visibleBookedSlots(context.data, 'all').length, 0, 'a different date cannot occupy this grid');
+});
+
 test('booked slots use an accent outline and show structured match choices inside the booking inbox', () => {
   assert.match(availability, /getCourtBookings\?\.\(date\)/);
   assert.match(availability, /className = bookedCover[\s\S]*is-booked-start[\s\S]*is-booked-end/);
-  assert.match(availability, /choice\.reserved \? 'bereits gebucht' : 'frei'/);
+  assert.match(availability, /Platz bereits gebucht/);
   assert.match(availabilityStyle, /td\.is-booked[^\n]*var\(--accent\)/);
   assert.match(availabilityStyle, /td\.is-selected \{ background: var\(--accent\); box-shadow: none; \}/);
+  assert.match(availabilityStyle, /td\.is-booked:not\(\.is-assigned\)\.is-preview \{ background: color-mix\(in srgb, var\(--accent\) 55%, var\(--surface\)\); \}/);
+  assert.match(availabilityStyle, /td\.is-booked:not\(\.is-assigned\)\.is-selected \{ background: var\(--accent\); box-shadow: none; \}/);
   assert.match(account, /data-court-booking-select/);
   assert.match(account, /pendingCourtSlot\?\.reserved[\s\S]*renderCourtBookingInbox\(\)/);
   assert.match(account, /court-booking-match-selection/);

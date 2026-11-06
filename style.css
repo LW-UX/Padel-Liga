@@ -1941,7 +1941,7 @@
     .home-matchday {
       padding: 1.5rem;
       background: var(--surface);
-      border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+      border-color: var(--accent2);
     }
     .home-matchday-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
     .home-matchday-header h2 { margin: 0.2rem 0 0; line-height: 1.1; }

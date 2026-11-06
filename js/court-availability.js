@@ -15,10 +15,17 @@
       until: Math.min(minute(data.opening.until), hoursFilter === 'office' ? 20 * 60 : 24 * 60) };
   }
 
-  function visibleSlots(data, hoursFilter = 'office') {
+  function overlapsBooking(slot, bookings) {
+    return bookings.some(booking => booking.courtId === slot.courtId
+      && Date.parse(slot.start) < Date.parse(booking.end)
+      && Date.parse(slot.end) > Date.parse(booking.start));
+  }
+
+  function visibleSlots(data, hoursFilter = 'office', bookings = []) {
     if (!data) return [];
     const bounds = hourBounds(data, hoursFilter);
-    return data.slots.filter(slot => currentSlot(slot) && minute(slot.time) >= bounds.from && minute(slot.time) + 60 <= bounds.until);
+    return data.slots.filter(slot => currentSlot(slot) && minute(slot.time) >= bounds.from && minute(slot.time) + 60 <= bounds.until
+      && !overlapsBooking(slot, bookings));
   }
 
   function buildTimes(data, hoursFilter = 'office', extraSlots = []) {
@@ -28,8 +35,9 @@
     for (const slot of [...data.slots, ...extraSlots]) {
       const start = minute(slot.time);
       const duration = slot.duration || 60;
-      if (start >= bounds.from && start + duration <= bounds.until) {
-        for (let offset = 0; offset < duration; offset += 30) times.add(timeLabel(start + offset));
+      for (let offset = 0; offset < duration; offset += 30) {
+        const time = start + offset;
+        if (time >= bounds.from && time < bounds.until) times.add(timeLabel(time));
       }
     }
     return [...times].sort();
@@ -56,8 +64,7 @@
       <div class="court-grid-wrap" data-court-grid tabindex="0" role="region" aria-label="Plätze und Uhrzeiten; freie Stunden auswählen"></div>
     </div>
     <footer class="court-footer">
-      <p class="hint">Freie Flächen: 60 Minuten auswählen. Hover oder Tastaturfokus markiert die ganze Stunde.</p>
-      <p class="hint">Die Auswahl reserviert keinen Platz. Die Platzbuchung erfolgt weiterhin über das Hanako Leben Squad oder Ludwig.</p>
+      <p class="hint">Markierte Felder kennzeichnen bereits offiziell gebuchte Plätze. Du kannst sie hier auswählen und einer Partie zuordnen. Neue Platzbuchungen sind in dieser Ansicht nicht möglich; sie erfolgen weiterhin über das Hanako Leben Squad oder Ludwig. Partien kannst du hier dennoch terminieren, ohne dadurch einen Platz zu buchen.</p>
       <div class="court-footer-actions"><div class="court-selection" data-court-selection role="status" aria-live="polite" aria-invalid="false"></div>
         <button type="button" class="primary-button" data-court-apply hidden>Uhrzeit übernehmen</button>
         <button type="button" class="text-link" data-court-account>Partie auswählen</button></div>
@@ -89,7 +96,7 @@
     const court = data?.courts.find(item => item.id === slot?.courtId);
     const selection = dialog.querySelector('[data-court-selection]');
     selection.textContent = slot
-      ? `${court?.name || slot.courtName || 'Platz'} · ${dateLabel(data.date)} · ${slot.time}–${clock(slot.end)}${slot.reserved ? ' · bereits gebucht' : ''}` : '';
+      ? `${court?.name || slot.courtName || 'Platz'} · ${dateLabel(data.date)} · ${slot.time}–${clock(slot.end)}${slot.reserved ? ' · Platz bereits gebucht' : ''}` : '';
     selection.setAttribute('aria-invalid', 'false');
     grid.querySelectorAll('[data-court-slot]').forEach(button => {
       const active = button.dataset.courtSlot === slot?.id;
@@ -111,6 +118,13 @@
     return String(value || '').toLocaleLowerCase('de-DE').replace(/[^a-z0-9]+/g, ' ').trim();
   }
 
+  function bookingMatchNumber(slot) {
+    if (!slot?.matchId) return '';
+    return String(slot.matchLabel || '').match(/(\d+)\s*$/)?.[1]
+      || String(slot.matchId).match(/(\d+)\s*$/)?.[1]
+      || '';
+  }
+
   function visibleBookedSlots(data, hoursFilter = 'office') {
     const bounds = hourBounds(data, hoursFilter);
     return ownBookings.flatMap(booking => {
@@ -120,8 +134,9 @@
       const time = clock(booking.starts_at);
       const start = minute(time);
       const duration = (Date.parse(booking.ends_at) - Date.parse(booking.starts_at)) / 60000;
-      if (![60, 90].includes(duration) || Date.parse(booking.starts_at) <= Date.now()
-        || start < bounds.from || start + duration > bounds.until) return [];
+      if (![60, 90].includes(duration) || Date.parse(booking.ends_at) <= Date.now()
+        || format.format(new Date(booking.starts_at)) !== data.date
+        || start >= bounds.until || start + duration <= bounds.from) return [];
       return [{
         id: `booking-${booking.booking_id}`,
         bookingId: Number(booking.booking_id),
@@ -131,9 +146,18 @@
         end: booking.ends_at,
         duration,
         time,
+        matchId: booking.match_id || null,
+        matchLabel: booking.match_label || '',
         reserved: true
       }];
     });
+  }
+
+  function isSelectableBooking(slot) {
+    const bounds = hourBounds(data, hoursFilter);
+    return currentSlot(slot) && minute(slot.time) >= bounds.from
+      && minute(slot.time) + slot.duration <= bounds.until
+      && (!slot.matchId || slot.matchId === options.matchId);
   }
 
   function requestedBooking() {
@@ -148,7 +172,7 @@
     const bookings = await Promise.resolve(window.PadelKonto?.getCourtBookings?.() || []).catch(() => []);
     if (version !== bookingShortcutVersion || !dialog.open) return;
     availableBookings = (Array.isArray(bookings) ? bookings : [])
-      .filter(booking => Date.parse(booking.ends_at) > Date.now()
+      .filter(booking => Date.parse(booking.starts_at) > Date.now()
         && (!booking.match_id || booking.match_id === options.matchId))
       .sort((left, right) => Number(right.match_id === options.matchId) - Number(left.match_id === options.matchId)
         || Date.parse(left.starts_at) - Date.parse(right.starts_at)
@@ -169,7 +193,7 @@
 
   function revealBookedSlot(booking) {
     const slot = visibleBookedSlots(data, hoursFilter)
-      .find(item => Number(item.bookingId) === Number(booking.booking_id));
+      .find(item => Number(item.bookingId) === Number(booking.booking_id) && isSelectableBooking(item));
     if (!slot) return false;
     const button = grid.querySelector(`[data-court-slot="booking-${Number(booking.booking_id)}"]`);
     if (!button) return false;
@@ -182,9 +206,11 @@
   }
 
   function findSelectableSlot(slotId) {
+    if (!data) return null;
+    const booked = visibleBookedSlots(data, hoursFilter);
     return [
-      ...(data?.slots || []),
-      ...(data ? visibleBookedSlots(data, hoursFilter) : [])
+      ...visibleSlots(data, hoursFilter, booked),
+      ...booked.filter(isSelectableBooking)
     ].find(slot => slot.id === slotId && currentSlot(slot));
   }
 
@@ -210,31 +236,35 @@
     const courts = data.courts.filter(court => court.location === filter);
     const booked = visibleBookedSlots(data, hoursFilter);
     const times = buildTimes(data, hoursFilter, booked);
-    const visible = visibleSlots(data, hoursFilter);
+    const visible = visibleSlots(data, hoursFilter, booked);
     const slots = new Map(visible.map(slot => [`${slot.courtId}:${slot.time}`, slot]));
-    const bookedStarts = new Map(booked.map(slot => [`${slot.courtId}:${slot.time}`, slot]));
     preview = null;
     grid.innerHTML = courts.length && times.length ? `<table class="court-grid"><caption class="sr-only">${escape(dateLabel(data.date))}, freie Startzeiten für 60 Minuten</caption>
       <thead><tr><th scope="col">Platz</th>${times.map(time => `<th scope="col">${time}</th>`).join('')}</tr></thead>
       <tbody>${courts.map(court => `<tr><th scope="row">${escape(court.name)}</th>${times.map(time => {
         const slot = slots.get(`${court.id}:${time}`);
-        const bookedSlot = bookedStarts.get(`${court.id}:${time}`);
         const bookedCover = booked.find(item => item.courtId === court.id && minute(time) >= minute(item.time) && minute(time) < minute(item.time) + item.duration);
         const freeCovered = visible.some(item => item.courtId === court.id && minute(time) >= minute(item.time) && minute(time) < minute(item.time) + 60);
-        const choice = bookedSlot || slot;
+        const choice = bookedCover && isSelectableBooking(bookedCover) ? bookedCover : bookedCover ? null : slot;
+        const bookingLabel = bookedCover
+          ? `Platz bereits gebucht, ${court.name}, ${bookedCover.time} bis ${clock(bookedCover.end)}${bookedCover.matchLabel ? `, ${bookedCover.matchLabel}` : ''}` : '';
+        const bookingNumber = bookingMatchNumber(bookedCover);
+        const bookingCellIndex = bookedCover ? (minute(time) - minute(bookedCover.time)) / 30 : -1;
+        const bookingMarker = bookingNumber && bookingCellIndex < 2
+          ? `<span class="court-booking-match-number ${bookingCellIndex === 0 ? 'is-prefix' : 'is-number'}" aria-hidden="true">${bookingCellIndex === 0 ? 'P#' : escape(bookingNumber)}</span>` : '';
         const className = bookedCover
-          ? `is-booked${minute(time) === minute(bookedCover.time) ? ' is-booked-start' : ''}${minute(time) + 30 >= minute(bookedCover.time) + bookedCover.duration ? ' is-booked-end' : ''}`
+          ? `is-booked${bookedCover.matchId ? ' is-assigned' : ''}${minute(time) === minute(bookedCover.time) ? ' is-booked-start' : ''}${minute(time) + 30 >= minute(bookedCover.time) + bookedCover.duration ? ' is-booked-end' : ''}`
           : freeCovered ? 'is-free' : 'is-unavailable';
         return `<td data-court-cell="${escape(court.id)}" data-court-time="${time}" class="${className}">${choice
-          ? `<button type="button" class="court-slot" data-court-slot="${escape(choice.id)}" aria-pressed="false" aria-label="${escape(`${court.name}, ${time} bis ${clock(choice.end)}, ${choice.reserved ? 'bereits gebucht' : 'frei'}`)}"></button>`
-          : '<span class="sr-only">Nicht als Stundenbeginn verfügbar</span>'}</td>`;
+          ? `<button type="button" class="court-slot" data-court-slot="${escape(choice.id)}" aria-pressed="false" aria-label="${escape(choice.reserved ? bookingLabel : `${court.name}, ${time} bis ${clock(choice.end)}, frei`)}"></button>`
+          : `<span class="sr-only">${escape(bookingLabel || 'Nicht als Stundenbeginn verfügbar')}</span>`}${bookingMarker}</td>`;
       }).join('')}</tr>`).join('')}</tbody></table>` : '<p class="hint">Für diese Auswahl sind keine Plätze verfügbar.</p>';
     grid.style.minHeight = '';
     grid.scrollTop = scroll.top;
     grid.scrollLeft = scroll.left;
     if (focusId) [...grid.querySelectorAll('[data-court-slot]')].find(button => button.dataset.courtSlot === focusId)?.focus({ preventScroll: true });
     if (selected) {
-      const updated = [...visible, ...booked].find(slot => slot.id === selected.id && courts.some(court => court.id === slot.courtId));
+      const updated = [...visible, ...booked.filter(isSelectableBooking)].find(slot => slot.id === selected.id && courts.some(court => court.id === slot.courtId));
       setSelection(updated || null);
       if (!updated) status.textContent = 'Die ausgewählte Zeit ist nicht mehr verfügbar. Bitte wähle eine andere Zeit.';
     }
@@ -286,7 +316,7 @@
         revealBookingId = null;
       }
       if (!status.textContent && !selected
-        && !visibleSlots(result, hoursFilter).some(slot => result.courts.some(court => court.id === slot.courtId && court.location === filter))
+        && !visibleSlots(result, hoursFilter, visibleBookedSlots(result, hoursFilter)).some(slot => result.courts.some(court => court.id === slot.courtId && court.location === filter))
         && !visibleBookedSlots(result, hoursFilter).some(slot => result.courts.some(court => court.id === slot.courtId && court.location === filter))) {
         status.textContent = 'Für diese Auswahl sind keine freien Stunden verfügbar.';
       }

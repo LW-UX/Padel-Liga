@@ -4,7 +4,7 @@
 #court-availability-dialog h2 { margin-bottom: 0; }
 .court-controls, .court-footer-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .court-controls { justify-content: space-between; }
-.court-date-controls { display: grid; grid-template-columns: 40px 4.6rem 8rem 40px auto; align-items: center; gap: 16px; }
+.court-date-controls { display: grid; grid-template-columns: 40px 4.6rem 8rem 40px auto; align-items: center; gap: 8px; }
 .court-date-controls label { display: contents; font-size: var(--text-sm); color: var(--dim); }
 .court-date-controls [data-court-weekday] { min-width: 0; text-align: right; }
 .court-date-controls input { box-sizing: border-box; width: 8rem; min-width: 0; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--input-radius); padding: 8px; font: var(--text-sm) var(--font-body); }
@@ -23,14 +23,21 @@
 .court-grid-skeleton tbody th span { display: block; width: 72%; height: 0.7rem; border-radius: var(--radius-full); }
 .court-grid td.is-free { background: color-mix(in srgb, var(--positiv) 34%, var(--surface)); }
 .court-grid td.is-unavailable { background: transparent; }
-.court-grid td.is-booked { background: transparent; box-shadow: inset 0 2px var(--accent), inset 0 -2px var(--accent); }
-.court-grid td.is-booked-start { box-shadow: inset 2px 0 var(--accent), inset 0 2px var(--accent), inset 0 -2px var(--accent); }
-.court-grid td.is-booked-end { box-shadow: inset -2px 0 var(--accent), inset 0 2px var(--accent), inset 0 -2px var(--accent); }
 .court-grid td.is-preview { background: color-mix(in srgb, var(--accent) 55%, var(--surface)); }
 .court-grid td.is-selected { background: var(--accent); box-shadow: none; }
+/* Nur einer Partie zugeordnete Buchungen tragen die graue Passiv-Fläche. */
+.court-grid td.is-booked { background: transparent; box-shadow: inset 0 3px var(--accent), inset 0 -3px var(--accent); }
+.court-grid td.is-booked.is-assigned { background: var(--surface2); }
+.court-grid td.is-booked-start { box-shadow: inset 3px 0 var(--accent), inset 0 3px var(--accent), inset 0 -3px var(--accent); }
+.court-grid td.is-booked-end { box-shadow: inset -3px 0 var(--accent), inset 0 3px var(--accent), inset 0 -3px var(--accent); }
+.court-grid td.is-booked:not(.is-assigned).is-preview { background: color-mix(in srgb, var(--accent) 55%, var(--surface)); }
+.court-grid td.is-booked:not(.is-assigned).is-selected { background: var(--accent); box-shadow: none; }
+.court-booking-match-number { position: relative; z-index: 1; display: grid; place-items: center; box-sizing: border-box; width: 100%; height: 100%; color: var(--text); font: 600 var(--text-xs) var(--font-body); pointer-events: none; }
+.court-booking-match-number.is-prefix { justify-items: end; padding-right: 2px; }
+.court-booking-match-number.is-number { justify-items: start; padding-left: 2px; }
 .court-slot { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; cursor: var(--cursor-pointer); }
 .court-slot:hover { background: transparent; }
-.court-slot:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.court-slot:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
 .court-footer { display: grid; gap: 8px; }
 .court-footer p, #court-availability-dialog .hint { margin: 0; }
 .court-footer-actions { justify-content: flex-end; flex-wrap: nowrap; }
@@ -47,7 +54,7 @@
 .court-booking-inbox [data-court-booking-select][aria-pressed="true"] { border-color: var(--accent); }
 .court-booking-time { flex: 0 0 auto; }
 .court-booking-court { min-width: 0; margin-left: auto; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
-.court-booking-match-selection { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--accent); }
+.court-booking-match-selection { display: grid; gap: 10px; padding-top: 12px; }
 .court-booking-match-selection h4 { margin: 0; }
 .court-account-selection-options [data-court-match-select] { display: grid; gap: 10px; width: 100%; padding: 12px 14px; border-radius: var(--container-radius-sm); background: color-mix(in srgb, var(--surface) 33%, transparent); }
 .court-account-selection-options [data-court-match-select]:is(:hover, :focus-visible) { border-color: var(--accent) !important; box-shadow: inset 0 0 0 2px var(--accent) !important; }
