@@ -227,6 +227,7 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
   const matchName = getEventHeading(job);
   const training = isTrainingJob(job);
   const calendarSubject = training ? "Training – PadelLiga" : `${job.match_label} – PadelLiga ${job.season_label}`;
+  const calendarUpdateNotice = "Wird der Termin über die Webseite verschoben oder abgesagt, bekommst du automatisch eine Aktualisierung.";
   if (job.notification_type === "calendar_invitation") {
     const moved = calendar?.is_update ?? false;
     if (!moved && !training) {
@@ -235,7 +236,7 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
         subject: calendarSubject,
         intro: "Pack deine Sportsachen! Das nächste Padel-Match steht an.",
         body: `Die ${matchTitle} ist terminiert. Hier sind die Details:`,
-        afterDetails: "Wird der Termin über die Webseite verschoben oder abgesagt, bekommst du automatisch eine Aktualisierung.",
+        afterDetails: calendarUpdateNotice,
         action: linksToMatchPreview(job) ? "Partie ansehen" : "Zum Konto",
         matchName,
       };
@@ -247,7 +248,8 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
         : moved ? "Eure Partie wurde verschoben." : "Eure Partie ist terminiert.",
       body: moved
         ? "Die Kalendereinladung im Anhang ersetzt den bisherigen Termin in deinem Kalender."
-        : "Die Kalendereinladung im Anhang trägt den Termin in deinen Kalender ein. Wird er verschoben oder abgesagt, bekommst du automatisch eine Aktualisierung.",
+        : "Die Kalendereinladung im Anhang trägt den Termin in deinen Kalender ein.",
+      afterDetails: moved ? undefined : calendarUpdateNotice,
       action: linksToMatchPreview(job) ? "Partie ansehen" : "Zum Konto",
       matchName,
     };
