@@ -111,6 +111,12 @@ Empfangsprüfung DMARC bestehen. Fehlende/fehlgeschlagene Prüfung ergibt
   HTML-only wird mit `html-to-text` ohne Ausführen von Mailcode dekodiert.
   Mehrere Original-/Kalenderanhänge, unbekannte Formate, uneindeutige
   Zeitumstellungsstunden und widersprüchliche Angaben ändern nichts.
+- Eine normale erneute Weiterleitung kann im äußeren Betreff oder als eigene
+  Zeile oberhalb des Outlook-Kopfs `Partie <Nummer> | <Saison>` enthalten. Nur
+  dieser äußere Bereich wird als Anweisung gelesen; zitierter Originalinhalt
+  nie. Nach der transaktionalen Zuordnung ruft der Empfänger `racket-booking`
+  intern mit der Service-Rolle und dem bereits autorisierten Konto auf. Ein
+  vorübergehender Fehler fordert eine idempotente Resend-Wiederholung an.
 - Import und RPC akzeptieren genau 60 oder 90 Minuten. Andere Dauern liefern
   `unsupported_duration` zur Prüfung; sie werden nicht gekürzt.
 - Originalmails werden auf 2 MiB, Webhook-Anfragen auf 128 KiB begrenzt.

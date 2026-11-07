@@ -6,6 +6,7 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const migration = fs.readFileSync(path.join(root, 'supabase/migrations/20261106190000_court_booking_workflow.sql'), 'utf8');
+const assignmentMigration = fs.readFileSync(path.join(root, 'supabase/migrations/20261107120000_booking_mail_match_assignment.sql'), 'utf8');
 const account = fs.readFileSync(path.join(root, 'js/account.js'), 'utf8');
 const availability = fs.readFileSync(path.join(root, 'js/court-availability.js'), 'utf8');
 const availabilityStyle = fs.readFileSync(path.join(root, 'court-availability.css'), 'utf8');
@@ -22,6 +23,16 @@ test('mail events are service-only, ordered and idempotent by provider booking i
   assert.match(migration, /booking\.cancelled_at is null[\s\S]*lower\(trim\(booking\.court_name\)\)[\s\S]*lower\(trim\(booking\.organizer\)\)[\s\S]*booking\.starts_at = p_starts_at/);
   assert.match(migration, /grant execute on function public\.record_court_booking[\s\S]*to service_role/);
   assert.match(migration, /revoke all on private\.court_bookings from public, anon, authenticated/);
+});
+
+test('an explicit repeated forward assigns only one authorized open match', () => {
+  assert.match(assignmentMigration, /record_court_booking_with_match/);
+  assert.match(assignmentMigration, /account\.email_confirmed_at is not null/);
+  assert.match(assignmentMigration, /forwarder\.app_role = 'admin'[\s\S]*public\.match_players/);
+  assert.match(assignmentMigration, /candidate_count > 1[\s\S]*'ambiguous_match'/);
+  assert.match(assignmentMigration, /set match_id = selected_match\.id,[\s\S]*assigned_by = forwarder\.id/);
+  assert.match(assignmentMigration, /set match_at = selected_booking\.starts_at/);
+  assert.match(assignmentMigration, /grant execute on function public\.record_court_booking_with_match[\s\S]*to service_role/);
 });
 
 test('cancelled bookings disappear while exactly one shared participant action remains', () => {

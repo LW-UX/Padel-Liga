@@ -1,8 +1,10 @@
 # Schnittstelle für Playtomic-Buchungsmails
 
 Die Mailverarbeitung ist von der Konto- und Terminierungslogik getrennt. Sie
-übergibt ausschließlich normalisierte Buchungsereignisse an die service-role-RPC
-`record_court_booking`.
+übergibt ausschließlich normalisierte Buchungsereignisse und eine gegebenenfalls
+erkannte äußere Zuordnungsanweisung an die service-role-RPC
+`record_court_booking_with_match`. Diese verwendet für den eigentlichen Import
+weiterhin `record_court_booking`.
 
 ## Eingabe
 
@@ -24,6 +26,12 @@ Die Mailverarbeitung ist von der Konto- und Terminierungslogik getrennt. Sie
 - `p_source_precision_seconds`: `1` für Originalheader/Kalenderzeitpunkt,
   `60` für die minutengenaue deutsche Outlook-Datumszeile; Standard ist `1`.
   Zeitlich überlappende, widersprüchliche Ereignisse benötigen eine Prüfung.
+- `p_forwarder_email`: authentifizierter äußerer Absender einer normalen
+  Weiterleitung; bei einer Playtomic-Umleitung `null`.
+- `p_match_number` und `p_season_hint`: ausschließlich aus der äußeren
+  Anweisung `Partie <Nummer> | <Saison>` gelesen. Ohne Anweisung sind beide
+  Werte `null`; die Saison darf fehlen und wird dann serverseitig nur bei einem
+  einzigen berechtigten Treffer akzeptiert.
 
 Der Aufruf benötigt die Supabase `service_role`. Vollständiger Mailtext,
 Absender, Empfänger und Anhänge werden nicht in der Liga-Datenbank gespeichert.
@@ -32,6 +40,11 @@ Absender, Empfänger und Anhänge werden nicht in der Liga-Datenbank gespeichert
 
 - Eine aktive Buchung erscheint angemeldeten Spielern als zuordenbarer Slot.
 - Beim Terminieren wird sie atomar genau einer Partie zugeordnet.
+- Eine erneut weitergeleitete Bestätigung mit eindeutiger Zuordnungsanweisung
+  darf Import, Verknüpfung und Terminierung in derselben Transaktion erledigen.
+  Die Datenbank ermittelt das bestätigte Konto erneut und erlaubt dies nur
+  beteiligten Spielern oder Admins. Erwartete Konflikte lassen den Import
+  bestehen und die Buchung unverknüpft.
 - Eine Stornierung entfernt den Slot sofort aus allen sichtbaren Auswahlen.
 - Enthält die Stornierung keine Playtomic-ID, wird sie nur bei genau einer
   aktiven Buchung desselben Platzes, Buchenden und absoluten Zeitfensters

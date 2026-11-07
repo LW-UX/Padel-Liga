@@ -319,6 +319,30 @@ Deno.serve(async (request) => {
   }
   if (!authorization) return jsonResponse({ error: "Nicht angemeldet." }, 401);
 
+  const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
+  const body = await request.json().catch(() => ({})) as Record<string, unknown>;
+  const bearer = authorization.match(/^Bearer\s+(.+)$/i)?.[1] || "";
+
+  // The signed booking-mail receiver may reconcile exactly the match it has
+  // just assigned. The service key never gains access to browser actions.
+  if (bearer === serviceRoleKey) {
+    if (body.action !== "sync-internal") return jsonResponse({ error: "Keine Berechtigung." }, 403);
+    const actorUserId = String(body.actorUserId || "");
+    if (!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(actorUserId)) {
+      return jsonResponse({ error: "Zugehöriges Konto fehlt." }, 400);
+    }
+    const subject = readSubject(body);
+    if (!subject || subject.type !== "match") return jsonResponse({ error: "Partie fehlt." }, 400);
+    try {
+      const desired = await resolveSubject(admin, subject, actorUserId);
+      if (desired === "forbidden") return jsonResponse({ error: "Keine Berechtigung für diese Schlägerbuchung." }, 403);
+      return jsonResponse(await reconcile(admin, subject, desired));
+    } catch (error) {
+      console.error("Interne Schlägerbuchung nicht möglich", error instanceof Error ? error.message : error);
+      return jsonResponse({ state: "unavailable" });
+    }
+  }
+
   const userClient = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authorization } },
     auth: { persistSession: false },
@@ -326,9 +350,6 @@ Deno.serve(async (request) => {
   const { data: userData, error: userError } = await userClient.auth.getUser();
   if (userError || !userData?.user) return jsonResponse({ error: "Nicht angemeldet." }, 401);
   if (!userData.user.email_confirmed_at) return jsonResponse({ error: "Bitte zuerst die E-Mail-Adresse bestätigen." }, 403);
-
-  const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
-  const body = await request.json().catch(() => ({})) as Record<string, unknown>;
 
   try {
     if (body.action === "check") return await check(admin, body, userData.user.id);

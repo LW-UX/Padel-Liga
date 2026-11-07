@@ -96,6 +96,14 @@ test('die Edge Function liest Partien und Trainings nur über die abgesicherte D
   assert.match(subjectMigration, /array\['ludi_gmail', 'ludi_gmx', 'ludi_ionos', 'test_net'\]/);
 });
 
+test('nur der interne Mail-Empfänger darf eine automatisch zugeordnete Partie synchronisieren', () => {
+  assert.match(edgeFunction, /bearer === serviceRoleKey/);
+  assert.match(edgeFunction, /body\.action !== "sync-internal"/);
+  assert.match(edgeFunction, /subject\.type !== "match"/);
+  assert.match(edgeFunction, /resolveSubject\(admin, subject, actorUserId\)/);
+  assert.match(edgeFunction, /desired === "forbidden"/);
+});
+
 test('doppelt gemeldete Datums- und Uhrzeitänderungen beenden die Live-Prüfung', async () => {
   const vm = require('node:vm');
   const account = fs.readFileSync(path.join(root, 'js', 'account.js'), 'utf8');

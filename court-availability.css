@@ -51,9 +51,17 @@
 .court-appointment { position: absolute; box-sizing: border-box; height: 15px; padding: 0 3px; overflow: hidden; border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: color-mix(in srgb, var(--surface2) 45%, transparent); color: var(--muted); font: var(--text-xs) var(--font-body); line-height: 15px; text-align: center; text-overflow: ellipsis; white-space: nowrap; cursor: var(--cursor-help); }
 .court-appointment:focus-visible { outline: 1px solid var(--dim); outline-offset: -1px; }
 .court-footer p, #court-availability-dialog .hint { margin: 0; }
+.court-footer .hint { font-size: var(--text-xs); }
 .court-footer-actions { justify-content: flex-end; flex-wrap: nowrap; }
-.court-selection { min-width: 0; color: var(--text); font: var(--text-sm) var(--font-body); text-align: right; }
+.court-footer-message { display: grid; min-width: 0; margin-right: auto; gap: 4px; }
+.court-selection { min-width: 0; color: var(--text); font: var(--text-sm) var(--font-body); text-align: left; }
 .court-selection[aria-invalid="true"] { color: var(--negativ); }
+.court-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; color: var(--dim); font: var(--text-xs) var(--font-body); }
+.court-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.court-legend-swatch { box-sizing: border-box; width: 18px; height: 18px; border: 1px solid var(--border); background: transparent; }
+.court-legend-swatch.is-free { background: color-mix(in srgb, var(--positiv) 34%, var(--surface)); }
+.court-legend-swatch.is-booked { box-shadow: inset 0 0 0 3px var(--accent); }
+.court-legend-swatch.is-booked.is-assigned { background: var(--surface2); }
 .court-load-state { position: absolute; top: 50%; left: 50%; z-index: 4; box-sizing: border-box; max-width: calc(100% - 32px); padding: 12px 16px; transform: translate(-50%, -50%); border: 1px solid var(--border); border-radius: var(--container-radius-xs); background: var(--surface); text-align: center; }
 .court-load-state:empty, .court-selection:empty { display: none; }
 .court-account-selection { display: grid; gap: 12px; border: 1px solid var(--border); border-radius: var(--container-radius-sm); padding: 12px; margin-bottom: 16px; }
@@ -80,10 +88,10 @@
 body:has(#court-availability-dialog[open]) { overflow: hidden; }
 @media (max-width: 768px) {
   #court-availability-dialog { width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh; }
-  #court-availability-dialog .court-dialog-card { height: 100%; max-height: 100dvh; padding: 20px 12px; }
-  .court-grid-stage { flex: 1; }
-  .court-grid-wrap { height: 100%; max-height: none; }
-  .court-grid th:first-child { width: 64px; min-width: 64px; max-width: 64px; }
+  #court-availability-dialog .court-dialog-card { height: 100%; max-height: 100dvh; overflow-y: auto; padding: 20px 12px; }
+  .court-grid-stage { flex: none; }
+  .court-grid-wrap { height: auto; max-height: none; overflow-x: auto; overflow-y: hidden; }
+  .court-grid th:first-child { width: 48px; min-width: 48px; max-width: 48px; }
   .court-name-full { display: none; }
   .court-name-short { display: inline; }
   .court-controls { align-items: flex-start; }

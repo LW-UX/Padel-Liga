@@ -38,7 +38,8 @@ test('signierter Eingang lädt Mail und schreibt ausschließlich normalisierte R
   assert.equal((await ctx.send()).body.status, 'processed');
   assert.deepEqual(ctx.writes, [{ p_provider_booking_id: null, p_court_resource_id: null,
     p_court_name: 'Indoor H2', p_organizer: 'Testgruppe', p_starts_at: '2026-10-06T10:30:00.000Z',
-    p_ends_at: '2026-10-06T11:30:00.000Z', p_cancelled: false, p_source_occurred_at: '2026-10-01T08:55:40.000Z', p_source_precision_seconds: 1 }]);
+    p_ends_at: '2026-10-06T11:30:00.000Z', p_cancelled: false, p_source_occurred_at: '2026-10-01T08:55:40.000Z',
+    p_source_precision_seconds: 1, p_forwarder_email: 'booker@example.com', p_match_number: null, p_season_hint: null }]);
   assert.equal(ctx.requests[0].options.headers.Authorization, 'Bearer test-key');
   assert.equal(ctx.requests[1].options.headers, undefined, 'kein API-Key am Download');
 });
@@ -124,6 +125,50 @@ test('deutscher Outlook-Weiterleitungskopf liefert Originaldatum und minütliche
   assert.equal((await ctx.send()).body.status, 'processed');
   assert.equal(ctx.writes[0].p_source_occurred_at, '2026-10-01T08:56:00.000Z');
   assert.equal(ctx.writes[0].p_source_precision_seconds, 60);
+});
+
+test('äußerer Betreff oder eigene Zeile ordnet eine erneut weitergeleitete Buchung eindeutig zu', async () => {
+  const { readMatchAssignmentReference } = await modulePromise;
+  assert.deepEqual(readMatchAssignmentReference('WG: Playtomic · Partie 12 | Winter 2026', ''), {
+    matchNumber: 12, seasonHint: 'Winter 2026'
+  });
+  assert.deepEqual(readMatchAssignmentReference('WG: Playtomic', `Partie Nr. 7 | 2026-winter\n\nVon: Playtomic <no-reply@playtomic.io>\nPartie 99`), {
+    matchNumber: 7, seasonHint: '2026-winter'
+  });
+  assert.deepEqual(readMatchAssignmentReference('Partie 7', 'Partie 7 | Winter 2026'), {
+    matchNumber: 7, seasonHint: 'Winter 2026'
+  });
+
+  const forwarded = { ...mail(), from: { address: 'booker@example.com' },
+    subject: 'WG: Playtomic - Buchungsbestätigung · Partie 12 | Winter 2026',
+    text: `Von: Playtomic <no-reply@playtomic.io>\nDatum: Donnerstag, 1. Oktober 2026 um 10:56\nAn: Test <booker@example.com>\nBetreff: Playtomic - Buchungsbestätigung / Ticket\n\n${text}` };
+  const syncs = [];
+  const ctx = await setup({ deps: {
+    parseMime: async () => forwarded,
+    record: async params => {
+      ctx.writes.push(params);
+      return { bookingId: 4, status: 'active', assignment: 'assigned', matchId: 'winter-2026-partie-12',
+        actorUserId: '00000000-0000-0000-0000-000000000012' };
+    },
+    syncRacket: async (...args) => { syncs.push(args); return { state: 'booked' }; },
+  } });
+  const response = await ctx.send();
+  assert.equal(ctx.writes[0].p_forwarder_email, 'booker@example.com');
+  assert.equal(ctx.writes[0].p_match_number, 12);
+  assert.equal(ctx.writes[0].p_season_hint, 'Winter 2026');
+  assert.deepEqual(syncs, [['winter-2026-partie-12', '00000000-0000-0000-0000-000000000012']]);
+  assert.equal(response.body.result.actorUserId, undefined, 'interne Konto-ID verlässt den Webhook nicht');
+  assert.equal(response.body.racket.state, 'booked');
+});
+
+test('widersprüchliche Partienummern importieren nur die Buchung und lösen keine Zuordnung aus', async () => {
+  const forwarded = { ...mail(), from: { address: 'booker@example.com' }, subject: 'Partie 12 | Winter 2026',
+    text: `Partie 13 | Winter 2026\nVon: Playtomic <no-reply@playtomic.io>\nDatum: Donnerstag, 1. Oktober 2026 um 10:56\nAn: Test <booker@example.com>\nBetreff: Playtomic - Buchungsbestätigung / Ticket\n\n${text}` };
+  const ctx = await setup({ deps: { parseMime: async () => forwarded,
+    record: async params => { ctx.writes.push(params); return { status: 'active', assignment: 'not_requested' }; } } });
+  const response = await ctx.send();
+  assert.equal(ctx.writes[0].p_match_number, null);
+  assert.equal(response.body.result.assignment, 'invalid_reference');
 });
 
 test('Outlook-Stornierung und Buchung stimmen trotz verspäteter Weiterleitung im Slot überein', async () => {

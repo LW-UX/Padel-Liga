@@ -38,8 +38,24 @@ Deno.serve(createBookingWebhook(config, {
     return data === true;
   },
   record: async params => {
-    const { data, error } = await admin().rpc("record_court_booking", params);
+    const { data, error } = await admin().rpc("record_court_booking_with_match", params);
     if (error) throw new Error("booking_storage_unavailable");
     return data;
+  },
+  syncRacket: async (matchId, actorUserId) => {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    const response = await fetch(`${supabaseUrl}/functions/v1/racket-booking`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${serviceRoleKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "sync-internal", subjectType: "match", subjectId: matchId, actorUserId }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!response.ok) throw new Error("racket_sync_unavailable");
+    const result = await response.json();
+    if (["failed", "unavailable"].includes(String(result?.state || ""))) {
+      throw new Error("racket_sync_unavailable");
+    }
+    return result;
   },
 }));

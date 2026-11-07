@@ -109,7 +109,7 @@
   dialog.setAttribute('aria-labelledby', 'court-availability-title');
   dialog.innerHTML = `<div class="dialog-card court-dialog-card">
     <button class="secondary-button modal-close-button" type="button" data-court-close aria-label="Freie Plätze schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
-    <header><div class="eyebrow" data-court-context></div><h2 id="court-availability-title">Freie Plätze · Lucky Star Padel</h2></header>
+    <header><div class="eyebrow" data-court-context></div><h2 id="court-availability-title">Lucky Star Padel · Freie Plätze</h2></header>
     <div class="court-controls">
       <div class="court-date-controls"><button class="secondary-button detail-view-step" type="button" data-court-day="-1" aria-label="Vorheriger Tag"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 18-6-6 6-6"></path></svg></button>
         <label><span data-court-weekday aria-hidden="true">Wochentag</span><input type="date" data-court-date aria-label="Datum" required></label>
@@ -124,11 +124,17 @@
       <div class="court-grid-wrap" data-court-grid tabindex="0" role="region" aria-label="Plätze und Uhrzeiten; freie Stunden auswählen"></div>
     </div>
     <footer class="court-footer">
-      <p class="hint" data-court-racket-status role="status" aria-live="polite" hidden></p>
-      <p class="hint">Markierte Felder kennzeichnen bereits offiziell gebuchte Plätze. Du kannst sie hier auswählen und einer Partie zuordnen. Neue Platzbuchungen sind in dieser Ansicht nicht möglich; sie erfolgen weiterhin über das Hanako Leben Squad oder Ludwig. Partien kannst du hier dennoch terminieren, ohne dadurch einen Platz zu buchen.</p>
-      <div class="court-footer-actions"><div class="court-selection" data-court-selection role="status" aria-live="polite" aria-invalid="false"></div>
+      <div class="court-footer-actions"><div class="court-footer-message"><div class="court-selection" data-court-selection role="status" aria-live="polite" aria-invalid="false"></div>
+        <p class="hint" data-court-racket-status role="status" aria-live="polite" hidden></p></div>
         <button type="button" class="primary-button" data-court-apply hidden>Uhrzeit übernehmen</button>
         <button type="button" class="text-link" data-court-account>Partie auswählen</button></div>
+      <div class="court-legend" aria-label="Legende der Platzbelegung">
+        <span class="court-legend-item"><span class="court-legend-swatch is-unavailable" aria-hidden="true"></span>Belegt</span>
+        <span class="court-legend-item"><span class="court-legend-swatch is-free" aria-hidden="true"></span>Frei</span>
+        <span class="court-legend-item"><span class="court-legend-swatch is-booked" aria-hidden="true"></span>Gebucht</span>
+        <span class="court-legend-item"><span class="court-legend-swatch is-booked is-assigned" aria-hidden="true"></span>Gebucht + andere Partie</span>
+      </div>
+      <p class="hint">Einen gebuchten Platz kannst du hier auswählen und einer Partie zuordnen. Neue Platzbuchungen sind in dieser Ansicht nicht möglich; sie erfolgen weiterhin über das Hanako Leben Squad oder Ludwig. Partien kannst du hier dennoch terminieren, ohne dadurch einen Platz zu buchen.</p>
     </footer>
     <div id="court-racket-tooltip" class="court-racket-tooltip" role="tooltip" hidden>${racketHint}</div>
   </div>`;

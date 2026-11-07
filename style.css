@@ -255,11 +255,12 @@
     /* ── INITIAL LOADING SKELETONS ── */
     .loading-skeleton {
       --skeleton-base: color-mix(in srgb, var(--surface2) 78%, var(--border));
-      --skeleton-highlight: color-mix(in srgb, var(--text) 11%, var(--surface2));
     }
     .loading-skeleton span,
-    .loading-skeleton li::before {
+    .loading-skeleton li::before,
+    .loading-skeleton:empty {
       background: var(--skeleton-base);
+      animation: skeleton-pulse 1.15s ease-in-out infinite;
     }
     .skeleton-pill {
       display: inline-block;
@@ -341,13 +342,11 @@
     }
     .skeleton-short-info li:nth-child(2) span { width: 72%; }
     .skeleton-short-info li:nth-child(3) span { width: 82%; }
-    @keyframes skeleton-shimmer {
-      from { background-position: 100% 0; }
-      to { background-position: -120% 0; }
-    }
+    @keyframes skeleton-pulse { 50% { opacity: 0.45; } }
     @media (prefers-reduced-motion: reduce) {
       .loading-skeleton span,
       .loading-skeleton li::before,
+      .loading-skeleton:empty,
       .live-overview-poll-swap { animation: none; }
       .info-menu,
       .info-menu-chevron { transition: none !important; }

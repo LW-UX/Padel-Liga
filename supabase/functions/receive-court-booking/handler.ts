@@ -10,6 +10,7 @@ type Dependencies = {
   verify: (body: string, headers: Record<string, string>, secret: string) => unknown;
   parseMime: (raw: Uint8Array) => Promise<MimeMail>;
   record: (params: Record<string, unknown>) => Promise<unknown>;
+  syncRacket?: (matchId: string, actorUserId: string) => Promise<unknown>;
   hasRegisteredEmail?: (emails: string[]) => Promise<boolean>;
   fetch: typeof fetch;
 };
@@ -20,6 +21,30 @@ const json = (value: unknown, status = 200) => new Response(JSON.stringify(value
 const address = (value: string) => (value.match(/<([^<>]+)>/)?.[1] || value).trim().toLowerCase();
 const bytes = (value: ArrayBuffer | Uint8Array | string) => typeof value === "string"
   ? new TextEncoder().encode(value) : new Uint8Array(value);
+
+export type MatchAssignmentReference = { matchNumber: number; seasonHint: string | null };
+
+// Only the outer subject and the note above an Outlook forward are commands.
+// The quoted Playtomic mail remains booking evidence and can never instruct an
+// assignment by mentioning an unrelated match in its original content.
+export function readMatchAssignmentReference(subject = "", text = ""): MatchAssignmentReference | null {
+  const normalizedText = text.normalize("NFC").replace(/\r\n?/g, "\n");
+  const firstForwardHeader = normalizedText.search(/^Von:[ \t]*/m);
+  const outerNote = firstForwardHeader < 0 ? normalizedText : normalizedText.slice(0, firstForwardHeader);
+  const input = `${subject.normalize("NFC")}\n${outerNote}`;
+  const pattern = /\bPartie\s*(?:Nr\.?\s*)?#?(\d{1,3})\b(?:\s*(?:[|·;,]\s*|\s+)(?:Saison\s*:?\s*)?((?:Winter|Sommer|Test)\s+20\d{2}|20\d{2}-(?:winter|sommer|test)|Cup\s+20\d{2}|20\d{2}-cup))?/giu;
+  const references = [...input.matchAll(pattern)].map(match => ({
+    matchNumber: Number(match[1]),
+    seasonHint: match[2]?.trim() || null,
+  })).filter(reference => reference.matchNumber > 0);
+  if (!references.length) return null;
+  const numbers = new Set(references.map(reference => reference.matchNumber));
+  const seasonHints = new Map(references.filter(reference => reference.seasonHint).map(reference => [
+    reference.seasonHint!.toLocaleLowerCase("de-DE"), reference.seasonHint!,
+  ]));
+  if (numbers.size !== 1 || seasonHints.size > 1) throw new Error("ambiguous_match_reference");
+  return { matchNumber: references[0].matchNumber, seasonHint: [...seasonHints.values()][0] || null };
+}
 
 async function limitedBody(response: Response, limit: number) {
   if (Number(response.headers.get("content-length")) > limit) throw new Error("too_large");
@@ -116,6 +141,15 @@ export function createBookingWebhook(config: Config, deps: Dependencies) {
       const response = await deps.fetch(url.toString(), { redirect: "error", signal: AbortSignal.timeout(15000) });
       if (!response.ok) throw new Error("raw_unavailable");
       let mail = await deps.parseMime(await limitedBody(response, MAX_BYTES));
+      let assignmentReference: MatchAssignmentReference | null = null;
+      let invalidAssignmentReference = false;
+      if (sender !== "no-reply@playtomic.io") {
+        try {
+          assignmentReference = readMatchAssignmentReference(mail.subject, mail.text);
+        } catch {
+          invalidAssignmentReference = true;
+        }
+      }
       if (sender === "no-reply@playtomic.io") {
         // Redirects retain the original recipient. Accept only Playtomic mail
         // originally addressed to an approved/registered recipient, not mail
@@ -154,10 +188,25 @@ export function createBookingWebhook(config: Config, deps: Dependencies) {
         params = { p_provider_booking_id: booking.providerId, p_court_resource_id: null,
           p_court_name: booking.court, p_organizer: booking.organizer,
           p_starts_at: start, p_ends_at: end, p_cancelled: booking.state === "cancelled",
-          p_source_occurred_at: source.occurredAt, p_source_precision_seconds: source.precisionSeconds };
+          p_source_occurred_at: source.occurredAt, p_source_precision_seconds: source.precisionSeconds,
+          p_forwarder_email: sender === "no-reply@playtomic.io" ? null : sender,
+          p_match_number: assignmentReference?.matchNumber ?? null,
+          p_season_hint: assignmentReference?.seasonHint ?? null };
       } catch { return json({ status: "needs_review", reason: "mail_format_or_original_date" }); }
-      const result = await deps.record(params);
-      return json({ status: "processed", result });
+      const result = await deps.record(params) as Record<string, unknown> | null;
+      const actorUserId = typeof result?.actorUserId === "string" ? result.actorUserId : null;
+      const matchId = typeof result?.matchId === "string" ? result.matchId : null;
+      let racket: unknown;
+      if (deps.syncRacket && actorUserId && matchId
+        && ["assigned", "already_assigned"].includes(String(result?.assignment || ""))) {
+        racket = await deps.syncRacket(matchId, actorUserId);
+      }
+      const publicResult = result ? { ...result } : result;
+      if (publicResult) {
+        delete publicResult.actorUserId;
+        if (invalidAssignmentReference) publicResult.assignment = "invalid_reference";
+      }
+      return json({ status: "processed", result: publicResult, ...(racket === undefined ? {} : { racket }) });
     } catch {
       // Do not expose/log API errors, signed download URLs, mail bodies or keys.
       // Non-2xx makes Resend retry transient API/database failures.
