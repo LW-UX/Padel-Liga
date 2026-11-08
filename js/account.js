@@ -80,6 +80,7 @@
   let playerToolsTimer = null;
   const PLAYER_TOOLS_MAX_AGE = 10 * 60 * 1000;
   let unscheduleTrigger = null;
+  let trainingDeleteTrigger = null;
   let unrateTrigger = null;
   let accountMessageTimer = null;
   let accountTaskPromptTarget = null;
@@ -1916,6 +1917,20 @@
       .map(input => String(input.value || ''));
   }
 
+  function syncTrainingPlayerPickerOptions(form = document) {
+    const selectedPlayerIds = getTrainingParticipantIds(form).filter(Boolean);
+    form.querySelectorAll('[data-training-player-fields] [data-training-picker]').forEach(picker => {
+      const currentValue = String(picker.querySelector('input[name="playerId"]')?.value || '');
+      picker.querySelectorAll('[data-training-picker-value]').forEach(option => {
+        const value = String(option.dataset.trainingPickerValue || '');
+        option.disabled = Boolean(value
+          && value !== TRAINING_GUEST_OPTION
+          && value !== currentValue
+          && selectedPlayerIds.includes(value));
+      });
+    });
+  }
+
   function getTrainingGuestNames(form = document) {
     return Object.fromEntries([...form.querySelectorAll('[data-training-guest-name]')]
       .map(input => [String(input.dataset.trainingGuestName), String(input.value || '').trim()])
@@ -1973,6 +1988,7 @@
         playerField: true
       });
     }).join('');
+    syncTrainingPlayerPickerOptions(form);
   }
 
   function renderTrainingForm(playerIds = null, roundValues = [], form = document.getElementById('training-form'), guestNames = {}) {
@@ -2137,6 +2153,7 @@
   }
 
   function selectTrainingPickerOption(option) {
+    if (option.disabled) return;
     const picker = option.closest('[data-training-picker]');
     const restoreToggleFocus = picker?.classList.contains('open');
     const form = picker?.closest('.training-form');
@@ -2159,6 +2176,7 @@
       return;
     }
     setTrainingPickerValue(picker, option.dataset.trainingPickerValue);
+    if (form && inputName === 'playerId') syncTrainingPlayerPickerOptions(form);
     closeTrainingPickerMenus();
     presetScheduleMinute(picker, inputName);
     picker?.closest('[data-schedule-time-field]')?.dispatchEvent(new Event('change', { bubbles: true }));
@@ -3431,6 +3449,19 @@ Dein Hanako-Leben-Squad`;
     document.getElementById('unschedule-match-dialog')?.close();
   }
 
+  function openTrainingDeleteDialog(button) {
+    const dialog = document.getElementById('delete-training-dialog');
+    if (!dialog) return;
+    dialog.dataset.sessionId = button.dataset.trainingDelete;
+    trainingDeleteTrigger = button;
+    if (!dialog.open) dialog.showModal();
+    dialog.querySelector('.secondary-button:not(.modal-close-button)[data-training-delete-close]')?.focus();
+  }
+
+  function closeTrainingDeleteDialog() {
+    document.getElementById('delete-training-dialog')?.close();
+  }
+
   function openUnrateDialog(button) {
     const dialog = document.getElementById('unrate-match-dialog');
     if (!dialog) return;
@@ -3900,15 +3931,21 @@ Dein Hanako-Leben-Squad`;
     window.dispatchEvent(new CustomEvent('padel:training-data-changed'));
   }
 
-  async function deleteScheduledTraining(sessionId) {
-    if (!window.confirm('Soll dieser Trainingstermin wirklich gelöscht werden?')) return;
+  async function deleteScheduledTraining(sessionId, button) {
+    if (button) button.disabled = true;
     setAuthMessage('Trainingstermin wird gelöscht …');
-    const { error } = await state.client.rpc('delete_scheduled_training', { p_session_id: Number(sessionId) });
-    if (error) return setAuthMessage(getFriendlyAuthError(error), 'error');
-    await syncRacketBooking('training', sessionId);
-    setAuthMessage('Trainingstermin wurde gelöscht.', 'success');
-    await refresh();
-    window.dispatchEvent(new CustomEvent('padel:training-data-changed'));
+    try {
+      const { error } = await state.client.rpc('delete_scheduled_training', { p_session_id: Number(sessionId) });
+      if (error) throw error;
+      await syncRacketBooking('training', sessionId);
+      setAuthMessage('Trainingstermin wurde gelöscht.', 'success');
+      await refresh();
+      window.dispatchEvent(new CustomEvent('padel:training-data-changed'));
+    } catch (error) {
+      setAuthMessage(getFriendlyAuthError(error), 'error');
+    } finally {
+      if (button) button.disabled = false;
+    }
   }
 
   function bindEvents() {
@@ -4253,7 +4290,19 @@ Dein Hanako-Leben-Squad`;
       }
       const deleteTrainingButton = event.target.closest('[data-training-delete]');
       if (deleteTrainingButton) {
-        await deleteScheduledTraining(deleteTrainingButton.dataset.trainingDelete);
+        openTrainingDeleteDialog(deleteTrainingButton);
+        return;
+      }
+      if (event.target.closest('[data-training-delete-close]')) {
+        closeTrainingDeleteDialog();
+        return;
+      }
+      if (event.target.closest('[data-training-delete-confirm]')) {
+        const dialog = document.getElementById('delete-training-dialog');
+        const sessionId = dialog?.dataset.sessionId;
+        const trigger = trainingDeleteTrigger;
+        closeTrainingDeleteDialog();
+        if (sessionId) await deleteScheduledTraining(sessionId, trigger);
         return;
       }
       const editTrainingButton = event.target.closest('[data-training-edit]');
@@ -4362,7 +4411,7 @@ Dein Hanako-Leben-Squad`;
       if (trainingPickerSearch) {
         const picker = trainingPickerSearch.closest('[data-training-picker]');
         const visibleOptions = [...picker.querySelectorAll('[data-training-picker-value]')]
-          .filter(option => !option.hidden);
+          .filter(option => !option.hidden && !option.disabled);
         if (event.key === 'Escape') {
           event.preventDefault();
           closeTrainingPickerMenus();
@@ -4424,6 +4473,13 @@ Dein Hanako-Leben-Squad`;
     document.getElementById('unschedule-match-dialog')?.addEventListener('close', event => {
       delete event.currentTarget.dataset.matchId;
       unscheduleTrigger = null;
+    });
+    document.getElementById('delete-training-dialog')?.addEventListener('click', event => {
+      if (event.target === event.currentTarget) closeTrainingDeleteDialog();
+    });
+    document.getElementById('delete-training-dialog')?.addEventListener('close', event => {
+      delete event.currentTarget.dataset.sessionId;
+      trainingDeleteTrigger = null;
     });
     document.getElementById('unrate-match-dialog')?.addEventListener('click', event => {
       if (event.target === event.currentTarget) closeUnrateDialog();

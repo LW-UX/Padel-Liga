@@ -136,11 +136,15 @@ test('calendar mail only announces a move when an invitation was really sent', (
   assert.match(edgeFunction, /const moved = calendar\?\.is_update \?\? false;/);
 });
 
-test('match mails share the match-card team layout and new invitations explain updates below the button', () => {
+test('match and training mails share the invitation tone without mentioning attachments', () => {
   assert.match(edgeFunction, /intro: "Pack deine Sportsachen! Das nächste Padel-Match steht an\."/);
+  assert.match(edgeFunction, /"Pack deine Sportsachen! Das nächste Padel-Training steht an\."/);
   assert.match(edgeFunction, /body: `Die \$\{matchTitle\} ist terminiert\. Hier sind die Details:`/);
+  assert.match(edgeFunction, /"Euer Training ist terminiert\. Hier sind die Details:"/);
   assert.match(edgeFunction, /const calendarUpdateNotice = "Wird der Termin über die Webseite verschoben oder abgesagt/);
-  assert.match(edgeFunction, /body: moved[\s\S]*: "Die Kalendereinladung im Anhang trägt den Termin in deinen Kalender ein\."[\s\S]*afterDetails: moved \? undefined : calendarUpdateNotice/);
+  assert.match(edgeFunction, /body: "Der bisherige Termin in deinem Kalender wurde aktualisiert\."/);
+  assert.match(edgeFunction, /\? "Du kannst den Termin aus deinem Kalender entfernen\."/);
+  assert.doesNotMatch(edgeFunction, /Kalendereinladung im Anhang|Absage im Anhang/);
   assert.match(edgeFunction, /getTeamMembers\(label\)\.join\(" & "\)/);
   assert.match(edgeFunction, /const calendarSubject = training \? "Training – PadelLiga" : `\$\{getCalendarTitle\(job\)\}/);
   assert.match(edgeFunction, /<span style=\"color:#7E828B;font-weight:normal;\">&amp;<\/span>/);

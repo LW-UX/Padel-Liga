@@ -236,11 +236,15 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
   const calendarUpdateNotice = "Wird der Termin über die Webseite verschoben oder abgesagt, bekommst du automatisch eine Aktualisierung.";
   if (job.notification_type === "calendar_invitation") {
     const moved = calendar?.is_update ?? false;
-    if (!moved && !training) {
+    if (!moved) {
       return {
         subject: calendarSubject,
-        intro: "Pack deine Sportsachen! Das nächste Padel-Match steht an.",
-        body: `Die ${matchTitle} ist terminiert. Hier sind die Details:`,
+        intro: training
+          ? "Pack deine Sportsachen! Das nächste Padel-Training steht an."
+          : "Pack deine Sportsachen! Das nächste Padel-Match steht an.",
+        body: training
+          ? "Euer Training ist terminiert. Hier sind die Details:"
+          : `Die ${matchTitle} ist terminiert. Hier sind die Details:`,
         afterDetails: calendarUpdateNotice,
         action: linksToMatchPreview(job) ? "Partie ansehen" : "Zum Konto",
         matchName,
@@ -248,15 +252,8 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
     }
     return {
       subject: calendarSubject,
-      intro: training
-        ? moved ? "Euer Training wurde verschoben." : "Euer Training ist terminiert."
-        : moved ? "Eure Partie wurde verschoben." : "Eure Partie ist terminiert.",
-      body: moved
-        ? training
-          ? "Die Kalendereinladung im Anhang ersetzt den bisherigen Termin in deinem Kalender."
-          : "Der bisherige Termin in deinem Kalender wurde aktualisiert."
-        : "Die Kalendereinladung im Anhang trägt den Termin in deinen Kalender ein.",
-      afterDetails: moved ? undefined : calendarUpdateNotice,
+      intro: training ? "Euer Training wurde verschoben." : "Eure Partie wurde verschoben.",
+      body: "Der bisherige Termin in deinem Kalender wurde aktualisiert.",
       action: linksToMatchPreview(job) ? "Partie ansehen" : "Zum Konto",
       matchName,
     };
@@ -266,7 +263,7 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
       subject: `Abgesagt: ${calendarSubject}`,
       intro: training ? "Der Termin eures Trainings entfällt." : "Der Termin eurer Partie entfällt.",
       body: training
-        ? "Die Absage im Anhang entfernt den Termin aus deinem Kalender."
+        ? "Du kannst den Termin aus deinem Kalender entfernen."
         : "Du kannst den Termin aus deinem Kalender entfernen. Sobald ein neuer Termin feststeht, bekommst du eine neue Einladung.",
       action: training ? "Zum Konto" : "Partie neu terminieren",
       matchName,

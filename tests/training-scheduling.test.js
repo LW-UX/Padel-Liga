@@ -4,6 +4,7 @@ const path = require('node:path');
 const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
+const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const migration = fs.readFileSync(
   path.join(root, 'supabase/migrations/20261026140000_schedule_training_sessions.sql'),
   'utf8'
@@ -48,6 +49,60 @@ test('account workflow switches between scheduling and result entry by time', ()
   assert.match(taskRenderer, /scheduled-result-actions[\s\S]*data-training-delete="\$\{escapeHtml\(task\.session_id\)\}">Termin löschen<\/button>[\s\S]*data-training-schedule-toggle="\$\{escapeHtml\(task\.session_id\)\}">Termin ändern<\/button>/);
 });
 
+test('training player pickers disable players already selected in another slot', () => {
+  assert.match(account, /function syncTrainingPlayerPickerOptions\(form = document\)/);
+  assert.match(account, /value !== currentValue[\s\S]*selectedPlayerIds\.includes\(value\)/);
+  assert.match(account, /renderTrainingPlayerFields[\s\S]*syncTrainingPlayerPickerOptions\(form\)/);
+  assert.match(account, /inputName === 'playerId'\) syncTrainingPlayerPickerOptions\(form\)/);
+  assert.match(account, /if \(option\.disabled\) return;/);
+  assert.match(account, /filter\(option => !option\.hidden && !option\.disabled\)/);
+  assert.match(style, /\.training-picker-option:disabled \{[\s\S]*cursor: var\(--cursor-not-allowed\);[\s\S]*opacity: 0\.35;/);
+
+  const pickerHelpers = account.slice(
+    account.indexOf('  function getTrainingParticipantIds('),
+    account.indexOf('  function getTrainingGuestNames(')
+  );
+  const syncOptions = Function(`const TRAINING_GUEST_OPTION = '__training_guest__';\n${pickerHelpers}\nreturn syncTrainingPlayerPickerOptions;`)();
+  const input = value => ({ value });
+  const option = value => ({ dataset: { trainingPickerValue: value }, disabled: false });
+  const inputs = [input('a'), input('b'), input(''), input('guest:4')];
+  const pickers = inputs.slice(0, 3).map((selectedInput) => {
+    const options = ['', 'a', 'b', 'c', '__training_guest__'].map(option);
+    return {
+      options,
+      querySelector: selector => selector === 'input[name="playerId"]' ? selectedInput : null,
+      querySelectorAll: selector => selector === '[data-training-picker-value]' ? options : []
+    };
+  });
+  const form = {
+    querySelectorAll(selector) {
+      if (selector === '[data-training-player-fields] [name="playerId"]') return inputs;
+      if (selector === '[data-training-player-fields] [data-training-picker]') return pickers;
+      return [];
+    }
+  };
+
+  syncOptions(form);
+  assert.equal(pickers[0].options.find(item => item.dataset.trainingPickerValue === 'a').disabled, false);
+  assert.equal(pickers[0].options.find(item => item.dataset.trainingPickerValue === 'b').disabled, true);
+  assert.equal(pickers[1].options.find(item => item.dataset.trainingPickerValue === 'a').disabled, true);
+  assert.equal(pickers[1].options.find(item => item.dataset.trainingPickerValue === 'b').disabled, false);
+  assert.equal(pickers[2].options.find(item => item.dataset.trainingPickerValue === '').disabled, false);
+  assert.equal(pickers[2].options.find(item => item.dataset.trainingPickerValue === '__training_guest__').disabled, false);
+
+  inputs[1].value = '';
+  syncOptions(form);
+  assert.equal(pickers[0].options.find(item => item.dataset.trainingPickerValue === 'b').disabled, false);
+});
+
+test('scheduled training deletion uses the branded confirmation dialog', () => {
+  assert.doesNotMatch(account, /window\.confirm\('Soll dieser Trainingstermin wirklich gelöscht werden\?'/);
+  assert.match(index, /<dialog class="dialog" id="delete-training-dialog"[^>]*aria-labelledby="delete-training-title"[^>]*aria-describedby="delete-training-description">/);
+  assert.match(index, /Soll dieser Trainingstermin wirklich gelöscht werden\?[\s\S]*data-training-delete-close>Abbrechen<\/button>[\s\S]*class="danger-button"[^>]*data-training-delete-confirm>Termin löschen<\/button>/);
+  assert.match(account, /function openTrainingDeleteDialog\(button\)/);
+  assert.match(account, /data-training-delete-confirm[\s\S]*deleteScheduledTraining\(sessionId, trigger\)/);
+});
+
 test('due training results allow the actual participants to replace scheduled players', () => {
   assert.match(participantEditMigration, /create or replace function public\.submit_scheduled_training_result/);
   assert.doesNotMatch(participantEditMigration, /Teilnehmer eines terminierten Trainings können beim Ergebnis nicht geändert werden/);
@@ -57,7 +112,8 @@ test('due training results allow the actual participants to replace scheduled pl
   assert.match(taskRenderer, /\$\{due \? '' : `<div class="result-card-timing">/);
   assert.match(taskRenderer, /\$\{due \? '' : renderTrainingParticipants\(task\)\}/);
   assert.match(account, /scheduled-training-form\$\{due \? ' is-result-entry' : ''\}/);
-  assert.match(style, /\.scheduled-training-form\.is-result-entry \{[\s\S]*?border-top: 0;[\s\S]*?padding-top: 0;/);
+  assert.match(style, /\.scheduled-training-form \{ border-top: 0; \}/);
+  assert.match(style, /\.scheduled-training-form\.is-result-entry \{[\s\S]*?padding-top: 0;/);
 
   const formMode = account.match(/function syncTrainingFormMode\(form\) \{[\s\S]*?\n  \}/)?.[0] || '';
   assert.doesNotMatch(formMode, /button\.disabled|input\.readOnly/);

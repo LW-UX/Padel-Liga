@@ -906,8 +906,8 @@
       border-radius: 0;
       padding: 12px 0 0;
     }
+    .scheduled-training-form { border-top: 0; }
     .scheduled-training-form.is-result-entry {
-      border-top: 0;
       padding-top: 0;
     }
     .training-form-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -1022,6 +1022,10 @@
       flex: 1 1 auto;
       min-width: 0;
       overflow: hidden;
+    }
+    .training-picker-option:disabled {
+      cursor: var(--cursor-not-allowed);
+      opacity: 0.35;
     }
     .training-picker-option[data-training-guest-option] {
       color: var(--accent);
