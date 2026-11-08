@@ -24,8 +24,8 @@ test('the passive appointment row stays present even when empty and never offers
   assert.match(html, />TR<\/span>/);
   assert.match(html, /Ohne zugeordnete Platzbuchung · A, B, C, D/);
   assert.match(html, /top:0px/);
-  assert.match(html, /top:16px/);
-  assert.match(html, /top:32px/);
+  assert.match(html, /top:35px/);
+  assert.match(html, /top:70px/);
   assert.doesNotMatch(html, /<button|data-court-slot|data-court-cell|is-free|is-preview/);
   assert.match(renderAppointmentRow(times), /class="court-unassigned-row"/);
   assert.doesNotMatch(renderAppointmentRow(times, [], true), /court-appointment-placeholder|court-appointment"/);

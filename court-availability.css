@@ -47,8 +47,8 @@
 .court-grid .court-unassigned-row > :is(th, td) { height: 36px; padding: 0; border: 0; background: var(--bg); }
 .court-appointment-track { height: 34px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
 .court-appointment-track::-webkit-scrollbar { display: none; }
-.court-appointment-lanes { position: relative; min-height: 32px; }
-.court-appointment { position: absolute; box-sizing: border-box; height: 15px; padding: 0 3px; overflow: hidden; border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: color-mix(in srgb, var(--surface2) 45%, transparent); color: var(--muted); font: var(--text-xs) var(--font-body); line-height: 15px; text-align: center; text-overflow: ellipsis; white-space: nowrap; cursor: var(--cursor-help); }
+.court-appointment-lanes { position: relative; min-height: 34px; }
+.court-appointment { position: absolute; box-sizing: border-box; height: 34px; padding: 0 3px; overflow: hidden; border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); color: var(--muted); font: var(--text-xs) var(--font-body); line-height: 34px; text-align: center; text-overflow: ellipsis; white-space: nowrap; cursor: var(--cursor-help); }
 .court-appointment:focus-visible { outline: 1px solid var(--dim); outline-offset: -1px; }
 .court-footer p, #court-availability-dialog .hint { margin: 0; }
 .court-footer .hint { font-size: var(--text-xs); }

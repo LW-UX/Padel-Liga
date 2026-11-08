@@ -163,7 +163,9 @@ test('involved players receive session-scoped result prompts that lead to the ma
     assert.match(source, /data-account-task-prompt-open>Zum Konto<\/button>/);
   });
   assert.match(accountScript, /ACCOUNT_TASK_PROMPT_SESSION_KEY = 'padel-account-task-prompts'/);
-  assert.match(accountScript, /getPlayerResultTaskGroups\(state\.resultTasks, Date\.now\(\), false\)/);
+  assert.match(accountScript, /promptResultTasks = state\.resultTasks\.filter\(task => !isTestResultTask\(task\)\)/);
+  assert.match(accountScript, /getPlayerResultTaskGroups\(promptResultTasks, Date\.now\(\), false\)/);
+  assert.match(accountScript, /state\.courtCancellationTasks\.filter\(task => !isTestResultTask\(task\)\)/);
   assert.match(accountScript, /task\.task_type === 'review'/);
   assert.match(accountScript, /state\.profile\?\.app_role !== 'admin'[\s\S]*task\.proposed_by_team[\s\S]*task\.my_team/);
   assert.match(accountScript, /group\.key === 'past'/);

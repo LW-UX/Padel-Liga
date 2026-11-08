@@ -231,12 +231,12 @@ function buildDestination(job: NotificationJob, siteUrl: URL) {
 function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailContent {
   const matchName = getEventHeading(job);
   const training = isTrainingJob(job);
+  const matchTitle = job.match_label.startsWith("Partie ") ? job.match_label : `Partie „${job.match_label}“`;
   const calendarSubject = training ? "Training – PadelLiga" : `${getCalendarTitle(job)} – PadelLiga ${job.season_label}`;
   const calendarUpdateNotice = "Wird der Termin über die Webseite verschoben oder abgesagt, bekommst du automatisch eine Aktualisierung.";
   if (job.notification_type === "calendar_invitation") {
     const moved = calendar?.is_update ?? false;
     if (!moved && !training) {
-      const matchTitle = job.match_label.startsWith("Partie ") ? job.match_label : `Partie „${job.match_label}“`;
       return {
         subject: calendarSubject,
         intro: "Pack deine Sportsachen! Das nächste Padel-Match steht an.",
@@ -252,7 +252,9 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
         ? moved ? "Euer Training wurde verschoben." : "Euer Training ist terminiert."
         : moved ? "Eure Partie wurde verschoben." : "Eure Partie ist terminiert.",
       body: moved
-        ? "Die Kalendereinladung im Anhang ersetzt den bisherigen Termin in deinem Kalender."
+        ? training
+          ? "Die Kalendereinladung im Anhang ersetzt den bisherigen Termin in deinem Kalender."
+          : "Der bisherige Termin in deinem Kalender wurde aktualisiert."
         : "Die Kalendereinladung im Anhang trägt den Termin in deinen Kalender ein.",
       afterDetails: moved ? undefined : calendarUpdateNotice,
       action: linksToMatchPreview(job) ? "Partie ansehen" : "Zum Konto",
@@ -265,7 +267,7 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
       intro: training ? "Der Termin eures Trainings entfällt." : "Der Termin eurer Partie entfällt.",
       body: training
         ? "Die Absage im Anhang entfernt den Termin aus deinem Kalender."
-        : "Die Absage im Anhang entfernt den Termin aus deinem Kalender. Sobald ein neuer Termin feststeht, bekommst du eine neue Einladung.",
+        : "Du kannst den Termin aus deinem Kalender entfernen. Sobald ein neuer Termin feststeht, bekommst du eine neue Einladung.",
       action: training ? "Zum Konto" : "Partie neu terminieren",
       matchName,
     };
@@ -273,7 +275,7 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
   if (job.notification_type === "result_entry") {
     return {
       subject: `PadelLiga: Ergebnis für ${job.match_label} eintragen`,
-      intro: "Das Ergebnis eurer Partie ist noch offen.",
+      intro: "Letzten Ball gespielt?",
       body: "Der geplante Spielbeginn liegt fünf Stunden zurück. Trage das Ergebnis jetzt ein, damit das andere Team es bestätigen kann.",
       action: "Ergebnis eintragen",
       matchName,
@@ -283,10 +285,10 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
     const proposedResult = [job.actual_sets, job.result_details].filter(Boolean).join(" · ");
     return {
       subject: `PadelLiga: Ergebnis für ${job.match_label} bestätigen`,
-      intro: "Ein Ergebnis wartet auf deine Bestätigung.",
+      intro: "Alles richtig gezählt?",
       body: proposedResult
-        ? `Der Vorschlag „${proposedResult}“ wurde vor vier Stunden eingetragen. Bestätige ihn oder sende eine abweichende Alternative.`
-        : "Der Ergebnisvorschlag wurde vor vier Stunden eingetragen. Bestätige ihn oder sende eine abweichende Alternative.",
+        ? `Der Vorschlag „${proposedResult}“ für ${matchTitle} wartet auf deine Bestätigung. Bestätige ihn oder sende eine abweichende Alternative.`
+        : `Der Ergebnisvorschlag für ${matchTitle} wartet auf deine Bestätigung. Bestätige ihn oder sende eine abweichende Alternative.`,
       action: "Ergebnis prüfen",
       matchName,
     };

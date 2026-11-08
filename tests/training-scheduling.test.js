@@ -44,6 +44,8 @@ test('account workflow switches between scheduling and result entry by time', ()
   assert.match(account, /isScheduledTrainingDue\(task\)/);
   assert.match(account, /data-training-scheduled=/);
   assert.match(account, /data-training-result-fields/);
+  const taskRenderer = account.match(/function renderScheduledTrainingTaskCard\(task, groupKey\) \{[\s\S]*?\n  \}/)?.[0] || '';
+  assert.match(taskRenderer, /scheduled-result-actions[\s\S]*data-training-delete="\$\{escapeHtml\(task\.session_id\)\}">Termin löschen<\/button>[\s\S]*data-training-schedule-toggle="\$\{escapeHtml\(task\.session_id\)\}">Termin ändern<\/button>/);
 });
 
 test('due training results allow the actual participants to replace scheduled players', () => {

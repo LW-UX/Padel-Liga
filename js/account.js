@@ -670,7 +670,8 @@
 
   function getAccountTaskPromptCandidates() {
     if (!state.session?.user || !isPlayerAccount() || !state.playerToolsReady) return [];
-    const groups = getPlayerResultTaskGroups(state.resultTasks, Date.now(), false);
+    const promptResultTasks = state.resultTasks.filter(task => !isTestResultTask(task));
+    const groups = getPlayerResultTaskGroups(promptResultTasks, Date.now(), false);
     const reviewTasks = groups.find(group => group.key === 'review').tasks
       .filter(task => task.task_type === 'review' && (
         state.profile?.app_role !== 'admin'
@@ -680,7 +681,7 @@
     const resultEntryTasks = groups.find(group => group.key === 'past').tasks
       .filter(task => !window.PadelLiveTicker?.isMatchLive(task.match_id));
     return [
-      ...state.courtCancellationTasks.map(task => ({
+      ...state.courtCancellationTasks.filter(task => !isTestResultTask(task)).map(task => ({
         task,
         type: 'court-cancellation',
         key: `${state.session.user.id}:court-cancellation:${task.booking_id}`
@@ -1234,7 +1235,7 @@
       <div class="match-schedule-actions">
         ${allowCancel ? renderCancelMatchButton(task) : ''}
         <button class="secondary-button" type="button" data-court-match-open="${escapeHtml(task.match_id)}">Freie Plätze prüfen</button>
-        <button class="secondary-button" type="submit">${task.match_at ? 'Termin speichern' : 'Terminieren'}</button>
+        <button class="${task.match_at ? 'secondary-button' : 'primary-button'}" type="submit">${task.match_at ? 'Termin speichern' : 'Terminieren'}</button>
       </div>
     </form>`;
   }
@@ -2219,7 +2220,7 @@
       </div>
       <div class="auth-message training-message" data-training-message role="status" aria-live="polite"></div>
       <div class="training-form-actions">
-        ${canManage ? `<button class="secondary-button" type="button" data-training-delete="${escapeHtml(task.session_id)}">Training löschen</button>` : ''}
+        ${due && canManage ? `<button class="secondary-button" type="button" data-training-delete="${escapeHtml(task.session_id)}">Training löschen</button>` : ''}
         <button class="primary-button" type="submit">${due
           ? state.profile?.app_role === 'admin' ? 'Ergebnis eintragen' : 'Zur Bestätigung senden'
           : 'Termin speichern'}</button>
@@ -2239,7 +2240,8 @@
       ${due ? '' : `<div class="result-card-timing">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>
       <div class="racket-status" data-racket-status="training:${escapeHtml(task.session_id)}" data-racket-starts-at="${getTrainingTaskTimestamp(task, 0)}" hidden></div>`}
       ${due ? '' : renderTrainingParticipants(task)}
-      ${!due && canManage ? `<div class="account-task-actions">
+      ${!due && canManage ? `<div class="account-task-actions scheduled-result-actions">
+        <button class="secondary-button" type="button" data-training-delete="${escapeHtml(task.session_id)}">Termin löschen</button>
         <button class="secondary-button" type="button" data-training-schedule-toggle="${escapeHtml(task.session_id)}">Termin ändern</button>
       </div>` : ''}
       ${renderScheduledTrainingForm(task, due)}

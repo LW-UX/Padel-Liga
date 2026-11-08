@@ -98,9 +98,9 @@
       const left = position(entry.from) / times.length * 100;
       const width = (position(entry.until) - position(entry.from)) / times.length * 100;
       const info = `${entry.label} · ${entry.time}–${timeLabel(minute(entry.time) + entry.duration)} Uhr · Ohne zugeordnete Platzbuchung${entry.participants ? ` · ${entry.participants}` : ''}`;
-      return `<span class="court-appointment" tabindex="0" role="img" aria-label="${escape(info)}" data-court-appointment-info="${escape(info)}" style="left:${left}%;width:${width}%;top:${lane * 16}px">${escape(entry.shortLabel)}</span>`;
+      return `<span class="court-appointment" tabindex="0" role="img" aria-label="${escape(info)}" data-court-appointment-info="${escape(info)}" style="left:${left}%;width:${width}%;top:${lane * 35}px">${escape(entry.shortLabel)}</span>`;
     }).join('');
-    return `<tr class="court-unassigned-row"><th scope="row"><span class="sr-only">Termine ohne zugeordnete Platzbuchung</span></th><td colspan="${times.length}"><div class="court-appointment-track"><div class="court-appointment-lanes" style="height:${Math.max(32, lanes.length * 16)}px">${skeleton ? '' : blocks}</div></div></td></tr>`;
+    return `<tr class="court-unassigned-row"><th scope="row"><span class="sr-only">Termine ohne zugeordnete Platzbuchung</span></th><td colspan="${times.length}"><div class="court-appointment-track"><div class="court-appointment-lanes" style="height:${Math.max(34, lanes.length * 35 - 1)}px">${skeleton ? '' : blocks}</div></div></td></tr>`;
   }
 
   const dialog = document.createElement('dialog');
