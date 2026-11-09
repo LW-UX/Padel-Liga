@@ -391,6 +391,7 @@
       align-items: center;
     }
     .season-picker .secondary-button--dropdown { width: 112px; }
+    .season-picker .skeleton-pill { width: 2.5rem; }
     .season-picker-trophy {
       display: inline-flex;
       width: 20px;

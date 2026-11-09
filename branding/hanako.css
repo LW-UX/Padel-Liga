@@ -9,30 +9,9 @@
   Am Ende stehen die Regeln, die es nur in diesem Branding gibt.
 */
 
-@font-face {
-  font-family: 'The Queen';
-  src: url('../fonts/TheQueen-Regular.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Roboto';
-  src: url('../fonts/Roboto-Variable.ttf') format('truetype');
-  font-weight: 100 900;
-  font-stretch: 75% 100%;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Roboto';
-  src: url('../fonts/Roboto-Italic.ttf') format('truetype');
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
+@font-face { font-family: 'The Queen'; src: url('../fonts/TheQueen-Regular.otf') format('opentype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Roboto'; src: url('../fonts/Roboto-Variable.ttf') format('truetype'); font-weight: 100 900; font-stretch: 75% 100%; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Roboto'; src: url('../fonts/Roboto-Italic.ttf') format('truetype'); font-weight: 400; font-style: italic; font-display: swap; }
 
 :root {
   /* Schriften. Die Vorlage nutzt keine eigene Monospace-Schrift. */

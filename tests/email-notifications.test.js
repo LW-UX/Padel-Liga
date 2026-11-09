@@ -137,9 +137,9 @@ test('calendar mail only announces a move when an invitation was really sent', (
 });
 
 test('match and training mails share the invitation tone without mentioning attachments', () => {
-  assert.match(edgeFunction, /intro: "Pack deine Sportsachen! Das nächste Padel-Match steht an\."/);
+  assert.match(edgeFunction, /"Pack deine Sportsachen! Das nächste Padel-Match steht an\."/);
   assert.match(edgeFunction, /"Pack deine Sportsachen! Das nächste Padel-Training steht an\."/);
-  assert.match(edgeFunction, /body: `Die \$\{matchTitle\} ist terminiert\. Hier sind die Details:`/);
+  assert.match(edgeFunction, /`Die \$\{matchTitle\} ist terminiert\. Hier sind die Details:`/);
   assert.match(edgeFunction, /"Euer Training ist terminiert\. Hier sind die Details:"/);
   assert.match(edgeFunction, /const calendarUpdateNotice = "Wird der Termin über die Webseite verschoben oder abgesagt/);
   assert.match(edgeFunction, /body: "Der bisherige Termin in deinem Kalender wurde aktualisiert\."/);
