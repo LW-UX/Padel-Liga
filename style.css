@@ -352,6 +352,66 @@
       .info-menu-chevron { transition: none !important; }
     }
 
+    /* One animation per loading region; placeholders retain their layout. */
+    [data-padel-loading] { position: relative; }
+    .padel-loader {
+      position: absolute;
+      width: 120px;
+      height: 160px;
+      transform: translate(-50%, -60%);
+      pointer-events: none;
+      z-index: 3;
+    }
+    .padel-loader-racket {
+      position: absolute;
+      left: 29px;
+      top: 100px;
+      width: 64px;
+      height: 64px;
+      transform-origin: 35px 40px;
+      animation: padel-loader-swing 1.5s infinite;
+    }
+    .padel-loader-ball {
+      position: absolute;
+      z-index: 2;
+      left: 73px;
+      top: 103px;
+      width: 17px;
+      height: 17px;
+      box-sizing: border-box;
+      border: 1.5px solid black;
+      border-radius: 50%;
+      background: var(--accent);
+      overflow: hidden;
+      animation: padel-loader-bounce 1.5s infinite;
+    }
+    .padel-loader-ball::before {
+      content: '';
+      position: absolute;
+      inset: -2px 4px;
+      border-left: 1px solid black;
+      border-right: 1px solid black;
+      border-radius: 50%;
+      transform: rotate(30deg);
+    }
+    .has-padel-loader .loading-skeleton span,
+    .has-padel-loader .loading-skeleton li::before,
+    .has-padel-loader .loading-skeleton:empty { animation-play-state: paused; }
+    @keyframes padel-loader-bounce {
+      0%, 100% { transform: translateY(0) rotate(0deg); animation-timing-function: cubic-bezier(.16,.6,.4,1); }
+      50% { transform: translateY(-87px) rotate(180deg); animation-timing-function: cubic-bezier(.6,0,.84,.4); }
+    }
+    @keyframes padel-loader-swing {
+      0%, 100% { transform: rotate(65deg); }
+      9% { transform: rotate(52deg); }
+      32%, 70% { transform: rotate(76deg); }
+      92% { transform: rotate(82deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .padel-loader-racket, .padel-loader-ball { animation: none; }
+      .padel-loader-racket { transform: rotate(65deg); }
+    }
+
     /* ── HEADER ── */
     .site-header {
       background: var(--bg);
@@ -1850,7 +1910,7 @@
     /* Der Zähler bleibt einzeilig; die Überschrift gibt stattdessen Platz ab. */
     #fr-meta { flex-shrink: 0; white-space: nowrap; }
     .table-note { font-size: var(--text-xs); }
-    #league-calculator:has(+ #final-four-calculator:not([hidden])) { margin-bottom: var(--section-gap); }
+    #league-calculator:has(+ #final-four-calculator:not([hidden])) { margin-bottom: 4rem; }
     .toggle {
       display: inline-flex;
       padding: 2px;

@@ -3951,25 +3951,27 @@ document.addEventListener('click', event => {
   }
 
   const infoMenuLink = event.target.closest('#info-menu a');
-  if (infoMenuLink && mobileViewportQuery.matches) {
+  if (infoMenuLink) {
     event.preventDefault();
     const infoMenuCard = infoMenuLink.closest('.info-menu-card');
     const infoMenu = infoMenuCard?.querySelector('.info-menu');
     const targetId = decodeURIComponent(infoMenuLink.hash.slice(1));
     const target = targetId ? document.getElementById(targetId) : null;
-    infoMenuCard?.classList.remove('is-expanded');
-    infoMenuCard?.querySelector('[data-info-menu-toggle]')?.setAttribute('aria-expanded', 'false');
 
     if (target) {
       let didNavigate = false;
       const navigateToTarget = () => {
         if (didNavigate) return;
         didNavigate = true;
-        window.history.pushState(null, '', infoMenuLink.hash);
+        const url = new URL(window.location.href);
+        url.hash = infoMenuLink.hash;
+        window.history.pushState(null, '', `${url.pathname}${url.search}${url.hash}`);
         target.scrollIntoView();
       };
 
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      if (!mobileViewportQuery.matches) {
+        navigateToTarget();
+      } else if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         window.requestAnimationFrame(navigateToTarget);
       } else {
         const handleMenuTransitionEnd = transitionEvent => {
@@ -3983,6 +3985,10 @@ document.addEventListener('click', event => {
           navigateToTarget();
         }, 300);
       }
+    }
+    if (mobileViewportQuery.matches) {
+      infoMenuCard?.classList.remove('is-expanded');
+      infoMenuCard?.querySelector('[data-info-menu-toggle]')?.setAttribute('aria-expanded', 'false');
     }
     return;
   }
@@ -4330,6 +4336,11 @@ function renderActiveSection() {
 function nav(id, el) {
   // Vor dem Umschalten messen: Ein noch nicht gerenderter Bereich verkürzt die Seite kurzzeitig.
   const navigationPinned = isNavigationPinned();
+  if (id !== 'infos' && window.location.hash) {
+    const url = new URL(window.location.href);
+    url.hash = '';
+    window.history.replaceState(window.history.state, '', url);
+  }
   const panelContext = getPlayerProfilePanelContext()?.id;
   const keepsPanelContext = (panelContext === 'ranking' && id === 'rangliste')
     || (panelContext === 'all-time-ranking' && id === 'verlauf');

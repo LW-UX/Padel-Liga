@@ -43,7 +43,7 @@
     })();
   </script>
   <link rel="stylesheet" href="achievements.css?v=2026-10-31">
-  <link rel="stylesheet" href="style.css?v=2026-11-06-home-hall-code-mobile">
+  <link rel="stylesheet" href="style.css?v=2026-11-09-padel-loader">
   <link rel="stylesheet" href="account.css?v=2026-11-06-home-hall-code">
   <link rel="stylesheet" href="court-availability.css?v=2026-11-06-calendar-appointments-v8">
   <link rel="stylesheet" href="whats-new.css?v=2026-11-05-cursors-11">
@@ -88,6 +88,7 @@
   <script defer src="js/headline-split.js?v=2026-11-03-headline-split-2"></script>
   <script defer src="js/panel-layout.js?v=2026-11-03-split-left-sync"></script>
   <script defer src="js/match-statistics.js?v=2026-11-05-widget-cards"></script>
+  <script defer src="js/loading-animation.js?v=2026-11-09-padel-loader"></script>
   <script defer src="js/app.js?v=2026-11-06-home-priority"></script>
 </head>
 <body>
@@ -175,7 +176,7 @@
   <button data-section="infos">Infos</button>
 </nav>
 
-<main aria-busy="true">
+<main aria-busy="true" data-padel-loading>
   <span class="sr-only" id="page-load-status" role="status" aria-live="polite">Inhalte werden geladen.</span>
 
   <!-- START -->
@@ -685,7 +686,7 @@
     </header>
     <section class="detail-view-content" id="detail-view">
       <div class="site-nav" id="final-four-view-switcher" aria-label="Final-Four-Partie auswählen"></div>
-      <div id="detail-view-body">
+      <div id="detail-view-body" data-padel-loading>
         <div class="hint">Der Liveticker wird geladen …</div>
       </div>
     </section>
@@ -763,7 +764,7 @@
   </button>
   <button class="secondary-button modal-close-button player-profile-close" type="button" data-player-profile-close aria-label="Spielerprofil schließen"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
   <div class="player-profile-shell">
-    <div class="player-profile-state" id="player-profile-state" role="status" aria-label="Spielerprofil wird geladen" data-skeleton-markup><div class="player-profile-skeleton loading-skeleton" aria-hidden="true"><div class="player-profile-skeleton-identity"><span class="player-profile-skeleton-avatar"></span><span class="player-profile-skeleton-name"></span></div><div class="player-profile-skeleton-stats"><span></span><span></span><span></span><span></span></div><span class="player-profile-skeleton-block player-profile-skeleton-chart"></span><span class="player-profile-skeleton-block"></span><span class="player-profile-skeleton-block"></span></div></div>
+    <div class="player-profile-state" id="player-profile-state" data-padel-loading role="status" aria-label="Spielerprofil wird geladen" data-skeleton-markup><div class="player-profile-skeleton loading-skeleton" aria-hidden="true"><div class="player-profile-skeleton-identity"><span class="player-profile-skeleton-avatar"></span><span class="player-profile-skeleton-name"></span></div><div class="player-profile-skeleton-stats"><span></span><span></span><span></span><span></span></div><span class="player-profile-skeleton-block player-profile-skeleton-chart"></span><span class="player-profile-skeleton-block"></span><span class="player-profile-skeleton-block"></span></div></div>
     <div class="player-profile-content" id="player-profile-content" hidden>
       <header class="player-profile-hero" id="player-profile-hero">
         <div class="player-profile-identity-row">
