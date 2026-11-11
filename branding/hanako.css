@@ -346,9 +346,14 @@ html:root .primary-button:not(.secondary-button, :hover, :focus-visible) {
   box-shadow: none;
 }
 
-/* Auf dem Handy liegen die Schnellzugriffe und Schließen-Buttons über Inhalten und brauchen eine deckende Fläche. */
+/* Schließen-Buttons liegen über Inhalten und brauchen bei jeder Bildschirmgröße eine deckende Fläche. */
+html:root :is(.modal-close-button, .detail-view-close):not(:hover, :focus, :focus-visible) {
+  background-color: var(--surface);
+}
+
+/* Auf dem Handy brauchen auch die Schnellzugriffe eine deckende Fläche. */
 @media (max-width: 768px) {
-  html:root :is(.global-action, .modal-close-button):not(.primary-button, :hover, :focus, :focus-visible),
+  html:root .global-action:not(.primary-button, :hover, :focus, :focus-visible),
   html:root .global-actions .auth-button.is-authenticated.secondary-button:not(:hover, :focus, :focus-visible),
   html:root .global-actions .viewer-split-button {
     background-color: var(--surface);

@@ -55,6 +55,8 @@ Regeln dafür, welche Gestaltungswerte zu einem Branding gehören und wie ein Br
 
 ## Branding wechseln
 
+- Schließen-Buttons haben in jeder Bildschirmgröße eine deckende Fläche, damit darunterliegende Inhalte nicht durchscheinen. Das gilt auch im Hanako-Design.
+
 - Ein neues Branding entsteht als Kopie von `branding/og-design.css` unter `branding/<name>.css` mit eigenen Werten.
 - `tools/apply-branding.mjs <name>` aktiviert es: Das Werkzeug bindet die Datei in Liga- und Tippseite ein und überträgt die Farben dorthin, wo keine CSS-Variablen gelesen werden können. Das sind die Browserleiste (`--bg`), das Safari-Tab-Symbol (`--accent`) und das App-Manifest (`--bg`).
 - Nach jeder Änderung an einer Branding-Datei, insbesondere an der Akzentfarbe, wird das Werkzeug erneut ausgeführt. Es setzt dabei auch die Versionskennung für den Browser-Cache. Ein Test schlägt fehl, solange Seiten oder Manifest nicht zum aktiven Branding passen.
