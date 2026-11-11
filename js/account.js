@@ -324,8 +324,9 @@
     }
     if (form?.matches('.training-form') && !form.dataset.trainingAlternative) {
       return {
-        subjectType: form.dataset.trainingScheduled ? 'training' : null,
+        subjectType: 'training',
         subjectId: form.dataset.trainingScheduled || null,
+        playerIds: getTrainingParticipantIds(form),
         date: String(form.querySelector('[name="playedOn"]')?.value || ''),
         time: String(form.querySelector('[name="displayTime"]')?.value || '')
       };
@@ -363,7 +364,7 @@
       return;
     }
     // Datum und Uhrzeit melden eine Änderung oft doppelt; eine laufende Prüfung derselben Eingabe bleibt bestehen.
-    const requestKey = `${context.date} ${context.time}`;
+    const requestKey = JSON.stringify(context);
     if (target.dataset.racketRequest === requestKey) return;
     window.clearTimeout(racketCheckTimers.get(form));
     target.dataset.racketRequest = requestKey;
@@ -1989,6 +1990,7 @@
       });
     }).join('');
     syncTrainingPlayerPickerOptions(form);
+    scheduleRacketCheck(form);
   }
 
   function renderTrainingForm(playerIds = null, roundValues = [], form = document.getElementById('training-form'), guestNames = {}) {
@@ -2176,7 +2178,10 @@
       return;
     }
     setTrainingPickerValue(picker, option.dataset.trainingPickerValue);
-    if (form && inputName === 'playerId') syncTrainingPlayerPickerOptions(form);
+    if (form && inputName === 'playerId') {
+      syncTrainingPlayerPickerOptions(form);
+      scheduleRacketCheck(form);
+    }
     closeTrainingPickerMenus();
     presetScheduleMinute(picker, inputName);
     picker?.closest('[data-schedule-time-field]')?.dispatchEvent(new Event('change', { bubbles: true }));
@@ -3977,6 +3982,13 @@ Dein Hanako-Leben-Squad`;
       if (bookedCourtSelect) {
         const booking = state.courtBookings.find(item => Number(item.booking_id) === Number(bookedCourtSelect.dataset.courtBookingSelect));
         if (!booking) return;
+        if (!replacementCancellationTask && Number(pendingCourtSlot?.bookingId) === Number(booking.booking_id)) {
+          pendingCourtSlot = null;
+          courtAccountRequested = false;
+          renderCourtMatchSelection();
+          renderCourtBookingInbox();
+          return;
+        }
         const slot = courtBookingSlot(booking);
         if (replacementCancellationTask) applyCourtSlot(replacementCancellationTask.match_id, slot);
         else chooseCourtMatch(slot);

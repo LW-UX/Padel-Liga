@@ -53,7 +53,7 @@ test('training player pickers disable players already selected in another slot',
   assert.match(account, /function syncTrainingPlayerPickerOptions\(form = document\)/);
   assert.match(account, /value !== currentValue[\s\S]*selectedPlayerIds\.includes\(value\)/);
   assert.match(account, /renderTrainingPlayerFields[\s\S]*syncTrainingPlayerPickerOptions\(form\)/);
-  assert.match(account, /inputName === 'playerId'\) syncTrainingPlayerPickerOptions\(form\)/);
+  assert.match(account, /inputName === 'playerId'\)\s*\{\s*syncTrainingPlayerPickerOptions\(form\);\s*scheduleRacketCheck\(form\)/);
   assert.match(account, /if \(option\.disabled\) return;/);
   assert.match(account, /filter\(option => !option\.hidden && !option\.disabled\)/);
   assert.match(style, /\.training-picker-option:disabled \{[\s\S]*cursor: var\(--cursor-not-allowed\);[\s\S]*opacity: 0\.35;/);

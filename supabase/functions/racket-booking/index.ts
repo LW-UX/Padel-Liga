@@ -276,7 +276,17 @@ async function check(admin: SupabaseClient, body: Record<string, unknown>, userI
   const ownBookingId = row?.clearooms_booking_id ?? null;
   const busy = findBusyWindow(dayBookings, RACKET_DESK_ID, plan, ownBookingId);
   if (!busy) return jsonResponse({ ...plan });
-  const participants = subject ? await readParticipants(admin, subject, userId) : [];
+  let participants: Participant[];
+  if (body.subjectType === "training" && Array.isArray(body.playerIds)) {
+    const { data, error } = await admin.rpc("get_racket_training_check_participants", {
+      p_player_ids: body.playerIds,
+      p_user_id: userId,
+    });
+    if (error) throw error;
+    participants = (Array.isArray(data) ? data : []) as Participant[];
+  } else {
+    participants = subject ? await readParticipants(admin, subject, userId) : [];
+  }
   const covering = findCoveringBooking(dayBookings, RACKET_DESK_ID, plan, participants, ownBookingId);
   return jsonResponse(covering
     ? { ...plan, state: "covered", busyFrom: covering.from, busyUntil: covering.until, coveredBy: covering.name }

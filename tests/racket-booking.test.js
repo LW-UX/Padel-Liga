@@ -116,6 +116,7 @@ test('doppelt gemeldete Datums- und Uhrzeitänderungen beenden die Live-Prüfung
     querySelector: selector => selector === '[data-racket-check]' ? target : null,
     closest: () => null
   };
+  const selection = { subjectType: 'training', subjectId: null, playerIds: ['p1', 'p2', 'p3', 'p4'], date: '2099-11-04', time: '18:00' };
   const context = vm.createContext({
     window: {
       setTimeout: (callback, delay) => { timers.set(++nextTimer, { callback, delay }); return nextTimer; },
@@ -125,7 +126,7 @@ test('doppelt gemeldete Datums- und Uhrzeitänderungen beenden die Live-Prüfung
     racketCheckTimers: new Map(),
     RACKET_CHECK_DELAY_MS: 450,
     RACKET_CHECK_TIMEOUT_MS: 12000,
-    getRacketFormContext: () => ({ subjectType: 'match', subjectId: 'm1', date: '2099-11-04', time: '18:00' }),
+    getRacketFormContext: () => selection,
     syncCourtBookingWindow: () => {},
     getMatchAtTimestamp: value => new Date(value).getTime(),
     buildMatchAtValue: (date, time) => `${date}T${time}:00`,
@@ -140,6 +141,9 @@ test('doppelt gemeldete Datums- und Uhrzeitänderungen beenden die Live-Prüfung
   assert.equal(pending.length, 1);
   await pending[0].callback();
   assert.deepEqual(target.notes, ['checking', 'free']);
+  selection.playerIds[3] = 'guest:4';
+  context.scheduleRacketCheck(form);
+  assert.equal(target.notes.at(-1), 'checking', 'a participant change starts a new check at the same time');
 });
 
 test('der Schläger-Hinweis verschwindet ab Spielbeginn', () => {
@@ -168,4 +172,48 @@ test('der Schläger-Hinweis verschwindet ab Spielbeginn', () => {
   assert.deepEqual(upcoming.note, { text: 'booked' });
   assert.equal(timers.length, 1);
   assert.ok(timers[0] > 59 * 60_000 && timers[0] <= 61 * 60_000);
+});
+
+test('Live-Prüfung erkennt den Bucher aus der aktuellen Trainingsauswahl ohne gespeicherte Sitzung', async () => {
+  const vm = require('node:vm');
+  const { findBusyWindow, findCoveringBooking, planSlot } = await slotModule;
+  const source = edgeFunction.slice(edgeFunction.indexOf('async function check('), edgeFunction.indexOf('\nasync function status('))
+    .replace('admin: SupabaseClient, body: Record<string, unknown>, userId: string', 'admin, body, userId')
+    .replace('let participants: Participant[];', 'let participants;')
+    .replace(' as Participant[]', '');
+  const calls = [];
+  const context = vm.createContext({
+    readSubject: () => null,
+    isDateValue: () => true, isTimeValue: () => true,
+    getWorkingHours: async () => officeHours,
+    listDayBookings: async () => [booking('manual', '18:00', '19:00', { user: { email: 'player@example.com' } })],
+    RACKET_DESK_ID: desk, planSlot, findBusyWindow, findCoveringBooking,
+    jsonResponse: value => value,
+    readParticipants: () => { throw new Error('Must use current selection'); }
+  });
+  vm.runInContext(source, context);
+  const admin = { rpc: async (name, args) => {
+    calls.push({ name, args });
+    return { data: args.p_player_ids.includes('p4') ? [{ name: 'Spieler 4', email: 'player@example.com' }] : [] };
+  } };
+  const body = { subjectType: 'training', subjectId: null, playerIds: ['p1', 'p2', 'p3', 'p4'], date: '2026-11-04', time: '18:00' };
+  const covered = await context.check(admin, body, 'user-1');
+  assert.equal(covered.state, 'covered');
+  assert.equal(covered.coveredBy, 'Spieler 4');
+  assert.equal(JSON.stringify(covered).includes('player@example.com'), false);
+  assert.equal(calls[0].name, 'get_racket_training_check_participants');
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[0].args)), { p_player_ids: body.playerIds, p_user_id: 'user-1' });
+  const changed = await context.check(admin, { ...body, playerIds: ['p1', 'p2', 'p3', 'guest:4'] }, 'user-1');
+  assert.equal(changed.state, 'busy');
+});
+
+test('Trainings-Teilnehmerabgleich bleibt für Browser gesperrt und prüft Rolle und eigene Teilnahme', () => {
+  const sql = fs.readFileSync(path.join(root, 'supabase/migrations/20261111110000_racket_training_check_participants.sql'), 'utf8');
+  assert.match(sql, /security definer/);
+  assert.match(sql, /private\.user_email_is_confirmed\(p_user_id\)/);
+  assert.match(sql, /app_role not in \('player', 'admin'\)/);
+  assert.match(sql, /current_profile\.player_id = any\(p_player_ids\)/);
+  assert.match(sql, /cardinality\(p_player_ids\)/);
+  assert.match(sql, /revoke execute[\s\S]*from public, anon, authenticated/);
+  assert.match(sql, /grant execute[\s\S]*to service_role/);
 });

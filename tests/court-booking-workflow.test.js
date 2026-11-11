@@ -182,6 +182,37 @@ test('booked slots use an accent outline and show structured match choices insid
   assert.match(account, /getTaskMatchLabel\(first\)\.localeCompare\(getTaskMatchLabel\(second\), 'de', \{ numeric: true \}\)/);
 });
 
+test('clicking the selected booking collapses its match choices, while another booking switches the selection', () => {
+  const handler = account.slice(account.indexOf('      const bookedCourtSelect ='), account.indexOf("      if (event.target.closest('[data-court-replacement-cancel]'))"));
+  const bookings = [{ booking_id: 1 }, { booking_id: 2 }];
+  const calls = [];
+  const context = vm.createContext({
+    state: { courtBookings: bookings }, pendingCourtSlot: null, courtAccountRequested: false,
+    replacementCancellationTask: null,
+    event: { target: { closest: () => ({ dataset: { courtBookingSelect: '1' } }) } },
+    courtBookingSlot: booking => ({ bookingId: booking.booking_id, reserved: true }),
+    renderCourtMatchSelection: () => calls.push('selection'),
+    renderCourtBookingInbox: () => calls.push('inbox'),
+    applyCourtSlot: (matchId, slot) => calls.push([matchId, slot.bookingId])
+  });
+  vm.runInContext(`function chooseCourtMatch(slot) { pendingCourtSlot = slot; courtAccountRequested = true; }
+    function clickBooking() { ${handler} }`, context);
+  context.clickBooking();
+  assert.equal(context.pendingCourtSlot.bookingId, 1);
+  assert.equal(context.courtAccountRequested, true);
+  context.clickBooking();
+  assert.equal(context.pendingCourtSlot, null);
+  assert.equal(context.courtAccountRequested, false);
+  assert.deepEqual(calls, ['selection', 'inbox']);
+  context.clickBooking();
+  context.event.target.closest = () => ({ dataset: { courtBookingSelect: '2' } });
+  context.clickBooking();
+  assert.equal(context.pendingCourtSlot.bookingId, 2);
+  context.replacementCancellationTask = { match_id: 'replacement' };
+  context.clickBooking();
+  assert.deepEqual(calls.at(-1), ['replacement', 2]);
+});
+
 test('court and racket confirmation share one exact booking message', () => {
   const source = ['describeRacketCheck', 'describeRacketBooking', 'getBookedCourtNumber', 'getCourtBookingWindow', 'describeCourtAndRacket']
     .map(name => account.match(new RegExp(` {2}function ${name}\\([\\s\\S]*?\\n {2}\\}\\n`))?.[0])
