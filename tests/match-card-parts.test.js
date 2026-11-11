@@ -5,7 +5,7 @@ const path = require('node:path');
 
 const root = path.join(__dirname, '..');
 const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
-const sources = ['js/app.js', 'js/tippspiel.js', 'style.css', 'tipp.css']
+const sources = ['js/app.js', 'js/tippspiel.js', 'js/account.js', 'js/live-ticker.js', 'style.css', 'tipp.css', 'account.css']
   .map(file => fs.readFileSync(path.join(root, file), 'utf8'))
   .join('\n');
 
@@ -21,7 +21,7 @@ test('match cards share one set of part classes', () => {
 });
 
 test('old per-family names for shared match parts are gone', () => {
-  for (const name of ['mc-player-name', 'mc-players', 'mini-match-winner', 'mini-match-loser', 'mini-match-prob', 'calculator-match-complete']) {
+  for (const name of ['mc-player-name', 'mc-players', 'mini-match-winner', 'mini-match-loser', 'mini-match-prob', 'calculator-match-complete', 'mc-nr', 'mc-score-main', 'live-overview-team-separator', 'live-overview-probability']) {
     assert.doesNotMatch(sources, new RegExp(`\\b${name}\\b`), name);
   }
 });

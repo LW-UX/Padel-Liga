@@ -75,6 +75,7 @@ Dauerhafte Verbindungen zwischen Spielern, die nicht in der Datenbank stehen, et
 - Lukas T., Marcel M., Ludwig W. und Luca W. sind die vier UX-Designer von Envidual.
 - Florian Z., Ludwig W., Luca W., Lukas P. und Niklas K. bilden das Hanako-Leben-Squad, das die Liga organisiert. Diese Zugehörigkeit dient nur dem Hintergrundwissen: Die Rolle als Organisator wird im Artikel nicht hervorgehoben (siehe Grundsätze).
 - Greta L., Agnes L., Jonas L., Andreas L. und Leonie R. bilden das Zurückgeben-Squad.
+- Christoph L. und Lukas P. bilden das Event-Squad. Spielen die beiden zusammen in einem Team, kann das abweichend von der Rangfolge unten auch dann erwähnt werden, wenn die Gegner keinem gemeinsamen Squad angehören.
 
 Für Squads gilt bei der Erwähnung diese Rangfolge:
 

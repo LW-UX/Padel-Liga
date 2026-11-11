@@ -512,11 +512,9 @@
     }
     .account-task-card.has-authenticated-player {
       border-color: var(--accent2);
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent2) 18%, transparent);
     }
     .account-task-card.is-actionable {
       border-color: var(--accent);
-      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
     }
     .account-task-card.is-waiting { background: color-mix(in srgb, var(--surface) 62%, var(--bg)); }
     .account-task-card.is-waiting > :not(.account-task-actions) { opacity: 0.58; }
@@ -577,11 +575,10 @@
       display: grid; 
       grid-template-columns: 1fr auto 1fr; 
       align-items: center; 
-      gap: 12px; 
-      font-size: var(--text-base);
+      gap: 12px;
     }
-    .account-task-matchup strong:last-child { text-align: right; }
-    .account-task-matchup > span { color: var(--dim); font-size: var(--text-sm); }
+    .account-task-matchup > .match-team:last-child { justify-content: flex-end; text-align: right; }
+    .account-task-matchup > span:not(.match-team) { color: var(--dim); font-size: var(--text-sm); }
     #live-account-list .account-task-matchup {
       margin: 12px 0;
     }
@@ -592,7 +589,7 @@
       padding: 1rem;
       font-size: var(--text-base);
     }
-    .account-live-player { display: inline-flex; align-items: center; min-width: 0; gap: 0.3em; }
+    .account-live-player { display: inline-flex; flex: 0 1 auto; align-items: center; min-width: 0; max-width: 100%; gap: 0.3em; }
     .account-live-server {
       flex: 0 0 auto;
       color: var(--accent);
@@ -605,13 +602,7 @@
       gap: 2px;
       text-align: center;
     }
-    .account-task-live-score .mc-score-main { font-size: var(--text-heading); }
-    .account-task-live-score .mc-score-detail { 
-      margin-top: 0; 
-      position: inherit;
-      width: inherit;
-      top: inherit;
-    }
+    .account-task-live-score .score { font-size: var(--text-heading); line-height: 1; }
     .account-task-player-name.is-authenticated { color: var(--accent2); }
     .result-proposal { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: var(--container-radius-xs); background: var(--surface2); padding: 0.7rem; }
     .result-proposal span { color: var(--dim); font-size: var(--text-sm); }
@@ -1086,6 +1077,7 @@
     .training-guest-remove:hover,
     .training-guest-remove:focus-visible { background: var(--surface2); color: var(--accent); outline: none; }
     .account-task-player-name.is-guest { color: var(--dim); font-weight: 600; }
+    .match-player.is-guest { color: var(--dim); }
     .training-picker-menu { right: auto; left: 0; width: max(100%, 260px); }
     .training-player-fields .training-picker:nth-child(even) .training-picker-menu { right: 0; left: auto; }
     .training-rounds { display: grid; gap: 16px; }
@@ -1164,8 +1156,9 @@
       }
       .result-entry-timing :is(label, .schedule-time-label) { min-width: 0; flex-direction: column; align-items: stretch; gap: 4px; }
       .account-section-heading { align-items: center; flex-wrap: wrap; gap: 8px; }
-      .account-task-matchup strong { display: flex; flex-wrap: wrap; }
-      .account-task-matchup strong:last-child { justify-content: end; }
+      .account-task-matchup > .match-team { flex-direction: column; align-items: flex-start; gap: 2px; }
+      .account-task-matchup > .match-team:last-child { align-items: flex-end; }
+      .account-task-matchup > .match-team > .team-sep { display: none; }
 
       .account-task-actions .secondary-button, 
       .account-task-actions .primary-button, 

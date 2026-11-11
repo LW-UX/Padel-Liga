@@ -21,7 +21,8 @@ Diese Datei ist die kanonische Quelle für Rollen, Registrierung, Einladungen, B
 ## Spielereinladungen
 
 - Ein Admin ordnet einem bestehenden Spielerprofil eine eindeutige Arbeits-E-Mail zu. Der Spieler erhält einen persönlichen, zeitlich begrenzten Link und legt sein Passwort selbst fest; der Admin erzeugt und kennt kein Passwort.
-- Zuordnung und Einladungsvorbereitung sind getrennte Aktionen. Die Anwendung zeigt Link und vorbereitete Nachricht an, versendet aber nicht selbst über einen externen Maildienst.
+- Zuordnung und Einladungsvorbereitung sind getrennte Aktionen. Die Anwendung zeigt Link und vorbereitete Nachricht an, versendet die Ersteinladung aber nicht selbst über einen externen Maildienst.
+- Ausnahme: Auf ausdrücklichen Auftrag des Admins darf der Server eine Erinnerung an eingeladene, weiterhin unbestätigte Spielerkonten über den Transaktionsmaildienst im gebrandeten Layout verschicken. Jeder Empfänger erhält dabei erst beim Versand einen frischen persönlichen Link, der über die neutrale Liga-Zwischenseite (Bestätigungsadresse als Query-Parameter) zur Passwortmaske führt; ein inzwischen bestätigtes Konto erhält keine Erinnerung. Die Erinnerung nennt als Grund, dass ohne aktives Konto weder Kalendereinladungen noch der Hallencode möglich sind.
 - Bestehende Konten werden nicht dupliziert. Soweit die Zuordnungen eindeutig sind, kann ein vorhandenes Konto mit dem Spielerprofil verbunden und erneut mit einem Passwort-Einrichtungslink eingeladen werden.
 - Die Zugangsverwaltung zeigt nur den Zustand der Zuordnung, nicht die geschützte Adresse selbst.
 

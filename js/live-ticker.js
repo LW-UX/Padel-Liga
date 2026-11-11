@@ -319,8 +319,8 @@
 
   function renderOverviewTeam(payload, team) {
     return getTeamPlayers(payload, team)
-      .map(player => `<span>${escapeHtml(player.displayName)}</span>`)
-      .join('<span class="team-sep live-overview-team-separator">&amp;</span>');
+      .map(player => `<span class="match-player">${escapeHtml(player.displayName)}</span>`)
+      .join('<span class="team-sep">&amp;</span>');
   }
 
   function getOverviewMatchState(payload) {
@@ -634,19 +634,19 @@
         <div class="live-overview-matches">
           ${payloads.map((payload, index) => {
             const matchState = getOverviewMatchState(payload);
-            const teamOneWinner = matchState.isFinished && Number(payload.winner) === 1;
-            const teamTwoWinner = matchState.isFinished && Number(payload.winner) === 2;
-            return `<button class="live-overview-match${matchState.isFinished ? ' is-finished' : ''}" type="button" data-live-match-id="${escapeHtml(payload.matchId)}">
-              <span class="hint live-overview-match-meta">
+            const winner = matchState.isFinished ? Number(payload.winner) : 0;
+            const teamResultClass = team => (winner === 1 || winner === 2) ? (winner === team ? ' is-winner' : ' is-loser') : '';
+            return `<button class="live-overview-match match-card${matchState.isFinished ? ' is-played' : ''}" type="button" data-live-match-id="${escapeHtml(payload.matchId)}">
+              <span class="match-meta live-overview-match-meta">
                 <span>${escapeHtml(payload.displayLabel || `Partie ${index + 1}`)}</span>
                 ${matchState.isLive ? '<span class="live-overview-live"><span class="live-overview-score-dot" aria-hidden="true">●</span>Live</span>' : ''}
               </span>
               <span class="live-overview-matchup">
-                <span class="live-overview-team live-overview-team-1${teamOneWinner ? ' is-winner' : ''}">${renderOverviewTeam(payload, 1)}</span>
+                <span class="live-overview-team live-overview-team-1 match-team${teamResultClass(1)}">${renderOverviewTeam(payload, 1)}</span>
                 <span class="live-overview-result">${matchState.probability
-                  ? renderProbabilityScore(matchState.probability, 'live-overview-probability')
-                  : `<strong>${escapeHtml(matchState.score)}</strong>`}</span>
-                <span class="live-overview-team live-overview-team-2${teamTwoWinner ? ' is-winner' : ''}">${renderOverviewTeam(payload, 2)}</span>
+                  ? `<span class="match-prob" aria-label="Gewinnwahrscheinlichkeit ${matchState.probability.team1} zu ${matchState.probability.team2} Prozent">${matchState.probability.team1}% : ${matchState.probability.team2}%</span>`
+                  : `<strong class="score">${escapeHtml(matchState.score)}</strong>`}</span>
+                <span class="live-overview-team live-overview-team-2 match-team${teamResultClass(2)}">${renderOverviewTeam(payload, 2)}</span>
               </span>
             </button>`;
           }).join('')}
@@ -1158,12 +1158,12 @@
   function renderAccountTeamLabel(task, team) {
     const players = (task.players || []).filter(player => Number(player.team) === team);
     if (!players.length) {
-      return escapeHtml(team === 1 ? task.teamOneLabel : task.teamTwoLabel);
+      return `<span class="match-player">${escapeHtml(team === 1 ? task.teamOneLabel : task.teamTwoLabel)}</span>`;
     }
     const currentServerId = task.session?.currentServerPlayerId;
     return players.map(player => {
       const serving = currentServerId && String(player.playerId) === String(currentServerId);
-      return `<span class="account-live-player">${escapeHtml(player.displayName)}${serving
+      return `<span class="account-live-player"><span class="match-player">${escapeHtml(player.displayName)}</span>${serving
         ? '<span class="account-live-server" role="img" aria-label="hat Aufschlag" title="Aufschlag">◉</span>'
         : ''}</span>`;
     }).join('<span class="team-sep">&amp;</span>');
@@ -1207,19 +1207,19 @@
     </article>`).join('');
     const matchHtml = matches.map(task => `<article class="account-task-card${task.session ? ' is-actionable' : ''}" data-live-account-match="${escapeHtml(task.matchId)}">
       <div class="account-task-meta">
-        <span class="eyebrow">${escapeHtml(task.seasonLabel)} · ${escapeHtml(task.displayLabel)}</span>
+        <span class="match-meta">${escapeHtml(task.seasonLabel)} · ${escapeHtml(task.displayLabel)}</span>
         <span class="account-task-status ${task.session ? 'is-open' : ''}">${task.session ? 'Live' : task.assignment?.status === 'accepted' ? 'Bereit' : 'Zuweisung offen'}</span>
       </div>
       <div class="result-card-timing">${escapeHtml(formatDateTime(task.matchAt))}</div>
       <div class="account-task-matchup">
-        <strong>${renderAccountTeamLabel(task, 1)}</strong>
+        <div class="match-team">${renderAccountTeamLabel(task, 1)}</div>
         ${task.session ? `<div class="account-task-live-score" aria-label="Aktueller Stand ${Number(task.session.teamOneGames) || 0} zu ${Number(task.session.teamTwoGames) || 0}${scoringMode(task.session) === 'points' ? `, Punkte ${escapeHtml(pointLabel(task.session))}` : ''}">
-          <span class="mc-score-main">${Number(task.session.teamOneGames) || 0}:${Number(task.session.teamTwoGames) || 0}</span>
-          <span class="hint mc-score-detail">${scoringMode(task.session) === 'points'
+          <span class="score">${Number(task.session.teamOneGames) || 0}:${Number(task.session.teamTwoGames) || 0}</span>
+          <span class="hint account-task-live-points">${scoringMode(task.session) === 'points'
             ? escapeHtml(pointLabel(task.session))
             : '–'}</span>
         </div>` : '<span>vs.</span>'}
-        <strong>${renderAccountTeamLabel(task, 2)}</strong>
+        <div class="match-team">${renderAccountTeamLabel(task, 2)}</div>
       </div>
       ${task.assignment && task.assignment.scorerProfileId !== profileId
         ? `<div class="hint account-waiting">Schreiber: ${escapeHtml(task.assignment.scorerName)}</div>`

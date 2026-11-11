@@ -61,7 +61,7 @@ test('account cards use tournament labels across seasons and task groups', () =>
       const label = match.displayLabel || `Partie ${match.id.match(/\d+$/)[0]}`;
       for (const group of ['review', 'past', 'future', 'planned']) {
         assert.ok(context.renderResultTaskCard(task, group).includes(
-          `<span class="mc-nr">${task.league_label} · ${label}</span>`
+          `<span class="match-meta">${task.league_label} · ${label}</span>`
         ), `${match.id} in ${group} uses ${label}`);
       }
       if (!sample.legacyLabels) {

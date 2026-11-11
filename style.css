@@ -3632,14 +3632,6 @@
     }
     .mc-result-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
     .mc-score .score { font-size: var(--text-heading); }
-    .mc-score-main { 
-      font-family: var(--font-heading); 
-      font-size: var(--text-heading); 
-      letter-spacing: 0.05em; 
-      color: var(--text); 
-      line-height: 1; 
-      font-weight: 600;
-    }
     .mc-score-detail { 
       position: absolute;
       width: max-content;
@@ -3738,13 +3730,6 @@
       font-weight: 400;
       letter-spacing: normal;
       line-height: 1;
-    }
-    .mc-nr { 
-      font-family: var(--font-body);
-      font-size: var(--text-sm);
-      color: var(--dim);
-      text-align: left;
-      letter-spacing: 0.03rem;
     }
 
     .detail-view-dialog {
@@ -3957,15 +3942,11 @@
       display: grid;
       gap: 8px;
       padding: 0.5rem 1.2rem;
-      border: 1px solid var(--border);
-      border-radius: var(--container-radius-sm);
-      background: transparent;
       color: inherit;
       cursor: var(--cursor-pointer);
       font: inherit;
       text-align: left;
     }
-    .live-overview-match.is-finished { background: var(--surface); }
     .live-overview-match:hover,
     .live-overview-match:focus-visible { border-color: var(--accent); }
     .live-overview-match-meta {
@@ -3986,41 +3967,24 @@
       gap: 1rem;
     }
     .live-overview-team {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 0.25rem 0.45rem;
-      min-width: 0;
-      font-size: var(--text-base);
-      font-weight: 500;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.1rem;
       line-height: 1.16;
     }
     .live-overview-team-2 {
-      justify-content: flex-end;
+      align-items: flex-end;
       text-align: right;
     }
-    .live-overview-team-separator { margin: 0; }
-    .live-overview-match.is-finished .live-overview-team:not(.is-winner) { color: var(--muted); }
-    .live-overview-team.is-winner {
-      color: var(--text);
-      font-weight: 600;
-    }
+    .live-overview-team > .team-sep { display: none; }
     .live-overview-result {
       display: grid;
       min-width: 74px;
       justify-items: center;
     }
-    .live-overview-result strong {
-      color: var(--text);
-      font-family: var(--font-heading);
+    .live-overview-result .score {
       font-size: var(--text-heading);
-      font-weight: 400;
-      letter-spacing: 0.05em;
       line-height: 1;
-    }
-    .live-overview-probability {
-      column-gap: 9px;
-      width: 110px;
     }
     .live-overview-score-dot {
       display: inline-block;
@@ -5480,12 +5444,6 @@
       }
       .live-overview-matchup { gap: 0.6rem; }
       .live-overview-match { padding: 0.5rem 0.85rem; }
-      .live-overview-team {
-        display: grid;
-        gap: 0.1rem;
-      }
-      .live-overview-team-2 { justify-content: stretch; }
-      .live-overview-team-separator { display: none; }
       .live-overview-result { min-width: 78px; }
       .live-overview-prematch-grid {
         grid-template-columns: minmax(0, 1fr);

@@ -1174,9 +1174,7 @@
         const escapedName = escapeHtml(playerName);
         const isAuthenticatedPlayer = normalizedAuthenticatedName
           && playerName.trim().toLocaleLowerCase('de-DE') === normalizedAuthenticatedName;
-        return isAuthenticatedPlayer
-          ? `<span class="account-task-player-name is-authenticated">${escapedName}</span>`
-          : escapedName;
+        return `<span class="match-player${isAuthenticatedPlayer ? ' viewer-player' : ''}">${escapedName}</span>`;
       })
       .join('<span class="team-sep">&amp;</span>');
   }
@@ -1186,9 +1184,9 @@
       ? getPlayerName(state.profile.player_id)
       : '';
     return `<div class="account-task-matchup">
-      <strong>${renderTaskTeamLabel(task.team_one_label, authenticatedPlayerName)}</strong>
+      <div class="match-team">${renderTaskTeamLabel(task.team_one_label, authenticatedPlayerName)}</div>
       <span>vs.</span>
-      <strong>${renderTaskTeamLabel(task.team_two_label, authenticatedPlayerName)}</strong>
+      <div class="match-team">${renderTaskTeamLabel(task.team_two_label, authenticatedPlayerName)}</div>
     </div>`;
   }
 
@@ -1328,7 +1326,7 @@
     return `<div class="result-task-wrap">
       <article class="account-task-card result-task-card${hasAuthenticatedPlayer ? ' has-authenticated-player' : ''}${isActionable ? ' is-actionable' : ''}${isWaiting ? ' is-waiting' : ''}" data-result-task-match="${escapeHtml(task.match_id)}">
         <div class="account-task-meta">
-          <span class="mc-nr">${escapeHtml(getTaskLeagueLabel(task))} · ${escapeHtml(getTaskMatchLabel(task))}</span>
+          <span class="match-meta">${escapeHtml(getTaskLeagueLabel(task))} · ${escapeHtml(getTaskMatchLabel(task))}</span>
           ${renderResultTaskStatus(task)}
         </div>
         ${renderTaskMatchup(task)}
@@ -1470,10 +1468,17 @@
       return '<p class="hint">Partien werden geladen …</p>';
     }
     const trainings = courtSelectableTrainings();
-    const trainingOptions = `<button type="button" class="secondary-button match-card" data-court-training-select="new">Training hinzufügen</button>`
+    const trainingOptions = `<button type="button" class="secondary-button secondary-button--with-icon court-training-add" data-court-training-select="new">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+        <span>Training hinzufügen</span>
+      </button>`
       + trainings.map(task => `<button type="button" class="secondary-button match-card is-already-scheduled" data-court-training-select="${escapeHtml(task.session_id)}">
         <span class="account-task-meta"><span class="match-meta">Training · Partie ${escapeHtml(task.training_number || task.session_id)}</span><span class="account-task-status">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</span></span>
-        ${renderTrainingParticipants(task)}
+        <span class="match-team court-training-players">${task.player_ids.map(playerId => {
+          const isAuthenticated = playerId === state.profile?.player_id;
+          const isGuest = isTrainingGuestKey(playerId);
+          return `<span class="match-player${isAuthenticated ? ' viewer-player' : ''}${isGuest ? ' is-guest' : ''}">${escapeHtml(getPlayerName(playerId, task.guest_names, task.player_ids))}</span>`;
+        }).join('')}</span>
       </button>`).join('');
     return trainingOptions + tasks.map(task => `<button type="button" class="secondary-button match-card${task.match_at ? ' is-already-scheduled' : ''}" data-court-match-select="${escapeHtml(task.match_id)}">
         <span class="account-task-meta">
@@ -1481,9 +1486,9 @@
           <span class="account-task-status">${task.match_at ? escapeHtml(formatMatchAt(task.match_at)) : 'Nicht terminiert'}</span>
         </span>
         <span class="account-task-matchup">
-          <strong>${renderTaskTeamLabel(task.team_one_label, authenticatedPlayerName)}</strong>
+          <span class="match-team">${renderTaskTeamLabel(task.team_one_label, authenticatedPlayerName)}</span>
           <span>vs.</span>
-          <strong>${renderTaskTeamLabel(task.team_two_label, authenticatedPlayerName)}</strong>
+          <span class="match-team">${renderTaskTeamLabel(task.team_two_label, authenticatedPlayerName)}</span>
         </span>
       </button>`).join('');
   }
@@ -1748,7 +1753,7 @@
     return playerIds.map(playerId => {
       const isAuthenticated = playerId === state.profile?.player_id;
       const isGuest = isTrainingGuestKey(playerId);
-      return `<span class="account-task-player-name${isAuthenticated ? ' is-authenticated' : ''}${isGuest ? ' is-guest' : ''}">${escapeHtml(getPlayerName(playerId, guestNames, participantIds))}</span>`;
+      return `<span class="match-player${isAuthenticated ? ' viewer-player' : ''}${isGuest ? ' is-guest' : ''}">${escapeHtml(getPlayerName(playerId, guestNames, participantIds))}</span>`;
     }).join('<span class="team-sep">&amp;</span>');
   }
 
@@ -1813,9 +1818,9 @@
     const roundLabel = roundCount > 1 ? ` · Partie ${roundIndex + 1}` : '';
     return `<div class="training-task-round">
       <div class="account-task-matchup">
-        <strong>${renderTrainingTaskTeam(round.team_one_ids, task.guest_names, task.player_ids)}</strong>
+        <div class="match-team">${renderTrainingTaskTeam(round.team_one_ids, task.guest_names, task.player_ids)}</div>
         <span>vs.</span>
-        <strong>${renderTrainingTaskTeam(round.team_two_ids, task.guest_names, task.player_ids)}</strong>
+        <div class="match-team">${renderTrainingTaskTeam(round.team_two_ids, task.guest_names, task.player_ids)}</div>
       </div>
       <div class="result-proposal">
         <span>${proposalLabel}${roundLabel}<br>${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</span>
@@ -2333,7 +2338,7 @@
       && Date.parse(linkedBooking.ends_at) > Date.now();
     return `<article class="account-task-card training-task-card scheduled-training-card${hasAuthenticatedPlayer ? ' has-authenticated-player' : ''}${due ? ' is-actionable' : ''}">
       <div class="account-task-meta">
-        <span class="mc-nr">Training · Partie ${escapeHtml(task.training_number || task.session_id)}</span>
+        <span class="match-meta">Training · Partie ${escapeHtml(task.training_number || task.session_id)}</span>
         <span class="account-task-status${due ? ' is-open' : ''}">${due ? 'Ergebnis eintragen' : 'Terminiert'}</span>
       </div>
       ${due ? '' : `<div class="result-card-timing">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>`}
@@ -2355,7 +2360,7 @@
     const hasAuthenticatedPlayer = Boolean(state.profile?.player_id && task.player_ids.includes(state.profile.player_id));
     return `<article class="account-task-card training-task-card${hasAuthenticatedPlayer ? ' has-authenticated-player' : ''}${task.created_by_me ? ' is-waiting' : ' is-actionable'}">
       <div class="account-task-meta">
-        <span class="mc-nr">Training · Partie ${escapeHtml(task.training_number || index + 1)}</span>
+        <span class="match-meta">Training · Partie ${escapeHtml(task.training_number || index + 1)}</span>
         <span class="account-task-status${task.created_by_me ? '' : ' is-open'}">${task.created_by_me ? 'Auf Bestätigung warten' : 'Zu bestätigen'}</span>
       </div>
       <div class="training-task-rounds">${rounds.map((round, roundIndex) => renderTrainingTaskRound(task, round, roundIndex, rounds.length)).join('')}</div>

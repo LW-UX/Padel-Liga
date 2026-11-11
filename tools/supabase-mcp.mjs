@@ -15,7 +15,7 @@ const tokenFile = resolve(repositoryRoot, '.codex-secrets/supabase-access-token'
 const [command, argument, originalRecipientsArgument] = process.argv.slice(2);
 
 if (!command) {
-  fail('Aufruf: supabase-mcp.mjs <list-tools|list-migrations|apply-migration|execute-sql|list-functions|get-function|deploy-function|delete-function|get-logs|store-notification-service-key|get-auth-email-settings|update-recovery-template|update-account-email-templates> [Datei oder Function]');
+  fail('Aufruf: supabase-mcp.mjs <list-tools|list-migrations|apply-migration|execute-sql|list-functions|get-function|deploy-function|delete-function|invoke-invite-reminders|get-logs|store-notification-service-key|get-auth-email-settings|update-recovery-template|update-account-email-templates> [Datei oder Function]');
 }
 
 let accessToken;
@@ -326,6 +326,21 @@ if (command === 'list-tools') {
   } finally {
     await managementRequest(`/functions/${slug}`, { method: 'DELETE' });
   }
+} else if (command === 'invoke-invite-reminders') {
+  // Ruft die bereitgestellte Erinnerungs-Function mit einer JSON-Datei als Auftrag auf.
+  // Die Antwort enthält nur Konto-IDs und Versandstatus, keine Adressen oder Links.
+  if (!argument) fail('Die Auftragsdatei fehlt.');
+  const body = await readFile(resolve(argument), 'utf8');
+  const keys = await managementRequest('/api-keys?reveal=true');
+  const serviceKey = keys.find(key => key.type === 'secret')?.api_key;
+  if (!serviceKey) fail('Der Projektzugang ist nicht verfügbar.');
+  const response = await fetch(`https://${projectRef}.supabase.co/functions/v1/send-invite-reminders`, {
+    method: 'POST', headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey, 'Content-Type': 'application/json' },
+    body, signal: AbortSignal.timeout(60000)
+  });
+  const result = await response.json().catch(() => ({}));
+  console.log(JSON.stringify({ http: response.status, ...result }));
+  if (!response.ok || result.results?.some(row => row.status !== 'sent')) process.exitCode = 1;
 } else if (command === 'delete-function') {
   requireFunctionPath(argument);
   await managementRequest(`/functions/${argument}`, { method: 'DELETE' });

@@ -393,7 +393,7 @@ test('only Final Four detail views use the split probability score', () => {
   assert.match(matchRow, /`<div class="match-prob">\$\{probability\.team1\}% : \$\{probability\.team2\}%<\/div>`/);
   assert.doesNotMatch(matchRow, /renderProbabilityScore/);
   assert.match(ticker, /function getPayloadWinProbability\(payload\)[\s\S]*player\.currentElo[\s\S]*elos\[0\] \* 0\.7 \+ elos\[1\] \* 0\.3/);
-  assert.match(overview, /renderProbabilityScore\(matchState\.probability, 'live-overview-probability'\)/);
+  assert.match(overview, /class="match-prob"[^\n]*% : /);
   assert.match(publicMatch, /renderProbabilityScore\(pendingProbability, 'match-detail-probability', false\)/);
   assert.match(publicMatch, /pendingProbability \? 'Prozent' : 'Noch nicht begonnen'/);
   assert.match(publicMatch, /pendingProbability \? 'Gewinnchance' : 'Spielstand'/);
