@@ -22,7 +22,8 @@ test('the passive appointment row stays present even when empty and never offers
   assert.equal((html.match(/class="court-unassigned-row"/g) || []).length, 1);
   assert.match(html, />P\.7<\/span>/);
   assert.match(html, />TR<\/span>/);
-  assert.match(html, /Ohne zugeordnete Platzbuchung · A, B, C, D/);
+  assert.match(html, /12:00–13:00 Uhr · A, B, C, D/);
+  assert.doesNotMatch(html, /Ohne zugeordnete Platzbuchung/);
   assert.match(html, /top:0px/);
   assert.match(html, /top:35px/);
   assert.match(html, /top:70px/);

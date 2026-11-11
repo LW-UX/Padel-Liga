@@ -323,10 +323,14 @@
       };
     }
     if (form?.matches('.training-form') && !form.dataset.trainingAlternative) {
+      const playerIds = getTrainingParticipantIds(form);
+      const guestNames = getTrainingGuestNames(form);
+      if (playerIds.length !== 4 || new Set(playerIds).size !== 4 || playerIds.some(id => !id)
+        || playerIds.filter(isTrainingGuestKey).some(id => !guestNames[id] || guestNames[id].length < 2 || guestNames[id].length > 40)) return null;
       return {
         subjectType: 'training',
         subjectId: form.dataset.trainingScheduled || null,
-        playerIds: getTrainingParticipantIds(form),
+        playerIds,
         date: String(form.querySelector('[name="playedOn"]')?.value || ''),
         time: String(form.querySelector('[name="displayTime"]')?.value || '')
       };
@@ -335,14 +339,16 @@
   }
 
   function syncCourtBookingWindow(form, context) {
-    if (!form?.matches('.match-schedule-form')) return;
+    if (!form?.matches('.match-schedule-form, .training-form')) return;
     const bookingInput = form.querySelector('[name="courtBookingId"]');
     const target = form.querySelector('[data-racket-check]');
     if (!bookingInput?.value || !target) return;
     const booking = state.courtBookings.find(entry => String(entry.booking_id) === bookingInput.value);
     if (!booking) return;
     const startsAt = getBerlinMatchAtParts(booking.starts_at);
-    if (startsAt.date === context?.date && startsAt.time === context?.time) return;
+    const date = context?.date || form.querySelector('[name="playedOn"]')?.value;
+    const time = context?.time || form.querySelector('[name="displayTime"]')?.value;
+    if (startsAt.date === date && startsAt.time === time) return;
     bookingInput.value = '';
     delete target.dataset.courtBookingFrom;
     delete target.dataset.courtBookingUntil;
@@ -1423,6 +1429,13 @@
       && (!task.match_at || getMatchAtTimestamp(task.match_at) > Date.now()));
   }
 
+  function courtSelectableTrainings() {
+    return state.trainingTasks.filter(task => task.status === 'scheduled'
+      && getTrainingTaskTimestamp(task, 0) > Date.now()
+      && (task.created_by_me || state.profile?.app_role === 'admin'))
+      .sort((a, b) => getTrainingTaskTimestamp(a) - getTrainingTaskTimestamp(b));
+  }
+
   function courtBookingSlot(booking) {
     const parts = getBerlinMatchAtParts(booking.starts_at);
     return {
@@ -1453,8 +1466,13 @@
     if (isPlayerAccount() && (state.playerToolsLoading || !state.playerToolsReady)) {
       return '<p class="hint">Partien werden geladen …</p>';
     }
-    if (!tasks.length) return '<p class="hint">Für dein Konto ist gerade keine terminierbare Partie verfügbar.</p>';
-    return tasks.map(task => `<button type="button" class="secondary-button match-card${task.match_at ? ' is-already-scheduled' : ''}" data-court-match-select="${escapeHtml(task.match_id)}">
+    const trainings = courtSelectableTrainings();
+    const trainingOptions = `<button type="button" class="secondary-button match-card" data-court-training-select="new">Training hinzufügen</button>`
+      + trainings.map(task => `<button type="button" class="secondary-button match-card is-already-scheduled" data-court-training-select="${escapeHtml(task.session_id)}">
+        <span class="account-task-meta"><span class="match-meta">Training · Partie ${escapeHtml(task.training_number || task.session_id)}</span><span class="account-task-status">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</span></span>
+        ${renderTrainingParticipants(task)}
+      </button>`).join('');
+    return trainingOptions + tasks.map(task => `<button type="button" class="secondary-button match-card${task.match_at ? ' is-already-scheduled' : ''}" data-court-match-select="${escapeHtml(task.match_id)}">
         <span class="account-task-meta">
           <span class="match-meta">${escapeHtml(getTaskLeagueLabel(task))} · ${escapeHtml(getTaskMatchLabel(task))}</span>
           <span class="account-task-status">${task.match_at ? escapeHtml(formatMatchAt(task.match_at)) : 'Nicht terminiert'}</span>
@@ -1477,7 +1495,7 @@
       panel.className = 'court-account-selection court-booking-inbox';
       games.before(panel);
     }
-    const bookings = state.courtBookings.filter(booking => !booking.match_id && Date.parse(booking.ends_at) > Date.now());
+    const bookings = state.courtBookings.filter(booking => !booking.match_id && !booking.training_session_id && Date.parse(booking.ends_at) > Date.now());
     const isChoosingMatch = Boolean(pendingCourtSlot?.reserved && !replacementCancellationTask);
     panel.hidden = !state.session?.user || (!bookings.length && !replacementCancellationTask && !isChoosingMatch);
     if (panel.hidden) return;
@@ -1565,6 +1583,53 @@
       : 'Zeit übernommen. Bitte die Partie mit „Terminieren“ beziehungsweise „Termin speichern“ bestätigen. Der Platz ist noch nicht reserviert.');
   }
 
+  function applyTrainingCourtSlot(sessionId, slot) {
+    if (Date.parse(slot.start) <= Date.now()
+      || (sessionId !== 'new' && !courtSelectableTrainings().some(task => String(task.session_id) === sessionId))) {
+      setAuthMessage('Die Zeit kann diesem Training nicht mehr zugewiesen werden. Bitte prüfe die Auswahl erneut.', 'error');
+      return;
+    }
+    const form = sessionId === 'new' ? document.getElementById('training-form')
+      : document.querySelector(`[data-training-scheduled="${CSS.escape(sessionId)}"]`);
+    if (!form) return;
+    if (sessionId === 'new') {
+      renderTrainingForm();
+      setTrainingToggleState(true);
+      const group = form.closest('[data-training-form-group]');
+      if (group) group.hidden = false;
+    } else {
+      const toggle = form.closest('.training-task-card')?.querySelector('[data-training-schedule-toggle]');
+      if (toggle) toggle.textContent = 'Termin schließen';
+    }
+    form.hidden = false;
+    form.querySelector('[name="playedOn"]').value = slot.date;
+    form.querySelector('[name="courtBookingId"]').value = slot.bookingId || '';
+    const target = form.querySelector('[data-racket-check]');
+    delete target.dataset.racketRequest;
+    if (slot.reserved) {
+      target.dataset.courtBookingFrom = slot.time;
+      target.dataset.courtBookingUntil = getBerlinMatchAtParts(slot.end).time;
+      target.dataset.courtBookingNumber = getBookedCourtNumber(slot.courtName);
+    } else {
+      delete target.dataset.courtBookingFrom;
+      delete target.dataset.courtBookingUntil;
+      delete target.dataset.courtBookingNumber;
+    }
+    const timeField = form.querySelector('[data-schedule-time-field="displayTime"]');
+    timeField.dataset.scheduleTimeDefault = slot.time;
+    timeField.innerHTML = renderScheduleTimeControls('displayTime', slot.time);
+    syncDateTimeHints(form);
+    syncTrainingFormMode(form);
+    pendingCourtSlot = null;
+    courtAccountRequested = false;
+    renderCourtMatchSelection();
+    renderCourtBookingInbox();
+    form.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    setAuthMessage(slot.reserved
+      ? 'Gebuchte Zeit übernommen. Bitte die Teilnehmer prüfen und die Platzzuordnung mit dem Training speichern.'
+      : 'Zeit übernommen. Bitte die Teilnehmer prüfen und das Training speichern. Der Platz ist noch nicht reserviert.');
+  }
+
   function chooseCourtMatch(slot) {
     pendingCourtSlot = slot;
     courtAccountRequested = true;
@@ -1596,11 +1661,12 @@
     await refreshPlayerMatchData({ force: true });
     if (version !== state.playerToolsVersion || !state.session?.user) return [];
     const booked = new Set(state.courtBookings.map(booking => booking.match_id).filter(Boolean));
+    const bookedTrainings = new Set(state.courtBookings.map(booking => String(booking.training_session_id || '')).filter(Boolean));
     const matches = getVisibleResultTasks().filter(task => task.task_type === 'enter' && !booked.has(task.match_id))
       .map(task => ({ id: `match:${task.match_id}`, kind: 'match', start: getMatchAtTimestamp(task.match_at, NaN),
         shortLabel: `P.${getTaskNumber(task)}`, label: [getTaskLeagueLabel(task), getTaskMatchLabel(task)].join(' · '),
         participants: (task.match_players || []).map(member => getPlayerName(member.player_id)).join(', ') }));
-    const trainings = state.trainingTasks.filter(task => task.status === 'scheduled')
+    const trainings = state.trainingTasks.filter(task => task.status === 'scheduled' && !bookedTrainings.has(String(task.session_id)))
       .map(task => ({ id: `training:${task.session_id}`, kind: 'training', start: getTrainingTaskTimestamp(task, NaN),
         shortLabel: 'TR', label: 'Training',
         participants: (task.player_ids || []).map(id => getPlayerName(id, task.guest_names, task.player_ids)).join(', ') }));
@@ -2230,12 +2296,14 @@
 
   function renderScheduledTrainingForm(task, due) {
     const canManage = task.created_by_me || state.profile?.app_role === 'admin';
+    const linkedBooking = state.courtBookings.find(booking => String(booking.training_session_id) === String(task.session_id));
     return `<form class="training-form training-alternative-form scheduled-training-form${due ? ' is-result-entry' : ''}" data-training-scheduled="${escapeHtml(task.session_id)}" ${due ? '' : 'hidden'}>
+      <input type="hidden" name="courtBookingId" value="${linkedBooking?.booking_id || ''}">
       <div class="training-form-meta">
         <label><span>Datum</span><span class="datetime-input-shell" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required value="${escapeHtml(task.played_on)}"></span></label>
         <div class="schedule-time-label" role="group" aria-label="Uhrzeit"><span>Uhrzeit</span>${renderScheduleTimeField('displayTime', task.display_time)}</div>
       </div>
-      <div class="racket-check" data-racket-check role="status" aria-live="polite" hidden></div>
+      <div class="racket-check" data-racket-check${courtBookingWindowAttributes(linkedBooking)} role="status" aria-live="polite" hidden></div>
       <div class="training-player-fields" data-training-player-fields></div>
       <div class="training-result-fields" data-training-result-fields ${due ? '' : 'hidden'}>
         <div class="training-rounds" data-training-rounds></div>
@@ -2253,6 +2321,7 @@
 
   function renderScheduledTrainingTaskCard(task, groupKey) {
     const due = groupKey === 'past';
+    const linkedBooking = state.courtBookings.find(booking => String(booking.training_session_id) === String(task.session_id));
     const canManage = task.created_by_me || state.profile?.app_role === 'admin';
     const hasAuthenticatedPlayer = Boolean(state.profile?.player_id && task.player_ids.includes(state.profile.player_id));
     return `<article class="account-task-card training-task-card scheduled-training-card${hasAuthenticatedPlayer ? ' has-authenticated-player' : ''}${due ? ' is-actionable' : ''}">
@@ -2261,7 +2330,7 @@
         <span class="account-task-status${due ? ' is-open' : ''}">${due ? 'Ergebnis eintragen' : 'Terminiert'}</span>
       </div>
       ${due ? '' : `<div class="result-card-timing">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>
-      <div class="racket-status" data-racket-status="training:${escapeHtml(task.session_id)}" data-racket-starts-at="${getTrainingTaskTimestamp(task, 0)}" hidden></div>`}
+      <div class="racket-status" data-racket-status="training:${escapeHtml(task.session_id)}" data-racket-starts-at="${getTrainingTaskTimestamp(task, 0)}"${courtBookingWindowAttributes(linkedBooking)} hidden></div>`}
       ${due ? '' : renderTrainingParticipants(task)}
       ${!due && canManage ? `<div class="account-task-actions scheduled-result-actions">
         <button class="secondary-button" type="button" data-training-delete="${escapeHtml(task.session_id)}">Termin löschen</button>
@@ -3847,8 +3916,9 @@ Dein Hanako-Leben-Squad`;
         return;
       }
     }
+    const bookingId = data.get('courtBookingId') ? Number(data.get('courtBookingId')) : null;
     const rpcName = schedulesFuture
-      ? scheduledTrainingId ? 'update_scheduled_training' : 'schedule_training_session'
+      ? bookingId ? 'save_training_with_court_booking' : scheduledTrainingId ? 'update_scheduled_training' : 'schedule_training_session'
       : scheduledTrainingId ? 'submit_scheduled_training_result'
         : editingTrainingId ? 'replace_pending_training_session' : 'create_training_session';
     const payload = {
@@ -3857,6 +3927,10 @@ Dein Hanako-Leben-Squad`;
       p_player_ids: playerIds,
       p_guest_names: guestNames
     };
+    if (schedulesFuture && bookingId) {
+      payload.p_session_id = scheduledTrainingId ? Number(scheduledTrainingId) : null;
+      payload.p_court_booking_id = bookingId;
+    }
     if (!schedulesFuture) payload.p_rounds = rounds;
     if (editingTrainingId) payload.p_session_id = Number(editingTrainingId);
     if (scheduledTrainingId) payload.p_session_id = Number(scheduledTrainingId);
@@ -3900,7 +3974,7 @@ Dein Hanako-Leben-Squad`;
     if (form.id === 'training-form') setTrainingToggleState(false);
     setAuthMessage(schedulesFuture
       ? withCalendarNote(
-        withRacketNote(scheduledTrainingId ? 'Trainingstermin wurde geändert.' : 'Training wurde terminiert.', racket),
+        withRacketNote(scheduledTrainingId ? 'Trainingstermin wurde geändert.' : 'Training wurde terminiert.', racket, form.querySelector('[data-racket-check]')),
         buildMatchAtValue(payload.p_played_on, payload.p_display_time)
       )
       : state.profile?.app_role === 'admin' ? 'Training wurde direkt eingetragen.' : 'Training wurde zur Bestätigung gesendet.', 'success');
@@ -3976,6 +4050,8 @@ Dein Hanako-Leben-Squad`;
         });
         return;
       }
+      const trainingCourtSelect = event.target.closest('[data-court-training-select]');
+      if (trainingCourtSelect && pendingCourtSlot) { applyTrainingCourtSlot(trainingCourtSelect.dataset.courtTrainingSelect, pendingCourtSlot); return; }
       const courtSelect = event.target.closest('[data-court-match-select]');
       if (courtSelect && pendingCourtSlot) { applyCourtSlot(courtSelect.dataset.courtMatchSelect, pendingCourtSlot); return; }
       const bookedCourtSelect = event.target.closest('[data-court-booking-select]');
@@ -4355,6 +4431,7 @@ Dein Hanako-Leben-Squad`;
       }
       if (event.target.matches('[data-training-guest-name]')) {
         setTrainingMessage('', '', event.target.closest('.training-form'));
+        scheduleRacketCheck(event.target.closest('.training-form'));
         return;
       }
       if (event.target.matches('[data-result-score]')) {

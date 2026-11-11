@@ -680,7 +680,7 @@
     .schedule-time-field .training-picker-toggle::after { right: 0.65rem; }
     .schedule-time-field :is(.training-picker-display, .training-picker-display-line) { overflow: visible; text-overflow: clip; }
     .schedule-time-field .training-picker-menu { right: auto; left: 0; width: 100%; min-width: 72px; max-height: min(240px, 50vh); overscroll-behavior: contain; }
-    .datetime-input-shell { display: contents; }
+    .datetime-input-shell { display: inline-grid; width: fit-content; max-width: 100%; }
     .datetime-input-shell.is-empty input { color: var(--dim); }
     .has-controlled-datetime-hints .datetime-input-shell {
       position: relative;

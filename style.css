@@ -113,7 +113,8 @@
       transition: all 0.15s;
       white-space: nowrap;
     }
-    .datetime-input-shell input:is(:hover, :focus),
+    .datetime-input-shell:hover input,
+    .datetime-input-shell input:focus,
     .auth-form :is(input, select):is(:hover, :focus),
     .player-invite-output input:is(:hover, :focus),
     .secondary-button:hover,

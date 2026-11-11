@@ -2,6 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
+const { stripTypeScriptTypes } = require('node:module');
 
 const root = path.join(__dirname, '..');
 const migration = fs.readFileSync(
@@ -165,4 +167,47 @@ test('calendar mail waits 15 minutes unless the match starts within two hours', 
   assert.match(calendarDelayMigration, /from private\.calendar_invitation_baseline as baseline/);
   assert.match(accountScript, /Kalendereinladungen werden in etwa 15 Minuten verschickt\./);
   assert.match(accountScript, /startsIn <= 2 \* 60 \* 60 \* 1000/);
+});
+
+test('short-notice prediction mail names the match and uses the urgent introduction in HTML and text', () => {
+  const context = vm.createContext({ URL, Intl, Date });
+  const source = edgeFunction.replace(/^import .*;\n/gm, '').split('Deno.serve(')[0];
+  vm.runInContext(stripTypeScriptTypes(source), context);
+  const job = {
+    notification_type: 'prediction_reminder', recipient_name: 'Alex',
+    match_id: 'winter-12', match_label: 'Partie 12', season_label: 'Winter 2026',
+    team_one_label: 'A & B', team_two_label: 'C & D',
+    match_at: '2026-11-12T17:00:00Z', short_notice: true,
+  };
+  const mail = context.renderMail(job, 'https://example.invalid/tipp/');
+  assert.equal(mail.subject, 'PadelLiga: Tipp für Partie 12 nicht vergessen');
+  assert.equal(mail.intro, 'jetzt schnell noch tippen!');
+  assert.equal(mail.body, 'Die Partie 12 wurde kurzfristig terminiert und dein Tipp fehlt noch. Bis zum Spielbeginn kannst du ihn eintragen oder ändern.');
+  assert.match(mail.html, /font-weight:bold;">jetzt schnell noch tippen!<\/p>/);
+  assert.match(mail.text, /Hallo Alex,\n\njetzt schnell noch tippen!/);
+  assert.doesNotMatch(mail.html + mail.text, /in rund 24 Stunden/);
+  assert.match(mail.html, /Jetzt tippen/);
+  assert.match(mail.html, /12\.11\.2026/);
+
+  assert.match(context.getMailContent({ ...job, short_notice: false }).body, /in rund 24 Stunden/);
+  for (const short_notice of [null, undefined]) {
+    const fallback = context.getMailContent({ ...job, short_notice });
+    assert.doesNotMatch(fallback.body, /24 Stunden|kurzfristig/);
+    assert.match(fallback.body, /Bis zum Spielbeginn/);
+  }
+});
+
+test('short-notice classification uses the actual schedule change and only exposes claimed mail context to the service', () => {
+  const timing = fs.readFileSync(path.join(root, 'supabase/migrations/20261111130000_prediction_reminder_schedule_timing.sql'), 'utf8');
+  assert.match(timing, /after insert or update of match_at on public\.matches/);
+  assert.match(timing, /new\.match_at is not distinct from old\.match_at then return new/);
+  assert.match(timing, /delete from private\.match_schedule_timing where match_id = new\.id/);
+  assert.match(timing, /set match_at = excluded\.match_at, scheduled_at = excluded\.scheduled_at/);
+  assert.match(timing, /timing\.scheduled_at > queue\.source_match_at - interval '24 hours'/);
+  assert.match(timing, /timing\.match_at = queue\.source_match_at/);
+  assert.match(timing, /queue\.claim_token = p_claim_token and queue\.status = 'processing'/);
+  assert.match(timing, /<> 'service_role'/);
+  assert.match(timing, /revoke all on function public\.get_claimed_prediction_reminder_context\(uuid\) from public, anon, authenticated/);
+  assert.match(timing, /grant execute on function public\.get_claimed_prediction_reminder_context\(uuid\) to service_role/);
+  assert.match(edgeFunction, /job\.short_notice = reminderContext\.get\(job\.job_id\) \?\? null/);
 });

@@ -97,7 +97,7 @@
       lanes[lane] = entry.until;
       const left = position(entry.from) / times.length * 100;
       const width = (position(entry.until) - position(entry.from)) / times.length * 100;
-      const info = `${entry.label} · ${entry.time}–${timeLabel(minute(entry.time) + entry.duration)} Uhr · Ohne zugeordnete Platzbuchung${entry.participants ? ` · ${entry.participants}` : ''}`;
+      const info = `${entry.label} · ${entry.time}–${timeLabel(minute(entry.time) + entry.duration)} Uhr${entry.participants ? ` · ${entry.participants}` : ''}`;
       return `<span class="court-appointment" tabindex="0" role="img" aria-label="${escape(info)}" data-court-appointment-info="${escape(info)}" style="left:${left}%;width:${width}%;top:${lane * 35}px">${escape(entry.shortLabel)}</span>`;
     }).join('');
     return `<tr class="court-unassigned-row"><th scope="row"><span class="sr-only">Termine ohne zugeordnete Platzbuchung</span></th><td colspan="${times.length}"><div class="court-appointment-track"><div class="court-appointment-lanes" style="height:${Math.max(34, lanes.length * 35 - 1)}px">${skeleton ? '' : blocks}</div></div></td></tr>`;
@@ -191,6 +191,7 @@
   }
 
   function bookingMatchNumber(slot) {
+    if (slot?.trainingId) return 'TR';
     if (!slot?.matchId) return '';
     return String(slot.matchLabel || '').match(/(\d+)\s*$/)?.[1]
       || String(slot.matchId).match(/(\d+)\s*$/)?.[1]
@@ -219,6 +220,7 @@
         duration,
         time,
         matchId: booking.match_id || null,
+        trainingId: booking.training_session_id || null,
         matchLabel: booking.match_label || '',
         reserved: true
       }];
@@ -229,7 +231,7 @@
     const bounds = hourBounds(data, hoursFilter);
     return currentSlot(slot) && minute(slot.time) >= bounds.from
       && minute(slot.time) + slot.duration <= bounds.until
-      && (!slot.matchId || slot.matchId === options.matchId);
+      && !slot.trainingId && (!slot.matchId || slot.matchId === options.matchId);
   }
 
   function requestedBooking() {
@@ -245,7 +247,7 @@
     if (version !== bookingShortcutVersion || !dialog.open) return;
     availableBookings = (Array.isArray(bookings) ? bookings : [])
       .filter(booking => Date.parse(booking.starts_at) > Date.now()
-        && (!booking.match_id || booking.match_id === options.matchId))
+        && !booking.training_session_id && (!booking.match_id || booking.match_id === options.matchId))
       .sort((left, right) => Number(right.match_id === options.matchId) - Number(left.match_id === options.matchId)
         || Date.parse(left.starts_at) - Date.parse(right.starts_at)
         || Number(left.booking_id) - Number(right.booking_id));
@@ -324,13 +326,13 @@
         const bookingNumber = bookingMatchNumber(bookedCover);
         const bookingCellIndex = bookedCover ? (minute(time) - minute(bookedCover.time)) / 30 : -1;
         const bookingMarker = bookingNumber && bookingCellIndex === 0
-          ? `<span class="court-booking-match-number" aria-hidden="true">P.${escape(bookingNumber)}</span>` : '';
+          ? `<span class="court-booking-match-number" aria-hidden="true">${bookingNumber === 'TR' ? 'TR' : `P.${escape(bookingNumber)}`}</span>` : '';
         const className = bookedCover
-          ? `is-booked${bookedCover.matchId ? ' is-assigned' : ''}${minute(time) === minute(bookedCover.time) ? ' is-booked-start' : ''}${minute(time) + 30 >= minute(bookedCover.time) + bookedCover.duration ? ' is-booked-end' : ''}`
+          ? `is-booked${(bookedCover.matchId || bookedCover.trainingId) ? ' is-assigned' : ''}${minute(time) === minute(bookedCover.time) ? ' is-booked-start' : ''}${minute(time) + 30 >= minute(bookedCover.time) + bookedCover.duration ? ' is-booked-end' : ''}`
           : freeCovered ? 'is-free' : 'is-unavailable';
         const label = choice?.reserved ? bookingLabel : choice ? `${court.name}, ${time} bis ${clock(choice.end)}, frei` : '';
-        const racketBusy = !bookedCover?.matchId && isRacketBusy(time, data.racketBusyStarts);
-        const racketText = bookedCover?.matchId ? '' : racketHourHint(time, data.racketBusyStarts);
+        const racketBusy = !(bookedCover?.matchId || bookedCover?.trainingId) && isRacketBusy(time, data.racketBusyStarts);
+        const racketText = (bookedCover?.matchId || bookedCover?.trainingId) ? '' : racketHourHint(time, data.racketBusyStarts);
         return `<td data-court-cell="${escape(court.id)}" data-court-time="${time}" class="${className}">${choice
           ? `<button type="button" class="court-slot" data-court-slot="${escape(choice.id)}" data-court-label="${escape(label)}" aria-pressed="false" aria-label="${escape(label + (racketText ? `. ${racketText}` : ''))}"></button>`
           : `<span class="sr-only">${escape(bookingLabel || 'Nicht als Stundenbeginn verfügbar')}</span>`}${racketBusy ? renderRacketMarker(Boolean(choice), racketText) : ''}${bookingMarker}</td>`;
@@ -479,7 +481,8 @@
       data = result;
       data.racketBusyStarts = racketAvailability?.date === date ? racketAvailability.busyStarts : [];
       ownBookings = Array.isArray(bookings) ? bookings : [];
-      const assignedIds = new Set(ownBookings.map(booking => `match:${booking.match_id}`));
+      const assignedIds = new Set(ownBookings.map(booking => booking.training_session_id
+        ? `training:${booking.training_session_id}` : `match:${booking.match_id}`));
       data.appointments = (Array.isArray(appointments) ? appointments : []).filter(entry => !assignedIds.has(entry.id));
       const revealRequested = Boolean(revealBookingId);
       const bookingToReveal = requestedBooking();

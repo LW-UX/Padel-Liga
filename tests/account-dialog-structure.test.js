@@ -202,7 +202,7 @@ test('date and time hints are dimmed while Safari and iOS receive controlled tex
   assert.match(accountScript, /document\.addEventListener\('input', event => \{\s*syncDateTimeHint\(event\.target\)/);
   assert.match(accountScript, /document\.addEventListener\('change', event => \{\s*syncDateTimeHint\(event\.target\)/);
   assert.match(accountScript, /form\.reset\(\);\s*syncDateTimeHints\(form\);/);
-  assert.match(style, /\.datetime-input-shell \{ display: contents; \}/);
+  assert.match(style, /\.datetime-input-shell \{ display: inline-grid; width: fit-content; max-width: 100%; \}/);
   assert.match(style, /\.datetime-input-shell\.is-empty input \{ color: var\(--dim\); \}/);
   assert.match(style, /\.has-controlled-datetime-hints \.datetime-input-shell::after \{[^}]*color: var\(--dim\);[^}]*opacity: 0;/);
   assert.match(style, /\.datetime-input-shell\.is-empty:not\(:focus-within\)::after \{ opacity: 1; \}/);

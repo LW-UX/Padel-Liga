@@ -235,7 +235,9 @@ html:root .viewer-combobox {
 }
 
 /* Beim Überfahren füllt sich die Fläche mit dem blauen Akzent; Zähler bleiben ohne Hover. */
-html:root :is(.secondary-button, .global-action:not(:where(.text-link)), .datetime-input-shell input):is(:hover, :focus, :focus-visible),
+html:root :is(.secondary-button, .global-action:not(:where(.text-link))):is(:hover, :focus, :focus-visible),
+html:root .datetime-input-shell:hover input,
+html:root .datetime-input-shell input:is(:focus, :focus-visible),
 html:root .toggle:not(.toggle--sort) button:is(:hover, :focus-visible),
 html:root .viewer-profile-button:is(:hover, :focus-visible),
 html:root .viewer-combobox:has(> .secondary-button:enabled):hover,
@@ -330,7 +332,9 @@ html:root .viewer-split-button .secondary-button:is(:hover, :focus, :focus-visib
 }
 
 /* Dropdowns (Saison-, Spieler-, Datums- und Uhrzeitauswahl) verhalten sich beim Überfahren wie Eingabefelder: Fläche --surface und oranger Rahmen statt blauer Fläche. Der Profilbild-Knopf des Split-Buttons ist ein Button und wird blau. */
-html:root :is(.secondary-button--dropdown, .datetime-input-shell input):is(:hover, :focus, :focus-visible),
+html:root .secondary-button--dropdown:is(:hover, :focus, :focus-visible),
+html:root .datetime-input-shell:hover input,
+html:root .datetime-input-shell input:is(:focus, :focus-visible),
 html:root .viewer-combobox:has(> .secondary-button:enabled):hover,
 html:root .viewer-combobox:has(:focus-visible) {
   border-color: var(--accent);

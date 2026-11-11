@@ -34,10 +34,10 @@
     })();
   </script>
   <link rel="stylesheet" href="../achievements.css?v=2026-10-31">
-  <link rel="stylesheet" href="../style.css?v=2026-11-09-padel-loader">
+  <link rel="stylesheet" href="../style.css?v=2026-11-11-datepicker-hover">
   <link rel="stylesheet" href="../tipp.css?v=2026-11-06-flat-design">
   <link rel="stylesheet" href="../match-statistics.css?v=2026-11-06-flat-design">
-  <link rel="stylesheet" href="../account.css?v=2026-11-06-hall-alerts">
+  <link rel="stylesheet" href="../account.css?v=2026-11-11-datepicker-hover">
   <link rel="stylesheet" href="../court-availability.css?v=2026-11-06-calendar-appointments-v8">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -51,8 +51,8 @@
   <script defer src="../js/score-input.js?v=2026-09-22-unified-score-counters"></script>
   <script defer src="../js/mobile-dialog-pages.js?v=2026-11-03-profile-routes"></script>
   <script defer src="../js/branding-preview.js?v=2026-11-06-og-outer-border"></script>
-  <script defer src="../js/court-availability.js?v=2026-11-06-calendar-appointments-v8"></script>
-  <script defer src="../js/account.js?v=2026-11-11-training-racket-check"></script>
+  <script defer src="../js/court-availability.js?v=2026-11-11-training-court-bookings"></script>
+  <script defer src="../js/account.js?v=2026-11-11-training-court-bookings"></script>
   <script defer src="../js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="../js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="../js/headline-split.js?v=2026-11-03-headline-split-2"></script>
@@ -447,6 +447,7 @@
             <div class="match-group" id="training-form-group" data-training-form-group hidden>
               <h3><span>Training</span></h3>
               <form class="training-form" id="training-form" hidden>
+                <input type="hidden" name="courtBookingId" value="">
                 <div class="training-form-meta">
                   <label><span>Datum</span><span class="datetime-input-shell is-empty" data-datetime-field data-datetime-hint="TT.MM.JJJJ"><input type="date" name="playedOn" required></span></label>
                   <div class="schedule-time-label" role="group" aria-label="Uhrzeit"><span>Uhrzeit</span><span class="schedule-time-field" data-schedule-time-field="displayTime"></span></div>

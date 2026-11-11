@@ -144,6 +144,11 @@ test('doppelt gemeldete Datums- und Uhrzeitänderungen beenden die Live-Prüfung
   selection.playerIds[3] = 'guest:4';
   context.scheduleRacketCheck(form);
   assert.equal(target.notes.at(-1), 'checking', 'a participant change starts a new check at the same time');
+  context.getRacketFormContext = () => null;
+  context.scheduleRacketCheck(form);
+  assert.equal([...timers.values()].filter(timer => timer.delay === 450).length, 0, 'incomplete selection cancels the pending check');
+  assert.equal(target.notes.at(-1), null, 'incomplete selection hides the loading indicator');
+  assert.equal(target.dataset.racketRequest, undefined);
 });
 
 test('der Schläger-Hinweis verschwindet ab Spielbeginn', () => {
@@ -216,4 +221,35 @@ test('Trainings-Teilnehmerabgleich bleibt für Browser gesperrt und prüft Rolle
   assert.match(sql, /cardinality\(p_player_ids\)/);
   assert.match(sql, /revoke execute[\s\S]*from public, anon, authenticated/);
   assert.match(sql, /grant execute[\s\S]*to service_role/);
+});
+
+test('Training prüft Schläger erst bei vier verschiedenen vollständig benannten Teilnehmern', () => {
+  const vm = require('node:vm');
+  const account = fs.readFileSync(path.join(root, 'js/account.js'), 'utf8');
+  const source = account.match(/ {2}function getRacketFormContext\(form\) \{[\s\S]*?\n {2}\}\n/)[0];
+  let playerIds = ['p1', '', '', ''];
+  let guestNames = {};
+  const form = {
+    dataset: {}, matches: selector => selector === '.training-form',
+    querySelector: selector => ({ value: selector.includes('playedOn') ? '2099-11-04' : '18:00' })
+  };
+  const context = vm.createContext({
+    getTrainingParticipantIds: () => playerIds,
+    getTrainingGuestNames: () => guestNames,
+    isTrainingGuestKey: id => /^guest:[1-4]$/.test(id)
+  });
+  vm.runInContext(source, context);
+  assert.equal(context.getRacketFormContext(form), null);
+  playerIds = ['p1', 'p2', 'p3', ''];
+  assert.equal(context.getRacketFormContext(form), null);
+  playerIds = ['p1', 'p2', 'p3', 'p3'];
+  assert.equal(context.getRacketFormContext(form), null);
+  playerIds = ['p1', 'p2', 'p3', 'p4'];
+  assert.deepEqual(Array.from(context.getRacketFormContext(form).playerIds), playerIds);
+  playerIds[3] = 'guest:4';
+  assert.equal(context.getRacketFormContext(form), null);
+  guestNames = { 'guest:4': 'A' };
+  assert.equal(context.getRacketFormContext(form), null);
+  guestNames['guest:4'] = 'Alex';
+  assert.ok(context.getRacketFormContext(form));
 });

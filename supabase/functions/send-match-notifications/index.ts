@@ -25,6 +25,7 @@ type NotificationJob = {
   idempotency_key: string;
   training_participants: string | null;
   match_has_preview: boolean;
+  short_notice?: boolean | null;
 };
 
 type CalendarDetails = {
@@ -292,8 +293,12 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
   }
   return {
     subject: `PadelLiga: Tipp für ${job.match_label} nicht vergessen`,
-    intro: "Dein Tipp fehlt noch.",
-    body: "Diese Partie beginnt in rund 24 Stunden und du hast noch keinen Tipp abgegeben. Bis zum Spielbeginn kannst du deinen Tipp eintragen und ändern.",
+    intro: job.short_notice === true ? "jetzt schnell noch tippen!" : "Dein Tipp fehlt noch.",
+    body: job.short_notice === true
+      ? `Die ${matchTitle} wurde kurzfristig terminiert und dein Tipp fehlt noch. Bis zum Spielbeginn kannst du ihn eintragen oder ändern.`
+      : job.short_notice === false
+        ? "Diese Partie beginnt in rund 24 Stunden und du hast noch keinen Tipp abgegeben. Bis zum Spielbeginn kannst du deinen Tipp eintragen und ändern."
+        : "Diese Partie steht an und dein Tipp fehlt noch. Bis zum Spielbeginn kannst du ihn eintragen oder ändern.",
     action: "Jetzt tippen",
     matchName,
   };
@@ -403,6 +408,21 @@ Deno.serve(async (request) => {
   if (error) return jsonResponse({ error: error.message }, 500);
 
   const jobs = (data || []) as NotificationJob[];
+  if (jobs.some(job => job.notification_type === "prediction_reminder")) {
+    const { data: reminderRows, error: reminderError } = await serviceClient.rpc(
+      "get_claimed_prediction_reminder_context",
+      { p_claim_token: claimToken },
+    );
+    if (reminderError) {
+      console.error("Terminierungskontext der Tipp-Erinnerungen konnte nicht geladen werden:", reminderError.message);
+    }
+    const reminderContext = new Map<number, boolean | null>(
+      (reminderRows || []).map((row: { job_id: number; short_notice: boolean | null }) => [row.job_id, row.short_notice]),
+    );
+    for (const job of jobs) {
+      if (job.notification_type === "prediction_reminder") job.short_notice = reminderContext.get(job.job_id) ?? null;
+    }
+  }
   const siteUrl = normalizeSiteUrl(publicSiteUrl);
   const calendarDetails = new Map<number, CalendarDetails>();
   if (jobs.some(isCalendarJob)) {
