@@ -52,9 +52,25 @@ export function normalizePlaytomicSessionCookie(input: string): string {
   return [...tokens].map(([name, token]) => `${name}=${token}`).join("; ");
 }
 
-export async function readHallAccessCode(bookingId: string, sessionCookie: string, fetcher: typeof fetch = fetch): Promise<string> {
+// Reads only the `exp` claim of the access token. An undecodable payload stays
+// undecided so Playtomic itself remains the authority.
+export function accessTokenExpiresAt(cookie: string): number | null {
+  const payload = /(?:^|; )pt_auth_access_token=[A-Za-z0-9_-]+\.([A-Za-z0-9_-]+)\./.exec(cookie)?.[1];
+  if (!payload) return null;
+  try {
+    const exp = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(payload.length / 4) * 4, "="))).exp;
+    return Number.isFinite(exp) ? exp * 1000 : null;
+  } catch { return null; }
+}
+
+export async function readHallAccessCode(bookingId: string, sessionCookie: string, fetcher: typeof fetch = fetch,
+  now: () => number = Date.now): Promise<string> {
   if (typeof bookingId !== "string" || !bookingIdPattern.test(bookingId)) throw new AccessCodeReadError("invalid_request");
   const cookie = normalizePlaytomicSessionCookie(sessionCookie);
+  // Playtomic answers an expired access token with HTTP 500 instead of 401.
+  // Report it as an expired login and skip the pointless network request.
+  const expiresAt = accessTokenExpiresAt(cookie);
+  if (expiresAt !== null && expiresAt <= now()) throw new AccessCodeReadError("login_required");
   let response: Response;
   try {
     // The URL and method cannot be supplied by a caller. In particular this

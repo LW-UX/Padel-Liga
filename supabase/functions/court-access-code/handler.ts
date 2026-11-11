@@ -4,7 +4,7 @@ type User = { id: string; confirmed: boolean };
 export type Dependencies = {
   user: (authorization: string) => Promise<User | null>;
   subject: (matchId: string, userId: string) => Promise<Subject | null>;
-  cookie: () => string | undefined;
+  cookie: () => string | undefined | Promise<string | undefined>;
   readCode: (providerId: string, cookie: string) => Promise<string>;
   claim: (matchId: string, userId: string, claimId: string) => Promise<CacheResult>;
   finish: (matchId: string, userId: string, claimId: string, bookingId: number, code: string | null, failureReason: string | null) => Promise<CacheResult>;
@@ -63,7 +63,7 @@ export function createHandler(deps: Dependencies) {
       let code: string | null = null;
       let failureReason: string | null = "configuration";
       try {
-        const cookie = deps.cookie();
+        const cookie = await deps.cookie();
         if (cookie) {
           failureReason = "code_unavailable";
           const read = await deps.readCode(selected.providerId, cookie);

@@ -184,8 +184,9 @@ if (command === 'list-tools') {
   let entrypointPath = 'index.ts';
   if (argument === 'court-access-code') {
     files = files.map(file => ({ ...file, name: `${argument}/${file.name}` }));
-    files.push({ name: '_shared/playtomic-access-code.ts',
-      content: await readFile(resolve(functionsDirectory, '_shared/playtomic-access-code.ts'), 'utf8') });
+    for (const name of ['_shared/playtomic-access-code.ts', '_shared/playtomic-session.ts']) {
+      files.push({ name, content: await readFile(resolve(functionsDirectory, name), 'utf8') });
+    }
     entrypointPath = `${argument}/index.ts`;
   }
   if (argument === 'receive-court-booking') {
@@ -211,7 +212,11 @@ if (command === 'list-tools') {
       files
     }
   }));
-} else if (command === 'probe-court-access-codes') {
+} else if (['probe-court-access-codes', 'diagnose-court-access-codes', 'refresh-playtomic-session'].includes(command)) {
+  // diagnose-… liest nur (Berechtigung + ein Playtomic-GET), ohne Cache- oder Störungsschreibvorgänge.
+  // refresh-playtomic-session verlängert zusätzlich die Sitzung und schreibt nur den privaten Sitzungsspeicher.
+  const diagnoseOnly = command !== 'probe-court-access-codes';
+  const withSession = command === 'refresh-playtomic-session';
   const matchIds = (argument || '').split(',').filter(Boolean);
   if (!matchIds.length || matchIds.length > 10 || matchIds.some(id => id.length > 200)) fail('Partie-IDs für die Prüfung fehlen.');
   const secrets = await managementRequest('/secrets');
@@ -232,7 +237,7 @@ if (command === 'list-tools') {
     const files = (await readFunctionFiles(requireFunctionPath(slug))).map(file => ({
       ...file, name: `${slug}/${file.name}`, content: file.content.replace('__COURT_PROBE_KEY__', probeKey),
     }));
-    for (const path of ['court-access-code/handler.ts', '_shared/playtomic-access-code.ts']) {
+    for (const path of ['court-access-code/handler.ts', '_shared/playtomic-access-code.ts', '_shared/playtomic-session.ts']) {
       files.push({ name: path, content: await readFile(resolve(functionsDirectory, path), 'utf8') });
     }
     const deployed = await rpc('tools/call', { name: 'deploy_edge_function', arguments: {
@@ -242,12 +247,12 @@ if (command === 'list-tools') {
     try {
       const response = await fetch(`https://${projectRef}.supabase.co/functions/v1/${slug}`, {
         method: 'POST', headers: { Authorization: `Bearer ${probeKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchIds, actorId }), signal: AbortSignal.timeout(60000),
+        body: JSON.stringify({ matchIds, actorId, diagnoseOnly, withSession }), signal: AbortSignal.timeout(60000),
       });
       const result = await response.json();
       // Only sanitized diagnostics are returned by the probe, never codes/keys.
       console.log(JSON.stringify(result));
-      if (!response.ok || !result.configured || result.results?.some(row => !row.codePresent || !row.cacheConfirmed)) process.exitCode = 1;
+      if (!response.ok || !result.configured || (!diagnoseOnly && result.results?.some(row => !row.codePresent || !row.cacheConfirmed))) process.exitCode = 1;
     } finally {
       await managementRequest(`/functions/${slug}`, { method: 'DELETE' });
     }

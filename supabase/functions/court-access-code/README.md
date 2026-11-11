@@ -19,12 +19,25 @@ aufgebaut. Zeilenumbrüche zwischen Cookie-Paaren und ein optionales `Cookie:`
 am Anfang sind zulässig; fremde Cookies werden ignoriert. Doppelte Anmelde-Cookies
 und beschädigte JWT-Werte werden vor einem Netzwerkaufruf abgewiesen.
 
-Playtomic erhält ausschließlich einen GET auf
-`https://app.playtomic.com/app_tabs/profile/activity/bookings/<UUID>`.
-Weiterleitungen, Scripts, Formulare, Loginversuche und sämtliche Buchungs- oder
-Stornierungsaktionen sind ausgeschlossen. Ein fehlender, abgelaufener oder
-abgewiesener Zugang liefert nur `unavailable`; es gibt keine automatische
-Neuanmeldung. Die bislang geprüfte Sitzung hat keine Erneuerung nachgewiesen.
+Playtomic erhält für den Code ausschließlich einen GET auf
+`https://app.playtomic.com/app_tabs/profile/activity/bookings/<UUID>` mit dem
+Zugriffstoken als einzigem Cookie. Weiterleitungen, Scripts, Formulare,
+Loginversuche mit Zugangsdaten und sämtliche Buchungs- oder Stornierungsaktionen
+sind ausgeschlossen.
+
+Das Zugriffstoken gilt etwa eine Stunde. Ist es abgelaufen, sendet
+`_shared/playtomic-session.ts` das Erneuerungstoken per
+`POST https://api.app.playtomic.io/v3/auth/token`
+(`{ "refresh_token": …, "requested_user_roles": ["ROLE_CUSTOMER"] }`).
+Playtomic tauscht dabei auch das Erneuerungstoken aus; das neue Paar liegt
+ausschließlich in `private.playtomic_session` (Migration
+`20261111160000_playtomic_session_refresh.sql`). `claim_playtomic_session`
+vergibt genau einen 30-Sekunden-Erneuerungsauftrag, parallele Aufrufe warten.
+Ein SHA-256-Fingerabdruck des Secret-Erneuerungstokens erkennt ein neu
+hinterlegtes Secret und verwirft dann den gespeicherten Stand. Abgewiesene
+Erneuerungen (400/401/403) gelten als `login_required`. Playtomic beantwortet
+ein abgelaufenes Zugriffstoken auf der Buchungsseite mit HTTP 500; der Leser
+erkennt den Ablauf deshalb vorab am `exp`-Wert und meldet `login_required`.
 
 ## Einrichtung durch Codex
 

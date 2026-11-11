@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { createHandler } from "./handler.ts";
 import { readHallAccessCode } from "../_shared/playtomic-access-code.ts";
+import { currentPlaytomicCookie, playtomicSessionStore } from "../_shared/playtomic-session.ts";
 
 const options = { auth: { persistSession: false, autoRefreshToken: false } };
 function admin() {
@@ -20,7 +21,8 @@ Deno.serve(createHandler({
     if (error) throw new Error("subject_unavailable");
     return data;
   },
-  cookie: () => Deno.env.get("PLAYTOMIC_READ_ONLY_SESSION_COOKIE"),
+  // Renews the one-hour Playtomic session on demand and stores the rotated tokens privately.
+  cookie: () => currentPlaytomicCookie(Deno.env.get("PLAYTOMIC_READ_ONLY_SESSION_COOKIE"), playtomicSessionStore(admin())),
   readCode: readHallAccessCode,
   async claim(matchId, userId, claimId) {
     const { data, error } = await admin().rpc("claim_court_access_code_read", {

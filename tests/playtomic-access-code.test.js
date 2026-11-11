@@ -74,3 +74,15 @@ test('Cookie-Header werden aus benannten JWTs aufgebaut, Fremdcookies und Zeilen
     assert.throws(() => normalize(value), { message: 'invalid_request' });
   }
 });
+
+test('abgelaufene Playtomic-Anmeldung wird ohne Netzaufruf als login_required gemeldet', async () => {
+  const { readHallAccessCode } = await import('../supabase/functions/_shared/playtomic-access-code.ts');
+  const jwt = exp => `pt_auth_access_token=aaa.${Buffer.from(JSON.stringify({ exp })).toString('base64url')}.ccc`;
+  const id = '00000000-0000-0000-0000-000000000001';
+  let calls = 0;
+  const fetcher = async () => { calls++; return new Response('Access code: 1234#', { headers: { 'content-type': 'text/html' } }); };
+  await assert.rejects(readHallAccessCode(id, jwt(1000), fetcher, () => 1000_000), { reason: 'login_required' });
+  assert.equal(calls, 0);
+  assert.equal(await readHallAccessCode(id, jwt(2000), fetcher, () => 1000_000), '1234#');
+  assert.equal(calls, 1);
+});
