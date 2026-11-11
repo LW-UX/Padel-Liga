@@ -457,7 +457,7 @@
     hallCodeRun++;
     window.clearTimeout(hallCodeTimer);
     hallCodeTimer = null;
-    document.querySelectorAll('[data-hall-code-match]').forEach(target => {
+    document.querySelectorAll('[data-hall-code-match], [data-hall-code-training]').forEach(target => {
       target.textContent = '';
       delete target.dataset.hallCodeState;
       target.hidden = true;
@@ -481,7 +481,7 @@
     const visible = target => target.dataset.hallCodeSurface === 'home'
       ? document.getElementById('home-matchday')?.hidden === false && (!target.getClientRects || target.getClientRects().length > 0)
       : !!document.getElementById('auth-dialog')?.open;
-    const targets = [...document.querySelectorAll('[data-hall-code-match]')].filter(visible);
+    const targets = [...document.querySelectorAll('[data-hall-code-match], [data-hall-code-training]')].filter(visible);
     let nextRefresh = Number.POSITIVE_INFINITY;
     for (const target of targets) {
       const active = () => run === hallCodeRun && state.session?.user?.id === userId
@@ -493,7 +493,9 @@
         continue;
       }
       target.hidden = false;
-      const key = `${target.dataset.hallCodeMatch}:${target.dataset.hallCodeBooking || ''}:${target.dataset.hallCodeUntil}`;
+      const trainingId = target.dataset.hallCodeTraining;
+      const subjectKey = trainingId ? `training:${trainingId}` : `match:${target.dataset.hallCodeMatch}`;
+      const key = `${subjectKey}:${target.dataset.hallCodeBooking || ''}:${target.dataset.hallCodeUntil}`;
       let cached = hallCodeCache.get(key);
       if (!cached || cached.until <= Date.now()) {
         target.dataset.hallCodeState = 'loading';
@@ -502,7 +504,8 @@
           const request = (async () => {
             let result;
             try {
-              const response = await state.client.functions.invoke('court-access-code', { body: { matchId: target.dataset.hallCodeMatch } });
+              const body = trainingId ? { trainingId: Number(trainingId) } : { matchId: target.dataset.hallCodeMatch };
+              const response = await state.client.functions.invoke('court-access-code', { body });
               if (!response.error) result = response.data;
               if (state.profile?.app_role === 'admin') void loadCourtAccessHealth();
             } catch (_error) { /* Keine Schlüssel oder Antwortinhalte protokollieren. */ }
@@ -2324,13 +2327,20 @@
     const linkedBooking = state.courtBookings.find(booking => String(booking.training_session_id) === String(task.session_id));
     const canManage = task.created_by_me || state.profile?.app_role === 'admin';
     const hasAuthenticatedPlayer = Boolean(state.profile?.player_id && task.player_ids.includes(state.profile.player_id));
+    // Wie bei Partien: Code nur für die zum Termin passende aktive H1–H4-Buchung bis zum Buchungsende.
+    const hasHallBooking = linkedBooking && /^H[1-4]$/.test(getBookedCourtNumber(linkedBooking.court_name))
+      && Date.parse(linkedBooking.starts_at) === getTrainingTaskTimestamp(task, 0)
+      && Date.parse(linkedBooking.ends_at) > Date.now();
     return `<article class="account-task-card training-task-card scheduled-training-card${hasAuthenticatedPlayer ? ' has-authenticated-player' : ''}${due ? ' is-actionable' : ''}">
       <div class="account-task-meta">
         <span class="mc-nr">Training · Partie ${escapeHtml(task.training_number || task.session_id)}</span>
         <span class="account-task-status${due ? ' is-open' : ''}">${due ? 'Ergebnis eintragen' : 'Terminiert'}</span>
       </div>
-      ${due ? '' : `<div class="result-card-timing">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>
-      <div class="racket-status" data-racket-status="training:${escapeHtml(task.session_id)}" data-racket-starts-at="${getTrainingTaskTimestamp(task, 0)}"${courtBookingWindowAttributes(linkedBooking)} hidden></div>`}
+      ${due ? '' : `<div class="result-card-timing">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>`}
+      ${!due || hasHallBooking ? `<div class="result-card-resources">
+        ${due ? '' : `<div class="racket-status" data-racket-status="training:${escapeHtml(task.session_id)}" data-racket-starts-at="${getTrainingTaskTimestamp(task, 0)}"${courtBookingWindowAttributes(linkedBooking)} hidden></div>`}
+        ${hasHallBooking ? `<div class="hall-code" data-hall-code-training="${escapeHtml(task.session_id)}" data-hall-code-booking="${linkedBooking.booking_id}" data-hall-code-until="${Date.parse(linkedBooking.ends_at)}" role="status" aria-live="polite" hidden></div>` : ''}
+      </div>` : ''}
       ${due ? '' : renderTrainingParticipants(task)}
       ${!due && canManage ? `<div class="account-task-actions scheduled-result-actions">
         <button class="secondary-button" type="button" data-training-delete="${escapeHtml(task.session_id)}">Termin löschen</button>

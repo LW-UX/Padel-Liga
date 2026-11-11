@@ -134,3 +134,15 @@ test('Hallencodes erscheinen am Spieltag nur für passende aktive H1–H4-Buchun
   app.render(data({ courtBookings: [booking], resultTasks: [match({ task_type: 'waiting' })] }), now);
   assert.doesNotMatch(app.target.innerHTML, /data-hall-code-match/);
 });
+
+test('Trainings mit passender Hallenbuchung zeigen Platz und Trainingscode', () => {
+  const app = setup();
+  const training = { session_id: 5, status: 'scheduled', played_on: '2026-11-06', display_time: '16:30:00', player_ids: ['me', 'a', 'b', 'partner'] };
+  const booking = { booking_id: 2, training_session_id: 5, starts_at: '2026-11-06T15:30:00Z', ends_at: '2026-11-06T16:30:00Z', court_name: 'CUPRA Indoor H3' };
+  app.render(data({ resultTasks: [], trainingTasks: [training], courtBookings: [booking] }), now);
+  assert.match(app.target.innerHTML, /data-hall-code-training="5"/);
+  assert.match(app.target.innerHTML, /Lucky Star Padel · CUPRA Indoor H3/);
+  app.render(data({ resultTasks: [], trainingTasks: [{ ...training, display_time: '17:00:00' }], courtBookings: [booking] }), now);
+  assert.doesNotMatch(app.target.innerHTML, /data-hall-code-training/);
+  assert.match(app.target.innerHTML, /Ort wie vereinbart/);
+});

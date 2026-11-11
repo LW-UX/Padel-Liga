@@ -47,10 +47,16 @@
     const trainings = (data.trainingTasks || []).flatMap(task => {
       if (task.status !== 'scheduled' || task.played_on !== today
         || !task.player_ids?.includes(playerId) || !/^\d{2}:\d{2}/.test(task.display_time || '')) return [];
+      const time = task.display_time.slice(0, 5);
+      const booking = (data.courtBookings || []).find(item => String(item.training_session_id) === String(task.session_id)
+        && dateKey(new Date(item.starts_at)) === today && timeFormatter.format(new Date(item.starts_at)) === time);
       return [{
-        id: task.session_id, kind: 'training', time: task.display_time.slice(0, 5), sortTime: task.display_time.slice(0, 5),
+        id: task.session_id, kind: 'training', time, sortTime: time,
         label: 'Training', participants: task.player_ids.filter(id => id !== playerId)
-          .map(id => data.getPlayerName(id, task.guest_names, task.player_ids))
+          .map(id => data.getPlayerName(id, task.guest_names, task.player_ids)),
+        court: booking?.court_name || '',
+        hallBooking: booking && /(?:^|\s)H[1-4]$/i.test(String(booking.court_name || '').trim())
+          && Date.parse(booking.ends_at) > now.getTime() ? booking : null
       }];
     });
     return [...matches, ...trainings].sort((left, right) => left.sortTime.localeCompare(right.sortTime));
@@ -60,7 +66,7 @@
     const matchup = entry.kind === 'training'
       ? `<strong>Du trainierst mit</strong><p>${entry.participants.map(escapeHtml).join(' &amp; ')}</p>`
       : `<strong>Du${entry.partner ? ` &amp; ${escapeHtml(entry.partner)}` : ''}</strong><p>gegen ${entry.opponents.map(escapeHtml).join(' &amp; ')}</p>`;
-    const location = entry.kind === 'training'
+    const location = entry.kind === 'training' && !entry.court
       ? 'Ort wie vereinbart'
       : `Lucky Star Padel · ${entry.court || 'Platz noch offen'}`;
     return `<article class="home-matchday-entry match-card">
@@ -69,7 +75,7 @@
         <div class="match-meta">${[entry.season, entry.label].filter(Boolean).map(escapeHtml).join(' · ')}</div>
         <div class="home-matchday-matchup">${matchup}</div>
         <div class="home-matchday-location"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span>${escapeHtml(location)}</span></div>
-        ${entry.hallBooking ? `<div class="hall-code" data-hall-code-surface="home" data-hall-code-match="${escapeHtml(entry.id)}" data-hall-code-booking="${entry.hallBooking.booking_id}" data-hall-code-until="${Date.parse(entry.hallBooking.ends_at)}" role="status" aria-live="polite" hidden></div>` : ''}
+        ${entry.hallBooking ? `<div class="hall-code" data-hall-code-surface="home" data-hall-code-${entry.kind === 'training' ? 'training' : 'match'}="${escapeHtml(entry.id)}" data-hall-code-booking="${entry.hallBooking.booking_id}" data-hall-code-until="${Date.parse(entry.hallBooking.ends_at)}" role="status" aria-live="polite" hidden></div>` : ''}
       </div>
     </article>`;
   }

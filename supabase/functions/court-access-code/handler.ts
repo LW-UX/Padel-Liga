@@ -33,13 +33,17 @@ export function createHandler(deps: Dependencies) {
       if (text.length > 512) return json({ state: "unavailable" }, 400);
       let body;
       try { body = JSON.parse(text); } catch { return json({ state: "unavailable" }, 400); }
-      if (!body || typeof body.matchId !== "string" || !body.matchId.trim()
-        || body.matchId.length > 200 || Object.keys(body).some(key => key !== "matchId")) {
-        return json({ state: "unavailable" }, 400);
-      }
+      const keys = body && typeof body === "object" ? Object.keys(body) : [];
+      const isMatch = keys.length === 1 && typeof body.matchId === "string" && !!body.matchId.trim()
+        && body.matchId.length <= 200 && !body.matchId.startsWith("training:");
+      const isTraining = keys.length === 1 && /^[1-9]\d{0,17}$/.test(String(body.trainingId ?? ""))
+        && ["string", "number"].includes(typeof body.trainingId);
+      if (!isMatch && !isTraining) return json({ state: "unavailable" }, 400);
+      // Trainings use the same protected RPCs under an internal subject key.
+      const subjectKey = isTraining ? `training:${body.trainingId}` : body.matchId;
       // Resolve and authorize every time, including when the UI still holds an
       // old booking. Never accept a provider booking ID or user ID from the UI.
-      const subject = await deps.subject(body.matchId, user.id);
+      const subject = await deps.subject(subjectKey, user.id);
       const now = deps.now || Date.now;
       if (!subject || !/^H[1-4]$/.test(subject.courtNumber) || !(Date.parse(subject.endsAt) > now())) return json({ state: "none" });
       const publicResult = (result: CacheResult) => {
@@ -52,7 +56,7 @@ export function createHandler(deps: Dependencies) {
         return json({ state: "unavailable", ...(result?.retryAt ? { retryAt: result.retryAt } : {}) });
       };
       const claimId = crypto.randomUUID();
-      const claim = await deps.claim(body.matchId, user.id, claimId);
+      const claim = await deps.claim(subjectKey, user.id, claimId);
       if (claim.state !== "read") return publicResult(claim);
       const selected = claim.subject;
       if (!selected || !/^H[1-4]$/.test(selected.courtNumber) || !(Date.parse(selected.endsAt) > now())) return json({ state: "none" });
@@ -73,12 +77,12 @@ export function createHandler(deps: Dependencies) {
       }
       // A cancellation, reassignment or permission change during the external
       // request must not release the code to an obsolete match or account.
-      const current = await deps.subject(body.matchId, user.id);
+      const current = await deps.subject(subjectKey, user.id);
       if (!current || current.providerId !== selected.providerId || current.endsAt !== selected.endsAt
         || current.startsAt !== selected.startsAt || current.bookingId !== selected.bookingId
         || current.courtNumber !== selected.courtNumber
         || !(Date.parse(current.endsAt) > now())) return json({ state: "none" });
-      return publicResult(await deps.finish(body.matchId, user.id, claimId, selected.bookingId, code, failureReason));
+      return publicResult(await deps.finish(subjectKey, user.id, claimId, selected.bookingId, code, failureReason));
     } catch {
       // No response body, transport exception, cookie or code in logs/errors.
       return json({ state: "unavailable" });

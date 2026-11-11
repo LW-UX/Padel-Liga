@@ -1,8 +1,12 @@
 # Hallencode ausschließlich lesen
 
-`POST { "matchId": "…" }` an die geschützte Edge Function liefert nur einem
-bestätigten Liga-Konto den aktuellen Hallencode seiner zugeordneten aktiven
-Platzbuchung. Berechtigt sind Partieteilnehmer und Admins.
+`POST { "matchId": "…" }` beziehungsweise `POST { "trainingId": 123 }` an die
+geschützte Edge Function liefert nur einem bestätigten Liga-Konto den aktuellen
+Hallencode seiner zugeordneten aktiven Platzbuchung. Berechtigt sind Partie-
+beziehungsweise Trainingsteilnehmer und Admins. Trainings laufen intern unter
+der Kennung `training:<ID>` durch dieselben geschützten RPCs und denselben
+Cache (Migration `20261111150000_training_court_access_codes.sql`); ein
+eingetragenes Trainingsergebnis beendet die Ausgabe wie bei Partien.
 Nur Indoor-Buchungen der Plätze H1–H4 liefern einen Code. Außenplätze und
 unbekannte Platzkennungen lösen keinen Playtomic-Abruf aus und liefern `none`.
 Die Provider-ID wird serverseitig ermittelt und nicht vom Browser übernommen. Nach dem Abruf wird

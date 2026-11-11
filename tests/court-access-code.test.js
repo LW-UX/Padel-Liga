@@ -217,3 +217,70 @@ test('PostgreSQL schützt die Zuordnung vor Fremd-, Tipper- und Direktzugriffen'
     assert.equal(await read(actors[0]), null);
   } finally { await db.close(); }
 });
+
+test('Trainings mit Hallenbuchung verwenden eine eigene Kennung, nicht die matchId', async () => {
+  const { createHandler } = await modulePromise;
+  const calls = [];
+  const handler = createHandler(dependencies({ subject: async (...args) => { calls.push(args); return subject; } }));
+  assert.equal((await (await handler(request({ trainingId: 7 }))).json()).code, '1234#');
+  assert.deepEqual(calls, [['training:7', 'actor'], ['training:7', 'actor']]);
+  for (const body of [{ trainingId: 0 }, { trainingId: '7; drop' }, { trainingId: 7, matchId: 'm1' }, { matchId: 'training:7' }, { trainingId: null }]) {
+    assert.equal((await handler(request(body))).status, 400);
+  }
+});
+
+test('Kontoanzeige fragt Trainingscodes über trainingId an', async () => {
+  const bodies = [];
+  const { context, target } = ui({ invoke: async (_name, { body }) => {
+    bodies.push(body);
+    return { data: { state: 'available', code: '1234#', endsAt: subject.endsAt, refreshAt } };
+  } });
+  delete target.dataset.hallCodeMatch;
+  target.dataset.hallCodeTraining = '7';
+  await context.loadHallAccessCodes();
+  assert.equal(target.textContent, 'Hallencode: 1234#');
+  assert.deepEqual(JSON.parse(JSON.stringify(bodies)), [{ trainingId: 7 }]);
+});
+
+test('PostgreSQL gibt Trainingscodes nur Teilnehmern und Admins bis zur Ergebniseintragung', {
+  skip: !process.env.PADEL_PGLITE_MODULE && 'Requires local PGlite'
+}, async () => {
+  const { PGlite } = await import(pathToFileURL(process.env.PADEL_PGLITE_MODULE).href);
+  const db = new PGlite();
+  try {
+    await db.exec(fs.readFileSync(require.resolve('./fixtures/court-booking-schema.sql'), 'utf8'));
+    await db.exec(`create table public.training_sessions (id bigint primary key, played_on date, display_time time,
+        player_ids text[], created_by uuid, status text);
+      create function private.training_session_at(p_played_on date, p_display_time time) returns timestamptz
+        language sql immutable as $$ select (p_played_on + p_display_time) at time zone 'Europe/Berlin' $$;`);
+    for (const file of ['20261106190000_court_booking_workflow.sql', '20261106230000_court_access_code_subject.sql',
+      '20261111140000_training_court_bookings.sql', '20261111150000_training_court_access_codes.sql']) {
+      await db.exec(fs.readFileSync(require.resolve(`../supabase/migrations/${file}`), 'utf8'));
+    }
+    const actors = ['00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002',
+      '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000004'];
+    for (const [i, actor] of actors.entries()) {
+      await db.query('insert into auth.users values ($1)', [actor]);
+      await db.query('insert into public.profiles values ($1, $2, $3)', [actor, i === 3 ? 'p1' : `p${i + 1}`, ['player', 'player', 'admin', 'tipper'][i]]);
+    }
+    await db.exec(`insert into public.training_sessions values (7, '2099-11-13', '12:00', array['p1','g1','g2','g3'], '${actors[1]}', 'scheduled');
+      insert into private.court_bookings (provider_booking_id, court_name, organizer, starts_at, ends_at, training_session_id, source_occurred_at)
+      values ('${subject.providerId}', 'CUPRA Indoor H2', 'Testgruppe', '2099-11-13T11:00:00Z', '2099-11-13T12:00:00Z', 7, now());
+      set request.jwt.claim.role = 'service_role';`);
+    const read = async (actor, key = 'training:7') => (await db.query('select public.get_court_access_code_subject($1, $2) as value', [key, actor])).rows[0].value;
+    assert.equal((await read(actors[0])).courtNumber, 'H2', 'Teilnehmer erhält den Code');
+    assert.equal(await read(actors[1]), null, 'Ersteller ohne Teilnahme erhält keinen Code');
+    assert.equal((await read(actors[2])).providerId, subject.providerId, 'Admin erhält den Code');
+    assert.equal(await read(actors[3]), null, 'Tipper erhält keinen Code');
+    assert.equal(await read(actors[0], 'training:8'), null);
+    assert.equal(await read(actors[0], '7'), null, 'reine Trainings-ID ist keine Partie');
+    const claim = (await db.query("select public.claim_court_access_code_read('training:7', $1, '00000000-0000-0000-0000-000000000010') as value", [actors[0]])).rows[0].value;
+    assert.equal(claim.state, 'read');
+    await db.exec("update private.court_bookings set court_name = 'Court 3'");
+    assert.equal(await read(actors[0]), null, 'Außenplätze haben keinen Code');
+    await db.exec("update private.court_bookings set court_name = 'CUPRA Indoor H2'; update public.training_sessions set status = 'pending'");
+    assert.equal(await read(actors[0]), null, 'eingetragenes Ergebnis beendet die Codeanzeige');
+    await db.exec("update public.training_sessions set status = 'scheduled', display_time = '12:15'");
+    assert.equal(await read(actors[0]), null, 'abweichender Termin gibt keinen Code aus');
+  } finally { await db.close(); }
+});
