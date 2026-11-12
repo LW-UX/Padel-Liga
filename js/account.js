@@ -478,9 +478,14 @@
       clearHallAccessCodes();
       return;
     }
-    const visible = target => target.dataset.hallCodeSurface === 'home'
-      ? document.getElementById('home-matchday')?.hidden === false && (!target.getClientRects || target.getClientRects().length > 0)
-      : !!document.getElementById('auth-dialog')?.open;
+    // Das Codefeld selbst startet mit `hidden`; sichtbar sein muss die zugehörige
+    // Spieltagskarte, sonst würde der Startseiten-Code nie geladen.
+    const visible = target => {
+      if (target.dataset.hallCodeSurface !== 'home') return !!document.getElementById('auth-dialog')?.open;
+      const card = target.closest?.('.home-matchday-entry') || target.parentElement;
+      return document.getElementById('home-matchday')?.hidden === false
+        && (!card?.getClientRects || card.getClientRects().length > 0);
+    };
     const targets = [...document.querySelectorAll('[data-hall-code-match], [data-hall-code-training]')].filter(visible);
     let nextRefresh = Number.POSITIVE_INFINITY;
     for (const target of targets) {

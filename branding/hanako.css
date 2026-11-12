@@ -131,6 +131,24 @@ html:root:root .home-announcement .article-card h2 {
   text-align: left;
 }
 
+/* Der Spieltagstitel steht samt Zeile darüber in der Mitte des Containers; das Datum bleibt links. Mobil reicht der Platz dafür nicht, dort steht er mittig neben dem Datum. */
+html:root:root .home-matchday-header {
+  display: grid;
+  grid-template-columns: minmax(4rem, 1fr) minmax(0, auto) minmax(4rem, 1fr);
+}
+html:root:root .home-matchday-date {
+  width: 4rem;
+}
+html:root:root .home-matchday-header > :last-child {
+  min-width: 0;
+  text-align: center;
+}
+@media (max-width: 480px) {
+  html:root:root .home-matchday-header {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+}
+
 /* Titel und Wortmarke stehen in normaler Schreibweise statt in Großbuchstaben */
 html:root :is(h1, h2, .site-footer-brand) {
   text-transform: none;

@@ -229,6 +229,25 @@ test('Trainings mit Hallenbuchung verwenden eine eigene Kennung, nicht die match
   }
 });
 
+test('Spieltagscontainer lädt den Code, obwohl das Codefeld anfangs verborgen ist', async () => {
+  const { context, target } = ui({ open: false });
+  const card = { getClientRects: () => [{}] };
+  target.dataset.hallCodeSurface = 'home';
+  // Ein verborgenes Element hat keine Rechtecke; maßgeblich ist die sichtbare Karte.
+  target.getClientRects = () => (target.hidden ? [] : [{}]);
+  target.closest = () => card;
+  context.document.getElementById = id => (id === 'home-matchday' ? { hidden: false } : { open: false });
+  await context.loadHallAccessCodes();
+  assert.equal(target.hidden, false);
+  assert.equal(target.textContent, 'Code: 1234#');
+  card.getClientRects = () => [];
+  context.hallCodeCache.clear();
+  target.hidden = true;
+  target.textContent = '';
+  await context.loadHallAccessCodes();
+  assert.equal(target.textContent, '');
+});
+
 test('Kontoanzeige fragt Trainingscodes über trainingId an', async () => {
   const bodies = [];
   const { context, target } = ui({ invoke: async (_name, { body }) => {
