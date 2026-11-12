@@ -239,7 +239,7 @@ test('Spieltagscontainer lädt den Code, obwohl das Codefeld anfangs verborgen i
   context.document.getElementById = id => (id === 'home-matchday' ? { hidden: false } : { open: false });
   await context.loadHallAccessCodes();
   assert.equal(target.hidden, false);
-  assert.equal(target.textContent, 'Code: 1234#');
+  assert.equal(target.innerHTML, '<span class="hall-code-label">Code: </span>1234#');
   card.getClientRects = () => [];
   context.hallCodeCache.clear();
   target.hidden = true;

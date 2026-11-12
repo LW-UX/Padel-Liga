@@ -66,15 +66,16 @@
     const matchup = entry.kind === 'training'
       ? `<strong>Du trainierst mit</strong><p>${entry.participants.map(escapeHtml).join(' &amp; ')}</p>`
       : `<strong>Du${entry.partner ? ` &amp; ${escapeHtml(entry.partner)}` : ''}</strong><p>gegen ${entry.opponents.map(escapeHtml).join(' &amp; ')}</p>`;
+    // Mobil steht der Platz in einer eigenen Zeile unter dem Ort.
     const location = entry.kind === 'training' && !entry.court
       ? 'Ort wie vereinbart'
-      : `Lucky Star Padel · ${entry.court || 'Platz noch offen'}`;
+      : `Lucky Star Padel<span class="home-matchday-location-separator"> · </span><span class="home-matchday-court">${escapeHtml(entry.court || 'Platz noch offen')}</span>`;
     return `<article class="home-matchday-entry match-card">
       <div class="home-matchday-time"><span>${escapeHtml(entry.time)}</span><span>Uhr</span></div>
       <div class="home-matchday-details">
         <div class="match-meta">${[entry.season, entry.label].filter(Boolean).map(escapeHtml).join(' · ')}</div>
         <div class="home-matchday-matchup">${matchup}</div>
-        <div class="home-matchday-location"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span>${escapeHtml(location)}</span></div>
+        <div class="home-matchday-location"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span>${location}</span></div>
         ${entry.hallBooking ? `<div class="hall-code" data-hall-code-surface="home" data-hall-code-${entry.kind === 'training' ? 'training' : 'match'}="${escapeHtml(entry.id)}" data-hall-code-booking="${entry.hallBooking.booking_id}" data-hall-code-until="${Date.parse(entry.hallBooking.ends_at)}" role="status" aria-live="polite" hidden></div>` : ''}
       </div>
     </article>`;

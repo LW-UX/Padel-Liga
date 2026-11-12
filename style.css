@@ -2068,14 +2068,28 @@
         grid-column: 1 / -1;
         grid-row: 1;
         min-width: 0;
-        padding: 2rem 0 0;
+        padding: 0 5.5rem 0 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
       .home-matchday-entry:has(.hall-code) .home-matchday-matchup { grid-column: 2; grid-row: 2; }
       .home-matchday-entry:has(.hall-code) .home-matchday-location { grid-column: 2; grid-row: 3; }
-      .hall-code[data-hall-code-surface="home"] { top: 0.85rem; right: 0.65rem; }
+      /* Der Chip steht mittig auf Höhe der Meta-Zeile und ragt nicht in die Begegnung. */
+      .home-matchday-entry .hall-code[data-hall-code-surface="home"] { top: 0.6rem; right: 0.65rem; }
+      .home-matchday-location { align-items: center; }
+      .home-matchday-location svg { margin-top: 0; }
+      .home-matchday-location-separator { display: none; }
+      .home-matchday-court { display: block; }
+      /* Mobil steht nur der Code selbst im Chip; Screenreader lesen die Beschriftung weiter vor. */
+      .hall-code[data-hall-code-surface="home"] .hall-code-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
       .home-matchday-time > :first-child { font-size: calc(var(--text-heading) * 0.85); }
     }
     .home-season-podium {

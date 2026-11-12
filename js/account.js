@@ -536,7 +536,9 @@
         target.hidden = true;
       } else if (result?.state === 'available' && /^\d{4}#$/.test(result.code) && until > Date.now()) {
         target.dataset.hallCodeState = 'available';
-        target.textContent = `${target.dataset.hallCodeSurface === 'home' ? 'Code' : 'Hallencode'}: ${result.code}`;
+        // Der Code ist oben geprüft (vier Ziffern und #); mobil blendet die Startseite die Beschriftung aus.
+        if (target.dataset.hallCodeSurface === 'home') target.innerHTML = `<span class="hall-code-label">Code: </span>${result.code}`;
+        else target.textContent = `Hallencode: ${result.code}`;
         nextRefresh = Math.min(nextRefresh, until, cached.until);
       } else if (result?.state === 'pending') {
         target.dataset.hallCodeState = 'loading';
