@@ -132,6 +132,38 @@ test('scheduled trainings get calendar mail, also after their row was deleted', 
   assert.match(edgeFunction, /job\.training_participants \?\? ""/);
 });
 
+test('trainings get result reminders without disturbing the match reminder checks', () => {
+  const trainingReminderMigration = fs.readFileSync(
+    path.join(root, 'supabase', 'migrations', '20261112120000_training_result_reminders.sql'),
+    'utf8'
+  );
+  assert.match(trainingReminderMigration, /'result_entry',\s+'result_confirmation'\s+\)/);
+  assert.match(trainingReminderMigration, /session\.status = 'scheduled'\s+and private\.training_session_at\(session\.played_on, session\.display_time\) \+ interval '5 hours' <= now\(\)/);
+  assert.match(trainingReminderMigration, /session\.status = 'pending'\s+and profile\.id <> session\.created_by\s+and session\.created_at \+ interval '4 hours' <= now\(\)/);
+  assert.match(trainingReminderMigration, /Bei der Erstaktivierung bereits überfällig\./);
+  assert.match(trainingReminderMigration, /\|\| private\.queue_training_result_reminders\(\)/);
+  // A training job has no match row, so the match checks must not cancel it.
+  assert.match(trainingReminderMigration, /queue\.notification_type = 'result_entry'\s+and queue\.training_session_id is null/);
+  assert.match(trainingReminderMigration, /queue\.notification_type = 'result_confirmation'\s+and queue\.training_session_id is null/);
+  assert.match(trainingReminderMigration, /session\.created_by <> queue\.recipient_user_id/);
+
+  const context = vm.createContext({ URL, Intl, Date });
+  const source = edgeFunction.replace(/^import .*;\n/gm, '').split('Deno.serve(')[0];
+  vm.runInContext(stripTypeScriptTypes(source), context);
+  const job = {
+    recipient_name: 'Alex', match_id: null, match_label: 'Training', season_id: null,
+    training_participants: 'Alex, Bea, Cem, Dana', match_at: '2026-11-12T17:00:00Z',
+  };
+  const entry = context.getMailContent({ ...job, notification_type: 'result_entry' });
+  assert.equal(entry.subject, 'PadelLiga: Ergebnis für Training eintragen');
+  assert.match(entry.body, /ein anderer Teilnehmer/);
+  const confirmation = context.getMailContent({ ...job, notification_type: 'result_confirmation' });
+  assert.equal(confirmation.subject, 'PadelLiga: Ergebnis für Training bestätigen');
+  assert.match(confirmation.body, /Trainingsergebnis wartet auf deine Bestätigung/);
+  assert.doesNotMatch(confirmation.body, /Partie/);
+  assert.match(context.buildDestination({ ...job, notification_type: 'result_entry' }, new URL('https://example.invalid/')), /konto=1/);
+});
+
 test('calendar mail only announces a move when an invitation was really sent', () => {
   assert.match(calendarUpdateMigration, /earlier\.notification_type = 'calendar_invitation'/);
   assert.match(calendarUpdateMigration, /earlier\.status = 'sent'/);

@@ -274,7 +274,9 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
     return {
       subject: `PadelLiga: Ergebnis für ${job.match_label} eintragen`,
       intro: "Letzten Ball gespielt?",
-      body: "Der geplante Spielbeginn liegt fünf Stunden zurück. Trage das Ergebnis jetzt ein, damit das andere Team es bestätigen kann.",
+      body: training
+        ? "Der geplante Trainingsbeginn liegt fünf Stunden zurück. Trage das Ergebnis jetzt ein, damit ein anderer Teilnehmer es bestätigen kann."
+        : "Der geplante Spielbeginn liegt fünf Stunden zurück. Trage das Ergebnis jetzt ein, damit das andere Team es bestätigen kann.",
       action: "Ergebnis eintragen",
       matchName,
     };
@@ -284,7 +286,9 @@ function getMailContent(job: NotificationJob, calendar?: CalendarDetails): MailC
     return {
       subject: `PadelLiga: Ergebnis für ${job.match_label} bestätigen`,
       intro: "Alles richtig gezählt?",
-      body: proposedResult
+      body: training
+        ? "Das eingetragene Trainingsergebnis wartet auf deine Bestätigung. Bestätige es oder sende eine abweichende Alternative."
+        : proposedResult
         ? `Der Vorschlag „${proposedResult}“ für ${matchTitle} wartet auf deine Bestätigung. Bestätige ihn oder sende eine abweichende Alternative.`
         : `Der Ergebnisvorschlag für ${matchTitle} wartet auf deine Bestätigung. Bestätige ihn oder sende eine abweichende Alternative.`,
       action: "Ergebnis prüfen",
