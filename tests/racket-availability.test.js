@@ -124,8 +124,8 @@ test('calendar displays each occupied half hour even without a selectable court 
   for (const time of ['18:00', '18:30', '19:00']) {
     assert.doesNotMatch(cell(time), /court-racket-icon|Schläger/, 'assigned match fields retain only the match marking');
   }
-  assert.match(cell('18:00'), /court-booking-match-number[^>]*>P#<\/span>/);
-  assert.match(cell('18:30'), /court-booking-match-number[^>]*>7<\/span>/);
+  assert.match(cell('18:00'), /court-booking-match-number[^>]*>P\.7<\/span>/);
+  assert.doesNotMatch(cell('18:30'), /court-booking-match-number/);
 
 });
 

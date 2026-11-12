@@ -151,7 +151,7 @@ test('ranking, matches, and calculator share the phase layout controls', () => {
   assert.match(app, /renderPartienByDate[\s\S]*joinSeasonPhaseSections/);
   assert.match(app, /data-live-open-match="\$\{escapeHtml\(detailEntryMatchId\)\}" data-live-view="overview"/);
   assert.match(app, /detailLink\.dataset\.liveOpenMatch = detailEntryMatchId/);
-  assert.match(style, /#league-calculator\[hidden\] \+ #final-four-calculator \.section-subheading/);
+  assert.match(style, /#league-calculator:has\(\+ #final-four-calculator:not\(\[hidden\]\)\) \{ margin-bottom: /);
 });
 
 test('only official result changes refresh the complete season view', () => {

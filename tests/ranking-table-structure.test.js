@@ -141,7 +141,7 @@ test('league and final-four notes show the maximum games before sorting', () => 
   assert.match(page, /id="ff-ranking-note">Spiele: 3  \|  Sortierung: Siege/);
 });
 
-test('the regular season ranking shows previous league achievements after company labels', () => {
+test('the regular season ranking shows previous league achievements between name and company label in points order', () => {
   const ranking = getFunctionSource('renderRanking', 'getAllTimeLeagueMatches');
 
   assert.match(app, /function getPreviousCompletedLeagueSeason\(seasonReference = selectedSeason\)/);
@@ -151,7 +151,7 @@ test('the regular season ranking shows previous league achievements after compan
   assert.match(app, /function renderLeagueRankingAchievementIcon\(player\)/);
   assert.match(app, /ranking-player-achievement-laurel-stems/);
   assert.match(app, /ranking-player-achievement-laurel-leaves/);
-  assert.match(ranking, /class="ranking-player-name">\$\{renderPlayerProfileLink\(p, 'pname', rankingPlayerLabel\)\}\$\{absenceMark\}<\/span>\$\{renderLeagueRankingAchievementIcon\(p\)\}\$\{renderRankingCompanyBadge\(p\)\}/);
+  assert.match(ranking, /class="ranking-player-name">\$\{renderPlayerProfileLink\(p, 'pname', rankingPlayerLabel\)\}\$\{absenceMark\}<\/span>\$\{rankingSortMode === 'points' \? renderLeagueRankingAchievementIcon\(p\) : ''\}\$\{renderRankingCompanyBadge\(p\)\}/);
   assert.match(app, /class="mini-rank-name"><span class="ranking-player-name">\$\{renderPlayerProfileLink\(p\)\}\$\{renderLeagueRankingAchievementIcon\(p\)\}/);
   assert.match(style, /\.ranking-player-name \{[^}]*gap: 2px;/);
   assert.match(style, /\.player-cell-inner > \.ranking-player-achievement \{[^}]*padding-left: 6px;/);

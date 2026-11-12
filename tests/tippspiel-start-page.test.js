@@ -224,7 +224,7 @@ test('personal and guest dashboard states remain distinct', () => {
   assert.match(script, /const passivePoints = getPersonalContributions\(\)[\s\S]*?\.filter\(item => item\.automatic\)[\s\S]*?\.reduce\(\(total, item\) => total \+ item\.points, 0\)/);
   assert.match(script, /<div class="hint">Passive Punkte<\/div>/);
   assert.match(script, /class="stat-main prediction-passive-points-value"[\s\S]*?aria-label="Passive Punkte erklären"[\s\S]*?id="prediction-passive-points-help" role="tooltip"/);
-  assert.match(script, /Eigene Partien kann man nicht tippen\.[\s\S]*?Mehrheit der Tipps der anderen\. Details stehen unter Infos\.[\s\S]*?Ohne fremde Tipps gibt es keine Gutschrift\./);
+  assert.match(script, /Eigene Partien kann man nicht tippen\.[\s\S]*?durchschnittlich getippte Ergebnis der anderen\. Details stehen unter Infos\.[\s\S]*?Ohne fremde Tipps gibt es keine Gutschrift\./);
   assert.match(script, /class="prediction-overview-stand-copy">[\s\S]*?Dein Stand[\s\S]*?prediction-overview-account[\s\S]*?\$\{context \? `<p>\$\{escapeHtml\(context\)\}<\/p>` : ''\}/);
   assert.match(style, /\.prediction-overview-personal-stand \{[\s\S]*?grid-template-columns: minmax\(0, 1\.6fr\) repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(style, /\.prediction-overview-personal-stand \.prediction-overview-scoreline \{ display: contents; \}/);

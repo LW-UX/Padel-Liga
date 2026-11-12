@@ -850,9 +850,33 @@
       .site-nav:has([data-tip-nav]) button { font-size: 0.72rem; }
     }
 
+    /* Leere abgeschlossene Saison: Hinweis und Wege mittig im Container bis zum Viewport-Ende. */
+    .widget.is-empty-season {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      min-height: max(14rem, calc(100dvh - var(--empty-season-top, 0px) - 1rem));
+      text-align: center;
+    }
+    .widget.is-empty-season :is(.ranking-wrap, .prediction-table-wrap) { display: none; }
+    .prediction-empty-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+    .prediction-empty-actions[hidden] { display: none; }
+
     /* Auto-Tipp ist ein Vergleichswert ohne offiziellen Rang. */
     .prediction-ranking-table tr.is-benchmark > td,
     .prediction-table tr.is-benchmark > :is(th, td) { color: var(--dim); }
     .prediction-ranking-table tr.is-benchmark > td > *,
     .prediction-table tr.is-benchmark > :is(th, td) > * { opacity: 0.6; }
+    /* Zahlen ohne eigenes Element erhalten dieselbe Abschwächung wie der Name. */
+    table.prediction-ranking-table tbody tr.is-benchmark > td:is(.col-games, .col-wins, .col-passive, .col-bonus, .col-points),
+    table.rt.prediction-table tbody tr.is-benchmark > td:is(.prediction-table-bonus-total, .prediction-table-total) {
+      color: color-mix(in srgb, var(--dim) 60%, transparent);
+    }
     .prediction-account-type-icon.is-benchmark svg { stroke-width: 1.5; }

@@ -170,7 +170,8 @@ test('the public view links only live or archived result centers and keeps profi
   assert.match(index, /<section class="detail-view-content" id="detail-view">/);
   assert.match(app, /class="mc-score" data-live-open-match/);
   assert.match(app, /PadelLiveTicker\?\.hasHistory\(m\.id\)/);
-  assert.match(app, /class="player-profile-match-score" data-live-open-match/);
+  assert.match(app, /const detailAttributes = hasLiveHistory\s*\? `data-live-open-match=/);
+  assert.match(app, /class="player-profile-match-score" \$\{detailAttributes\}/);
   assert.match(ticker, /data-player-profile-id/);
   assert.match(ticker, /data-live-refresh/);
   assert.match(ticker, /const breakLabel = last\.break \? '<strong>BREAK/);
@@ -248,7 +249,7 @@ test('the ticker starts with an overview tab for all three matches and the final
   assert.match(ticker, /class="live-overview-matches"/);
   assert.match(ticker, /class="rt rt--dense rt--fit"/);
   const overview = ticker.match(/function renderOverview\(\) \{[\s\S]*?(?=\n  function renderPublic)/)?.[0] || '';
-  assert.match(overview, /<th class="col-diff">Diff\.<\/th>/);
+  assert.match(overview, /<th class="col-diff">Diff<\/th>/);
   assert.match(overview, /<th class="col-gv">G:V<\/th>/);
   assert.doesNotMatch(overview, /class="col-games"/);
   assert.doesNotMatch(overview, /class="match-detail-status/);

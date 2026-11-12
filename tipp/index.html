@@ -148,7 +148,7 @@
                   <button type="button" class="ranking-sort-header" data-prediction-ranking-sort="passive"><span class="sort-chevron" aria-hidden="true"></span><span>Passiv</span></button>
                   <span class="th-help-wrap">
                     <span class="help-icon" tabindex="0" role="button" aria-label="Passive Punkte erklären" aria-describedby="prediction-ranking-passive-help" data-help-tooltip-anchor>?</span>
-                    <span class="help-tooltip" id="prediction-ranking-passive-help" role="tooltip"><span class="help-block">Eigene Partien kann man nicht tippen.</span><span class="help-block">Stattdessen zählt automatisch die Mehrheit der Tipps der anderen. Details stehen unter Infos.</span><span class="help-block">Ohne fremde Tipps gibt es keine Gutschrift.</span></span>
+                    <span class="help-tooltip" id="prediction-ranking-passive-help" role="tooltip"><span class="help-block">Eigene Partien kann man nicht tippen.</span><span class="help-block">Stattdessen zählt automatisch das durchschnittlich getippte Ergebnis der anderen. Details stehen unter Infos.</span><span class="help-block">Ohne fremde Tipps gibt es keine Gutschrift.</span></span>
                   </span>
                 </span>
               </th>
@@ -160,6 +160,7 @@
         </table>
       </div>
       <div id="prediction-ranking-empty" class="hint">Rangliste wird geladen …</div>
+      <div class="prediction-empty-actions" data-prediction-empty-actions hidden></div>
     </article>
   </section>
 
@@ -178,6 +179,7 @@
         <table class="rt prediction-table" id="prediction-table"></table>
       </div>
       <div id="prediction-table-empty" class="hint">Tippübersicht wird geladen …</div>
+      <div class="prediction-empty-actions" data-prediction-empty-actions hidden></div>
     </article>
   </section>
 
@@ -256,7 +258,7 @@
           <h4>Was gilt bei meiner eigenen Partie?</h4>
           <ul class="clean-list">
             <li>Deine eigene Partie kannst du nicht tippen.</li>
-            <li>Nach der Wertung erhältst du dafür automatisch einen Passiv-Tipp aus den Tipps der anderen. Bei zwei Gewinnsätzen zählt die Siegerverteilung, wie sie in der Tippanzeige steht: Ab 75 % für ein Team gilt 2:0, über 50 % 2:1 und bei genau 50 % ein 2:1 für dein Team. Im Final Four zählt das durchschnittlich getippte Ergebnis, umgerechnet auf 6 Spiele für den Sieger und gerundet; bei Gleichstand gilt ein 6:4 für dein Team. Dieser Passiv-Tipp wird normal gewertet.</li>
+            <li>Nach der Wertung erhältst du dafür automatisch einen Passiv-Tipp aus den Tipps der anderen. Es zählt das durchschnittlich getippte Ergebnis. Bei zwei Gewinnsätzen wird es auf 2 Sätze für den Sieger umgerechnet und gerundet; bei Gleichstand gilt ein 2:1 für dein Team. Im Final Four wird es auf 6 Spiele für den Sieger umgerechnet und gerundet; bei Gleichstand gilt ein 6:4 für dein Team. Dieser Passiv-Tipp wird normal gewertet.</li>
             <li>Nicht abgegebene Tipps zählen dabei nicht mit.</li>
             <li>Wurde gar kein Tipp abgegeben, gibt es keine Gutschrift.</li>
           </ul>

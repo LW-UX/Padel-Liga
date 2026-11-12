@@ -88,7 +88,7 @@ test('all-time view ends with the points ranking and only counts regular league 
     /id="ranking-sort-toggle"|id="all-time-ranking-sort-toggle"/
   );
   assert.match(rankingMarkup, /class="col-points" aria-sort="descending">[\s\S]*?data-all-time-ranking-sort="points"/);
-  assert.match(rankingMarkup, /data-all-time-ranking-sort="average"[\s\S]*?Ø-Pkt\./);
+  assert.match(rankingMarkup, /data-all-time-ranking-sort="average"[\s\S]*?Ø-Pkt</);
   assert.match(rankingMarkup, /class="col-points"[\s\S]*?<\/th>\s*<th class="col-average-points">/);
   assert.doesNotMatch(rankingMarkup, /col-elo|col-form|col-winrate|col-draw-factor|Letzte 3|Sieg-%|Losfaktor/);
   const renderer = app.match(/function renderAllTimeRanking\(\)[\s\S]*?(?=\nfunction getRankedPlayers)/)?.[0] || '';

@@ -70,6 +70,15 @@ test('own matches are scored with a winner-share tip per team', () => {
   assert.match(averageMigration, /when 12 \* tip\.loser_games >= 11 \* tip\.winner_games then '7:6'/);
   assert.match(averageMigration, /least\(4, \(\(12 \* tip\.loser_games \+ tip\.winner_games\) \/ \(2 \* tip\.winner_games\)\)/);
   assert.match(averageMigration, /when tip\.winner_games = tip\.loser_games then '6:4'/);
+  const setAverageMigration = fs.readFileSync(
+    path.join(root, 'supabase', 'migrations', '20261112140000_best_of_three_passive_tip_from_average_sets.sql'),
+    'utf8'
+  );
+  assert.match(setAverageMigration, /split_part\(prediction\.prediction, ':', 1\)::integer as team_one_games/);
+  assert.match(setAverageMigration, /when total\.team_one_games > total\.team_two_games then 1[\s\S]*?else side\.team/);
+  assert.match(setAverageMigration, /when 4 \* tip\.loser_games < tip\.winner_games then '2:0'\s+else '2:1'/);
+  assert.match(setAverageMigration, /not private\.is_benchmark_account\(prediction\.user_id\)/);
+  assert.doesNotMatch(setAverageMigration, /majority_count|team_one_count/);
   const crowdMigration = fs.readFileSync(
     path.join(root, 'supabase', 'migrations', '20261105140000_own_match_crowd_average_tip.sql'),
     'utf8'

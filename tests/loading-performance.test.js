@@ -366,7 +366,7 @@ test('the PadelTipp page takes matches from the database and only editorial cont
 test('account startup publishes identity without waiting for private game tasks', async () => {
   const events = [];
   const context = vm.createContext({ state: { client: {} }, document: { getElementById: () => ({ open: false }) },
-    loadProfile: async () => events.push('profile'), loadNotificationPreferences: async () => {}, publishAuthState: () => events.push('identity'),
+    loadProfile: async () => events.push('profile'), loadNotificationPreferences: async () => {}, publishAuthState: () => events.push('identity'), loadCourtAccessHealth: async () => {},
     refreshPlayerTools: async () => events.push('tasks'), startHomeMatchdayLoad: () => events.push('home'),
     schedulePlayerTools: () => events.push('background'), syncBrandingPreviewAccess() {}, render() {}, console });
   vm.runInContext(fn(account, 'refresh', '  '), context);
@@ -409,7 +409,7 @@ test('home match data starts before email settings and renders while extra accou
     state, console, document: { getElementById: () => ({ open: false }) },
     window: { clearTimeout() {}, PadelHomeMatchday: {}, PadelLiveTicker: { refreshAccount: () => live.promise } },
     isPlayerAccount: () => true, loadProfile: async () => events.push('profile'),
-    publishAuthState: () => events.push('identity'),
+    publishAuthState: () => events.push('identity'), loadCourtAccessHealth: async () => {},
     loadNotificationPreferences: () => { events.push('preferences'); return preferences.promise; },
     loadPlayerTools: () => { calls++; events.push('match-data'); return matches.promise; },
     loadCourtCancellationTasks: () => cancellations.promise,

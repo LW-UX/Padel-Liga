@@ -216,14 +216,26 @@
     if (clauses.length < 2) return clauses[0] || '';
     return `${clauses.slice(0, -1).join(', ')} und ${clauses.at(-1)}`;
   }
+  const mutualPartnerTerms = {
+    successPartner: ['Erfolgspartner', 'Erfolgspartnerinnen'],
+    fearedPartner: ['Angstpartner', 'Angstpartnerinnen']
+  };
+  const pluralOpponentTerms = {
+    favoriteOpponent: ['Lieblingsgegner', 'Lieblingsgegnerinnen'],
+    fearedOpponent: ['Angstgegner', 'Angstgegnerinnen']
+  };
+  function relationshipRecord(relationship) {
+    return `<span class="match-statistics-relationship-record">(${number(relationship.wins)} von ${number(relationship.matches)})</span>`;
+  }
   function renderContext(data, selectedPlayerId, forecast = null) {
     const seen = new Set();
     const facts = historyFacts(data, forecast);
-    (data.players || []).forEach(player => {
+    const players = data.players || [];
+    players.forEach(player => {
       const clauses = [];
       (player.relationships || []).forEach(relationship => {
         const relationshipPlayerId = relationship.playerId || relationship.name;
-        const relationshipPlayer = (data.players || []).find(candidate => candidate.playerId === relationshipPlayerId)
+        const relationshipPlayer = players.find(candidate => candidate.playerId === relationshipPlayerId)
           || { playerId: relationshipPlayerId };
         const phrase = relationshipPhrase(relationship.kind, player, relationshipPlayer);
         if (!phrase) return;
@@ -231,12 +243,33 @@
         const key = `${relationship.kind}:${pairKey}`;
         if (seen.has(key)) return;
         seen.add(key);
-        const other = relationshipPlayerLink(relationshipPlayerId, relationship.name, selectedPlayerId);
-        clauses.push(`${phrase} ${other} <span class="match-statistics-relationship-record">(${number(relationship.wins)} von ${number(relationship.matches)})</span>`);
+        // Haben sich zwei Partner gegenseitig als Erfolgs- oder Angstpartner, steht das in einem gemeinsamen Satz.
+        const isMutual = mutualPartnerTerms[relationship.kind] && (relationshipPlayer.relationships || [])
+          .some(other => other.kind === relationship.kind && (other.playerId || other.name) === player.playerId);
+        if (isMutual) {
+          const bothFemale = playerEmoji(player) === '👩' && playerEmoji(relationshipPlayer) === '👩';
+          const term = mutualPartnerTerms[relationship.kind][bothFemale ? 1 : 0];
+          const subject = relationshipPlayerLink(player.playerId, player.displayName, selectedPlayerId);
+          const other = relationshipPlayerLink(relationshipPlayerId, relationshipPlayer.displayName || relationship.name, selectedPlayerId);
+          facts.push(`<p class="match-statistics-context-fact match-statistics-relationship">${subject} und ${other} sind gegenseitig ihre aktuellen ${term} ${relationshipRecord(relationship)}.</p>`);
+          return;
+        }
+        const mention = `${relationshipPlayerLink(relationshipPlayerId, relationship.name, selectedPlayerId)} ${relationshipRecord(relationship)}`;
+        // Sind beide Gegner Lieblings- oder Angstgegner, werden sie in einem Satzteil gemeinsam genannt.
+        const sameKind = pluralOpponentTerms[relationship.kind] && clauses.find(clause => clause.kind === relationship.kind);
+        if (sameKind) sameKind.others.push({ player: relationshipPlayer, mention });
+        else clauses.push({ kind: relationship.kind, phrase, others: [{ player: relationshipPlayer, mention }] });
       });
       if (!clauses.length) return;
       const subject = relationshipPlayerLink(player.playerId, player.displayName, selectedPlayerId);
-      facts.push(`<p class="match-statistics-context-fact match-statistics-relationship">${subject} ${joinRelationshipClauses(clauses)}.</p>`);
+      const texts = clauses.map(clause => {
+        if (clause.others.length === 1) return `${clause.phrase} ${clause.others[0].mention}`;
+        const allFemale = clause.others.every(other => playerEmoji(other.player) === '👩');
+        const term = pluralOpponentTerms[clause.kind][allFemale ? 1 : 0];
+        const possessive = playerEmoji(player) === '👩' ? 'ihre' : 'seine';
+        return `trifft auf ${possessive} aktuellen ${term} ${clause.others.map(other => other.mention).join(' und ')}`;
+      });
+      facts.push(`<p class="match-statistics-context-fact match-statistics-relationship">${subject} ${joinRelationshipClauses(texts)}.</p>`);
     });
     return facts.length
       ? `<section class="widget match-statistics-context" aria-label="Einordnung der Partie">${facts.join('')}</section>`
@@ -540,8 +573,38 @@
           ['Linie', 'Die gestrichelte Linie zeigt die Elo-Prognose des wahrscheinlichsten Ergebnisses.']
         ]);
   }
+  // „Florian Z. wird sein Erfolgspartner.“ – Possessiv nach dem Spieler, Bezeichnung nach der genannten Person.
+  function relationshipChangeText(impact, data, condition) {
+    const terms = relationshipTerms[impact.relationship];
+    if (!terms) return '';
+    const players = data.players || [];
+    const subject = players.find(player => player.playerId === impact.playerId) || { playerId: impact.playerId };
+    const other = players.find(player => player.playerId === impact.otherId) || { playerId: impact.otherId };
+    const otherIsFemale = playerEmoji(other) === '👩';
+    const possessive = (playerEmoji(subject) === '👩' ? 'ihr' : 'sein') + (otherIsFemale ? 'e' : '');
+    const relation = `${possessive} ${terms[otherIsFemale ? 1 : 0]}`;
+    const name = other.displayName || impact.otherName || '';
+    const when = condition ? ` ${condition}` : '';
+    const gained = impact.kind === 'relationshipGained' || impact.kind === 'relationshipGainPossible';
+    return gained ? `${name} wird${when} ${relation}.` : `${name} ist${when} nicht mehr ${relation}.`;
+  }
   function impactText(impact, data) {
     const condition = impact.onWin ? 'bei einem Sieg' : 'bei einer Niederlage';
+    if (impact.kind === 'relationshipLost') return relationshipChangeText(impact, data, '');
+    if (impact.kind === 'relationshipGained') {
+      // Positive Beziehung nach Niederlage bzw. negative nach Sieg wird als Widerspruch benannt.
+      const player = (data.players || []).find(item => item.playerId === impact.playerId);
+      const won = Number(player?.team) === Number(data.winner);
+      const positive = impact.relationship === 'successPartner' || impact.relationship === 'favoriteOpponent';
+      const contrary = player && data.winner != null && positive !== won;
+      return relationshipChangeText(impact, data, contrary ? (won ? 'trotz Sieg' : 'trotz Niederlage') : '');
+    }
+    if (impact.kind === 'relationshipGainPossible' || impact.kind === 'relationshipLossPossible') {
+      // Tritt dieselbe Änderung bei Sieg und Niederlage ein, hängt sie nicht von dieser Partie ab und entfällt in der Vorschau.
+      const bothOutcomes = (data.impacts || []).some(other => other.kind === impact.kind && other.playerId === impact.playerId
+        && other.otherId === impact.otherId && other.relationship === impact.relationship && Boolean(other.onWin) !== Boolean(impact.onWin));
+      return bothOutcomes ? '' : relationshipChangeText(impact, data, condition);
+    }
     if ((impact.kind === 'leaderPossible' || impact.kind === 'qualificationPossible') && !impact.onWin) return '';
     if ((impact.kind === 'leaderLossPossible' || impact.kind === 'qualificationLossPossible') && impact.onWin) return '';
     const texts = {

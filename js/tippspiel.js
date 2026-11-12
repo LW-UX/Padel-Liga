@@ -108,7 +108,8 @@
     return `<span class="prediction-account-type-icon${podiumClass}" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icon}</svg></span>`;
   }
 
-  const BENCHMARK_LABEL = 'Auto-Tipp: tippt automatisch nach der Elo-Prognose und zählt nicht zur offiziellen Wertung.';
+  const NO_SEASON_TIPS_TEXT = 'In dieser Saison wurden keine Tipps abgegeben.';
+  const BENCHMARK_LABEL ='Auto-Tipp: tippt automatisch nach der Elo-Prognose und zählt nicht zur offiziellen Wertung.';
 
   function renderPredictionAccountBadges(entry, { company = true } = {}) {
     if (entry?.is_benchmark) {
@@ -235,7 +236,7 @@
     ].includes(authenticatedPlayerId));
   }
 
-  // Passiv-Tipp aus der Siegerverteilung der Fremdtipps für das eigene Team.
+  // Passiv-Tipp aus dem durchschnittlich getippten Ergebnis der Fremdtipps für das eigene Team.
   function getOwnMatchAutoTip(match) {
     const authenticatedPlayerId = state.profile?.player_id;
     if (!authenticatedPlayerId) return null;
@@ -910,7 +911,7 @@
               <span>${formatCount(passivePoints)}</span>
               <span class="th-help-wrap prediction-passive-points-help">
                 <span class="help-icon" tabindex="0" role="button" aria-label="Passive Punkte erklären" aria-describedby="prediction-passive-points-help" data-help-tooltip-anchor>?</span>
-                <span class="help-tooltip" id="prediction-passive-points-help" role="tooltip"><span class="help-block">Eigene Partien kann man nicht tippen.</span><span class="help-block">Stattdessen zählt automatisch die Mehrheit der Tipps der anderen. Details stehen unter Infos.</span><span class="help-block">Ohne fremde Tipps gibt es keine Gutschrift.</span></span>
+                <span class="help-tooltip" id="prediction-passive-points-help" role="tooltip"><span class="help-block">Eigene Partien kann man nicht tippen.</span><span class="help-block">Stattdessen zählt automatisch das durchschnittlich getippte Ergebnis der anderen. Details stehen unter Infos.</span><span class="help-block">Ohne fremde Tipps gibt es keine Gutschrift.</span></span>
               </span>
             </div>
             <div class="hint">Passive Punkte</div>
@@ -1295,8 +1296,41 @@
         : !state.leaderboardReady || state.seasonCompleted === null
           ? 'Rangliste wird geladen …'
           : state.seasonCompleted
-            ? 'In dieser Saison wurden keine Tipps abgegeben.'
+            ? NO_SEASON_TIPS_TEXT
             : 'Die Rangliste füllt sich, sobald der erste Tipp gespeichert wurde.';
+    renderEmptySeasonActions(empty);
+  }
+
+  // Abgeschlossene Saisons ohne Tipps führen zur Standard-Tippsaison oder zurück zur Liga.
+  function renderEmptySeasonActions(empty) {
+    const widget = empty.closest?.('.widget');
+    const actions = widget?.querySelector('[data-prediction-empty-actions]');
+    if (!widget || !actions) return;
+    const show = empty.textContent === NO_SEASON_TIPS_TEXT;
+    widget.classList.toggle('is-empty-season', show);
+    actions.hidden = !show;
+    if (!show) {
+      actions.innerHTML = '';
+      return;
+    }
+    const routing = window.PadelSeasonRouting;
+    const defaultSeason = (window.PADEL_SEASONS || []).find(option => option.default && !option.hidden);
+    const seasonLink = routing && defaultSeason && defaultSeason.id !== state.season?.id
+      ? `<a class="primary-button" href="${escapeHtml(routing.getSeasonUrl(defaultSeason.id, 'tipp').href)}">Zu ${escapeHtml(defaultSeason.label)}</a>`
+      : '';
+    const leagueHref = routing && state.season?.id ? routing.getSeasonUrl(state.season.id, 'league').href : '../';
+    actions.innerHTML = `${seasonLink}<a class="secondary-button" href="${escapeHtml(leagueHref)}">Zurück zur Liga</a>`;
+    updateEmptySeasonHeight(widget);
+  }
+
+  // Der leere Container reicht vom eigenen Beginn bis zum Ende des Viewports.
+  function updateEmptySeasonHeight(widget) {
+    if (!widget.offsetParent) return;
+    widget.style.setProperty('--empty-season-top', `${Math.round(widget.getBoundingClientRect().top + window.scrollY)}px`);
+  }
+
+  function updateEmptySeasonHeights() {
+    document.querySelectorAll('.widget.is-empty-season').forEach(updateEmptySeasonHeight);
   }
 
   function getLeaderboardPassivePoints(entry) {
@@ -1684,8 +1718,9 @@
       : !state.tableReady || !state.leaderboardReady
         ? 'Tippübersicht wird geladen …'
         : !entries.length
-          ? state.seasonCompleted ? 'In dieser Saison wurden keine Tipps abgegeben.' : 'Die Tippübersicht füllt sich, sobald der erste Tipp gespeichert wurde.'
+          ? state.seasonCompleted ? NO_SEASON_TIPS_TEXT : 'Die Tippübersicht füllt sich, sobald der erste Tipp gespeichert wurde.'
           : !showTable ? 'In dieser Saison gibt es keine Bonustipps.' : '';
+    renderEmptySeasonActions(empty);
     if (showTable && state.tableView === 'matches') requestAnimationFrame(focusPredictionTable);
   }
 
@@ -1715,6 +1750,7 @@
   }
 
   function onSectionShown(sectionId) {
+    updateEmptySeasonHeights();
     if (sectionId !== 'tipptabelle') return;
     if (state.tableRequested) {
       renderPredictionTable();
@@ -2182,5 +2218,6 @@
     render();
   }
 
+  window.addEventListener('resize', updateEmptySeasonHeights);
   window.PadelTippspiel = { init, refresh, render, setSeasonData, onSectionShown };
 })();

@@ -134,6 +134,26 @@ test('relationship facts combine each player\'s statements in one centered sente
  assert.equal((context.match(/data-player-profile-id="greta_p"/g)||[]).length,1);
  assert.equal((context.match(/data-player-profile-id="christoph_l"/g)||[]).length,2);
 });
+test('mutual partner relationships are combined in one sentence',()=>{
+ const d=fixture();
+ const partnerId=d.players[1].playerId;
+ d.players[0].relationships=[{kind:'successPartner',playerId:partnerId,name:d.players[1].displayName,matches:4,wins:3}];
+ d.players[1].relationships=[{kind:'successPartner',playerId:d.players[0].playerId,name:d.players[0].displayName,matches:4,wins:3}];
+ const context=render(d).match(/<section class="widget match-statistics-context"[\s\S]*?<\/section>/)?.[0]||'';
+ assert.equal((context.match(/match-statistics-relationship"/g)||[]).length,1);
+ assert.match(context,/<\/button> und <button[^>]*>[^<]*<\/button> sind gegenseitig ihre aktuellen Erfolgspartner(innen)? <span class="match-statistics-relationship-record">\(3 von 4\)<\/span>\./);
+ assert.doesNotMatch(context,/spielt mit/);
+});
+test('two opponents with the same relationship share one clause',()=>{
+ const d=fixture();
+ d.players[0].relationships=[
+  {kind:'favoriteOpponent',playerId:'christoph_l',name:'Christoph L.',matches:4,wins:3},
+  {kind:'favoriteOpponent',playerId:'marco_m',name:'Marco M.',matches:8,wins:6}
+ ];
+ const context=render(d).match(/<section class="widget match-statistics-context"[\s\S]*?<\/section>/)?.[0]||'';
+ assert.match(context,/data-player-profile-id="greta_p"[^>]*>Greta P\.<\/button> trifft auf ihre aktuellen Lieblingsgegner <button[^>]*>Christoph L\.<\/button> <span[^>]*>\(3 von 4\)<\/span> und <button[^>]*>Marco M\.<\/button> <span[^>]*>\(6 von 8\)<\/span>\./);
+ assert.equal((context.match(/trifft auf/g)||[]).length,1);
+});
 test('two relationship facts are connected with und without a comma',()=>{
  const d=fixture();
  d.players[0].relationships.push({kind:'fearedOpponent',playerId:'marco_m',name:'Marco M.',matches:3,wins:1});
@@ -181,6 +201,38 @@ test('significant impacts are grouped as facts below each affected player',()=>{
  assert.equal((panel.match(/data-player-profile-id="agnes_k"/g)||[]).length,1);
  assert.match(panel,/Agnes K\.[\s\S]*Kann bei einem Sieg die Tabellenführung übernehmen\.[\s\S]*Kann bei einem Sieg die Top 4 erreichen\./);
  assert.doesNotMatch(panel,/Agnes K\. kann|Team 1 gewinnt/);
+});
+test('relationship changes appear as impacts with gendered wording',()=>{
+ const d=fixture();
+ d.impacts=[
+  {kind:'relationshipGained',playerId:'greta_p',relationship:'successPartner',otherId:'agnes_k',otherName:'Agnes K.'},
+  {kind:'relationshipLost',playerId:'christoph_l',relationship:'fearedOpponent',otherId:'greta_p',otherName:'Greta P.'},
+  {kind:'relationshipGainPossible',playerId:'agnes_k',relationship:'favoriteOpponent',otherId:'marco_m',otherName:'Marco M.',onWin:true},
+  {kind:'relationshipLossPossible',playerId:'marco_m',relationship:'successPartner',otherId:'christoph_l',otherName:'Christoph L.',onWin:false}
+ ];
+ const panel=render(d).match(/<section class="widget match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
+ assert.match(panel,/Agnes K\. wird ihre Erfolgspartnerin\./);
+ assert.match(panel,/Greta P\. ist nicht mehr seine Angstgegnerin\./);
+ assert.match(panel,/Marco M\. wird bei einem Sieg ihr Lieblingsgegner\./);
+ assert.match(panel,/Christoph L\. ist bei einer Niederlage nicht mehr sein Erfolgspartner\./);
+});
+test('relationship changes possible on both outcomes are left out of previews',()=>{
+ const d=fixture();
+ d.impacts=[true,false].map(onWin=>({kind:'relationshipGainPossible',playerId:'greta_p',relationship:'favoriteOpponent',otherId:'marco_m',otherName:'Marco M.',onWin}));
+ const panel=render(d).match(/<section class="widget match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
+ assert.doesNotMatch(panel,/Marco M\. wird/);
+});
+test('relationships gained against the result are marked as despite win or loss',()=>{
+ const d=fixture('analysis');
+ d.impacts=[
+  {kind:'relationshipGained',playerId:'christoph_l',relationship:'favoriteOpponent',otherId:'greta_p',otherName:'Greta P.'},
+  {kind:'relationshipGained',playerId:'greta_p',relationship:'fearedOpponent',otherId:'marco_m',otherName:'Marco M.'},
+  {kind:'relationshipGained',playerId:'agnes_k',relationship:'successPartner',otherId:'greta_p',otherName:'Greta P.'}
+ ];
+ const panel=render(d).match(/<section class="widget match-statistics-section match-statistics-impact-panel">[\s\S]*?<\/section>/)?.[0]||'';
+ assert.match(panel,/Greta P\. wird trotz Niederlage seine Lieblingsgegnerin\./);
+ assert.match(panel,/Marco M\. wird trotz Sieg ihr Angstgegner\./);
+ assert.match(panel,/Greta P\. wird ihre Erfolgspartnerin\./);
 });
 test('impossible ranking impacts are not displayed',()=>{
  const d=fixture();
@@ -288,7 +340,7 @@ test('match header and full ranking follow ticker and ranking conventions',()=>{
  assert.match(analysisHtml,/<div class="match-detail-meta"><span class="match-detail-status is-finished">Beendet<\/span><\/div>/);
  assert.match(html,/Gewinnchance[\s\S]*match-probability match-detail-probability match-statistics-probability[\s\S]*match-probability-value">61<\/span>[\s\S]*match-probability-separator"[^>]*>:<\/span>[\s\S]*match-probability-value">39<\/span>[\s\S]*match-detail-score-note">Prozent<\/span>/);
  assert.match(analysisHtml,/61% : 39%/);
- assert.doesNotMatch(html,/20\.10\.2026/);assert.match(html,/match-detail-player-emoji" hidden>👩/);
+ assert.doesNotMatch(html,/20\.10\.2026/);assert.match(html,/match-detail-player-emoji">👩/);
  assert.match(html,/class="rt match-statistics-ranking"/);
  assert.equal((html.match(/match-statistics-ranking-gap/g)||[]).length,0);
  assert.equal((html.match(/match-statistics-ranking-player/g)||[]).length,4);
@@ -314,7 +366,7 @@ test('match header and full ranking follow ticker and ranking conventions',()=>{
  assert.doesNotMatch(html,/Siege in Folge|Niederlagen in Folge/);
  assert.match(statisticsStyleSource,/\.match-statistics-ranking tbody tr\.match-statistics-ranking-other td \{[\s\S]*?font-size: var\(--text-xs\);/);
  assert.match(html,/<th class="col-rank"><span aria-hidden="true">#<\/span><span class="sr-only">Platz<\/span><\/th>/);
- assert.match(html,/<th class="col-wins">Siege<\/th>/);
+ assert.match(html,/<th class="col-wins"><span class="th-label-full">Siege<\/span><span class="th-label-short">S<\/span><\/th>/);
  assert.match(html,/<td class="col-wins">3<\/td>/);
  assert.match(statisticsStyleSource,/\.match-statistics-ranking :is\(th, td\):is\(\.col-games, \.col-wins, \.col-points, \.col-diff\) \{[\s\S]*?text-align: center;[\s\S]*?font-variant-numeric: tabular-nums;/);
  assert.match(statisticsStyleSource,/@media \(max-width: 768px\) \{[\s\S]*?\.match-statistics-ranking \.col-wins \{ display: none; \}/);

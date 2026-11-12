@@ -42,6 +42,8 @@ let playerProfileExpanded = false;
 let playerProfileMatchScope = 'past';
 let playerProfileCompareId = null;
 const playerProfileCompareProfiles = new Map();
+// Aufgeklappte Partienlisten des Vergleichs: 'duel' und/oder 'team'.
+const playerProfileCompareOpenLists = new Set();
 let playerProfileRequestId = 0;
 let playerProfileSeasonPayloadCache = new Map();
 const PLAYER_PROFILE_CACHE_TTL = 10 * 60 * 1000;
@@ -2663,17 +2665,39 @@ function renderPlayerProfileCompareResult() {
     renderPlayerProfileCompareRow('Tiebreaks', side.tiebreaks[0], side.tiebreaks[1]),
     renderPlayerProfileCompareRow('Zu-Null', side.bagels[0], side.bagels[1])
   ].join('');
+  const duelMatches = (profile.matches || []).filter(match =>
+    getPlayerProfileMatchWeight(match) && !(match.partnerNames || []).includes(other.name)
+      && (match.opponentNames || []).includes(other.name)
+  );
+  // Die Blockbezeichnung klappt die zugehörigen Partien unter der Tabelle auf.
+  const renderTitle = (list, title, matches) => {
+    if (!matches.length) return `<span class="player-profile-compare-label">${escapeHtml(title)}</span>`;
+    const open = playerProfileCompareOpenLists.has(list);
+    return `<button type="button" class="player-profile-compare-label player-profile-compare-list-toggle${open ? ' is-open' : ''}" data-profile-compare-list="${list}" aria-expanded="${open}" aria-controls="player-profile-compare-list-${list}" aria-label="${escapeHtml(`${title}: Partien ${open ? 'ausblenden' : 'anzeigen'}`)}">${escapeHtml(title)}<span class="player-profile-compare-chevron" aria-hidden="true"></span></button>`;
+  };
+  // Siege stehen vor Niederlagen, innerhalb davon bleibt die Profilreihenfolge (neueste zuerst).
+  // Trainingsrunden werden je Ausgang gruppiert, damit ein Termin mit Sieg und Niederlage in beiden Teilen erscheint.
+  const renderListGroups = matches => [
+    matches.filter(match => match.outcome === 'win'),
+    matches.filter(match => match.outcome !== 'win')
+  ].map(part => renderPlayerProfileMatchGroups(groupPlayerProfileMatches(part))).join('');
+  const renderList = (list, matches) => matches.length
+    ? `<div class="player-profile-match-list player-profile-compare-matches" id="player-profile-compare-list-${list}"${playerProfileCompareOpenLists.has(list) ? '' : ' hidden'}>${playerProfileCompareOpenLists.has(list) ? renderListGroups(matches) : ''}</div>`
+    : '';
   // Das Elo und die Namenszeile bleiben auch ohne gemeinsame Partien sichtbar.
   // Die Blockbezeichnung steht wie die Wertebezeichnungen mittig zwischen beiden Seiten.
-  const renderTable = (title, matchCount, names, rows, emptyText, extraRows = '') => `<div class="player-profile-compare-table">
-    <div class="match-forecast-percentages player-profile-compare-names"><span>${escapeHtml(names[0])}</span><span class="player-profile-compare-label">${escapeHtml(title)}</span><span>${escapeHtml(names[1])}</span></div>
+  const renderTable = (list, title, matches, matchCount, names, rows, emptyText, extraRows = '') => `<div class="player-profile-compare-table">
+    <div class="match-forecast-percentages player-profile-compare-names"><span>${escapeHtml(names[0])}</span>${renderTitle(list, title, matches)}<span>${escapeHtml(names[1])}</span></div>
+    ${renderList(list, matches)}
     ${matchCount ? rows : `<div class="hint player-profile-compare-empty">${escapeHtml(emptyText)}</div>`}
     ${extraRows}
   </div>`;
   target.innerHTML = `<div class="hint stat-meta-line">${escapeHtml(`${formatProfileMatchCount(sharedMatches)} gemeinsame Partien`)}</div>
     <div class="player-profile-compare-tables">
       ${renderTable(
+        'duel',
         `Im Duell (${formatProfileMatchCount(comparison.against)})`,
+        duelMatches,
         comparison.against,
         [profile.identity?.displayName || '', other.name],
         renderSideRows(comparison.duel),
@@ -2683,7 +2707,9 @@ function renderPlayerProfileCompareResult() {
           : renderPlayerProfileCompareRow('Akt. Elo', ownElo, otherElo, formatElo)
       )}
       ${renderTable(
+        'team',
         `Im Team (${formatProfileMatchCount(comparison.together)})`,
+        togetherMatches,
         comparison.together,
         ['Zusammen', 'Gegner'],
         renderSideRows(comparison.team) + (isPlayerProfileCompareEloLoading(comparePlayerIds)
@@ -2940,66 +2966,69 @@ function renderPlayerProfileHistory() {
   renderPlayerProfilePastMatches();
 }
 
+// Gemeinsame Zeilendarstellung vergangener Partien für Profilhistorie und Vergleich.
+function renderPlayerProfileMatchGroups(groups) {
+  return groups.map(group => {
+    const rows = group.matches.map((match, index) => {
+      const isComplete = match.isComplete !== false;
+      const isCancelled = match.isCancelled === true
+        || (match.kind !== 'training' && !isComplete && Number(match.matchWeight) === 0);
+      const hasWeightedResult = match.kind === 'training'
+        ? Number(match.matchWeight) > 0
+        : isComplete;
+      const outcome = hasWeightedResult && ['win', 'loss', 'draw'].includes(match.outcome)
+        ? match.outcome
+        : 'unfinished';
+      const isTraining = group.kind === 'training';
+      const decidedByMatchTiebreak = /[–-]/.test(match.resultDetails || '');
+      const outcomeLabel = outcome === 'win' ? 'S' : outcome === 'loss' ? 'N' : outcome === 'draw' ? 'U' : '–';
+      const outcomeAriaLabel = outcome === 'win'
+        ? 'Sieg'
+        : outcome === 'loss' ? 'Niederlage' : outcome === 'draw' ? 'Unentschieden' : 'Abgebrochen, ohne Wertung';
+      const partner = renderPlayerProfileNames(match.partnerNames, 'ohne Partner');
+      const opponents = renderPlayerProfileNames(match.opponentNames);
+      const showDate = index === 0;
+      const showGroupLabelFirst = group.kind === 'training' || group.kind === 'final-four';
+      const showSeason = showGroupLabelFirst
+        ? index === 0
+        : index === group.matches.length - 1;
+      const hasLiveHistory = !isCancelled && isComplete && window.PadelLiveTicker?.hasHistory(match.id);
+      const hasStatistics = !isCancelled && isComplete && match.hasMatchStatistics && window.PadelMatchStatistics;
+      const detailAttributes = hasLiveHistory
+        ? `data-live-open-match="${escapeHtml(match.id)}" data-live-season-id="${escapeHtml(match.seasonId || '')}"`
+        : hasStatistics ? `data-match-statistics="${escapeHtml(match.id)}"` : '';
+      const detailLabel = hasLiveHistory ? 'Spielverlauf öffnen' : 'Partieanalyse öffnen';
+      const chipClass = `player-profile-match-outcome form-chip form-${outcome}${isTraining ? ' form-training' : ''}${decidedByMatchTiebreak ? ' form-tiebreak' : ''}`;
+      return `<article class="player-profile-match ${outcome}${detailAttributes ? ' has-details' : ''}">
+        <div class="player-profile-match-date">${showDate ? escapeHtml(formatProfileDate(match.date)) : ''}</div>
+        ${detailAttributes
+          ? `<button type="button" class="${chipClass}" ${detailAttributes} tabindex="-1" aria-label="${outcomeAriaLabel}, ${detailLabel}">${outcomeLabel}</button>`
+          : `<div class="${chipClass}" aria-label="${outcomeAriaLabel}">${outcomeLabel}</div>`}
+        <div class="player-profile-match-teams">
+          <div class="player-profile-match-team-line"><span>mit</span> ${partner}</div>
+          <div class="player-profile-match-team-line"><span>vs.</span> ${opponents}</div>
+        </div>
+        ${isCancelled
+          ? '<div class="player-profile-match-score player-profile-unrated-result">ohne Wertung</div>'
+          : detailAttributes
+          ? `<button type="button" class="player-profile-match-score" ${detailAttributes} aria-label="${detailLabel}">${renderProfileResultDetails(match)}</button>`
+          : `<div class="player-profile-match-score"${isComplete ? '' : ' title="Vollständige Sätze werden einzeln gewertet"'}>${renderProfileResultDetails(match)}</div>`}
+        <div class="player-profile-match-season">${showSeason ? escapeHtml(getPlayerProfileMatchLabel(match)) : ''}</div>
+      </article>`;
+    }).join('');
+    return `<section class="player-profile-match-group ${escapeHtml(group.kind || '')}" data-profile-match-group="${escapeHtml(group.key)}">${rows}</section>`;
+  }).join('');
+}
+
 function renderPlayerProfilePastMatches() {
   const target = document.getElementById('player-profile-match-list');
   const showAll = document.getElementById('player-profile-show-all');
   if (!target || !showAll) return;
   const matches = playerProfileData?.matches || [];
   const visibleGroups = getVisiblePlayerProfileMatchGroups(matches);
-  if (!visibleGroups.length) {
-    target.innerHTML = '<div class="hint">Noch keine vergangenen Partien.</div>';
-  } else {
-    target.innerHTML = visibleGroups.map(group => {
-      const rows = group.matches.map((match, index) => {
-        const isComplete = match.isComplete !== false;
-        const isCancelled = match.isCancelled === true
-          || (match.kind !== 'training' && !isComplete && Number(match.matchWeight) === 0);
-        const hasWeightedResult = match.kind === 'training'
-          ? Number(match.matchWeight) > 0
-          : isComplete;
-        const outcome = hasWeightedResult && ['win', 'loss', 'draw'].includes(match.outcome)
-          ? match.outcome
-          : 'unfinished';
-        const isTraining = group.kind === 'training';
-        const decidedByMatchTiebreak = /[–-]/.test(match.resultDetails || '');
-        const outcomeLabel = outcome === 'win' ? 'S' : outcome === 'loss' ? 'N' : outcome === 'draw' ? 'U' : '–';
-        const outcomeAriaLabel = outcome === 'win'
-          ? 'Sieg'
-          : outcome === 'loss' ? 'Niederlage' : outcome === 'draw' ? 'Unentschieden' : 'Abgebrochen, ohne Wertung';
-        const partner = renderPlayerProfileNames(match.partnerNames, 'ohne Partner');
-        const opponents = renderPlayerProfileNames(match.opponentNames);
-        const showDate = index === 0;
-        const showGroupLabelFirst = group.kind === 'training' || group.kind === 'final-four';
-        const showSeason = showGroupLabelFirst
-          ? index === 0
-          : index === group.matches.length - 1;
-        const hasLiveHistory = !isCancelled && isComplete && window.PadelLiveTicker?.hasHistory(match.id);
-        const hasStatistics = !isCancelled && isComplete && match.hasMatchStatistics && window.PadelMatchStatistics;
-        const detailAttributes = hasLiveHistory
-          ? `data-live-open-match="${escapeHtml(match.id)}" data-live-season-id="${escapeHtml(match.seasonId || '')}"`
-          : hasStatistics ? `data-match-statistics="${escapeHtml(match.id)}"` : '';
-        const detailLabel = hasLiveHistory ? 'Spielverlauf öffnen' : 'Partieanalyse öffnen';
-        const chipClass = `player-profile-match-outcome form-chip form-${outcome}${isTraining ? ' form-training' : ''}${decidedByMatchTiebreak ? ' form-tiebreak' : ''}`;
-        return `<article class="player-profile-match ${outcome}${detailAttributes ? ' has-details' : ''}">
-          <div class="player-profile-match-date">${showDate ? escapeHtml(formatProfileDate(match.date)) : ''}</div>
-          ${detailAttributes
-            ? `<button type="button" class="${chipClass}" ${detailAttributes} tabindex="-1" aria-label="${outcomeAriaLabel}, ${detailLabel}">${outcomeLabel}</button>`
-            : `<div class="${chipClass}" aria-label="${outcomeAriaLabel}">${outcomeLabel}</div>`}
-          <div class="player-profile-match-teams">
-            <div class="player-profile-match-team-line"><span>mit</span> ${partner}</div>
-            <div class="player-profile-match-team-line"><span>vs.</span> ${opponents}</div>
-          </div>
-          ${isCancelled
-            ? '<div class="player-profile-match-score player-profile-unrated-result">ohne Wertung</div>'
-            : detailAttributes
-            ? `<button type="button" class="player-profile-match-score" ${detailAttributes} aria-label="${detailLabel}">${renderProfileResultDetails(match)}</button>`
-            : `<div class="player-profile-match-score"${isComplete ? '' : ' title="Vollständige Sätze werden einzeln gewertet"'}>${renderProfileResultDetails(match)}</div>`}
-          <div class="player-profile-match-season">${showSeason ? escapeHtml(getPlayerProfileMatchLabel(match)) : ''}</div>
-        </article>`;
-      }).join('');
-      return `<section class="player-profile-match-group ${escapeHtml(group.kind || '')}" data-profile-match-group="${escapeHtml(group.key)}">${rows}</section>`;
-    }).join('');
-  }
+  target.innerHTML = visibleGroups.length
+    ? renderPlayerProfileMatchGroups(visibleGroups)
+    : '<div class="hint">Noch keine vergangenen Partien.</div>';
   showAll.hidden = playerProfileExpanded || matches.length <= PLAYER_PROFILE_MATCH_PREVIEW_LIMIT;
   showAll.textContent = 'Alle Partien anzeigen';
 }
@@ -3394,6 +3423,7 @@ function renderPlayerProfile(profile) {
   playerProfileExpanded = false;
   playerProfileMatchScope = 'past';
   playerProfileCompareId = null;
+  playerProfileCompareOpenLists.clear();
   arrangePlayerProfileContent();
   document.getElementById('player-profile-name').textContent = identity.displayName || 'Spielerprofil';
   const profileCompany = identity.company || '';
@@ -3628,6 +3658,7 @@ window.PadelLigaCapturePlayerProfile = () => ({
   expanded: playerProfileExpanded,
   matchScope: playerProfileMatchScope,
   compareId: playerProfileCompareId,
+  compareLists: [...playerProfileCompareOpenLists],
   scrollTop: getPlayerProfileShellScrollTop(),
   presentation: playerProfilePresentation,
   presentationPreference: playerProfilePresentationPreference,
@@ -3667,6 +3698,7 @@ window.PadelLigaRestorePlayerProfile = snapshot => {
   playerProfileExpanded = snapshot.expanded;
   playerProfileMatchScope = snapshot.matchScope === 'upcoming' ? 'upcoming' : 'past';
   playerProfileCompareId = snapshot.compareId || null;
+  (snapshot.compareLists || []).forEach(list => playerProfileCompareOpenLists.add(list));
   renderPlayerProfileCompare(snapshot.data);
   renderPlayerProfileHistory();
   requestAnimationFrame(() => {
@@ -3788,6 +3820,15 @@ document.addEventListener('click', event => {
   const profileCompareToggle = event.target.closest('[data-profile-compare-toggle]');
   if (profileCompareToggle) {
     setPlayerProfileComparePickerOpen(!profileCompareToggle.closest('[data-profile-compare-picker]').classList.contains('open'));
+    return;
+  }
+
+  const profileCompareListToggle = event.target.closest('[data-profile-compare-list]');
+  if (profileCompareListToggle) {
+    const list = profileCompareListToggle.dataset.profileCompareList;
+    if (!playerProfileCompareOpenLists.delete(list)) playerProfileCompareOpenLists.add(list);
+    renderPlayerProfileCompareResult();
+    document.querySelector(`[data-profile-compare-list="${list}"]`)?.focus({ preventScroll: true });
     return;
   }
 
