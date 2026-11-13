@@ -167,7 +167,7 @@ test('widersprüchliche Partienummern importieren nur die Buchung und lösen kei
   const ctx = await setup({ deps: { parseMime: async () => forwarded,
     record: async params => { ctx.writes.push(params); return { status: 'active', assignment: 'not_requested' }; } } });
   const response = await ctx.send();
-  assert.equal(ctx.writes[0].p_match_number, null);
+  assert.equal(ctx.writes[0].p_match_number, -1);
   assert.equal(response.body.result.assignment, 'invalid_reference');
 });
 

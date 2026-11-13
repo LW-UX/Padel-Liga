@@ -14,7 +14,7 @@ weiterhin `record_court_booking`.
   bekannt; andernfalls `null`.
 - `p_court_name`: Platzname aus der Bestätigung.
 - `p_organizer`: der in Bestätigung und Stornierung genannte Buchende. Er wird
-  ausschließlich privat für die eindeutige Zuordnung einer Stornierung genutzt.
+  privat für die eindeutige Zuordnung einer Stornierung sowie für den exakten Namensfilter `Headsquare United` der automatischen Ligapartiezuordnung genutzt (Groß-/Kleinschreibung und zusätzliche Leerzeichen werden ignoriert).
 - `p_starts_at` und `p_ends_at`: absolute Zeitpunkte mit Zeitzone. Das Fenster
   muss genau 60 oder 90 Minuten umfassen. Die tatsächliche Dauer wird für
   Anzeige und Stornierungszuordnung unverändert beibehalten.
@@ -30,7 +30,7 @@ weiterhin `record_court_booking`.
   Weiterleitung; bei einer Playtomic-Umleitung `null`.
 - `p_match_number` und `p_season_hint`: ausschließlich aus der äußeren
   Anweisung `Partie <Nummer> | <Saison>` gelesen. Ohne Anweisung sind beide
-  Werte `null`; die Saison darf fehlen und wird dann serverseitig nur bei einem
+  Werte `null`; bei einer erkannten ungültigen oder widersprüchlichen Anweisung wird `p_match_number = -1` übergeben, um auch den zeitbasierten Ersatzabgleich zu sperren. Die Saison darf fehlen und wird dann serverseitig nur bei einem
   einzigen berechtigten Treffer akzeptiert.
 
 Der Aufruf benötigt die Supabase `service_role`. Vollständiger Mailtext,
@@ -40,6 +40,7 @@ Absender, Empfänger und Anhänge werden nicht in der Liga-Datenbank gespeichert
 
 - Eine aktive Buchung erscheint angemeldeten Spielern als zuordenbarer Slot.
 - Beim Terminieren wird sie atomar genau einer Partie zugeordnet.
+- Ohne äußere Anweisung verknüpft `Headsquare United` eine noch freie zukünftige Buchung mit der offenen, vollständig besetzten regulären Ligapartie mit der niedrigsten Partienummer am selben Berliner Tag innerhalb einschließlich ±15 Minuten. Beim Speichern eines Partietermins wird auch eine bereits vorhandene passende freie Buchung berücksichtigt. Trainings, aktive Zuordnungen, abgeschlossene Partien und offene Ergebnisvorschläge bleiben von der Automatik ausgeschlossen. Es gibt keine zusätzliche Einschränkung auf Partien des Weiterleiters. Der Beginn der Buchung wird als Partietermin gespeichert. Wiederholte Mails lassen die Zuordnung unverändert und können einen zuvor fehlgeschlagenen internen Schlägerabgleich erneut anstoßen.
 - Eine erneut weitergeleitete Bestätigung mit eindeutiger Zuordnungsanweisung
   darf Import, Verknüpfung und Terminierung in derselben Transaktion erledigen.
   Die Datenbank ermittelt das bestätigte Konto erneut und erlaubt dies nur

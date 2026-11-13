@@ -190,7 +190,8 @@ export function createBookingWebhook(config: Config, deps: Dependencies) {
           p_starts_at: start, p_ends_at: end, p_cancelled: booking.state === "cancelled",
           p_source_occurred_at: source.occurredAt, p_source_precision_seconds: source.precisionSeconds,
           p_forwarder_email: sender === "no-reply@playtomic.io" ? null : sender,
-          p_match_number: assignmentReference?.matchNumber ?? null,
+          // An invalid explicit instruction must not fall back to time matching.
+          p_match_number: invalidAssignmentReference ? -1 : assignmentReference?.matchNumber ?? null,
           p_season_hint: assignmentReference?.seasonHint ?? null };
       } catch { return json({ status: "needs_review", reason: "mail_format_or_original_date" }); }
       const result = await deps.record(params) as Record<string, unknown> | null;

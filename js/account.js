@@ -153,9 +153,10 @@
     root?.querySelectorAll?.('[data-schedule-time-field]').forEach(syncScheduleTimeField);
   }
 
-  // Termine liegen auf Viertelstunden zwischen 07:00 und 20:45 Uhr; ein abweichender gespeicherter Wert bleibt wählbar.
+  // Neue Termine folgen dem halbstündigen Platzraster; Ergebniszeiten bleiben unabhängig davon.
   const SCHEDULE_HOUR_OPTIONS = Array.from({ length: 20 - 7 + 1 }, (_, index) => String(7 + index).padStart(2, '0'));
-  const SCHEDULE_MINUTE_OPTIONS = ['00', '15', '30', '45'];
+  const SCHEDULE_MINUTE_OPTIONS = ['00', '30'];
+  const RESULT_MINUTE_OPTIONS = ['00', '15', '30', '45'];
 
   let scheduleTimePickerCount = 0;
 
@@ -173,9 +174,11 @@
   }
 
   function renderScheduleTimeControls(name, value = '') {
-    const [hour = '', minute = ''] = String(value || '').slice(0, 5).split(':');
+    const [hour = '', savedMinute = ''] = String(value || '').slice(0, 5).split(':');
+    const minuteOptions = name === 'playedTime' ? RESULT_MINUTE_OPTIONS : SCHEDULE_MINUTE_OPTIONS;
+    const minute = name === 'playedTime' || minuteOptions.includes(savedMinute) ? savedMinute : '';
     const hours = name === 'scheduledTime' || name === 'playedTime' ? Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0')) : SCHEDULE_HOUR_OPTIONS;
-    return `<input type="hidden" name="${name}" value="${hour && minute ? `${hour}:${minute}` : ''}">${renderScheduleTimePicker(`${name}Hour`, 'Stunde', hours, hour)}<span aria-hidden="true">:</span>${renderScheduleTimePicker(`${name}Minute`, 'Minute', SCHEDULE_MINUTE_OPTIONS, minute)}`;
+    return `<input type="hidden" name="${name}" value="${hour && minute ? `${hour}:${minute}` : ''}">${renderScheduleTimePicker(`${name}Hour`, 'Stunde', hours, hour)}<span aria-hidden="true">:</span>${renderScheduleTimePicker(`${name}Minute`, 'Minute', minuteOptions, minute)}`;
   }
 
   function renderScheduleTimeField(name, value = '') {

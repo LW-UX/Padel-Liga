@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const vm = require('node:vm');
 
 const root = path.join(__dirname, '..');
 const style = [
@@ -12,6 +13,25 @@ const accountScript = fs.readFileSync(path.join(root, 'js', 'account.js'), 'utf8
 const tippspielScript = fs.readFileSync(path.join(root, 'js', 'tippspiel.js'), 'utf8');
 const tippPageScript = fs.readFileSync(path.join(root, 'js', 'tipp-page.js'), 'utf8');
 const appScript = fs.readFileSync(path.join(root, 'js', 'app.js'), 'utf8');
+
+test('planned time controls offer only half hours and require replacing legacy minutes', () => {
+  const source = accountScript.slice(accountScript.indexOf('  const SCHEDULE_HOUR_OPTIONS'), accountScript.indexOf('  function renderScheduleTimeField'));
+  const pickers = [];
+  const context = { renderTrainingPicker: picker => { pickers.push(picker); return ''; } };
+  vm.createContext(context);
+  vm.runInContext(source, context);
+  for (const name of ['scheduledTime', 'displayTime']) {
+    pickers.length = 0;
+    const html = vm.runInContext(`renderScheduleTimeControls('${name}', '18:15')`, context);
+    assert.match(html, /value=""/);
+    assert.deepEqual(Array.from(pickers[1].options, option => option.value), ['', '00', '30']);
+    assert.equal(pickers[1].value, '');
+    assert.match(vm.runInContext(`renderScheduleTimeControls('${name}', '18:30')`, context), /value="18:30"/);
+  }
+  pickers.length = 0;
+  assert.match(vm.runInContext("renderScheduleTimeControls('playedTime', '18:17')", context), /value="18:17"/);
+  assert.equal(pickers[1].value, '17', 'actual result time remains editable');
+});
 const ligaPage = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const tippspielPage = fs.readFileSync(path.join(root, 'tipp', 'index.html'), 'utf8');
 const pages = [ligaPage, tippspielPage];
@@ -183,7 +203,8 @@ test('date and time hints are dimmed while Safari and iOS receive controlled tex
     assert.match(source, /<div class="schedule-time-label" role="group" aria-label="Uhrzeit"><span>Uhrzeit<\/span><span class="schedule-time-field" data-schedule-time-field="displayTime"><\/span><\/div>/);
   });
   assert.match(accountScript, /SCHEDULE_HOUR_OPTIONS = Array\.from\(\{ length: 20 - 7 \+ 1 \}/);
-  assert.match(accountScript, /SCHEDULE_MINUTE_OPTIONS = \['00', '15', '30', '45'\]/);
+  assert.match(accountScript, /SCHEDULE_MINUTE_OPTIONS = \['00', '30'\]/);
+  assert.match(accountScript, /RESULT_MINUTE_OPTIONS = \['00', '15', '30', '45'\]/);
   assert.match(accountScript, /renderScheduleTimeField\('scheduledTime', matchTime\.time\)/);
   assert.match(accountScript, /renderScheduleTimeField\('playedTime', getResultFormTime\(task\)\)/);
   assert.doesNotMatch(accountScript, /<input type="time" name="playedTime"/);
