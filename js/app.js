@@ -9003,7 +9003,7 @@ function externalPlacementTooltip(context) {
 
     return `<div class="elo-tooltip-item">
       <div class="elo-tooltip-name">${escapeHtml(item.dataset.label)}</div>
-      <div>Platz: ${escapeHtml(item.parsed.y)}</div>
+      <div>${escapeHtml(getPlacementTooltipRank(item.dataset, item.dataIndex))}</div>
       <div>Pkt.: ${escapeHtml(points)} · Siege: ${escapeHtml(wins)} · Diff.: <span class="elo-tooltip-delta ${diffClass}">${escapeHtml(diff)}</span></div>
     </div>`;
   }).join('');
@@ -9099,6 +9099,8 @@ function getPlayerSeries(player, events) {
 function getPlacementSeries() {
   const matchDays = [...new Set(PADEL_DATA.matches.filter(countsForRanking).map(m => m.spieltag))].sort((a, b) => a - b);
   const placementsByPlayer = new Map(PADEL_DATA.players.map(p => [p.name, []]));
+  const displayPlacementsByPlayer = new Map(PADEL_DATA.players.map(p => [p.name, []]));
+  const tiedNamesByPlayer = new Map(PADEL_DATA.players.map(p => [p.name, []]));
   const playedByPlayer = new Map(PADEL_DATA.players.map(p => [p.name, []]));
   const byeByPlayer = new Map(PADEL_DATA.players.map(p => [p.name, []]));
   const statsByPlayer = new Map(PADEL_DATA.players.map(p => [p.name, []]));
@@ -9108,16 +9110,48 @@ function getPlacementSeries() {
     const scheduledMatchesAtDay = PADEL_DATA.matches.filter(m => countsForRanking(m) && m.spieltag === spieltag);
     const playedMatchesAtDay = scheduledMatchesAtDay.filter(m => m.sieger !== null);
     const ranked = getRankedPlayers(matchesUntilDay);
-    ranked.forEach((player, index) => {
+    const groups = new Map();
+    ranked.forEach(player => {
+      if (!groups.has(player.rank)) groups.set(player.rank, []);
+      groups.get(player.rank).push(player.name);
+    });
+    ranked.forEach(player => {
       const isInMatch = match => match.team1.spieler.includes(player.name) || match.team2.spieler.includes(player.name);
-      placementsByPlayer.get(player.name).push(index + 1);
+      const tiedNames = groups.get(player.rank);
+      placementsByPlayer.get(player.name).push(player.rank);
+      displayPlacementsByPlayer.get(player.name).push(getPlacementDisplayRank(player.rank, tiedNames.indexOf(player.name), tiedNames.length));
+      tiedNamesByPlayer.get(player.name).push(tiedNames.filter(name => name !== player.name));
       statsByPlayer.get(player.name).push(player.stats);
       playedByPlayer.get(player.name).push(playedMatchesAtDay.some(isInMatch));
       byeByPlayer.get(player.name).push(!scheduledMatchesAtDay.some(isInMatch));
     });
   });
 
-  return { matchDays, placementsByPlayer, playedByPlayer, byeByPlayer, statsByPlayer };
+  return { matchDays, placementsByPlayer, displayPlacementsByPlayer, tiedNamesByPlayer, playedByPlayer, byeByPlayer, statsByPlayer };
+}
+
+// Nur die Zeichenposition auffächern; Rang und Tooltip bleiben sportliche Ganzzahlen.
+function getPlacementDisplayRank(rank, groupIndex, groupSize) {
+  if (groupSize < 2) return rank;
+  return rank + (groupIndex / (groupSize - 1) - 0.5) * 0.36;
+}
+
+function getPlacementTooltipRank(dataset, pointIndex) {
+  const rank = dataset.actualRanksByPoint[pointIndex];
+  const others = dataset.tiedNamesByPoint[pointIndex] || [];
+  return others.length ? `Geteilter ${rank}. Platz mit ${others.join(', ')}` : `Platz: ${rank}`;
+}
+
+function getPlacementLabelPositions(entries, top, bottom) {
+  const labels = entries.map(entry => ({ ...entry, labelY: entry.point.y })).sort((a, b) => a.point.y - b.point.y);
+  const gap = labels.length > 1 ? Math.min(14, (bottom - top) / (labels.length - 1)) : 0;
+  labels.forEach((entry, index) => {
+    entry.labelY = Math.max(entry.point.y, index ? labels[index - 1].labelY + gap : top);
+  });
+  for (let index = labels.length - 1; index >= 0; index--) {
+    labels[index].labelY = Math.min(labels[index].labelY, index === labels.length - 1 ? bottom : labels[index + 1].labelY - gap);
+  }
+  return labels;
 }
 
 const placementLabelPlugin = {
@@ -9128,21 +9162,32 @@ const placementLabelPlugin = {
     ctx.textBaseline = 'middle';
 
     chartInstance.$placementLabelBoxes = [];
-    chartInstance.data.datasets.forEach((dataset, datasetIndex) => {
+    const entries = chartInstance.data.datasets.flatMap((dataset, datasetIndex) => {
       const meta = chartInstance.getDatasetMeta(datasetIndex);
-      if (!meta.data.length) return;
-
+      if (meta.hidden || !meta.data.length) return [];
       const point = meta.data[meta.data.length - 1];
-      const x = Math.min(point.x + 8, chartArea.right + 8);
+      return point && !point.skip ? [{ dataset, point }] : [];
+    });
+    const labels = getPlacementLabelPositions(entries, chartArea.top + 7, chartArea.bottom - 7);
+    labels.forEach(({ dataset, point, labelY }) => {
+      const x = Math.min(point.x + 12, chartArea.right + 12);
+      if (Math.abs(labelY - point.y) > 1) {
+        ctx.beginPath();
+        ctx.strokeStyle = getThemeValue('--border');
+        ctx.lineWidth = 1;
+        ctx.moveTo(point.x + 2, point.y);
+        ctx.lineTo(x - 3, labelY);
+        ctx.stroke();
+      }
       ctx.font = `${getPlacementLabelWeight(dataset.label)} 11px ${getThemeValue('--font-body')}`;
       ctx.fillStyle = getPlacementLabelColor(dataset.label, dataset.baseColor || dataset.borderColor);
-      ctx.fillText(dataset.label, x, point.y);
+      ctx.fillText(dataset.label, x, labelY);
       chartInstance.$placementLabelBoxes.push({
         playerName: dataset.label,
         left: x,
         right: x + ctx.measureText(dataset.label).width,
-        top: point.y - 7,
-        bottom: point.y + 7
+        top: labelY - 7,
+        bottom: labelY + 7
       });
     });
 
@@ -9319,7 +9364,7 @@ function getPlacementSegmentColor(context, playedFlags, color) {
 function initPlacementChart() {
   if (placementChart) return;
   hoveredPlacementChartPlayerName = null;
-  const { matchDays, placementsByPlayer, playedByPlayer, byeByPlayer, statsByPlayer } = getPlacementSeries();
+  const { matchDays, placementsByPlayer, displayPlacementsByPlayer, tiedNamesByPlayer, playedByPlayer, byeByPlayer, statsByPlayer } = getPlacementSeries();
   const maxPlace = PADEL_DATA.players.length;
   const datasets = PADEL_DATA.players.map((p, i) => {
     const playedFlags = playedByPlayer.get(p.name);
@@ -9328,7 +9373,9 @@ function initPlacementChart() {
     const color = getPlacementChartColor(baseColor, p.name);
     return {
       label: p.name,
-      data: placementsByPlayer.get(p.name),
+      data: displayPlacementsByPlayer.get(p.name),
+      actualRanksByPoint: placementsByPlayer.get(p.name),
+      tiedNamesByPoint: tiedNamesByPlayer.get(p.name),
       playedFlags,
       byeFlags,
       statsByPoint: statsByPlayer.get(p.name),
