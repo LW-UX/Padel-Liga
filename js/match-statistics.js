@@ -4,6 +4,7 @@
   const eloForecast = typeof module !== 'undefined' ? require('./elo-forecast.js') : window.PadelEloForecast;
   const tableCore = typeof module !== 'undefined' ? require('./table-core.js') : window.PadelTable;
   const previewWindow = typeof module !== 'undefined' ? require('./preview-window.js') : window.PadelPreviewWindow;
+  const matchHistory = typeof module !== 'undefined' ? require('./match-history.js') : window.PadelMatchHistory;
   const playerImages = typeof module !== 'undefined' ? require('./player-images.js') : window.PadelPlayerImages;
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const number = value => value == null || !Number.isFinite(Number(value)) ? '—' : Number(value).toLocaleString('de-DE', { maximumFractionDigits: 1 });
@@ -646,9 +647,19 @@
     const forecast = Object.prototype.hasOwnProperty.call(forecastOptions, 'forecast')
       ? renderMatchForecast(data, forecastOptions.forecast, forecastOptions)
       : '';
-    return head + forecast
-      + renderContext(data, selectedPlayerId, forecastOptions.forecast) + renderForm(data, selectedPlayerId) + renderPlayersAndImpacts(data, groupImpacts(data), selectedPlayerId) + renderGraph(data, selectedPlayerId)
+    const statistics = renderContext(data, selectedPlayerId, forecastOptions.forecast) + renderForm(data, selectedPlayerId) + renderPlayersAndImpacts(data, groupImpacts(data), selectedPlayerId) + renderGraph(data, selectedPlayerId)
       + (data.availability === 'preview' ? '<p class="match-statistics-note">Werte und Prognosen können sich durch weitere bestätigte Partien bis zum Spielbeginn verändern.</p>' : '');
+    if (data.availability !== 'analysis' || data.stage !== 'league') return head + forecast + statistics;
+    const historyActive = forecastOptions.detailTab === 'history';
+    const canEdit = forecastOptions.profile?.app_role === 'admin' && forecastOptions.session?.user?.email_confirmed_at && data.historyVersion != null;
+    const historyBody = forecastOptions.historyDraft && canEdit
+      ? matchHistory.editor(data, forecastOptions.historyDraft, { busy: forecastOptions.historySaving, message: forecastOptions.historyMessage })
+      : matchHistory.render(data) + (canEdit ? `<button type="button" class="secondary-button" data-history-edit>${data.matchHistory ? 'Spielverlauf bearbeiten' : 'Spielverlauf nachtragen'}</button>` : '');
+    return head + forecast + `<nav class="site-nav match-statistics-tabs" aria-label="Partiedetails">
+      <button type="button" data-statistics-tab="statistics" class="${historyActive ? '' : 'active'}" aria-pressed="${!historyActive}" aria-controls="match-statistics-tab-content">Statistik</button>
+      <button type="button" data-statistics-tab="history" class="${historyActive ? 'active' : ''}" aria-pressed="${historyActive}" aria-controls="match-history-tab-content">Spielverlauf</button>
+      </nav><div id="match-statistics-tab-content" class="match-statistics-tab-content"${historyActive ? ' hidden' : ''}>${statistics}</div>
+      <div id="match-history-tab-content" class="match-statistics-tab-content"${historyActive ? '' : ' hidden'}>${historyBody}</div>`;
   }
   function skeleton() {
     const card = '<div class="match-statistics-skeleton-card"><span class="loading-skeleton"></span><span class="loading-skeleton"></span><span class="loading-skeleton"></span></div>';
@@ -662,6 +673,7 @@
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
   let request = 0, active = null, returnState = null, profileOnTop = false, profileReplacesDetail = false, currentRoute = null, routeNumber = 0;
   let activeData = null, activeForecast = null, forecastSelectionOpen = false, forecastSubmitting = false, forecastMessage = '';
+  let detailTab = 'statistics', historyDraft = null, historySaving = false, historyMessage = '';
   let forecastRefreshPromise = null;
   let sequence = [];
   let presentation = 'modal', presentationPreference = null, panelContextActive = false, embeddedPanelAvailable = false, sharedDetailFlow = false;
@@ -826,14 +838,18 @@
   const getSession = () => window.PadelKonto?.getSession?.() || null;
   function renderActiveContent() {
     if (!activeData) return;
+    const reason = content().querySelector('[data-history-reason]')?.value || '';
     content().innerHTML = render(activeData, window.PadelLigaGetSelectedViewerId?.(), {
       forecast: activeForecast,
       session: getSession(),
       profile: window.PadelKonto?.getProfile?.() || null,
       selectionOpen: forecastSelectionOpen,
       submitting: forecastSubmitting,
-      message: forecastMessage
+      message: forecastMessage,
+      detailTab, historyDraft, historySaving, historyMessage
     });
+    const reasonInput = content().querySelector('[data-history-reason]');
+    if (reasonInput) reasonInput.value = reason;
     content().setAttribute('aria-busy', 'false');
   }
   async function loadForecast(client, matchId) {
@@ -1087,6 +1103,7 @@
         : (!active && returnContext?.sequence) || window.PadelLigaGetMatchStatisticsSequence?.(trigger, matchId) || [];
       if (returnState) returnState.sequence = sequence;
     }
+    if (active !== matchId) { detailTab = 'statistics'; historyDraft = null; historyMessage = ''; }
     active = matchId;
     activeData = retainedActiveData;
     activeForecast = retainedActiveForecast;
@@ -1305,7 +1322,83 @@
     })
   });
   window.PadelMatchStatistics = api;
+  async function saveHistory() {
+    if (!activeData || !historyDraft || historySaving) return;
+    const matchId = active, token = request;
+    const draft = JSON.parse(JSON.stringify(historyDraft));
+    const reason = content().querySelector('[data-history-reason]')?.value.trim() || '';
+    try {
+      matchHistory.validate(activeData.result, draft, activeData.players);
+      if (reason.length < 3) throw new Error('Bitte einen Grund mit mindestens drei Zeichen angeben.');
+      historySaving = true;
+      historyMessage = '';
+      renderActiveContent();
+      const client = getClient();
+      if (!client) throw new Error('Verbindung nicht verfügbar.');
+      const { data, error } = await client.rpc('admin_save_match_history', {
+        p_match_id: matchId, p_sections: draft, p_reason: reason, p_expected_version: activeData.historyVersion
+      });
+      if (error) throw error;
+      prefetched.delete(matchId);
+      if (active !== matchId || request !== token) return;
+      activeData.matchHistory = data;
+      activeData.historyVersion = data.version;
+      historyDraft = null;
+      historyMessage = '';
+    } catch (error) {
+      if (active !== matchId || request !== token) return;
+      historyMessage = error.message || 'Der Spielverlauf konnte nicht gespeichert werden.';
+    } finally {
+      historySaving = false;
+      if (active === matchId && request === token) renderActiveContent();
+    }
+  }
+  document.addEventListener('change', event => {
+    const server = event.target.closest('[data-history-server]');
+    if (!server || !historyDraft || historySaving) return;
+    historyDraft[Number(server.dataset.historySet)].servers[Number(server.dataset.historyServer)] = server.value || null;
+  });
   document.addEventListener('click', event => {
+    const tab = event.target.closest('[data-statistics-tab]');
+    if (tab) {
+      detailTab = tab.dataset.statisticsTab;
+      // Keep the draft and all entered values mounted while switching views.
+      content().querySelectorAll('[data-statistics-tab]').forEach(button => {
+        const selected = button === tab;
+        button.classList.toggle('active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      });
+      content().querySelector('#match-statistics-tab-content').hidden = detailTab !== 'statistics';
+      content().querySelector('#match-history-tab-content').hidden = detailTab !== 'history';
+      return;
+    }
+    if (event.target.closest('[data-history-edit]') && activeData) {
+      historyDraft = activeData.matchHistory ? JSON.parse(JSON.stringify(activeData.matchHistory.sections)) : matchHistory.empty(activeData.result);
+      historyMessage = '';
+      renderActiveContent();
+      return;
+    }
+    if (event.target.closest('[data-history-save]')) { void saveHistory(); return; }
+    if (event.target.closest('[data-history-cancel]') && !historySaving) {
+      historyDraft = null; historyMessage = ''; renderActiveContent(); return;
+    }
+    const historyAction = event.target.closest('[data-history-add], [data-history-undo]');
+    if (historyAction && historyDraft && !historySaving) {
+      const index = Number(historyAction.dataset.historySet), part = historyDraft[index];
+      const points = historyAction.dataset.historyPoints === 'true';
+      const winners = points ? part.points : part.winners;
+      if (historyAction.hasAttribute('data-history-undo')) {
+        winners.pop();
+        if (!points) part.servers.pop();
+      } else {
+        winners.push(Number(historyAction.dataset.historyAdd));
+        if (!points) part.servers.push(null);
+      }
+      historyMessage = '';
+      renderActiveContent();
+      content().querySelector(`[data-history-set="${index}"][data-history-points="${points}"]:not(:disabled)`)?.focus({ preventScroll: true });
+      return;
+    }
     if (event.target.closest('[data-match-statistics-presentation-toggle]')) {
       togglePresentation();
       return;

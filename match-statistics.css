@@ -502,3 +502,18 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
   #detail-view-dialog:not([data-presentation="panel"]) .match-statistics-form-row { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   #detail-view-dialog:not([data-presentation="panel"]) .match-statistics-form-team { display: contents; }
 }
+
+/* Both detail views share the match header and prediction poll. */
+.match-statistics-tabs { position: static; max-width: none; margin: 0; padding: 0; }
+.match-statistics-tab-content { display: grid; gap: var(--section-gap); min-width: 0; }
+.match-statistics-tab-content[hidden] { display: none; }
+.match-history-set h3, .match-history-tiebreak { text-align: center; }
+.match-history-editor { display: grid; gap: 1rem; }
+.match-history-editor-set { display: grid; gap: 1rem; padding-block: 1rem; border-top: 1px solid var(--border); }
+.match-history-controls { display: grid; gap: 0.75rem; }
+.match-history-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+.match-history-editor label { display: grid; gap: 0.5rem; }
+.match-history-server { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); align-items: center; }
+.match-history-editor :is(input, select) { min-width: 0; width: 100%; padding: 0.65rem; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--input-radius); font: inherit; }
+.match-history-editor :is(input, select):is(:hover, :focus-visible) { border-color: var(--accent); }
+@media (max-width: 480px) { .match-history-server { grid-template-columns: 1fr; } }

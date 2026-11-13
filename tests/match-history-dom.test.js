@@ -1,0 +1,44 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const fixture=require('./fixtures/match-statistics.cjs');
+test('admin history editing keeps drafts across tabs, validates and saves', {skip:!process.env.PADEL_LINKEDOM_MODULE}, async()=>{
+ const {parseHTML}=require(process.env.PADEL_LINKEDOM_MODULE);
+ const {window}=parseHTML(fs.readFileSync(path.resolve(__dirname,'../index.html'),'utf8'));
+ const {document}=window;
+ const data=fixture('analysis');data.matchId='m';data.result='6:0, 0:6 – 10:0';data.historyVersion=0;
+ let saved=null;
+ const client={rpc:async(name,args)=>{
+  if(name==='get_public_match_detail')return {data};
+  if(name==='admin_save_match_history'){saved=args;return {data:{sections:args.p_sections,version:1}};}
+  return {data:null};
+ }};
+ window.PadelKonto={getClient:()=>client,getProfile:()=>({app_role:'admin'}),getSession:()=>({user:{email_confirmed_at:'yes'}})};
+ for(const [key,file] of Object.entries({PadelMatchHistory:'match-history',PadelEloForecast:'elo-forecast',PadelTable:'table-core',PadelPreviewWindow:'preview-window',PadelPlayerImages:'player-images'}))window[key]=require('../js/'+file+'.js');
+ window.PadelLigaPanelLayout={createPresentationPreference:()=>({get:()=>null,set:()=>{}})};
+ window.history={state:{},replaceState:()=>{}};window.location=new URL('http://localhost/');window.parent=window;
+ const dialog=document.getElementById('detail-view-dialog');dialog.showModal=()=>{dialog.open=true;};dialog.close=()=>{dialog.open=false;};
+ const raf=callback=>{callback();return 1;};
+ const context=vm.createContext({window,document,URL,Intl,console,setTimeout,clearTimeout,requestAnimationFrame:raf,cancelAnimationFrame:()=>{}});
+ vm.runInContext(fs.readFileSync(path.resolve(__dirname,'../js/match-statistics.js'),'utf8'),context);
+ await window.PadelMatchStatistics.open('m',{updateUrl:false});
+ const click=selector=>{const el=document.querySelector(selector);assert.ok(el,selector);el.dispatchEvent(new window.Event('click',{bubbles:true}));};
+ const add=(set,team)=>click(`[data-history-add="${team}"][data-history-set="${set}"]`);
+ click('[data-statistics-tab="history"]');assert.equal(document.querySelector('#match-statistics-tab-content').hidden,true);
+ click('[data-history-edit]');document.querySelector('[data-history-reason]').value='Nachtrag';
+ add(0,1);
+ click('[data-statistics-tab="statistics"]');click('[data-statistics-tab="history"]');
+ assert.equal(document.querySelector('[data-history-reason]').value,'Nachtrag');
+ click('[data-history-save]');await new Promise(resolve=>setImmediate(resolve));
+ assert.match(document.querySelector('[data-history-message]').textContent,/Endstand/);
+ for(let i=1;i<6;i++)add(0,1);
+ for(let i=0;i<6;i++)add(1,2);
+ for(let i=0;i<10;i++)add(2,1);
+ assert.equal(document.querySelector('[data-history-reason]').value,'Nachtrag');
+ click('[data-history-save]');await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(saved.p_sections[2].winners.length,10);assert.equal(saved.p_expected_version,0);
+ assert.equal(document.querySelectorAll('.match-history-set').length,3);
+ assert.ok(document.querySelector('[data-history-edit]'));
+});

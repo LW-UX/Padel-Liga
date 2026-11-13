@@ -38,6 +38,12 @@ Diese Datei ist die kanonische Quelle für Terminierung, Ergebnisse, Bestätigun
 - Automatische Turnierfortschreibung ist idempotent und überschreibt keine Folgerunde mit bereits vorhandenen Ergebnissen, Vorschlägen oder Tipps.
 - Ein Wettbewerb wird erst abgeschlossen, wenn der gesperrte Spielplan vollständig, alle erforderlichen Partien besetzt und gespielt oder ohne Wertung abgeschlossen sowie die jeweilige Endrunde vollständig ist. Dann werden Saisonendwerte eingefroren und weitere Ergebniseingaben deaktiviert.
 
+## Nachgetragener Spielverlauf für Ligapartien
+
+- Bestätigte reguläre Ligapartien können optional einen nachgetragenen Spielverlauf erhalten. Bestätigte Admins erfassen ihn in den Partiedetails Spiel für Spiel; der Match-Tiebreak wird Punkt für Punkt erfasst. Aufschläger je regulärem Spiel und der zusätzliche Punkteverlauf eines Satz-Tiebreaks sind optional. Unbekannte Aufschläger erzeugen keine Break-Aussage; ein gesamter Satz-Tiebreak besitzt keinen einzelnen Aufschläger.
+- Jeder Verlauf muss alle gespielten Sätze enthalten, die sportlichen Satzenden einhalten und exakt zum bestätigten Ergebnis passen. Er verändert weder Ergebnis noch Elo, Rangliste oder Tipps und ist kein Liveticker. Eintragungen und Korrekturen benötigen einen Grund; frühere Revisionen bleiben intern erhalten. Gleichzeitige Bearbeitungen dürfen einander nicht überschreiben. Nach einer Änderung des offiziellen Ergebnisses oder der Besetzung wird ein dazu nicht mehr passender Verlauf öffentlich ausgeblendet.
+- Unterhalb der Partieumfrage steht in der Analyse regulärer Ligapartien die Navigation `Statistik | Spielverlauf`, zunächst auf Statistik. Die bisherigen Statistikbereiche einschließlich der Ereignisse stehen in Statistik. Im Spielverlauf erscheinen Satz 1, Satz 2 und gegebenenfalls der Match-Tiebreak chronologisch untereinander mit ihrer jeweiligen Endstandüberschrift, im Erscheinungsbild des Final-Four-Verlaufs. Ohne eingetragenen Verlauf zeigt dieser Reiter einen entsprechenden Hinweis; Vorschauen erhalten keine Verlaufsnavigation.
+
 ## Final-Four-Liveticker
 
 - Die drei Final-Four-Partien heißen in ihrer fortlaufenden Reihenfolge `Final Four 1`, `Final Four 2` und `Final Four 3`. Sie bleiben Elo-wirksam, die aus Ergebnis und Gewinnwahrscheinlichkeit berechnete Elo-Änderung zählt wegen des Ein-Satz-Formats jedoch nur zur Hälfte und wird erst danach gerundet.
