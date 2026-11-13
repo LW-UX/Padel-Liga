@@ -81,3 +81,45 @@ test('prediction sorting keeps the official leaderboard untouched', () => {
   assert.deepEqual(Array.from(state.leaderboard, item => item.user_id), ['missing', 'leader', 'exact', 'bonus']);
   assert.deepEqual(Array.from(sorted, item => item.canonicalRank), [3, 2, 4, 1]);
 });
+
+function seasonRankingContext(players) {
+  const context = vm.createContext({
+    PADEL_DATA: { players, matches: [] },
+    getPlayerStats: player => player.stats
+  });
+  vm.runInContext([
+    appFunction('compareRankingByPoints', 'assignRankingPlaces'),
+    appFunction('assignRankingPlaces', 'getRankedPlayers'),
+    appFunction('getRankedPlayers', 'getPlayerIdByName'),
+    appFunction('getRankingPositionMap', 'formatSignedInteger'),
+    app.match(/function getHomeRankingEntries\([^]*?\n\}/)[0]
+  ].join('\n'), context);
+  return context;
+}
+
+function rankingPlayer(name, punkte = 0, spielDiff = 0, gewonneneSpiele = 0, partien = 0) {
+  return { id: name, name, stats: { punkte, spielDiff, gewonneneSpiele, partien, siege: 0 } };
+}
+
+test('before the first match everyone shares first place regardless of name', () => {
+  const context = seasonRankingContext([rankingPlayer('Zoe'), rankingPlayer('Anna'), rankingPlayer('Max')]);
+  const ranked = context.getRankedPlayers();
+  assert.deepEqual(Array.from(ranked, player => [player.name, player.rank]), [['Zoe', 1], ['Anna', 1], ['Max', 1]]);
+  assert.deepEqual(Array.from(context.getRankingPositionMap().values()), [1, 1, 1]);
+});
+
+test('unplayed players share fourth after three players, with competition rank gaps', () => {
+  const context = seasonRankingContext([
+    rankingPlayer('Zoe'),
+    rankingPlayer('Winner B', 3, 8, 12, 1),
+    rankingPlayer('Anna'),
+    rankingPlayer('Winner A', 3, 8, 12, 1),
+    rankingPlayer('Third', 1, -2, 10, 1),
+    rankingPlayer('Last', 0, -8, 4, 1)
+  ]);
+  const ranked = context.getRankedPlayers();
+  assert.deepEqual(Array.from(ranked, player => player.rank), [1, 1, 3, 4, 4, 6]);
+  assert.equal(context.getRankingPositionMap().get('Anna'), 4);
+  const home = context.getHomeRankingEntries(ranked, 'Anna');
+  assert.equal(home[home.length - 1].rank, 4);
+});

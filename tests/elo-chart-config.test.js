@@ -86,7 +86,7 @@ test('player profile Elo history connects seasons with a color transition', () =
 
 test('profile Elo tooltips use statistics details and a plain Start-Elo label', () => {
   const tooltipEl = { innerHTML: '' };
-  const functionNames = ['showPlayerProfileEloTooltip', 'renderEloStyleTooltipItem', 'escapeHtml', 'formatResultForPlayer', 'formatEloDelta'];
+  const functionNames = ['showPlayerProfileEloTooltip', 'formatChartTooltipTitle', 'renderEloStyleTooltipItem', 'escapeHtml', 'formatResultForPlayer', 'formatEloDelta'];
   const source = functionNames.map(name => appSource.match(new RegExp(`function ${name}\\([\\s\\S]*?\\n\\}(?=\\n|$)`))[0]).join('\n');
   const showTooltip = vm.runInNewContext(`(() => { ${source}; return showPlayerProfileEloTooltip; })()`, {
     getOrCreateChartTooltip: () => tooltipEl,

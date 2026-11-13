@@ -3569,7 +3569,7 @@
       color: var(--muted);
       font-family: var(--font-body);
       font-size: 0.74rem;
-      letter-spacing: 0.04rem;
+      letter-spacing: normal;
       margin-bottom: 0.45rem;
     }
     .elo-tooltip-item + .elo-tooltip-item {

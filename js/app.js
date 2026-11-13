@@ -1720,7 +1720,7 @@ function getLocalPlayerProfile(playerId) {
     seasonId: selectedSeason.id,
     seasonLabel: PADEL_DATA.label || selectedSeason.label,
     isActive: Boolean(selectedSeason.default && !(PADEL_DATA?.completedAt || selectedSeason.completedAt)),
-    rank: rankedPlayers.findIndex(item => item.id === player.id) + 1,
+    rank: rankedPlayer.rank,
     matches: rankedPlayer.stats.partien,
     wins: rankedPlayer.stats.siege,
     losses: rankedPlayer.stats.partien - rankedPlayer.stats.siege,
@@ -2030,9 +2030,12 @@ function getPlayerProfileEloTicks(min, max) {
 }
 
 function getPlayerProfileDateTickIndexes(count, limit) {
-  const tickCount = Math.min(count, Math.max(2, limit));
-  if (tickCount <= 1) return [0];
-  return [...new Set(Array.from({ length: tickCount }, (_, index) => Math.round(index * (count - 1) / (tickCount - 1))))];
+  if (count <= 0) return [];
+  const maxTicks = Math.max(2, limit);
+  let step = 1;
+  // Thin the grid evenly: every point, then every second, fourth, etc.
+  while (Math.ceil(count / step) > maxTicks) step *= 2;
+  return Array.from({ length: Math.ceil(count / step) }, (_, index) => index * step);
 }
 
 function getPlayerProfileControlPoints(points, tension = 0.2) {
@@ -2071,12 +2074,17 @@ function renderPlayerProfileEloSegments(points, colors) {
   return { defs: gradients.join(''), paths: paths.join('') };
 }
 
+function formatChartTooltipTitle(title) {
+  // Keep the time with its date rather than wrapping it onto a separate line.
+  return escapeHtml(title).replace(/\s+(?=\d{1,2}:\d{2}\b)/g, '&nbsp;');
+}
+
 function showPlayerProfileEloTooltip(svg, point) {
   const chartHost = { canvas: svg };
   const tooltipEl = getOrCreateChartTooltip(chartHost, 'player-profile-chart-tooltip');
   const title = point.isInitial ? 'Start-Elo' : [point.label, point.matchLabel].filter(Boolean).join(' · ');
   tooltipEl.innerHTML = `
-    ${title ? `<div class="elo-tooltip-title">${escapeHtml(title)}</div>` : ''}
+    ${title ? `<div class="elo-tooltip-title">${formatChartTooltipTitle(title)}</div>` : ''}
     ${renderEloStyleTooltipItem({
       elo: point.elo,
       oldElo: point.isInitial ? null : point.oldElo,
@@ -2146,9 +2154,9 @@ function drawPlayerProfileEloChart(svg, { labels, values, colors, events = [], m
     <line class="player-profile-elo-grid" x1="${plot.left}" x2="${plot.right}" y1="${y(value)}" y2="${y(value)}"/>
     <text class="player-profile-elo-axis-label" x="${plot.left - 8}" y="${y(value)}" text-anchor="end" dominant-baseline="middle">${value}</text>
   `).join('');
-  const xGrid = getPlayerProfileDateTickIndexes(values.length, Math.floor((plot.right - plot.left) / 70)).map(index => `
+  const xGrid = getPlayerProfileDateTickIndexes(values.length, Math.floor((plot.right - plot.left) / 48) + 1).map(index => `
     <line class="player-profile-elo-grid" x1="${points[index].x}" x2="${points[index].x}" y1="${plot.top}" y2="${plot.bottom}"/>
-    <text class="player-profile-elo-axis-label" x="${points[index].x}" y="${plot.bottom + 18}" text-anchor="middle">${escapeHtml(labels[index])}</text>
+    <text class="player-profile-elo-axis-label" x="${points[index].x}" y="${plot.bottom + 18}" text-anchor="middle">${escapeHtml(labels[index].replace(/\.\d{2,4}$/, '.'))}</text>
   `).join('');
   const segments = renderPlayerProfileEloSegments(points, colors);
   const dots = points.map((point, index) => `
@@ -4863,7 +4871,7 @@ function renderFinalFourRanking() {
 
 function getRankingPositionMap(sortMode = 'points') {
   return new Map(getRankedPlayers(PADEL_DATA.matches, sortMode)
-    .map((player, index) => [player.name, index + 1]));
+    .map(player => [player.name, player.rank]));
 }
 
 function formatSignedInteger(value) {
@@ -5210,8 +5218,8 @@ function renderRanking() {
     absenceNote.textContent = '* Marco M. fällt krankheitsbedingt beim Final Four aus. Der fünftplatzierte Ludwig W. rückt nach.';
     rankingNote.append(absenceNote);
   }
-  body.innerHTML = withStats.map((p, i) => {
-    const currentRank = i + 1;
+  body.innerHTML = withStats.map(p => {
+    const currentRank = p.rank;
     const pointsRank = rankMap.get(p.name);
     const extras = getPlayerRankingExtras(p, drawFactorRankMap);
     const isTopFourQualifier = getCompetitionConfig().qualificationPlaces > 0
@@ -5466,14 +5474,14 @@ function renderAllTimeRanking() {
   const players = isLeagueScope
     ? getAllTimeRankingPlayers(matches).map(player => ({ ...player, stats: getPlayerStats(player, matches) }))
     : getAllTimeScopedRankingPlayers(allTimeRankingScope);
-  const pointsRankMap = new Map([...players]
-    .sort(compareAllTimeRankingByPoints)
-    .map((player, index) => [player.id || player.name, index + 1]));
-  const rankedPlayers = [...players].sort((left, right) => compareAllTimeRanking(left, right, allTimeRankingSortMode));
+  const pointsRankMap = new Map(assignRankingPlaces([...players].sort(compareAllTimeRankingByPoints), compareAllTimeRankingByPoints)
+    .map(player => [player.id || player.name, player.rank]));
+  const compare = (left, right) => compareAllTimeRanking(left, right, allTimeRankingSortMode);
+  const rankedPlayers = assignRankingPlaces([...players].sort(compare), compare);
 
   meta.textContent = `${rankedPlayers.length} Spieler`;
-  body.innerHTML = rankedPlayers.map((player, index) => {
-    const currentRank = index + 1;
+  body.innerHTML = rankedPlayers.map(player => {
+    const currentRank = player.rank;
     const rankingPlayerLabel = isMobileViewport() && allTimeRankingViewMode === 'expanded'
       ? player.initials || player.name
       : player.name;
@@ -5505,6 +5513,15 @@ function compareRankingByPoints(left, right) {
   return right.stats.punkte - left.stats.punkte ||
     right.stats.spielDiff - left.stats.spielDiff ||
     right.stats.gewonneneSpiele - left.stats.gewonneneSpiele;
+}
+
+// Gleiche sportliche Werte teilen den ersten Platz ihrer Gruppe (1, 1, 3).
+function assignRankingPlaces(players, compare) {
+  let rank = 1;
+  return players.map((player, index) => {
+    if (index > 0 && compare(players[index - 1], player) !== 0) rank = index + 1;
+    return { ...player, rank };
+  });
 }
 
 function getRankedPlayers(matches = PADEL_DATA.matches, sortMode = 'points') {
@@ -5540,7 +5557,8 @@ function getRankedPlayers(matches = PADEL_DATA.matches, sortMode = 'points') {
       getDrawFactorAdjustedRank(left, rankMap, referenceRankMap) - getDrawFactorAdjustedRank(right, rankMap, referenceRankMap);
   }
 
-  return withStats.sort((left, right) => comparePrimary(left, right) || pointsComparison(left, right));
+  const compare = (left, right) => comparePrimary(left, right) || pointsComparison(left, right);
+  return assignRankingPlaces(withStats.sort(compare), compare);
 }
 
 function getPlayerIdByName(playerName) {
@@ -6083,7 +6101,7 @@ function getHomeRankingEntries(rankedPlayers, selectedPlayerId, limit = 4) {
   const topCount = Math.max(0, Number(limit) || 4);
   const entries = rankedPlayers.slice(0, topCount).map((player, index) => ({
     player,
-    rank: index + 1,
+    rank: player.rank ?? index + 1,
     separated: false
   }));
   if (!selectedPlayerId) return entries;
@@ -6092,7 +6110,7 @@ function getHomeRankingEntries(rankedPlayers, selectedPlayerId, limit = 4) {
   if (selectedIndex >= topCount) {
     entries.push({
       player: rankedPlayers[selectedIndex],
-      rank: selectedIndex + 1,
+      rank: rankedPlayers[selectedIndex].rank ?? selectedIndex + 1,
       separated: true
     });
   }
@@ -8115,12 +8133,12 @@ function renderCalculatorRanking() {
   const qualificationPlaces = getCompetitionConfig().qualificationPlaces;
 
   renderCalculatorMiniRanking(rankedPlayers, previousMiniPositions, activePlayerIds);
-  body.innerHTML = rankedPlayers.map((player, index) => {
+  body.innerHTML = rankedPlayers.map(player => {
     const activeMatchClass = activePlayerIds.has(player.id) ? 'calculator-active-match-player' : '';
-    const qualificationClass = index < qualificationPlaces ? 'top-four-highlight' : '';
+    const qualificationClass = player.rank <= qualificationPlaces ? 'top-four-highlight' : '';
 
-    return `<tr class="calculator-ranking-row r${Math.min(index + 1, 4)} ${qualificationClass} ${activeMatchClass} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id)}"${renderPlayerProfileRowAttributes(player)}>
-      <td class="col-rank rank-position">${index + 1}</td>
+    return `<tr class="calculator-ranking-row r${Math.min(player.rank, 4)} ${qualificationClass} ${activeMatchClass} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id)}"${renderPlayerProfileRowAttributes(player)}>
+      <td class="col-rank rank-position">${player.rank}</td>
       <td class="col-name">${renderPlayerProfileLink(player, 'pname')}</td>
       <td class="col-games">${player.stats.partien}</td>
       <td class="col-points rank-score">${player.stats.punkte}</td>
@@ -8135,12 +8153,12 @@ function renderCalculatorMiniRanking(rankedPlayers, previousPositions = null, ac
   if (!miniRanking) return;
   const qualificationPlaces = getCompetitionConfig().qualificationPlaces;
 
-  miniRanking.innerHTML = rankedPlayers.map((player, index) => {
+  miniRanking.innerHTML = rankedPlayers.map(player => {
     const activeMatchClass = activePlayerIds.has(player.id) ? 'calculator-active-match-player' : '';
-    const qualificationClass = index < qualificationPlaces ? 'top-four-highlight' : '';
+    const qualificationClass = player.rank <= qualificationPlaces ? 'top-four-highlight' : '';
     return `
-    <div class="calculator-mini-rank-row r${Math.min(index + 1, 4)} ${qualificationClass} ${activeMatchClass} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id)}">
-      <span class="rank-position calculator-rank-position">${index + 1}</span>
+    <div class="calculator-mini-rank-row r${Math.min(player.rank, 4)} ${qualificationClass} ${activeMatchClass} ${isSelectedPlayer(player.name) ? 'viewer-highlight' : ''}" data-ranking-entry="${escapeHtml(player.id)}">
+      <span class="rank-position calculator-rank-position">${player.rank}</span>
       <span class="calculator-mini-rank-initials">${escapeHtml(player.initials || player.name)}</span>
     </div>`;
   }).join('');
@@ -8885,7 +8903,7 @@ function showFormTooltip(anchor) {
       opponents: anchor.dataset.formOpponents || '—'
     };
     tooltipEl.innerHTML = `
-      <div class="elo-tooltip-title">${escapeHtml([anchor.dataset.formDate, anchor.dataset.formCompetition].filter(Boolean).join(' · '))}</div>
+      <div class="elo-tooltip-title">${formatChartTooltipTitle([anchor.dataset.formDate, anchor.dataset.formCompetition].filter(Boolean).join(' · '))}</div>
       ${renderEloStyleTooltipItem({ playerName, matchContext, showElo: false })}
     `;
     positionFormTooltip(anchor, tooltipEl);
@@ -8903,7 +8921,7 @@ function showFormTooltip(anchor) {
   const eloTooltipData = getPlayerMatchEloTooltipData(playerName, match);
 
   tooltipEl.innerHTML = `
-    <div class="elo-tooltip-title">${escapeHtml(formatMatchMeta(match))}</div>
+    <div class="elo-tooltip-title">${formatChartTooltipTitle(formatMatchMeta(match))}</div>
     ${renderEloStyleTooltipItem({
       playerName,
       ...eloTooltipData,
@@ -8932,7 +8950,7 @@ function externalEloTooltip(context) {
   const title = items.find(item => item.dataset.eventTitles?.[item.dataIndex])?.dataset.eventTitles?.[items[0]?.dataIndex] || '';
 
   tooltipEl.innerHTML = `
-    ${title ? `<div class="elo-tooltip-title">${escapeHtml(title)}</div>` : ''}
+    ${title ? `<div class="elo-tooltip-title">${formatChartTooltipTitle(title)}</div>` : ''}
     ${items.map(item => {
       const delta = item.dataset.deltaLabels?.[item.dataIndex] || '';
       const deltaClass = item.dataset.deltas?.[item.dataIndex] > 0
