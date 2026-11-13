@@ -1949,7 +1949,7 @@ function refreshThemeDependentCharts() {
 
   if (!playerProfileData || !document.getElementById('player-profile-dialog')?.open) return;
   renderPlayerProfileParticipations(playerProfileData.participations || [], playerProfileData.matches || []);
-  renderPlayerProfileEloChart(playerProfileData.eloSeries || []);
+  renderPlayerProfileEloChart(playerProfileData.eloSeries || [], playerProfileData.matches || []);
 }
 
 function getDefaultProfileSeasonColor() {
@@ -2076,6 +2076,12 @@ function showPlayerProfileEloTooltip(svg, point) {
   const tooltipEl = getOrCreateChartTooltip(chartHost, 'player-profile-chart-tooltip');
   tooltipEl.innerHTML = `
     ${point.label ? `<div class="elo-tooltip-title">${escapeHtml(point.label)}</div>` : ''}
+    ${point.matchLabel ? `<div class="elo-tooltip-title">${escapeHtml(point.matchLabel)}</div>` : ''}
+    ${point.match ? `<div class="elo-tooltip-item">
+      <div>mit ${escapeHtml((point.match.partnerNames || []).join(' & '))}</div>
+      <div>vs. ${escapeHtml((point.match.opponentNames || []).join(' & '))}</div>
+      ${point.match.resultDetails ? `<div>${escapeHtml(point.match.resultDetails)}</div>` : ''}
+    </div>` : ''}
     ${renderEloStyleTooltipItem({
       playerName: point.seasonLabel,
       elo: point.elo
@@ -2089,7 +2095,7 @@ function hidePlayerProfileEloTooltip(svg) {
   if (tooltipEl) tooltipEl.style.opacity = 0;
 }
 
-function drawPlayerProfileEloChart(svg, { labels, values, colors, seasonLabels }) {
+function drawPlayerProfileEloChart(svg, { labels, values, colors, seasonLabels, matchLabels = [], matches = [] }) {
   const width = svg.parentNode?.clientWidth || 0;
   const height = svg.parentNode?.clientHeight || 0;
   if (!width || !height) return [];
@@ -2106,7 +2112,9 @@ function drawPlayerProfileEloChart(svg, { labels, values, colors, seasonLabels }
     y: Math.round(y(elo) * 10) / 10,
     elo,
     label: labels[index],
-    seasonLabel: seasonLabels[index]
+    seasonLabel: seasonLabels[index],
+    matchLabel: matchLabels[index],
+    match: matches[index]
   }));
 
   const yGrid = getPlayerProfileEloTicks(minElo, maxElo).map(value => `
@@ -2130,7 +2138,7 @@ function drawPlayerProfileEloChart(svg, { labels, values, colors, seasonLabels }
   return points;
 }
 
-function renderPlayerProfileEloChart(eloSeries = []) {
+function renderPlayerProfileEloChart(eloSeries = [], matches = []) {
   const svg = document.getElementById('player-profile-elo-chart');
   const range = document.getElementById('player-profile-elo-range');
   const legend = document.getElementById('player-profile-chart-legend');
@@ -2156,7 +2164,10 @@ function renderPlayerProfileEloChart(eloSeries = []) {
   `).join('');
 
   const seasonColors = new Map(seasons.map(([seasonId]) => [seasonId, getPlayerProfileSeasonColor(seasonId)]));
+  const matchesById = new Map(matches.map(match => [match.id, match]));
   const chartData = {
+    matchLabels: series.map(item => item.eventType === 'initial' ? '' : item.label || ''),
+    matches: series.map(item => item.matchId ? matchesById.get(item.matchId) : null),
     labels,
     values,
     colors: series.map(item => seasonColors.get(item.seasonId) || getDefaultProfileSeasonColor()),
@@ -3462,7 +3473,7 @@ function renderPlayerProfile(profile) {
   document.getElementById('player-profile-elo-range').textContent = 'Diagramm wird geladen …';
   requestAnimationFrame(() => {
     if (playerProfileData === profile && document.getElementById('player-profile-dialog')?.open) {
-      renderPlayerProfileEloChart(profile.eloSeries || []);
+      renderPlayerProfileEloChart(profile.eloSeries || [], profile.matches || []);
     }
   });
 }

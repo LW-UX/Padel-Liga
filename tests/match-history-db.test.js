@@ -74,5 +74,32 @@ test('match history migration enforces access, scores, revisions and stale-histo
   await assert.rejects(db.query('select * from private.league_match_history'),/permission denied/);
   await assert.rejects(db.query("select private.get_public_match_detail_without_game_history('m')"),/permission denied/);
   assert.equal((await detail()).historyVersion,5);
+  await db.exec(`reset role;
+   alter table public.profiles add column player_id text;
+   update public.profiles set player_id='ludwig_w' where id='00000000-0000-0000-0000-000000000001';
+   insert into public.matches values
+    ('winter-2026-partie-1','league','season',null,1,'2:0','best-of-three','6:4, 6:0'),
+    ('winter-2026-partie-9','league','season',null,1,'2:0','best-of-three','6:2, 6:3');
+   insert into public.match_players values
+    ('winter-2026-partie-1','ludwig_w',1,1),('winter-2026-partie-1','florian_z',1,2),
+    ('winter-2026-partie-1','luca_w',2,1),('winter-2026-partie-1','christoph_l',2,2),
+    ('winter-2026-partie-9','jonas_l',1,1),('winter-2026-partie-9','ludwig_w',1,2),
+    ('winter-2026-partie-9','andreas_l',2,1),('winter-2026-partie-9','chris_m',2,2);
+  `);
+  const importSql=fs.readFileSync(path.resolve(__dirname,'../tools/import-winter-2026-match-histories.sql'),'utf8');
+  await db.exec(importSql);
+  const imported=(await db.query("select match_id,sections from private.league_match_history where match_id like 'winter-%' order by match_id")).rows;
+  assert.equal(imported.length,2);
+  const scoring=require('../js/match-history.js');
+  for(const row of imported){
+   const result=row.match_id.endsWith('-1')?'6:4, 6:0':'6:2, 6:3';
+   const players=(await db.query('select player_id as "playerId" from public.match_players where match_id=$1',[row.match_id])).rows;
+   assert.ok(scoring.validate(result,row.sections,players));
+  }
+  assert.deepEqual(imported[0].sections[0].servers.slice(0,4),['florian_z','christoph_l','ludwig_w','luca_w']);
+  assert.deepEqual(imported[1].sections[1].winners,[1,1,2,1,1,1,2,2,1]);
+  await assert.rejects(db.exec(importSql),/bereits ein Verlauf/);
+  await db.exec('rollback');
+
  } finally { await db.close(); }
 });

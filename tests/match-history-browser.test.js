@@ -35,14 +35,12 @@ test('league history tabs, admin entry and saving work on desktop and mobile', {
    page.on('pageerror',error=>errors.push(error.message));
    await page.goto(`http://127.0.0.1:${server.address().port}/`);
    await page.evaluate(()=>window.PadelMatchStatistics.open('m',{updateUrl:false}));
-   await page.locator('[data-statistics-tab="history"]').click();
-   assert.equal(await page.locator('#match-statistics-tab-content').isVisible(),false);
+   assert.equal(await page.locator('[data-statistics-tab]').count(),0);
    await page.locator('[data-history-edit]').click();
    await page.locator('[data-history-reason]').fill('Spielverlauf nachgetragen');
    await page.locator('[data-history-add="1"][data-history-set="0"]').click();
    await page.locator('[data-history-server="0"][data-history-set="0"]').selectOption('greta_p');
-   await page.locator('[data-statistics-tab="statistics"]').click();
-   await page.locator('[data-statistics-tab="history"]').click();
+   assert.equal(await page.locator('[data-statistics-tab]').count(),0);
    assert.equal(await page.locator('[data-history-reason]').inputValue(),'Spielverlauf nachgetragen');
    await page.locator('[data-history-save]').click();
    await page.waitForFunction(()=>document.querySelector('[data-history-message]')?.textContent.includes('Endstand'));

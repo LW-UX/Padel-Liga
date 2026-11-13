@@ -71,3 +71,14 @@ test('history escapes names and labels breaks only with a known opposing server'
  d.matchHistory.sections[0].servers[0]=null;
  assert.doesNotMatch(history.render(d),/BREAK/);
 });
+
+test('detail navigation only appears with a saved history, including for admins', () => {
+ const d=fixture('analysis');d.historyVersion=0;
+ assert.doesNotMatch(render(d),/data-statistics-tab|Für diese Partie wurde noch kein Spielverlauf/);
+ const opts={profile:{app_role:'admin'},session:{user:{email_confirmed_at:'yes'}}};
+ assert.doesNotMatch(render(d,null,opts),/data-statistics-tab/);
+ assert.match(render(d,null,opts),/data-history-edit/);
+ assert.doesNotMatch(render(d,null,{...opts,historyDraft:history.empty(d.result)}),/data-statistics-tab/);
+ d.matchHistory={sections:straight()};
+ assert.match(render(d),/data-statistics-tab="history"/);
+});

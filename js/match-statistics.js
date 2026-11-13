@@ -650,11 +650,17 @@
     const statistics = renderContext(data, selectedPlayerId, forecastOptions.forecast) + renderForm(data, selectedPlayerId) + renderPlayersAndImpacts(data, groupImpacts(data), selectedPlayerId) + renderGraph(data, selectedPlayerId)
       + (data.availability === 'preview' ? '<p class="match-statistics-note">Werte und Prognosen können sich durch weitere bestätigte Partien bis zum Spielbeginn verändern.</p>' : '');
     if (data.availability !== 'analysis' || data.stage !== 'league') return head + forecast + statistics;
-    const historyActive = forecastOptions.detailTab === 'history';
     const canEdit = forecastOptions.profile?.app_role === 'admin' && forecastOptions.session?.user?.email_confirmed_at && data.historyVersion != null;
-    const historyBody = forecastOptions.historyDraft && canEdit
+    const hasHistory = Boolean(data.matchHistory?.sections?.length);
+    const editing = forecastOptions.historyDraft && canEdit;
+    const editButton = canEdit ? `<button type="button" class="secondary-button" data-history-edit>${hasHistory ? 'Spielverlauf bearbeiten' : 'Spielverlauf nachtragen'}</button>` : '';
+    if (!hasHistory) return head + forecast + (editing
       ? matchHistory.editor(data, forecastOptions.historyDraft, { busy: forecastOptions.historySaving, message: forecastOptions.historyMessage })
-      : matchHistory.render(data) + (canEdit ? `<button type="button" class="secondary-button" data-history-edit>${data.matchHistory ? 'Spielverlauf bearbeiten' : 'Spielverlauf nachtragen'}</button>` : '');
+      : statistics + editButton);
+    const historyActive = forecastOptions.detailTab === 'history';
+    const historyBody = editing
+      ? matchHistory.editor(data, forecastOptions.historyDraft, { busy: forecastOptions.historySaving, message: forecastOptions.historyMessage })
+      : matchHistory.render(data) + editButton;
     return head + forecast + `<nav class="site-nav match-statistics-tabs" aria-label="Partiedetails">
       <button type="button" data-statistics-tab="statistics" class="${historyActive ? '' : 'active'}" aria-pressed="${!historyActive}" aria-controls="match-statistics-tab-content">Statistik</button>
       <button type="button" data-statistics-tab="history" class="${historyActive ? 'active' : ''}" aria-pressed="${historyActive}" aria-controls="match-history-tab-content">Spielverlauf</button>
@@ -1373,6 +1379,7 @@
       return;
     }
     if (event.target.closest('[data-history-edit]') && activeData) {
+      detailTab = 'history';
       historyDraft = activeData.matchHistory ? JSON.parse(JSON.stringify(activeData.matchHistory.sections)) : matchHistory.empty(activeData.result);
       historyMessage = '';
       renderActiveContent();

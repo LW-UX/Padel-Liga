@@ -26,10 +26,10 @@ test('admin history editing keeps drafts across tabs, validates and saves', {ski
  await window.PadelMatchStatistics.open('m',{updateUrl:false});
  const click=selector=>{const el=document.querySelector(selector);assert.ok(el,selector);el.dispatchEvent(new window.Event('click',{bubbles:true}));};
  const add=(set,team)=>click(`[data-history-add="${team}"][data-history-set="${set}"]`);
- click('[data-statistics-tab="history"]');assert.equal(document.querySelector('#match-statistics-tab-content').hidden,true);
+ assert.equal(document.querySelector('[data-statistics-tab]'),null);
  click('[data-history-edit]');document.querySelector('[data-history-reason]').value='Nachtrag';
  add(0,1);
- click('[data-statistics-tab="statistics"]');click('[data-statistics-tab="history"]');
+ assert.equal(document.querySelector('[data-statistics-tab]'),null);
  assert.equal(document.querySelector('[data-history-reason]').value,'Nachtrag');
  click('[data-history-save]');await new Promise(resolve=>setImmediate(resolve));
  assert.match(document.querySelector('[data-history-message]').textContent,/Endstand/);
@@ -41,4 +41,8 @@ test('admin history editing keeps drafts across tabs, validates and saves', {ski
  assert.equal(saved.p_sections[2].winners.length,10);assert.equal(saved.p_expected_version,0);
  assert.equal(document.querySelectorAll('.match-history-set').length,3);
  assert.ok(document.querySelector('[data-history-edit]'));
+ assert.equal(document.querySelector('#match-statistics-tab-content').hidden,true);
+ click('[data-history-edit]');document.querySelector('[data-history-reason]').value='Korrektur';
+ click('[data-statistics-tab="statistics"]');click('[data-statistics-tab="history"]');
+ assert.equal(document.querySelector('[data-history-reason]').value,'Korrektur');
 });
