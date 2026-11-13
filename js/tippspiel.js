@@ -1479,12 +1479,8 @@
     }, 0);
   }
 
-  function isPredictionTableGroupComplete(matches) {
-    return matches.length > 0 && matches.every(match => getActualSets(match) || isCancelledMatch(match));
-  }
-
   function getPredictionTableGroupBestPoints(entries, matches) {
-    if (!isPredictionTableGroupComplete(matches)) return null;
+    if (!matches.some(match => getActualSets(match) && !isCancelledMatch(match))) return null;
     const visibleEntries = entries.filter(entry => !entry.is_benchmark);
     return visibleEntries.length
       ? Math.max(...visibleEntries.map(entry => getPredictionTableGroupPoints(entry, matches)))

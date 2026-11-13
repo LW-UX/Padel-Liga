@@ -137,7 +137,7 @@ test('overview group sums become active as soon as one match of the group is act
   assert.match(table, /<td class="\$\{group\.totalClass\}">/);
 });
 
-test('completed overview groups accent every shared best score but exclude the benchmark', () => {
+test('overview groups accent shared best scores after the first confirmed result and exclude the benchmark', () => {
   const completedMatches = [
     { id: 'partie-1' },
     { id: 'partie-2' }
@@ -156,7 +156,6 @@ test('completed overview groups accent every shared best score but exclude the b
   context.getPredictionTableEntry = (userId, type, itemId) => points.get(`${userId}:${itemId}`) || null;
   vm.runInContext([
     fn('getPredictionTableGroupPoints'),
-    fn('isPredictionTableGroupComplete'),
     fn('getPredictionTableGroupBestPoints')
   ].join('\n'), context);
 
@@ -165,9 +164,13 @@ test('completed overview groups accent every shared best score but exclude the b
     { user_id: 'tipper-2' },
     { user_id: 'benchmark', is_benchmark: true }
   ];
-  assert.equal(context.isPredictionTableGroupComplete(completedMatches), true);
   assert.equal(context.getPredictionTableGroupBestPoints(entries, completedMatches), 4);
-  assert.equal(context.getPredictionTableGroupBestPoints(entries, [...completedMatches, { id: 'partie-3' }]), null);
+  assert.equal(context.getPredictionTableGroupBestPoints(entries, [...completedMatches, { id: 'partie-3' }]), 4);
+  assert.equal(context.getPredictionTableGroupBestPoints(entries, [{ id: 'partie-3' }]), null);
+  assert.equal(context.getPredictionTableGroupBestPoints(entries, [{ id: 'partie-2' }]), null);
+  assert.equal(context.getPredictionTableGroupBestPoints(entries, []), null);
+  context.state.databaseMatches.get('partie-1').cancelled_at = '2026-11-06T18:00:00Z';
+  assert.equal(context.getPredictionTableGroupBestPoints(entries, completedMatches), null);
   assert.match(fn('renderPredictionMatchTable'), /prediction-table-group-score\$\{isBest \? ' is-best' : ''\}/);
   assert.match(style, /\.prediction-table-group-score\.is-best \{ color: var\(--accent\); font-weight: 600; \}/);
 });
