@@ -813,6 +813,7 @@
     }
     .player-profile-content {
       display: grid;
+      align-content: start;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: var(--section-gap);
     }
@@ -1695,7 +1696,7 @@
     }
     .player-profile-dialog .player-profile-hero.is-condensed .player-profile-avatar-placeholder { font-size: 2rem; }
     .player-profile-dialog .player-profile-hero.is-condensed .player-profile-identity h2 { font-size: 1.7rem; }
-    .player-profile-dialog .player-profile-hero.is-condensed .player-profile-identity .player-profile-company { margin-top: 2px; }
+    .player-profile-dialog .player-profile-hero.is-condensed .player-profile-identity .player-profile-company { display: none; }
     .player-profile-dialog .player-profile-hero.is-condensed .player-profile-achievements { display: none; }
     @media (prefers-reduced-motion: reduce) {
       .player-profile-dialog[data-presentation="panel"],

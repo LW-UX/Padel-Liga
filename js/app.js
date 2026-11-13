@@ -2074,20 +2074,22 @@ function renderPlayerProfileEloSegments(points, colors) {
 function showPlayerProfileEloTooltip(svg, point) {
   const chartHost = { canvas: svg };
   const tooltipEl = getOrCreateChartTooltip(chartHost, 'player-profile-chart-tooltip');
+  const title = point.isInitial ? 'Start-Elo' : [point.label, point.matchLabel].filter(Boolean).join(' · ');
   tooltipEl.innerHTML = `
-    ${point.label ? `<div class="elo-tooltip-title">${escapeHtml(point.label)}</div>` : ''}
-    ${point.matchLabel ? `<div class="elo-tooltip-title">${escapeHtml(point.matchLabel)}</div>` : ''}
-    ${point.match ? `<div class="elo-tooltip-item">
-      <div>mit ${escapeHtml((point.match.partnerNames || []).join(' & '))}</div>
-      <div>vs. ${escapeHtml((point.match.opponentNames || []).join(' & '))}</div>
-      ${point.match.resultDetails ? `<div>${escapeHtml(point.match.resultDetails)}</div>` : ''}
-    </div>` : ''}
+    ${title ? `<div class="elo-tooltip-title">${escapeHtml(title)}</div>` : ''}
     ${renderEloStyleTooltipItem({
-      playerName: point.seasonLabel,
-      elo: point.elo
+      elo: point.elo,
+      oldElo: point.isInitial ? null : point.oldElo,
+      delta: point.isInitial ? '' : formatEloDelta(point.delta),
+      deltaClass: getDeltaClass(point.delta),
+      matchContext: point.match ? {
+        result: formatResultForPlayer(point.match.resultDetails, Number(point.match.team) !== 2),
+        partner: (point.match.partnerNames || []).join(' & ') || '—',
+        opponents: (point.match.opponentNames || []).join(' & ') || '—'
+      } : null
     })}
   `;
-  positionChartTooltip(chartHost, { caretX: point.x, caretY: point.y }, tooltipEl);
+  positionPlayerProfileEloTooltip(svg, point, tooltipEl);
 }
 
 function hidePlayerProfileEloTooltip(svg) {
@@ -2095,7 +2097,28 @@ function hidePlayerProfileEloTooltip(svg) {
   if (tooltipEl) tooltipEl.style.opacity = 0;
 }
 
-function drawPlayerProfileEloChart(svg, { labels, values, colors, seasonLabels, matchLabels = [], matches = [] }) {
+function positionPlayerProfileEloTooltip(svg, point, tooltipEl) {
+  const parent = svg.parentNode;
+  const padding = 12;
+  const gap = 12;
+  const width = parent.clientWidth;
+  const height = parent.clientHeight;
+  // Keep the tooltip inside the chart, including when its panel clips overflow.
+  tooltipEl.style.minWidth = `${Math.min(210, Math.max(0, width - padding * 2))}px`;
+  tooltipEl.style.transform = 'none';
+  const tooltipWidth = tooltipEl.offsetWidth;
+  const tooltipHeight = tooltipEl.offsetHeight;
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  const preferredLeft = isMobile ? (width - tooltipWidth) / 2
+    : point.x + gap + tooltipWidth <= width - padding
+      ? point.x + gap : point.x - gap - tooltipWidth;
+  const preferredTop = isMobile ? point.y + gap : point.y - tooltipHeight / 2;
+  tooltipEl.style.left = `${Math.max(padding, Math.min(preferredLeft, width - tooltipWidth - padding))}px`;
+  tooltipEl.style.top = `${Math.max(padding, Math.min(preferredTop, height - tooltipHeight - padding))}px`;
+  tooltipEl.style.opacity = 1;
+}
+
+function drawPlayerProfileEloChart(svg, { labels, values, colors, events = [], matchLabels = [], matches = [] }) {
   const width = svg.parentNode?.clientWidth || 0;
   const height = svg.parentNode?.clientHeight || 0;
   if (!width || !height) return [];
@@ -2112,7 +2135,9 @@ function drawPlayerProfileEloChart(svg, { labels, values, colors, seasonLabels, 
     y: Math.round(y(elo) * 10) / 10,
     elo,
     label: labels[index],
-    seasonLabel: seasonLabels[index],
+    isInitial: events[index]?.eventType === 'initial' || (index === 0 && !events[index]?.matchId),
+    oldElo: events[index]?.oldElo ?? (index > 0 ? values[index - 1] : null),
+    delta: events[index]?.delta ?? (index > 0 ? elo - values[index - 1] : null),
     matchLabel: matchLabels[index],
     match: matches[index]
   }));
@@ -2166,12 +2191,12 @@ function renderPlayerProfileEloChart(eloSeries = [], matches = []) {
   const seasonColors = new Map(seasons.map(([seasonId]) => [seasonId, getPlayerProfileSeasonColor(seasonId)]));
   const matchesById = new Map(matches.map(match => [match.id, match]));
   const chartData = {
+    events: series,
     matchLabels: series.map(item => item.eventType === 'initial' ? '' : item.label || ''),
     matches: series.map(item => item.matchId ? matchesById.get(item.matchId) : null),
     labels,
     values,
-    colors: series.map(item => seasonColors.get(item.seasonId) || getDefaultProfileSeasonColor()),
-    seasonLabels: series.map(item => item.seasonLabel || item.seasonId || 'Elo')
+    colors: series.map(item => seasonColors.get(item.seasonId) || getDefaultProfileSeasonColor())
   };
   let points = [];
   const draw = () => {
@@ -3282,15 +3307,19 @@ const PLAYER_PROFILE_HERO_EXPAND_SCROLL = 8;
 function updatePlayerProfileHeroCondensed() {
   const shell = document.querySelector('#player-profile-dialog .player-profile-shell');
   const hero = document.getElementById('player-profile-hero');
-  if (!shell || !hero) return;
+  const content = document.getElementById('player-profile-content');
+  if (!shell || !hero || !content) return;
   const scrollTop = shell.scrollTop;
-  if (hero.classList.contains('is-condensed')) {
-    if (scrollTop <= PLAYER_PROFILE_HERO_EXPAND_SCROLL) hero.classList.remove('is-condensed');
+  if (scrollTop <= PLAYER_PROFILE_HERO_EXPAND_SCROLL) {
+    hero.classList.remove('is-condensed');
+    content.style.removeProperty('min-height');
     return;
   }
-  // Nur verdichten, wenn danach genug Scrollweg bleibt; sonst springt der Kopf zwischen beiden Größen hin und her.
-  const remainingScroll = shell.scrollHeight - shell.clientHeight - hero.offsetHeight;
-  if (scrollTop > PLAYER_PROFILE_HERO_CONDENSE_SCROLL && remainingScroll > PLAYER_PROFILE_HERO_CONDENSE_SCROLL) {
+  if (hero.classList.contains('is-condensed')) return;
+  if (scrollTop > PLAYER_PROFILE_HERO_CONDENSE_SCROLL) {
+    // Den bestehenden Scrollweg erhalten, wenn der Kopf schrumpft. Auch kurze
+    // Profile können so einrasten, ohne durch Scroll-Clamping wieder aufzuklappen.
+    content.style.minHeight = `${content.offsetHeight}px`;
     hero.classList.add('is-condensed');
   }
 }
@@ -8702,7 +8731,7 @@ function renderEloStyleTooltipItem({
   showElo = true
 }) {
   return `<div class="elo-tooltip-item">
-    <div class="elo-tooltip-name">${escapeHtml(playerName)}</div>
+    ${playerName ? `<div class="elo-tooltip-name">${escapeHtml(playerName)}</div>` : ''}
     ${interveningEvents.length ? `<div class="elo-tooltip-intervening">
       <span>Zwischenzeitlich</span>
       ${interveningEvents.map(event => `<div>${escapeHtml(event.seasonLabel || event.seasonId)} · ${escapeHtml(event.matchLabel || 'Partie')}: <strong class="${getDeltaClass(Number(event.delta))}">${escapeHtml(formatEloDelta(Number(event.delta)))} Elo</strong></div>`).join('')}

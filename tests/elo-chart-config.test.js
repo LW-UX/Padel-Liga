@@ -83,3 +83,56 @@ test('player profile Elo history connects seasons with a color transition', () =
   assert.match(transition.paths, /stroke="url\(#player-profile-elo-gradient-0\)"/);
   assert.match(transition.paths, /d="M0,50 C[\d.]+,[\d.]+ [\d.]+,[\d.]+ 100,20"/);
 });
+
+test('profile Elo tooltips use statistics details and a plain Start-Elo label', () => {
+  const tooltipEl = { innerHTML: '' };
+  const functionNames = ['showPlayerProfileEloTooltip', 'renderEloStyleTooltipItem', 'escapeHtml', 'formatResultForPlayer', 'formatEloDelta'];
+  const source = functionNames.map(name => appSource.match(new RegExp(`function ${name}\\([\\s\\S]*?\\n\\}(?=\\n|$)`))[0]).join('\n');
+  const showTooltip = vm.runInNewContext(`(() => { ${source}; return showPlayerProfileEloTooltip; })()`, {
+    getOrCreateChartTooltip: () => tooltipEl,
+    positionPlayerProfileEloTooltip: () => {},
+    getDeltaClass: value => value > 0 ? 'pos' : value < 0 ? 'neg' : 'neu'
+  });
+  showTooltip({}, {
+    label: '13.11.2026', matchLabel: 'Partie 12', seasonLabel: 'Winter 2026',
+    elo: 1020, oldElo: 1000, delta: 20,
+    match: { team: 2, resultDetails: '3:6, 4:6', partnerNames: ['Partner'], opponentNames: ['A', 'B'] }
+  });
+  assert.match(tooltipEl.innerHTML, /13\.11\.2026 · Partie 12/);
+  assert.match(tooltipEl.innerHTML, /1000 → 1020 Elo/);
+  assert.match(tooltipEl.innerHTML, /pos">\+20/);
+  assert.match(tooltipEl.innerHTML, /Ergebnis: 6:3, 6:4/);
+  assert.match(tooltipEl.innerHTML, /Mit: Partner/);
+  assert.match(tooltipEl.innerHTML, /vs\. A &amp; B/);
+  assert.doesNotMatch(tooltipEl.innerHTML, /Winter 2026|elo-tooltip-name/);
+
+  showTooltip({}, { isInitial: true, label: '01.01.2026', elo: 1000 });
+  assert.match(tooltipEl.innerHTML, /Start-Elo/);
+  assert.match(tooltipEl.innerHTML, /1000 Elo/);
+  assert.doesNotMatch(tooltipEl.innerHTML, /01\.01\.2026|Ergebnis:|Mit:|→|elo-tooltip-delta/);
+});
+
+test('profile Elo tooltips stay inside narrow panels at every chart edge', () => {
+  const source = appSource.match(/function positionPlayerProfileEloTooltip\([\s\S]*?\n\}/)[0];
+  for (const mobile of [false, true]) {
+    const position = vm.runInNewContext(`(() => { ${source}; return positionPlayerProfileEloTooltip; })()`, {
+      window: { matchMedia: () => ({ matches: mobile }) }
+    });
+    for (const width of [240, 320, 460, 1100]) {
+      const svg = { parentNode: { clientWidth: width, clientHeight: 210 } };
+      for (const x of [44, width / 2, width - 30]) {
+        for (const y of [10, 100, 182]) {
+          const tooltip = { offsetWidth: Math.min(260, width - 24), offsetHeight: 150, style: {} };
+          position(svg, { x, y }, tooltip);
+          const left = parseFloat(tooltip.style.left);
+          const top = parseFloat(tooltip.style.top);
+          assert.ok(left >= 12);
+          assert.ok(left + tooltip.offsetWidth <= width - 12);
+          assert.ok(top >= 12);
+          assert.ok(top + tooltip.offsetHeight <= 198);
+          assert.equal(tooltip.style.transform, 'none');
+        }
+      }
+    }
+  }
+});

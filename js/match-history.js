@@ -66,7 +66,7 @@
     if (!history) return '<section class="widget match-statistics-section"><p class="hint">Für diese Partie wurde noch kein Spielverlauf eingetragen.</p></section>';
     return sections(data.result).map((set, index) => {
       const part = history[index];
-      return `<section class="widget match-statistics-section match-history-set"><h3>${set.title} · ${set.score.join(':')}</h3>
+      return `<section class="widget match-statistics-section match-history-set${set.target ? ' match-history-set--match-tiebreak' : ''}"><h3>${set.title} · ${set.score.join(':')}</h3>
         ${renderRows(part.winners, part.servers, data.players || [], Boolean(set.target))}
         ${set.tiebreak ? `<p class="hint match-history-tiebreak">Satz-Tiebreak · ${set.tiebreak.join(':')}</p>${part.points.length ? renderRows(part.points, [], [], true) : ''}` : ''}
       </section>`;

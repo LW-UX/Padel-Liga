@@ -39,7 +39,8 @@ test('admin history editing keeps drafts across tabs, validates and saves', {ski
  assert.equal(document.querySelector('[data-history-reason]').value,'Nachtrag');
  click('[data-history-save]');await new Promise(resolve=>setImmediate(resolve));
  assert.equal(saved.p_sections[2].winners.length,10);assert.equal(saved.p_expected_version,0);
- assert.equal(document.querySelectorAll('.match-history-set').length,3);
+ assert.equal(document.querySelectorAll('#match-history-tab-content > .match-history-set').length,3);
+ assert.ok(document.querySelector('#match-history-tab-content > .match-history-set--match-tiebreak'));
  assert.ok(document.querySelector('[data-history-edit]'));
  assert.equal(document.querySelector('#match-statistics-tab-content').hidden,true);
  click('[data-history-edit]');document.querySelector('[data-history-reason]').value='Korrektur';
