@@ -75,7 +75,8 @@ test('league, ranking and cup achievements use their selected metal colors', () 
   const achievements = fs.readFileSync(path.join(root, 'achievements.css'), 'utf8');
   for (const [name, color] of [['gold', '#FFD000'], ['silver', '#ADC8D8'], ['cup-gold', '#C59600'], ['cup-silver', '#7F98A8']]) {
     assert.match(branding, new RegExp(`--${name}:\\s+${color};`));
-    assert.match(achievements, new RegExp(`--achievement-${name}:\\s+${color};`));
+    const placementColor = name.endsWith('gold') ? 'gold' : 'silver';
+    assert.match(achievements, new RegExp(`--achievement-${name}:\\s+var\\(--${placementColor}\\);`));
   }
   assert.match(style, /\.r1 \.rank-position \{ color: var\(--gold\)/);
   assert.match(style, /\.r2 \.rank-position \{ color: var\(--silver\)/);

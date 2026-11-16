@@ -4712,8 +4712,8 @@ function renderFirmenRanking() {
   document.getElementById('fr-meta').textContent = '3 Firmen';
   document.getElementById('fr-body').innerHTML = stats.map((f, i) => {
     return `<tr class="r${i+1} ${isSelectedViewerFirma(f.firma) ? 'viewer-highlight' : ''}">
-      <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${i+1}</span></span></td>
-      <td class="col-company"><span class="player-cell-inner"><span class="ranking-player-name"><span class="pname">${escapeHtml(f.firma)}</span></span>${COMPANIES_WITH_LOGO.includes(f.firma) ? renderCompanyIcon(f.firma) : ''}</span></td>
+      <td class="col-rank rank-position"><span class="rank-cell-inner"><span class="rank-main">${i+1}</span>${COMPANIES_WITH_LOGO.includes(f.firma) ? `<span class="ranking-avatar ranking-company-avatar">${renderCompanyIcon(f.firma)}</span>` : ''}</span></td>
+      <td class="col-company"><span class="player-cell-inner"><span class="ranking-player-name"><span class="pname">${escapeHtml(f.firma)}</span></span></span></td>
       <td class="col-participants">${f.teilnehmer}</td>
       <td class="col-games">${f.partien}</td>
       <td class="col-points-per-player rank-score">${f.pktPerTN.toFixed(2)}</td>

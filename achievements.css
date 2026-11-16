@@ -1,6 +1,6 @@
 /*
-  Auszeichnungen sehen in jedem Branding gleich aus: Farben und Schriften sind fest die des OG-Designs.
-  Deshalb stehen diese Werte hier und nicht in branding/. Die Regeln dazu stehen in style.css.
+  Sportliche Auszeichnungen verwenden Gold und Silber des aktiven Brandings.
+  Schriften und die Farbe individueller Auszeichnungen bleiben fest. Die Regeln stehen in style.css.
 */
 
 @font-face {
@@ -22,9 +22,9 @@
 :root {
   --achievement-font-title: 'Bebas Neue', sans-serif;
   --achievement-font-subtitle: 'DM Sans', sans-serif;
-  --achievement-gold:       #FFD000;
-  --achievement-silver:     #ADC8D8;
-  --achievement-cup-gold:   #C59600;
-  --achievement-cup-silver: #7F98A8;
+  --achievement-gold:       var(--gold);
+  --achievement-silver:     var(--silver);
+  --achievement-cup-gold:   var(--gold);
+  --achievement-cup-silver: var(--silver);
   --achievement-custom:     #5B8DEF;
 }

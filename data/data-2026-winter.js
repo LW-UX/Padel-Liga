@@ -156,6 +156,156 @@ window.PADEL_SEASON = {
           text: "Wer sich nicht nur auf dem Platz beweisen will, kann bei PadelTipp noch seine Prognosen platzieren. Besonders die sechs Bonustipps lohnen sich, denn jede richtige Antwort bringt vier Punkte. Sie schließen mit Beginn des zweiten Spieltags am 16. November um 00:00 Uhr."
         }
       ]
+    },
+    {
+      spieltag: 2,
+      startDate: "2026-11-16",
+      endDate: "2026-11-29",
+      title: "Einer legt vor, der Rest sucht noch Termine",
+      meta: "SPIELTAG 2  ·  16. NOVEMBER - 27. NOVEMBER 2026",
+      body: [
+        {
+          type: "p",
+          text: "Der erste Spieltag ist offiziell vorbei, gespielt wurde aber erst eine Partie. Ludwig W. und Florian Z. gewannen das Eröffnungsspiel 6:4, 6:0 gegen Luca W. und Christoph L. Für Florian Z. brachte der Sieg den angekündigten neuen Elo-Höchstwert. Er steht jetzt bei 904 statt zuvor 866."
+        },
+        {
+          type: "p",
+          text: "Ludwig W. hat sich damit nicht begnügt. Schon am nächsten Tag gewann er auch seine Partie vom zweiten Spieltag, dazu mehr weiter unten. Nach zwei Siegen führt er die Rangliste an. Mit einem Elo von 1228 ist er außerdem der neue Elo-Erste der Liga, knapp vor Marco M. mit 1199."
+        },
+        {
+          type: "p",
+          text: "Der Rest der Liga hängt den Terminen dagegen schon jetzt hinterher. Vier Partien des ersten Spieltags sind noch offen. Einen Termin hat bisher nur Partie 2, nämlich den 19. November."
+        },
+        {
+          type: "h",
+          text: "Partie 6 - Ex-Partner auf beiden Seiten"
+        },
+        {
+          type: "match",
+          matchId: "winter-2026-partie-6",
+          text: "Marcel M. & Christoph L. vs. Greta P. & Luca W.",
+          result: "48 : 52 %",
+          resultLabel: "Gewinnwahrscheinlichkeit"
+        },
+        {
+          type: "p",
+          text: "Vor wenigen Tagen standen Luca W. und Christoph L. noch auf derselben Seite des Netzes. Gemeinsam verloren sie Partie 1. Jetzt stehen sie sich gegenüber: Christoph L. spielt an der Seite von Marcel M., Luca W. mit Greta P."
+        },
+        {
+          type: "p",
+          text: "Für Marcel M. ist das keine angenehme Aufgabe. Luca W. ist sein Angstgegner, von drei Partien gegen ihn hat Marcel M. nur eine gewonnen. Die Gewinnwahrscheinlichkeit von 48 zu 52 Prozent sieht Luca W. und Greta P. leicht vorn."
+        },
+        {
+          type: "p",
+          text: "Luca W. selbst ist mit der Auslosung alles andere als zufrieden, er fühlt sich bei den Ansetzungen betrogen:"
+        },
+        {
+          type: "quote",
+          text: "Ich bin gespannt, ob sich die Korruption wieder verbessert. Hat alles ein Geschmäckle.",
+          author: "Luca W"
+        },
+        {
+          type: "p",
+          text: "Beweise hat diese Redaktion bislang nicht erhalten. Ein Sieg gegen den Ex-Partner wäre wohl die beste Antwort an die Verschwörung."
+        },
+        {
+          type: "h",
+          text: "Partie 7 - Früher Vogel und Langschläfer, jetzt im selben Team"
+        },
+        {
+          type: "match",
+          matchId: "winter-2026-partie-7",
+          text: "Agnes K. & Lukas P. vs. Niklas K. & Raphael H.",
+          result: "40 : 60 %",
+          resultLabel: "Gewinnwahrscheinlichkeit"
+        },
+        {
+          type: "p",
+          text: "In Partie 3 treffen Raphael H. und Niklas K. noch aufeinander, hier spielen sie zusammen. Beide haben ihr letztes Spiel allerdings deutlich verloren. Raphael H. unterlag 0:6, 0:6, Niklas K. 2:6, 0:6. Gegen Agnes K. und Lukas P. sind sie mit 60 Prozent trotzdem favorisiert. Schaffen die beiden den Turnaround?"
+        },
+        {
+          type: "h",
+          text: "Partie 8 - Florian Z. will nachlegen"
+        },
+        {
+          type: "match",
+          matchId: "winter-2026-partie-8",
+          text: "Florian Z. & Lisa S. vs. Martin B. & Christian H.",
+          result: "61 : 39 %",
+          resultLabel: "Gewinnwahrscheinlichkeit"
+        },
+        {
+          type: "p",
+          text: "Florian Z. ist mit einem Sieg in die Saison gestartet und steht auf Platz zwei. Jetzt will er nachlegen. Mit jedem Sieg würde er seinen gerade erst erreichten Elo-Höchstwert von 904 erneut verbessern. Mit 61 Prozent gehen er und Lisa S. als Favoriten in die Partie."
+        },
+        {
+          type: "h",
+          text: "Partie 9 - Bereits gespielt: Der sechste Matchball"
+        },
+        {
+          type: "match",
+          matchId: "winter-2026-partie-9",
+          text: "Jonas L. & Ludwig W. vs. Andreas L. & Chris M.",
+          result: "6:2, 6:3",
+          resultLabel: "Ergebnis"
+        },
+        {
+          type: "p",
+          text: "Das Ergebnis liest sich klar, das Spiel war es nicht. Jonas L. und Ludwig W. gewannen 6:2, 6:3 gegen Andreas L. und Chris M. Auffällig viele Punkte wurden dabei erst im Golden Point entschieden."
+        },
+        {
+          type: "p",
+          text: "Im zweiten Satz hatten Jonas L. und Ludwig W. beim Stand von 5:1 den ersten Matchball. Er saß nicht, die nächsten auch nicht. Andreas L. und Chris M. kamen noch auf 5:3 heran, bevor der sechste Matchball zum 6:3 endlich verwandelt war."
+        },
+        {
+          type: "p",
+          text: "Für beide Sieger hat sich die Mühe gelohnt. Ludwig W. erreichte mit 1228 einen neuen Elo-Höchstwert und übernahm die Tabellenführung. Auch Jonas L. steht mit 1028 so hoch wie nie zuvor."
+        },
+        {
+          type: "h",
+          text: "Partie 10 - Fünf Siege und leise Töne"
+        },
+        {
+          type: "match",
+          matchId: "winter-2026-partie-10",
+          text: "Yonatan G. & Marco M. vs. Lukas T. & Leonie R.",
+          result: "66 : 34 %",
+          resultLabel: "Gewinnwahrscheinlichkeit"
+        },
+        {
+          type: "p",
+          text: "Marco M. geht mit fünf Siegen in Folge in diese Partie. Den letzten holte er zusammen mit Jonas L. sogar mit 6:0, 6:0. Mit Yonatan G. an seiner Seite liegt die Gewinnwahrscheinlichkeit bei 66 Prozent, so deutlich wie bei keiner anderen Partie dieses Spieltags."
+        },
+        {
+          type: "p",
+          text: "Auf der anderen Seite stehen Lukas T. und Leonie R. In der Sommersaison war Leonie R. noch für große Ansagen bekannt. Vor ihrem ersten Spiel kündigte sie an: „Ich werde das Turnier gewinnen.“ Später folgte nur noch: „Ich sage gar nichts mehr.“ Diesmal klingt sie vorsichtiger:"
+        },
+        {
+          type: "quote",
+          text: "Ich lass alles erstmal auf mich zukommen.",
+          author: "Leonie R"
+        },
+        {
+          type: "p",
+          text: "Leonie R. scheint aus dem Sommer gelernt zu haben. Gegen die längste Siegesserie des Spieltags ist etwas Zurückhaltung vielleicht auch nicht die schlechteste Idee."
+        },
+        {
+          type: "h",
+          text: "Blick auf die Rangliste"
+        },
+        {
+          type: "p",
+          text: "Ludwig W. führt mit sechs Punkten aus zwei Spielen und einer Differenz von +15. Dahinter folgen Florian Z. mit +8 und Jonas L. mit +7. Beide haben drei Punkte und ein Spiel weniger."
+        },
+        {
+          type: "p",
+          text: "Viel sagt die Tabelle allerdings noch nicht. Vierzehn der zwanzig Spieler haben in dieser Saison noch keine Partie bestritten. Das Spielfenster des zweiten Spieltags läuft bis zum 27. November. Dazu kommen die vier offenen Partien des ersten Spieltags."
+        },
+        {
+          type: "p",
+          text: "Es bleibt abzuwarten, wer sich von Anfang an in der oberen Tabellenhälfte und unter den Top 8 positionieren kann."
+        }
+      ]
     }
   ]
 };

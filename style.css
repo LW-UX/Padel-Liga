@@ -3479,6 +3479,12 @@
       flex-basis: 18px;
       margin-right: 0;
     }
+    .ranking-company-avatar {
+      background: transparent;
+    }
+    .ranking-company-avatar .firma-icon {
+      margin: 0;
+    }
     .is-file-protocol .firma-icon,
     .is-file-protocol .firma-logo {
       background: var(--firma-mask) center / contain no-repeat;
