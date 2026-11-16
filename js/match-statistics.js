@@ -641,8 +641,20 @@
     });
     return data.players.map(player => ({ player, facts: factsByPlayer.get(player.playerId) || [] })).filter(group => group.facts.length);
   }
+  // Nur die vier beteiligten eingeloggten Spieler erhalten bei offenen Partien den Weg zur Partiekarte im Konto.
+  function renderAccountAction(data, options = {}) {
+    if (!options.accountAction || data.availability === 'analysis') return '';
+    const playerId = options.profile?.player_id || null;
+    if (!playerId || !options.session?.user || !data.players?.some(player => player.playerId === playerId)) return '';
+    const matchTime = data.matchAt ? Date.parse(data.matchAt) : NaN;
+    const scheduled = Number.isFinite(matchTime);
+    const label = !scheduled ? 'Partie terminieren' : matchTime > Date.now() ? 'Termin ändern' : 'Im Konto öffnen';
+    return `<div class="match-detail-account-action">
+      <button type="button" class="${scheduled ? 'secondary-button' : 'primary-button'}" data-match-account-open>${label}</button>
+    </div>`;
+  }
   function render(data, selectedPlayerId = null, forecastOptions = {}) {
-    const head = renderHead(data, selectedPlayerId);
+    const head = renderHead(data, selectedPlayerId) + renderAccountAction(data, forecastOptions);
     if (data.availability === 'basic') return `${head}<p class="match-statistics-note">Die ausführliche Vorschau folgt näher am Spieltag.</p>`;
     const forecast = Object.prototype.hasOwnProperty.call(forecastOptions, 'forecast')
       ? renderMatchForecast(data, forecastOptions.forecast, forecastOptions)
@@ -849,6 +861,8 @@
       forecast: activeForecast,
       session: getSession(),
       profile: window.PadelKonto?.getProfile?.() || null,
+      // Eingebettet auf der Tippseite gehört das Konto dem umgebenden Fenster.
+      accountAction: !isDetailEmbed && typeof window.PadelKonto?.openMatch === 'function',
       selectionOpen: forecastSelectionOpen,
       submitting: forecastSubmitting,
       message: forecastMessage,
@@ -1028,6 +1042,17 @@
       window.history.go(-Math.max(1, (state.detailDepth || 1) - (state.detailBase || 0)));
     }
     else { window.history.replaceState(window.history.state, '', getSeasonBaseUrl()); restore(); }
+  }
+  // Die Partie schließt zuerst; so gehört der folgende Zurück-Schritt allein dem Konto.
+  function openInAccount(matchId) {
+    const openAccount = () => window.PadelKonto?.openMatch?.(matchId);
+    if (!isDetailEmbed && window.history.state?.matchStatistics) {
+      window.addEventListener('popstate', () => setTimeout(openAccount), { once: true });
+      close();
+      return;
+    }
+    close();
+    openAccount();
   }
   function notice(message) {
     let target = document.getElementById('match-statistics-notice');
@@ -1421,6 +1446,7 @@
       renderActiveContent();
       return;
     }
+    if (event.target.closest('[data-match-account-open]') && active) { openInAccount(active); return; }
     const retry = event.target.closest('[data-statistics-retry]');
     if (retry && active) { void open(active, { updateUrl: false, keepSequence: true }); return; }
     const stepButton = event.target.closest('[data-statistics-step]');

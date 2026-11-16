@@ -12,6 +12,7 @@
   margin-top: calc(1rem - var(--section-gap));
 }
 .match-forecast-question { margin-bottom: 0; }
+.match-detail-account-action { display: flex; justify-content: center; margin-top: calc(1rem - var(--section-gap)); }
 .match-forecast-control { min-width: 0; }
 .match-forecast-action { display: flex; align-items: center; gap: 1rem; justify-self: end; min-width: 0; }
 .match-forecast-action .text-link { margin-top: 0; }

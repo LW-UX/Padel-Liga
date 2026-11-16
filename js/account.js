@@ -84,6 +84,7 @@
   let unrateTrigger = null;
   let accountMessageTimer = null;
   let accountTaskPromptTarget = null;
+  let pendingAccountMatchFocus = null;
   let hallCodeRun = 0;
   let courtAccessHealthRun = 0;
   let hallCodeTimer = null;
@@ -828,6 +829,44 @@
     document.getElementById('account-task-prompt-dialog')?.close();
     openAuthDialog();
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => focusAccountTask()));
+  }
+
+  // Aus den Partiedetails geöffnet: Das Konto springt nach dem Laden zur Partiekarte und öffnet ihre nächste Aktion.
+  function openAccountMatch(matchId) {
+    if (!matchId) return;
+    pendingAccountMatchFocus = String(matchId);
+    openAuthDialog();
+    window.requestAnimationFrame(() => window.requestAnimationFrame(focusPendingAccountMatch));
+  }
+
+  function focusPendingAccountMatch() {
+    if (!pendingAccountMatchFocus) return;
+    if (!document.getElementById('auth-dialog')?.open) {
+      pendingAccountMatchFocus = null;
+      return;
+    }
+    if (state.playerToolsLoading) return;
+    const card = document.querySelector(`[data-result-task-match="${CSS.escape(pendingAccountMatchFocus)}"]`);
+    if (!card) {
+      // Ohne geladene Aufgaben wird später erneut gesucht; danach fehlt die Partie tatsächlich.
+      if (!state.playerToolsReady && !state.playerToolsError) return;
+      pendingAccountMatchFocus = null;
+      if (state.playerToolsReady) setAuthMessage('Diese Partie steht gerade nicht in deinen Kontoaufgaben.');
+      return;
+    }
+    pendingAccountMatchFocus = null;
+    const scheduleToggle = card.querySelector('[data-match-schedule-toggle]');
+    const scheduleForm = card.querySelector('.match-schedule-form');
+    if (scheduleToggle && scheduleForm?.hidden) {
+      scheduleForm.hidden = false;
+      scheduleToggle.textContent = 'Termin schließen';
+      scheduleRacketCheck(scheduleForm);
+    }
+    card.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    const control = (scheduleForm && !scheduleForm.hidden && scheduleForm.querySelector('[type="submit"]'))
+      || card.querySelector('[data-result-confirm]')
+      || card.querySelector('[data-result-score]');
+    control?.focus({ preventScroll: true });
   }
 
   function publishAuthenticatedPlayer() {
@@ -2608,6 +2647,7 @@
     renderAuthState();
     renderResultTasks();
     renderHomeMatchday();
+    focusPendingAccountMatch();
   }
 
   function renderHomeMatchday() {
@@ -4679,6 +4719,7 @@ Dein Hanako-Leben-Squad`;
     refresh,
     render,
     openDialog: openAuthDialog,
+    openMatch: openAccountMatch,
     setMessage: setAuthMessage,
     getClient: () => state.client,
     getSession: () => state.session,
