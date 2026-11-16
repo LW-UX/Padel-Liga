@@ -664,7 +664,7 @@
     const canEdit = forecastOptions.profile?.app_role === 'admin' && forecastOptions.session?.user?.email_confirmed_at && data.historyVersion != null;
     const hasHistory = Boolean(data.matchHistory?.sections?.length);
     const editing = forecastOptions.historyDraft && canEdit;
-    const editButton = canEdit ? `<button type="button" class="secondary-button" data-history-edit>${hasHistory ? 'Spielverlauf bearbeiten' : 'Spielverlauf nachtragen'}</button>` : '';
+    const editButton = canEdit ? `<button type="button" class="secondary-button match-history-edit" data-history-edit>${hasHistory ? 'Spielverlauf bearbeiten' : 'Spielverlauf nachtragen'}</button>` : '';
     if (!hasHistory) return head + forecast + (editing
       ? matchHistory.editor(data, forecastOptions.historyDraft, { busy: forecastOptions.historySaving, message: forecastOptions.historyMessage })
       : statistics + editButton);

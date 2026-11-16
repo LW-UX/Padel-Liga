@@ -126,7 +126,7 @@
     return `<section class="widget match-statistics-section match-history-editor"><h3>${data.matchHistory?.sections ? 'Spielverlauf bearbeiten' : 'Spielverlauf nachtragen'}</h3>
       <p class="hint">Team 1: ${esc(names(1))}<br>Team 2: ${esc(names(2))}</p>
       <p class="hint">Trage die Spiele in ihrer Reihenfolge ein. In jeder Zeile lassen sich Gewinner und Aufschläger ändern oder das Spiel löschen. Aufschläger und Tiebreak-Punkte sind optional. Das bestätigte Ergebnis bleibt unverändert.</p>
-      ${sections(data.result).map((set, index) => `<div class="match-history-editor-set"><h4>${set.title} · ${set.score.join(':')}</h4>${controls(set, draft[index], index)}${set.tiebreak ? controls(set, draft[index], index, true) : ''}</div>`).join('')}
+      <div class="match-history-editor-sets">${sections(data.result).map((set, index) => `<div class="match-history-editor-set${set.target ? ' match-history-editor-set--match-tiebreak' : ''}"><h4>${set.title} · ${set.score.join(':')}</h4>${controls(set, draft[index], index)}${set.tiebreak ? controls(set, draft[index], index, true) : ''}</div>`).join('')}</div>
       <label>Grund der Eintragung oder Korrektur<input data-history-reason type="text" minlength="3" maxlength="500" required${disabled}></label>
       <p role="status" class="hint" data-history-message>${esc(message)}</p>
       <div class="match-history-actions"><button type="button" class="primary-button" data-history-save${disabled}>${busy ? 'Wird gespeichert …' : 'Spielverlauf speichern'}</button><button type="button" class="secondary-button" data-history-cancel${disabled}>Abbrechen</button></div>

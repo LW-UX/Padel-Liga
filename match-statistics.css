@@ -511,12 +511,20 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
 }
 
 /* Both detail views share the match header and prediction poll. */
-.match-statistics-tabs { position: static; max-width: none; margin: 0; padding: 0; }
+.match-statistics-tabs { position: static; z-index: auto; max-width: none; margin: 0; padding: 0; }
 .match-statistics-tab-content { display: grid; gap: var(--section-gap); min-width: 0; }
 .match-statistics-tab-content[hidden] { display: none; }
 .match-history-set h3, .match-history-tiebreak { text-align: center; }
+.match-history-edit { justify-self: center; width: fit-content; margin-inline: auto; }
 .match-history-editor { display: grid; gap: 1rem; }
-.match-history-editor-set { display: grid; gap: 1rem; padding-block: 1rem; border-top: 1px solid var(--border); }
+.match-history-editor-sets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 0 var(--section-gap); }
+.match-history-editor-set { container: match-history-set / inline-size; display: grid; gap: 1rem; padding-block: 1rem; border-top: 1px solid var(--border); }
+.match-history-editor-set--match-tiebreak { grid-column: 1 / -1; }
+#detail-view-dialog[data-presentation="panel"] .match-history-editor-sets { grid-template-columns: 1fr; }
+@container match-detail-panel (min-width: 760px) {
+  #detail-view-dialog[data-presentation="panel"] .match-history-editor-sets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 768px) { .match-history-editor-sets { grid-template-columns: 1fr; } }
 .match-history-controls { display: grid; gap: 0.75rem; }
 .match-history-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
 .match-history-editor label { display: grid; gap: 0.5rem; }
@@ -539,6 +547,6 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
 .match-history-status.is-complete { color: var(--positiv); }
 .match-history-editor :is(input, select) { min-width: 0; width: 100%; padding: 0.65rem; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--input-radius); font: inherit; }
 .match-history-editor :is(input, select):is(:hover, :focus-visible) { border-color: var(--accent); }
-@media (max-width: 480px) {
+@container match-history-set (max-width: 440px) {
   .match-history-row { grid-template-columns: auto minmax(0, 1fr) 32px; grid-template-areas: "label label remove" "winner server server"; gap: 0.5rem 0.75rem; }
 }
