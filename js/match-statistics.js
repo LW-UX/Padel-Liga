@@ -82,8 +82,7 @@
       </span>`;
     const analysisProbability = probability.replace(/(\d+)/g, '$1%');
     const analysis = data.availability === 'analysis';
-    return `<article class="match-detail"><div class="match-detail-meta"><span class="match-detail-status${analysis ? ' is-finished' : ''}">${analysis ? 'Beendet' : 'Offen'}</span></div>
-      <div class="match-detail-matchup"><div class="match-detail-team match-detail-team-1">${data.players.filter(p => p.team === 1).map(p => playerBlock(p, selectedPlayerId)).join('')}</div>
+    return `<article class="match-detail"><div class="match-detail-matchup"><div class="match-detail-team match-detail-team-1">${data.players.filter(p => p.team === 1).map(p => playerBlock(p, selectedPlayerId)).join('')}</div>
       <div class="match-detail-scoreboard"><span class="match-detail-score-label">${analysis ? 'Ergebnis' : 'Gewinnchance'}</span>
       ${analysis ? `<strong class="score score--match">${esc(data.sets || '—')}</strong>` : previewProbability || '<strong class="score score--match">—</strong>'}
       ${analysis ? `<span class="match-detail-score-note">${esc(data.result)}</span>${analysisProbability ? `<span class="match-detail-score-note">${analysisProbability}</span>` : ''}` : previewProbability ? '<span class="match-detail-score-note">Prozent</span>' : ''}

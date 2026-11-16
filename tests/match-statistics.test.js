@@ -336,8 +336,7 @@ test('match header and full ranking follow ticker and ranking conventions',()=>{
  assert.equal(playedOrderLabel({...d,availability:'analysis',leaguePlayedOrdinal:18}),'Gespielt als 18. Partie');
  assert.equal(playedOrderLabel(d),'');
  assert.doesNotMatch(html,/Partievorschau|Partieanalyse/);
- assert.match(html,/<div class="match-detail-meta"><span class="match-detail-status">Offen<\/span><\/div>/);
- assert.match(analysisHtml,/<div class="match-detail-meta"><span class="match-detail-status is-finished">Beendet<\/span><\/div>/);
+ assert.doesNotMatch(html+analysisHtml,/match-detail-meta|match-detail-status|>Offen<|>Beendet</);
  assert.match(html,/Gewinnchance[\s\S]*match-probability match-detail-probability match-statistics-probability[\s\S]*match-probability-value">61<\/span>[\s\S]*match-probability-separator"[^>]*>:<\/span>[\s\S]*match-probability-value">39<\/span>[\s\S]*match-detail-score-note">Prozent<\/span>/);
  assert.match(analysisHtml,/61% : 39%/);
  assert.doesNotMatch(html,/20\.10\.2026/);assert.match(html,/match-detail-player-emoji">👩/);
