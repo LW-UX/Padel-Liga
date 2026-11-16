@@ -82,3 +82,17 @@ test('detail navigation only appears with a saved history, including for admins'
  d.matchHistory={sections:straight()};
  assert.match(render(d),/data-statistics-tab="history"/);
 });
+
+test('editor marks the first game that no longer fits and offers per-game corrections', () => {
+ assert.deepEqual(history.sequenceStatus([2,2,1,2,2,2], [6,4], null), {score:[1,5],invalidAt:5,complete:false});
+ assert.deepEqual(history.sequenceStatus([1,1,1,1,1,1], [6,0], null), {score:[6,0],invalidAt:-1,complete:true});
+ assert.equal(history.sequenceStatus([1,1,1,1,1,1,1], [7,0], null).invalidAt, 6);
+ const d=fixture('analysis');d.result='6:3, 6:4';d.historyVersion=0;
+ const html=history.editor(d,straight());
+ assert.match(html,/Spielverlauf nachtragen/);
+ assert.match(html,/data-history-winner="2"[^>]*data-history-index="0"/);
+ assert.match(html,/data-history-remove[^>]*data-history-index="8"/);
+ assert.doesNotMatch(html,/data-history-undo/);
+ d.matchHistory={sections:straight()};
+ assert.match(history.editor(d,straight()),/Spielverlauf bearbeiten/);
+});

@@ -72,30 +72,67 @@
       </section>`;
     }).join('');
   }
+  // Liefert den laufenden Stand und das erste Spiel beziehungsweise den ersten Punkt, der nicht mehr zum Ergebnis passt.
+  function sequenceStatus(winners, expected, target) {
+    const score = [0, 0];
+    let invalidAt = -1;
+    winners.forEach((winner, index) => {
+      if (invalidAt >= 0) return;
+      if (![1, 2].includes(winner) || ended(score, target)) { invalidAt = index; return; }
+      score[winner - 1]++;
+      if (score.some((value, i) => value > expected[i])) invalidAt = index;
+    });
+    return { score, invalidAt, complete: invalidAt < 0 && score.every((value, i) => value === expected[i]) };
+  }
+  const removeIcon = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg>';
   function editor(data, draft, { busy = false, message = '' } = {}) {
     const disabled = busy ? ' disabled' : '';
-    const names = team => (data.players || []).filter(player => Number(player.team) === team).map(player => player.displayName).join(' / ');
+    const players = data.players || [];
+    const names = team => players.filter(player => Number(player.team) === team).map(player => player.displayName).join(' / ');
     const controls = (set, part, index, points = false) => {
       const winners = points ? part.points : part.winners;
       const expected = points ? set.tiebreak : set.score;
-      const score = totals(winners);
-      const done = score.every((value, i) => value === expected[i]);
-      return `<div class="match-history-controls"><p>${points ? 'Satz-Tiebreak, Punkte (optional)' : set.target ? 'Punktgewinne' : 'Spielgewinne'} · <strong>${score.join(':')}</strong></p>
-        <div class="match-history-actions">${[1, 2].map(team => `<button type="button" class="secondary-button" data-history-add="${team}" data-history-set="${index}" data-history-points="${points}"${disabled}${done || score[team - 1] >= expected[team - 1] || ended(score, points ? 7 : set.target) ? ' disabled' : ''}>Team ${team}${points || set.target ? ' + Punkt' : ' + Spiel'}</button>`).join('')}
-        <button type="button" class="text-link" data-history-undo data-history-set="${index}" data-history-points="${points}"${disabled}${!winners.length ? ' disabled' : ''}>Zurücknehmen</button></div>
-        <p class="hint">${winners.length ? winners.map(team => `Team ${team}`).join(' · ') : 'Noch keine Gewinne erfasst.'}</p>
-        ${!points && !set.target ? winners.map((winner, game) => set.tiebreak && game === 12 ? '' : `<label class="match-history-server">Spiel ${game + 1} · Team ${winner}<select data-history-server="${game}" data-history-set="${index}"${disabled}><option value="">Aufschläger unbekannt</option>${(data.players || []).map(player => `<option value="${esc(player.playerId)}"${part.servers[game] === player.playerId ? ' selected' : ''}>${esc(player.displayName)}</option>`).join('')}</select></label>`).join('') : ''}</div>`;
+      const target = points ? 7 : set.target;
+      const unit = points || set.target ? 'Punkt' : 'Spiel';
+      const status = sequenceStatus(winners, expected, target);
+      const statusText = status.invalidAt >= 0
+        ? `Ab ${unit} ${status.invalidAt + 1} passt der Verlauf nicht zum Ergebnis ${expected.join(':')}.`
+        : status.complete ? `Passt zum Ergebnis ${expected.join(':')}.`
+          : points && !winners.length ? 'Optional. Noch keine Punkte erfasst.'
+            : `Erfasst ${status.score.join(':')} von ${expected.join(':')}.`;
+      const running = [0, 0];
+      const rows = winners.map((winner, game) => {
+        if ([1, 2].includes(winner)) running[winner - 1]++;
+        const attributes = `data-history-set="${index}" data-history-index="${game}" data-history-points="${points}"`;
+        const noServer = points || set.target || (set.tiebreak && game === 12);
+        const server = noServer
+          ? `<span class="hint match-history-row-server">${!points && set.tiebreak && game === 12 ? 'Tiebreak' : ''}</span>`
+          : `<select class="match-history-row-server" data-history-server="${game}" data-history-set="${index}" aria-label="Aufschläger ${unit} ${game + 1}"${disabled}><option value="">Aufschläger unbekannt</option>${players.map(player => `<option value="${esc(player.playerId)}"${part.servers[game] === player.playerId ? ' selected' : ''}>${esc(player.displayName)}</option>`).join('')}</select>`;
+        return `<li class="match-history-row${status.invalidAt >= 0 && game >= status.invalidAt ? ' is-invalid' : ''}">
+          <span class="match-history-row-label">${unit} ${game + 1}<span class="hint">${running.join(':')}</span></span>
+          <div class="toggle match-history-row-winner" role="group" aria-label="Gewinner ${unit} ${game + 1}">${[1, 2].map(team => `<button type="button" class="${winner === team ? 'active' : ''}" data-history-winner="${team}" ${attributes} aria-pressed="${winner === team}"${disabled}>Team ${team}</button>`).join('')}</div>
+          ${server}
+          <button type="button" class="secondary-button match-history-row-remove" data-history-remove ${attributes} aria-label="${unit} ${game + 1} löschen" title="${unit} ${game + 1} löschen"${disabled}>${removeIcon}</button>
+        </li>`;
+      }).join('');
+      const blocked = status.complete || status.invalidAt >= 0 || ended(status.score, target);
+      return `<div class="match-history-controls">
+        <p class="match-history-controls-title">${points ? 'Punkte im Satz-Tiebreak (optional)' : set.target ? 'Punktgewinne' : 'Spielgewinne'}</p>
+        ${rows ? `<ol class="match-history-rows">${rows}</ol>` : ''}
+        <p class="hint match-history-status${status.invalidAt >= 0 ? ' is-invalid' : status.complete ? ' is-complete' : ''}">${statusText}</p>
+        <div class="match-history-actions">${[1, 2].map(team => `<button type="button" class="secondary-button" data-history-add="${team}" data-history-set="${index}" data-history-points="${points}"${disabled}${blocked || status.score[team - 1] >= expected[team - 1] ? ' disabled' : ''}>Team ${team} + ${unit}</button>`).join('')}</div>
+      </div>`;
     };
-    return `<section class="widget match-statistics-section match-history-editor"><h3>Spielverlauf nachtragen</h3>
+    return `<section class="widget match-statistics-section match-history-editor"><h3>${data.matchHistory?.sections ? 'Spielverlauf bearbeiten' : 'Spielverlauf nachtragen'}</h3>
       <p class="hint">Team 1: ${esc(names(1))}<br>Team 2: ${esc(names(2))}</p>
-      <p class="hint">Erfasse die Gewinne in ihrer Reihenfolge. Aufschläger und der Punkteverlauf eines Satz-Tiebreaks sind optional. Das bestätigte Ergebnis bleibt unverändert.</p>
+      <p class="hint">Trage die Spiele in ihrer Reihenfolge ein. In jeder Zeile lassen sich Gewinner und Aufschläger ändern oder das Spiel löschen. Aufschläger und Tiebreak-Punkte sind optional. Das bestätigte Ergebnis bleibt unverändert.</p>
       ${sections(data.result).map((set, index) => `<div class="match-history-editor-set"><h4>${set.title} · ${set.score.join(':')}</h4>${controls(set, draft[index], index)}${set.tiebreak ? controls(set, draft[index], index, true) : ''}</div>`).join('')}
       <label>Grund der Eintragung oder Korrektur<input data-history-reason type="text" minlength="3" maxlength="500" required${disabled}></label>
       <p role="status" class="hint" data-history-message>${esc(message)}</p>
       <div class="match-history-actions"><button type="button" class="primary-button" data-history-save${disabled}>${busy ? 'Wird gespeichert …' : 'Spielverlauf speichern'}</button><button type="button" class="secondary-button" data-history-cancel${disabled}>Abbrechen</button></div>
     </section>`;
   }
-  const api = { sections, totals, ended, validateSequence, validate, empty, render, editor };
+  const api = { sections, totals, ended, validateSequence, validate, sequenceStatus, empty, render, editor };
   if (typeof module !== 'undefined') module.exports = api;
   else window.PadelMatchHistory = api;
 })();

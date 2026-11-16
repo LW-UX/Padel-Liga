@@ -1413,21 +1413,28 @@
     if (event.target.closest('[data-history-cancel]') && !historySaving) {
       historyDraft = null; historyMessage = ''; renderActiveContent(); return;
     }
-    const historyAction = event.target.closest('[data-history-add], [data-history-undo]');
+    const historyAction = event.target.closest('[data-history-add], [data-history-winner], [data-history-remove]');
     if (historyAction && historyDraft && !historySaving) {
       const index = Number(historyAction.dataset.historySet), part = historyDraft[index];
       const points = historyAction.dataset.historyPoints === 'true';
       const winners = points ? part.points : part.winners;
-      if (historyAction.hasAttribute('data-history-undo')) {
-        winners.pop();
-        if (!points) part.servers.pop();
-      } else {
+      const game = Number(historyAction.dataset.historyIndex);
+      let focusSelector = `[data-history-add][data-history-set="${index}"][data-history-points="${points}"]:not(:disabled)`;
+      if (historyAction.hasAttribute('data-history-add')) {
         winners.push(Number(historyAction.dataset.historyAdd));
         if (!points) part.servers.push(null);
+      } else if (historyAction.hasAttribute('data-history-winner')) {
+        winners[game] = Number(historyAction.dataset.historyWinner);
+        focusSelector = `[data-history-winner="${winners[game]}"][data-history-set="${index}"][data-history-index="${game}"][data-history-points="${points}"]`;
+      } else {
+        winners.splice(game, 1);
+        if (!points) part.servers.splice(game, 1);
+        const next = Math.min(game, winners.length - 1);
+        if (next >= 0) focusSelector = `[data-history-remove][data-history-set="${index}"][data-history-index="${next}"][data-history-points="${points}"]`;
       }
       historyMessage = '';
       renderActiveContent();
-      content().querySelector(`[data-history-set="${index}"][data-history-points="${points}"]:not(:disabled)`)?.focus({ preventScroll: true });
+      content().querySelector(focusSelector)?.focus({ preventScroll: true });
       return;
     }
     if (event.target.closest('[data-match-statistics-presentation-toggle]')) {
