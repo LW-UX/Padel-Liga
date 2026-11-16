@@ -1030,7 +1030,7 @@ function applySeasonMetadata() {
     heroButton.dataset.navTarget = cupSeason ? 'partien' : 'start';
     heroButton.setAttribute('aria-label', cupSeason ? 'Zum Turnierbaum' : 'Zur Startseite');
   }
-  document.querySelectorAll('nav button[data-section]').forEach(button => {
+  document.querySelectorAll('nav [data-section]').forEach(button => {
     button.hidden = (cupSeason && !['partien', 'infos'].includes(button.dataset.section))
       || (button.dataset.section === 'rechner' && calculatorUnavailable);
   });
@@ -3620,6 +3620,7 @@ async function openPlayerProfile(playerId, trigger = null, options = {}) {
 
 function pushPlayerProfileHistory(playerId, profileWasOpen) {
   if (isDetailEmbed || !window.PadelSeasonRouting || !selectedSeason) return;
+  if (!profileWasOpen) rememberSectionHistory();
   const state = window.history.state || {};
   const continues = Boolean(profileWasOpen && state.playerProfile);
   if (continues) rememberPlayerProfileHistoryEntry();
@@ -3965,9 +3966,11 @@ document.addEventListener('click', event => {
     return;
   }
 
-  const navControl = event.target.closest('[data-nav-target], nav button[data-section]');
+  const navControl = event.target.closest('[data-nav-target], nav [data-section]');
   if (navControl) {
-    nav(navControl.dataset.navTarget || navControl.dataset.section, navControl.matches('nav button') ? navControl : null);
+    if (navControl.matches('a') && (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)) return;
+    event.preventDefault();
+    nav(navControl.dataset.navTarget || navControl.dataset.section, navControl.matches('nav [data-section]') ? navControl : null);
     return;
   }
 
@@ -4422,29 +4425,62 @@ function renderActiveSection() {
   if (appReady && id === 'verlauf') initChart();
 }
 
-function nav(id, el) {
+function rememberSectionHistory() {
+  const state = window.history.state || {};
+  window.history.replaceState({ ...state, sectionScrollY: window.scrollY }, '', window.location.href);
+}
+
+function updateSectionLinks() {
+  document.querySelectorAll('nav.site-nav a[data-section]').forEach(link => {
+    link.href = window.PadelSeasonRouting.getSectionUrl(selectedSeason.id, link.dataset.section).href;
+  });
+}
+
+function syncSectionWithHistory() {
+  if (!appReady || isDetailEmbed) return;
+  const state = window.history.state || {};
+  if (state.playerProfile || state.matchStatistics || state.liveMatchId || state.mobileDialogPage) return;
+  const section = state.leagueSection || window.PadelSeasonRouting.getRequestedSection();
+  nav(section, null, { updateUrl: false });
+  if (Number.isFinite(state.sectionScrollY)) {
+    requestAnimationFrame(() => window.scrollTo({ top: state.sectionScrollY, behavior: 'instant' }));
+  }
+}
+
+function nav(id, el, { updateUrl = true } = {}) {
+  const target = document.getElementById(id);
+  if (!target || target.hidden) return;
+  const previousSection = document.querySelector('main > .section.active')?.id;
+  const leavesDetail = Boolean(window.history.state?.playerProfile || window.history.state?.matchStatistics);
+  if (updateUrl && leavesDetail && previousSection === id) return;
   // Vor dem Umschalten messen: Ein noch nicht gerenderter Bereich verkürzt die Seite kurzzeitig.
   const navigationPinned = isNavigationPinned();
-  if (id !== 'infos' && window.location.hash) {
-    const url = new URL(window.location.href);
-    url.hash = '';
-    window.history.replaceState(window.history.state, '', url);
-  }
   const panelContext = getPlayerProfilePanelContext()?.id;
   const keepsPanelContext = (panelContext === 'ranking' && id === 'rangliste')
     || (panelContext === 'all-time-ranking' && id === 'verlauf');
   const profileBelongsToMatchDetail = panelContext === 'match-statistics' && window.PadelMatchStatistics?.active;
   if (!keepsPanelContext && !profileBelongsToMatchDetail && playerProfilePresentation === 'panel') {
-    closePlayerProfile({ immediate: true, restoreFocus: false });
+    closePlayerProfile({ immediate: true, restoreFocus: false, fromHistory: true });
   }
   if (id !== 'partien' && window.PadelMatchStatistics?.active) {
-    window.PadelMatchStatistics.close();
+    window.PadelMatchStatistics.restore();
   }
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  const activeButton = el || document.querySelector(`nav button[data-section="${id}"]`);
+  document.querySelectorAll('nav [data-section]').forEach(b => b.classList.remove('active'));
+  target.classList.add('active');
+  const activeButton = el || document.querySelector(`nav [data-section="${id}"]`);
   if (activeButton) activeButton.classList.add('active');
+  document.querySelectorAll('nav.site-nav a[data-section]').forEach(link => {
+    if (link.dataset.section === id) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  });
+  if (updateUrl && appReady && !isDetailEmbed && Object.hasOwn(window.PadelSeasonRouting.SECTION_PATHS, id)) {
+    const url = window.PadelSeasonRouting.getSectionUrl(selectedSeason.id, id, { preserveSearch: true, preserveHash: id === 'infos' });
+    window.PadelSeasonRouting.ensureDocumentBase(url);
+    rememberSectionHistory();
+    const method = previousSection === id || leavesDetail ? 'replaceState' : 'pushState';
+    window.history[method]({ leagueSection: id }, '', url);
+  }
   renderActiveSection();
   if (navigationPinned || id === 'detail-view') scrollToTopInstantly();
 }
@@ -9543,8 +9579,9 @@ function finishInitialLoading() {
 
 async function initApp() {
   try {
-    normalizeLegacySeasonUrl();
     await loadActiveSeason();
+    const requestedSection = window.PadelSeasonRouting.getRequestedSection();
+    normalizeLegacySeasonUrl();
     window.PadelSeasonRouting.normalizeCurrentMatchUrl(selectedSeason.id, PADEL_DATA.matches);
     window.PadelSeasonRouting.normalizeCurrentLiveUrl(selectedSeason.id, PADEL_DATA.matches);
     if (!isDetailEmbed) window.PadelSeasonRouting.normalizeCurrentPlayerProfileUrl(selectedSeason.id, window.PADEL_PLAYERS || []);
@@ -9553,7 +9590,18 @@ async function initApp() {
     updateViewerPicker();
     appReady = true;
     invalidateSections();
-    renderActiveSection();
+    updateSectionLinks();
+    const hasDetail = window.PadelSeasonRouting.getRequestedMatchId(PADEL_DATA.matches)
+      || window.PadelSeasonRouting.getRequestedLiveRoute(PADEL_DATA.matches)
+      || window.PadelSeasonRouting.getRequestedPlayerProfileId(window.PADEL_PLAYERS || []);
+    const initialSection = document.getElementById(requestedSection)?.hidden
+      ? (document.body.classList.contains('is-cup-season') ? 'partien' : 'rangliste') : requestedSection;
+    nav(initialSection, null, { updateUrl: false });
+    if (!hasDetail && !isDetailEmbed) {
+      const url = window.PadelSeasonRouting.getSectionUrl(selectedSeason.id, initialSection, { preserveSearch: true, preserveHash: true });
+      window.PadelSeasonRouting.ensureDocumentBase(url);
+      window.history.replaceState({ leagueSection: initialSection }, '', url);
+    }
   } catch (error) {
     document.querySelector('main').innerHTML = `<div class="hint">Die Saison-Daten konnten nicht geladen werden.</div>`;
     document.querySelector('main')?.setAttribute('aria-busy', 'false');
@@ -9581,7 +9629,7 @@ async function initApp() {
     if (requestedLiveMatch) {
       await window.PadelLiveTicker?.init();
       liveTickerInitialized = true;
-      nav('partien', document.getElementById('partien-nav-button'));
+      nav('partien', document.getElementById('partien-nav-button'), { updateUrl: false });
       const liveUrl = new URL(url);
       const baseUrl = window.PadelSeasonRouting.getSeasonUrl(selectedSeason.id, 'league', {
         preserveSearch: true,
@@ -9711,7 +9759,7 @@ document.querySelectorAll('#spielplan, #final-four-spielplan').forEach(matchPlan
 
 // Mobil per horizontalem Wischen zwischen den Hauptbereichen wechseln.
 function getSwipeableSections() {
-  const sections = [...document.querySelectorAll('nav.site-nav button[data-section]')]
+  const sections = [...document.querySelectorAll('nav.site-nav [data-section]')]
     .filter(button => !button.hidden)
     .map(button => button.dataset.section);
   if (!document.body.classList.contains('is-cup-season')) sections.unshift('start');
@@ -9731,6 +9779,7 @@ window.PadelSwipeGesture?.attach(document.querySelector('main'), {
 });
 
 window.addEventListener('popstate', syncPlayerProfileWithHistory);
+window.addEventListener('popstate', syncSectionWithHistory);
 
 const playerProfileDialog = document.getElementById('player-profile-dialog');
 playerProfileDialog?.addEventListener('cancel', event => {

@@ -23,6 +23,33 @@
     return getSeasons().find(season => season.id === normalized) || null;
   }
 
+  const SECTION_PATHS = Object.freeze({ start: '', rangliste: 'rangliste', partien: 'partien', rechner: 'rechner', verlauf: 'statistik', infos: 'infos' });
+
+  function getRequestedSection() {
+    const requested = new URLSearchParams(window.location.search).get('bereich');
+    if (Object.hasOwn(SECTION_PATHS, requested)) return requested;
+    const base = getAreaBaseUrl('league');
+    const relative = window.location.pathname.startsWith(base.pathname)
+      ? window.location.pathname.slice(base.pathname.length) : '';
+    const segments = relative.split('/').filter(Boolean);
+    if (getSeasons().some(season => season.route === segments[0])) segments.shift();
+    return Object.keys(SECTION_PATHS).find(section => SECTION_PATHS[section] === segments[0]) || 'start';
+  }
+
+  function getSectionUrl(seasonId, section = 'start', options = {}) {
+    const url = getSeasonUrl(seasonId, 'league', { ...options, clearDetails: true });
+    url.searchParams.delete('bereich');
+    const slug = SECTION_PATHS[section] || '';
+    if (usesQueryRoutes(url)) {
+      if (slug) url.searchParams.set('bereich', section);
+      return url;
+    }
+    const target = slug ? new URL(`${slug}/`, url) : url;
+    target.search = url.search;
+    target.hash = options.preserveHash ? url.hash : '';
+    return target;
+  }
+
   // Ohne <base> würden relative Skripte und Links nach dem Pfadwechsel unter dem Kurzpfad gesucht.
   function ensureDocumentBase(url) {
     if (url.pathname !== window.location.pathname && !document.querySelector('base')) {
@@ -68,7 +95,7 @@
     const season = getSeasonById(seasonId);
     const base = getAreaBaseUrl(area);
     const queryRoutes = usesQueryRoutes(base);
-    const url = !queryRoutes && season?.route
+    const url = !queryRoutes && season?.route && !season.default
       ? new URL(`${season.route}/`, base)
       : new URL(base);
 
@@ -77,7 +104,7 @@
     url.searchParams.delete('saison');
     if ((queryRoutes || !season?.route) && seasonId) url.searchParams.set('saison', normalizeSeasonId(seasonId));
     if (options.clearDetails) {
-      ['partie', 'live', 'liveView', 'spielerprofil'].forEach(parameter => url.searchParams.delete(parameter));
+      ['partie', 'live', 'liveView', 'spielerprofil', 'bereich'].forEach(parameter => url.searchParams.delete(parameter));
     }
     return url;
   }
@@ -146,7 +173,7 @@
 
   function getPlayerProfileUrl(seasonId, playerId, options = {}) {
     const seasonUrl = getSeasonUrl(seasonId, 'league', options);
-    ['partie', 'live', 'liveView', 'spielerprofil'].forEach(parameter => seasonUrl.searchParams.delete(parameter));
+    ['partie', 'live', 'liveView', 'spielerprofil', 'bereich'].forEach(parameter => seasonUrl.searchParams.delete(parameter));
     if (!playerId) return seasonUrl;
     const season = getSeasonById(seasonId);
     if (usesQueryRoutes(seasonUrl) || !season?.route) {
@@ -238,6 +265,9 @@
   }
 
   window.PadelSeasonRouting = Object.freeze({
+    SECTION_PATHS,
+    getRequestedSection,
+    getSectionUrl,
     ensureDocumentBase,
     getRequestedSeasonId,
     getRequestedMatchId,

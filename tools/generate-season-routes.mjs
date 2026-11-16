@@ -44,58 +44,52 @@ function writePage(source, destination, baseHref) {
   fs.writeFileSync(destination, addBase(fs.readFileSync(path.join(projectRoot, source), 'utf8'), baseHref));
 }
 
-const pages = [
-  { source: 'index.html', destination: route => path.join(outputRoot, route, 'index.html'), baseHref: '../' },
-  { source: 'tipp/index.html', destination: route => path.join(outputRoot, 'tipp', route, 'index.html'), baseHref: '../' }
-];
+function writeLeaguePage(route, suffix = '') {
+  const segments = [route, ...suffix.split('/')].filter(Boolean);
+  writePage('index.html', path.join(outputRoot, ...segments, 'index.html'), '../'.repeat(segments.length) || './');
+}
 
 for (const season of context.window.PADEL_SEASONS || []) {
   if (!season.route) continue;
-  for (const page of pages) {
-    writePage(page.source, page.destination(season.route), page.baseHref);
-  }
+  writePage('tipp/index.html', path.join(outputRoot, 'tipp', season.route, 'index.html'), '../');
+  const seasonMatches = await loadDatabaseMatches(season);
+  for (const route of season.default ? [season.route, ''] : [season.route]) {
+    // Die Startseite liegt bereits im Repository; nur die zusätzlichen Einstiege erzeugen.
+    if (route) writeLeaguePage(route);
+    for (const slug of Object.values(context.window.PadelSeasonRouting.SECTION_PATHS).filter(Boolean)) {
+      writeLeaguePage(route, slug);
+    }
 
-  const playerIds = new Set();
-  for (const player of context.window.PADEL_PLAYERS || []) {
-    const id = String(player?.id || '');
-    if (!id) continue;
-    if (playerIds.has(id)) throw new Error(`Doppelter Spielerpfad ${season.route}/spieler/${id}/`);
-    playerIds.add(id);
-    writePage(
-      'index.html',
-      path.join(outputRoot, season.route, 'spieler', id, 'index.html'),
-      '../../../'
-    );
-  }
+    const playerIds = new Set();
+    for (const player of context.window.PADEL_PLAYERS || []) {
+      const id = String(player?.id || '');
+      if (!id) continue;
+      if (playerIds.has(id)) throw new Error(`Doppelter Spielerpfad ${season.route}/spieler/${id}/`);
+      playerIds.add(id);
+      writeLeaguePage(route, `spieler/${id}`);
+    }
 
-  const matches = await loadDatabaseMatches(season);
-  const slugs = new Set();
-  for (const match of matches) {
-    const slug = context.window.PadelSeasonRouting.getMatchSlug(match);
-    if (!slug) continue;
-    if (slugs.has(slug)) throw new Error(`Doppelter Partiepfad ${season.route}/partie/${slug}/`);
-    slugs.add(slug);
-    writePage(
-      'index.html',
-      path.join(outputRoot, season.route, 'partie', slug, 'index.html'),
-      '../../../'
-    );
-  }
+    const matches = seasonMatches;
+    const slugs = new Set();
+    for (const match of matches) {
+      const slug = context.window.PadelSeasonRouting.getMatchSlug(match);
+      if (!slug) continue;
+      if (slugs.has(slug)) throw new Error(`Doppelter Partiepfad ${season.route}/partie/${slug}/`);
+      slugs.add(slug);
+      writeLeaguePage(route, `partie/${slug}`);
+    }
 
-  const liveMatches = matches
-    .map(match => ({ match, slug: context.window.PadelSeasonRouting.getLiveSlug(match) }))
-    .filter(item => item.slug);
-  if (liveMatches.length) {
-    writePage('index.html', path.join(outputRoot, season.route, 'live', 'index.html'), '../../');
-    const liveSlugs = new Set();
-    for (const { slug } of liveMatches) {
-      if (liveSlugs.has(slug)) throw new Error(`Doppelter Livepfad ${season.route}/live/${slug}/`);
-      liveSlugs.add(slug);
-      writePage(
-        'index.html',
-        path.join(outputRoot, season.route, 'live', slug, 'index.html'),
-        '../../../'
-      );
+    const liveMatches = matches
+      .map(match => ({ match, slug: context.window.PadelSeasonRouting.getLiveSlug(match) }))
+      .filter(item => item.slug);
+    if (liveMatches.length) {
+      writeLeaguePage(route, 'live');
+      const liveSlugs = new Set();
+      for (const { slug } of liveMatches) {
+        if (liveSlugs.has(slug)) throw new Error(`Doppelter Livepfad ${season.route}/live/${slug}/`);
+        liveSlugs.add(slug);
+        writeLeaguePage(route, `live/${slug}`);
+      }
     }
   }
 }

@@ -43,7 +43,7 @@
     })();
   </script>
   <link rel="stylesheet" href="achievements.css?v=2026-10-31">
-  <link rel="stylesheet" href="style.css?v=2026-11-13-profile-header">
+  <link rel="stylesheet" href="style.css?v=2026-11-16-tab-links">
   <link rel="stylesheet" href="account.css?v=2026-11-11-single-card-border">
   <link rel="stylesheet" href="court-availability.css?v=2026-11-06-calendar-appointments-v8">
   <link rel="stylesheet" href="whats-new.css?v=2026-11-05-cursors-11">
@@ -65,7 +65,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="data/players.js?v=2026-10-20-test-net-emoji"></script>
   <script defer src="data/seasons.js?v=2026-11-05-database-seasons"></script>
-  <script defer src="js/season-routing.js?v=2026-11-03-profile-routes"></script>
+  <script defer src="js/season-routing.js?v=2026-11-16-tab-routes"></script>
   <script defer src="data/training-matches.js"></script>
   <script defer src="data/info.js"></script>
   <script defer src="data/supabase-config.js"></script>
@@ -91,7 +91,7 @@
   <script defer src="js/panel-layout.js?v=2026-11-03-split-left-sync"></script>
   <script defer src="js/match-statistics.js?v=2026-11-13-match-history"></script>
   <script defer src="js/loading-animation.js?v=2026-11-09-padel-loader"></script>
-  <script defer src="js/app.js?v=2026-11-13-shared-placement-ranks"></script>
+  <script defer src="js/app.js?v=2026-11-16-tab-routes"></script>
 </head>
 <body>
 
@@ -171,11 +171,11 @@
 </header>
 
 <nav class="site-nav" aria-label="Hauptnavigation">
-  <button data-section="rangliste">Rangliste</button>
-  <button id="partien-nav-button" data-section="partien">Partien</button>
-  <button id="calculator-nav-button" data-section="rechner">Rechner</button>
-  <button data-section="verlauf">Statistik</button>
-  <button data-section="infos">Infos</button>
+  <a data-section="rangliste" href="rangliste/">Rangliste</a>
+  <a id="partien-nav-button" data-section="partien" href="partien/">Partien</a>
+  <a id="calculator-nav-button" data-section="rechner" href="rechner/">Rechner</a>
+  <a data-section="verlauf" href="statistik/">Statistik</a>
+  <a data-section="infos" href="infos/">Infos</a>
 </nav>
 
 <main aria-busy="true" data-padel-loading>

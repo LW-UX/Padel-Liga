@@ -42,6 +42,38 @@ test('short paths select their season and produce league and tipping URLs', () =
   assert.equal(routing.getSeasonUrl('2027-cup', 'tipp').href, 'https://lw-ux.github.io/Padel-Liga/tipp/cup27/');
 });
 
+test('default season tabs omit the prefix while explicit season links stay readable', () => {
+  for (const section of ['rangliste', 'partien', 'rechner', 'statistik', 'infos']) {
+    const { routing } = loadRouting(`https://padelliga.envidual.com/${section}/`, 'https://padelliga.envidual.com/');
+    const id = section === 'statistik' ? 'verlauf' : section;
+    assert.equal(routing.getRequestedSection(), id);
+    assert.equal(routing.getSectionUrl('2026-winter', id).pathname, `/${section}/`);
+    assert.equal(routing.getSectionUrl('2026-sommer', id).pathname, `/so26/${section}/`);
+  }
+  const { routing } = loadRouting('https://padelliga.envidual.com/wi26/rechner/', 'https://padelliga.envidual.com/');
+  assert.equal(routing.getRequestedSeasonId(), '2026-winter');
+  assert.equal(routing.getRequestedSection(), 'rechner');
+  assert.equal(routing.getSeasonUrl('2026-winter').pathname, '/');
+  assert.equal(routing.getSeasonUrl('2026-winter', 'tipp').pathname, '/tipp/');
+  assert.equal(routing.getPlayerProfileUrl('2026-winter', 'agnes_k').pathname, '/spieler/agnes_k/');
+});
+
+test('seasonal tab entry paths resolve below a GitHub project base', () => {
+  const { routing } = loadRouting('https://lw-ux.github.io/Padel-Liga/so26/statistik/', 'https://lw-ux.github.io/Padel-Liga/');
+  assert.equal(routing.getRequestedSeasonId(), '2026-sommer');
+  assert.equal(routing.getRequestedSection(), 'verlauf');
+  assert.equal(routing.getSectionUrl('2026-sommer', 'rechner').pathname, '/Padel-Liga/so26/rechner/');
+});
+
+test('local tab URLs use existing entry files and clear detail parameters', () => {
+  const { routing } = loadRouting('http://localhost:4173/?saison=2026-winter&bereich=rechner&spielerprofil=agnes_k', 'http://localhost:4173/');
+  assert.equal(routing.getRequestedSection(), 'rechner');
+  assert.equal(routing.getSectionUrl('2026-winter', 'verlauf', { preserveSearch: true }).href,
+    'http://localhost:4173/?saison=2026-winter&bereich=verlauf');
+  assert.equal(routing.getPlayerProfileUrl('2026-winter', 'agnes_k', { preserveSearch: true }).href,
+    'http://localhost:4173/?saison=2026-winter&spielerprofil=agnes_k');
+});
+
 test('local file navigation keeps using real index files with query parameters', () => {
   const { routing } = loadRouting(
     'file:///Users/example/Padel-Liga/index.html',
@@ -126,8 +158,8 @@ test('short match paths resolve the season and the underlying stable match id', 
   ];
   assert.equal(routing.getRequestedSeasonId(), '2026-winter');
   assert.equal(routing.getRequestedMatchId(matches), 'winter-2026-partie-7');
-  assert.equal(routing.getMatchUrl('2026-winter', matches[0]).href, 'https://lw-ux.github.io/Padel-Liga/wi26/partie/7/');
-  assert.equal(routing.getMatchUrl('2026-winter', matches[1]).href, 'https://lw-ux.github.io/Padel-Liga/wi26/partie/halbfinale-1/');
+  assert.equal(routing.getMatchUrl('2026-winter', matches[0]).href, 'https://lw-ux.github.io/Padel-Liga/partie/7/');
+  assert.equal(routing.getMatchUrl('2026-winter', matches[1]).href, 'https://lw-ux.github.io/Padel-Liga/partie/halbfinale-1/');
   assert.equal(routing.getMatchSlug(matches[2]), null, 'Final Four remains on the separate live route');
 });
 
@@ -138,7 +170,7 @@ test('legacy query links are replaced by the canonical short path and keep detai
   );
   assert.equal(routing.getRequestedSeasonId(), '2026-winter');
   assert.equal(routing.normalizeCurrentUrl('league'), true);
-  assert.equal(history.replaced, '/Padel-Liga/wi26/?partie=42');
+  assert.equal(history.replaced, '/Padel-Liga/?partie=42');
 });
 
 test('leaving the root page for a short path keeps relative scripts at the site root', () => {
@@ -158,7 +190,7 @@ test('legacy match query links are normalized after the season matches are avail
   );
   const matches = [{ id: 'winter-2026-partie-7', stage: 'league' }];
   assert.equal(routing.normalizeCurrentMatchUrl('2026-winter', matches), true);
-  assert.equal(history.replaced, '/Padel-Liga/wi26/partie/7/');
+  assert.equal(history.replaced, '/Padel-Liga/partie/7/');
 });
 
 test('live overview and individual Final Four routes use short paths', () => {
@@ -196,7 +228,7 @@ test('player profiles use short season paths and keep query links locally', () =
   const players = [{ id: 'agnes_k' }, { id: 'chris_m' }];
   assert.equal(
     routing.getPlayerProfileUrl('2026-winter', 'agnes_k', { preserveSearch: true }).href,
-    'https://lw-ux.github.io/Padel-Liga/wi26/spieler/agnes_k/?ref=x'
+    'https://lw-ux.github.io/Padel-Liga/spieler/agnes_k/?ref=x'
   );
   assert.equal(routing.getPlayerIdFromPath(players, '/Padel-Liga/wi26/spieler/chris_m/'), 'chris_m');
   assert.equal(routing.getPlayerIdFromPath(players, '/Padel-Liga/wi26/spieler/unbekannt/'), null);
@@ -217,12 +249,23 @@ test('legacy profile queries normalize to the short profile route', () => {
   const players = [{ id: 'agnes_k' }];
   assert.equal(routing.getRequestedPlayerProfileId(players), 'agnes_k');
   assert.equal(routing.normalizeCurrentPlayerProfileUrl('2026-winter', players), true);
-  assert.equal(history.replaced, '/Padel-Liga/wi26/spieler/agnes_k/');
+  assert.equal(history.replaced, '/Padel-Liga/spieler/agnes_k/');
 });
 
 test('deployment generation creates direct entry pages with the correct base paths', () => {
   const output = fs.mkdtempSync(path.join(os.tmpdir(), 'padel-season-routes-'));
-  execFileSync(process.execPath, [path.join(root, 'tools/generate-season-routes.mjs'), output], { cwd: root });
+  const mock = path.join(output, 'mock-database.mjs');
+  fs.writeFileSync(mock, `globalThis.fetch = async () => ({ ok: true, json: async () => ({ matches: [
+    { id: 'winter-2026-partie-7', stage: 'league' },
+    { id: 'season-2026-partie-28', stage: 'final-four', format: 'single-set' }
+  ] }) });`);
+  execFileSync(process.execPath, ['--import', mock, path.join(root, 'tools/generate-season-routes.mjs'), output], { cwd: root });
+  for (const route of ['rechner', 'statistik', 'so26/rechner', 'wi26/rangliste', 'spieler/agnes_k', 'partie/7']) {
+    const html = fs.readFileSync(path.join(output, route, 'index.html'), 'utf8');
+    const depth = route.split('/').length;
+    assert.ok(html.includes(`<base href="${'../'.repeat(depth)}">`), route);
+  }
+
   const league = fs.readFileSync(path.join(output, 'wi26', 'index.html'), 'utf8');
   const match = fs.readFileSync(path.join(output, 'wi26', 'partie', '7', 'index.html'), 'utf8');
   const liveOverview = fs.readFileSync(path.join(output, 'so26', 'live', 'index.html'), 'utf8');

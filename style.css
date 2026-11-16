@@ -525,7 +525,9 @@
       padding: 10px 1rem 0.5rem;
       background-color: var(--bg);
     }
-    .site-nav button {
+    .site-nav :is(button, a[data-section]) {
+      text-align: center;
+      text-decoration: none;
       min-width: 0;
       border: 0;
       border-radius: var(--menu-radius);
@@ -539,8 +541,8 @@
       transition: all 0.15s;
       white-space: nowrap;
     }
-    .site-nav button:hover,
-    .site-nav button.active,
+    .site-nav :is(button, a[data-section]):hover,
+    .site-nav :is(button, a[data-section]).active,
     .auth-mode-toggle button:hover,
     .auth-mode-toggle button.active {
       color: var(--accent);

@@ -220,11 +220,11 @@ html:root .danger-button:hover {
   opacity: 1;
 }
 /* Menüpunkte bleiben schwarz; Hover und aktiver Punkt nur mit grauem Hintergrund */
-html:root .site-nav button {
+html:root .site-nav :is(button, a[data-section]) {
   color: var(--text);
 }
-html:root .site-nav button:hover,
-html:root .site-nav button.active {
+html:root .site-nav :is(button, a[data-section]):hover,
+html:root .site-nav :is(button, a[data-section]).active {
   color: var(--text);
   background: color-mix(in srgb, var(--text) 6%, transparent);
 }
