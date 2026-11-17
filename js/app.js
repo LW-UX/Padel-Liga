@@ -9155,13 +9155,41 @@ function getPlacementSeries() {
       const isInMatch = match => match.team1.spieler.includes(player.name) || match.team2.spieler.includes(player.name);
       const tiedNames = groups.get(player.rank);
       placementsByPlayer.get(player.name).push(player.rank);
-      displayPlacementsByPlayer.get(player.name).push(getPlacementDisplayRank(player.rank, tiedNames.indexOf(player.name), tiedNames.length));
       tiedNamesByPlayer.get(player.name).push(tiedNames.filter(name => name !== player.name));
       statsByPlayer.get(player.name).push(player.stats);
       playedByPlayer.get(player.name).push(playedMatchesAtDay.some(isInMatch));
       byeByPlayer.get(player.name).push(!scheduledMatchesAtDay.some(isInMatch));
     });
   });
+
+  // Gleichstände vom nächsten Verlauf aus auffächern, damit beim Auflösen
+  // keine Kreuzungen allein durch die ursprüngliche Spielerreihenfolge entstehen.
+  for (let dayIndex = matchDays.length - 1; dayIndex >= 0; dayIndex--) {
+    const groups = new Map();
+    PADEL_DATA.players.forEach(({ name }) => {
+      const rank = placementsByPlayer.get(name)[dayIndex];
+      if (!groups.has(rank)) groups.set(rank, []);
+      groups.get(rank).push(name);
+    });
+    groups.forEach((names, rank) => {
+      names.sort((a, b) => {
+        if (dayIndex + 1 < matchDays.length) {
+          const nextDifference = displayPlacementsByPlayer.get(a)[dayIndex + 1]
+            - displayPlacementsByPlayer.get(b)[dayIndex + 1];
+          if (nextDifference) return nextDifference;
+        }
+        // Endet der Verlauf im Gleichstand, die eingehende Reihenfolge behalten.
+        for (let previous = dayIndex - 1; previous >= 0; previous--) {
+          const difference = placementsByPlayer.get(a)[previous] - placementsByPlayer.get(b)[previous];
+          if (difference) return difference;
+        }
+        return 0;
+      });
+      names.forEach((name, index) => {
+        displayPlacementsByPlayer.get(name)[dayIndex] = getPlacementDisplayRank(rank, index, names.length);
+      });
+    });
+  }
 
   return { matchDays, placementsByPlayer, displayPlacementsByPlayer, tiedNamesByPlayer, playedByPlayer, byeByPlayer, statsByPlayer };
 }

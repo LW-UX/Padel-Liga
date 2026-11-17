@@ -32,7 +32,9 @@ function racket(transform, holes = true) {
   const dots = holes ? [[10, 5.4], [14, 5.4], [12, 7.6], [10, 9.8], [14, 9.8]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="0.85" fill="${W}"/>`).join('') : '';
   return `<g transform="${transform}">${outlined(body)}${dots}</g>`;
 }
-const STANDARD_RACKET = 'translate(8 4) rotate(-25) scale(1.3) translate(-12 -1.5)';
+// Griffende am Klickpunkt links oben, Schlägerkopf nach rechts unten.
+const STANDARD_RACKET = 'translate(5 3.2) rotate(155) scale(1.3) translate(-12 -22.4)';
+const LOADING_RACKET = 'translate(8 4) rotate(-25) scale(1.3) translate(-12 -1.5)';
 const PROGRESS_RACKET = 'translate(7 3.4) rotate(-25) scale(1.12) translate(-12 -1.5)';
 const bar = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="0.6" fill="${W}"/>`;
 const zoomRacket = (plus) => svg(racket('translate(13 13) rotate(-45) scale(1.4) translate(-12 -8)', false) + bar(8.5, 11.6, 9, 2.8) + (plus ? bar(11.6, 8.5, 2.8, 9) : ''));
@@ -62,7 +64,7 @@ const HANDS = {
 // der Hände, Rand und Nähte der Bälle); auf helleren wie Gelb und Orange bleiben sie schwarz.
 const WHITE_LINES_BELOW = 0.23;
 const lineColor = (accent) => (luminance(accent) < WHITE_LINES_BELOW ? W : K);
-// Die Zeigehand steht im selben Winkel wie der Standard-Schläger; Klickstelle ist die Fingerspitze.
+// Die Zeigehand zeigt nach links oben; Klickstelle ist die Fingerspitze.
 const POINTER_HAND = 'translate(5 2) rotate(-25) scale(1.1) translate(-12 -2.5)';
 function hand(kind, color, transform = '') {
   const { outline, fingers } = HANDS[kind];
@@ -119,6 +121,7 @@ function ballInNet(color) {
 export function buildFixedCursorFiles() {
   return {
     'racket.svg': svg(racket(STANDARD_RACKET)),
+    'racket-loading.svg': svg(racket(LOADING_RACKET)),
     'zoom-in.svg': zoomRacket(true),
     'zoom-out.svg': zoomRacket(false),
     'text.svg': textNet(),

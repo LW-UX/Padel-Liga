@@ -105,3 +105,31 @@ test('crowded end labels draw connectors and use their displaced positions for h
  context.plugin.afterEvent(chart,{event:{type:'mouseout'}});
  assert.equal(hovered.at(-1),null);
 });
+
+
+test('ties fan out towards subsequent ranks without artificial crossings',()=>{
+ const context=contextFor(['Florian Z.','Ludwig W.','Chris M.','Jonas L.']);
+ const series=context.getPlacementSeries();
+ for(const [higher,lower] of [['Ludwig W.','Florian Z.'],['Jonas L.','Chris M.']]){
+  const upper=series.displayPlacementsByPlayer.get(higher);
+  const lowerLine=series.displayPlacementsByPlayer.get(lower);
+  assert.ok(upper[0]<lowerLine[0]);
+  assert.ok(upper[1]<lowerLine[1]);
+ }
+});
+
+test('ties at the end retain their incoming order through multiple matchdays',()=>{
+ const context=contextFor(['Florian Z.','Ludwig W.','Chris M.','Jonas L.']);
+ context.PADEL_DATA.matches.push({...context.PADEL_DATA.matches[1],spieltag:3});
+ context.getPlayerStats=(player,matches)=>{
+  const values=matches.length===1
+   ? {'Ludwig W.':4,'Florian Z.':3,'Jonas L.':2,'Chris M.':1}
+   : {'Ludwig W.':3,'Florian Z.':3,'Jonas L.':0,'Chris M.':0};
+  return {punkte:values[player.name],spielDiff:0,gewonneneSpiele:0};
+ };
+ const series=context.getPlacementSeries();
+ for(const day of [0,1,2]){
+  assert.ok(series.displayPlacementsByPlayer.get('Ludwig W.')[day]<series.displayPlacementsByPlayer.get('Florian Z.')[day]);
+  assert.ok(series.displayPlacementsByPlayer.get('Jonas L.')[day]<series.displayPlacementsByPlayer.get('Chris M.')[day]);
+ }
+});

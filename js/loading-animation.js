@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const racketUrl = new URL('../assets/cursors/racket.svg', document.currentScript.src).href;
+  const racketUrl = new URL('../assets/cursors/racket-loading.svg', document.currentScript.src).href;
   const regions = [...document.querySelectorAll('[data-padel-loading]')].map(host => ({ host, timer: null, overlay: null }));
   let queued = false;
 
