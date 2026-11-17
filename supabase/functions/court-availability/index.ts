@@ -1,4 +1,5 @@
-import { CLUB_ID, CLUB_URL, type Club, isDate, normalizeAvailability } from "./data.ts";
+import { CLUB_ID, CLUB_URL, type Club, isDate, normalizeAvailability, parseClub } from "./data.ts";
+import { AvailabilityReadError, playtomicHttpError } from "./errors.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -10,17 +11,37 @@ let metadataRequest: Promise<Club> | null = null;
 const pending = new Map<string, Promise<ReturnType<typeof normalizeAvailability>>>();
 
 async function read(url: string) {
-  const response = await fetch(url, { signal: AbortSignal.timeout(10000), cache: "no-store" });
-  if (!response.ok) throw new Error(`Playtomic HTTP ${response.status}`);
-  return response;
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(10000), cache: "no-store", redirect: "error" });
+    if (!response.ok) {
+      await response.body?.cancel().catch(() => {});
+      throw playtomicHttpError(response.status);
+    }
+    return response;
+  } catch (error) {
+    if (error instanceof AvailabilityReadError) throw error;
+    throw new AvailabilityReadError(error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name)
+      ? "playtomic_timeout" : "playtomic_unavailable");
+  }
+}
+
+async function providerData<T>(operation: () => T | Promise<T>): Promise<T> {
+  try { return await operation(); }
+  catch (error) {
+    if (error instanceof AvailabilityReadError) throw error;
+    if (error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name)) {
+      throw new AvailabilityReadError("playtomic_timeout");
+    }
+    throw new AvailabilityReadError("playtomic_invalid_response");
+  }
 }
 
 async function getClub() {
   if (metadata && metadata.expires > Date.now()) return metadata.value;
   if (!metadataRequest) {
     metadataRequest = (async () => {
-      const { parseClub } = await import("./data.ts");
-      const value = parseClub(await (await read(CLUB_URL)).text());
+      const response = await read(CLUB_URL);
+      const value = await providerData(async () => parseClub(await response.text()));
       metadata = { value, expires: Date.now() + 60 * 60 * 1000 };
       return value;
     })().finally(() => { metadataRequest = null; });
@@ -33,8 +54,8 @@ export async function availability(date: string) {
     const operation = (async () => {
       const url = new URL("https://playtomic.com/api/clubs/availability");
       url.search = new URLSearchParams({ tenant_id: CLUB_ID, date, sport_id: "PADEL" }).toString();
-      const [club, raw] = await Promise.all([getClub(), read(url.href).then(response => response.json())]);
-      return normalizeAvailability(raw, club, date);
+      const [club, raw] = await Promise.all([getClub(), read(url.href).then(response => providerData(() => response.json()))]);
+      return providerData(() => normalizeAvailability(raw, club, date));
     })().finally(() => pending.delete(date));
     pending.set(date, operation);
   }
@@ -57,7 +78,9 @@ Deno.serve(async request => {
     if (!isDate(body?.date)) return json({ error: "Bitte ein gültiges Datum wählen." }, 400);
     return json(await availability(body.date));
   } catch (error) {
-    console.error("Verfügbarkeit nicht lesbar", error instanceof Error ? error.message : "Unbekannter Fehler");
-    return json({ error: "Die freien Plätze konnten gerade nicht geladen werden." }, 502);
+    const reason = error instanceof AvailabilityReadError ? error.reason : "availability_unavailable";
+    console.error("Verfügbarkeit nicht lesbar", reason);
+    return json({ error: "Die freien Plätze konnten gerade nicht geladen werden.", reason,
+      source: error instanceof AvailabilityReadError ? "playtomic" : "unknown" }, 502);
   }
 });

@@ -88,7 +88,7 @@ test('production reader only fetches daily bookings, rejects malformed upstream 
 
 test('calendar displays each occupied half hour even without a selectable court time', () => {
   const grid = { innerHTML: '', style: {}, scrollTop: 0, scrollLeft: 0, contains: () => false };
-  const context = { window: {}, grid, document: { activeElement: null }, ownBookings: [], options: {},
+  const context = { window: {}, grid, dialog: { querySelector: () => ({ classList: { toggle() {} } }) }, document: { activeElement: null }, ownBookings: [], options: {},
     data: { date: '2099-11-06', opening: { from: '07:00', until: '20:00' }, racketBusyStarts: ['18:00', '18:30', '19:30'],
       courts: [{ id: 'hall', name: 'Halle', location: 'indoor' }],
       slots: ['18:15', '19:00'].map(time => ({ id: time, time, courtId: 'hall',

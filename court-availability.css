@@ -100,3 +100,9 @@ body:has(#court-availability-dialog[open]) { overflow: hidden; }
   .court-date-controls { grid-template-columns: 40px 4.6rem 10.5rem 40px; }
   .court-date-controls [data-court-booking-show] { grid-column: 1 / -1; justify-self: start; margin-left: 0; }
 }
+
+/* Unknown availability stays distinct from both occupied and free courts. */
+.court-grid td.is-unknown, .court-legend-swatch.is-unknown { background: repeating-linear-gradient(135deg, transparent 0 5px, var(--border) 5px 6px); }
+.court-outage { font-size: var(--text-xs); }
+.court-outage .text-link { display: inline-block; margin-inline-end: 8px; }
+.court-legend-item[hidden] { display: none; }

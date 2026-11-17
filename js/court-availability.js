@@ -103,6 +103,53 @@
     return `<tr class="court-unassigned-row"><th scope="row"><span class="sr-only">Termine ohne zugeordnete Platzbuchung</span></th><td colspan="${times.length}"><div class="court-appointment-track"><div class="court-appointment-lanes" style="height:${Math.max(34, lanes.length * 35 - 1)}px">${skeleton ? '' : blocks}</div></div></td></tr>`;
   }
 
+  // Public court metadata only. Never infer free times from this fallback.
+  const fallbackCourts = [
+    {"id": "88801221-e24c-420c-9f44-98209675546e", "name": "GEIGER Court 1", "location": "outdoor"},
+    {"id": "2076aa23-52cb-4ebe-aaaf-a050b84c4202", "name": "CUPRA Court 2", "location": "outdoor"},
+    {"id": "8b83cd3c-a998-427c-b60c-a14f20e9bb2a", "name": "CUPRA Court 3", "location": "outdoor"},
+    {"id": "54a3822d-7772-4447-b2c2-f6f7a78967ce", "name": "DAS ANDERS Court 4", "location": "outdoor"},
+    {"id": "1f343d4c-45b7-4cb3-a4d0-be41a196d10c", "name": "CUPRA Court 5", "location": "outdoor"},
+    {"id": "34181566-cc2d-4af8-b102-fc05ed1045d7", "name": "CUPRA Court 6", "location": "outdoor"},
+    {"id": "d118983f-c557-4117-ace8-dd078f81718f", "name": "Court 7", "location": "outdoor"},
+    {"id": "6ebc6f1a-14cc-4554-ac0a-b35d13f9f3f4", "name": "CUPRA Court 8", "location": "outdoor"},
+    {"id": "7ec5ac16-73a1-4bc6-ad62-f0380593353d", "name": "Court 9", "location": "outdoor"},
+    {"id": "11dabe24-bf80-4ea2-bbc0-ba0632b3bf21", "name": "Court 10", "location": "outdoor"},
+    {"id": "f7c7e37a-1fce-4b29-b3b1-41601f1f591c", "name": "CUPRA Indoor H1", "location": "indoor"},
+    {"id": "8778f800-6d2d-46d8-b2b5-fbe35d9ad5b5", "name": "Indoor H2", "location": "indoor"},
+    {"id": "ca99238e-ea6f-41e7-bafb-1fd67acc694c", "name": "Indoor H3", "location": "indoor"},
+    {"id": "4aeb17f7-868f-4389-bb6e-4828dd0e61da", "name": "CUPRA Indoor H4", "location": "indoor"},
+  ];
+
+  function availabilityFailureMessage(reason) {
+    const messages = {
+      playtomic_timeout: 'Playtomic hat auf unsere Platzabfrage nicht rechtzeitig geantwortet.',
+      playtomic_unavailable: 'Playtomic ist für unsere Platzabfrage momentan nicht erreichbar.',
+      playtomic_access_denied: 'Playtomic hat den Zugriff auf die freien Plätze abgewiesen. Ob eine Anmeldung oder eine Zugriffsbeschränkung die Ursache ist, lässt sich derzeit nicht feststellen.',
+      playtomic_login_required: 'Der hinterlegte Playtomic-Zugang wird nicht mehr akzeptiert und muss überprüft werden.',
+      playtomic_rate_limited: 'Playtomic begrenzt gerade die Anzahl der Platzabfragen. Bitte versuche es später erneut.',
+      playtomic_invalid_response: 'Die von Playtomic gelieferten Platzdaten sind momentan nicht lesbar.',
+    };
+    return Object.hasOwn(messages, reason) ? messages[reason]
+      : 'Die freien Plätze von Playtomic können gerade nicht geladen werden. Die Ursache ist noch unklar.';
+  }
+
+  function bookingCalendar(date, bookings, failureReason = 'availability_unavailable') {
+    const courts = new Map(fallbackCourts.map(court => [court.id, { ...court }]));
+    for (const booking of bookings) {
+      if (!booking.court_name) continue;
+      const known = [...courts.values()].find(court => normalizeCourtName(court.name) === normalizeCourtName(booking.court_name));
+      const id = booking.court_resource_id || known?.id || `booking-court:${normalizeCourtName(booking.court_name)}`;
+      if (!courts.has(id)) courts.set(id, {
+        id, name: booking.court_name,
+        location: /indoor|halle|\bH[1-4]\b/i.test(booking.court_name) ? 'indoor' : 'outdoor',
+      });
+    }
+    // Display bounds, not claimed opening hours or availability.
+    return { date, courts: [...courts.values()], opening: { from: '00:00', until: '24:00' },
+      slots: [], availabilityUnavailable: true, failureReason };
+  }
+
   const dialog = document.createElement('dialog');
   dialog.id = 'court-availability-dialog';
   dialog.className = 'dialog dialog--page';
@@ -119,6 +166,11 @@
         <button type="button" data-court-filter="indoor">Indoor</button><button type="button" data-court-filter="outdoor">Outdoor</button>
       </div>
     </div>
+    <div class="hint court-outage" data-court-outage role="status" aria-live="polite" hidden>
+      <span data-court-outage-reason></span> Angezeigt werden nur die für dich sichtbaren Buchungen und Termine.
+      <a class="text-link" href="https://playtomic.com/clubs/lucky-star-padel" target="_blank" rel="noopener noreferrer">Freie Plätze bei Playtomic prüfen</a>
+      <button type="button" class="text-link" data-court-retry>Erneut versuchen</button>
+    </div>
     <div class="court-grid-stage">
       <div class="court-load-state hint" role="status" aria-live="polite" data-court-status></div>
       <div class="court-grid-wrap" data-court-grid tabindex="0" role="region" aria-label="Plätze und Uhrzeiten; freie Stunden auswählen"></div>
@@ -129,8 +181,8 @@
         <button type="button" class="primary-button" data-court-apply hidden>Uhrzeit übernehmen</button>
         <button type="button" class="text-link" data-court-account>Partie auswählen</button></div>
       <div class="court-legend" aria-label="Legende der Platzbelegung">
-        <span class="court-legend-item"><span class="court-legend-swatch is-unavailable" aria-hidden="true"></span>Belegt</span>
-        <span class="court-legend-item"><span class="court-legend-swatch is-free" aria-hidden="true"></span>Frei</span>
+        <span class="court-legend-item"><span class="court-legend-swatch is-unavailable" aria-hidden="true"></span><span data-court-unavailable-label>Belegt</span></span>
+        <span class="court-legend-item" data-court-free-legend><span class="court-legend-swatch is-free" aria-hidden="true"></span>Frei</span>
         <span class="court-legend-item"><span class="court-legend-swatch is-booked" aria-hidden="true"></span>Gebucht</span>
         <span class="court-legend-item"><span class="court-legend-swatch is-booked is-assigned" aria-hidden="true"></span>Gebucht + andere Partie</span>
       </div>
@@ -304,6 +356,12 @@
   }
 
   function renderGrid() {
+    const unavailable = Boolean(data?.availabilityUnavailable);
+    dialog.querySelector('[data-court-outage]').hidden = !unavailable;
+    dialog.querySelector('[data-court-outage-reason]').textContent = unavailable ? availabilityFailureMessage(data.failureReason) : '';
+    dialog.querySelector('[data-court-free-legend]').hidden = unavailable;
+    dialog.querySelector('[data-court-unavailable-label]').textContent = unavailable ? 'Nicht prüfbar' : 'Belegt';
+    dialog.querySelector('.court-legend-swatch.is-unavailable').classList.toggle('is-unknown', unavailable);
     if (!data) { grid.replaceChildren(); grid.style.minHeight = ''; return; }
     const scroll = { top: grid.scrollTop, left: grid.scrollLeft };
     const focusId = grid.contains(document.activeElement) ? document.activeElement.dataset.courtSlot : null;
@@ -313,7 +371,7 @@
     const visible = visibleSlots(data, hoursFilter, booked);
     const slots = new Map(visible.map(slot => [`${slot.courtId}:${slot.time}`, slot]));
     preview = null;
-    grid.innerHTML = courts.length && times.length ? `<table class="court-grid"><caption class="sr-only">${escape(dateLabel(data.date))}, freie Startzeiten für 60 Minuten</caption>
+    grid.innerHTML = courts.length && times.length ? `<table class="court-grid"><caption class="sr-only">${escape(dateLabel(data.date))}, ${unavailable ? 'Buchungen und Termine; freie Plätze nicht prüfbar' : 'freie Startzeiten für 60 Minuten'}</caption>
       <thead><tr><th scope="col">Platz</th>${times.map(time => `<th scope="col">${time}</th>`).join('')}</tr></thead>
       <tbody>${courts.map(court => {
         return `<tr><th scope="row">${renderCourtLabel(court)}</th>${times.map(time => {
@@ -329,13 +387,13 @@
           ? `<span class="court-booking-match-number" aria-hidden="true">${bookingNumber === 'TR' ? 'TR' : `P.${escape(bookingNumber)}`}</span>` : '';
         const className = bookedCover
           ? `is-booked${(bookedCover.matchId || bookedCover.trainingId) ? ' is-assigned' : ''}${minute(time) === minute(bookedCover.time) ? ' is-booked-start' : ''}${minute(time) + 30 >= minute(bookedCover.time) + bookedCover.duration ? ' is-booked-end' : ''}`
-          : freeCovered ? 'is-free' : 'is-unavailable';
+          : freeCovered ? 'is-free' : unavailable ? 'is-unknown' : 'is-unavailable';
         const label = choice?.reserved ? bookingLabel : choice ? `${court.name}, ${time} bis ${clock(choice.end)}, frei` : '';
         const racketBusy = !(bookedCover?.matchId || bookedCover?.trainingId) && isRacketBusy(time, data.racketBusyStarts);
         const racketText = (bookedCover?.matchId || bookedCover?.trainingId) ? '' : racketHourHint(time, data.racketBusyStarts);
         return `<td data-court-cell="${escape(court.id)}" data-court-time="${time}" class="${className}">${choice
           ? `<button type="button" class="court-slot" data-court-slot="${escape(choice.id)}" data-court-label="${escape(label)}" aria-pressed="false" aria-label="${escape(label + (racketText ? `. ${racketText}` : ''))}"></button>`
-          : `<span class="sr-only">${escape(bookingLabel || 'Nicht als Stundenbeginn verfügbar')}</span>`}${racketBusy ? renderRacketMarker(Boolean(choice), racketText) : ''}${bookingMarker}</td>`;
+          : `<span class="sr-only">${escape(bookingLabel || (unavailable ? 'Platzverfügbarkeit nicht prüfbar' : 'Nicht als Stundenbeginn verfügbar'))}</span>`}${racketBusy ? renderRacketMarker(Boolean(choice), racketText) : ''}${bookingMarker}</td>`;
       }).join('')}</tr>`;
       }).join('')}${renderAppointmentRow(times, data.appointments || [])}</tbody></table>` : '<p class="hint">Für diese Auswahl sind keine Plätze verfügbar.</p>';
     grid.style.minHeight = '';
@@ -469,15 +527,28 @@
         .catch(() => []);
       const appointmentsPromise = Promise.resolve(window.PadelKonto?.getCourtAppointments?.(date) || [])
         .catch(() => []);
-      const response = await fetch(`${config.url}/functions/v1/court-availability`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', apikey: config.publishableKey },
-        body: JSON.stringify({ date }), signal: requestController.signal, cache: 'no-store',
-      });
-      if (!response.ok) throw new Error('Nicht verfügbar');
-      const result = await response.json();
-      const [bookings, appointments] = await Promise.all([ownBookingsPromise, appointmentsPromise]);
+      const publicAvailability = (async () => {
+        const response = await fetch(`${config.url}/functions/v1/court-availability`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', apikey: config.publishableKey },
+          body: JSON.stringify({ date }), signal: requestController.signal, cache: 'no-store',
+        });
+        if (!response.ok) {
+          const failure = await response.json().catch(() => null);
+          const reason = failure?.source === 'playtomic' && [
+            'playtomic_timeout', 'playtomic_unavailable', 'playtomic_access_denied',
+            'playtomic_login_required', 'playtomic_rate_limited', 'playtomic_invalid_response',
+          ].includes(failure.reason) ? failure.reason : 'availability_unavailable';
+          throw Object.assign(new Error('Nicht verfügbar'), { availabilityReason: reason });
+        }
+        const result = await response.json();
+        if (result.date !== date || !Array.isArray(result.courts) || !Array.isArray(result.slots) || !result.opening) throw new Error('Ungültige Antwort');
+        return { value: result };
+      })().catch(error => ({ value: null, reason: error?.availabilityReason || 'availability_unavailable' }));
+      const [publicData, bookings, appointments] = await Promise.all([
+        publicAvailability, ownBookingsPromise, appointmentsPromise,
+      ]);
       if (version !== generation || !dialog.open) return;
-      if (result.date !== date || !Array.isArray(result.courts) || !Array.isArray(result.slots) || !result.opening) throw new Error('Ungültige Antwort');
+      const result = publicData.value || bookingCalendar(date, Array.isArray(bookings) ? bookings : [], publicData.reason);
       data = result;
       data.racketBusyStarts = racketAvailability?.date === date ? racketAvailability.busyStarts : [];
       ownBookings = Array.isArray(bookings) ? bookings : [];
@@ -495,7 +566,7 @@
         }
         revealBookingId = null;
       }
-      if (!status.textContent && !selected
+      if (!result.availabilityUnavailable && !status.textContent && !selected
         && !visibleSlots(result, hoursFilter, visibleBookedSlots(result, hoursFilter)).some(slot => result.courts.some(court => court.id === slot.courtId && court.location === filter))
         && !visibleBookedSlots(result, hoursFilter).some(slot => result.courts.some(court => court.id === slot.courtId && court.location === filter))) {
         status.textContent = 'Für diese Auswahl sind keine freien Stunden verfügbar.';

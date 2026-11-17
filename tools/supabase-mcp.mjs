@@ -212,6 +212,47 @@ if (command === 'list-tools') {
       files
     }
   }));
+} else if (command === 'invoke-court-availability') {
+  // Public, read-only endpoint; no session, token renewal or database writes.
+  const { isDate } = await import('../supabase/functions/court-availability/data.ts');
+  if (!isDate(argument)) fail('Ein gültiger Prüftag fehlt.');
+  const config = await readFile(resolve(repositoryRoot, 'data/supabase-config.js'), 'utf8');
+  const key = /publishableKey:\s*"([^"\r\n]+)"/.exec(config)?.[1];
+  if (!key) fail('Der öffentliche Projektschlüssel fehlt.');
+  const response = await fetch(`https://${projectRef}.supabase.co/functions/v1/court-availability`, {
+    method: 'POST', headers: { apikey: key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date: argument }), signal: AbortSignal.timeout(20000),
+  });
+  const body = await response.json();
+  console.log(JSON.stringify({ status: response.status, ...body }));
+} else if (command === 'probe-court-availability') {
+  // Requires approval for renewing/storing the shared private session, never writes booking data.
+  const { isDate } = await import('../supabase/functions/court-availability/data.ts');
+  if (!isDate(argument)) fail('Ein gültiger Prüftag fehlt.');
+  const slug = 'court-availability-probe';
+  const probeKey = randomUUID();
+  const files = (await readFunctionFiles(requireFunctionPath(slug))).map(file => ({
+    ...file, name: `${slug}/${file.name}`, content: file.content.replace('__AVAILABILITY_PROBE_KEY__', probeKey),
+  }));
+  for (const name of ['court-availability/data.ts', '_shared/playtomic-access-code.ts', '_shared/playtomic-session.ts']) {
+    files.push({ name, content: await readFile(resolve(functionsDirectory, name), 'utf8') });
+  }
+  const deployed = await rpc('tools/call', { name: 'deploy_edge_function', arguments: {
+    name: slug, entrypoint_path: `${slug}/index.ts`, verify_jwt: false, files,
+  } });
+  if (deployed?.isError) fail('Der geschützte Verfügbarkeitsprüfer konnte nicht bereitgestellt werden.');
+  try {
+    const response = await fetch(`https://${projectRef}.supabase.co/functions/v1/${slug}`, {
+      method: 'POST', headers: { Authorization: `Bearer ${probeKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: argument }), signal: AbortSignal.timeout(60000),
+    });
+    // The probe returns sanitized counts/statuses only, never session tokens or response content.
+    const result = await response.json();
+    console.log(JSON.stringify(result));
+    if (!response.ok || !result.configured) process.exitCode = 1;
+  } finally {
+    await managementRequest(`/functions/${slug}`, { method: 'DELETE' });
+  }
 } else if (['probe-court-access-codes', 'diagnose-court-access-codes', 'refresh-playtomic-session'].includes(command)) {
   // diagnose-… liest nur (Berechtigung + ein Playtomic-GET), ohne Cache- oder Störungsschreibvorgänge.
   // refresh-playtomic-session verlängert zusätzlich die Sitzung und schreibt nur den privaten Sitzungsspeicher.
