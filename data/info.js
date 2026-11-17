@@ -5,19 +5,19 @@ window.PADEL_INFO = {
       "intro": "Die im Folgenden aufgezählten Regeln stellen nur einen Auszug aus dem gesamten Regelwerk dar.",
       "link": {
         "label": "Vollständiges Regelwerk",
-        "href": "https://de.wikipedia.org/wiki/Padel"
+        "href": "https://www.padelfip.com/wp-content/uploads/2025/12/FIP_Rules-of-Padel-1.pdf"
       },
       "groups": [
         {
           "title": "Aufschlag, Seitenwahl und Wechsel",
           "items": [
             "Der Gewinner des Losentscheids kann zwischen dem Aufschlagsrecht und der Spielfeldseite wählen.",
-            "Der Aufschlag darf nur hinter der Aufschlaglinie ausgeführt werden. Er muss als Unterhandschlag unterhalb der Hüfte erfolgen.",
+            "Vor dem Aufschlag muss der Ball hinter der Aufschlaglinie einmal auf dem Boden aufspringen. Getroffen wird er höchstens auf Hüfthöhe; dabei bleibt mindestens ein Fuß am Boden.",
             "Nach dem Aufschlag muss der Ball im schräg gegenüberliegenden Aufschlagfeld aufspringen. Danach darf er die Wände, aber nicht den Zaun berühren.",
-            "Wenn der Ball von der Kante zwischen Zaun und Wand wieder nach vorne springt, wird der Aufschlag wiederholt.",
-            "Aufschläge, die das Netz berühren und danach korrekt im Aufschlagfeld aufkommen, müssen wiederholt werden.",
-            "Die Mannschaft mit Aufschlagrecht wechselt nach jedem Aufschlag die Seite im eigenen Feld.",
-            "Beide Mannschaften wechseln die Spielseiten, wenn die Summe der Spiele eine ungerade Zahl erreicht."
+            "Berührt der aufgeschlagene Ball nach dem korrekten Aufspringen vor dem zweiten Bodenkontakt den Zaun, ist der Aufschlag ein Fehler.",
+            "Berührt der Aufschlag das Netz und landet danach korrekt im Aufschlagfeld, wird er wiederholt, sofern er vor dem zweiten Bodenkontakt nicht den Zaun berührt.",
+            "Die Aufschlagseite wechselt nach jedem gespielten Punkt. Ein zweiter Aufschlag erfolgt von derselben Seite wie der erste.",
+            "Beide Mannschaften wechseln nach dem ersten, dritten und jedem weiteren ungeraden Spiel eines Satzes die Spielfeldseite."
           ]
         },
         {
@@ -54,7 +54,7 @@ window.PADEL_INFO = {
     },
     {
       "title": "Zählweise",
-      "intro": "Die Zählweise ist bis auf eine Ausnahme komplett identisch zum Tennis.",
+      "intro": "In der Liga zählen wir wie im Tennis, spielen bei Einstand aber Golden Point und bei Satzgleichstand einen Match-Tie-Break. Das Final Four wird über einen Satz gespielt.",
       "groups": [
         {
           "title": "Zählfolge",
@@ -77,7 +77,7 @@ window.PADEL_INFO = {
         {
           "title": "Tie-Break",
           "items": [
-            "Im Tie-Break schlägt die Mannschaft und der Spieler auf, der dies auch bei normaler Fortsetzung des Spiels getan hätte. Der erste Spieler hat dabei nur einen Aufschlag, danach wechselt das Aufschlagrecht zwischen den beiden Teams nach jeweils zwei gespielten Punkten.",
+            "Im Tie-Break schlägt die Mannschaft und der Spieler auf, der dies auch bei normaler Fortsetzung des Spiels getan hätte. Der erste Spieler schlägt für einen Punkt auf, danach wechselt das Aufschlagrecht zwischen den Teams nach jeweils zwei Punkten. Pro Punkt sind wie gewohnt zwei Aufschlagversuche erlaubt.",
             "Die Mannschaften tauschen im Tie-Break nach jeweils sechs gespielten Punkten die Spielfeldseite.",
             "Den Tie-Break gewinnt die Mannschaft, die zuerst sieben Punkte mit zwei Punkten Vorteil erspielt."
           ]
@@ -95,24 +95,25 @@ window.PADEL_INFO = {
           ]
         }
       ],
-      "note": "Ob ihr euch an die Zählweise haltet, müsst ihr selbst entscheiden. Am Ende muss ein Ergebnis im richtigen Format feststehen."
+      "note": "Für die Ergebnismeldung werden vollständige Satzergebnisse benötigt. Im Final Four entscheidet ein einzelner Satz; bei 6:6 wird ein Tie-Break gespielt."
     },
     {
       "title": "Platzbuchung",
       "paragraphs": [
-        "Wenn sich die 4 Teilnehmer einer Partie gefunden haben, stimmen sie einen Termin ab. Freie Plätze bei Lucky Star könnt ihr direkt hier ansehen und eine Uhrzeit für eure Partie auswählen. Die Auswahl reserviert noch keinen Platz.",
-        "Abendzeiten sind sehr beliebt und mindestens eine Woche im Voraus ausgebucht. Daher rechtzeitig einen Platz buchen oder morgens beziehungsweise mittags spielen.",
+        "Sobald die vier Teilnehmer einer Partie feststehen, stimmen sie einen Termin ab. Freie Plätze bei Lucky Star könnt ihr direkt hier ansehen und eine Uhrzeit für eure Partie auswählen. Die Auswahl reserviert noch keinen Platz.",
+        "Abendzeiten sind stark gefragt. Stimmt euch frühzeitig ab und prüft bei Bedarf auch Termine am Morgen oder Mittag.",
         "Den Wunschtermin mit Datum, Uhrzeit und Partienummer bitte an das Hanako Leben Squad oder direkt an Ludwig übermitteln. Der Platz wird für euch gebucht.",
         "Die Kosten der Platzbuchung werden von der Firma übernommen.",
-        "Tragt den gebuchten Termin anschließend auf der Webseite bei der Partie ein. Beim Terminieren werden die Schläger automatisch in Clearooms gebucht und alle beteiligten Personen erhalten automatisch eine Kalendereinladung. Um Bälle muss sich selbst gekümmert werden.",
+        "Eine Platzbuchung kann bis 24 Stunden vor dem gebuchten Termin kostenlos storniert werden. Gebt dem Hanako Leben Squad oder Ludwig deshalb bitte frühzeitig Bescheid, sobald absehbar ist, dass eure Partie nicht stattfinden kann.",
+        "Tragt den gebuchten Termin anschließend im Konto bei eurer Partie ein. Eine eingegangene Buchungsbestätigung wird bei passendem Termin automatisch zugeordnet; noch nicht zugeordnete Buchungen könnt ihr dort selbst auswählen. Beim Terminieren wird die Schlägerbuchung in Clearooms automatisch geprüft und bei Bedarf angelegt. Beteiligte Spieler mit bestätigtem Konto erhalten eine Kalendereinladung, sofern sie diese in ihren Einstellungen aktiviert haben. Um Bälle kümmert ihr euch selbst.",
         "Gebt Bescheid, wenn ihr eure Playtomic-Profile samt Ergebnis eintragen wollt. Hierfür Headsquare United auf Playtomic folgen."
       ]
     },
     {
       "title": "Ergebnismeldung",
       "paragraphs": [
-        "Nachdem die Partie absolviert ist, tragen die Spieler das Ergebnis selbst auf der Webseite ein. Dafür oben rechts über „Login“ anmelden, im Konto die Partie öffnen und unter „Ergebnis eintragen“ die Sätze sowie Datum und Uhrzeit der Partie angeben.",
-        "Ein Spieler meldet das Ergebnis für sein Team. Das gegnerische Team bestätigt es oder schickt eine korrigierte Alternative. Erfolgt innerhalb von 48 Stunden keine Reaktion, wird das Ergebnis automatisch bestätigt und zählt für Rangliste und Elo.",
+        "Nachdem die Partie absolviert ist, tragen die Spieler das Ergebnis selbst auf der Webseite ein. Dafür über „Login“ anmelden, im Konto die Partie öffnen und unter „Ergebnis eintragen“ die Sätze sowie Datum und Uhrzeit der Partie angeben.",
+        "Ein Spieler meldet das Ergebnis für sein Team. Das gegnerische Team bestätigt es oder schickt eine korrigierte Alternative. Die manuelle Bestätigung ist sofort möglich. Bleibt ein Vorschlag offen, wird er 48 Stunden nach seiner Eintragung automatisch bestätigt; die Prüfung erfolgt alle fünf Minuten. Ein Gegenvorschlag startet die 48 Stunden neu. Erst das bestätigte Ergebnis zählt für Rangliste und Elo.",
         "Wer noch keinen Kontozugang hat, meldet sich bitte bei Ludwig.",
         "Alternativ kann das Ergebnis weiterhin im Teams-Kanal Sport | Headsquare & Hanako & Envidual, per Mail an Hanako Leben Squad oder direkt an Ludwig gemeldet werden, und zwar mit folgenden Angaben:"
       ],

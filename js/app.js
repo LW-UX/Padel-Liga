@@ -3631,6 +3631,7 @@ function pushPlayerProfileHistory(playerId, profileWasOpen) {
     preserveSearch: true,
     preserveHash: true
   });
+  url.searchParams.delete('konto');
   window.PadelSeasonRouting.ensureDocumentBase(url);
   const depth = continues ? (state.detailDepth || 0) : 0;
   // Eine gerade geschlossene mobile Dialogseite gibt ihren Zurück-Schritt an das Profil ab.
@@ -7025,8 +7026,11 @@ function renderInfoSection(section, id) {
     : '';
   const paragraphsAfterTable = (section.paragraphsAfterTable || []).map(p => `<p>${p}</p>`).join('');
   const note = section.note ? `<p class="info-note">${section.note}</p>` : '';
+  const accountUrl = window.PadelSeasonRouting.getSectionUrl(selectedSeason.id, 'infos');
+  accountUrl.searchParams.set('konto', '1');
+  accountUrl.hash = 'platzbuchung';
   const courtLink = id === 'platzbuchung'
-    ? `<p><a class="text-link" href="#platzbuchung" data-court-info-open data-court-season="${escapeHtml(selectedSeason?.id || '')}">Freie Plätze bei Lucky Star ansehen</a></p>`
+    ? `<p><a class="text-link" href="#platzbuchung" data-court-info-open data-court-season="${escapeHtml(selectedSeason?.id || '')}">Freie Plätze bei Lucky Star ansehen</a> · <a class="text-link" href="${escapeHtml(accountUrl.href)}" data-auth-open data-account-link>Termin im Konto eintragen</a></p>`
     : '';
 
   return `<div class="widget-group info-anchor" id="${id}">

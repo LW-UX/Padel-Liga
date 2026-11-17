@@ -4,6 +4,8 @@ Regeln dafür, welche Gestaltungswerte zu einem Branding gehören und wie ein Br
 
 ## Grundsätze
 
+- Die Artikellinks im PadelPost-Untermenü der Infoseite verwenden einen ausgewogenen Zeilenumbruch (`text-wrap: balance`).
+
 - Das aktuelle Design heißt `OG-Design`. Seine Werte stehen in `branding/og-design.css`.
 - Alle Brandings verwenden einfarbige Flächen ohne dekorative Farbverläufe. Das gilt auch für Ladeplatzhalter, Podium, Artikelvorschauen und Trennlinien; Vorschauen enden ohne ausblendenden Verlauf. Ladeplatzhalter pulsieren einheitlich in ihrer einfarbigen Fläche; bei aktivierter Einstellung „Bewegung reduzieren“ bleiben sie statisch.
 - Beim ersten Laden der Liga einschließlich Saisonwechsel sowie beim Laden von Spielerprofil und Partievorschau oder -analyse erscheint nach 400 Millisekunden je Ladebereich eine gemeinsame Schläger-Ball-Animation mittig im sichtbaren Bereich. Sie verwendet den vorhandenen schwarzen Cursor-Schläger und einen Ball in der Branding-Akzentfarbe, der vor dem Schläger liegt und in ruhiger Endlosschleife hochgespielt wird. Sichtbarer Ladetext entfällt; zugängliche Ladehinweise bleiben erhalten. Die Skeletons behalten ihre Form, pausieren währenddessen aber ihr Pulsieren. Fertige Inhalte und Fehler beenden die Animation sofort; kurze Ladezeiten, kleine Nachladevorgänge und Live-Aktualisierungen erhalten keine Animation. Bei „Bewegung reduzieren“ bleibt das Schläger-Ball-Symbol statisch.

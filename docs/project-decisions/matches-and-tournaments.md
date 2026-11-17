@@ -4,6 +4,8 @@ Diese Datei ist die kanonische Quelle für Terminierung, Ergebnisse, Bestätigun
 
 ## Offizielle Partien und Termine
 
+- Platzbuchungen können bis 24 Stunden vor dem gebuchten Termin kostenlos storniert werden. Sobald absehbar ist, dass eine Partie nicht stattfinden kann, sollen die Teilnehmer frühzeitig dem Hanako Leben Squad oder Ludwig Bescheid geben, damit die Buchung rechtzeitig storniert werden kann.
+
 - Ligapartien werden durch den Spielplan angelegt und nicht von Spielern erstellt.
 - Beteiligte Spieler und Admins dürfen offene Partien terminieren, umterminieren oder nach Sicherheitsabfrage wieder ohne Termin führen. Abgeschlossene Partien und Partien mit offenem Ergebnisvorschlag sind davon ausgenommen.
 - Ein Ergebnisvorschlag enthält das vollständige Ergebnis und den tatsächlichen Spielzeitpunkt. Dieser darf vom Plan abweichen, aber nicht in der Zukunft liegen.

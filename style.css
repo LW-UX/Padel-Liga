@@ -2947,6 +2947,7 @@
     .info-menu a.is-sub {
       color: var(--dim);
       font-size: var(--text-xs);
+      text-wrap: balance;
     }
     .info-menu a:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent);}
     .info-menu a:last-child { border-bottom: 0; }

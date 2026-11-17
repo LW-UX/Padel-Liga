@@ -93,6 +93,7 @@
   const hallCodeRequests = new Map();
   const shownAccountTaskPromptKeys = new Set();
   let shouldOpenAccountFromLink = requestedAccountOpen;
+  let keepAccountOpenAfterLogin = requestedAccountOpen;
   let courtAccountRequested = false;
   let pendingCourtSlot = null;
   let replacementCancellationTask = null;
@@ -2779,9 +2780,6 @@
   function consumeRequestedAccountOpen() {
     if (!shouldOpenAccountFromLink || !state.session?.user) return;
     shouldOpenAccountFromLink = false;
-    const url = new URL(window.location.href);
-    url.searchParams.delete('konto');
-    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
   }
 
   async function handleAuthSubmit(event) {
@@ -2817,7 +2815,7 @@
         if (error) throw error;
       }
       authForm.reset();
-      if (courtAccountRequested) {
+      if (courtAccountRequested || keepAccountOpenAfterLogin) {
         renderAuthState();
         void refresh({ includeTasks: true });
       } else closeAuthDialog();
@@ -4150,6 +4148,8 @@ Dein Hanako-Leben-Squad`;
       }
       const open = event.target.closest('[data-auth-open]');
       if (open) {
+        event.preventDefault();
+        if (open.hasAttribute('data-account-link')) keepAccountOpenAfterLogin = true;
         openAuthDialog();
         return;
       }
@@ -4607,6 +4607,8 @@ Dein Hanako-Leben-Squad`;
       window.setTimeout(maybeShowAccountTaskPrompt, 0);
     }, true);
     document.getElementById('auth-dialog')?.addEventListener('close', () => {
+      keepAccountOpenAfterLogin = false;
+      shouldOpenAccountFromLink = false;
       clearHallAccessCodes();
       pendingCourtSlot = null;
       courtAccountRequested = false;

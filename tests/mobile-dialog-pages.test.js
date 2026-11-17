@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'mobile-dialog-pages.js'), 'utf8');
 
-function setup({ search = '', mobile = true } = {}) {
+function setup({ search = '', mobile = true, pathname = '/' } = {}) {
   const observers = [];
   const listeners = {};
   const timers = [];
@@ -20,15 +20,21 @@ function setup({ search = '', mobile = true } = {}) {
     'whats-new-dialog': dialog(),
     'detail-view-dialog': { open: false }
   };
-  const stack = [{ state: null }];
+  const stack = [{ state: { leagueSection: pathname.includes('infos') ? 'infos' : 'rechner' }, url: `https://liga.test${pathname}${search}` }];
   let index = 0;
   const history = {
     get state() { return stack[index].state; },
     get length() { return stack.length; },
-    pushState(state) { stack.splice(index + 1); stack.push({ state }); index += 1; },
-    replaceState(state) { stack[index] = { state }; },
+    pushState(state, _, url = window.location.href) { stack.splice(index + 1); stack.push({ state, url }); index += 1; window.location = new URL(url); },
+    replaceState(state, _, url = window.location.href) { stack[index] = { state, url }; window.location = new URL(url); },
     back() {
       index -= 1;
+      window.location = new URL(stack[index].url);
+      listeners.popstate();
+    },
+    forward() {
+      index += 1;
+      window.location = new URL(stack[index].url);
       listeners.popstate();
     }
   };
@@ -38,7 +44,9 @@ function setup({ search = '', mobile = true } = {}) {
   }
   const window = {
     history,
-    location: { search, href: `https://liga.test/${search}` },
+    location: new URL(stack[0].url),
+    scrollY: 420,
+    PadelKonto: { openDialog() { nodes['auth-dialog'].open = true; } },
     matchMedia: () => ({ matches: mobile }),
     addEventListener: (type, callback) => { listeners[type] = callback; },
     PadelLigaClosePlayerProfile() { nodes['player-profile-dialog'].open = false; }
@@ -53,6 +61,7 @@ function setup({ search = '', mobile = true } = {}) {
       constructor(callback) { observers.push(callback); }
       observe() {}
     },
+    URL,
     URLSearchParams,
     setTimeout: callback => timers.push(callback)
   });
@@ -167,4 +176,53 @@ test('Profile über einer Partie, breite Ansichten und Einmal-Links erzeugen kei
   authLink.nodes['auth-dialog'].open = true;
   authLink.flush();
   assert.equal(authLink.entries(), 0);
+});
+
+for (const mobile of [false, true]) {
+  test(`Konto-URL behält den vorherigen Tab und Anker (${mobile ? 'mobil' : 'Desktop'})`, () => {
+    const { window, nodes, flush, history, stack, entries } = setup({ mobile, pathname: '/infos/', search: '?saison=2026-sommer#platzbuchung' });
+    const previousUrl = window.location.href;
+    nodes['auth-dialog'].open = true;
+    flush();
+    assert.equal(entries(), 1);
+    assert.equal(window.location.pathname, '/infos/');
+    assert.equal(window.location.search, '?saison=2026-sommer&konto=1');
+    assert.equal(window.location.hash, '#platzbuchung');
+    assert.equal(stack[0].state.sectionScrollY, 420);
+    nodes['auth-dialog'].close();
+    assert.equal(entries(), 0);
+    assert.equal(window.location.href, previousUrl);
+    history.forward();
+    flush();
+    assert.equal(nodes['auth-dialog'].open, true);
+    assert.equal(entries(), 1, 'Vorwärts öffnet denselben Eintrag');
+    history.back();
+    flush();
+    assert.equal(nodes['auth-dialog'].open, false);
+    assert.equal(window.location.href, previousUrl);
+  });
+}
+
+test('Direkter Konto-Link erhält einen Rückweg auf denselben Tab ohne Konto', () => {
+  const { window, nodes, flush, history, entries } = setup({ mobile: false, pathname: '/partien/', search: '?konto=1' });
+  nodes['auth-dialog'].open = true;
+  flush();
+  assert.equal(entries(), 1);
+  assert.equal(window.location.search, '?konto=1');
+  history.back();
+  flush();
+  assert.equal(window.location.pathname, '/partien/');
+  assert.equal(window.location.search, '');
+  assert.equal(nodes['auth-dialog'].open, false);
+});
+
+test('Konto übernimmt den mobilen Neuigkeiten-Schritt und ergänzt die URL', () => {
+  const { window, nodes, flush, entries } = setup();
+  nodes['whats-new-dialog'].open = true;
+  flush();
+  nodes['whats-new-dialog'].open = false;
+  nodes['auth-dialog'].open = true;
+  flush();
+  assert.equal(entries(), 1);
+  assert.equal(window.location.search, '?konto=1');
 });
