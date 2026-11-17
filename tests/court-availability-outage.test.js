@@ -108,14 +108,14 @@ test('bookings without a provider court ID remain visible even when the public c
 test('the calendar explains provider failures while preserving bookings and discards unknown error text', async () => {
   const { context, api, grid, element } = setup();
   const cases = [
-    ['playtomic_timeout', /Playtomic.*nicht rechtzeitig/],
+    ['playtomic_timeout', /Playtomic antwortet gerade nicht/],
     ['playtomic_unavailable', /Playtomic.*nicht erreichbar/],
-    ['playtomic_access_denied', /Playtomic hat den Zugriff.*abgewiesen/],
-    ['playtomic_login_required', /hinterlegte Playtomic-Zugang.*nicht mehr akzeptiert/],
-    ['playtomic_rate_limited', /Playtomic begrenzt/],
+    ['playtomic_access_denied', /Playtomic lässt die Platzabfrage.*nicht zu/],
+    ['playtomic_login_required', /Playtomic akzeptiert die Anmeldung nicht mehr/],
+    ['playtomic_rate_limited', /Zu viele Abfragen bei Playtomic/],
     ['playtomic_invalid_response', /Playtomic.*nicht lesbar/],
-    ['unknown', /Ursache ist noch unklar/],
-    ['__proto__', /Ursache ist noch unklar/],
+    ['unknown', /Ursache noch unklar/],
+    ['__proto__', /Ursache noch unklar/],
   ];
   for (const [reason, message] of cases) {
     context.fetch = async () => Response.json({ source: 'playtomic', reason, error: '<script>secret</script>' }, { status: 502 });
@@ -137,7 +137,7 @@ test('the calendar explains provider failures while preserving bookings and disc
   ]) {
     context.fetch = upstream;
     await api.load();
-    assert.match(element('[data-court-outage-reason]').textContent, /Ursache ist noch unklar/);
+    assert.match(element('[data-court-outage-reason]').textContent, /Ursache noch unklar/);
   }
   context.fetch = async () => Response.json({ date, courts: [], slots: [], opening: { from: '07:00', until: '24:00' } });
   await api.load();

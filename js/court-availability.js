@@ -123,15 +123,15 @@
 
   function availabilityFailureMessage(reason) {
     const messages = {
-      playtomic_timeout: 'Playtomic hat auf unsere Platzabfrage nicht rechtzeitig geantwortet.',
-      playtomic_unavailable: 'Playtomic ist für unsere Platzabfrage momentan nicht erreichbar.',
-      playtomic_access_denied: 'Playtomic hat den Zugriff auf die freien Plätze abgewiesen. Ob eine Anmeldung oder eine Zugriffsbeschränkung die Ursache ist, lässt sich derzeit nicht feststellen.',
-      playtomic_login_required: 'Der hinterlegte Playtomic-Zugang wird nicht mehr akzeptiert und muss überprüft werden.',
-      playtomic_rate_limited: 'Playtomic begrenzt gerade die Anzahl der Platzabfragen. Bitte versuche es später erneut.',
-      playtomic_invalid_response: 'Die von Playtomic gelieferten Platzdaten sind momentan nicht lesbar.',
+      playtomic_timeout: 'Playtomic antwortet gerade nicht.',
+      playtomic_unavailable: 'Playtomic ist gerade nicht erreichbar.',
+      playtomic_access_denied: 'Playtomic lässt die Platzabfrage gerade nicht zu.',
+      playtomic_login_required: 'Playtomic akzeptiert die Anmeldung nicht mehr.',
+      playtomic_rate_limited: 'Zu viele Abfragen bei Playtomic. Bitte kurz warten.',
+      playtomic_invalid_response: 'Die Platzdaten von Playtomic sind gerade nicht lesbar.',
     };
     return Object.hasOwn(messages, reason) ? messages[reason]
-      : 'Die freien Plätze von Playtomic können gerade nicht geladen werden. Die Ursache ist noch unklar.';
+      : 'Freie Plätze nicht abrufbar. Ursache noch unklar.';
   }
 
   function bookingCalendar(date, bookings, failureReason = 'availability_unavailable') {
@@ -166,13 +166,17 @@
         <button type="button" data-court-filter="indoor">Indoor</button><button type="button" data-court-filter="outdoor">Outdoor</button>
       </div>
     </div>
-    <div class="hint court-outage" data-court-outage role="status" aria-live="polite" hidden>
-      <span data-court-outage-reason></span> Angezeigt werden nur die für dich sichtbaren Buchungen und Termine.
-      <a class="text-link" href="https://playtomic.com/clubs/lucky-star-padel" target="_blank" rel="noopener noreferrer">Freie Plätze bei Playtomic prüfen</a>
-      <button type="button" class="text-link" data-court-retry>Erneut versuchen</button>
-    </div>
     <div class="court-grid-stage">
-      <div class="court-load-state hint" role="status" aria-live="polite" data-court-status></div>
+      <div class="court-load-state hint" role="status" aria-live="polite">
+        <div class="court-outage" data-court-outage hidden>
+          <span data-court-outage-reason></span>
+          <div class="court-outage-actions">
+            <a class="text-link" href="https://playtomic.com/clubs/lucky-star-padel" target="_blank" rel="noopener noreferrer">Playtomic öffnen</a>
+            <button type="button" class="text-link" data-court-retry>Erneut versuchen</button>
+          </div>
+        </div>
+        <div data-court-status></div>
+      </div>
       <div class="court-grid-wrap" data-court-grid tabindex="0" role="region" aria-label="Plätze und Uhrzeiten; freie Stunden auswählen"></div>
     </div>
     <footer class="court-footer">
