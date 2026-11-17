@@ -208,7 +208,7 @@ if (command === 'list-tools') {
       entrypoint_path: entrypointPath,
       // Verfügbarkeit ist öffentlich; der Empfangs-Webhook prüft stattdessen
       // zwingend seine Resend-/Svix-Signatur vor jedem Zugriff.
-      verify_jwt: !['court-availability', 'racket-availability', 'receive-court-booking'].includes(argument),
+      verify_jwt: !['court-availability', 'racket-availability', 'receive-court-booking', 'send-invite-reminders'].includes(argument),
       files
     }
   }));
@@ -402,6 +402,83 @@ if (command === 'list-tools') {
   } finally {
     await managementRequest(`/functions/${slug}`, { method: 'DELETE' });
   }
+} else if (command === 'upload-player-image') {
+  // Explicit admin operation: <player-id> <directory containing profile.webp and thumb.jpg>.
+  const playerId = argument;
+  if (!/^[a-z][a-z0-9_]*$/.test(playerId || '') || !originalRecipientsArgument) {
+    fail('Aufruf: upload-player-image <Spieler-ID> <Bildverzeichnis>');
+  }
+  const directory = resolve(originalRecipientsArgument);
+  const images = await Promise.all([
+    ['profile.webp', 'image/webp'], ['thumb.jpg', 'image/jpeg']
+  ].map(async ([name, contentType]) => {
+    const body = await readFile(resolve(directory, name));
+    const valid = name.endsWith('.webp')
+      ? body.toString('ascii', 0, 4) === 'RIFF' && body.toString('ascii', 8, 12) === 'WEBP'
+      : body[0] === 0xff && body[1] === 0xd8;
+    if (!valid || body.length > 524288) fail(`Ungültiges Bildformat oder zu große Datei: ${name}`);
+    return { name, contentType, body };
+  }));
+  const keys = await managementRequest('/api-keys?reveal=true');
+  const serviceKey = keys.find(key => key.name === 'service_role')?.api_key
+    || keys.find(key => key.type === 'secret')?.api_key;
+  if (!serviceKey) fail('Der Projektzugang ist nicht verfügbar.');
+  const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+  printToolResult(await rpc('tools/call', {
+    name: 'execute_sql', arguments: {
+      query: `do $check$ begin if not exists (select 1 from public.players where id = '${playerId}') then raise exception 'Spieler nicht gefunden'; end if; end $check$;`
+    }
+  }));
+  for (const { name, contentType, body } of images) {
+    const response = await fetch(`https://${projectRef}.supabase.co/storage/v1/object/player-images/${playerId}/${name}`, {
+      method: 'POST', headers: { ...headers, 'Content-Type': contentType, 'x-upsert': 'true', 'cache-control': 'max-age=31536000' },
+      body, signal: AbortSignal.timeout(30000)
+    });
+    if (!response.ok) fail(`Bild-Upload fehlgeschlagen: ${name} (HTTP ${response.status}).`);
+  }
+  for (const { name, body } of images) {
+    const response = await fetch(`https://${projectRef}.supabase.co/storage/v1/object/public/player-images/${playerId}/${name}?verify=${randomUUID()}`, {
+      signal: AbortSignal.timeout(30000)
+    });
+    if (!response.ok || !body.equals(Buffer.from(await response.arrayBuffer()))) {
+      fail(`Öffentliche Bildprüfung fehlgeschlagen: ${name}.`);
+    }
+  }
+  printToolResult(await rpc('tools/call', {
+    name: 'execute_sql', arguments: {
+      query: `update public.players set profile_image_version = clock_timestamp() where id = '${playerId}' returning id, profile_image_version;`
+    }
+  }));
+} else if (command === 'prepare-player-invitation-account') {
+  // Creates an unconfirmed invitation account; tokens are discarded, never printed.
+  // Requires an already assigned player email and explicit authorization by the admin.
+  const { playerId, email: rawEmail } = JSON.parse(await readFile(requireFilePath(argument), 'utf8'));
+  const email = String(rawEmail || '').trim().toLowerCase();
+  if (!/^[a-z][a-z0-9_]*$/.test(playerId || '') || !/^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(email)) {
+    fail('Ungültige Spieler-ID oder E-Mail-Adresse.');
+  }
+  // The validated email contains no SQL quoting characters.
+  printToolResult(await rpc('tools/call', { name: 'execute_sql', arguments: {
+    query: `do $check$ begin
+      if not exists (select 1 from private.player_email_allowlist where player_id = '${playerId}' and app_role = 'player' and email_hash = extensions.digest('${email}', 'sha256')) then
+        raise exception 'Keine passende Spielerzuordnung';
+      end if;
+      if exists (select 1 from auth.users where lower(email) = '${email}') then
+        raise exception 'Konto existiert bereits; vorhandene Einladung verwenden';
+      end if;
+    end $check$;`
+  } }));
+  const keys = await managementRequest('/api-keys?reveal=true');
+  const serviceKey = keys.find(key => key.type === 'secret')?.api_key;
+  if (!serviceKey) fail('Der Projektzugang ist nicht verfügbar.');
+  const response = await fetch(`https://${projectRef}.supabase.co/auth/v1/admin/generate_link`, {
+    method: 'POST', headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'invite', email, redirect_to: 'https://padelliga.envidual.com/?auth=invite' }),
+    signal: AbortSignal.timeout(30000)
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.id) fail(`Einladungskonto konnte nicht angelegt werden (HTTP ${response.status}).`);
+  console.log(JSON.stringify({ status: 'prepared', userId: result.id }));
 } else if (command === 'invoke-invite-reminders') {
   // Ruft die bereitgestellte Erinnerungs-Function mit einer JSON-Datei als Auftrag auf.
   // Die Antwort enthält nur Konto-IDs und Versandstatus, keine Adressen oder Links.

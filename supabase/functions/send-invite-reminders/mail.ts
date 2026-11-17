@@ -14,10 +14,13 @@ const privacy = "Dein Passwort kennt nur du, auch der Administrator nicht.";
 const ignore = "Falls du von all dem nicht profitieren möchtest, kannst du diese Mail einfach ignorieren.";
 const action = "Zugang einrichten";
 
-export function renderInviteReminder(name: string, link: string, test = false) {
+export function renderInviteReminder(name: string, link: string, test = false, initialInvitation = false) {
   const firstName = name.trim().split(/\s+/)[0] || "";
   const greeting = firstName ? `Hallo ${firstName},` : "Hallo,";
-  const subject = `${test ? "[Test] " : ""}Dein PadelLiga-Zugang wartet noch auf dich`;
+  const subject = `${test ? "[Test] " : ""}${initialInvitation ? "Willkommen bei der PadelLiga – aktiviere dein Konto" : "Dein PadelLiga-Zugang wartet noch auf dich"}`;
+  const messageIntro = initialInvitation
+    ? "willkommen bei der PadelLiga! Dein Spielerzugang ist vorbereitet. Aktiviere jetzt dein Konto und lege dein eigenes Passwort fest."
+    : intro;
   const testNote = test
     ? "Testmail: Der Knopf meldet dich mit deinem eigenen Konto an und öffnet die Passwortmaske wie bei den Spielern. Wenn du dort nichts speicherst, bleibt dein Passwort unverändert."
     : "";
@@ -27,7 +30,7 @@ export function renderInviteReminder(name: string, link: string, test = false) {
     ${testNote ? `<tr><td style="padding:8px 28px 0;"><p style="margin:0;padding:10px 12px;border:1px dashed #D4F53A;border-radius:8px;color:#D4F53A;font-size:13px;line-height:1.5;">${escapeHtml(testNote)}</p></td></tr>` : ""}
     <tr><td style="padding:8px 28px 0;color:#F3F4F1;font-size:16px;line-height:1.5;">
       <p style="margin:0 0 16px;">${escapeHtml(greeting)}</p>
-      <p style="margin:0 0 20px;">${escapeHtml(intro)}</p>
+      <p style="margin:0 0 20px;">${escapeHtml(messageIntro)}</p>
     </td></tr>
     <tr><td align="center" style="padding:0 28px 8px;">
       <a href="${escapeHtml(link)}" style="display:inline-block;background:#D4F53A;color:#07080C;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 28px;border-radius:8px;">${action}</a>
@@ -46,7 +49,7 @@ export function renderInviteReminder(name: string, link: string, test = false) {
   </table></td></tr></table>`;
   const text = `${testNote ? `${testNote}\n\n` : ""}${greeting}
 
-${intro}
+${messageIntro}
 
 ${action}: ${link}
 

@@ -22,9 +22,10 @@ Deno.serve(async request => {
   if (!supabaseUrl || !serviceKey || !resendApiKey) return respond({ error: "not_configured" }, 500);
   if (request.headers.get("authorization") !== `Bearer ${serviceKey}`) return respond({ error: "not_allowed" }, 401);
 
-  let input: { test?: unknown; campaign?: unknown; recipients?: unknown };
+  let input: { test?: unknown; campaign?: unknown; recipients?: unknown; initialInvitation?: unknown };
   try { input = await request.json(); } catch { return respond({ error: "invalid_input" }, 400); }
   const test = input.test === true;
+  const initialInvitation = input.initialInvitation === true;
   const campaign = String(input.campaign || "");
   const recipients = input.recipients as Recipient[];
   if (!/^[a-z0-9-]{1,60}$/.test(campaign) || !Array.isArray(recipients) || !recipients.length || recipients.length > 20
@@ -59,7 +60,7 @@ Deno.serve(async request => {
       confirmationPage.searchParams.set("auth", "confirm");
       confirmationPage.searchParams.set("purpose", "invite");
       confirmationPage.searchParams.set("confirmation_url", actionLink);
-      const mail = renderInviteReminder(recipient.name, confirmationPage.href, test);
+      const mail = renderInviteReminder(recipient.name, confirmationPage.href, test, initialInvitation);
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {

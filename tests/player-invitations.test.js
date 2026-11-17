@@ -169,3 +169,17 @@ test('Test Net receives the same private player-role access as the other test ac
   assert.match(correctedTestNetEmailMigration, /update private\.player_email_allowlist[\s\S]*set email_hash/);
   assert.doesNotMatch(correctedTestNetEmailMigration, /@/);
 });
+
+test('explicit first invitations use welcome copy while reminders retain their existing wording', async () => {
+  const { renderInviteReminder } = await import('../supabase/functions/send-invite-reminders/mail.ts');
+  const link = 'https://example.test/?auth=confirm&purpose=invite';
+  const initial = renderInviteReminder('Thomas H.', link, false, true);
+  assert.match(initial.subject, /Willkommen/);
+  assert.match(initial.text, /Hallo Thomas,/);
+  assert.match(initial.text, /48 Stunden/);
+  assert.match(initial.html, /auth=confirm&amp;purpose=invite/);
+  assert.doesNotMatch(initial.text + initial.html, /damalige Link|inzwischen abgelaufen/);
+  const reminder = renderInviteReminder('Thomas H.', link);
+  assert.match(reminder.subject, /wartet noch auf dich/);
+  assert.match(reminder.text, /damalige Link ist inzwischen abgelaufen/);
+});
