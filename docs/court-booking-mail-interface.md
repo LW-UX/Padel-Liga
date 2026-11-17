@@ -55,7 +55,7 @@ Absender, Empfänger und Anhänge werden nicht in der Liga-Datenbank gespeichert
   unsichtbaren Stornierungsnachweis an, damit eine später eintreffende ältere
   Bestätigung keinen aktiven Slot erzeugt.
 - War die Buchung mit einer weiterhin gleich terminierten Partie verknüpft,
-  erhalten deren vier Spieler eine gemeinsame offene Aufgabe. Die erste
+  erhalten deren vier Spieler und alle Admins unabhängig von eigener Beteiligung eine gemeinsame offene Aufgabe. Die erste
   Bestätigung hebt den Termin für alle auf; eine Ersatzbuchung löst dieselbe
   Aufgabe ebenfalls für alle.
 - Stornierungen werden intern als unsichtbare Tombstones behalten, damit

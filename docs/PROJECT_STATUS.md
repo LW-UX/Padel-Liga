@@ -4,6 +4,8 @@ Diese Datei enthält nur betriebsrelevanten Gegenwartsstand. Dauerhafte Regeln s
 
 ## Produktion
 
+- Lokal vorbereitet und geprüft: Stornierungsaufgaben erscheinen auch für unbeteiligte Admins, einschließlich Konten ohne Spielerprofil. Migration `20261117150000_admin_booking_cancellation_tasks.sql` erweitert Aufgabenabruf und Terminaufhebung; die erste Reaktion löst die gemeinsame Aufgabe für Spieler und Admins. Datenbankfreigabe zur Aktivierung und GitHub-Push der ergänzten Konto-Rollenprüfung stehen noch aus.
+
 - Lokal vorbereitet und noch nicht produktiv aktiviert: Der Buchungsimport gleicht Buchungen und Stornierungen unabhängig vom Buchernamen ab. Migration `20261117140000_booking_import_ignore_organizer.sql` entfernt die Namensbedingungen; Absenderfreigabe, Platz-/Zeitabgleich und Ereignisreihenfolge bleiben bestehen. Die Datenbankfreigabe zur Aktivierung steht noch aus.
 
 - Lokal vorbereitet: echte Links für die Liga-Hauptbereiche mit Browser-Zurück/-Vorwärts und Direktaufrufen. Die Standardsaison verwendet Pfade ohne Saisonkürzel (etwa `/rechner/` und `/spieler/<id>/`), andere Saisons ihr Kürzel; explizite Saisonpfade bleiben erreichbar. Der Deploy erzeugt die zusätzlichen Einstiegsseiten. Die Veröffentlichung benötigt den GitHub-Push des Nutzers.

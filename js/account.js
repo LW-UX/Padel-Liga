@@ -610,7 +610,8 @@
   }
 
   function isPlayerAccount() {
-    return ['player', 'admin'].includes(state.profile?.app_role) && Boolean(state.profile?.player_id);
+    return state.profile?.app_role === 'admin'
+      || (state.profile?.app_role === 'player' && Boolean(state.profile?.player_id));
   }
 
   function isTrainingTaskVisible(task) {
@@ -1007,7 +1008,7 @@
       if (inviteButton) inviteButton.hidden = state.profile?.app_role !== 'admin';
       const playerProfileButton = document.querySelector('[data-account-player-profile]');
       if (playerProfileButton) {
-        playerProfileButton.hidden = !isPlayerAccount();
+        playerProfileButton.hidden = !isPlayerAccount() || !state.profile?.player_id;
         if (state.profile?.player_id) playerProfileButton.dataset.playerId = state.profile.player_id;
         else delete playerProfileButton.dataset.playerId;
       }

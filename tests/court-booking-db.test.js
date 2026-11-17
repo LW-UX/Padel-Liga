@@ -19,6 +19,7 @@ test('PostgreSQL: booking order, rebooking, precision, permissions and shared ca
     await db.exec(`alter table auth.users add column email text, add column email_confirmed_at timestamptz;
       alter table public.seasons add column label text;`);
     await db.exec(assignmentMigration);
+    await db.exec(fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261117150000_admin_booking_cancellation_tasks.sql'), 'utf8'));
     await db.exec("set request.jwt.claim.role = 'service_role'");
     const record = async (id, cancelled, occurred, precision = 1, duration = 60, court = 'Indoor H2', organizer = 'Testgruppe') => {
       const result = await db.query(`select public.record_court_booking($1, null, $2, $7,
@@ -66,9 +67,30 @@ test('PostgreSQL: booking order, rebooking, precision, permissions and shared ca
     assert.equal(cancellation.bookingId, assigned.bookingId);
     assert.equal(cancellation.status, 'cancelled');
     assert.equal((await db.query('select * from public.get_my_court_booking_cancellation_tasks()')).rows.length, 1);
+    await db.exec(`insert into auth.users (id, email, email_confirmed_at) values
+      ('00000000-0000-0000-0000-000000000003', 'admin@example.com', now()),
+      ('00000000-0000-0000-0000-000000000004', 'other@example.com', now()),
+      ('00000000-0000-0000-0000-000000000005', 'tipper@example.com', now());
+      insert into public.profiles values
+      ('00000000-0000-0000-0000-000000000003', null, 'admin'),
+      ('00000000-0000-0000-0000-000000000004', 'other', 'player'),
+      ('00000000-0000-0000-0000-000000000005', null, 'tipper');
+      set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003';`);
+    assert.equal((await db.query('select * from public.get_my_court_booking_cancellation_tasks()')).rows.length, 1);
+    await db.exec("update public.profiles set player_id = 'p1' where app_role = 'admin'");
+    assert.equal((await db.query('select * from public.get_my_court_booking_cancellation_tasks()')).rows.length, 1, 'participating admin sees no duplicates');
+    await db.exec("update public.profiles set player_id = null where app_role = 'admin'");
+    for (const user of ['00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000005']) {
+      await db.query("select set_config('request.jwt.claim.sub', $1, false)", [user]);
+      assert.equal((await db.query('select * from public.get_my_court_booking_cancellation_tasks()')).rows.length, 0);
+      await assert.rejects(db.query('select public.confirm_court_booking_cancellation($1)', [assigned.bookingId]));
+    }
     await db.exec("set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002'");
     assert.equal((await db.query('select * from public.get_my_court_booking_cancellation_tasks()')).rows.length, 1);
+    await db.exec("set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000003'");
     assert.equal((await db.query('select public.confirm_court_booking_cancellation($1) as result', [assigned.bookingId])).rows[0].result.status, 'unscheduled');
+    await db.exec("set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002'");
+    assert.equal((await db.query('select * from public.get_my_court_booking_cancellation_tasks()')).rows.length, 0);
     assert.equal((await db.query('select match_at from public.matches where id = $1', ['test-partie-1'])).rows[0].match_at, null);
     await db.exec("set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001'");
     assert.equal((await db.query('select * from public.get_my_court_booking_cancellation_tasks()')).rows.length, 0);
