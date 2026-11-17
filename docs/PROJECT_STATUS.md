@@ -4,6 +4,8 @@ Diese Datei enthält nur betriebsrelevanten Gegenwartsstand. Dauerhafte Regeln s
 
 ## Produktion
 
+- Lokal vorbereitet: gemeinsamer Konto-Kurzpfad `/konto/` für Desktop und Mobil mit direktem Einstieg, Browser-Zurück/-Vorwärts und Rückkehr zum vorherigen Bereich samt Scrollstand. Bestehende `konto=1`-Links bleiben kompatibel. Die Einstiegsseite wird beim Deploy erzeugt; Skriptversionen für den Browser-Cache sind erhöht. 49 passende Tests bestehen. Veröffentlichung durch den GitHub-Push des Nutzers; keine Supabase-Änderung erforderlich.
+
 - Christian H. verwendet mit Nutzerfreigabe das quadratische generierte Kanubild als produktives Spielerbild. `player-images/christian_h/profile.webp` (600 × 600) und `thumb.jpg` (64 × 64) sind hochgeladen, öffentlich bytegenau geprüft und über `players.profile_image_version` aktiviert. Die Bildvorlage liegt lokal unter `output/imagegen/christian-h-kanu.png`; kein Website-Push erforderlich.
 
 - Thomas H. verwendet mit Nutzerfreigabe das generierte Bauarbeiterbild als produktives Spielerbild. `player-images/thomas_h/profile.webp` (600 × 600) und `thumb.jpg` (64 × 64) sind hochgeladen, öffentlich bytegenau geprüft und über `players.profile_image_version` aktiviert. Kein Website-Push für das Bild erforderlich. `tools/supabase-mcp.mjs upload-player-image <Spieler-ID> <Bildverzeichnis>` unterstützt den administrativen Upload über den vorhandenen Projektzugang.
