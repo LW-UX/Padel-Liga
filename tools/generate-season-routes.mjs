@@ -49,6 +49,8 @@ function writeLeaguePage(route, suffix = '') {
   writePage('index.html', path.join(outputRoot, ...segments, 'index.html'), '../'.repeat(segments.length) || './');
 }
 
+writeLeaguePage('', 'konto');
+
 for (const season of context.window.PADEL_SEASONS || []) {
   if (!season.route) continue;
   writePage('tipp/index.html', path.join(outputRoot, 'tipp', season.route, 'index.html'), '../');

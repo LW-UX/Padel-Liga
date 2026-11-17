@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="470" viewBox="0 0 1080 470">
+<defs>
+ <g id="arrow"><path d="M3 2 L3 24 L9 18 L13 27 L17 25 L13 16 L22 16 Z" fill="#16171c" stroke="white" stroke-width="1.4" stroke-linejoin="round"/></g>
+ <g id="ball"><circle cx="23" cy="24" r="5.5" fill="#d9f04a" stroke="#fff" stroke-width="1"/><path d="M19 20 Q24 24 19 28 M27 20 Q22 24 27 28" fill="none" stroke="#526519" stroke-width=".8"/></g>
+ <g id="racket" transform="translate(21 21) rotate(-28)"><rect x="-1.1" y="2" width="2.2" height="8" rx=".7" fill="#16171c" stroke="white" stroke-width=".8"/><ellipse cy="-2" rx="4.8" ry="6" fill="#16171c" stroke="white" stroke-width="1"/><g fill="white"><circle cx="-1.7" cy="-4" r=".65"/><circle cx="1.7" cy="-4" r=".65"/><circle cx="-1.7" cy="-1" r=".65"/><circle cx="1.7" cy="-1" r=".65"/></g></g>
+ <g id="v1"><use href="#arrow"/><use href="#ball"/></g>
+ <g id="v2"><use href="#arrow"/><g fill="#fff"><circle cx="6.3" cy="10" r="1"/><circle cx="6.3" cy="13.5" r="1"/><circle cx="9.5" cy="13.5" r="1"/></g></g>
+ <g id="v3"><use href="#arrow"/><use href="#racket"/></g>
+</defs>
+<rect width="1080" height="470" fill="#0b0b19"/>
+<g font-family="Helvetica, Arial, sans-serif" fill="#f5f5fa">
+<text x="40" y="43" font-size="23" font-weight="700">Cursor · drei Padel-Varianten</text>
+<text x="40" y="70" font-size="14" fill="#a6a6b8">Groß zum Vergleichen · darunter klein auf dunklem und hellem Hintergrund</text>
+<g transform="translate(30 100)"><rect width="330" height="335" rx="16" fill="#191929"/><text x="22" y="34" font-size="18" font-weight="700">1  Pfeil + Ball</text><text x="22" y="58" font-size="13" fill="#c9dd68">Mein Favorit</text><use href="#v1" transform="translate(108 82) scale(4)"/><rect x="20" y="252" width="140" height="60" rx="8" fill="#0b0b19"/><rect x="170" y="252" width="140" height="60" rx="8" fill="#eeeff4"/><use href="#v1" transform="translate(78 267)"/><use href="#v1" transform="translate(228 267)"/></g>
+<g transform="translate(375 100)"><rect width="330" height="335" rx="16" fill="#191929"/><text x="22" y="34" font-size="18" font-weight="700">2  Pfeil mit Schlägerlöchern</text><text x="22" y="58" font-size="13" fill="#a6a6b8">Sehr dezent</text><use href="#v2" transform="translate(108 82) scale(4)"/><rect x="20" y="252" width="140" height="60" rx="8" fill="#0b0b19"/><rect x="170" y="252" width="140" height="60" rx="8" fill="#eeeff4"/><use href="#v2" transform="translate(78 267)"/><use href="#v2" transform="translate(228 267)"/></g>
+<g transform="translate(720 100)"><rect width="330" height="335" rx="16" fill="#191929"/><text x="22" y="34" font-size="18" font-weight="700">3  Pfeil + Schläger</text><text x="22" y="58" font-size="13" fill="#a6a6b8">Padel deutlicher erkennbar</text><use href="#v3" transform="translate(108 82) scale(4)"/><rect x="20" y="252" width="140" height="60" rx="8" fill="#0b0b19"/><rect x="170" y="252" width="140" height="60" rx="8" fill="#eeeff4"/><use href="#v3" transform="translate(78 267)"/><use href="#v3" transform="translate(228 267)"/></g>
+</g></svg>

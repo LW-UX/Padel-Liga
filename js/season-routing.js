@@ -91,6 +91,25 @@
     return isTipBase ? new URL('../', base) : base;
   }
 
+  function isAccountPath() {
+    const base = getAreaBaseUrl('league');
+    return window.location.pathname.replace(/\/$/, '') === new URL('konto/', base).pathname.replace(/\/$/, '');
+  }
+
+  function isAccountRequested() {
+    return isAccountPath() || new URLSearchParams(window.location.search).get('konto') === '1';
+  }
+
+  function getAccountUrl() {
+    const base = getAreaBaseUrl('league');
+    if (usesQueryRoutes(base)) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('konto', '1');
+      return url;
+    }
+    return new URL('konto/', base);
+  }
+
   function getSeasonUrl(seasonId, area = 'league', options = {}) {
     const season = getSeasonById(seasonId);
     const base = getAreaBaseUrl(area);
@@ -269,6 +288,9 @@
     getRequestedSection,
     getSectionUrl,
     ensureDocumentBase,
+    isAccountPath,
+    isAccountRequested,
+    getAccountUrl,
     getRequestedSeasonId,
     getRequestedMatchId,
     getMatchIdFromPath,

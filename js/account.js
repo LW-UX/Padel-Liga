@@ -26,7 +26,8 @@
     || (readInitialUrlParam(initialSearch, 'error') || readInitialUrlParam(initialHash, 'error')
       ? 'Der Link ist ungültig oder abgelaufen.'
       : null);
-  const requestedAccountOpen = readInitialUrlParam(initialSearch, 'konto') === '1';
+  const requestedAccountOpen = readInitialUrlParam(initialSearch, 'konto') === '1'
+    || Boolean(window.PadelSeasonRouting?.isAccountPath());
   // Supabase verwirft ?auth=…, wenn die Zieladresse nicht freigegeben ist; type=… im Hash kommt immer mit.
   const requestedAuthFlow = String(window.location?.search || '')
     .match(/(?:^|[?&])auth=(invite|recovery)(?:&|$)/)?.[1]

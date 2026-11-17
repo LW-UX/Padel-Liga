@@ -32,8 +32,8 @@ function racket(transform, holes = true) {
   const dots = holes ? [[10, 5.4], [14, 5.4], [12, 7.6], [10, 9.8], [14, 9.8]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="0.85" fill="${W}"/>`).join('') : '';
   return `<g transform="${transform}">${outlined(body)}${dots}</g>`;
 }
-// Griffende am Klickpunkt links oben, Schlägerkopf nach rechts unten.
-const STANDARD_RACKET = 'translate(5 3.2) rotate(155) scale(1.3) translate(-12 -22.4)';
+// Ungenutzte Schläger-Alternative: Kopf links oben, Griff nach rechts unten.
+const STANDARD_RACKET = 'translate(8 4) rotate(-25) scale(1.3) translate(-12 -1.5)';
 const LOADING_RACKET = 'translate(8 4) rotate(-25) scale(1.3) translate(-12 -1.5)';
 const PROGRESS_RACKET = 'translate(7 3.4) rotate(-25) scale(1.12) translate(-12 -1.5)';
 const bar = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="0.6" fill="${W}"/>`;

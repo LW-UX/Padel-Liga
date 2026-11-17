@@ -7026,9 +7026,7 @@ function renderInfoSection(section, id) {
     : '';
   const paragraphsAfterTable = (section.paragraphsAfterTable || []).map(p => `<p>${p}</p>`).join('');
   const note = section.note ? `<p class="info-note">${section.note}</p>` : '';
-  const accountUrl = window.PadelSeasonRouting.getSectionUrl(selectedSeason.id, 'infos');
-  accountUrl.searchParams.set('konto', '1');
-  accountUrl.hash = 'platzbuchung';
+  const accountUrl = window.PadelSeasonRouting.getAccountUrl();
   const courtLink = id === 'platzbuchung'
     ? `<p><a class="text-link" href="#platzbuchung" data-court-info-open data-court-season="${escapeHtml(selectedSeason?.id || '')}">Freie Plätze bei Lucky Star ansehen</a> · <a class="text-link" href="${escapeHtml(accountUrl.href)}" data-auth-open data-account-link>Termin im Konto eintragen</a></p>`
     : '';
@@ -9630,7 +9628,9 @@ async function initApp() {
       ? (document.body.classList.contains('is-cup-season') ? 'partien' : 'rangliste') : requestedSection;
     nav(initialSection, null, { updateUrl: false });
     if (!hasDetail && !isDetailEmbed) {
-      const url = window.PadelSeasonRouting.getSectionUrl(selectedSeason.id, initialSection, { preserveSearch: true, preserveHash: true });
+      const url = window.PadelSeasonRouting.isAccountPath()
+        ? new URL(window.location.href)
+        : window.PadelSeasonRouting.getSectionUrl(selectedSeason.id, initialSection, { preserveSearch: true, preserveHash: true });
       window.PadelSeasonRouting.ensureDocumentBase(url);
       window.history.replaceState({ leagueSection: initialSection }, '', url);
     }

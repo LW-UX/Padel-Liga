@@ -29,20 +29,24 @@
     const accountOpen = Boolean(authDialog?.open);
     if (anyOpen && !entryId && (accountOpen || mobile.matches) && !isAuthLink()) {
       entryId = String(Date.now());
-      const url = new URL(window.location.href);
+      let url = new URL(window.location.href);
       if (accountOpen) {
         // Direktlinks erhalten denselben Rückweg wie ein auf der Seite geöffnetes Konto.
-        if (url.searchParams.has('konto')) {
-          url.searchParams.delete('konto');
-          window.history.replaceState({ ...window.history.state, mobileDialogPage: null, accountPage: false }, '', url.href);
+        if (window.PadelSeasonRouting?.isAccountPath() || url.searchParams.has('konto')) {
+          const returnUrl = window.PadelSeasonRouting?.isAccountPath()
+            ? window.PadelSeasonRouting.getSeasonUrl(window.PadelSeasonRouting.getRequestedSeasonId(), 'league')
+            : new URL(url);
+          returnUrl.searchParams.delete('konto');
+          window.history.replaceState({ ...window.history.state, mobileDialogPage: null, accountPage: false }, '', returnUrl.href);
         }
-        url.searchParams.set('konto', '1');
+        url = window.PadelSeasonRouting.getAccountUrl();
+        window.PadelSeasonRouting.ensureDocumentBase(url);
       }
       window.history.replaceState({ ...window.history.state, sectionScrollY: window.scrollY }, '', window.location.href);
       window.history.pushState({ ...window.history.state, mobileDialogPage: entryId, accountPage: accountOpen }, '', url.href);
     } else if (accountOpen && entryId && !window.history.state?.accountPage && !isAuthLink()) {
-      const url = new URL(window.location.href);
-      url.searchParams.set('konto', '1');
+      const url = window.PadelSeasonRouting.getAccountUrl();
+      window.PadelSeasonRouting.ensureDocumentBase(url);
       window.history.replaceState({ ...window.history.state, accountPage: true }, '', url.href);
     } else if (!anyOpen && entryId) {
       // Hat ein Folgeziel wie ein Spielerprofil den Eintrag übernommen, bleibt dessen Zurück-Schritt erhalten.
@@ -56,7 +60,7 @@
     new MutationObserver(sync).observe(dialog, { attributes: true, attributeFilter: ['open'] });
   });
   window.addEventListener('popstate', () => {
-    if (window.history.state?.accountPage && new URLSearchParams(window.location.search).get('konto') === '1') {
+    if (window.history.state?.accountPage && window.PadelSeasonRouting.isAccountRequested()) {
       entryId = window.history.state.mobileDialogPage;
       if (!authDialog?.open) window.PadelKonto?.openDialog();
     } else if (entryId && window.history.state?.mobileDialogPage !== entryId) {

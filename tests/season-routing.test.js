@@ -32,6 +32,21 @@ function loadRouting(href, baseURI) {
   return { routing: window.PadelSeasonRouting, history, document };
 }
 
+test('account links use one short global path, including project bases and tipping', () => {
+  for (const [href, baseURI, expected] of [
+    ['https://padelliga.envidual.com/infos/?konto=1', 'https://padelliga.envidual.com/', 'https://padelliga.envidual.com/konto/'],
+    ['https://lw-ux.github.io/Padel-Liga/so26/infos/', 'https://lw-ux.github.io/Padel-Liga/', 'https://lw-ux.github.io/Padel-Liga/konto/'],
+    ['https://padelliga.envidual.com/tipp/', 'https://padelliga.envidual.com/tipp/', 'https://padelliga.envidual.com/konto/']
+  ]) {
+    const { routing } = loadRouting(href, baseURI);
+    assert.equal(routing.getAccountUrl().href, expected);
+  }
+  const direct = loadRouting('https://padelliga.envidual.com/konto/', 'https://padelliga.envidual.com/');
+  assert.equal(direct.routing.isAccountRequested(), true);
+  const local = loadRouting('http://localhost:4173/?bereich=infos#platzbuchung', 'http://localhost:4173/');
+  assert.equal(local.routing.getAccountUrl().href, 'http://localhost:4173/?bereich=infos&konto=1#platzbuchung');
+});
+
 test('short paths select their season and produce league and tipping URLs', () => {
   const { routing } = loadRouting(
     'https://lw-ux.github.io/Padel-Liga/wi26/',
@@ -260,7 +275,7 @@ test('deployment generation creates direct entry pages with the correct base pat
     { id: 'season-2026-partie-28', stage: 'final-four', format: 'single-set' }
   ] }) });`);
   execFileSync(process.execPath, ['--import', mock, path.join(root, 'tools/generate-season-routes.mjs'), output], { cwd: root });
-  for (const route of ['rechner', 'statistik', 'so26/rechner', 'wi26/rangliste', 'spieler/agnes_k', 'partie/7']) {
+  for (const route of ['konto', 'rechner', 'statistik', 'so26/rechner', 'wi26/rangliste', 'spieler/agnes_k', 'partie/7']) {
     const html = fs.readFileSync(path.join(output, route, 'index.html'), 'utf8');
     const depth = route.split('/').length;
     assert.ok(html.includes(`<base href="${'../'.repeat(depth)}">`), route);

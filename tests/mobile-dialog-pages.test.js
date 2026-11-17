@@ -51,9 +51,11 @@ function setup({ search = '', mobile = true, pathname = '/' } = {}) {
     addEventListener: (type, callback) => { listeners[type] = callback; },
     PadelLigaClosePlayerProfile() { nodes['player-profile-dialog'].open = false; }
   };
-  vm.runInNewContext(source, {
+  const context = {
     window,
     document: {
+      baseURI: 'https://liga.test/',
+      querySelector: () => ({}),
       documentElement: { classList: { contains: () => false } },
       getElementById: id => nodes[id] || null
     },
@@ -64,7 +66,9 @@ function setup({ search = '', mobile = true, pathname = '/' } = {}) {
     URL,
     URLSearchParams,
     setTimeout: callback => timers.push(callback)
-  });
+  };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '..', 'js', 'season-routing.js'), 'utf8'), context);
+  vm.runInNewContext(source, context);
   return { window, nodes, flush, history, entries: () => index, stack };
 }
 
@@ -185,9 +189,9 @@ for (const mobile of [false, true]) {
     nodes['auth-dialog'].open = true;
     flush();
     assert.equal(entries(), 1);
-    assert.equal(window.location.pathname, '/infos/');
-    assert.equal(window.location.search, '?saison=2026-sommer&konto=1');
-    assert.equal(window.location.hash, '#platzbuchung');
+    assert.equal(window.location.pathname, '/konto/');
+    assert.equal(window.location.search, '');
+    assert.equal(window.location.hash, '');
     assert.equal(stack[0].state.sectionScrollY, 420);
     nodes['auth-dialog'].close();
     assert.equal(entries(), 0);
@@ -208,7 +212,8 @@ test('Direkter Konto-Link erhält einen Rückweg auf denselben Tab ohne Konto', 
   nodes['auth-dialog'].open = true;
   flush();
   assert.equal(entries(), 1);
-  assert.equal(window.location.search, '?konto=1');
+  assert.equal(window.location.pathname, '/konto/');
+  assert.equal(window.location.search, '');
   history.back();
   flush();
   assert.equal(window.location.pathname, '/partien/');
@@ -224,5 +229,22 @@ test('Konto übernimmt den mobilen Neuigkeiten-Schritt und ergänzt die URL', ()
   nodes['auth-dialog'].open = true;
   flush();
   assert.equal(entries(), 1);
-  assert.equal(window.location.search, '?konto=1');
+  assert.equal(window.location.pathname, '/konto/');
 });
+
+for (const pathname of ['/konto', '/konto/']) {
+  test(`Direkter Kurzlink ${pathname} bleibt beim Öffnen erhalten und schließt zur Startseite`, () => {
+    const { window, nodes, flush, history } = setup({ pathname });
+    assert.equal(window.PadelSeasonRouting.isAccountRequested(), true);
+    nodes['auth-dialog'].open = true;
+    flush();
+    assert.equal(window.location.pathname, '/konto/');
+    history.back();
+    flush();
+    assert.equal(window.location.pathname, '/');
+    assert.equal(nodes['auth-dialog'].open, false);
+    history.forward();
+    flush();
+    assert.equal(nodes['auth-dialog'].open, true);
+  });
+}
