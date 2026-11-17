@@ -1,5 +1,7 @@
 import { CLUB_ID, CLUB_URL, type Club, isDate, normalizeAvailability, parseClub } from "./data.ts";
 import { AvailabilityReadError, playtomicHttpError } from "./errors.ts";
+import { publicRequestHeaders } from "./request-headers.ts";
+import { fallbackClub } from "./club-metadata.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -10,9 +12,11 @@ let metadata: { value: Club; expires: number } | null = null;
 let metadataRequest: Promise<Club> | null = null;
 const pending = new Map<string, Promise<ReturnType<typeof normalizeAvailability>>>();
 
-async function read(url: string) {
+
+async function read(url: string, timeoutMs = 10000) {
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(10000), cache: "no-store", redirect: "error" });
+    const response = await fetch(url, { headers: publicRequestHeaders,
+      signal: AbortSignal.timeout(timeoutMs), cache: "no-store", redirect: "error" });
     if (!response.ok) {
       await response.body?.cancel().catch(() => {});
       throw playtomicHttpError(response.status);
@@ -40,8 +44,14 @@ async function getClub() {
   if (metadata && metadata.expires > Date.now()) return metadata.value;
   if (!metadataRequest) {
     metadataRequest = (async () => {
-      const response = await read(CLUB_URL);
-      const value = await providerData(async () => parseClub(await response.text()));
+      let value: Club;
+      try {
+        const response = await read(CLUB_URL, 3000);
+        value = await providerData(async () => parseClub(await response.text()));
+      } catch {
+        // A slow public HTML page must not hide fresh slots from the JSON route.
+        value = fallbackClub;
+      }
       metadata = { value, expires: Date.now() + 60 * 60 * 1000 };
       return value;
     })().finally(() => { metadataRequest = null; });

@@ -225,8 +225,9 @@ if (command === 'list-tools') {
   });
   const body = await response.json();
   console.log(JSON.stringify({ status: response.status, ...body }));
-} else if (command === 'probe-court-availability') {
-  // Requires approval for renewing/storing the shared private session, never writes booking data.
+} else if (['probe-court-availability', 'probe-public-court-availability', 'setup-playtomic-availability-session'].includes(command)) {
+  // Only probe-court-availability may renew the shared session and needs write approval.
+  // Public/browser diagnostics never use that session or write booking data.
   const { isDate } = await import('../supabase/functions/court-availability/data.ts');
   if (!isDate(argument)) fail('Ein gültiger Prüftag fehlt.');
   const slug = 'court-availability-probe';
@@ -234,7 +235,7 @@ if (command === 'list-tools') {
   const files = (await readFunctionFiles(requireFunctionPath(slug))).map(file => ({
     ...file, name: `${slug}/${file.name}`, content: file.content.replace('__AVAILABILITY_PROBE_KEY__', probeKey),
   }));
-  for (const name of ['court-availability/data.ts', '_shared/playtomic-access-code.ts', '_shared/playtomic-session.ts']) {
+  for (const name of ['court-availability/data.ts', 'court-availability/errors.ts', 'court-availability/request-headers.ts', '_shared/playtomic-access-code.ts', '_shared/playtomic-session.ts']) {
     files.push({ name, content: await readFile(resolve(functionsDirectory, name), 'utf8') });
   }
   const deployed = await rpc('tools/call', { name: 'deploy_edge_function', arguments: {
@@ -242,14 +243,48 @@ if (command === 'list-tools') {
   } });
   if (deployed?.isError) fail('Der geschützte Verfügbarkeitsprüfer konnte nicht bereitgestellt werden.');
   try {
-    const response = await fetch(`https://${projectRef}.supabase.co/functions/v1/${slug}`, {
-      method: 'POST', headers: { Authorization: `Bearer ${probeKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: argument }), signal: AbortSignal.timeout(60000),
-    });
-    // The probe returns sanitized counts/statuses only, never session tokens or response content.
-    const result = await response.json();
-    console.log(JSON.stringify(result));
-    if (!response.ok || !result.configured) process.exitCode = 1;
+    if (command === 'setup-playtomic-availability-session') {
+      const { startAvailabilitySessionSetup } = await import('./playtomic-availability-session-setup.mjs');
+      const setup = await startAvailabilitySessionSetup({
+        date: argument,
+        probe: async ({ date, cookie, userAgent }) => {
+          const response = await fetch(`https://${projectRef}.supabase.co/functions/v1/${slug}`, {
+            method: 'POST', headers: { Authorization: `Bearer ${probeKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date, browserCookie: cookie, userAgent }), signal: AbortSignal.timeout(40000),
+          });
+          return response.json();
+        },
+        storeSession: async session => {
+          const response = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/secrets`, {
+            method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify([{ name: 'PLAYTOMIC_AVAILABILITY_SESSION', value: JSON.stringify(session) }]),
+            redirect: 'error', signal: AbortSignal.timeout(15000),
+          });
+          await response.body?.cancel().catch(() => {});
+          if (!response.ok) throw new Error('Server-Hinterlegung fehlgeschlagen.');
+        },
+        onResult: result => console.log(JSON.stringify(result)),
+      });
+      console.log(JSON.stringify({ setupUrl: setup.url, expiresInMinutes: 30 }));
+      const stop = () => setup.close();
+      process.once('SIGINT', stop);
+      process.once('SIGTERM', stop);
+      try { console.log(JSON.stringify({ setupFinished: await setup.done })); }
+      finally {
+        process.removeListener('SIGINT', stop);
+        process.removeListener('SIGTERM', stop);
+        setup.close();
+      }
+    } else {
+      const response = await fetch(`https://${projectRef}.supabase.co/functions/v1/${slug}`, {
+        method: 'POST', headers: { Authorization: `Bearer ${probeKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: argument, publicHeadersOnly: command === 'probe-public-court-availability' }), signal: AbortSignal.timeout(60000),
+      });
+      // The probe returns sanitized counts/statuses only, never session tokens or response content.
+      const result = await response.json();
+      console.log(JSON.stringify(result));
+      if (!response.ok || !result.configured) process.exitCode = 1;
+    }
   } finally {
     await managementRequest(`/functions/${slug}`, { method: 'DELETE' });
   }

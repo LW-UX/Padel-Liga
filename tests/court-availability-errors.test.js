@@ -9,9 +9,11 @@ const errorsPromise = import('../supabase/functions/court-availability/errors.ts
 const source = fs.readFileSync(path.join(__dirname, '../supabase/functions/court-availability/index.ts'), 'utf8');
 const date = '2099-11-18';
 const request = () => new Request('https://example.invalid', { method: 'POST', body: JSON.stringify({ date }) });
-async function endpoint(upstream) {
+async function endpoint(upstream, clubOverride) {
   const data = await dataPromise;
   const errors = await errorsPromise;
+  const { publicRequestHeaders } = await import('../supabase/functions/court-availability/request-headers.ts');
+  const { fallbackClub } = await import('../supabase/functions/court-availability/club-metadata.ts');
   const hours = Object.fromEntries(['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
     .map(day => [day, { opening_time: '07:00', closing_time: '00:00' }]));
   const tenant = { tenant_id: data.CLUB_ID, address: { timezone: 'Europe/Berlin' }, opening_hours: hours,
@@ -19,11 +21,11 @@ async function endpoint(upstream) {
   const html = `<script>self.__next_f.push([1,${JSON.stringify(JSON.stringify({ tenant }))}])</script>`;
   let handler;
   const logs = [], calls = [];
-  const context = vm.createContext({ ...data, ...errors, Error, Request, Response, AbortSignal, URL, URLSearchParams,
+  const context = vm.createContext({ ...data, ...errors, publicRequestHeaders, fallbackClub, Error, Request, Response, AbortSignal, URL, URLSearchParams,
     console: { error: (...args) => logs.push(args) }, Deno: { serve: callback => { handler = callback; } },
     fetch: async (url, options) => {
       calls.push({ url, options });
-      return url === data.CLUB_URL ? new Response(html) : upstream(url, options);
+      return url === data.CLUB_URL ? (clubOverride ? clubOverride() : new Response(html)) : upstream(url, options);
     } });
   vm.runInContext(stripTypeScriptTypes(source.replace(/^import .*;\n/gm, '').replace(/export /g, '')), context);
   return { handler, logs, calls };
@@ -76,4 +78,44 @@ test('healthy empty availability remains a success; invalid local requests never
   const body = await response.json();
   assert.deepEqual(body.slots, []);
   assert.equal(body.reason, undefined);
+});
+
+test('the public reader uses browser request metadata without account credentials to avoid a false access failure', async () => {
+  const { handler, calls } = await endpoint(async (_url, { headers }) => {
+    const browserRequest = /Mozilla\//.test(headers?.['User-Agent'] || '')
+      && headers?.['Sec-Fetch-Dest'] === 'empty' && headers?.['Sec-Fetch-Mode'] === 'cors'
+      && headers?.['Sec-Fetch-Site'] === 'same-origin';
+    return browserRequest ? Response.json([]) : new Response('blocked', { status: 403 });
+  });
+  const response = await handler(request());
+  assert.equal(response.status, 200);
+  assert.deepEqual((await response.json()).slots, []);
+  for (const call of calls) {
+    const headers = new Headers(call.options.headers);
+    assert.equal(headers.has('Cookie'), false);
+    assert.equal(headers.has('Authorization'), false);
+    assert.ok(call.url.startsWith('https://playtomic.com/'));
+  }
+});
+
+test('slow club HTML uses verified court metadata while every offered hour still comes from the current JSON response', async () => {
+  const { fallbackClub } = await import('../supabase/functions/court-availability/club-metadata.ts');
+  const court = fallbackClub.courts.find(court => court.location === 'indoor');
+  let reads = 0;
+  const { handler } = await endpoint(async () => {
+    reads++;
+    return Response.json(reads === 1 ? [
+      { resource_id: court.id, start_date: date, slots: [{ start_time: '12:00:00', duration: 60 }] },
+      { resource_id: 'unmapped', start_date: date, slots: [{ start_time: '12:00:00', duration: 60 }] },
+    ] : []);
+  }, async () => { throw Object.assign(new Error('slow HTML'), { name: 'TimeoutError' }); });
+  const first = await handler(request());
+  assert.equal(first.status, 200);
+  const data = await first.json();
+  assert.equal(data.slots.length, 1);
+  assert.equal(data.slots[0].courtId, court.id);
+  const second = await handler(request());
+  assert.equal(second.status, 200);
+  assert.deepEqual((await second.json()).slots, []);
+  assert.equal(reads, 2, 'fresh availability is fetched even when fallback metadata is cached');
 });

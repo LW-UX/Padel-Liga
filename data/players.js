@@ -24,5 +24,5 @@ window.PADEL_PLAYERS = [
   { id: "martin_b", name: "Martin B.", initials: "MB", firma: "Headsquare", profileEmoji: "👨" },
   { id: "niklas_k", name: "Niklas K.", initials: "NK", firma: "Hanako", profileEmoji: "👨" },
   { id: "raphael_h", name: "Raphael H.", initials: "RH", firma: "Headsquare", profileEmoji: "👨" },
-  { id: "yonatan_g", name: "Yonatan G.", initials: "YG", firma: "Envidual", profileEmoji: "👨" }
+  { id: "thomas_h", name: "Thomas H.", initials: "TH", firma: "Envidual", profileEmoji: "👨" }
 ];

@@ -1,6 +1,7 @@
 // Temporarily deployed with a unique key and deleted by tools/supabase-mcp.mjs.
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { isDate } from "../court-availability/data.ts";
+import { CLUB_ID, CLUB_URL, isDate } from "../court-availability/data.ts";
+import { publicRequestHeaders } from "../court-availability/request-headers.ts";
 import { currentPlaytomicCookie, playtomicSessionStore } from "../_shared/playtomic-session.ts";
 import { AccessCodeReadError } from "../_shared/playtomic-access-code.ts";
 import { probeAvailability } from "./read.ts";
@@ -20,6 +21,31 @@ Deno.serve(async request => {
     if (text.length > 50_000) return json({ error: "invalid_input" }, 400);
     const input = JSON.parse(text);
     if (!isDate(input?.date)) return json({ error: "invalid_date" }, 400);
+    if (input.publicHeadersOnly === true) {
+      const url = new URL("https://playtomic.com/api/clubs/availability");
+      url.search = new URLSearchParams({ tenant_id: CLUB_ID, date: input.date, sport_id: "PADEL" }).toString();
+      const navigation = { "User-Agent": publicRequestHeaders["User-Agent"],
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Site": "none" };
+      const routes: { route: string; target: string; headers: Record<string, string> }[] = [
+        { route: "club_plain", target: CLUB_URL, headers: {} },
+        { route: "club_navigation", target: CLUB_URL, headers: navigation },
+        { route: "club_german", target: "https://playtomic.com/de/clubs/lucky-star-padel", headers: navigation },
+        { route: "availability", target: url.href, headers: publicRequestHeaders },
+      ];
+      const results = await Promise.all(routes.map(async ({ route, target, headers }) => {
+        const start = Date.now();
+        try {
+          const response = await fetch(target, { headers, redirect: "error",
+            cache: "no-store", signal: AbortSignal.timeout(15000) });
+          const status = response.status;
+          const type = response.headers.get("content-type");
+          await response.body?.cancel();
+          return { route, status, type, elapsedMs: Date.now() - start };
+        } catch { return { route, error: "transport_or_timeout", elapsedMs: Date.now() - start }; }
+      }));
+      return json({ configured: true, results });
+    }
     if (typeof input.browserCookie === "string") {
       return json(await probeBrowserCookie(input.date, input.browserCookie, input.userAgent || ""));
     }

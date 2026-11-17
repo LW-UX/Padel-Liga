@@ -8,12 +8,14 @@ export function normalizeAvailabilityCookie(input: string): string {
   const values = new Map<string, string>();
   for (const part of input.trim().replace(/^cookie\s*:\s*/i, "").split(";")) {
     if (!part.trim()) continue;
-    const match = /^([!#$%&'*+.^_`|~0-9A-Za-z-]+)=([\x21\x23-\x2B\x2D-\x3A\x3C-\x5B\x5D-\x7E]*)$/.exec(part.trim());
+    const match = /^([!#$%&'*+.^_`|~0-9A-Za-z-]+)=(.*)$/.exec(part.trim());
     if (!match) throw new Error("invalid_cookie");
     const [, name, value] = match;
     // No refresh token is ever sent to a data endpoint or stored for this test.
     // Preserve unfamiliar security cookies so we do not repeat the JWT-only test.
     if (name === "pt_auth_refresh_token" || /^(?:_ga(?:_|$)|_gid$|_gat|_gcl_|__utm|_fb[pc]$|_hj|_cl[cs]k$|__stripe_|hubspotutk$|__hs)/i.test(name)) continue;
+    const octets = value.startsWith('"') && value.endsWith('"') ? value.slice(1, -1) : value;
+    if (!/^[\x21\x23-\x2B\x2D-\x3A\x3C-\x5B\x5D-\x7E]*$/.test(octets)) throw new Error("invalid_cookie");
     if (values.has(name)) throw new Error("invalid_cookie");
     values.set(name, value);
   }

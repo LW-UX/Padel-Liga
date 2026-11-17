@@ -268,13 +268,13 @@ window.PADEL_SEASON = {
         {
           type: "match",
           matchId: "winter-2026-partie-10",
-          text: "Yonatan G. & Marco M. vs. Lukas T. & Leonie R.",
+          text: "Thomas H. & Marco M. vs. Lukas T. & Leonie R.",
           result: "66 : 34 %",
           resultLabel: "Gewinnwahrscheinlichkeit"
         },
         {
           type: "p",
-          text: "Marco M. geht mit fünf Siegen in Folge in diese Partie. Den letzten holte er zusammen mit Jonas L. sogar mit 6:0, 6:0. Mit Yonatan G. an seiner Seite liegt die Gewinnwahrscheinlichkeit bei 66 Prozent, so deutlich wie bei keiner anderen Partie dieses Spieltags."
+          text: "Marco M. geht mit fünf Siegen in Folge in diese Partie. Den letzten holte er zusammen mit Jonas L. sogar mit 6:0, 6:0. Mit Thomas H. an seiner Seite liegt die Gewinnwahrscheinlichkeit bei 66 Prozent, so deutlich wie bei keiner anderen Partie dieses Spieltags."
         },
         {
           type: "p",
