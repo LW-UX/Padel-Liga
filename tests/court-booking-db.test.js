@@ -15,24 +15,25 @@ test('PostgreSQL: booking order, rebooking, precision, permissions and shared ca
   try {
     await db.exec(fixture);
     await db.exec(migration);
+    await db.exec(fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261117140000_booking_import_ignore_organizer.sql'), 'utf8'));
     await db.exec(`alter table auth.users add column email text, add column email_confirmed_at timestamptz;
       alter table public.seasons add column label text;`);
     await db.exec(assignmentMigration);
     await db.exec("set request.jwt.claim.role = 'service_role'");
-    const record = async (id, cancelled, occurred, precision = 1, duration = 60, court = 'Indoor H2') => {
-      const result = await db.query(`select public.record_court_booking($1, null, $2, 'Testgruppe',
+    const record = async (id, cancelled, occurred, precision = 1, duration = 60, court = 'Indoor H2', organizer = 'Testgruppe') => {
+      const result = await db.query(`select public.record_court_booking($1, null, $2, $7,
         '2099-10-06T10:30:00Z', '2099-10-06T10:30:00Z'::timestamptz + $3 * interval '1 minute', $4, $5, $6) as value`,
-      [id, court, duration, cancelled, occurred, precision]);
+      [id, court, duration, cancelled, occurred, precision, organizer]);
       return result.rows[0].value;
     };
     // A cancellation arriving first must survive an older confirmation.
     assert.equal((await record(null, true, '2099-10-05T09:21:00Z', 60)).status, 'cancelled');
-    assert.equal((await record('old', false, '2099-10-01T08:56:00Z', 60)).status, 'cancelled');
+    assert.equal((await record('old', false, '2099-10-01T08:56:00Z', 60, 60, 'Indoor H2', 'Anderer Bucher')).status, 'cancelled');
     assert.equal((await db.query('select count(*)::int as n from private.court_bookings where cancelled_at is null')).rows[0].n, 0);
     // A clearly later rebooking with its own ID stays active despite old mail.
     const active = await record('new', false, '2099-10-05T10:00:00Z', 60);
     assert.equal(active.status, 'active');
-    assert.equal((await record(null, true, '2099-10-05T09:21:00Z', 60)).status, 'active');
+    assert.equal((await record(null, true, '2099-10-05T09:21:00Z', 60, 60, 'Indoor H2', 'Anderer Bucher')).status, 'active');
     assert.equal((await record('different', false, '2099-10-05T11:00:00Z', 60)).status, 'needs_review');
     assert.equal((await record(null, true, '2099-10-05T10:00:10Z')).status, 'needs_review');
     assert.equal((await record(null, true, '2099-10-05T11:00:00Z', 60)).status, 'cancelled');
@@ -60,7 +61,10 @@ test('PostgreSQL: booking order, rebooking, precision, permissions and shared ca
     const assigned = await record('assigned', false, '2099-10-05T13:00:00Z', 1, 90, 'Indoor H3');
     await db.exec("set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001'");
     await db.query("select public.schedule_match('test-partie-1', '2099-10-06 12:30'::timestamp, $1)", [assigned.bookingId]);
-    await record(null, true, '2099-10-05T14:00:00Z', 1, 90, 'Indoor H3');
+    assert.equal((await record('assigned', false, '2099-10-05T13:01:00Z', 1, 90, 'Indoor H3', 'Headsquare')).status, 'active');
+    const cancellation = await record(null, true, '2099-10-05T14:00:00Z', 1, 90, 'Indoor H3', 'Headsquare United');
+    assert.equal(cancellation.bookingId, assigned.bookingId);
+    assert.equal(cancellation.status, 'cancelled');
     assert.equal((await db.query('select * from public.get_my_court_booking_cancellation_tasks()')).rows.length, 1);
     await db.exec("set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002'");
     assert.equal((await db.query('select * from public.get_my_court_booking_cancellation_tasks()')).rows.length, 1);

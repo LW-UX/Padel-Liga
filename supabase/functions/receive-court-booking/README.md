@@ -111,6 +111,10 @@ Empfangsprüfung DMARC bestehen. Fehlende/fehlgeschlagene Prüfung ergibt
   HTML-only wird mit `html-to-text` ohne Ausführen von Mailcode dekodiert.
   Mehrere Original-/Kalenderanhänge, unbekannte Formate, uneindeutige
   Zeitumstellungsstunden und widersprüchliche Angaben ändern nichts.
+- Normale manuelle Weiterleitungen benötigen keine zusätzliche Partienummer.
+  Mit aktivierter automatischer Ligapartiezuordnung reichen die ursprünglichen
+  Buchungsdaten und der vollständige Outlook-Kopf für den Namens-/Terminabgleich.
+  Eigene Notizen oberhalb des Kopfs sind optional.
 - Eine normale erneute Weiterleitung kann im äußeren Betreff oder als eigene
   Zeile oberhalb des Outlook-Kopfs `Partie <Nummer> | <Saison>` enthalten. Nur
   dieser äußere Bereich wird als Anweisung gelesen; zitierter Originalinhalt

@@ -28,6 +28,7 @@ Diese Datei ist die kanonische Quelle für Saisonidentitäten, Datenquellen, Sai
 
 ## Saisonwechsel und Seitenphasen
 
+- Es gibt eine aktive Ligasaison; zusätzlich kann ein Cup aktiv sein. Eine Buchungsmail mit `Partie <Nummer>` ohne Saisonangabe durchsucht die aktiven Wettbewerbe. Existiert die Nummer mehrfach, entscheiden der Berliner Buchungstag und danach der geringste Abstand zur Buchungszeit; bei gleichem Abstand gewinnt der frühere Termin. Nur identische am besten passende Termine bleiben mehrdeutig. Ohne eine am Buchungstag terminierte passende Partie bleibt die Buchung ebenfalls unverknüpft. Auch der Terminabgleich ohne Partienummer berücksichtigt aktive Liga und Cup und verwendet innerhalb seiner Zeittoleranz dieselbe zeitliche Reihenfolge.
 - Eine aktive Standardsaison bleibt bis zu ihrem offiziellen Abschluss die Voreinstellung. Eine vorbereitete Nachfolgesaison kann bereits auswählbar sein, ohne automatisch Standard zu werden.
 - Beim bewussten Saisonwechsel werden geöffnete saisonbezogene Detailansichten verworfen. Partiepanel, Partiemodal, Partiedetailseite, Liveticker und Spielerprofil der bisherigen Saison werden weder in die neue Saison übernommen noch dort erneut geöffnet.
 - Der globale LIVE-Einstieg wechselt vor dem Öffnen des bildschirmfüllenden Livetickers in die Saison der laufenden Partie. Unter der Detailansicht liegt die Partienübersicht dieser Saison; Schließen führt dorthin, ein weiterer Browser-Zurück-Schritt führt in den zuvor betrachteten Saisonkontext.

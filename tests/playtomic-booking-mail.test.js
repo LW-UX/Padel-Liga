@@ -29,13 +29,12 @@ test('Bestätigung und Stornierung desselben Termins passen zusammen', async () 
   assert.equal(sameBookingSlot(booking, cancelled), true);
 });
 
-test('andere Termine, Plätze, Dauern und Buchende werden nicht zugeordnet', async () => {
+test('andere Termine, Plätze und Dauern werden nicht zugeordnet', async () => {
   const { parsePlaytomicBookingMail: parse, sameBookingSlot } = await modulePromise;
   assert.equal(sameBookingSlot(parse(confirmation('13.11.26', '12:00-13:00')),
     parse(cancellation('08.10.26', '18:00', 'CUPRA Court 2', 90))), false);
   for (const message of [cancellation('07.10.26'), cancellation(undefined, '13:00'),
-    cancellation(undefined, undefined, 'Indoor H1'), cancellation(undefined, undefined, undefined, 90),
-    { ...cancellation(), text: cancellation().text.replace('Testgruppe', 'Andere Gruppe') }]) {
+    cancellation(undefined, undefined, 'Indoor H1'), cancellation(undefined, undefined, undefined, 90)]) {
     assert.equal(sameBookingSlot(parse(confirmation()), parse(message)), false);
   }
 });
@@ -73,4 +72,10 @@ test('Kalenderzeiten müssen einschließlich Sommer-/Winterzeit zur Mail passen'
     calendar().replace('END:VEVENT', 'END:VEVENT\r\nBEGIN:VEVENT\r\nEND:VEVENT')]) {
     assert.throws(() => parse({ ...confirmation(), calendar: value }));
   }
+});
+
+test('abweichender Buchername verhindert keinen Slotabgleich', async () => {
+  const { parsePlaytomicBookingMail: parse, sameBookingSlot } = await modulePromise;
+  const message = { ...cancellation(), text: cancellation().text.replace('Testgruppe', 'Andere Gruppe') };
+  assert.equal(sameBookingSlot(parse(confirmation()), parse(message)), true);
 });

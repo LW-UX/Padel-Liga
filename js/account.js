@@ -1382,7 +1382,7 @@
         ${groupKey === 'future' ? `<div class="result-card-timing">${escapeHtml(formatMatchAt(task.proposed_match_at || task.match_at))}</div>` : ''}
         ${groupKey === 'future' || hasHallBooking ? `<div class="result-card-resources">
           ${groupKey === 'future' ? `<div class="racket-status" data-racket-status="match:${escapeHtml(task.match_id)}" data-racket-starts-at="${Date.parse(task.match_at) || 0}"${courtBookingWindowAttributes(linkedBooking)} hidden></div>` : ''}
-          ${hasHallBooking ? `<div class="hall-code" data-hall-code-match="${escapeHtml(task.match_id)}" data-hall-code-booking="${linkedBooking.booking_id}" data-hall-code-until="${Date.parse(linkedBooking.ends_at)}" role="status" aria-live="polite" hidden></div>` : ''}
+          ${hasHallBooking ? `<div class="hall-code" data-hall-code-match="${escapeHtml(task.match_id)}" data-hall-code-booking="${linkedBooking.booking_id}" data-hall-code-until="${Date.parse(linkedBooking.ends_at)}" role="status" aria-live="polite" hidden></div>` : groupKey === 'future' && !linkedBooking ? '<div class="hall-code">Platzbuchung steht aus.</div>' : ''}
         </div>` : ''}
         ${renderResultTaskBody(task, groupKey)}
         ${typeof window !== 'undefined' ? window.PadelLiveTicker?.renderGameAssignment(task.match_id) || '' : ''}
@@ -2393,7 +2393,7 @@
       ${due ? '' : `<div class="result-card-timing">${escapeHtml(formatTaskDate(task.played_on, task.display_time))}</div>`}
       ${!due || hasHallBooking ? `<div class="result-card-resources">
         ${due ? '' : `<div class="racket-status" data-racket-status="training:${escapeHtml(task.session_id)}" data-racket-starts-at="${getTrainingTaskTimestamp(task, 0)}"${courtBookingWindowAttributes(linkedBooking)} hidden></div>`}
-        ${hasHallBooking ? `<div class="hall-code" data-hall-code-training="${escapeHtml(task.session_id)}" data-hall-code-booking="${linkedBooking.booking_id}" data-hall-code-until="${Date.parse(linkedBooking.ends_at)}" role="status" aria-live="polite" hidden></div>` : ''}
+        ${hasHallBooking ? `<div class="hall-code" data-hall-code-training="${escapeHtml(task.session_id)}" data-hall-code-booking="${linkedBooking.booking_id}" data-hall-code-until="${Date.parse(linkedBooking.ends_at)}" role="status" aria-live="polite" hidden></div>` : !due && !linkedBooking ? '<div class="hall-code">Platzbuchung steht aus.</div>' : ''}
       </div>` : ''}
       ${due ? '' : renderTrainingParticipants(task)}
       ${!due && canManage ? `<div class="account-task-actions scheduled-result-actions">

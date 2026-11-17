@@ -12,7 +12,7 @@ keine Links und führt keine Mailinhalte aus.
 Die bereitgestellten deutschen Bestätigungen enthalten eine Playtomic-ID in
 der Kalenderdatei. Die Stornierungen enthalten keine entsprechende ID im
 Klartext. `sameBookingSlot` vergleicht daher Club, Platz, Berliner Datum und
-Beginn, Dauer und Veranstalter als Zuordnungskandidaten. Das ist noch keine
+Beginn und Dauer als Zuordnungskandidaten; der Veranstaltername darf abweichen. Das ist noch keine
 Freigabe zur automatischen Stornierung: Bei Wiederbuchung desselben Slots,
 mehreren Kandidaten oder widersprüchlichen Ereignissen muss der Import die
 Ereignishistorie berücksichtigen und gegebenenfalls eine Prüfung verlangen.

@@ -13,6 +13,8 @@ declare
   selected_match public.matches%rowtype;
   sync_user_id uuid;
   already_linked boolean := false;
+  candidate_ids text[];
+  candidate_time timestamptz;
 begin
   perform pg_advisory_xact_lock(20261113, 1400);
   select * into booking from private.court_bookings where id = p_booking_id for update;
@@ -33,11 +35,13 @@ begin
     if not found then return jsonb_build_object('assignment', 'not_requested'); end if;
     already_linked := true;
   else
-  select match.* into selected_match
+  select array_agg(match.id) into candidate_ids
   from public.matches as match
   join public.seasons as season on season.id = match.season_id
   where season.results_entry_enabled
-    and match.competition_stage = 'league'
+    and season.is_active
+    and (match.competition_stage = 'league' or (season.tournament_mode = 'knockout_redraw'
+      and match.competition_stage in ('quarterfinal', 'semifinal', 'final')))
     and (p_match_id is null or match.id = p_match_id)
     and match.cancelled_at is null and match.actual_sets is null and match.result_details is null
     and match.match_at > now()
@@ -45,13 +49,23 @@ begin
     and match.match_at between booking.starts_at - interval '15 minutes' and booking.starts_at + interval '15 minutes'
     and (select count(distinct lineup.player_id) from public.match_players as lineup where lineup.match_id = match.id) = 4
     and not exists (select 1 from public.result_proposals as proposal where proposal.match_id = match.id and proposal.status = 'pending')
-    and not exists (select 1 from private.court_bookings as assigned where assigned.match_id = match.id and assigned.cancelled_at is null)
-  -- Nummern werden numerisch verglichen (2 vor 10), unabhängig vom Zeitabstand.
-  order by coalesce(
-    substring(match.display_label from '^Partie ([0-9]+)$')::integer,
-    substring(match.id from '-partie-([0-9]+)$')::integer
-  ) nulls last, match.season_id, match.league_id, match.id
-  limit 1
+    and not exists (select 1 from private.court_bookings as assigned where assigned.match_id = match.id and assigned.cancelled_at is null);
+  if coalesce(cardinality(candidate_ids), 0) = 0 then
+    return jsonb_build_object('assignment', 'not_requested');
+  end if;
+  -- Der zeitlich nächste Termin entscheidet; bei gleichem Abstand zuerst
+  -- der frühere Termin. Nur identische passende Termine bleiben mehrdeutig.
+  select match.match_at into candidate_time
+  from public.matches as match where match.id = any(candidate_ids)
+  order by abs(extract(epoch from match.match_at - booking.starts_at)), match.match_at
+  limit 1;
+  if (select count(*) from public.matches as match
+      where match.id = any(candidate_ids) and match.match_at = candidate_time) > 1 then
+    return jsonb_build_object('assignment', 'ambiguous_match');
+  end if;
+  select match.* into selected_match
+  from public.matches as match
+  where match.id = any(candidate_ids) and match.match_at = candidate_time
   for update of match;
   if not found then return jsonb_build_object('assignment', 'not_requested'); end if;
 
@@ -106,6 +120,8 @@ declare
   booking_id bigint;
   candidate_id text;
   candidate_count integer;
+  candidate_ids text[];
+  candidate_time timestamptz;
   normalized_hint text := nullif(lower(trim(p_season_hint)), '');
 begin
   if coalesce((select auth.jwt() ->> 'role'), '') <> 'service_role' then
@@ -167,8 +183,8 @@ begin
     return recorded || jsonb_build_object('assignment', 'booking_unavailable');
   end if;
 
-  select count(*), min(match.id)
-  into candidate_count, candidate_id
+  select count(*), min(match.id), array_agg(match.id)
+  into candidate_count, candidate_id, candidate_ids
   from public.matches as match
   join public.seasons as season on season.id = match.season_id
   where season.results_entry_enabled
@@ -182,14 +198,16 @@ begin
     and (select count(*) from public.match_players as lineup where lineup.match_id = match.id) = 4
     and (
       lower(coalesce(
-        nullif(trim(match.display_label), ''),
+        case when trim(match.display_label) ~* '^Partie [0-9]+$' then trim(match.display_label) end,
         case when match.id ~* '-partie-[0-9]+$'
+          or (season.tournament_mode = 'knockout_redraw'
+            and match.id ~* '-(quarterfinal|semifinal|final)-[0-9]+$')
           then 'Partie ' || substring(match.id from '([0-9]+)$')
         end
       )) = lower('Partie ' || p_match_number::text)
     )
     and (
-      normalized_hint is null
+      (normalized_hint is null and season.is_active)
       or lower(trim(season.id)) = normalized_hint
       or lower(trim(season.label)) = normalized_hint
     )
@@ -204,7 +222,23 @@ begin
   if candidate_count = 0 then
     return recorded || jsonb_build_object('assignment', 'match_not_found');
   elsif candidate_count > 1 then
-    return recorded || jsonb_build_object('assignment', 'ambiguous_match');
+    -- Bei mehrfacher Nummer entscheidet nach dem Buchungstag die nächste
+    -- Uhrzeit. Gleich weit entfernte Termine werden chronologisch aufgelöst.
+    select match.id, match.match_at into candidate_id, candidate_time
+    from public.matches as match
+    where match.id = any(candidate_ids)
+      and (match.match_at at time zone 'Europe/Berlin')::date
+        = (selected_booking.starts_at at time zone 'Europe/Berlin')::date
+    order by abs(extract(epoch from match.match_at - selected_booking.starts_at)), match.match_at
+    limit 1;
+    if not found then
+      return recorded || jsonb_build_object('assignment', 'ambiguous_match');
+    end if;
+    select count(*) into candidate_count from public.matches as match
+    where match.id = any(candidate_ids) and match.match_at = candidate_time;
+    if candidate_count > 1 then
+      return recorded || jsonb_build_object('assignment', 'ambiguous_match');
+    end if;
   end if;
 
   select match.* into selected_match

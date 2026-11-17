@@ -112,6 +112,6 @@ export function parsePlaytomicBookingMail(input: { subject: string; text: string
 // A tuple match is only a cancellation candidate, not authorization to cancel.
 // Rebookings and multiple candidates need event history / manual review.
 export function sameBookingSlot(first: BookingMail, second: BookingMail): boolean {
-  return (["club", "court", "date", "time", "duration", "timezone", "organizer"] as const)
+  return (["club", "court", "date", "time", "duration", "timezone"] as const)
     .every(key => first[key] === second[key]);
 }
