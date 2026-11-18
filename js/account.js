@@ -4713,6 +4713,8 @@ Dein Hanako-Leben-Squad`;
         state.error = error?.message || 'Das Konto konnte nicht initialisiert werden.';
         console.error('Konto konnte nicht initialisiert werden:', error);
         render();
+      }).finally(() => {
+        window.dispatchEvent(new CustomEvent('padel:account-initialized'));
       });
     }
     return initPromise;

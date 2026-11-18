@@ -5956,6 +5956,7 @@
       .global-actions.open .global-actions-list > :nth-last-child(5) { transition-delay: 125ms; }
       .global-actions.open .global-actions-list > :nth-last-child(6) { transition-delay: 150ms; }
       .global-actions.open .global-actions-list > :nth-last-child(7) { transition-delay: 175ms; }
+      .global-actions.open .global-actions-list > :nth-last-child(8) { transition-delay: 200ms; }
 
       .global-actions .viewer-picker { max-width: calc(100vw - 32px); }
       .global-actions .viewer-split-button {

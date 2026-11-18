@@ -1,5 +1,23 @@
-.site-search-trigger > span {
+.site-search-trigger-label,
+.site-search-trigger-placeholder,
+.is-detail-embed .site-search-trigger {
   display: none;
+}
+
+.site-search-trigger[data-search-loading] {
+  position: relative;
+  pointer-events: none;
+}
+
+.site-search-trigger[data-search-loading] > :not(.site-search-trigger-placeholder) {
+  visibility: hidden;
+}
+
+.site-search-trigger[data-search-loading] > .site-search-trigger-placeholder {
+  display: block;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
 }
 
 .site-search-trigger > kbd {
@@ -291,7 +309,7 @@
     padding: 1.1rem;
   }
 
-  .site-search-trigger > span {
+  .site-search-trigger-label {
     display: inline;
   }
 

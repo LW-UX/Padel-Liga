@@ -9670,6 +9670,7 @@ async function initApp() {
   } catch (error) {
     document.querySelector('main').innerHTML = `<div class="hint">Die Saison-Daten konnten nicht geladen werden.</div>`;
     document.querySelector('main')?.setAttribute('aria-busy', 'false');
+    window.PadelSiteSearch?.finishLoading?.();
     console.error(error);
     return;
   }

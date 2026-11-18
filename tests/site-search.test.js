@@ -128,7 +128,10 @@ test('training search supports names, dates and guests without matching private 
 test('confirmed admins can open search and reveal filters by mouse or keyboard, with filters always available on touch', () => {
   const listeners = new Map();
   const on = target => (name, handler) => listeners.set(`${target}:${name}`, handler);
-  const button = { hidden: true, querySelector: () => ({}), setAttribute() {}, addEventListener: on('button') };
+  const button = {
+    hidden: false, disabled: true, loading: true, querySelector: () => ({}), setAttribute() {},
+    removeAttribute() { this.loading = false; }, addEventListener: on('button')
+  };
   const input = { value: '', focus() {}, select() {}, setAttribute() {}, addEventListener: on('input') };
   const searchField = { contains: target => target === input };
   const content = { replaceChildren() {}, contains: () => false, addEventListener() {} };
@@ -194,10 +197,14 @@ test('confirmed admins can open search and reveal filters by mouse or keyboard, 
     return intercepted;
   };
   const authChanged = () => listeners.get('window:padel:auth-state-changed')();
-  assert.equal(button.hidden, true);
+  assert.equal(button.loading, true);
+  assert.equal(button.disabled, true);
   assert.equal(shortcut(), false);
   listeners.get('button:click')();
   assert.equal(dialog.open, false);
+  listeners.get('window:padel:account-initialized')();
+  assert.equal(button.loading, false);
+  assert.equal(button.hidden, true);
 
   session = { user: { id: 'current', email_confirmed_at: 'confirmed' } };
   for (profile of [{ id: 'current', app_role: 'player' }, { id: 'other', app_role: 'admin' }]) {
@@ -216,6 +223,7 @@ test('confirmed admins can open search and reveal filters by mouse or keyboard, 
   session.user.email_confirmed_at = 'confirmed';
   authChanged();
   assert.equal(button.hidden, false);
+  assert.equal(button.disabled, false);
   assert.equal(shortcut(), true);
   assert.equal(dialog.open, true);
   assert.equal(output.dataset.expanded, 'false');

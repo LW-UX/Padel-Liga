@@ -94,7 +94,10 @@
 
   function syncSearchAccess() {
     const allowed = hasSearchAccess();
+    button.removeAttribute('data-search-loading');
     button.hidden = !allowed;
+    button.disabled = !allowed;
+    button.setAttribute('aria-hidden', String(!allowed));
     if (allowed) return;
     cache.trainings.clear();
     clearTimeout(timer);
@@ -668,13 +671,15 @@
   });
 
   window.addEventListener('padel:auth-state-changed', syncSearchAccess);
+  window.addEventListener('padel:account-initialized', syncSearchAccess, { once: true });
   window.addEventListener('padel:training-data-changed', () => {
     cache.trainings.clear();
     if (dialog.open && timer === null) loadResults();
   });
-  syncSearchAccess();
+  if (!window.PadelKonto || hasSearchAccess()) syncSearchAccess();
 
   window.PadelSiteSearch = {
+    finishLoading: syncSearchAccess,
     rememberSeason: (id, data) => remember('matches', id, data),
     rememberEditorial: data => remember('articles', data.id, data.articles || [])
   };
