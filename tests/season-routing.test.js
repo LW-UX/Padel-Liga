@@ -19,9 +19,11 @@ function loadRouting(href, baseURI) {
     }
   };
   const window = { location, history, PADEL_SEASONS: [] };
+  const seasonPickerLabel = { textContent: '' };
   const document = {
     baseURI,
     pinnedBase: null,
+    getElementById(id) { return id === 'season-picker-label' ? seasonPickerLabel : null; },
     querySelector() { return this.pinnedBase; },
     createElement() { return {}; },
     head: { prepend(element) { document.pinnedBase = element; } }
@@ -29,8 +31,19 @@ function loadRouting(href, baseURI) {
   const context = { window, document, URL, URLSearchParams };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'data/seasons.js'), 'utf8'), context);
   vm.runInNewContext(routingSource, context);
-  return { routing: window.PadelSeasonRouting, history, document };
+  return { routing: window.PadelSeasonRouting, history, document, seasonPickerLabel };
 }
+
+test('the season picker labels the default and explicit routes before season data loads', () => {
+  const defaultPage = loadRouting('https://example.test/', 'https://example.test/');
+  assert.equal(defaultPage.seasonPickerLabel.textContent, 'Wi26');
+  assert.equal(loadRouting('https://example.test/so26/partien/', 'https://example.test/').seasonPickerLabel.textContent, 'So26');
+  assert.equal(loadRouting('https://example.test/tipp/?saison=cup-2027', 'https://example.test/tipp/').seasonPickerLabel.textContent, 'Cup27');
+  for (const file of ['index.html', 'tipp/index.html']) {
+    const html = fs.readFileSync(path.join(root, file), 'utf8');
+    assert.ok(html.includes(`id="season-picker-label">${defaultPage.seasonPickerLabel.textContent}</span>`));
+  }
+});
 
 test('account links use one short global path, including project bases and tipping', () => {
   for (const [href, baseURI, expected] of [

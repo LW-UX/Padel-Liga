@@ -74,6 +74,11 @@
     return normalizeSeasonId(requested) || getSeasonIdFromPath();
   }
 
+  function setSeasonPickerLabel(season) {
+    const label = document.getElementById?.('season-picker-label');
+    if (label && season) label.textContent = season.shortLabel || season.label;
+  }
+
   function usesQueryRoutes(url) {
     const hostname = String(url.hostname || '').toLowerCase();
     return url.protocol === 'file:'
@@ -292,6 +297,7 @@
     isAccountRequested,
     getAccountUrl,
     getRequestedSeasonId,
+    setSeasonPickerLabel,
     getRequestedMatchId,
     getMatchIdFromPath,
     getMatchSlug,
@@ -311,4 +317,8 @@
     normalizeCurrentUrl,
     normalizeSeasonId
   });
+
+  const publicSeasons = getSeasons().filter(season => !season.hidden);
+  setSeasonPickerLabel(getSeasonById(getRequestedSeasonId())
+    || publicSeasons.find(season => season.default) || publicSeasons[0]);
 })();

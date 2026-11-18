@@ -986,6 +986,7 @@ async function loadActiveSeason() {
   await loadDatabaseSeasonOptions();
   selectedSeason = getDefaultSeasonOption();
   if (!selectedSeason) throw new Error('Keine Saison in data/seasons.js gefunden.');
+  window.PadelSeasonRouting.setSeasonPickerLabel(selectedSeason);
   [PADEL_DATA, publicTrainingFeed, previousLeagueRankingAchievements] = await Promise.all([
     loadSeasonData(selectedSeason),
     loadDatabasePublicTrainingFeed(),
