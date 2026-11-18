@@ -41,6 +41,10 @@ const longestWinStreakMigration = fs.readFileSync(
   path.join(root, 'supabase', 'migrations', '20261016140000_final_four_longest_win_streak.sql'),
   'utf8'
 );
+const benchmarkScorerMigration = fs.readFileSync(
+  path.join(root, 'supabase', 'migrations', '20261118120000_exclude_benchmark_live_scorers.sql'),
+  'utf8'
+);
 const acceptance = fs.readFileSync(path.join(root, 'tests', 'live-ticker.acceptance.sql'), 'utf8');
 const gamesAcceptance = fs.readFileSync(path.join(root, 'tests', 'live-ticker-games.acceptance.sql'), 'utf8');
 const ticker = fs.readFileSync(path.join(root, 'js', 'live-ticker.js'), 'utf8');
@@ -69,6 +73,21 @@ test('writer access is match-scoped while admins retain an explicit bypass', () 
   assert.match(migration, /Nur Beteiligte dürfen einen Schreiber festlegen/);
   assert.match(migration, /Nach dem Start kann der Schreiber nicht mehr geändert werden/);
   assert.match(migration, /email_confirmed_at is not null/);
+});
+
+test('benchmark accounts cannot be selected or nominated as live scorers', () => {
+  assert.match(
+    benchmarkScorerMigration,
+    /where not private\.is_benchmark_account\(profile\.id\)/
+  );
+  assert.match(
+    benchmarkScorerMigration,
+    /if private\.is_benchmark_account\(p_scorer_profile_id\) then/
+  );
+  assert.match(
+    benchmarkScorerMigration,
+    /Technische Konten können nicht als Schreiber eingesetzt werden\./
+  );
 });
 
 test('ticker assignment lives inside the scheduled match card and reveals only assigned work', () => {

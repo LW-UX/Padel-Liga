@@ -307,7 +307,7 @@
     const courtText = `✓ ${place} gebucht von ${court.from}–${court.until} Uhr`;
     if (!racket) return { text: courtText, tone: 'is-free' };
     return {
-      text: `${courtText} · ${racket.text.replace(/^[✓⚠]\s*/, '')}`,
+      text: `${courtText}\n${racket.text}`,
       tone: racket.tone
     };
   }

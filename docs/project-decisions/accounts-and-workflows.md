@@ -29,6 +29,7 @@ Diese Datei ist die kanonische Quelle für Rollen, Registrierung, Einladungen, B
 
 ## Konto-Dialog und Aufgaben
 
+- Weichen Platzbuchung und Schlägerstatus voneinander ab, stehen beide Hinweise in Konto-Partie- und Trainingskarten sowie im Terminformular untereinander, jeweils mit eigenem Statussymbol; insbesondere bleibt das Warnsymbol vor einem Schlägerproblem sichtbar. Sind Platz und Schläger für denselben Zeitraum gebucht, bleibt es beim gemeinsamen Buchungshinweis.
 - Der private Konto-Dialog ist vom öffentlichen Spielerprofil getrennt. Bei verknüpften Spielern kann aus dem Konto direkt in das öffentliche Profil gewechselt werden.
 - Das Öffnen des Kontos zeigt auf Desktop und Mobil den gemeinsamen Kurzpfad `/konto/`. Der vorherige Bereich mit seinem Saisonkontext, Anker und Scrollstand bleibt im Browserverlauf erhalten; Schließen und Browser-Zurück stellen ihn wieder her, Browser-Vorwärts öffnet das Konto erneut. Ein direkter Aufruf von `/konto/` führt nach dem Schließen zur Liga-Startseite. Bestehende Links mit `konto=1` bleiben gültig und behalten ihren bisherigen Bereich als Rückweg. Lokal ohne erzeugte Kurzpfade bleibt die Query-Variante erhalten. Geschützte Auth-Einmallinks bleiben vom zusätzlichen Verlaufsschritt ausgenommen.
 - Eingeloggte Nutzer können ihr Passwort direkt im privaten Konto-Dialog ändern; dafür müssen sie ihr aktuelles Passwort erneut bestätigen. Einladung und Passwort-Wiederherstellung verwenden dieselbe geprüfte Passwortmaske ohne diese erneute Bestätigung.

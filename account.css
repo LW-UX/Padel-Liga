@@ -568,7 +568,7 @@
       letter-spacing: 0;
       white-space: nowrap;
     }
-    .racket-check, .racket-status { color: var(--muted); font: var(--text-sm) var(--font-body); letter-spacing: 0.02rem; }
+    .racket-check, .racket-status { color: var(--muted); font: var(--text-sm) var(--font-body); letter-spacing: 0.02rem; white-space: pre-line; }
     .racket-check.is-free { color: var(--positiv); }
     .racket-check.is-busy { color: var(--negativ); }
     .account-task-matchup { 

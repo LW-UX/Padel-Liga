@@ -226,7 +226,11 @@ test('court and racket confirmation share one exact booking message', () => {
   );
   assert.equal(
     context.describeCourtAndRacket({ state: 'partial', from: '18:00', until: '18:30' }, target, true).text,
-    '✓ Platz gebucht von 18:00–19:00 Uhr · Schläger reserviert · 18:00–18:30 (Bürozeiten)'
+    '✓ Platz gebucht von 18:00–19:00 Uhr\n✓ Schläger reserviert · 18:00–18:30 (Bürozeiten)'
+  );
+  assert.equal(
+    context.describeCourtAndRacket({ state: 'busy', busyFrom: '18:00', busyUntil: '19:00' }, target, true).text,
+    '✓ Platz gebucht von 18:00–19:00 Uhr\n⚠ Keine Schläger reserviert – 18:00–19:00 schon belegt'
   );
   for (const number of ['H1', 'H2', 'H3', 'H4', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10']) {
     target.dataset.courtBookingNumber = number;
