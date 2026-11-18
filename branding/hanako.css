@@ -184,6 +184,7 @@ html:root .text-link {
 }
 
 html:root .text-link:is(:hover, :focus-visible) {
+  text-decoration: none;
   opacity: 1;
   color: var(--accent);
   background-size: 100% 2px, 100% 2px;

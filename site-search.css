@@ -1,0 +1,309 @@
+.site-search-trigger > span {
+  display: none;
+}
+
+.site-search-trigger > kbd {
+  font: inherit;
+  white-space: nowrap;
+}
+
+.site-search-trigger svg,
+.site-search-input > svg {
+  stroke: currentColor;
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+#site-search-dialog {
+  --dialog-width: 640px;
+  --search-edge-gap: min(14dvh, 112px);
+  margin-block: var(--search-edge-gap) auto;
+  max-height: calc(100dvh - var(--search-edge-gap) - var(--search-edge-gap));
+}
+
+#site-search-dialog:has(.site-search-output[data-expanded="false"]) {
+  --search-output-row: 0fr;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #site-search-dialog {
+    transition: background-color 340ms ease, box-shadow 340ms ease;
+  }
+
+  .site-search-output {
+    transition: grid-template-rows 420ms cubic-bezier(0.22, 0.8, 0.25, 1);
+  }
+
+  .site-search-output-content {
+    transition: opacity 260ms 50ms ease-out, transform 420ms cubic-bezier(0.22, 0.8, 0.25, 1);
+  }
+
+  .site-search-output[data-expanded="false"] {
+    transition: grid-template-rows 360ms cubic-bezier(0.45, 0, 0.25, 1);
+  }
+
+  .site-search-output[data-expanded="false"] .site-search-output-content {
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 250ms ease-in, transform 360ms cubic-bezier(0.45, 0, 0.25, 1);
+  }
+}
+
+.site-search-dialog .site-search-card {
+  max-height: inherit;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.site-search-content {
+  display: grid;
+  margin: 0;
+  color: var(--text);
+}
+
+.site-search-output {
+  display: grid;
+  grid-template-rows: var(--search-output-row, 1fr);
+}
+
+.site-search-output-clip {
+  min-block-size: 0;
+  overflow-y: clip;
+}
+
+.site-search-output-content {
+  display: grid;
+  gap: 12px;
+  padding-block-start: 12px;
+}
+
+.site-search-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  overflow-x: clip;
+}
+
+.site-search-input {
+  position: relative;
+  min-width: 0;
+}
+
+.site-search-input > svg {
+  position: absolute;
+  inset-inline-start: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  width: 18px;
+  height: 18px;
+}
+
+.site-search-input input {
+  appearance: none;
+  padding-inline-start: calc(1.35rem + 18px);
+}
+
+.site-search-input input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.site-search-filter-tray {
+  inline-size: var(--search-filters-width, 0px);
+}
+
+.site-search-filter-tray[inert] {
+  inline-size: 0;
+}
+
+.site-search-filters {
+  display: flex;
+  gap: 6px;
+  inline-size: max-content;
+  padding-inline-start: 10px;
+}
+
+.site-search-filter-tray[inert] .site-search-filters {
+  opacity: 0;
+  transform: translateX(-18px) scale(0.55);
+  filter: blur(2px);
+}
+
+.site-search-filters .secondary-button {
+  padding: 5px 10px;
+  transition: none;
+}
+
+.site-search-filters .secondary-button:focus-visible {
+  outline-offset: -3px;
+}
+
+.site-search-filters .secondary-button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--accent);
+}
+
+@media (min-width: 769px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .site-search-filter-tray {
+    transition: inline-size 520ms cubic-bezier(0.2, 1.25, 0.38, 1);
+  }
+
+  .site-search-filters {
+    transform-origin: left center;
+    transition: transform 520ms cubic-bezier(0.2, 1.35, 0.38, 1),
+      opacity 200ms ease-out, filter 230ms 55ms ease-out;
+  }
+
+  .site-search-filter-tray[inert] {
+    transition: inline-size 260ms ease-in-out;
+  }
+
+  .site-search-filter-tray[inert] .site-search-filters {
+    transition: transform 260ms ease-in-out, opacity 150ms ease-in, filter 150ms ease-in;
+  }
+}
+
+.site-search-status,
+.site-search-results h2 {
+  margin: 0;
+}
+
+.site-search-status:empty {
+  display: none;
+}
+
+.site-search-retry:not([hidden]),
+.site-search-more {
+  display: block;
+  justify-self: start;
+  text-align: left;
+}
+
+.site-search-results {
+  display: grid;
+  gap: 4px;
+}
+
+.site-search-results:empty {
+  display: none;
+}
+
+.site-search-results h2 {
+  font: inherit;
+  font-weight: 700;
+  margin: 8px 0 3px;
+}
+
+.site-search-result,
+.site-search-comparison {
+  display: grid;
+  border-radius: var(--container-radius-sm);
+  margin-inline: -10px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.site-search-result {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+}
+
+.site-search-result:is(:hover, :focus-visible),
+.site-search-comparison {
+  background: var(--surface);
+}
+
+.site-search-match-heading,
+.site-search-match-identity {
+  display: flex;
+  align-items: baseline;
+  column-gap: 0.75rem;
+}
+
+.site-search-match-identity {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.site-search-match-season,
+.site-search-match-date,
+.site-search-result > span {
+  color: var(--muted);
+}
+
+.site-search-match-season {
+  font-weight: 400;
+}
+
+.site-search-match-details {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 0.75rem;
+  font-size: var(--text-sm);
+}
+
+.site-search-match-date {
+  margin-inline-start: auto;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.site-search-result > span,
+.site-search-comparison > span {
+  font-size: var(--text-sm);
+}
+
+[data-match-entry]:focus {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+@media (max-width: 768px), (hover: none), (any-pointer: coarse) {
+  .site-search-field {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 12px;
+  }
+
+  .site-search-filter-tray {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    inline-size: auto;
+    overflow: visible;
+  }
+
+  .site-search-filters {
+    inline-size: auto;
+    flex-wrap: wrap;
+    padding-inline-start: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .site-search-dialog .site-search-card {
+    padding: 1.1rem;
+  }
+
+  .site-search-trigger > span {
+    display: inline;
+  }
+
+  .site-search-trigger > kbd {
+    display: none;
+  }
+
+  .site-search-input input {
+    font-size: max(16px, var(--text-sm));
+  }
+
+  #site-search-dialog {
+    --search-edge-gap: 12px;
+  }
+}

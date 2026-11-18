@@ -99,14 +99,47 @@ window.PADEL_INFO = {
     },
     {
       "title": "Platzbuchung",
-      "paragraphs": [
-        "Sobald die vier Teilnehmer einer Partie feststehen, stimmen sie einen Termin ab. Freie Plätze bei Lucky Star könnt ihr direkt hier ansehen und eine Uhrzeit für eure Partie auswählen. Die Auswahl reserviert noch keinen Platz.",
-        "Abendzeiten sind stark gefragt. Stimmt euch frühzeitig ab und prüft bei Bedarf auch Termine am Morgen oder Mittag.",
-        "Den Wunschtermin mit Datum, Uhrzeit und Partienummer bitte an das Hanako Leben Squad oder direkt an Ludwig übermitteln. Der Platz wird für euch gebucht.",
-        "Die Kosten der Platzbuchung werden von der Firma übernommen.",
-        "Eine Platzbuchung kann bis 24 Stunden vor dem gebuchten Termin kostenlos storniert werden. Gebt dem Hanako Leben Squad oder Ludwig deshalb bitte frühzeitig Bescheid, sobald absehbar ist, dass eure Partie nicht stattfinden kann.",
-        "Tragt den gebuchten Termin anschließend im Konto bei eurer Partie ein. Eine eingegangene Buchungsbestätigung wird bei passendem Termin automatisch zugeordnet; noch nicht zugeordnete Buchungen könnt ihr dort selbst auswählen. Beim Terminieren wird die Schlägerbuchung in Clearooms automatisch geprüft und bei Bedarf angelegt. Beteiligte Spieler mit bestätigtem Konto erhalten eine Kalendereinladung, sofern sie diese in ihren Einstellungen aktiviert haben. Um Bälle kümmert ihr euch selbst.",
-        "Gebt Bescheid, wenn ihr eure Playtomic-Profile samt Ergebnis eintragen wollt. Hierfür Headsquare United auf Playtomic folgen."
+      "groups": [
+        {
+          "title": "Termin abstimmen",
+          "paragraphs": [
+            "Sobald die vier Teilnehmer einer Partie feststehen, stimmen sie einen Termin ab. Freie Plätze bei Lucky Star könnt ihr direkt hier ansehen und eine Uhrzeit für eure Partie auswählen. Die Auswahl reserviert noch keinen Platz.",
+            "Abendzeiten sind stark gefragt. Stimmt euch frühzeitig ab und prüft bei Bedarf auch Termine am Morgen oder Mittag."
+          ],
+          "courtAvailability": true
+        },
+        {
+          "title": "Platz buchen und Kosten",
+          "paragraphs": [
+            "Den Wunschtermin mit Datum, Uhrzeit und Partienummer bitte an das Hanako Leben Squad oder direkt an Ludwig übermitteln. Der Platz wird für euch gebucht.",
+            "Die Kosten der Platzbuchung werden von der Firma übernommen."
+          ]
+        },
+        {
+          "title": "Stornierung",
+          "paragraphs": [
+            "Eine Platzbuchung kann bis 24 Stunden vor dem gebuchten Termin kostenlos storniert werden. Gebt dem Hanako Leben Squad oder Ludwig deshalb bitte frühzeitig Bescheid, sobald absehbar ist, dass eure Partie nicht stattfinden kann."
+          ]
+        },
+        {
+          "title": "Termin und Ausrüstung",
+          "paragraphs": [
+            "Tragt den gebuchten Termin anschließend <a class=\"text-link inline-link\" href=\"{{accountUrl}}\" data-auth-open data-account-link>im Konto</a> bei eurer Partie ein. Eine eingegangene Buchungsbestätigung wird bei passendem Termin automatisch zugeordnet; noch nicht zugeordnete Buchungen könnt ihr dort selbst auswählen. Beim Terminieren wird die Schlägerbuchung in Clearooms automatisch geprüft und bei Bedarf angelegt. Beteiligte Spieler mit bestätigtem Konto erhalten eine Kalendereinladung, sofern sie diese in ihren Einstellungen aktiviert haben. Um Bälle kümmert ihr euch selbst."
+          ]
+        },
+        {
+          "title": "Privates Training verknüpfen",
+          "paragraphs": [
+            "Wenn ihr ein privat gebuchtes Training bei Lucky Star mit der Webseite verknüpfen möchtet, leitet die ursprüngliche Playtomic-Buchungsmail von eurer bestätigten Konto-E-Mail-Adresse an <a class=\"text-link inline-link\" href=\"mailto:buchungen@kiroimyon.resend.app\">buchungen@kiroimyon.resend.app</a> weiter. Anschließend könnt ihr die eingegangene Buchung <a class=\"text-link inline-link\" href=\"{{accountUrl}}\" data-auth-open data-account-link>im Konto</a> auswählen und einem neuen oder bestehenden Training zuordnen.",
+            "Wenn ihr den Hallencode auf der Webseite sehen möchtet, fügt Headsquare United auf Playtomic als Mitspieler zum Spiel hinzu."
+          ]
+        },
+        {
+          "title": "Playtomic-Profile",
+          "paragraphs": [
+            "Gebt Bescheid, wenn ihr eure Playtomic-Profile samt Ergebnis eintragen wollt. Hierfür Headsquare United auf Playtomic folgen."
+          ]
+        }
       ]
     },
     {

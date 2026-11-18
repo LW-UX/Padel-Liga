@@ -759,7 +759,7 @@
       max-height: 320px;
       overflow: hidden;
     }
-    .prediction-overview-article .home-article-preview::after { display: none; }
+    .prediction-overview-article .home-article-preview::after { display: block; }
     .prediction-overview-article .home-article-preview.expanded { max-height: none; }
     .prediction-overview-article .home-article-preview.expanded::after { display: none; }
     .prediction-overview-article .article-readmore { display: inline-flex; }

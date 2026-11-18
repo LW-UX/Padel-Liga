@@ -13,7 +13,8 @@
   const headerDate = value => value ? new Intl.DateTimeFormat('de-DE', {
     timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric'
   }).format(new Date(value)) : '';
-  const headerMeta = data => [data?.seasonLabel, headerDate(data?.matchAt)].filter(Boolean).join(' · ');
+  const matchCourt = typeof module !== 'undefined' ? require('./match-court.js') : window.PadelMatchCourt;
+  const headerMeta = data => [data?.seasonLabel, headerDate(data?.matchAt), matchCourt.fullLabel(data)].filter(Boolean).join(matchCourt.separator);
   const playedOrderLabel = data => Number.isInteger(Number(data?.leaguePlayedOrdinal)) && Number(data.leaguePlayedOrdinal) > 0
     ? `Gespielt als ${Number(data.leaguePlayedOrdinal)}. Partie`
     : '';

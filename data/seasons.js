@@ -8,7 +8,7 @@ window.PADEL_SEASONS = [
     visualTheme: "summer",
     qualificationPlaces: 4,
     maximumLeagueMatches: 6,
-    file: "data/data-2026-sommer.js?v=2026-11-05-database-seasons",
+    file: "data/data-2026-sommer.js?v=2026-11-18-search-editorial",
     default: false
   },
   {
@@ -20,7 +20,7 @@ window.PADEL_SEASONS = [
     visualTheme: "winter",
     qualificationPlaces: 8,
     maximumLeagueMatches: 6,
-    file: "data/data-2026-winter.js?v=2026-11-05-database-seasons",
+    file: "data/data-2026-winter.js?v=2026-11-18-search-editorial",
     default: true
   },
   {
@@ -31,7 +31,7 @@ window.PADEL_SEASONS = [
     route: "cup27",
     visualTheme: "cup",
     qualificationPlaces: 0,
-    file: "data/data-2027-cup.js?v=2026-11-05-database-seasons",
+    file: "data/data-2027-cup.js?v=2026-11-18-search-editorial",
     default: false
   },
   {
@@ -42,7 +42,7 @@ window.PADEL_SEASONS = [
     route: "test",
     visualTheme: "neutral",
     qualificationPlaces: 3,
-    file: "data/data-2026-test.js?v=2026-11-05-database-seasons",
+    file: "data/data-2026-test.js?v=2026-11-18-search-editorial",
     hidden: true,
     default: false
   }

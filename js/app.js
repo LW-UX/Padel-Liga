@@ -291,7 +291,7 @@ async function loadDatabaseSeasonPayload(seasonReference) {
     throw error;
   }
   if (!data) return null;
-  return {
+  const payload = {
     ...data,
     id: publicId,
     databaseId,
@@ -300,6 +300,8 @@ async function loadDatabaseSeasonPayload(seasonReference) {
       seasonId: normalizeSeasonId(match.seasonId)
     }))
   };
+  window.PadelSiteSearch?.rememberSeason(publicId, payload);
+  return payload;
 }
 
 async function loadDatabaseMatchForecasts(seasonReference) {
@@ -5734,7 +5736,8 @@ function formatRelativeMatchDate(match) {
 function formatMatchMeta(match, options = {}) {
   const matchLabel = getMatchDisplayLabel(match);
   const date = options.relative ? formatRelativeMatchDate(match) : formatMatchDate(match);
-  return date ? `${matchLabel} – ${date}` : matchLabel;
+  const court = window.PadelMatchCourt.shortLabel(match);
+  return [matchLabel, date, court].filter(Boolean).join(window.PadelMatchCourt.separator);
 }
 
 function renderHomeMatchCard(match, options = {}) {
@@ -7007,14 +7010,19 @@ function sectionId(title) {
 }
 
 function renderInfoSection(section, id) {
+  const accountUrl = window.PadelSeasonRouting.getAccountUrl();
+  const renderParagraphs = paragraphs => (paragraphs || []).map(p => `<p>${p.replaceAll('{{accountUrl}}', escapeHtml(accountUrl.href))}</p>`).join('');
+  const courtLink = `<p><a class="text-link inline-link" href="#platzbuchung" data-court-info-open data-court-season="${escapeHtml(selectedSeason?.id || '')}">Freie Plätze bei Lucky Star ansehen</a></p>`;
   const link = section.link
     ? `<a href="${section.link.href}" target="_blank" rel="noopener" class="text-link inline-link">${section.link.label}</a>`
     : '';
   const intro = section.intro ? `<p>${section.intro} ${link}</p>` : '';
-  const paragraphs = (section.paragraphs || []).map(p => `<p>${p}</p>`).join('');
+  const paragraphs = renderParagraphs(section.paragraphs);
   const groups = (section.groups || []).map(group => `<div class="info-group">
     <h4>${group.title}</h4>
-    <ul class="clean-list">${group.items.map(item => `<li>${item}</li>`).join('')}</ul>
+    ${renderParagraphs(group.paragraphs)}
+    ${group.courtAvailability ? courtLink : ''}
+    ${group.items ? `<ul class="clean-list">${group.items.map(item => `<li>${item}</li>`).join('')}</ul>` : ''}
   </div>`).join('');
   const items = section.items
     ? `<ul class="clean-list">${section.items.map(item => `<li>${item}</li>`).join('')}</ul>`
@@ -7026,10 +7034,6 @@ function renderInfoSection(section, id) {
     : '';
   const paragraphsAfterTable = (section.paragraphsAfterTable || []).map(p => `<p>${p}</p>`).join('');
   const note = section.note ? `<p class="info-note">${section.note}</p>` : '';
-  const accountUrl = window.PadelSeasonRouting.getAccountUrl();
-  const courtLink = id === 'platzbuchung'
-    ? `<p><a class="text-link" href="#platzbuchung" data-court-info-open data-court-season="${escapeHtml(selectedSeason?.id || '')}">Freie Plätze bei Lucky Star ansehen</a> · <a class="text-link" href="${escapeHtml(accountUrl.href)}" data-auth-open data-account-link>Termin im Konto eintragen</a></p>`
-    : '';
 
   return `<div class="widget-group info-anchor" id="${id}">
     <div class="sh">
@@ -7038,7 +7042,6 @@ function renderInfoSection(section, id) {
     <article class="widget">
       ${intro}
       ${paragraphs}
-      ${courtLink}
       ${groups}
       ${table}
       ${paragraphsAfterTable}
@@ -7061,6 +7064,36 @@ function expandInfoArticle(index) {
   document.getElementById(`info-article-preview-${index}`).classList.add('expanded');
   document.getElementById(`info-article-readmore-${index}`).style.display = 'none';
 }
+
+function revealSearchTarget() {
+  if (!appReady || isDetailEmbed) return;
+  const url = new URL(window.location.href);
+  const fragment = url.hash.slice(1);
+  if (fragment.startsWith('suchpartie-') && document.getElementById('partien')?.classList.contains('active')) {
+    const matchId = PADEL_DATA.matches.find(match => `suchpartie-${match.id}` === fragment)?.id;
+    if (!matchId) return;
+    const selector = `#partien [data-match-entry="${CSS.escape(matchId)}"]`;
+    if (!document.querySelector(selector)) setMatchScope('all');
+    const card = document.querySelector(selector);
+    if (!card) return;
+    card.tabIndex = -1;
+    card.focus({ preventScroll: true });
+    card.scrollIntoView({ block: 'center' });
+    return;
+  }
+  if (!document.getElementById('infos')?.classList.contains('active')) return;
+  if (fragment === 'platzbuchung') {
+    document.getElementById(fragment)?.scrollIntoView({ block: 'start' });
+    return;
+  }
+  if (url.searchParams.get('artikelLesen') !== '1') return;
+  const index = (PADEL_DATA.articles || []).findIndex(article => `artikel-${article.spieltag}` === fragment);
+  if (index < 0) return;
+  expandInfoArticle(index);
+  document.getElementById(fragment)?.scrollIntoView({ block: 'start' });
+}
+window.PadelLigaRevealSearchTarget = revealSearchTarget;
+window.addEventListener('hashchange', revealSearchTarget);
 
 function getInfoArticleMenuTitle(article) {
   if (article.spieltag === 'abschluss') return article.title;
@@ -7443,7 +7476,7 @@ function renderCupMatchCard(match) {
     ? `<strong>${escapeHtml(match.saetze || '—')}</strong><span>${escapeHtml(match.ergebnis || '')}</span>`
     : `<strong>VS</strong><span>${escapeHtml(hasScheduledDateTime(match) ? formatMatchDate(match) : 'Noch offen')}</span>`;
 
-  return `<article class="cup-match-card match-card${isPlayed ? ' is-played' : ''}">
+  return `<article class="cup-match-card match-card${isPlayed ? ' is-played' : ''}" data-match-entry="${escapeHtml(match.id)}">
     <div class="cup-match-label match-meta">${escapeHtml(getMatchDisplayLabel(match))}</div>
     <div class="cup-match-team match-team${teamOneClass}">${renderTeamPlayers(match.team1.spieler)}</div>
     ${statistics ? `<button type="button" class="cup-match-status" ${statistics.attributes}>${status}${statistics.icon}</button>` : `<div class="cup-match-status">${status}</div>`}
@@ -9646,6 +9679,7 @@ async function initApp() {
   });
 
   finishInitialLoading();
+  if (window.location.hash) requestAnimationFrame(revealSearchTarget);
   void refreshHomePredictionLeaderboard();
   if (isDetailEmbed) initDetailEmbed();
 

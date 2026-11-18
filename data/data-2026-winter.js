@@ -1,4 +1,12 @@
-window.PADEL_SEASON = {
+(function (season) {
+  const receive = typeof document !== 'undefined' && document.currentScript?.padelSearchReceive;
+  if (typeof receive === 'function') {
+    receive(season);
+  } else {
+    window.PADEL_SEASON = season;
+    window.PadelSiteSearch?.rememberEditorial(season);
+  }
+})({
   id: "2026-winter",
   label: "Winter 2026",
   matchdayBreaks: [
@@ -308,4 +316,4 @@ window.PADEL_SEASON = {
       ]
     }
   ]
-};
+});

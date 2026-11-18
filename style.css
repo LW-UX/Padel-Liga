@@ -115,13 +115,18 @@
     }
     .datetime-input-shell:hover input,
     .datetime-input-shell input:focus,
-    .auth-form :is(input, select):is(:hover, :focus),
-    .player-invite-output input:is(:hover, :focus),
+    .auth-form select:is(:hover, :focus),
     .secondary-button:hover,
     .secondary-button:focus-visible,
     .fb-toggle:hover,
     .account-auth-message-dismiss:hover,
     .account-auth-message-dismiss:focus-visible { border-color: var(--accent); color: var(--accent); }
+    .auth-form input,
+    .player-invite-output input { caret-color: var(--accent); }
+    .auth-form input:is(:hover, :focus),
+    .player-invite-output input:is(:hover, :focus) { border-color: var(--accent); }
+    .auth-form input::placeholder,
+    .player-invite-output input::placeholder { color: var(--dim); opacity: 1; }
     .mini-match-status-action:focus-visible,
     .prediction-match-center-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .secondary-button:focus-visible,
@@ -231,6 +236,10 @@
       transition: opacity 160ms ease;
     }
     .text-link:hover { opacity: 0.7; }
+    .text-link:is(:hover, :focus-visible) {
+      text-decoration: underline;
+      text-underline-offset: 0.18em;
+    }
     /* Inhaltsbereich; das Aussehen setzt das Branding. Steht vorn, damit Bereichsregeln es überschreiben. */
     .widget {
       background: var(--widget-bg);
@@ -2540,7 +2549,7 @@
       display: grid;
       gap: 0.08rem;
     }
-    .inline-link { margin-top: 0; }
+    .inline-link { margin-top: 0; font-size: inherit; }
 
     .home-widget-links {
       display: flex;
@@ -2549,6 +2558,7 @@
       gap: 0.75rem;
       margin-top: 1rem;
     }
+    .home-widget-links .text-link { font-size: var(--text-sm); }
     .home-widget-note {
       display: flex;
       align-items: baseline;
@@ -2668,6 +2678,16 @@
       font-style: normal;
     }
     .article-body cite::before { content: "- "; }
+    .home-article-preview::after,
+    .info-article-preview::after {
+      content: "";
+      display: none;
+      position: absolute;
+      inset: auto 0 0;
+      height: 50px;
+      background: linear-gradient(to bottom, transparent, var(--bg));
+      pointer-events: none;
+    }
     .article-readmore,
     .info-article-readmore { display: none; }
     .mini-rank-row {
@@ -2984,7 +3004,7 @@
       max-height: 520px;
       overflow: hidden;
     }
-    .info-article-preview::after { display: none; }
+    .info-article-preview::after { display: block; }
     .info-article-preview.expanded {
       max-height: none;
     }
@@ -5211,7 +5231,7 @@
         font-size: 1.8rem;
       }
       .article-card h2 { font-size: 2rem; padding: 0; }
-      .home-article-preview::after { display: none; }
+      .home-article-preview::after { display: block; }
       .home-article-preview.expanded {
         max-height: none;
       }

@@ -38,6 +38,7 @@
     const { data, error } = await client.rpc('get_public_season', { p_season_id: selected.databaseId || selected.id });
     if (error) throw error;
     if (!data?.matches || !data?.participants) throw new Error(`Saison ${selected.id} ist in der Datenbank nicht verfügbar.`);
+    window.PadelSiteSearch?.rememberSeason(selected.id, data);
     return data;
   }
 

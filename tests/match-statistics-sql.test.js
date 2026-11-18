@@ -68,6 +68,7 @@ async function setupMatchDetail(db) {
   await db.exec(playedOrderMigration);
   await db.exec(recentFormMigration);
   await db.exec(fiveEventFormMigration);
+  await db.exec(fs.readFileSync(path.join(root, 'supabase/migrations/20261118120000_match_statistics_shared_ranks.sql'), 'utf8'));
 }
 test('match detail SQL: historical isolation, eligibility, calculations and public permissions', { skip: !process.env.PGLITE_MODULE }, async t => {
   const { PGlite } = require(process.env.PGLITE_MODULE);
@@ -83,6 +84,8 @@ test('match detail SQL: historical isolation, eligibility, calculations and publ
   let d=await detail('preview');
   assert.equal(d.availability,'preview'); assert.equal(d.leaguePlayedOrdinal,undefined); assert.equal(d.qualificationPlaces,4); assert.equal(d.players[0].elo.before,1100,'season start, never global initial 800'); assert.equal(d.players[0].statistics.tableSize,6);
   assert.equal(d.ranking.length,6); assert.deepEqual(d.ranking.map(player=>player.playerId),['a','b','c','d','e','f']);
+  assert.ok(d.ranking.every(player=>player.statistics.rank===1),'all unplayed players share rank 1 regardless of name');
+  assert.ok(d.players.every(player=>player.statistics.rank===1),'match participants use the same shared ranks');
   assert.equal(d.probability,0.5); assert.equal(d.players[0].elo.winMin,1150);
   assert.ok(d.players[0].elo.lossMin<d.players[0].elo.lossMax);
   await addMatch(db,'far',{day:6}); assert.equal((await detail('far')).availability,'basic');
@@ -96,7 +99,9 @@ test('match detail SQL: historical isolation, eligibility, calculations and publ
   const original=await detail('played'); assert.equal(original.availability,'analysis'); assert.equal(original.leaguePlayedOrdinal,1); assert.equal(original.players[0].statistics.points,3); assert.equal(original.players[0].elo.after,1150);
   assert.equal(original.players[0].elo.winMin,1150); assert.equal(original.players[0].elo.winMax,1185);
   assert.equal(original.players[0].elo.lossMin,1015); assert.equal(original.players[0].elo.lossMax,1050);
-  assert.ok(original.ranking.every(player=>Number.isInteger(player.statistics.previousRank)));
+  assert.ok(original.ranking.every(player=>player.statistics.previousRank===1),'previous ranks also ignore names');
+  assert.deepEqual(Object.fromEntries(original.ranking.map(player=>[player.playerId,player.statistics.rank])),{a:1,b:1,c:5,d:5,e:3,f:3},'ties skip occupied places and still compare games won');
+  assert.deepEqual(Object.fromEntries(original.players.map(player=>[player.playerId,player.statistics.rank])),{a:1,b:1,c:5,d:5});
   assert.ok(original.ranking.some(player=>player.statistics.previousRank!==player.statistics.rank));
   assert.ok(!original.impacts.some(i=>i.kind==='leaderGained'),'equally ranked teammates are not sole leaders');
   await db.exec(`insert into matches(id,season_id,league_id,match_at,winner,actual_sets,result_details,competition_stage,counts_for_ranking,cancelled_at) values

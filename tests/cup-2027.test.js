@@ -34,7 +34,7 @@ test('Cup 2027 is selectable without replacing Winter 2026 as default', () => {
     PADEL_SEASONS.findIndex(season => season.id === '2027-cup'),
     PADEL_SEASONS.findIndex(season => season.id === '2026-winter') + 1
   );
-  assert.deepEqual(JSON.parse(JSON.stringify(cupOption)), {
+  assert.deepEqual(JSON.parse(JSON.stringify({ ...cupOption, file: cupOption.file.split('?')[0] })), {
     id: '2027-cup',
     databaseId: 'cup-2027',
     label: 'Cup 2027',
@@ -42,7 +42,7 @@ test('Cup 2027 is selectable without replacing Winter 2026 as default', () => {
     route: 'cup27',
     visualTheme: 'cup',
     qualificationPlaces: 0,
-    file: 'data/data-2027-cup.js?v=2026-11-05-database-seasons',
+    file: 'data/data-2027-cup.js',
     default: false
   });
   assert.match(app, /const staticFallbacks = \[\.\.\.staticOptions\.values\(\)\]/);
