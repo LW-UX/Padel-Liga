@@ -535,3 +535,32 @@ test('mode search displays the shared qualification graphic inside the result', 
   assert.doesNotMatch(diagram.innerHTML, /id="turniermodus"/);
   assert.equal(diagram.innerHTML, search.renderQualificationFlow());
 });
+
+test('anonymous training search skips private scheduled trainings and keeps confirmed trainings public', async () => {
+  const source = fs.readFileSync(require.resolve('../js/site-search.js'), 'utf8');
+  const loader = source.match(/  async function loadTrainings\(source\) \{[\s\S]*?\n  \}/)[0];
+  let session = null;
+  let response = { data: [] };
+  const calls = [];
+  const context = vm.createContext({
+    window: { PadelKonto: { getSession: () => session }, PADEL_PLAYERS: [] }, core: search,
+    getClient: () => ({ rpc: name => {
+      calls.push(name);
+      const request = { select: () => request, eq: () => request, then: resolve => Promise.resolve(response).then(resolve) };
+      return request;
+    } })
+  });
+  vm.runInContext(loader, context);
+  assert.equal((await context.loadTrainings({ id: 'scheduled' })).length, 0);
+  assert.deepEqual(calls, []);
+  await context.loadTrainings({ id: 'confirmed' });
+  assert.deepEqual(calls, ['get_training_sessions']);
+  session = { user: { id: 'player' } };
+  await context.loadTrainings({ id: 'scheduled' });
+  assert.equal(calls.at(-1), 'get_my_training_tasks');
+  response = { error: { code: '42501', message: 'Permission denied' } };
+  assert.equal((await context.loadTrainings({ id: 'scheduled' })).length, 0);
+  await assert.rejects(context.loadTrainings({ id: 'confirmed' }), error => error.code === '42501');
+  response = { error: { code: 'NETWORK_ERROR' } };
+  await assert.rejects(context.loadTrainings({ id: 'scheduled' }), error => error.code === 'NETWORK_ERROR');
+});

@@ -117,11 +117,13 @@
   }
 
   async function loadTrainings(source) {
+    if (source.id === 'scheduled' && !window.PadelKonto?.getSession()?.user?.id) return [];
     const client = getClient();
     const request = source.id === 'scheduled'
       ? client.rpc('get_my_training_tasks').select('session_id,played_on,display_time,status,player_ids,guest_names').eq('status', 'scheduled')
       : client.rpc('get_training_sessions').select('session_id,played_on,display_time,players');
     const { data, error } = await request;
+    if (source.id === 'scheduled' && error?.code === '42501') return [];
     if (error || !Array.isArray(data)) throw error || new Error('Trainingsdaten fehlen.');
     const playersById = new Map((window.PADEL_PLAYERS || []).map(player => [player.id, player]));
     return data.map(row => core.normalizeTraining(row, source.id, playersById)).filter(Boolean);
@@ -849,6 +851,11 @@
       || ![...document.querySelectorAll('iframe')].some(frame => frame.contentWindow === event.source)) return;
     if (dialog.open) closeSearch();
     else open();
+  });
+
+  window.addEventListener('padel:auth-state-changed', () => {
+    cache.trainings.clear();
+    if (dialog.open && timer === null) loadResults();
   });
 
   window.addEventListener('padel:training-data-changed', () => {
