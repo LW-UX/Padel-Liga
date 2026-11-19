@@ -399,8 +399,12 @@ test('table searches include normal and all-time rankings with a direct all-time
   vm.runInNewContext(fs.readFileSync(require.resolve('../data/info.js'), 'utf8'), { window: infoData });
   const league = { id: 'winter', default: true };
   const cup = { id: 'cup', visualTheme: 'cup' };
+  const summer = { id: 'summer', label: 'Sommer 2026', completedAt: '2026-10-01' };
+  const previous = { id: 'previous', label: 'Winter 2025', completedAt: '2026-03-01' };
+  const future = { id: 'future', label: 'Sommer 2027' };
+  const hidden = { id: 'test', hidden: true, completedAt: '2026-10-02' };
   const context = vm.createContext({
-    window: infoData, core: search, cache: { matches: new Map() }, seasons: () => [league, cup],
+    window: infoData, core: search, cache: { matches: new Map() }, seasons: () => [previous, league, cup, future, hidden, summer],
     titleLink: (title, url, description = '') => ({ title, url, description }),
     pickerLink: () => ({ title: 'Spieler suchen' }),
     routing: {
@@ -412,10 +416,21 @@ test('table searches include normal and all-time rankings with a direct all-time
   const links = context.pageLinks(league, []);
   const find = query => links.filter(item => [item.title, ...(item.aliases || [])]
     .some(term => search.normalize(term).includes(search.normalize(query)))).map(item => item.title);
-  assert.deepEqual(Array.from(find('Tabelle')), ['Rangliste', 'Ewige Rangliste']);
+  for (const query of ['Tabelle', 'Rangliste']) {
+    assert.deepEqual(Array.from(find(query)), ['Rangliste', 'Ewige Rangliste', 'Tipprangliste', 'Rangliste · Sommer 2026', 'Rangliste · Winter 2025']);
+  }
+  assert.equal(links.find(item => item.title === 'Rangliste · Sommer 2026').url.href,
+    'https://liga.test/summer/rangliste/');
   assert.deepEqual(Array.from(find('Ewige Tabelle')), ['Ewige Rangliste']);
   assert.deepEqual(Array.from(find('ewig')), ['Ewige Rangliste']);
-  assert.deepEqual(Array.from(find('Ligatabelle')), ['Rangliste']);
+  assert.deepEqual(Array.from(find('Ligatabelle')), ['Rangliste', 'Rangliste · Sommer 2026', 'Rangliste · Winter 2025']);
+  for (const query of ['Tipprangliste', 'Tipp Rangliste', 'Tipp-Rangliste', 'tipp tabelle', 'tipptabelle']) {
+    assert.deepEqual(Array.from(find(query)), ['Tipprangliste']);
+  }
+  assert.equal(links.find(item => item.title === 'Tipprangliste').url.href,
+    'https://liga.test/tipp/winter/#tippuebersicht');
+  assert.equal(links.find(item => item.title === 'Tippübersicht').url.href,
+    'https://liga.test/tipp/winter/#tipptabelle');
   for (const section of infoData.PADEL_INFO.sections) {
     for (const group of section.groups || []) {
       const target = links.find(item => item.title === group.title);

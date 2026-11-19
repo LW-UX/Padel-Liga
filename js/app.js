@@ -1059,6 +1059,7 @@ function applySeasonMetadata() {
   const tippLink = document.getElementById('tipp-link');
   const tippUrl = window.PadelSeasonRouting.getSeasonUrl(selectedSeason.id, 'tipp').href;
   if (tippLink) tippLink.href = tippUrl;
+  window.PadelPredictionBadge?.setSeason(PADEL_DATA, selectedSeason.databaseId || selectedSeason.id);
   const homePredictionRankingLink = document.getElementById('home-prediction-ranking-link');
   if (homePredictionRankingLink) {
     const predictionRankingUrl = window.PadelSeasonRouting.getSeasonUrl(selectedSeason.id, 'tipp');

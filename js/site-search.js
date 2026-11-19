@@ -234,6 +234,8 @@
     if (!active) return [];
     const tipUrl = routing.getSeasonUrl(active.id, 'tipp');
     tipUrl.hash = 'tipptabelle';
+    const tipRankingUrl = routing.getSeasonUrl(active.id, 'tipp');
+    tipRankingUrl.hash = 'tippuebersicht';
     const leagueUrl = section => routing.getSectionUrl(active.id, section);
     const bookingUrl = leagueUrl('infos');
     bookingUrl.hash = 'platzbuchung';
@@ -267,8 +269,7 @@
       }
     }
     if (!isCup) {
-      items.push({ ...titleLink('Rangliste', leagueUrl('rangliste')), aliases: ['tabelle', 'ligatabelle', 'saisontabelle'] },
-        titleLink('Statistik', leagueUrl('verlauf')));
+      items.push(titleLink('Statistik', leagueUrl('verlauf')));
       if (!(active.completedAt || cache.matches.get(active.id)?.data?.completedAt)) {
         items.push(titleLink('Rechner', leagueUrl('rechner')));
       }
@@ -276,6 +277,7 @@
     const rankingSeason = !isCup ? active : seasons().find(season => season.default && season.visualTheme !== 'cup')
       || seasons().find(season => season.visualTheme !== 'cup');
     if (rankingSeason) {
+      items.push({ ...titleLink('Rangliste', routing.getSectionUrl(rankingSeason.id, 'rangliste')), aliases: ['tabelle', 'ligatabelle', 'saisontabelle'] });
       const allTimeUrl = routing.getSectionUrl(rankingSeason.id, 'verlauf');
       allTimeUrl.hash = 'ewige-rangliste';
       items.push({ ...titleLink('Ewige Rangliste', allTimeUrl), aliases: ['tabelle', 'ewige tabelle', 'ewig tabelle', 'all-time', 'all time'] });
@@ -285,6 +287,15 @@
         { ...titleLink('Früher Vogel', matchTimeUrl, 'Statistik · Ø-Spielbeginn'), aliases: ['frueher vogel'] },
         { ...titleLink('Langschläfer', matchTimeUrl, 'Statistik · Ø-Spielbeginn'), aliases: ['langschlaefer'] }
       );
+    }
+    items.push({ ...titleLink('Tipprangliste', tipRankingUrl, 'PadelTipp'), aliases: ['tipp rangliste', 'tipp-rangliste', 'tipp tabelle', 'tipptabelle', 'tabelle'] });
+    const completedAt = season => season.completedAt || cache.matches.get(season.id)?.data?.completedAt;
+    const pastSeasons = seasons().filter(season => !season.hidden && season.visualTheme !== 'cup'
+      && season.id !== rankingSeason?.id && completedAt(season))
+      .sort((a, b) => String(completedAt(b)).localeCompare(String(completedAt(a))));
+    for (const season of pastSeasons) {
+      items.push({ ...titleLink(`Rangliste · ${season.label}`, routing.getSectionUrl(season.id, 'rangliste'), season.label),
+        aliases: [`tabelle ${season.label}`, `ligatabelle ${season.label}`, `saisontabelle ${season.label}`] });
     }
     const diagramSeason = rankingSeason?.qualificationPlaces > 4 ? rankingSeason
       : seasons().find(season => season.default && season.qualificationPlaces > 4) || rankingSeason;

@@ -125,7 +125,7 @@
     .player-invite-output input { caret-color: var(--accent); }
     .auth-form input:is(:hover, :focus),
     .player-invite-output input:is(:hover, :focus) { border-color: var(--accent); }
-    :is(input:not([type]), input[type="text"], input[type="search"], input[type="email"], input[type="password"], input[type="tel"], input[type="url"], textarea) { color: var(--muted); }
+    :is(input:not([type]), input[type="text"], input[type="search"], input[type="email"], input[type="password"], input[type="tel"], input[type="url"], textarea) { color: var(--text); }
     :is(input:not([type]), input[type="text"], input[type="search"], input[type="email"], input[type="password"], input[type="tel"], input[type="url"], textarea)::placeholder { color: var(--muted); opacity: 1; }
     .mini-match-status-action:focus-visible,
     .prediction-match-center-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -6171,3 +6171,5 @@
       .global-actions-toggle,
       .global-actions-toggle svg { transition: none !important; }
     }
+
+#tipp-link { position: relative; }

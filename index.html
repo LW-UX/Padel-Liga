@@ -43,7 +43,7 @@
     })();
   </script>
   <link rel="stylesheet" href="achievements.css?v=2026-10-31">
-  <link rel="stylesheet" href="style.css?v=2026-11-19-article-link-fade">
+  <link rel="stylesheet" href="style.css?v=2026-11-19-input-text-color">
   <link rel="stylesheet" href="site-search.css?v=2026-11-19-player-search-stats">
   <link rel="stylesheet" href="account.css?v=2026-11-19-muted-inputs">
   <link rel="stylesheet" href="court-availability.css?v=2026-11-17-compact-calendar-error">
@@ -94,9 +94,10 @@
   <script defer src="js/match-statistics.js?v=2026-11-18-court-separator"></script>
   <script defer src="js/loading-animation.js?v=2026-11-09-padel-loader"></script>
   <script defer src="js/profile-comparison.js?v=2026-11-19-search-comparison"></script>
+  <script defer src="js/prediction-badge.js?v=2026-11-19-open-tips"></script>
   <script defer src="js/site-search-core.js?v=2026-11-19-inline-modus-search"></script>
-  <script defer src="js/site-search.js?v=2026-11-19-public-training-search"></script>
-  <script defer src="js/app.js?v=2026-11-19-inline-modus-search"></script>
+  <script defer src="js/site-search.js?v=2026-11-19-ranking-order"></script>
+  <script defer src="js/app.js?v=2026-11-19-open-tips"></script>
 </head>
 <body>
 
@@ -127,6 +128,7 @@
               <path d="m9 12 2 2 4-4"/>
             </svg>
             <span class="global-action-label">PadelTipp</span>
+            <span class="auth-task-badge" data-open-predictions-count aria-hidden="true" hidden></span>
           </a>
           <div class="season-picker" id="season-picker">
             <button class="secondary-button secondary-button--dropdown secondary-button--with-icon global-action" type="button" data-season-toggle data-global-action aria-haspopup="listbox" aria-expanded="false">
