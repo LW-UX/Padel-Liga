@@ -430,5 +430,5 @@ test('info subgroup anchors match their search destinations', () => {
       assert.ok(html.includes(`id="${search.infoGroupAnchor(section.title, group.title)}"`), group.title);
     }
   }
-  assert.match(source, /id="turniermodus"\s+class="qualification-flow info-anchor"/);
+  assert.match(search.renderQualificationFlow(true), /id="turniermodus"\s+class="qualification-flow info-anchor"/);
 });

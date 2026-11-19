@@ -5759,43 +5759,7 @@ function renderHomeSeasonPodium() {
 
 function renderTop8QualificationFlow() {
   if (getCompetitionConfig().tournamentMode !== 'top8-semifinals') return '';
-
-  return `<figure
-    id="turniermodus"
-    class="qualification-flow info-anchor"
-    role="img"
-    aria-label="Die besten acht Spieler der Ligaphase spielen zwei Halbfinals. Platz 1 und 2 spielen gegen Platz 7 und 8. Platz 3 und 4 spielen gegen Platz 5 und 6. Die vier Spieler der beiden Siegerteams erreichen das Final Four."
-  >
-    <div class="qualification-flow-stage qualification-flow-league" aria-hidden="true">
-      <div class="qualification-flow-label">Ligaphase</div>
-      <div class="qualification-flow-ranks">
-        ${Array.from({ length: 8 }, (_, index) => `<span>${index + 1}</span>`).join('')}
-      </div>
-      <small>Top 8</small>
-    </div>
-    <span class="qualification-flow-arrow" aria-hidden="true"></span>
-    <div class="qualification-flow-stage qualification-flow-semifinals" aria-hidden="true">
-      <div class="qualification-flow-label">Halbfinale</div>
-      <div class="qualification-flow-match">
-        <span>1 + 2</span><b>vs.</b><span>7 + 8</span>
-      </div>
-      <div class="qualification-flow-match">
-        <span>3 + 4</span><b>vs.</b><span>5 + 6</span>
-      </div>
-      <small>2 Siegerteams</small>
-    </div>
-    <span class="qualification-flow-arrow" aria-hidden="true"></span>
-    <div class="qualification-flow-stage qualification-flow-final" aria-hidden="true">
-      <div class="qualification-flow-label">Final Four</div>
-      <div class="qualification-flow-final-card">
-        <div class="qualification-flow-final-players">
-          <span></span><span></span><span></span><span></span>
-        </div>
-        <strong>4 Spieler</strong>
-      </div>
-      <small>spielen in 3 Partien um den Titel</small>
-    </div>
-  </figure>`;
+  return window.PadelSearchCore.renderQualificationFlow(true);
 }
 
 function renderPredictionAccountTypeIcon(entry) {

@@ -428,6 +428,7 @@ test('table searches include normal and all-time rankings with a direct all-time
   for (const term of ['Tie-Break', 'Tie Break', 'Tiebreak']) assert.ok(find(term).includes('Tie-Break'), term);
   for (const term of ['Turnierbaum', 'Modus']) assert.deepEqual(Array.from(find(term)), ['Turnierbaum']);
   assert.equal(links.find(item => item.title === 'Turnierbaum').url.hash, '#turniermodus');
+  assert.equal(links.find(item => item.title === 'Turnierbaum').inlineDiagram, true);
   assert.equal(context.pageLinks(cup, []).filter(item => item.title === 'Turnierbaum').length, 1);
   for (const [queries, title, anchor] of [
     [['Regeln', 'Spielregeln'], 'Spielregeln', 'spielregeln'],
@@ -513,4 +514,24 @@ test('quote search shows full quotes and filters by author in either order, incl
   }
   assert.equal(search.articleQuotes(article, search.parseQuery('Zitat Unbekannt'), players).length, 0);
   assert.equal(search.articleQuotes(article, search.parseQuery('Luca'), players).length, 0);
+});
+
+test('mode search displays the shared qualification graphic inside the result', () => {
+  const source = fs.readFileSync(require.resolve('../js/site-search.js'), 'utf8');
+  const renderer = source.slice(source.indexOf('  function renderGroup('), source.indexOf('  function loadSearchPlayerProfile('));
+  const createElement = tag => ({ tag, children: [], append(...children) { this.children.push(...children); } });
+  const results = createElement('div');
+  const context = vm.createContext({
+    document: { createElement }, results, core: search, limits: new Map(), pageSize: 16
+  });
+  vm.runInContext(renderer, context);
+  context.renderGroup('pages', 'Seiten', [{ title: 'Turnierbaum', url: 'https://liga.test/infos/#turniermodus', inlineDiagram: true }]);
+  const result = results.children[1];
+  const diagram = result.children.find(child => child.className === 'site-search-inline-diagram');
+  assert.ok(diagram, 'the search result must contain the graphic before opening a link');
+  assert.match(diagram.innerHTML, /Ligaphase/);
+  assert.match(diagram.innerHTML, /Halbfinale/);
+  assert.match(diagram.innerHTML, /Final Four/);
+  assert.doesNotMatch(diagram.innerHTML, /id="turniermodus"/);
+  assert.equal(diagram.innerHTML, search.renderQualificationFlow());
 });

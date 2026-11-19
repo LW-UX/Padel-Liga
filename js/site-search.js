@@ -289,7 +289,7 @@
     if (diagramSeason) {
       const diagramUrl = routing.getSectionUrl(diagramSeason.id, 'infos');
       diagramUrl.hash = 'turniermodus';
-      items.push({ ...titleLink('Turnierbaum', diagramUrl, 'Infos · Kurzinfo'), aliases: ['modus', 'turniermodus'] });
+      items.push({ ...titleLink('Turnierbaum', diagramUrl, 'Infos · Kurzinfo'), inlineDiagram: true, aliases: ['modus', 'turniermodus'] });
     }
     const selectedId = window.PadelLigaGetSelectedViewerId?.();
     const selected = players.find(player => player.id === selectedId);
@@ -510,6 +510,12 @@
         } else {
           row.append(description);
         }
+      }
+      if (item.inlineDiagram) {
+        const diagram = document.createElement('div');
+        diagram.className = 'site-search-inline-diagram';
+        diagram.innerHTML = core.renderQualificationFlow();
+        row.append(diagram);
       }
       if (item.playerId) {
         row.classList.add('site-search-player');
