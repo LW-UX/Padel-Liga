@@ -277,10 +277,11 @@
     const rankingSeason = !isCup ? active : seasons().find(season => season.default && season.visualTheme !== 'cup')
       || seasons().find(season => season.visualTheme !== 'cup');
     if (rankingSeason) {
-      items.push({ ...titleLink('Rangliste', routing.getSectionUrl(rankingSeason.id, 'rangliste')), aliases: ['tabelle', 'ligatabelle', 'saisontabelle'] });
+      items.push({ ...titleLink('Rangliste', routing.getSectionUrl(rankingSeason.id, 'rangliste'), rankingSeason.label),
+        descriptionCurrent: Boolean(rankingSeason.default), aliases: ['tabelle', 'ligatabelle', 'saisontabelle', `rangliste ${rankingSeason.label}`] });
       const allTimeUrl = routing.getSectionUrl(rankingSeason.id, 'verlauf');
       allTimeUrl.hash = 'ewige-rangliste';
-      items.push({ ...titleLink('Ewige Rangliste', allTimeUrl), aliases: ['tabelle', 'ewige tabelle', 'ewig tabelle', 'all-time', 'all time'] });
+      items.push({ ...titleLink('Ewige Rangliste', allTimeUrl, 'Statistik'), aliases: ['tabelle', 'ewige tabelle', 'ewig tabelle', 'all-time', 'all time'] });
       const matchTimeUrl = routing.getSectionUrl(rankingSeason.id, 'verlauf');
       matchTimeUrl.hash = 'stats-time-performance';
       items.push(
@@ -294,8 +295,8 @@
       && season.id !== rankingSeason?.id && completedAt(season))
       .sort((a, b) => String(completedAt(b)).localeCompare(String(completedAt(a))));
     for (const season of pastSeasons) {
-      items.push({ ...titleLink(`Rangliste · ${season.label}`, routing.getSectionUrl(season.id, 'rangliste'), season.label),
-        aliases: [`tabelle ${season.label}`, `ligatabelle ${season.label}`, `saisontabelle ${season.label}`] });
+      items.push({ ...titleLink('Rangliste', routing.getSectionUrl(season.id, 'rangliste'), season.label),
+        aliases: [`rangliste ${season.label}`, `tabelle ${season.label}`, `ligatabelle ${season.label}`, `saisontabelle ${season.label}`] });
     }
     const diagramSeason = rankingSeason?.qualificationPlaces > 4 ? rankingSeason
       : seasons().find(season => season.default && season.qualificationPlaces > 4) || rankingSeason;
@@ -499,7 +500,8 @@
             if (index > 0) {
               const separator = document.createElement(item.boldSeparator ? 'strong' : 'span');
               separator.className = 'site-search-pairing-separator';
-              separator.textContent = ` ${item.pairingSeparator} `;
+              const spacing = key === 'matches' && item.boldSeparator ? '  ' : ' ';
+              separator.textContent = `${spacing}${item.pairingSeparator}${spacing}`;
               description.append(separator);
             }
             names.forEach((name, nameIndex) => {
@@ -514,6 +516,11 @@
           });
         } else {
           description.textContent = item.description;
+          if (item.descriptionCurrent) {
+            const current = document.createElement('em');
+            current.textContent = 'aktuell';
+            description.append(' ', current);
+          }
         }
         if (key === 'matches' || key === 'trainings') {
           const details = document.createElement('div');

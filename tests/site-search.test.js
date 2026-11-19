@@ -397,7 +397,7 @@ test('table searches include normal and all-time rankings with a direct all-time
   const pageLinks = source.match(/  function pageLinks\(active, players\) \{[\s\S]*?\n  \}/)[0];
   const infoData = {};
   vm.runInNewContext(fs.readFileSync(require.resolve('../data/info.js'), 'utf8'), { window: infoData });
-  const league = { id: 'winter', default: true };
+  const league = { id: 'winter', label: 'Winter 2026', default: true };
   const cup = { id: 'cup', visualTheme: 'cup' };
   const summer = { id: 'summer', label: 'Sommer 2026', completedAt: '2026-10-01' };
   const previous = { id: 'previous', label: 'Winter 2025', completedAt: '2026-03-01' };
@@ -417,13 +417,17 @@ test('table searches include normal and all-time rankings with a direct all-time
   const find = query => links.filter(item => [item.title, ...(item.aliases || [])]
     .some(term => search.normalize(term).includes(search.normalize(query)))).map(item => item.title);
   for (const query of ['Tabelle', 'Rangliste']) {
-    assert.deepEqual(Array.from(find(query)), ['Rangliste', 'Ewige Rangliste', 'Tipprangliste', 'Rangliste · Sommer 2026', 'Rangliste · Winter 2025']);
+    assert.deepEqual(Array.from(find(query)), ['Rangliste', 'Ewige Rangliste', 'Tipprangliste', 'Rangliste', 'Rangliste']);
   }
-  assert.equal(links.find(item => item.title === 'Rangliste · Sommer 2026').url.href,
+  assert.equal(links.find(item => item.title === 'Rangliste' && item.description === 'Sommer 2026').url.href,
     'https://liga.test/summer/rangliste/');
+  assert.equal(links.find(item => item.title === 'Rangliste').description, 'Winter 2026');
+  assert.equal(links.find(item => item.title === 'Rangliste').descriptionCurrent, true);
+  assert.equal(links.find(item => item.title === 'Ewige Rangliste').description, 'Statistik');
+  assert.equal(links.find(item => item.description === 'Sommer 2026').descriptionCurrent, undefined);
   assert.deepEqual(Array.from(find('Ewige Tabelle')), ['Ewige Rangliste']);
   assert.deepEqual(Array.from(find('ewig')), ['Ewige Rangliste']);
-  assert.deepEqual(Array.from(find('Ligatabelle')), ['Rangliste', 'Rangliste · Sommer 2026', 'Rangliste · Winter 2025']);
+  assert.deepEqual(Array.from(find('Ligatabelle')), ['Rangliste', 'Rangliste', 'Rangliste']);
   for (const query of ['Tipprangliste', 'Tipp Rangliste', 'Tipp-Rangliste', 'tipp tabelle', 'tipptabelle']) {
     assert.deepEqual(Array.from(find(query)), ['Tipprangliste']);
   }
