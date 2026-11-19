@@ -148,6 +148,13 @@
     return Number(roundNumber[2]) === 1 ? 'finale' : `finale-${Number(roundNumber[2])}`;
   }
 
+  function getMatchListAnchor(match) {
+    const slug = getMatchSlug(match);
+    if (slug) return slug;
+    const liveSlug = getLiveSlug(match);
+    return liveSlug ? `final-four-${liveSlug}` : `suchpartie-${match.id || match}`;
+  }
+
   function getMatchIdFromPath(matches = [], pathname = window.location.pathname) {
     const segments = String(pathname).split('/').filter(Boolean).map(segment => decodeURIComponent(segment).toLowerCase());
     const detailIndex = segments.lastIndexOf('partie');
@@ -301,6 +308,7 @@
     getRequestedMatchId,
     getMatchIdFromPath,
     getMatchSlug,
+    getMatchListAnchor,
     getMatchUrl,
     getLiveRouteFromPath,
     getLiveSlug,

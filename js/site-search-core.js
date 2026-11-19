@@ -178,6 +178,26 @@
     return query.kind === 'text' && hasPlayers(match, groups);
   }
 
+  function quoteAuthorQuery(query) {
+    if (query.kind !== 'text' || !/(?:^|\s)zitate?(?=\s|$)/.test(query.query.replace(/\+/g, ' '))) return null;
+    return query.query.replace(/\+/g, ' ').replace(/(?:^|\s)zitate?(?=\s|$)/g, ' ').trim();
+  }
+
+  function articleQuotes(article, query, players = []) {
+    const authorQuery = quoteAuthorQuery(query);
+    if (authorQuery === null || !article.title) return [];
+    const candidates = playerLookup(players, authorQuery);
+    return (article.body || []).filter(block => {
+      if (block.type !== 'quote' || !block.text) return false;
+      if (!authorQuery) return true;
+      if (candidates.length) {
+        const authors = new Set(playerLookup(players, block.author).map(({ player }) => player.id));
+        return candidates.some(({ player }) => authors.has(player.id));
+      }
+      return nameKey(block.author).includes(nameKey(authorQuery));
+    });
+  }
+
   function articleMatches(article, query, { includeText = false } = {}) {
     if (!article.title || !article.body?.length) return false;
     if (query.kind === 'artikel') return query.number > 0 && Number(article.spieltag) === query.number;
@@ -198,7 +218,7 @@
     };
   }
 
-  const api = { normalize, parseQuery, resolveNames, matchesQuery, matchNumber, summarizePair, articleMatches, normalizeTraining, trainingMatches, groupPlayerAchievements, playerSummaryStats };
+  const api = { normalize, parseQuery, resolveNames, matchesQuery, matchNumber, summarizePair, quoteAuthorQuery, articleQuotes, articleMatches, normalizeTraining, trainingMatches, groupPlayerAchievements, playerSummaryStats };
   if (typeof module !== 'undefined') module.exports = api;
   if (typeof window !== 'undefined') window.PadelSearchCore = api;
 })();

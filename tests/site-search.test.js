@@ -308,10 +308,16 @@ test('visitors and all account roles can open search and reveal filters by mouse
   listeners.get('button:click')();
   assert.equal(filterTray.inert, false);
   listeners.get('dialog:click')({ target: dialog });
-  assert.equal(dialog.open, true);
+  assert.equal(dialog.open, false);
   assert.equal(output.dataset.expanded, 'false');
   assert.equal(output.inert, true);
-  listeners.get('output:transitionend')({ target: output, propertyName: 'grid-template-rows' });
+  listeners.get('button:click')();
+  assert.equal(dialog.open, true);
+  let escapePrevented = false;
+  listeners.get('dialog:keydown')({
+    key: 'Escape', preventDefault() { escapePrevented = true; }, stopPropagation() {}
+  });
+  assert.equal(escapePrevented, true);
   assert.equal(dialog.open, false);
   mobile.matches = true;
   listeners.get('button:click')();
@@ -384,4 +390,112 @@ test('player search shares pending profile requests and reloads after cache inva
   cache.profiles.clear();
   await context.loadSearchPlayerProfile('ludwig_w');
   assert.equal(calls, 2);
+});
+
+test('table searches include normal and all-time rankings with a direct all-time destination', () => {
+  const source = fs.readFileSync(require.resolve('../js/site-search.js'), 'utf8');
+  const pageLinks = source.match(/  function pageLinks\(active, players\) \{[\s\S]*?\n  \}/)[0];
+  const league = { id: 'winter', default: true };
+  const cup = { id: 'cup', visualTheme: 'cup' };
+  const context = vm.createContext({
+    window: {}, cache: { matches: new Map() }, seasons: () => [league, cup],
+    titleLink: (title, url, description = '') => ({ title, url, description }),
+    pickerLink: () => ({ title: 'Spieler suchen' }),
+    routing: {
+      getSeasonUrl: (id, kind) => new URL(`https://liga.test/${kind}/${id}/`),
+      getSectionUrl: (id, section) => new URL(`https://liga.test/${id}/${section}/`)
+    }
+  });
+  vm.runInContext(pageLinks, context);
+  const links = context.pageLinks(league, []);
+  const find = query => links.filter(item => [item.title, ...(item.aliases || [])]
+    .some(term => search.normalize(term).includes(search.normalize(query)))).map(item => item.title);
+  assert.deepEqual(Array.from(find('Tabelle')), ['Rangliste', 'Ewige Rangliste']);
+  assert.deepEqual(Array.from(find('Ewige Tabelle')), ['Ewige Rangliste']);
+  assert.deepEqual(Array.from(find('ewig')), ['Ewige Rangliste']);
+  assert.deepEqual(Array.from(find('Ligatabelle')), ['Rangliste']);
+  for (const [queries, title, anchor] of [
+    [['Regeln', 'Spielregeln'], 'Spielregeln', 'spielregeln'],
+    [['Kurzinfo'], 'Kurzinfo', 'kurzinfo'],
+    [['Zählweise', 'Zaehlweise'], 'Zählweise', 'zaehlweise'],
+    [['Ergebnis', 'Ergebnismeldung'], 'Ergebnismeldung', 'ergebnismeldung'],
+    [['Punkte', 'Punktevergabe'], 'Punktevergabe', 'punktevergabe'],
+    [['PadelPost', 'Archiv'], 'PadelPost', 'artikel']
+  ]) {
+    for (const query of queries) assert.deepEqual(Array.from(find(query)), [title], query);
+    assert.equal(links.find(item => item.title === title).url.href, `https://liga.test/winter/infos/#${anchor}`);
+  }
+  for (const query of ['Früher Vogel', 'Fruher Vogel', 'Frueher Vogel']) {
+    assert.deepEqual(Array.from(find(query)), ['Früher Vogel']);
+  }
+  for (const query of ['Langschläfer', 'Langschlafer', 'Langschlaefer']) {
+    assert.deepEqual(Array.from(find(query)), ['Langschläfer']);
+  }
+  assert.equal(links.find(item => item.title === 'Früher Vogel').url.href,
+    'https://liga.test/winter/verlauf/#stats-time-performance');
+  assert.equal(links.find(item => item.title === 'Langschläfer').url.href,
+    'https://liga.test/winter/verlauf/#stats-time-performance');
+  assert.equal(links.find(item => item.title === 'Ewige Rangliste').url.href,
+    'https://liga.test/winter/verlauf/#ewige-rangliste');
+  assert.equal(context.pageLinks(cup, []).find(item => item.title === 'Ewige Rangliste').url.href,
+    'https://liga.test/winter/verlauf/#ewige-rangliste');
+});
+
+test('all search loads article full text after other sources and ignores superseded queries', async () => {
+  const source = fs.readFileSync(require.resolve('../js/site-search.js'), 'utf8');
+  const loading = source.slice(source.indexOf('  function loadResults('), source.indexOf('  function titleLink('));
+  let finishMatches;
+  const calls = [];
+  const context = {
+    filter: 'all', query: { kind: 'text', query: 'endspurt' }, articlesReady: false,
+    cache: {}, currentSeason: () => ({ id: 'winter' }), seasons: () => [{ id: 'winter' }],
+    relevantKinds: () => ['matches', 'trainings', 'articles'], searchesAchievements: () => false,
+    sharedSources: { trainings: [{ id: 'confirmed' }] }, dialog: { open: true }, timer: null,
+    load: kind => { calls.push(kind); return kind === 'matches' ? new Promise(resolve => { finishMatches = resolve; }) : Promise.resolve(); },
+    render() {}
+  };
+  vm.createContext(context);
+  vm.runInContext(`${loading}\nloadResults();`, context);
+  assert.deepEqual(calls, ['matches', 'trainings']);
+  assert.equal(context.articlesReady, false);
+  finishMatches();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(calls, ['matches', 'trainings', 'articles']);
+  assert.equal(context.articlesReady, true);
+
+  calls.length = 0;
+  vm.runInContext('loadResults();', context);
+  context.query = { kind: 'text', query: 'andere suche' };
+  finishMatches();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(calls, ['matches', 'trainings']);
+
+  const articles = source.slice(source.indexOf('  function getArticleLinks('), source.indexOf('  const trainingDateLabel'));
+  Object.assign(context, {
+    core: search, query: search.parseQuery('Endspurt'), articlesReady: true,
+    cache: { articles: new Map([['winter', { data: [{ title: 'Die Liga ruft', spieltag: 1, body: [{ text: 'Endspurt' }] }] }]]) },
+    routing: { getSectionUrl: () => new URL('https://example.test/infos/') },
+    titleLink: (title, url) => ({ title, url })
+  });
+  vm.runInContext(articles, context);
+  const hits = vm.runInContext("getArticleLinks([{ id: 'winter' }])", context);
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].title, 'Die Liga ruft');
+});
+
+test('quote search shows full quotes and filters by author in either order, including aliases', () => {
+  const article = { title: 'Spieltag', body: [
+    { type: 'quote', text: 'Luca ist heute mein Gegner.', author: 'Marco M' },
+    { type: 'quote', text: 'Ein langes Zitat im vollständigen Wortlaut.', author: 'Luca W' },
+    { type: 'p', text: 'Ein Zitat von Luca im Fließtext.' }
+  ] };
+  assert.equal(search.articleQuotes(article, search.parseQuery('Zitat'), players).length, 2);
+  for (const text of ['Zitat Luca W.', 'Luca W. Zitat', 'Zitat + Luca W.', 'Luca W. + Zitat', 'Zitate LW']) {
+    const hits = search.articleQuotes(article, search.parseQuery(text), players);
+    assert.equal(hits.length, 1, text);
+    assert.equal(hits[0].author, 'Luca W', text);
+    assert.equal(hits[0].text, article.body[1].text);
+  }
+  assert.equal(search.articleQuotes(article, search.parseQuery('Zitat Unbekannt'), players).length, 0);
+  assert.equal(search.articleQuotes(article, search.parseQuery('Luca'), players).length, 0);
 });

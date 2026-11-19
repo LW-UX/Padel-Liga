@@ -6823,8 +6823,25 @@ function revealSearchTarget() {
   if (!appReady || isDetailEmbed) return;
   const url = new URL(window.location.href);
   const fragment = url.hash.slice(1);
-  if (fragment.startsWith('suchpartie-') && document.getElementById('partien')?.classList.contains('active')) {
-    const matchId = PADEL_DATA.matches.find(match => `suchpartie-${match.id}` === fragment)?.id;
+  if (fragment === 'ewige-rangliste' && document.getElementById('verlauf')?.classList.contains('active')) {
+    void setStatisticsMode('all-time').then(() => {
+      if (window.location.hash !== '#ewige-rangliste' || !isAllTimeStatistics()
+        || !document.getElementById('verlauf')?.classList.contains('active')) return;
+      document.getElementById('all-time-ranking-profile-layout')?.scrollIntoView({ block: 'start' });
+    });
+    return;
+  }
+  if (fragment === 'stats-time-performance' && document.getElementById('verlauf')?.classList.contains('active')) {
+    void setStatisticsMode('season').then(() => {
+      if (window.location.hash !== '#stats-time-performance' || isAllTimeStatistics()
+        || !document.getElementById('verlauf')?.classList.contains('active')) return;
+      document.getElementById('stats-time-performance')?.scrollIntoView({ block: 'center' });
+    });
+    return;
+  }
+  if (fragment && document.getElementById('partien')?.classList.contains('active')) {
+    const matchId = PADEL_DATA.matches.find(match => window.PadelSeasonRouting.getMatchListAnchor(match) === fragment
+      || `suchpartie-${match.id}` === fragment)?.id;
     if (!matchId) return;
     const selector = `#partien [data-match-entry="${CSS.escape(matchId)}"]`;
     if (!document.querySelector(selector)) setMatchScope('all');
@@ -6836,7 +6853,7 @@ function revealSearchTarget() {
     return;
   }
   if (!document.getElementById('infos')?.classList.contains('active')) return;
-  if (fragment === 'platzbuchung') {
+  if (['kurzinfo', 'spielregeln', 'zaehlweise', 'platzbuchung', 'ergebnismeldung', 'punktevergabe', 'artikel'].includes(fragment)) {
     document.getElementById(fragment)?.scrollIntoView({ block: 'start' });
     return;
   }

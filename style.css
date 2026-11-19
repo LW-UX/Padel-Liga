@@ -2676,6 +2676,8 @@
       font-style: normal;
     }
     .article-body cite::before { content: "- "; }
+    .home-article-preview,
+    .info-article-preview { isolation: isolate; }
     .home-article-preview::after,
     .info-article-preview::after {
       content: "";
@@ -2683,6 +2685,7 @@
       position: absolute;
       inset: auto 0 0;
       height: 50px;
+      z-index: 1;
       background: linear-gradient(to bottom, transparent, var(--bg));
       pointer-events: none;
     }

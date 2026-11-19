@@ -312,3 +312,99 @@ test('deployment generation creates direct entry pages with the correct base pat
   assert.match(liveMatch, /Padel<em>Liga<\/em>/);
   assert.match(tipping, /Padel<em>Tipp<\/em>/);
 });
+
+test('match list anchors are short and distinct across rounds', () => {
+  const { routing } = loadRouting('https://example.test/partien/', 'https://example.test/');
+  for (const [match, expected] of [
+    [{ id: 'winter-2026-partie-17', stage: 'league' }, '17'],
+    [{ id: 'cup-2027-semifinal-1', stage: 'semifinal' }, 'halbfinale-1'],
+    [{ id: 'cup-2027-quarterfinal-1', stage: 'quarterfinal' }, 'viertelfinale-1'],
+    [{ id: 'winter-2026-final-1', stage: 'final-four' }, 'final-four-1']
+  ]) assert.equal(routing.getMatchListAnchor(match), expected);
+});
+
+test('short and legacy search anchors reveal the same match card', () => {
+  const { routing } = loadRouting('https://example.test/partien/', 'https://example.test/');
+  const match = { id: 'winter-2026-partie-17', stage: 'league' };
+  const source = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
+  const reveal = source.slice(source.indexOf('function revealSearchTarget()'), source.indexOf('window.PadelLigaRevealSearchTarget ='));
+  for (const anchor of ['17', `suchpartie-${match.id}`]) {
+    let focused = false;
+    let scrolled = false;
+    const card = { focus: () => { focused = true; }, scrollIntoView: () => { scrolled = true; } };
+    vm.runInNewContext(`${reveal}\nrevealSearchTarget();`, {
+      appReady: true, isDetailEmbed: false, URL,
+      window: { location: { href: `https://example.test/partien/#${anchor}` }, PadelSeasonRouting: routing },
+      PADEL_DATA: { matches: [match] }, CSS: { escape: value => value },
+      document: {
+        getElementById: () => ({ classList: { contains: () => true } }),
+        querySelector: selector => selector.includes(match.id) ? card : null
+      }
+    });
+    assert.ok(focused && scrolled, anchor);
+  }
+});
+
+test('all-time search anchor loads the all-time statistics before scrolling to the ranking', async () => {
+  const source = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
+  const reveal = source.slice(source.indexOf('function revealSearchTarget()'), source.indexOf('window.PadelLigaRevealSearchTarget ='));
+  let finishLoading;
+  let scrolled = false;
+  let allTime = false;
+  const loading = new Promise(resolve => { finishLoading = resolve; });
+  vm.runInNewContext(`${reveal}\nrevealSearchTarget();`, {
+    appReady: true, isDetailEmbed: false, URL,
+    window: { location: { href: 'https://liga.test/statistik/#ewige-rangliste', hash: '#ewige-rangliste' } },
+    setStatisticsMode: mode => {
+      assert.equal(mode, 'all-time');
+      return loading.then(() => { allTime = true; });
+    },
+    isAllTimeStatistics: () => allTime,
+    document: { getElementById: id => id === 'verlauf'
+      ? { classList: { contains: () => true } }
+      : id === 'all-time-ranking-profile-layout' ? { scrollIntoView: () => { scrolled = true; } } : null }
+  });
+  assert.equal(scrolled, false);
+  finishLoading();
+  await loading;
+  await Promise.resolve();
+  assert.equal(scrolled, true);
+});
+
+test('match-time search anchor opens season statistics and reveals early-bird and late-riser facts', async () => {
+  const source = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
+  const reveal = source.slice(source.indexOf('function revealSearchTarget()'), source.indexOf('window.PadelLigaRevealSearchTarget ='));
+  let scrolled = false;
+  vm.runInNewContext(`${reveal}\nrevealSearchTarget();`, {
+    appReady: true, isDetailEmbed: false, URL,
+    window: { location: { href: 'https://liga.test/statistik/#stats-time-performance', hash: '#stats-time-performance' } },
+    setStatisticsMode: async mode => { assert.equal(mode, 'season'); },
+    isAllTimeStatistics: () => false,
+    document: { getElementById: id => id === 'verlauf'
+      ? { classList: { contains: () => true } }
+      : id === 'stats-time-performance' ? { scrollIntoView: () => { scrolled = true; } } : null }
+  });
+  await Promise.resolve();
+  assert.equal(scrolled, true);
+});
+
+test('info search anchors reveal the matching section without expanding an article', () => {
+  const source = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
+  const reveal = source.slice(source.indexOf('function revealSearchTarget()'), source.indexOf('window.PadelLigaRevealSearchTarget ='));
+  const infoData = {};
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'data/info.js'), 'utf8'), { window: infoData });
+  const sectionId = source.match(/function sectionId\(title\) \{[\s\S]*?\n\}/)[0];
+  const slug = vm.runInNewContext(`${sectionId}\nsectionId`);
+  const anchors = ['kurzinfo', ...infoData.PADEL_INFO.sections.map(section => slug(section.title)), 'artikel'];
+  for (const anchor of anchors) {
+    let scrolled = false;
+    vm.runInNewContext(`${reveal}\nrevealSearchTarget();`, {
+      appReady: true, isDetailEmbed: false, URL,
+      window: { location: { href: `https://liga.test/infos/#${anchor}` } },
+      document: { getElementById: id => id === 'infos'
+        ? { classList: { contains: () => true } }
+        : id === anchor ? { scrollIntoView: () => { scrolled = true; } } : null }
+    });
+    assert.equal(scrolled, true, anchor);
+  }
+});

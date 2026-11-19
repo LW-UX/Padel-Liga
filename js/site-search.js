@@ -23,7 +23,6 @@
   button.setAttribute('aria-keyshortcuts', isApple ? 'Meta+K' : 'Control+K');
   const mobile = matchMedia('(max-width: 768px)');
   const stackedFilters = matchMedia('(max-width: 768px), (hover: none), (any-pointer: coarse)');
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const actions = button.parentElement;
   const pongLink = document.getElementById('external-game-link');
   const placeButton = () => mobile.matches ? actions.prepend(button) : pongLink.after(button);
@@ -85,8 +84,8 @@
   const pageSize = 16;
   let filter = 'all';
   let query = { kind: 'idle' };
+  let articlesReady = false;
   let timer = null;
-  let closeTimer = null;
   let returnFocus = null;
   let isComposing = false;
   let filtersRevealed = false;
@@ -165,18 +164,20 @@
 
   function load(kind, source, retryErrors) {
     const entry = cache[kind].get(source.id);
-    if (entry?.loading || (entry?.error && !retryErrors)
+    if (entry?.loading) return entry.promise;
+    if ((entry?.error && !retryErrors)
       || (entry?.data && !entry.error && (kind === 'articles' || Date.now() - entry.time < maxAge))) return;
     const pending = { ...entry, loading: true, error: false };
     cache[kind].set(source.id, pending);
     const fetchData = { matches: loadMatches, articles: loadArticles, trainings: loadTrainings, achievements: loadAchievements }[kind];
-    fetchData(source).then(data => {
+    pending.promise = fetchData(source).then(data => {
       if (cache[kind].get(source.id) === pending) remember(kind, source.id, data);
     }).catch(() => {
       if (cache[kind].get(source.id) !== pending) return;
       cache[kind].set(source.id, { ...entry, error: true });
       if (dialog.open && timer === null) render();
     });
+    return pending.promise;
   }
 
   function searchesAchievements() {
@@ -202,9 +203,21 @@
     }
     const active = currentSeason();
     const ordered = [...seasons()].sort((a, b) => Number(b.id === active?.id) - Number(a.id === active?.id));
-    relevantKinds().forEach(kind => (sharedSources[kind] || ordered)
-      .forEach(source => load(kind, source, retryErrors)));
+    const deferArticles = filter === 'all' && query.kind === 'text' && !searchesAchievements();
+    const kinds = relevantKinds();
+    const pending = kinds.filter(kind => !deferArticles || kind !== 'articles')
+      .flatMap(kind => (sharedSources[kind] || ordered).map(source => load(kind, source, retryErrors)));
+    if (!deferArticles) articlesReady = true;
     render();
+    if (deferArticles) {
+      const requestedQuery = query;
+      Promise.all(pending).then(() => {
+        if (!dialog.open || timer !== null || query !== requestedQuery || filter !== 'all') return;
+        articlesReady = true;
+        ordered.forEach(source => load('articles', source, retryErrors));
+        render();
+      });
+    }
   }
 
   function titleLink(title, url, description = '') {
@@ -230,11 +243,37 @@
       { ...titleLink('Platzbuchung', bookingUrl, 'Infos'), aliases: ['buchen', 'platz buchen'] },
       titleLink('Tippübersicht', tipUrl, 'PadelTipp')
     ];
+    for (const [title, anchor, aliases] of [
+      ['Spielregeln', 'spielregeln', ['regeln']],
+      ['Kurzinfo', 'kurzinfo', []],
+      ['Zählweise', 'zaehlweise', ['zaehlweise']],
+      ['Ergebnismeldung', 'ergebnismeldung', ['ergebnis']],
+      ['Punktevergabe', 'punktevergabe', ['punkte']],
+      ['PadelPost', 'artikel', ['archiv']]
+    ]) {
+      const url = leagueUrl('infos');
+      url.hash = anchor;
+      items.push({ ...titleLink(title, url, 'Infos'), aliases });
+    }
     if (!isCup) {
-      items.push(titleLink('Rangliste', leagueUrl('rangliste')), titleLink('Statistik', leagueUrl('verlauf')));
+      items.push({ ...titleLink('Rangliste', leagueUrl('rangliste')), aliases: ['tabelle', 'ligatabelle', 'saisontabelle'] },
+        titleLink('Statistik', leagueUrl('verlauf')));
       if (!(active.completedAt || cache.matches.get(active.id)?.data?.completedAt)) {
         items.push(titleLink('Rechner', leagueUrl('rechner')));
       }
+    }
+    const rankingSeason = !isCup ? active : seasons().find(season => season.default && season.visualTheme !== 'cup')
+      || seasons().find(season => season.visualTheme !== 'cup');
+    if (rankingSeason) {
+      const allTimeUrl = routing.getSectionUrl(rankingSeason.id, 'verlauf');
+      allTimeUrl.hash = 'ewige-rangliste';
+      items.push({ ...titleLink('Ewige Rangliste', allTimeUrl), aliases: ['tabelle', 'ewige tabelle', 'ewig tabelle', 'all-time', 'all time'] });
+      const matchTimeUrl = routing.getSectionUrl(rankingSeason.id, 'verlauf');
+      matchTimeUrl.hash = 'stats-time-performance';
+      items.push(
+        { ...titleLink('Früher Vogel', matchTimeUrl, 'Statistik · Ø-Spielbeginn'), aliases: ['frueher vogel'] },
+        { ...titleLink('Langschläfer', matchTimeUrl, 'Statistik · Ø-Spielbeginn'), aliases: ['langschlaefer'] }
+      );
     }
     const selectedId = window.PadelLigaGetSelectedViewerId?.();
     const selected = players.find(player => player.id === selectedId);
@@ -260,7 +299,7 @@
       : item?.qualifierLabels?.filter(Boolean) || [];
     const pairing = [team(match.team1), team(match.team2)].filter(names => names.length);
     const listUrl = routing.getSectionUrl(season.id, 'partien');
-    listUrl.hash = `suchpartie-${match.id}`;
+    listUrl.hash = routing.getMatchListAnchor(match);
     const hasLive = match.stage === 'final-four' && (window.PadelLiveTicker?.hasHistory?.(match.id)
       || window.PadelLiveTicker?.activeMatch?.matchId === match.id);
     const availability = window.PadelPreviewWindow.availability(match, data);
@@ -272,7 +311,8 @@
       pairingSeparator: match.sets || 'vs.',
       boldSeparator: Boolean(match.sets),
       seasonLabel: season.label,
-      dateLabel: match.matchAt && dateLabel.format(new Date(match.matchAt))
+      dateLabel: match.cancelledAt || match.isCancelled ? 'Ohne Wertung'
+        : match.matchAt && dateLabel.format(new Date(match.matchAt))
     };
   }
 
@@ -289,14 +329,27 @@
   }
 
   function getArticleLinks(availableSeasons) {
+    if (!articlesReady || core.quoteAuthorQuery(query) !== null) return [];
     return availableSeasons.flatMap(season => (cache.articles.get(season.id)?.data || [])
-      .filter(article => core.articleMatches(article, query, { includeText: filter === 'articles' }))
+      .filter(article => core.articleMatches(article, query, { includeText: filter === 'articles' || filter === 'all' }))
       .map(article => {
         const url = routing.getSectionUrl(season.id, 'infos');
         url.searchParams.set('artikelLesen', '1');
         url.hash = `artikel-${article.spieltag}`;
         return titleLink(article.title, url, season.label);
       }));
+  }
+
+  function getQuoteLinks(availableSeasons) {
+    if (!articlesReady) return [];
+    const players = (window.PADEL_PLAYERS || []).filter(player => player.firma !== 'Test');
+    return availableSeasons.flatMap(season => (cache.articles.get(season.id)?.data || [])
+      .flatMap(article => core.articleQuotes(article, query, players).map(quote => {
+        const url = routing.getSectionUrl(season.id, 'infos');
+        url.searchParams.set('artikelLesen', '1');
+        url.hash = `artikel-${article.spieltag}`;
+        return titleLink(`„${quote.text}“`, url, [quote.author, article.title, season.label].filter(Boolean).join(' · '));
+      })));
   }
 
   const trainingDateLabel = new Intl.DateTimeFormat('de-DE', { timeZone: 'UTC', dateStyle: 'medium' });
@@ -370,7 +423,8 @@
         ['players', 'Spieler', filter === 'all' || filter === 'players' ? playerLinks : []],
         ['matches', 'Partien', filter === 'all' || filter === 'matches' ? matches.map(entry => matchLink(entry, byId)) : []],
         ['trainings', 'Trainings', filter === 'all' || filter === 'matches' ? getTrainingResults() : []],
-        ['articles', 'Artikel', filter === 'all' || filter === 'articles' ? getArticleLinks(availableSeasons) : []]
+        ['articles', 'Artikel', filter === 'all' || filter === 'articles' ? getArticleLinks(availableSeasons) : []],
+        ['quotes', 'Zitate', filter === 'all' || filter === 'articles' ? getQuoteLinks(availableSeasons) : []]
       ]
     };
   }
@@ -416,7 +470,7 @@
             if (index > 0) {
               const separator = document.createElement(item.boldSeparator ? 'strong' : 'span');
               separator.className = 'site-search-pairing-separator';
-              separator.textContent = `  ${item.pairingSeparator}  `;
+              separator.textContent = ` ${item.pairingSeparator} `;
               description.append(separator);
             }
             names.forEach((name, nameIndex) => {
@@ -485,12 +539,10 @@
       const value = document.createElement('span');
       value.textContent = '—';
       item.append(value);
-      if (key !== 'winRate') {
-        const caption = document.createElement('span');
-        caption.className = 'site-search-player-stat-label';
-        caption.textContent = label;
-        item.append(caption);
-      }
+      const caption = document.createElement('span');
+      caption.className = 'site-search-player-stat-label';
+      caption.textContent = label;
+      item.append(caption);
       stats.append(item);
       values.set(key, { value, item, label });
     }
@@ -557,7 +609,6 @@
   }
 
   function render() {
-    if (closeTimer !== null) return;
     if (query.kind === 'idle') {
       setOutputVisible(false);
       return;
@@ -595,10 +646,10 @@
   }
 
   function schedule(immediate = false, keepFilters = false) {
-    if (closeTimer !== null) return;
     clearTimeout(timer);
     timer = null;
     query = core.parseQuery(input.value);
+    articlesReady = false;
     limits = new Map();
     if (immediate || query.kind === 'idle') {
       if (query.kind !== 'idle' && !keepFilters) retractFilters();
@@ -654,16 +705,7 @@
   }
 
   function closeSearch() {
-    if (closeTimer !== null) return;
-    if (mobile.matches || output.dataset.expanded !== 'true' || reducedMotion.matches) {
-      dialog.close();
-      return;
-    }
-    clearTimeout(timer);
-    timer = null;
-    if (output.contains(document.activeElement)) input.focus({ preventScroll: true });
-    setOutputVisible(false);
-    closeTimer = setTimeout(() => dialog.close(), 400);
+    dialog.close();
   }
 
   function selectFilter(value) {
@@ -701,17 +743,12 @@
   dialog.addEventListener('close', () => {
     clearTimeout(timer);
     timer = null;
-    clearTimeout(closeTimer);
-    closeTimer = null;
     setOutputVisible(false);
     (returnFocus?.matches('body') ? button : returnFocus)?.focus({ preventScroll: true });
   });
   dialog.addEventListener('cancel', event => {
     event.preventDefault();
     closeSearch();
-  });
-  output.addEventListener('transitionend', event => {
-    if (closeTimer !== null && event.target === output && event.propertyName === 'grid-template-rows') dialog.close();
   });
   input.addEventListener('compositionstart', () => { isComposing = true; });
   input.addEventListener('compositionend', () => {
