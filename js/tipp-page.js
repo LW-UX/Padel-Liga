@@ -441,7 +441,6 @@
       await window.PadelTippspiel.init(season, { accountReady });
     } catch (error) {
       document.querySelector('main').innerHTML = `<div class="hint">Die Tippspiel-Daten konnten nicht geladen werden.</div>`;
-      window.PadelSiteSearch?.finishLoading?.();
       console.error(error);
     }
   }

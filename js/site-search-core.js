@@ -12,6 +12,8 @@
   ];
   const months = new Map(monthNames.flatMap((names, i) => names.split(' ').map(name => [name, i + 1])));
   const berlinDate = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin', dateStyle: 'short' });
+  const achievementTerms = new Set(['auszeichnung', 'auszeichnungen', 'emblem', 'embleme', 'medaille', 'medaillen', 'lorbeer', 'lorbeeren']);
+  const championTerms = new Set(['gewinner', 'sieger', 'champion', 'champions']);
 
   function parseDate(query, now) {
     const named = /^(?:(\d{1,2})\.?\s+)?([a-z]+)\.?(?:\s+(\d{2}|\d{4}))?$/.exec(query);
@@ -43,7 +45,21 @@
     if (shorthand) return { kind: { p: 'partie', a: 'artikel', f: 'final-four' }[shorthand[1]], number: Number(shorthand[2]) };
     const numbered = /^(?:(partie|artikel|final four)\s*|#\s*)?(\d+)$/.exec(query);
     if (numbered) return { kind: numbered[1] === 'final four' ? 'final-four' : numbered[1] || 'partie', number: Number(numbered[2]) };
+    if (championTerms.has(query)) return { kind: 'text', query, achievementMode: 'champion' };
+    if (achievementTerms.has(query)) return { kind: 'text', query, achievementMode: 'all' };
     return parseDate(query, now) || { kind: 'text', query };
+  }
+
+  function groupPlayerAchievements(rows, mode, playerIds, seasonIds) {
+    const grouped = new Map();
+    for (const row of rows) {
+      if (!playerIds.has(row.player_id) || (row.season_id != null && !seasonIds.has(row.season_id))) continue;
+      if (mode === 'champion' && row.kind !== 'winner') continue;
+      const achievements = grouped.get(row.player_id) || [];
+      achievements.push(row);
+      grouped.set(row.player_id, achievements);
+    }
+    return grouped;
   }
 
   const nameKey = value => normalize(String(value ?? '').replace(/\./g, ''));
@@ -170,7 +186,19 @@
     return includeText && article.body.some(block => normalize(block.text).includes(query.query));
   }
 
-  const api = { normalize, parseQuery, resolveNames, matchesQuery, matchNumber, summarizePair, articleMatches, normalizeTraining, trainingMatches };
+  function playerSummaryStats(summary = {}) {
+    const numeric = value => value === null || value === undefined || value === '' ? NaN : Number(value);
+    const elo = numeric(summary.currentElo);
+    const matches = numeric(summary.matches);
+    const wins = numeric(summary.wins);
+    return {
+      elo: Number.isFinite(elo) ? Math.round(elo).toLocaleString('de-DE') : '—',
+      matches: Number.isFinite(matches) ? matches.toLocaleString('de-DE', { maximumFractionDigits: 1 }) : '—',
+      winRate: matches > 0 && Number.isFinite(wins) ? `${Math.round(wins / matches * 100)} %` : '—'
+    };
+  }
+
+  const api = { normalize, parseQuery, resolveNames, matchesQuery, matchNumber, summarizePair, articleMatches, normalizeTraining, trainingMatches, groupPlayerAchievements, playerSummaryStats };
   if (typeof module !== 'undefined') module.exports = api;
   if (typeof window !== 'undefined') window.PadelSearchCore = api;
 })();

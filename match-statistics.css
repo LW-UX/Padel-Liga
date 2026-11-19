@@ -545,7 +545,8 @@ button.cup-match-status { width: 100%; color: inherit; font: inherit; border: 0;
 .match-history-row.is-invalid .match-history-row-label, .match-history-status.is-invalid { color: var(--negativ); }
 .match-history-status { margin: 0; }
 .match-history-status.is-complete { color: var(--positiv); }
-.match-history-editor :is(input, select) { min-width: 0; width: 100%; padding: 0.65rem; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--input-radius); font: inherit; }
+.match-history-editor :is(input, select) { min-width: 0; width: 100%; padding: 0.65rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--input-radius); font: inherit; }
+.match-history-editor select { color: var(--text); }
 .match-history-editor :is(input, select):is(:hover, :focus-visible) { border-color: var(--accent); }
 @container match-history-set (max-width: 440px) {
   .match-history-row { grid-template-columns: auto minmax(0, 1fr) 32px; grid-template-areas: "label label remove" "winner server server"; gap: 0.5rem 0.75rem; }

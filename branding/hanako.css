@@ -293,7 +293,6 @@ html:root :is(.auth-form input, .auth-form select, .player-invite-output input) 
 html:root :is(.auth-form input, .auth-form select, .player-invite-output input):is(:hover, :focus) {
   border-color: var(--accent);
   background-color: var(--surface);
-  color: var(--text);
 }
 
 html:root:root .auth-button.is-authenticated:is(:hover, :focus-visible) {

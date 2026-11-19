@@ -9,6 +9,31 @@ const { window: { PADEL_PLAYERS: players } } = vm.runInNewContext(
   { window: {} }
 );
 
+test('achievement keywords find awarded players, while champion keywords require a winner badge', () => {
+  for (const term of ['Auszeichnung', 'Emblem', 'Medaille', 'Lorbeeren']) {
+    assert.equal(search.parseQuery(term).achievementMode, 'all');
+  }
+  for (const term of ['Gewinner', 'Sieger', 'Champion']) {
+    assert.equal(search.parseQuery(term).achievementMode, 'champion');
+  }
+  assert.equal(search.parseQuery('Champion Sommer 2026').achievementMode, undefined);
+
+  const rows = [
+    { player_id: 'a', season_id: '2026-sommer', kind: 'winner' },
+    { player_id: 'a', season_id: '2027-cup', kind: 'winner' },
+    { player_id: 'b', season_id: '2026-sommer', kind: 'final_four' },
+    { player_id: 'c', season_id: null, kind: 'custom', title: 'Champion' },
+    { player_id: 'd', season_id: '2026-test', kind: 'winner' },
+    { player_id: 'test_net', season_id: '2026-sommer', kind: 'winner' }
+  ];
+  const playerIds = new Set(['a', 'b', 'c', 'd']);
+  const seasonIds = new Set(['2026-sommer', '2027-cup']);
+  assert.deepEqual([...search.groupPlayerAchievements(rows, 'all', playerIds, seasonIds).keys()], ['a', 'b', 'c']);
+  const winners = search.groupPlayerAchievements(rows, 'champion', playerIds, seasonIds);
+  assert.deepEqual([...winners.keys()], ['a']);
+  assert.equal(winners.get('a').length, 2);
+});
+
 test('search starts at three characters except numbered shorthand', () => {
   for (const query of ['Fl', 'Le', '12', 'P', 'A', 'F', 'Aß']) assert.equal(search.parseQuery(query).kind, 'idle', query);
   assert.deepEqual(search.parseQuery('Flo'), { kind: 'text', query: 'flo' });
@@ -125,11 +150,11 @@ test('training search supports names, dates and guests without matching private 
   assert.equal(search.normalizeTraining({ ...row, players: [{ id: 'test_net', display_name: 'Test Net' }] }, 'confirmed', playersById), null);
 });
 
-test('confirmed admins can open search and reveal filters by mouse or keyboard, with filters always available on touch', () => {
+test('visitors and all account roles can open search and reveal filters by mouse or keyboard, with filters always available on touch', () => {
   const listeners = new Map();
   const on = target => (name, handler) => listeners.set(`${target}:${name}`, handler);
   const button = {
-    hidden: false, disabled: true, loading: true, querySelector: () => ({}), setAttribute() {},
+    hidden: false, disabled: false, loading: false, querySelector: () => ({}), setAttribute() {},
     removeAttribute() { this.loading = false; }, addEventListener: on('button')
   };
   const input = { value: '', focus() {}, select() {}, setAttribute() {}, addEventListener: on('input') };
@@ -203,37 +228,30 @@ test('confirmed admins can open search and reveal filters by mouse or keyboard, 
     });
     return intercepted;
   };
-  const authChanged = () => listeners.get('window:padel:auth-state-changed')();
-  assert.equal(button.loading, true);
-  assert.equal(button.disabled, true);
-  assert.equal(shortcut(), false);
-  listeners.get('button:click')();
-  assert.equal(dialog.open, false);
-  listeners.get('window:padel:account-initialized')();
   assert.equal(button.loading, false);
-  assert.equal(button.hidden, true);
+  assert.equal(button.disabled, false);
+  assert.equal(button.hidden, false);
+  assert.equal(listeners.has('window:padel:account-initialized'), false);
+  assert.equal(shortcut(), true);
+  assert.equal(dialog.open, true);
+  assert.equal(shortcut(), true);
+  assert.equal(dialog.open, false);
 
-  session = { user: { id: 'current', email_confirmed_at: 'confirmed' } };
-  for (profile of [{ id: 'current', app_role: 'player' }, { id: 'other', app_role: 'admin' }]) {
-    authChanged();
-    assert.equal(button.hidden, true);
-    assert.equal(shortcut(), false);
+  for (const role of ['tipper', 'player', 'admin']) {
+    session = { user: { id: 'current', email_confirmed_at: 'confirmed' } };
+    profile = { id: 'current', app_role: role };
+    listeners.get('button:click')();
+    assert.equal(dialog.open, true, role);
+    assert.equal(shortcut(), true);
+    assert.equal(dialog.open, false, role);
   }
 
-  profile = { id: 'current', app_role: 'admin' };
-  session = { user: { id: 'current' } };
-  authChanged();
-  assert.equal(button.hidden, true);
-  assert.equal(shortcut(), false);
-
   otherModal = { open: true };
-  session.user.email_confirmed_at = 'confirmed';
-  authChanged();
-  assert.equal(button.hidden, false);
-  assert.equal(button.disabled, false);
   assert.equal(shortcut(), true);
   assert.equal(dialog.open, true);
   assert.equal(output.dataset.expanded, 'false');
+  assert.equal(filterTray.inert, true);
+  listeners.get('dialog:pointermove')({ pointerType: 'mouse', target: content });
   assert.equal(filterTray.inert, true);
   listeners.get('dialog:pointermove')({ pointerType: 'mouse', target: input });
   assert.equal(filterTray.inert, false);
@@ -265,8 +283,18 @@ test('confirmed admins can open search and reveal filters by mouse or keyboard, 
   listeners.get('dialog:click')({ target: { closest: () => filterButtons[1] } });
   assert.equal(input.value, 'PadelPost');
   assert.deepEqual(filterButtons.map(chip => chip.pressed), ['false', 'true']);
-  assert.equal(filterTray.inert, true);
+  assert.equal(filterTray.inert, false);
   assert.equal(input.placeholder, 'Artikel durchsuchen');
+  listeners.get('dialog:pointermove')({ pointerType: 'mouse', target: content });
+  assert.equal(filterTray.inert, false);
+  input.value = 'PadelPost neu';
+  listeners.get('input:input')();
+  runSearch();
+  assert.equal(filterTray.inert, true);
+  listeners.get('dialog:pointermove')({ pointerType: 'mouse', target: content });
+  assert.equal(filterTray.inert, true);
+  listeners.get('dialog:pointermove')({ pointerType: 'mouse', target: input });
+  assert.equal(filterTray.inert, false);
 
   input.value = '';
   listeners.get('input:input')();
@@ -295,10 +323,11 @@ test('confirmed admins can open search and reveal filters by mouse or keyboard, 
   listeners.get('button:click')();
 
   session = null;
-  authChanged();
-  assert.equal(button.hidden, true);
+  listeners.get('window:padel:auth-state-changed')?.();
+  assert.equal(button.hidden, false);
+  assert.equal(dialog.open, true);
+  assert.equal(shortcut(), true);
   assert.equal(dialog.open, false);
-  assert.equal(shortcut(), false);
 });
 
 
@@ -320,4 +349,39 @@ test('embedded detail views forward the search shortcut to their parent in captu
   handler({ ...event, repeat: true });
   handler({ ...event, key: 'f' });
   assert.equal(messages.length, 1);
+});
+
+test('player search uses weighted career matches and wins, with neutral missing values', () => {
+  assert.deepEqual(search.playerSummaryStats({ currentElo: 1284, matches: 12.5, wins: 8 }), {
+    elo: '1.284', matches: '12,5', winRate: '64 %'
+  });
+  assert.deepEqual(search.playerSummaryStats({ currentElo: 1000, matches: 0, wins: 0 }), {
+    elo: '1.000', matches: '0', winRate: '—'
+  });
+  assert.deepEqual(search.playerSummaryStats({ currentElo: null }), {
+    elo: '—', matches: '—', winRate: '—'
+  });
+});
+
+test('player search shares pending profile requests and reloads after cache invalidation', async () => {
+  const source = fs.readFileSync(require.resolve('../js/site-search.js'), 'utf8');
+  const loader = source.match(/  function loadSearchPlayerProfile\(playerId\) \{[\s\S]*?\n  \}/)[0];
+  let calls = 0;
+  const cache = { profiles: new Map() };
+  const context = vm.createContext({ cache, maxAge: 60000, getClient: () => ({
+    rpc: async (name, params) => {
+      calls++;
+      assert.equal(name, 'get_player_profile');
+      assert.equal(params.p_player_id, 'ludwig_w');
+      return { data: { summary: { currentElo: 1284, matches: 12.5, wins: 8 } } };
+    }
+  }) });
+  vm.runInContext(loader, context);
+  const first = context.loadSearchPlayerProfile('ludwig_w');
+  assert.equal(context.loadSearchPlayerProfile('ludwig_w'), first);
+  await first;
+  assert.equal(calls, 1);
+  cache.profiles.clear();
+  await context.loadSearchPlayerProfile('ludwig_w');
+  assert.equal(calls, 2);
 });

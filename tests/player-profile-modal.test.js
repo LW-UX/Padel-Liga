@@ -6,7 +6,8 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
+const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8') + '\n'
+  + fs.readFileSync(path.join(root, 'js/profile-comparison.js'), 'utf8');
 const scoreInput = fs.readFileSync(path.join(root, 'js/score-input.js'), 'utf8');
 const style = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 const panelLayout = require(path.join(root, 'js/panel-layout.js'));

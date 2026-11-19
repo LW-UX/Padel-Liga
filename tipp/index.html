@@ -34,15 +34,15 @@
     })();
   </script>
   <link rel="stylesheet" href="../achievements.css?v=2026-10-31">
-  <link rel="stylesheet" href="../style.css?v=2026-11-18-search-loading">
+  <link rel="stylesheet" href="../style.css?v=2026-11-19-muted-inputs">
   <link rel="stylesheet" href="../tipp.css?v=2026-11-18-article-fade">
-  <link rel="stylesheet" href="../site-search.css?v=2026-11-19-search-close-radius">
-  <link rel="stylesheet" href="../match-statistics.css?v=2026-11-16-editor-columns">
-  <link rel="stylesheet" href="../account.css?v=2026-11-11-single-card-border">
+  <link rel="stylesheet" href="../site-search.css?v=2026-11-19-player-search-stats">
+  <link rel="stylesheet" href="../match-statistics.css?v=2026-11-19-muted-inputs">
+  <link rel="stylesheet" href="../account.css?v=2026-11-19-muted-inputs">
   <link rel="stylesheet" href="../court-availability.css?v=2026-11-17-compact-calendar-error">
   <link rel="preconnect" href="https://ufpaeluwcqynzudhmrro.supabase.co" crossorigin>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script defer src="../data/players.js?v=2026-11-18-search-aliases-4"></script>
+  <script defer src="../data/players.js?v=2026-11-19-joni-alias"></script>
   <script defer src="../data/seasons.js?v=2026-11-18-search-editorial"></script>
   <script defer src="../js/season-routing.js?v=2026-11-18-season-label"></script>
   <script defer src="../data/supabase-config.js"></script>
@@ -59,8 +59,9 @@
   <script defer src="../js/name-nowrap.js?v=2026-11-12-name-nowrap"></script>
   <script defer src="../js/headline-split.js?v=2026-11-03-headline-split-2"></script>
   <script defer src="../js/table-core.js?v=2026-10-30-diff-zero"></script>
-  <script defer src="../js/site-search-core.js?v=2026-11-18-training-search"></script>
-  <script defer src="../js/site-search.js?v=2026-11-19-mobile-search-page"></script>
+  <script defer src="../js/profile-comparison.js?v=2026-11-19-search-comparison"></script>
+  <script defer src="../js/site-search-core.js?v=2026-11-19-player-search-stats"></script>
+  <script defer src="../js/site-search.js?v=2026-11-19-stable-search-filters"></script>
   <script defer src="../js/panel-layout.js?v=2026-11-03-split-left-sync"></script>
   <script defer src="../js/tipp-page.js?v=2026-11-18-search-loading"></script>
 </head>
@@ -80,10 +81,9 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10l3 3 1 8-3 1-4-4h-4l-4 4-3-1 1-8z"/><path d="M7 9v5m-2.5-2.5h5M16 10h.01M18 13h.01"/></svg>
             <span class="global-action-label">PadelPong</span>
           </a>
-          <button class="secondary-button secondary-button--with-icon global-action site-search-trigger" type="button" data-site-search-open data-search-loading data-global-action data-global-action-close aria-label="Suchen" aria-haspopup="dialog" aria-controls="site-search-dialog" aria-hidden="true" disabled>
+          <button class="secondary-button secondary-button--with-icon global-action site-search-trigger" type="button" data-site-search-open data-global-action data-global-action-close aria-label="Suchen" aria-haspopup="dialog" aria-controls="site-search-dialog">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
             <span class="site-search-trigger-label">Suchen</span><kbd>⌘ K</kbd>
-            <span class="site-search-trigger-placeholder loading-skeleton" aria-hidden="true"></span>
           </button>
           <div class="season-picker" id="season-picker">
             <button class="secondary-button secondary-button--dropdown secondary-button--with-icon global-action" type="button" data-season-toggle data-global-action aria-haspopup="listbox" aria-expanded="false">

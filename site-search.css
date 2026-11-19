@@ -1,23 +1,6 @@
 .site-search-trigger-label,
-.site-search-trigger-placeholder,
 .is-detail-embed .site-search-trigger {
   display: none;
-}
-
-.site-search-trigger[data-search-loading] {
-  position: relative;
-  pointer-events: none;
-}
-
-.site-search-trigger[data-search-loading] > :not(.site-search-trigger-placeholder) {
-  visibility: hidden;
-}
-
-.site-search-trigger[data-search-loading] > .site-search-trigger-placeholder {
-  display: block;
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
 }
 
 .site-search-trigger > kbd {
@@ -195,7 +178,7 @@
 }
 
 .site-search-status,
-.site-search-results h2 {
+.site-search-results h3 {
   margin: 0;
 }
 
@@ -219,9 +202,8 @@
   display: none;
 }
 
-.site-search-results h2 {
-  font: inherit;
-  font-weight: 700;
+.site-search-results h3 {
+  color: var(--text);
   margin: 8px 0 3px;
 }
 
@@ -239,6 +221,7 @@
   background: transparent;
   color: inherit;
   font: inherit;
+  font-size: var(--text-base);
   text-decoration: none;
 }
 
@@ -256,25 +239,29 @@
 
 .site-search-match-identity {
   min-width: 0;
-  flex-wrap: wrap;
+  white-space: nowrap;
+}
+
+.site-search-match-identity > strong {
+  flex-shrink: 0;
 }
 
 .site-search-match-season,
 .site-search-match-date,
+.site-search-team-separator,
+span.site-search-pairing-separator,
 .site-search-result > span {
   color: var(--muted);
 }
 
 .site-search-match-season {
   font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .site-search-match-details {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 3px 0.75rem;
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
 }
 
 .site-search-match-date {
@@ -284,6 +271,12 @@
   white-space: nowrap;
 }
 
+.site-search-pairing-separator {
+  white-space: pre;
+}
+
+.site-search-match-season,
+.site-search-match-date,
 .site-search-result > span,
 .site-search-comparison > span {
   font-size: var(--text-sm);
@@ -358,4 +351,53 @@
   .site-search-input input {
     font-size: max(16px, var(--text-sm));
   }
+}
+
+.site-search-comparison.player-profile-compare {
+  margin-block: 8px 12px;
+}
+
+@media (min-width: 769px) {
+  .site-search-comparison .player-profile-compare-tables {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.site-search-result.site-search-player {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+}
+
+.site-search-player-identity {
+  display: grid;
+  min-width: 0;
+}
+
+.site-search-player-identity > span {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.site-search-player-stats {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 16px;
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.site-search-player-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.site-search-player-stat-label {
+  color: var(--muted);
+  font-size: var(--text-sm);
 }

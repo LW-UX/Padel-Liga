@@ -8,7 +8,7 @@ window.PADEL_PLAYERS = [
   { id: "florian_z", name: "Florian Z.", initials: "FZ", firma: "Hanako", profileEmoji: "👨" },
   { id: "greta_p", name: "Greta P.", initials: "GP", firma: "Hanako", profileEmoji: "👩" },
   { id: "irene_w", name: "Irene W.", initials: "IW", firma: "Headsquare", profileEmoji: "👩" },
-  { id: "jonas_l", name: "Jonas L.", initials: "JL", firma: "Envidual", profileEmoji: "👨" },
+  { id: "jonas_l", name: "Jonas L.", initials: "JL", firma: "Envidual", searchAliases: ["Joni"], profileEmoji: "👨" },
   { id: "leonie_r", name: "Leonie R.", initials: "LR", firma: "Hanako", searchAliases: ["Leonia"], profileEmoji: "👩" },
   { id: "lisa_s", name: "Lisa S.", initials: "LS", firma: "Envidual", profileEmoji: "👩" },
   { id: "luca_w", name: "Luca W.", initials: "LW", firma: "Envidual", profileEmoji: "👨" },
