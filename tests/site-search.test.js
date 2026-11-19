@@ -135,6 +135,10 @@ test('confirmed admins can open search and reveal filters by mouse or keyboard, 
   const input = { value: '', focus() {}, select() {}, setAttribute() {}, addEventListener: on('input') };
   const searchField = { contains: target => target === input };
   const content = { replaceChildren() {}, contains: () => false, addEventListener() {} };
+  const mobileClose = { addEventListener: on('mobile-close') };
+  const mobile = { matches: false };
+  let speedDialFocused = false;
+  const speedDial = { matches: () => false, focus: () => { speedDialFocused = true; } };
   const output = { dataset: {}, contains: () => false, addEventListener: on('output') };
   let runSearch;
   let filterWidth = '';
@@ -161,6 +165,7 @@ test('confirmed admins can open search and reveal filters by mouse or keyboard, 
     querySelector(selector) {
       if (selector === 'input') return input;
       if (selector === '.site-search-field') return searchField;
+      if (selector === '.site-search-close') return mobileClose;
       if (selector === '.site-search-filter-tray') return filterTray;
       if (selector === '.site-search-filters') return filterChips;
       if (selector === '.site-search-output') return output;
@@ -178,13 +183,15 @@ test('confirmed admins can open search and reveal filters by mouse or keyboard, 
   const document = {
     body: { classList: { contains: () => false }, append() {} },
     documentElement: { classList: { contains: () => false } },
-    querySelector: selector => selector === '[data-site-search-open]' ? button : selector === 'dialog:modal' ? otherModal : null,
+    querySelector: selector => ({
+      '[data-site-search-open]': button, '[data-global-actions-toggle]': speedDial, 'dialog:modal': otherModal
+    })[selector] ?? null,
     getElementById: id => id === 'external-game-link' ? { after() {} } : null,
     createElement: () => dialog
   };
   vm.runInNewContext(fs.readFileSync(require.resolve('../js/site-search.js'), 'utf8'), {
     window, document, navigator: {},
-    matchMedia: query => query.includes('any-pointer') ? stackedFilters : { matches: false },
+    matchMedia: query => query.includes('any-pointer') ? stackedFilters : query === '(max-width: 768px)' ? mobile : { matches: false },
     setTimeout: callback => { runSearch = callback; return 1; },
     clearTimeout: () => { runSearch = undefined; }
   });
@@ -278,6 +285,13 @@ test('confirmed admins can open search and reveal filters by mouse or keyboard, 
   assert.equal(output.inert, true);
   listeners.get('output:transitionend')({ target: output, propertyName: 'grid-template-rows' });
   assert.equal(dialog.open, false);
+  mobile.matches = true;
+  listeners.get('button:click')();
+  assert.equal(dialog.open, true);
+  assert.equal(output.dataset.expanded, 'true');
+  listeners.get('mobile-close:click')();
+  assert.equal(dialog.open, false);
+  assert.equal(speedDialFocused, true);
   listeners.get('button:click')();
 
   session = null;

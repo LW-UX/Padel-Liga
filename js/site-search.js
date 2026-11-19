@@ -32,7 +32,7 @@
 
   const dialog = document.createElement('dialog');
   dialog.id = 'site-search-dialog';
-  dialog.className = 'dialog site-search-dialog';
+  dialog.className = 'dialog dialog--page site-search-dialog';
   dialog.setAttribute('aria-label', 'Website durchsuchen');
   dialog.innerHTML = `
     <div class="dialog-card site-search-card">
@@ -42,6 +42,9 @@
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
             <input type="search" aria-label="Suchbegriff" placeholder="Website durchsuchen" autocomplete="off" enterkeyhint="search" autofocus>
           </div>
+          <button type="button" class="secondary-button secondary-button--icon site-search-close" aria-label="Suche schließen">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg>
+          </button>
           <div class="site-search-filter-tray" inert>
             <div class="site-search-filters" role="group" aria-label="Treffer filtern">
               <button type="button" class="secondary-button" data-search-filter="all" aria-pressed="true">Alles</button>
@@ -532,7 +535,7 @@
 
   function closeSearch() {
     if (closeTimer !== null) return;
-    if (output.dataset.expanded !== 'true' || reducedMotion.matches) {
+    if (mobile.matches || output.dataset.expanded !== 'true' || reducedMotion.matches) {
       dialog.close();
       return;
     }
@@ -557,6 +560,7 @@
   }
 
   button.addEventListener('click', open);
+  dialog.querySelector('.site-search-close').addEventListener('click', closeSearch);
   stackedFilters.addEventListener?.('change', () => {
     if (dialog.open && filterTray.contains(document.activeElement)) filtersRevealed = true;
     syncFilterTray();
