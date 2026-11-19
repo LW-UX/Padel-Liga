@@ -395,10 +395,12 @@ test('player search shares pending profile requests and reloads after cache inva
 test('table searches include normal and all-time rankings with a direct all-time destination', () => {
   const source = fs.readFileSync(require.resolve('../js/site-search.js'), 'utf8');
   const pageLinks = source.match(/  function pageLinks\(active, players\) \{[\s\S]*?\n  \}/)[0];
+  const infoData = {};
+  vm.runInNewContext(fs.readFileSync(require.resolve('../data/info.js'), 'utf8'), { window: infoData });
   const league = { id: 'winter', default: true };
   const cup = { id: 'cup', visualTheme: 'cup' };
   const context = vm.createContext({
-    window: {}, cache: { matches: new Map() }, seasons: () => [league, cup],
+    window: infoData, core: search, cache: { matches: new Map() }, seasons: () => [league, cup],
     titleLink: (title, url, description = '') => ({ title, url, description }),
     pickerLink: () => ({ title: 'Spieler suchen' }),
     routing: {
@@ -414,6 +416,19 @@ test('table searches include normal and all-time rankings with a direct all-time
   assert.deepEqual(Array.from(find('Ewige Tabelle')), ['Ewige Rangliste']);
   assert.deepEqual(Array.from(find('ewig')), ['Ewige Rangliste']);
   assert.deepEqual(Array.from(find('Ligatabelle')), ['Rangliste']);
+  for (const section of infoData.PADEL_INFO.sections) {
+    for (const group of section.groups || []) {
+      const target = links.find(item => item.title === group.title);
+      assert.ok(target, group.title);
+      assert.equal(target.url.hash, `#${search.infoGroupAnchor(section.title, group.title)}`);
+    }
+  }
+  assert.deepEqual(Array.from(find('stornieren')), ['Stornierung']);
+  assert.deepEqual(Array.from(find('Termin abstimmen')), ['Termin abstimmen']);
+  for (const term of ['Tie-Break', 'Tie Break', 'Tiebreak']) assert.ok(find(term).includes('Tie-Break'), term);
+  for (const term of ['Turnierbaum', 'Modus']) assert.deepEqual(Array.from(find(term)), ['Turnierbaum']);
+  assert.equal(links.find(item => item.title === 'Turnierbaum').url.hash, '#turniermodus');
+  assert.equal(context.pageLinks(cup, []).filter(item => item.title === 'Turnierbaum').length, 1);
   for (const [queries, title, anchor] of [
     [['Regeln', 'Spielregeln'], 'Spielregeln', 'spielregeln'],
     [['Kurzinfo'], 'Kurzinfo', 'kurzinfo'],

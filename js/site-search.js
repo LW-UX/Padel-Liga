@@ -237,7 +237,7 @@
     bookingUrl.hash = 'platzbuchung';
     const isCup = active.visualTheme === 'cup';
     const items = [
-      titleLink(isCup ? 'Turnierbaum' : 'Startseite', leagueUrl(isCup ? 'partien' : 'start')),
+      titleLink(isCup ? 'Cup-Übersicht' : 'Startseite', leagueUrl(isCup ? 'partien' : 'start')),
       titleLink('Partien', leagueUrl('partien')),
       titleLink('Infos', leagueUrl('infos')),
       { ...titleLink('Platzbuchung', bookingUrl, 'Infos'), aliases: ['buchen', 'platz buchen'] },
@@ -254,6 +254,15 @@
       const url = leagueUrl('infos');
       url.hash = anchor;
       items.push({ ...titleLink(title, url, 'Infos'), aliases });
+    }
+    for (const section of window.PADEL_INFO?.sections || []) {
+      for (const group of section.groups || []) {
+        const url = leagueUrl('infos');
+        url.hash = core.infoGroupAnchor(section.title, group.title);
+        const aliases = [group.title.replace(/-/g, ' '), group.title.replace(/-/g, '')];
+        if (core.normalize(group.title) === 'stornierung') aliases.push('stornieren');
+        items.push({ ...titleLink(group.title, url, `Infos · ${section.title}`), aliases });
+      }
     }
     if (!isCup) {
       items.push({ ...titleLink('Rangliste', leagueUrl('rangliste')), aliases: ['tabelle', 'ligatabelle', 'saisontabelle'] },
@@ -274,6 +283,13 @@
         { ...titleLink('Früher Vogel', matchTimeUrl, 'Statistik · Ø-Spielbeginn'), aliases: ['frueher vogel'] },
         { ...titleLink('Langschläfer', matchTimeUrl, 'Statistik · Ø-Spielbeginn'), aliases: ['langschlaefer'] }
       );
+    }
+    const diagramSeason = rankingSeason?.qualificationPlaces > 4 ? rankingSeason
+      : seasons().find(season => season.default && season.qualificationPlaces > 4) || rankingSeason;
+    if (diagramSeason) {
+      const diagramUrl = routing.getSectionUrl(diagramSeason.id, 'infos');
+      diagramUrl.hash = 'turniermodus';
+      items.push({ ...titleLink('Turnierbaum', diagramUrl, 'Infos · Kurzinfo'), aliases: ['modus', 'turniermodus'] });
     }
     const selectedId = window.PadelLigaGetSelectedViewerId?.();
     const selected = players.find(player => player.id === selectedId);

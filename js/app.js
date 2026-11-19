@@ -5761,7 +5761,8 @@ function renderTop8QualificationFlow() {
   if (getCompetitionConfig().tournamentMode !== 'top8-semifinals') return '';
 
   return `<figure
-    class="qualification-flow"
+    id="turniermodus"
+    class="qualification-flow info-anchor"
     role="img"
     aria-label="Die besten acht Spieler der Ligaphase spielen zwei Halbfinals. Platz 1 und 2 spielen gegen Platz 7 und 8. Platz 3 und 4 spielen gegen Platz 5 und 6. Die vier Spieler der beiden Siegerteams erreichen das Final Four."
   >
@@ -6772,7 +6773,7 @@ function renderInfoSection(section, id) {
     : '';
   const intro = section.intro ? `<p>${section.intro} ${link}</p>` : '';
   const paragraphs = renderParagraphs(section.paragraphs);
-  const groups = (section.groups || []).map(group => `<div class="info-group">
+  const groups = (section.groups || []).map(group => `<div class="info-group info-anchor" id="${window.PadelSearchCore.infoGroupAnchor(section.title, group.title)}">
     <h4>${group.title}</h4>
     ${renderParagraphs(group.paragraphs)}
     ${group.courtAvailability ? courtLink : ''}
@@ -6853,7 +6854,12 @@ function revealSearchTarget() {
     return;
   }
   if (!document.getElementById('infos')?.classList.contains('active')) return;
-  if (['kurzinfo', 'spielregeln', 'zaehlweise', 'platzbuchung', 'ergebnismeldung', 'punktevergabe', 'artikel'].includes(fragment)) {
+  if (fragment === 'turniermodus') {
+    (document.getElementById('turniermodus') || document.getElementById('kurzinfo'))?.scrollIntoView({ block: 'center' });
+    return;
+  }
+  if (document.getElementById(fragment)?.classList?.contains('info-group')
+    || ['kurzinfo', 'spielregeln', 'zaehlweise', 'platzbuchung', 'ergebnismeldung', 'punktevergabe', 'artikel'].includes(fragment)) {
     document.getElementById(fragment)?.scrollIntoView({ block: 'start' });
     return;
   }

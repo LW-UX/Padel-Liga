@@ -218,7 +218,14 @@
     };
   }
 
-  const api = { normalize, parseQuery, resolveNames, matchesQuery, matchNumber, summarizePair, quoteAuthorQuery, articleQuotes, articleMatches, normalizeTraining, trainingMatches, groupPlayerAchievements, playerSummaryStats };
+  function infoGroupAnchor(sectionTitle, groupTitle) {
+    const slug = title => String(title).toLowerCase()
+      .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return `${slug(sectionTitle)}-${slug(groupTitle)}`;
+  }
+
+  const api = { normalize, parseQuery, resolveNames, matchesQuery, matchNumber, summarizePair, quoteAuthorQuery, articleQuotes, articleMatches, normalizeTraining, trainingMatches, groupPlayerAchievements, playerSummaryStats, infoGroupAnchor };
   if (typeof module !== 'undefined') module.exports = api;
   if (typeof window !== 'undefined') window.PadelSearchCore = api;
 })();

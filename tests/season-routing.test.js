@@ -395,7 +395,10 @@ test('info search anchors reveal the matching section without expanding an artic
   vm.runInNewContext(fs.readFileSync(path.join(root, 'data/info.js'), 'utf8'), { window: infoData });
   const sectionId = source.match(/function sectionId\(title\) \{[\s\S]*?\n\}/)[0];
   const slug = vm.runInNewContext(`${sectionId}\nsectionId`);
-  const anchors = ['kurzinfo', ...infoData.PADEL_INFO.sections.map(section => slug(section.title)), 'artikel'];
+  const search = require('../js/site-search-core');
+  const groupAnchors = infoData.PADEL_INFO.sections.flatMap(section => (section.groups || [])
+    .map(group => search.infoGroupAnchor(section.title, group.title)));
+  const anchors = ['kurzinfo', ...infoData.PADEL_INFO.sections.map(section => slug(section.title)), ...groupAnchors, 'artikel', 'turniermodus'];
   for (const anchor of anchors) {
     let scrolled = false;
     vm.runInNewContext(`${reveal}\nrevealSearchTarget();`, {
@@ -403,8 +406,29 @@ test('info search anchors reveal the matching section without expanding an artic
       window: { location: { href: `https://liga.test/infos/#${anchor}` } },
       document: { getElementById: id => id === 'infos'
         ? { classList: { contains: () => true } }
-        : id === anchor ? { scrollIntoView: () => { scrolled = true; } } : null }
+        : id === anchor ? { classList: { contains: name => name === 'info-group' && groupAnchors.includes(anchor) }, scrollIntoView: () => { scrolled = true; } } : null }
     });
     assert.equal(scrolled, true, anchor);
   }
+});
+
+
+test('info subgroup anchors match their search destinations', () => {
+  const source = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
+  const renderer = source.match(/function renderInfoSection\(section, id\) \{[\s\S]*?\n\}/)[0];
+  const infoData = {};
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'data/info.js'), 'utf8'), { window: infoData });
+  const search = require('../js/site-search-core');
+  const context = vm.createContext({
+    window: { PadelSearchCore: search, PadelSeasonRouting: { getAccountUrl: () => new URL('https://liga.test/konto/') } },
+    escapeHtml: value => String(value), selectedSeason: { id: 'winter' }
+  });
+  vm.runInContext(renderer, context);
+  for (const section of infoData.PADEL_INFO.sections) {
+    const html = context.renderInfoSection(section, 'parent');
+    for (const group of section.groups || []) {
+      assert.ok(html.includes(`id="${search.infoGroupAnchor(section.title, group.title)}"`), group.title);
+    }
+  }
+  assert.match(source, /id="turniermodus"\s+class="qualification-flow info-anchor"/);
 });
