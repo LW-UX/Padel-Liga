@@ -1846,6 +1846,9 @@
       margin-top: 0;
       font-size: var(--text-xs);
     }
+    html:root .site-footer-links .text-link {
+      color: var(--dim);
+    }
     .site-footer-links svg {
       width: 1em;
       height: 1em;
