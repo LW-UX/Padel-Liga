@@ -1797,7 +1797,6 @@
       align-items: baseline;
       justify-content: center;
       gap: clamp(0.35rem, 1.4vw, 0.8rem);
-      width: 100%;
       color: var(--muted);
       font-size: var(--text-xs);
       line-height: 1;
@@ -1836,9 +1835,20 @@
     }
     .site-footer-links {
       display: flex;
+      align-items: baseline;
       justify-content: center;
       gap: 1rem;
-      margin-top: 0.55rem;
+    }
+    @media (width > 768px) {
+      .site-footer {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+    }
+    @media (max-width: 768px) {
+      .site-footer-links { margin-top: 0.55rem; }
     }
     .site-footer-links .text-link {
       align-items: center;
