@@ -1834,6 +1834,27 @@
       border-left: 1px solid var(--border);
       color: var(--dim);
     }
+    .site-footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 0.55rem;
+    }
+    .site-footer-links .text-link {
+      align-items: center;
+      gap: 0.25em;
+      margin-top: 0;
+      font-size: var(--text-xs);
+    }
+    .site-footer-links svg {
+      width: 1em;
+      height: 1em;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
     .ranking-profile-layout,
     .all-time-ranking-profile-layout {
       display: grid;
