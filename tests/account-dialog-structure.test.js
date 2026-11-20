@@ -14,6 +14,17 @@ const tippspielScript = fs.readFileSync(path.join(root, 'js', 'tippspiel.js'), '
 const tippPageScript = fs.readFileSync(path.join(root, 'js', 'tipp-page.js'), 'utf8');
 const appScript = fs.readFileSync(path.join(root, 'js', 'app.js'), 'utf8');
 
+test('account task labels display Berlin time with a colon, including legacy training times', () => {
+  const context = vm.createContext({});
+  for (const name of ['getBerlinMatchAtParts', 'formatTaskDate', 'formatMatchAt']) {
+    const source = accountScript.match(new RegExp('  function ' + name + '\\([^]*?\\n  }'))[0];
+    vm.runInContext(source, context);
+  }
+  assert.equal(context.formatMatchAt('2026-11-20T11:00:00Z'), '20.11.2026 · 12:00 Uhr');
+  assert.equal(context.formatTaskDate('2026-11-20', '12:30:00'), '20.11.2026 · 12:30 Uhr');
+  assert.equal(context.formatTaskDate('2026-11-20', '12.30'), '20.11.2026 · 12:30 Uhr');
+});
+
 test('planned time controls offer only half hours and require replacing legacy minutes', () => {
   const source = accountScript.slice(accountScript.indexOf('  const SCHEDULE_HOUR_OPTIONS'), accountScript.indexOf('  function renderScheduleTimeField'));
   const pickers = [];

@@ -1080,7 +1080,7 @@
     const label = Number.isNaN(date.getTime())
       ? dateValue
       : new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
-    const time = String(timeValue || '').slice(0, 5).replace(':', '.');
+    const time = String(timeValue || '').slice(0, 5).replace('.', ':');
     return `${label}${time ? ` · ${time} Uhr` : ''}`;
   }
 

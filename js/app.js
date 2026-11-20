@@ -241,7 +241,7 @@ function getBerlinDateTimeParts(value) {
   }).formatToParts(date).map(part => [part.type, part.value]));
   return {
     date: `${parts.year}-${parts.month}-${parts.day}`,
-    time: `${parts.hour}.${parts.minute}`
+    time: `${parts.hour}:${parts.minute}`
   };
 }
 
@@ -441,7 +441,7 @@ async function loadDatabasePublicTrainingFeed() {
   const normalize = item => ({
     ...item,
     playedOn: String(item?.playedOn || ''),
-    displayTime: String(item?.displayTime || '').replace(':', '.'),
+    displayTime: formatMatchTime(item?.displayTime),
     participants: Array.isArray(item?.participants) ? item.participants : [],
     roundCount: Number(item?.roundCount) || 0,
     completedSetCount: Number(item?.completedSetCount) || 0
@@ -5387,8 +5387,7 @@ function renderTeamPlayers(players, nameClass = 'match-player') {
 
 function formatMatchTime(time) {
   if (!time) return '';
-  const value = String(time).trim().replace(',', '.').replace(':', '.');
-  const [hours, rawMinutes = '00'] = value.split('.');
+  const [hours, rawMinutes = '00'] = String(time).trim().split(/[.,:]/);
   const minutes = rawMinutes.padEnd(2, '0').slice(0, 2);
 
   return `${hours.padStart(2, '0')}:${minutes}`;
@@ -5539,7 +5538,7 @@ function renderHomeMatchCard(match, options = {}) {
 }
 
 function getHomeFeedTimestamp(dateValue, timeValue) {
-  const normalizedTime = String(timeValue || '').replace('.', ':');
+  const normalizedTime = formatMatchTime(timeValue);
   const timestamp = new Date(`${dateValue}T${normalizedTime || '00:00'}:00`).getTime();
   return Number.isNaN(timestamp) ? 0 : timestamp;
 }

@@ -145,10 +145,10 @@ test('clients use match_at as the only database match time and render Berlin loc
   const formatBerlin = vm.runInNewContext(`(() => { ${formatterSource}\nreturn getBerlinDateTimeParts; })()`, { Intl, Date, Object, Number });
   assert.deepEqual(JSON.parse(JSON.stringify(formatBerlin('2026-07-01T16:30:00Z'))), {
     date: '2026-07-01',
-    time: '18.30'
+    time: '18:30'
   });
   assert.deepEqual(JSON.parse(JSON.stringify(formatBerlin('2026-12-01T17:30:00Z'))), {
     date: '2026-12-01',
-    time: '18.30'
+    time: '18:30'
   });
 });

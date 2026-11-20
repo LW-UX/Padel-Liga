@@ -6,7 +6,7 @@ window.PADEL_TRAINING_MATCHES = [
   //   id: "training-2026-08-12-01",
   //   type: "training",
   //   date: "2026-08-12",
-  //   time: "18.00",
+  //   time: "18:00",
   //   team1: { playerIds: ["agnes_k", "ludwig_w"] },
   //   team2: { playerIds: ["raphael_h", "greta_p"] },
   //   result: "6:4, 3:6 – 10:7",

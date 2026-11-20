@@ -539,9 +539,8 @@ test('search help appears only after a successful search with no results', () =>
   context.articlesReady = true;
   context.render();
   assert.equal(status.textContent, 'Keine Treffer gefunden');
-  const labels = [...source.matchAll(/data-search-filter="[^"]+" aria-pressed="[^"]+">([^<]+)/g)].map(match => match[1]);
-  assert.deepEqual([...results.innerHTML.matchAll(/<dt>([^<]+)/g)].map(match => match[1]), labels);
-  assert.match(results.innerHTML, /Zitat \+ &lt;Spielername&gt;/);
+  assert.match(results.innerHTML, /Mit „Alles“ kannst du nach allen Beispielen suchen/);
+  assert.match(results.innerHTML, /<dt>Artikel und Zitate<\/dt>[\s\S]*Zitat \+ Luca W\./);
 
   entry.error = true;
   context.render();

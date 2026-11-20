@@ -674,30 +674,42 @@
     if (!loading && !failed && !hasResults) {
       status.textContent = 'Keine Treffer gefunden';
       results.innerHTML = `
-        <dl class="site-search-help" aria-label="Suchhilfe">
-          <div>
-            <dt>Alles</dt>
-            <dd>Seiten und Infos, z. B. Rangliste, Spielregeln oder Platzbuchung</dd>
-            <dd>Saisonname, z. B. Winter 2026</dd>
-            <dd>Zwei Spielernamen für den Vergleich „Im Duell“ und „Im Team“</dd>
-          </div>
-          <div>
-            <dt>Partien</dt>
-            <dd>Partienummer (P12), Final-Four-Nummer (F2) oder Training</dd>
-            <dd>Datum (21.11.2026) oder Monat (November 2026)</dd>
-            <dd>Ein bis vier Spielernamen mit Leerzeichen für gemeinsame Partien oder Trainings</dd>
-          </div>
-          <div>
-            <dt>Spieler</dt>
-            <dd>Spielername oder Namenskürzel</dd>
-            <dd>Auszeichnungen, z. B. Medaille oder Champion</dd>
-          </div>
-          <div>
-            <dt>Artikel</dt>
-            <dd>Titel, Textausschnitt oder Artikelnummer (A7)</dd>
-            <dd>Zitat oder Zitat + &lt;Spielername&gt;</dd>
-          </div>
-        </dl>`;
+        <section class="site-search-help" aria-label="Suchhilfe">
+          <p>Hier sind Suchvorschläge zum Ausprobieren. Mit „Alles“ kannst du nach allen Beispielen suchen. Die anderen Chips grenzen die Suche ein.</p>
+          <dl>
+            <div>
+              <dt>Profile und Spielervergleiche</dt>
+              <dd><ul>
+                <li>Spielerprofile nach Name oder Kürzel, z. B. „Luca W.“ oder „LW“</li>
+                <li>Zwei Spieler „Im Duell“ und „Im Team“ vergleichen, z. B. mit „Luca W. Marco M.“</li>
+                <li>Spieler mit Auszeichnungen über „Medaille“ oder „Champion“</li>
+              </ul></dd>
+            </div>
+            <div>
+              <dt>Partien, Trainings und Termine</dt>
+              <dd><ul>
+                <li>Partien über ihre Nummer, z. B. „P12“ oder „F2“ fürs Final Four</li>
+                <li>Trainings mit dem Suchwort „Training“</li>
+                <li>Partien und Trainings nach Datum oder Monat, z. B. „21.11.2026“ oder „November 2026“</li>
+                <li>Partien und Trainings mit bestimmten Spielern über bis zu vier Namen, getrennt durch Leerzeichen</li>
+              </ul></dd>
+            </div>
+            <div>
+              <dt>Artikel und Zitate</dt>
+              <dd><ul>
+                <li>Artikel nach Titel, Textausschnitt oder Nummer, z. B. „A7“</li>
+                <li>Alle Zitate mit „Zitat“ oder Zitate einer Person, z. B. mit „Zitat + Luca W.“</li>
+              </ul></dd>
+            </div>
+            <div>
+              <dt>Seiten und Saisons</dt>
+              <dd><ul>
+                <li>Seiten und Infos wie „Rangliste“, „Spielregeln“ oder „Platzbuchung“</li>
+                <li>Saisons wie „Winter 2026“</li>
+              </ul></dd>
+            </div>
+          </dl>
+        </section>`;
       setOutputVisible(true);
       return;
     }

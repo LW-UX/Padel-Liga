@@ -192,12 +192,15 @@
   font-weight: 600;
 }
 
-.site-search-help {
+.site-search-help,
+.site-search-help dl {
   display: grid;
   gap: 8px;
-  margin: 0;
+}
+
+.site-search-help {
   color: var(--dim);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
 }
 
 .site-search-help dt {
@@ -205,8 +208,12 @@
   font-weight: 600;
 }
 
-.site-search-help dd {
+.site-search-help :is(p, dl, dd, ul) {
   margin: 0;
+}
+
+.site-search-help ul {
+  padding-inline-start: 1.4em;
 }
 
 .site-search-retry:not([hidden]),
