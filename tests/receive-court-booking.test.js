@@ -127,6 +127,26 @@ test('deutscher Outlook-Weiterleitungskopf liefert Originaldatum und minütliche
   assert.equal(ctx.writes[0].p_source_precision_seconds, 60);
 });
 
+test('Outlook-Weiterleitung mit englischer Datumsreihenfolge und Partie 5 wird importiert', async (context) => {
+  context.mock.timers.enable({ apis: ['Date'], now: new Date('2026-11-20T07:55:00Z') });
+  const forwarded = { ...mail(), from: { address: 'booker@example.com' },
+    subject: 'Fw: Playtomic - Buchungsbestätigung / Ticket', date: '2026-11-20T07:55:00Z',
+    text: `Partie 5\n\nVon: Playtomic <no-reply@playtomic.io>\nGesendet: Freitag, November 20, 2026 8:48 AM\nAn: Test <booker@example.com>\nBetreff: Playtomic - Buchungsbestätigung / Ticket\n\n${text.replace('06.10.26', '26.11.26')}`,
+    attachments: [{ filename: 'calendar.ics', mimeType: 'text/calendar', content: [
+      'BEGIN:VEVENT', `UID:${id}@playtomic.io`, 'DTSTART:20261126T113000Z',
+      'DTEND:20261126T123000Z', 'DTSTAMP:20261120T074800Z',
+      'LOCATION:Lucky Star Padel @ Das Anders', 'END:VEVENT',
+    ].join('\n') }] };
+  const ctx = await setup({ deps: { parseMime: async () => forwarded } });
+  const response = await ctx.send();
+  assert.deepEqual(response.body, { status: 'processed', result: { status: 'active' } });
+  assert.equal(ctx.writes[0].p_match_number, 5);
+  assert.equal(ctx.writes[0].p_season_hint, null);
+  assert.equal(ctx.writes[0].p_provider_booking_id, id);
+  assert.equal(ctx.writes[0].p_source_occurred_at, '2026-11-20T07:48:00.000Z');
+  assert.equal(ctx.writes[0].p_source_precision_seconds, 60);
+});
+
 test('äußerer Betreff oder eigene Zeile ordnet eine erneut weitergeleitete Buchung eindeutig zu', async () => {
   const { readMatchAssignmentReference } = await modulePromise;
   assert.deepEqual(readMatchAssignmentReference('WG: Playtomic · Partie 12 | Winter 2026', ''), {
@@ -186,12 +206,15 @@ test('uneindeutige, beschädigte und mehrfach zitierte Outlook-Datumszeilen änd
   const { readOutlookForward } = await import('../supabase/functions/receive-court-booking/outlook-forward.ts');
   const header = date => `Von: Playtomic <no-reply@playtomic.io>\nDatum: ${date}\nAn: Test <test@example.com>\nBetreff: Buchung storniert\n\nBody`;
   for (const date of ['Montag, 31. Februar 2026 um 11:21', 'Dienstag, 5. Oktober 2026 um 11:21',
-    'Sonntag, 25. Oktober 2026 um 02:30', 'Sonntag, 29. März 2026 um 02:30', 'Montag, 5. Oktober 2026 um 25:21']) {
+    'Sonntag, 25. Oktober 2026 um 02:30', 'Sonntag, 29. März 2026 um 02:30', 'Montag, 5. Oktober 2026 um 25:21',
+    'Freitag, November 20, 2026 0:48 AM', 'Donnerstag, November 20, 2026 8:48 AM']) {
     assert.throws(() => readOutlookForward(header(date)));
   }
   assert.throws(() => readOutlookForward(header('Montag, 5. Oktober 2026 um 11:21') + '\n' + header('Montag, 5. Oktober 2026 um 11:21')));
   assert.throws(() => readOutlookForward(header('Montag, 5. Oktober 2026 um 11:21').replace('no-reply@playtomic.io', 'attacker@example.com')));
   assert.equal(readOutlookForward(header('Montag, 5. Januar 2026 um 11:21')).occurredAt, '2026-01-05T10:21:00.000Z');
+  assert.equal(readOutlookForward(header('Freitag, November 20, 2026 12:48 AM')).occurredAt, '2026-11-19T23:48:00.000Z');
+  assert.equal(readOutlookForward(header('Freitag, November 20, 2026 12:48 PM')).occurredAt, '2026-11-20T11:48:00.000Z');
 });
 
 test('90-Minuten-Buchung wird nicht auf eine Stunde gekürzt', async () => {

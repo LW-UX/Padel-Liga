@@ -186,6 +186,29 @@
   display: none;
 }
 
+.site-search-output-content:has(.site-search-help) .site-search-status {
+  color: var(--text);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.site-search-help {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
+}
+
+.site-search-help dt {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.site-search-help dd {
+  margin: 0;
+}
+
 .site-search-retry:not([hidden]),
 .site-search-more {
   display: block;

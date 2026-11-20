@@ -667,13 +667,43 @@
 
     const kinds = relevantKinds();
     const entries = kinds.flatMap(kind => (sharedSources[kind] || seasons()).map(source => cache[kind].get(source.id)));
-    const loading = entries.some(entry => !entry || entry.loading);
+    const loading = (kinds.includes('articles') && !articlesReady) || entries.some(entry => !entry || entry.loading);
     const failed = entries.some(entry => entry?.error);
     const { pair, groups } = getGroups();
     const hasResults = Boolean(pair) || groups.some(([, , items]) => items.length);
+    if (!loading && !failed && !hasResults) {
+      status.textContent = 'Keine Treffer gefunden';
+      results.innerHTML = `
+        <dl class="site-search-help" aria-label="Suchhilfe">
+          <div>
+            <dt>Alles</dt>
+            <dd>Seiten und Infos, z. B. Rangliste, Spielregeln oder Platzbuchung</dd>
+            <dd>Saisonname, z. B. Winter 2026</dd>
+            <dd>Zwei Spielernamen für den Vergleich „Im Duell“ und „Im Team“</dd>
+          </div>
+          <div>
+            <dt>Partien</dt>
+            <dd>Partienummer (P12), Final-Four-Nummer (F2) oder Training</dd>
+            <dd>Datum (21.11.2026) oder Monat (November 2026)</dd>
+            <dd>Ein bis vier Spielernamen mit Leerzeichen für gemeinsame Partien oder Trainings</dd>
+          </div>
+          <div>
+            <dt>Spieler</dt>
+            <dd>Spielername oder Namenskürzel</dd>
+            <dd>Auszeichnungen, z. B. Medaille oder Champion</dd>
+          </div>
+          <div>
+            <dt>Artikel</dt>
+            <dd>Titel, Textausschnitt oder Artikelnummer (A7)</dd>
+            <dd>Zitat oder Zitat + &lt;Spielername&gt;</dd>
+          </div>
+        </dl>`;
+      setOutputVisible(true);
+      return;
+    }
     const base = query.label || '';
     const message = loading ? 'Suche läuft …'
-      : failed ? 'Ein Teil der Suche ist gerade nicht verfügbar.' : hasResults ? '' : 'Keine Treffer.';
+      : failed ? 'Ein Teil der Suche ist gerade nicht verfügbar.' : '';
     retry.hidden = !failed;
     status.textContent = [base, message].filter(Boolean).join(' · ');
     if (pair && seasons().every(season => {

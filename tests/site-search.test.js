@@ -518,6 +518,43 @@ test('all search loads article full text after other sources and ignores superse
   assert.equal(hits[0].title, 'Die Liga ruft');
 });
 
+test('search help appears only after a successful search with no results', () => {
+  const source = fs.readFileSync(require.resolve('../js/site-search.js'), 'utf8');
+  const renderer = source.slice(source.indexOf('  function setOutputVisible('), source.indexOf('  function schedule('));
+  const results = { innerHTML: '', contains: () => false, replaceChildren() { this.innerHTML = ''; } };
+  const status = {};
+  const output = { dataset: {} };
+  const entry = {};
+  const context = vm.createContext({
+    document: {}, results, status, output, retry: {}, articlesReady: false,
+    query: { kind: 'text' }, relevantKinds: () => ['articles'], sharedSources: {},
+    seasons: () => [{ id: 'winter' }], cache: { articles: new Map([['winter', entry]]) },
+    getGroups: () => ({ groups: [['articles', 'Artikel', []]] }), renderGroup() {}
+  });
+  vm.runInContext(renderer, context);
+  context.render();
+  assert.equal(status.textContent, 'Suche läuft …');
+  assert.equal(results.innerHTML, '');
+
+  context.articlesReady = true;
+  context.render();
+  assert.equal(status.textContent, 'Keine Treffer gefunden');
+  const labels = [...source.matchAll(/data-search-filter="[^"]+" aria-pressed="[^"]+">([^<]+)/g)].map(match => match[1]);
+  assert.deepEqual([...results.innerHTML.matchAll(/<dt>([^<]+)/g)].map(match => match[1]), labels);
+  assert.match(results.innerHTML, /Zitat \+ &lt;Spielername&gt;/);
+
+  entry.error = true;
+  context.render();
+  assert.match(status.textContent, /nicht verfügbar/);
+  assert.equal(results.innerHTML, '');
+
+  entry.error = false;
+  context.getGroups = () => ({ groups: [['articles', 'Artikel', [{ title: 'Ein Artikel' }]]] });
+  context.render();
+  assert.equal(status.textContent, '');
+  assert.equal(results.innerHTML, '');
+});
+
 test('quote search shows full quotes and filters by author in either order, including aliases', () => {
   const article = { title: 'Spieltag', body: [
     { type: 'quote', text: 'Luca ist heute mein Gegner.', author: 'Marco M' },
