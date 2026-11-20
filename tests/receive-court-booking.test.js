@@ -147,6 +147,16 @@ test('Outlook-Weiterleitung mit englischer Datumsreihenfolge und Partie 5 wird i
   assert.equal(ctx.writes[0].p_source_precision_seconds, 60);
 });
 
+test('englischer Outlook-Kopf liefert Originalzeit und trennt zitierte Partieangaben ab', async () => {
+  const forwarded = { ...mail(), from: { address: 'booker@example.com' },
+    subject: 'Fw: Playtomic - Buchungsbestätigung / Ticket',
+    text: `Partie 5\n\nFrom: Playtomic <no-reply@playtomic.io>\nSent: Thursday, October 1, 2026 10:56 AM\nTo: Test <booker@example.com>\nSubject: Playtomic - Buchungsbestätigung / Ticket\n\n${text}\nPartie 99` };
+  const ctx = await setup({ deps: { parseMime: async () => forwarded } });
+  assert.equal((await ctx.send()).body.status, 'processed');
+  assert.equal(ctx.writes[0].p_match_number, 5);
+  assert.equal(ctx.writes[0].p_source_occurred_at, '2026-10-01T08:56:00.000Z');
+});
+
 test('äußerer Betreff oder eigene Zeile ordnet eine erneut weitergeleitete Buchung eindeutig zu', async () => {
   const { readMatchAssignmentReference } = await modulePromise;
   assert.deepEqual(readMatchAssignmentReference('WG: Playtomic · Partie 12 | Winter 2026', ''), {
@@ -211,6 +221,7 @@ test('uneindeutige, beschädigte und mehrfach zitierte Outlook-Datumszeilen änd
     assert.throws(() => readOutlookForward(header(date)));
   }
   assert.throws(() => readOutlookForward(header('Montag, 5. Oktober 2026 um 11:21') + '\n' + header('Montag, 5. Oktober 2026 um 11:21')));
+  assert.throws(() => readOutlookForward(header('Montag, 5. Oktober 2026 um 11:21') + '\nFrom: Playtomic <no-reply@playtomic.io>'));
   assert.throws(() => readOutlookForward(header('Montag, 5. Oktober 2026 um 11:21').replace('no-reply@playtomic.io', 'attacker@example.com')));
   assert.equal(readOutlookForward(header('Montag, 5. Januar 2026 um 11:21')).occurredAt, '2026-01-05T10:21:00.000Z');
   assert.equal(readOutlookForward(header('Freitag, November 20, 2026 12:48 AM')).occurredAt, '2026-11-19T23:48:00.000Z');

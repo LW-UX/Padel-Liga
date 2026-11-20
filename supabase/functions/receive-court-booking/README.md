@@ -101,9 +101,12 @@ Empfangsprüfung DMARC bestehen. Fehlende/fehlgeschlagene Prüfung ergibt
   Weiterleitungen mit Kalenderanhang. MIME wird mit PostalMime dekodiert.
 - Der Originalzeitpunkt stammt aus dem Original-`Date`-Header oder bei einer
   weitergeleiteten Bestätigung aus `DTSTAMP` im validierten Kalenderanhang.
-  Der deutsche Outlook-Kopf aus den bereitgestellten Resend-Vorschauen wird
-  ebenfalls unterstützt: Originalabsender, Datum, Empfänger und Betreff müssen
-  in genau einem vollständigen Block stehen. Das dortige Datum wird als Berliner
+  Deutsche und englische Outlook-Weiterleitungsköpfe werden ebenfalls gelesen.
+  Originalabsender, Datum, Empfänger und Betreff müssen in genau einem
+  vollständigen Block stehen. Die Datumszeile unterstützt
+  `Freitag, 20. November 2026 um 08:48` und
+  `Friday, November 20, 2026 8:48 AM`, auch mit deutschem Wochentag
+  im englischen Datumsformat. Das Datum wird als Berliner
   Zeit mit 60 Sekunden Genauigkeit übergeben; überlappende widersprüchliche
   Ereignisse werden in der RPC zur Prüfung zurückgestellt. Empfangszeitpunkt
   und Datum der Weiterleitung ersetzen nie den ursprünglichen Zeitpunkt.

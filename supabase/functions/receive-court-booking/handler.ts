@@ -1,5 +1,5 @@
 import { parsePlaytomicBookingMail, type BookingMail } from "../_shared/playtomic-booking-mail.ts";
-import { readOutlookForward } from "./outlook-forward.ts";
+import { outlookFromHeader, readOutlookForward } from "./outlook-forward.ts";
 
 type MimeMail = {
   subject?: string; text?: string; date?: string; from?: { address?: string }; to?: unknown;
@@ -29,7 +29,7 @@ export type MatchAssignmentReference = { matchNumber: number; seasonHint: string
 // assignment by mentioning an unrelated match in its original content.
 export function readMatchAssignmentReference(subject = "", text = ""): MatchAssignmentReference | null {
   const normalizedText = text.normalize("NFC").replace(/\r\n?/g, "\n");
-  const firstForwardHeader = normalizedText.search(/^Von:[ \t]*/m);
+  const firstForwardHeader = normalizedText.search(outlookFromHeader);
   const outerNote = firstForwardHeader < 0 ? normalizedText : normalizedText.slice(0, firstForwardHeader);
   const input = `${subject.normalize("NFC")}\n${outerNote}`;
   const pattern = /\bPartie\s*(?:Nr\.?\s*)?#?(\d{1,3})\b(?:\s*(?:[|·;,]\s*|\s+)(?:Saison\s*:?\s*)?((?:Winter|Sommer|Test)\s+20\d{2}|20\d{2}-(?:winter|sommer|test)|Cup\s+20\d{2}|20\d{2}-cup))?/giu;
