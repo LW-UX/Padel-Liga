@@ -1362,14 +1362,14 @@
 
   function getPredictionTableTeamLabel(team) {
     const playerIds = team?.playerIds || [];
-    return playerIds.length ? playerIds.map(getPlayerShortLabel).join('/') : 'offen';
+    return playerIds.length ? playerIds.map(getPlayerShortLabel).join(' & ') : 'offen';
   }
 
   // Beim Hovern einer Spalte fährt über den Kürzeln ein Feld mit den vollen Teamnamen aus.
   // Es liegt absolut über dem Kopf, damit sich die Spaltenbreite nicht ändert.
   function renderPredictionTableTeams(match) {
     const shortLabels = [match.team1, match.team2].map(getPredictionTableTeamLabel);
-    const fullLabels = [match.team1, match.team2].map(team => team?.spieler?.length ? team.spieler.join(' / ') : '');
+    const fullLabels = [match.team1, match.team2].map(team => team?.spieler?.length ? team.spieler.join(' & ') : '');
     const teams = shortLabels.map(label => `<span class="prediction-table-team">${escapeHtml(label)}</span>`).join('');
     const hasFullLabels = fullLabels.every(Boolean) && fullLabels.some((label, index) => label !== shortLabels[index]);
     if (!hasFullLabels) return teams;
@@ -1603,7 +1603,7 @@
           const presentation = getBonusQuestionPresentation(question);
           const status = question.resolved
             ? question.question_type === 'final_four_players'
-              ? (question.correct_answers || []).map(answer => getBonusAnswerShortLabel(question, answer)).join('/')
+              ? (question.correct_answers || []).map(answer => getBonusAnswerShortLabel(question, answer)).join(' & ')
               : (question.correct_answers || []).map(answer => getBonusAnswerFullLabel(question, answer)).join(', ')
             : isBonusQuestionOpen(question) ? 'offen' : '–';
           return `<th scope="col" class="prediction-table-question" title="${escapeHtml(presentation.question)}"><span class="prediction-table-match-link"><span class="prediction-table-question-title">${escapeHtml(presentation.title)}</span><span class="prediction-table-result">${escapeHtml(status)}</span></span></th>`;
