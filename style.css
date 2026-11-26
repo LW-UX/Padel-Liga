@@ -4612,8 +4612,10 @@
       align-content: center;
       gap: 0.45rem;
       min-height: 72px;
-      border-bottom: 1px solid var(--border);
       padding: 0.8rem 1.1rem;
+    }
+    .live-ticker-history > .live-ticker-game:not(:last-child) {
+      border-bottom: 1px solid var(--border);
     }
     .live-ticker-game-line {
       display: grid;
