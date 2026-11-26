@@ -1,0 +1,119 @@
+<div id="padel-press-demo" class="viz-dotted-background">
+  <div class="press-preview">
+    <div class="press-actions" aria-label="Beispiele für Druckfeedback">
+      <button type="button" class="press-control"><span class="press-face press-primary">Ergebnis melden</span></button>
+      <a href="#padel-press-demo" class="press-control"><span class="press-face press-secondary">Zum Spielplan</span></a>
+      <a href="#padel-press-demo" class="press-text">Zurück zur Liga <span aria-hidden="true">↗</span></a>
+    </div>
+    <fieldset class="press-tabs">
+      <legend>Ansicht</legend>
+      <div class="press-options">
+        <input type="radio" id="padel-press-league" name="padel-press-view" checked>
+        <label for="padel-press-league">Liga</label>
+        <input type="radio" id="padel-press-stats" name="padel-press-view">
+        <label for="padel-press-stats">Statistik</label>
+        <span class="press-indicator" aria-hidden="true"></span>
+      </div>
+    </fieldset>
+    <label class="press-motion"><input type="checkbox"> Bewegung reduzieren</label>
+  </div>
+</div>
+<style>
+  #padel-press-demo {
+    --press-surface: light-dark(#fffdf6, #20201c);
+    --press-ink: light-dark(#242217, #f8f3e2);
+    --press-border: light-dark(#b7ad95, #847b61);
+    --press-accent: light-dark(#f5d44b, #f4d451);
+    --press-accent-ink: #26200b;
+    --press-link-active: light-dark(#805800, #f4d451);
+    --press-active: light-dark(#f3e2a1, #504628);
+    --press-amount: 0.97;
+    --press-release: 160ms;
+    padding: 18px;
+    font: 400 0.9375rem/1.35 system-ui, sans-serif;
+  }
+  #padel-press-demo .press-preview {
+    box-sizing: border-box;
+    display: grid;
+    gap: 14px;
+    max-width: 34rem;
+    padding: 16px;
+    border: 1px solid var(--press-border);
+    border-radius: 14px;
+    background: var(--press-surface);
+    color: var(--press-ink);
+  }
+  #padel-press-demo .press-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  #padel-press-demo .press-control {
+    display: inline-flex;
+    appearance: none;
+    border: 0;
+    padding: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-decoration: none;
+    touch-action: manipulation;
+  }
+  #padel-press-demo .press-face {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    min-height: 44px;
+    padding: 0 13px;
+    border: 1px solid var(--press-border);
+    border-radius: inherit;
+    font-weight: 600;
+    pointer-events: none;
+    transition: transform var(--press-release) ease-out;
+  }
+  #padel-press-demo .press-primary { background: var(--press-accent); color: var(--press-accent-ink); border-color: var(--press-accent); }
+  #padel-press-demo .press-secondary { background: var(--press-surface); }
+  #padel-press-demo .press-control:active:not(:focus-visible) .press-face {
+    transform: scale(var(--press-amount));
+    transition-duration: 0ms;
+  }
+  #padel-press-demo .press-text { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; color: inherit; text-decoration: none; }
+  #padel-press-demo .press-text:is(:hover, :focus-visible, :active) { text-decoration: underline; text-underline-offset: 3px; }
+  #padel-press-demo .press-text:active { color: var(--press-link-active); }
+  #padel-press-demo .press-tabs { margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+  #padel-press-demo .press-tabs legend { padding: 0; margin-bottom: 5px; }
+  #padel-press-demo .press-options {
+    position: relative;
+    isolation: isolate;
+    display: inline-grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border: 1px solid var(--press-border);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  #padel-press-demo .press-options input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  #padel-press-demo .press-options label { display: grid; place-items: center; min-height: 44px; padding: 0 14px; border-radius: 6px; }
+  #padel-press-demo .press-options input:focus-visible + label { outline: 2px solid currentColor; outline-offset: -2px; }
+  #padel-press-demo .press-indicator {
+    position: absolute;
+    z-index: -1;
+    inset: 3px auto 3px 3px;
+    width: calc(50% - 3px);
+    border-radius: 6px;
+    background: var(--press-active);
+    transition: transform 260ms cubic-bezier(0.22, 1.15, 0.36, 1);
+  }
+  #padel-press-demo #padel-press-stats:checked ~ .press-indicator { transform: translateX(100%); }
+  #padel-press-demo .press-motion { display: flex; align-items: center; gap: 8px; min-height: 44px; width: fit-content; }
+  #padel-press-demo .press-motion input { margin: 0; accent-color: var(--press-link-active); }
+  #padel-press-demo:has(.press-motion input:checked) { --press-amount: 1; --press-release: 0ms; }
+  #padel-press-demo:has(.press-motion input:checked) .press-control:active .press-face { background: var(--press-active); color: var(--press-ink); border-color: var(--press-link-active); }
+  #padel-press-demo:has(.press-motion input:checked) .press-indicator { transition: none; }
+  @media (prefers-reduced-motion: reduce) {
+    #padel-press-demo { --press-amount: 1; --press-release: 0ms; }
+    #padel-press-demo .press-control:active .press-face { background: var(--press-active); color: var(--press-ink); border-color: var(--press-link-active); }
+    #padel-press-demo .press-indicator { transition: none; }
+  }
+</style>
+<script>
+  document.getElementById("padel-press-demo").querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", (event) => event.preventDefault());
+  });
+</script>

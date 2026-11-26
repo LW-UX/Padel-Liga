@@ -110,7 +110,8 @@
       font-size: var(--text-sm);
       font-weight: 500;
       padding: 0.5rem 0.85rem;
-      transition: all 0.15s;
+      transition: background-color 150ms, border-color 150ms, color 150ms, box-shadow 150ms,
+        scale var(--press-scale-duration, 160ms) ease-out;
       white-space: nowrap;
     }
     .datetime-input-shell:hover input,
@@ -148,6 +149,26 @@
     .secondary-button--icon {
       width: 38px;
       padding: 0;
+    }
+    /* Auswahlgruppen zeigen die Rückmeldung über ihre eigene Auswahlfläche. */
+    @media (prefers-reduced-motion: no-preference) {
+      :is(button, a[href]):is(.primary-button, .secondary-button, .danger-button, .global-actions-toggle, .viewer-profile-button):where(:not(:disabled, [aria-disabled="true"], :focus-visible, :is(.site-nav, .toggle, .auth-mode-toggle, .site-search-filters) *)):active {
+        --press-scale-duration: 0ms;
+        scale: 0.97;
+
+        /* Die transparente Fläche hält Randklicks während des Schrumpfens im Button. */
+        &::before {
+          content: '';
+          position: absolute;
+          inset: calc(-1.55% - 1px);
+        }
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      :is(button, a[href]):is(.primary-button, .secondary-button, .danger-button, .global-actions-toggle, .viewer-profile-button):where(:not(:disabled, [aria-disabled="true"], :is(.site-nav, .toggle, .auth-mode-toggle, .site-search-filters) *)):active {
+        box-shadow: inset 0 0 0 2px currentColor;
+        transition: none;
+      }
     }
     /* Button mit Symbol vor dem Text; alles Übrige kommt von .secondary-button. */
     .secondary-button--with-icon {
@@ -237,6 +258,12 @@
     }
     .text-link:hover { opacity: 0.7; }
     .text-link:is(:hover, :focus-visible) {
+      text-decoration: underline;
+      text-underline-offset: 0.18em;
+    }
+    html:root .text-link:active:where(:not(:disabled, [aria-disabled="true"])) {
+      color: var(--accent);
+      opacity: 1;
       text-decoration: underline;
       text-underline-offset: 0.18em;
     }
@@ -547,7 +574,7 @@
       font-size: var(--text-sm);
       font-weight: 500;
       padding: 0.55rem 0;
-      transition: all 0.15s;
+      transition: color 0.15s;
       white-space: nowrap;
     }
     .site-nav :is(button, a[data-section]):hover,
@@ -556,6 +583,29 @@
     .auth-mode-toggle button.active {
       color: var(--accent);
       background: color-mix(in srgb, var(--accent) 10%, transparent);
+    }
+    :is(.toggle:not(.toggle--sort), .auth-mode-toggle, .live-mode-toggle, .site-search-filters):has(> .selection-highlight) {
+      position: relative;
+    }
+    :is(.site-nav, .toggle, .auth-mode-toggle, .live-mode-toggle, .site-search-filters):has(> .selection-highlight) {
+      isolation: isolate;
+    }
+    .selection-highlight {
+      position: absolute;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .selection-highlight ~ :is(button, a[data-section]),
+    .site-search-filters:has(> .selection-highlight) > button > span {
+      position: relative;
+      z-index: 1;
+    }
+    [data-moving-selection] {
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    :is(.site-nav, .auth-mode-toggle):has(> .selection-highlight) > :is(button, a[data-section]):hover {
+      background: transparent !important;
     }
     .viewer-picker {
       position: relative;
@@ -576,7 +626,7 @@
       border-radius: 0;
       background: transparent;
       color: inherit;
-      transition: color 0.15s, background 0.15s;
+      transition: color 150ms, background-color 150ms, scale var(--press-scale-duration, 160ms) ease-out;
     }
     /* Jede Hälfte hat einen eigenen Rahmen; die Trennlinie teilen sich beide. */
     .viewer-combobox {
@@ -644,7 +694,7 @@
       background: transparent;
       color: var(--text);
       cursor: var(--cursor-pointer);
-      transition: border-color 0.15s, color 0.15s;
+      transition: border-color 150ms, color 150ms, scale var(--press-scale-duration, 160ms) ease-out;
     }
     .viewer-profile-emoji { font-size: 1.1rem; line-height: 1; }
     .viewer-profile-image {
@@ -736,14 +786,14 @@
       text-align: inherit;
       text-decoration: none;
     }
-    .player-profile-link:hover { color: var(--accent) !important; }
+    .player-profile-link:is(:hover, :active:where(:not(:disabled, [aria-disabled="true"]))) { color: var(--accent) !important; }
     /* Nur direktes Hovern unterstreicht; Spielerkarten färben nur den Namen, auch den hervorgehobenen. */
-    .player-profile-link:not(.match-detail-player):hover {
+    .player-profile-link:is(:not(.match-detail-player):hover, :active:where(:not(:disabled, [aria-disabled="true"]))) {
       text-decoration: underline;
       text-decoration-thickness: 1px;
       text-underline-offset: 3px;
     }
-    .match-detail-player.player-profile-link:is(:hover, :focus-visible) .match-detail-player-name { color: var(--accent) !important; }
+    .match-detail-player.player-profile-link:is(:hover, :focus-visible, :active:where(:not(:disabled, [aria-disabled="true"]))) .match-detail-player-name { color: var(--accent) !important; }
     .player-profile-link:focus-visible {
       border-radius: 3px;
       outline: 2px solid var(--accent);
@@ -1725,6 +1775,9 @@
     .prediction-overview-rank-separated,
     .home-ranking-selected-row { margin-top: 10px; border-top: 1px solid var(--border); }
 
+    :is(.primary-button, .danger-button) {
+      transition: scale var(--press-scale-duration, 160ms) ease-out;
+    }
     .primary-button {
       min-height: 38px;
       border: 1px solid var(--accent);
@@ -1857,7 +1910,7 @@
       margin-top: 0;
       font-size: var(--text-xs);
     }
-    html:root .site-footer-links .text-link {
+    html:root .site-footer-links .text-link:where(:not(:active)) {
       color: var(--dim);
     }
     .site-footer-links svg {
@@ -6120,7 +6173,8 @@
         padding: 0;
         place-items: center;
         pointer-events: auto;
-        transition: border-color 160ms ease, color 160ms ease, transform 160ms ease;
+        transition: border-color 160ms ease, color 160ms ease, transform 160ms ease,
+          scale var(--press-scale-duration, 160ms) ease-out;
       }
       .global-actions-toggle:hover,
       .global-actions-toggle:focus-visible {

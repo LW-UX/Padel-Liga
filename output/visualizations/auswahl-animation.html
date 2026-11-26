@@ -1,0 +1,206 @@
+<div id="padel-auswahl-demo" class="viz-dotted-background">
+  <div class="preview">
+    <div class="menu site-nav" role="group" aria-label="Hauptnavigation">
+      <button type="button" class="cursor-interaction" aria-pressed="true">Rangliste</button>
+      <button type="button" class="cursor-interaction" aria-pressed="false">Partien</button>
+      <button type="button" class="cursor-interaction" aria-pressed="false">Rechner</button>
+      <button type="button" class="cursor-interaction" aria-pressed="false">Statistik</button>
+    </div>
+    <div class="picker toggle" role="group" aria-label="Ranglistenansicht">
+      <button type="button" class="cursor-interaction" aria-pressed="true">Kompakt</button>
+      <button type="button" class="cursor-interaction" aria-pressed="false">Erweitert</button>
+    </div>
+  </div>
+</div>
+<style>
+  #padel-auswahl-demo {
+    --panel: light-dark(#fff, #191a16);
+    --ink: light-dark(#272921, #dedfd7);
+    --selected-ink: light-dark(#364200, #e2f87d);
+    --fill: light-dark(#edf2d0, #383f20);
+    --edge: light-dark(#daddd2, #45483e);
+    padding: 18px 12px;
+  }
+  #padel-auswahl-demo .preview {
+    box-sizing: border-box;
+    display: grid;
+    gap: 14px;
+    max-width: 550px;
+    margin-inline: auto;
+    padding: 12px;
+    border: 1px solid var(--edge);
+    border-radius: 16px;
+    background: var(--panel);
+    font: 500 0.875rem system-ui, sans-serif;
+  }
+  #padel-auswahl-demo :is(.menu, .picker) {
+    position: relative;
+    display: grid;
+    gap: 3px;
+  }
+  #padel-auswahl-demo .menu { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  #padel-auswahl-demo .picker {
+    justify-self: end;
+    grid-auto-flow: column;
+    padding: 2px;
+    border: 1px solid var(--edge);
+    border-radius: 10px;
+  }
+  #padel-auswahl-demo button {
+    position: relative;
+    min-width: 0;
+    min-height: 44px;
+    padding: 4px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+  }
+  #padel-auswahl-demo .picker button { padding-inline: 12px; }
+  #padel-auswahl-demo button:is([aria-pressed="true"], :hover) { color: var(--selected-ink); }
+  #padel-auswahl-demo button[aria-pressed="true"] { background: var(--fill); }
+  #padel-auswahl-demo button[data-moving-selection] { background: transparent; }
+  #padel-auswahl-demo .selection-highlight {
+    position: absolute;
+    border-radius: 7px;
+    background: var(--fill);
+    pointer-events: none;
+  }
+</style>
+<script>
+(() => {
+  const groups = '.site-nav, .toggle:not(.toggle--sort), .auth-mode-toggle, .live-mode-toggle, .site-search-filters';
+  const options = 'button, a[data-section]';
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const selections = new WeakMap();
+  const duration = 288;
+  const frequency = 31;
+  const dampingRatio = 0.75;
+  const decayRate = dampingRatio * frequency;
+  const dampedFrequency = frequency * Math.sqrt(1 - dampingRatio ** 2);
+
+  function finish(selection) {
+    if (!selection.layer) return;
+    selection.motion.animation.cancel();
+    selection.layer.remove();
+    selection.option.removeAttribute('data-moving-selection');
+    selection.layer = null;
+  }
+
+  function optionBox(option) {
+    const width = option.offsetWidth;
+    const height = option.offsetHeight;
+    return [option.offsetLeft + width / 2, option.offsetTop + height / 2, width, height];
+  }
+
+  function spring(from, target, initialVelocity, seconds) {
+    const displacement = from - target;
+    const amplitude = (initialVelocity + decayRate * displacement) / dampedFrequency;
+    const angle = dampedFrequency * seconds;
+    const decay = Math.exp(-decayRate * seconds);
+    const wave = displacement * Math.cos(angle) + amplitude * Math.sin(angle);
+    const slope = dampedFrequency * (-displacement * Math.sin(angle) + amplitude * Math.cos(angle));
+    return { value: target + decay * wave, velocity: decay * (slope - decayRate * wave) };
+  }
+
+  function moveHighlight(layer, start, target) {
+    const [x, y, width, height] = target;
+    Object.assign(layer.style, {
+      left: `${x - width / 2}px`, top: `${y - height / 2}px`,
+      width: `${width}px`, height: `${height}px`
+    });
+
+    // Sample the spring into compositor keyframes. Retarget from the same
+    // trajectory so a new click inherits both the position and the speed.
+    const sample = time => target.map((value, index) =>
+      spring(start[index].value, value, start[index].velocity, time / 1000));
+    const frames = Array.from({ length: 72 }, (_, index) => {
+      const [centerX, centerY, sizeX, sizeY] = sample(index * duration / 72);
+      // Stretch along the direction of travel and relax as the capsule settles.
+      const stretchX = 1 + 0.22 * Math.tanh(centerX.velocity / 1100) ** 2;
+      const stretchY = 1 + 0.22 * Math.tanh(centerY.velocity / 1100) ** 2;
+      const scaleX = Math.max(1, sizeX.value) / width * stretchX / Math.sqrt(stretchY);
+      const scaleY = Math.max(1, sizeY.value) / height * stretchY / Math.sqrt(stretchX);
+      return { transform: `translate(${centerX.value - x}px, ${centerY.value - y}px) scale(${scaleX}, ${scaleY})` };
+    });
+    frames.push({ transform: 'translate(0px, 0px) scale(1, 1)' });
+    const animation = layer.animate(frames, { duration });
+    return { animation, current: () => sample(Number(animation.currentTime) || 0) };
+  }
+
+  function update(group) {
+    const buttons = [...group.children].filter(child => child.matches(options));
+    const active = buttons.filter(button => button.matches('.active, [aria-pressed="true"]'));
+    const option = active.length === 1 ? active[0] : null;
+    const previous = selections.get(group);
+    if (previous?.option === option) return;
+
+    const selection = { option, layer: null };
+    selections.set(group, selection);
+    const current = previous?.layer?.isConnected ? previous.motion.current() : null;
+    if (previous) finish(previous);
+
+    const lastOption = previous?.option;
+    if (!option || !lastOption || reducedMotion.matches || !option.getClientRects().length) return;
+    // The live switcher redraws its buttons when fresh scores arrive.
+    const fromOption = group.contains(lastOption) ? lastOption
+      : buttons.find(button => button.textContent.trim() === lastOption.textContent.trim());
+    if (!current && (!fromOption || fromOption === option || !fromOption.getClientRects().length)) return;
+
+    const { backgroundColor, borderRadius, boxShadow } = getComputedStyle(option);
+    const layer = document.createElement('span');
+    layer.className = 'selection-highlight';
+    layer.setAttribute('aria-hidden', 'true');
+    Object.assign(layer.style, { backgroundColor, borderRadius, boxShadow });
+    if (group.matches('.site-search-filters')) group.append(layer);
+    else group.prepend(layer);
+
+    const from = current || optionBox(fromOption).map(value => ({ value, velocity: 0 }));
+    const to = optionBox(option);
+    if (to[2] === 0 || to[3] === 0 || from.every(({ value, velocity }, index) => value === to[index] && velocity === 0)) {
+      layer.remove();
+      return;
+    }
+
+    selection.layer = layer;
+    option.setAttribute('data-moving-selection', '');
+    selection.motion = moveHighlight(layer, from, to);
+    selection.motion.animation.onfinish = () => finish(selection);
+  }
+
+  document.querySelectorAll(groups).forEach(update);
+  new MutationObserver(records => {
+    const changed = new Set();
+    for (const record of records) {
+      const { target } = record;
+      if (target.matches?.(groups)) changed.add(target);
+      if (target.matches?.(options) && target.parentElement?.matches(groups)) changed.add(target.parentElement);
+      for (const node of record.addedNodes) {
+        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+        if (node.matches(groups)) changed.add(node);
+        node.querySelectorAll(groups).forEach(group => changed.add(group));
+      }
+    }
+    changed.forEach(group => {
+      if (group.isConnected) update(group);
+    });
+  }).observe(document.body, {
+    subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'aria-pressed']
+  });
+
+  reducedMotion.addEventListener('change', () => {
+    if (!reducedMotion.matches) return;
+    document.querySelectorAll('.selection-highlight').forEach(layer => finish(selections.get(layer.parentElement)));
+  });
+})();
+(() => {
+  const root = document.getElementById('padel-auswahl-demo');
+  root.addEventListener('click', event => {
+    const option = event.target.closest('button');
+    if (!option || option.getAttribute('aria-pressed') === 'true') return;
+    option.parentElement.querySelector('[aria-pressed="true"]').setAttribute('aria-pressed', 'false');
+    option.setAttribute('aria-pressed', 'true');
+  });
+})();
+</script>

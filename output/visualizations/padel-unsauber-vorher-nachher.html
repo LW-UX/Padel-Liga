@@ -1,0 +1,112 @@
+<div id="padel-unslop-vergleich" lang="de">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap');
+    #padel-unslop-vergleich .nav { margin-bottom: 12px; flex-wrap: wrap; }
+    #padel-unslop-vergleich .pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    #padel-unslop-vergleich figure { margin:0; min-width:0; }
+    #padel-unslop-vergleich figcaption { margin:0 0 6px; color:var(--muted-foreground); font-size:13px; }
+    #padel-unslop-vergleich .screen {
+      --pl-bg:#07080c; --pl-panel:#131620; --pl-line:#343c4e; --pl-text:#f3f4f1;
+      --pl-dim:#b9bbc2; --pl-yellow:#d4f53a; --pl-green:#3af5b4; --pl-gold:#ffd000;
+      height:100%; box-sizing:border-box; padding:20px; border:1px solid var(--pl-line); border-radius:12px;
+      background:var(--pl-bg); color:var(--pl-text); font:400 14px/1.45 'DM Sans',sans-serif;
+    }
+    #padel-unslop-vergleich figure { display:grid; grid-template-rows:auto 1fr; }
+    #padel-unslop-vergleich .screen :is(h2,h3,p) { margin:0; color:inherit; }
+    #padel-unslop-vergleich .screen :is(h2,h3,.wordmark) { font:400 30px/1.07 'Bebas Neue','Arial Narrow',sans-serif; letter-spacing:.04em; }
+    #padel-unslop-vergleich .screen .wordmark { font-size:46px; text-transform:uppercase; }
+    #padel-unslop-vergleich .wordmark span, #padel-unslop-vergleich .action { color:var(--pl-yellow); }
+    #padel-unslop-vergleich .org, #padel-unslop-vergleich .kicker { font-size:11px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; }
+    #padel-unslop-vergleich .after .org { color:var(--pl-dim); font-weight:500; letter-spacing:.02em; text-transform:none; }
+    #padel-unslop-vergleich .head { display:grid; gap:6px; margin-bottom:20px; }
+    #padel-unslop-vergleich .product-nav { display:flex; flex-wrap:wrap; gap:8px 14px; padding-bottom:8px; border-bottom:1px solid var(--pl-line); font-size:12px; color:var(--pl-dim); }
+    #padel-unslop-vergleich .stack { display:grid; gap:24px; align-content:start; }
+    #padel-unslop-vergleich .block { display:grid; gap:6px; align-content:start; }
+    #padel-unslop-vergleich .screen p, #padel-unslop-vergleich .kicker, #padel-unslop-vergleich .meta { color:var(--pl-dim); }
+    #padel-unslop-vergleich .action { font-size:13px; }
+    #padel-unslop-vergleich .action + .action { margin-left:12px; }
+    #padel-unslop-vergleich .tip-action { justify-self:start; padding:8px 14px; border-radius:999px; color:var(--pl-bg); background:var(--pl-yellow); font-weight:600; }
+    #padel-unslop-vergleich .sample-table { width:100%; border-collapse:collapse; margin:0; font-size:13px; }
+    #padel-unslop-vergleich .sample-table :is(th,td) { text-align:right; padding:8px 3px; border-bottom:1px solid var(--pl-line); }
+    #padel-unslop-vergleich .sample-table :is(th,td):nth-child(2) { text-align:left; padding-left:10px; }
+    #padel-unslop-vergleich .sample-table th { color:var(--pl-dim); font-size:11px; }
+    #padel-unslop-vergleich .before .sample-table th { text-transform:uppercase; letter-spacing:.09em; }
+    #padel-unslop-vergleich .after :is(td,.score,.meta) { font-variant-numeric:tabular-nums; }
+    #padel-unslop-vergleich .match { display:grid; gap:13px; padding:14px 17px; border:1px solid var(--pl-line); border-radius:8px; background:var(--pl-panel); }
+    #padel-unslop-vergleich .after .match { gap:8px; padding:12px; }
+    #padel-unslop-vergleich .match-top { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:4px 8px; }
+    #padel-unslop-vergleich .meta { font-size:12px; }
+    #padel-unslop-vergleich .status { color:var(--pl-green); border:1px solid currentColor; border-radius:99px; padding:2px 7px; font-size:11px; letter-spacing:.06em; text-transform:uppercase; }
+    #padel-unslop-vergleich .after .status { padding:1px 4px; border-radius:4px; letter-spacing:normal; text-transform:none; }
+    #padel-unslop-vergleich .teams { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:8px; }
+    #padel-unslop-vergleich .teams > :last-child { text-align:right; }
+    #padel-unslop-vergleich .score { color:var(--pl-dim); white-space:nowrap; }
+    #padel-unslop-vergleich .tip-options { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; }
+    #padel-unslop-vergleich .tip-options span { text-align:center; border:1px solid var(--pl-line); border-radius:8px; padding:4px 0; }
+    @media (max-width:620px) { #padel-unslop-vergleich .pair { grid-template-columns:1fr; } }
+    @media (max-width:360px) { #padel-unslop-vergleich .screen { padding:12px; } }
+  </style>
+  <div class="nav nav-pills" role="tablist" aria-label="Ansichten im Vergleich">
+    <button class="nav-link active" id="pl-tab-liga" role="tab" aria-controls="pl-panel-liga" aria-selected="true" type="button">Liga-Startseite</button>
+    <button class="nav-link" id="pl-tab-tipp" role="tab" aria-controls="pl-panel-tipp" aria-selected="false" type="button">PadelTipp</button>
+    <button class="nav-link" id="pl-tab-details" role="tab" aria-controls="pl-panel-details" aria-selected="false" type="button">Rangliste &amp; Tippkarte</button>
+  </div>
+  <section id="pl-panel-liga" role="tabpanel" aria-labelledby="pl-tab-liga">
+    <div class="pair">
+      <figure><figcaption>Vorher</figcaption><div class="screen before">
+        <header class="head"><div class="org">Headsquare × Hanako × Envidual</div><div class="wordmark">Padel<span>Liga</span></div><div class="product-nav"><span>Rangliste</span><span>Partien</span><span>Rechner</span><span>Statistik</span><span>Infos</span></div></header>
+        <div class="stack">
+          <div class="block"><div class="kicker">Übersicht</div><h2>Final Four</h2><p>Alles auf einen Blick: Spiele, Rangliste, Prematch-Fakten, Spielverlauf und Co.</p><span class="action">Zur Übersicht</span></div>
+          <div class="block"><h3>Top 4 · Ligaphase</h3><p><span class="action">Zur Rangliste</span> · Prognose wagen? <span class="action">Zum Rechner</span></p></div>
+          <div class="block"><div class="kicker">Kurzinfos</div><h2>So funktioniert die Liga</h2><span class="action">Alle Infos</span></div>
+          <div class="block"><h3>Jetzt auch als App!</h3><p>Diese Webseite auf dem Handy öffnen, im Browser-Menü auf Teilen drücken und zum Home-Bildschirm hinzufügen. Name vergeben, speichern und schon ist die App auf dem Handy für uneingeschränkten Zugriff.</p></div>
+        </div>
+      </div></figure>
+      <figure><figcaption>Entwurf</figcaption><div class="screen after">
+        <header class="head"><div class="org">Headsquare × Hanako × Envidual</div><div class="wordmark">Padel<span>Liga</span></div><div class="product-nav"><span>Rangliste</span><span>Partien</span><span>Rechner</span><span>Statistik</span><span>Infos</span></div></header>
+        <div class="stack">
+          <div class="block"><h2>Final Four</h2><p>Partien, Ergebnisse und Spielverläufe</p><span class="action">Zur Übersicht</span></div>
+          <div class="block"><h3>Top 4 · Ligaphase</h3><p><span class="action">Zur Rangliste</span><span class="action">Zum Ligarechner</span></p></div>
+          <div class="block"><h2>So funktioniert die Liga</h2><span class="action">Alle Infos</span></div>
+          <div class="block"><h3>PadelLiga zum Startbildschirm hinzufügen</h3><p>Öffne die Liga am Handy. Wähle im Browser-Menü „Zum Startbildschirm hinzufügen“ und bestätige.</p></div>
+        </div>
+      </div></figure>
+    </div>
+  </section>
+  <section id="pl-panel-tipp" role="tabpanel" aria-labelledby="pl-tab-tipp" hidden>
+    <div class="pair">
+      <figure><figcaption>Vorher</figcaption><div class="screen before">
+        <header class="head"><div class="org">Headsquare × Hanako × Envidual</div><div class="wordmark">Padel<span>Tipp</span></div><div class="product-nav"><span>Tipprangliste</span><span>Tippübersicht</span><span>Tippabgabe</span><span>Infos</span></div></header>
+        <div class="stack">
+          <div class="block"><div class="kicker">Dein PadelTipp</div><h2>Tippen, mitfiebern, Punkte sammeln.</h2><p>Mit einem gemeinsamen Padel-Konto speicherst du deine Prognosen und siehst hier deinen persönlichen Saisonstand.</p></div>
+          <hr>
+          <div class="block"><h2>3 Tipps offen</h2><p>Nächster Tippschluss: 30.11., 18:00 Uhr.</p><span class="tip-action">Jetzt tippen</span></div>
+          <hr>
+          <div class="block"><h2>Alles getippt ✓</h2><p>Deine 3 offenen Prognosen sind gespeichert.</p><span class="action">Zur Tippabgabe</span></div>
+        </div>
+      </div></figure>
+      <figure><figcaption>Entwurf</figcaption><div class="screen after">
+        <header class="head"><div class="org">Headsquare × Hanako × Envidual</div><div class="wordmark">Padel<span>Tipp</span></div><div class="product-nav"><span>Tipprangliste</span><span>Tippübersicht</span><span>Tippabgabe</span><span>Infos</span></div></header>
+        <div class="stack">
+          <div class="block"><h2>Partien tippen</h2><p>Mit einem Padel-Konto tippst du Satzergebnisse und siehst hier deinen Punktestand.</p></div>
+          <hr>
+          <div class="block"><h2>3 Tipps offen</h2><p>Nächster Tippschluss: 30.11., 18:00 Uhr</p><span class="tip-action">Jetzt tippen</span></div>
+          <hr>
+          <div class="block"><h2>Alle offenen Tipps gespeichert</h2><span class="action">Zur Tippabgabe</span></div>
+        </div>
+      </div></figure>
+    </div>
+  </section>
+  <section id="pl-panel-details" role="tabpanel" aria-labelledby="pl-tab-details" hidden>
+    <div class="pair">
+      <figure><figcaption>Vorher</figcaption><div class="screen before stack">
+        <div class="block"><h2>Rangliste</h2><table class="sample-table"><thead><tr><th scope="col">#</th><th scope="col">Name</th><th scope="col">Siege</th><th scope="col">Punkte</th></tr></thead><tbody><tr><td>1</td><td>Alex M.</td><td>4</td><td>12</td></tr><tr><td>2</td><td>Kim R.</td><td>3</td><td>9</td></tr></tbody></table></div>
+        <div class="block"><h2>Tippabgabe</h2><div class="match"><div class="match-top"><span class="meta">Partie 12 · 30.11., 18:00</span><span class="status">Offen</span></div><div class="teams"><span>Alex M.<br>Noa S.</span><span class="score">56% : 44%</span><span>Kim R.<br>Robin K.</span></div><div class="tip-options"><span>2:0</span><span>2:1</span><span>1:2</span><span>0:2</span></div></div></div>
+      </div></figure>
+      <figure><figcaption>Entwurf</figcaption><div class="screen after stack">
+        <div class="block"><h2>Rangliste</h2><table class="sample-table"><thead><tr><th scope="col">#</th><th scope="col">Name</th><th scope="col">Siege</th><th scope="col">Punkte</th></tr></thead><tbody><tr><td>1</td><td>Alex M.</td><td>4</td><td>12</td></tr><tr><td>2</td><td>Kim R.</td><td>3</td><td>9</td></tr></tbody></table></div>
+        <div class="block"><h2>Tippabgabe</h2><div class="match"><div class="match-top"><span class="meta">Partie 12 · 30.11., 18:00</span><span class="status">Offen</span></div><div class="teams"><span>Alex M.<br>Noa S.</span><span class="score">56% : 44%</span><span>Kim R.<br>Robin K.</span></div><div class="tip-options"><span>2:0</span><span>2:1</span><span>1:2</span><span>0:2</span></div></div></div>
+      </div></figure>
+    </div>
+  </section>
+</div>

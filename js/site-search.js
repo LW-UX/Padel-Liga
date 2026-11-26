@@ -46,10 +46,10 @@
           </button>
           <div class="site-search-filter-tray" inert>
             <div class="site-search-filters" role="group" aria-label="Treffer filtern">
-              <button type="button" class="secondary-button" data-search-filter="all" aria-pressed="true">Alles</button>
-              <button type="button" class="secondary-button" data-search-filter="matches" aria-pressed="false">Partien</button>
-              <button type="button" class="secondary-button" data-search-filter="players" aria-pressed="false">Spieler</button>
-              <button type="button" class="secondary-button" data-search-filter="articles" aria-pressed="false">Artikel</button>
+              <button type="button" class="secondary-button" data-search-filter="all" aria-pressed="true"><span>Alles</span></button>
+              <button type="button" class="secondary-button" data-search-filter="matches" aria-pressed="false"><span>Partien</span></button>
+              <button type="button" class="secondary-button" data-search-filter="players" aria-pressed="false"><span>Spieler</span></button>
+              <button type="button" class="secondary-button" data-search-filter="articles" aria-pressed="false"><span>Artikel</span></button>
             </div>
           </div>
         </div>
