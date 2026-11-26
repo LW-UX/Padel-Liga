@@ -152,20 +152,27 @@
     }
     /* Auswahlgruppen zeigen die Rückmeldung über ihre eigene Auswahlfläche. */
     @media (prefers-reduced-motion: no-preference) {
-      :is(button, a[href]):is(.primary-button, .secondary-button, .danger-button, .global-actions-toggle, .viewer-profile-button):where(:not(:disabled, [aria-disabled="true"], :focus-visible, :is(.site-nav, .toggle, .auth-mode-toggle, .site-search-filters) *)):active {
-        --press-scale-duration: 0ms;
-        scale: 0.97;
-
-        /* Die transparente Fläche hält Randklicks während des Schrumpfens im Button. */
+      :is(button, a[href]):is(.primary-button, .secondary-button, .danger-button, .global-actions-toggle, .viewer-profile-button):where(:not(:disabled, [aria-disabled="true"], :is(.site-nav, .toggle, .auth-mode-toggle, .site-search-filters) *)) {
+        /* Die transparente Fläche hält Randklicks bis zum Ende der Skalierung im Button. */
         &::before {
           content: '';
-          position: absolute;
-          inset: calc(-1.55% - 1px);
+          position: fixed;
+          inset: var(--press-hit-area, calc(-1.55% - 1px));
+          visibility: hidden;
+          transition: visibility 0s 160ms;
+        }
+        &:is(:active:not(:focus-visible), .is-pressing) {
+          --press-scale-duration: 0ms;
+          scale: 0.97;
+        }
+        &:is(:active:not(:focus-visible), .is-pressing)::before {
+          visibility: visible;
+          transition-delay: 0s;
         }
       }
     }
     @media (prefers-reduced-motion: reduce) {
-      :is(button, a[href]):is(.primary-button, .secondary-button, .danger-button, .global-actions-toggle, .viewer-profile-button):where(:not(:disabled, [aria-disabled="true"], :is(.site-nav, .toggle, .auth-mode-toggle, .site-search-filters) *)):active {
+      :is(button, a[href]):is(.primary-button, .secondary-button, .danger-button, .global-actions-toggle, .viewer-profile-button):where(:not(:disabled, [aria-disabled="true"], :is(.site-nav, .toggle, .auth-mode-toggle, .site-search-filters) *)):is(:active, .is-pressing) {
         box-shadow: inset 0 0 0 2px currentColor;
         transition: none;
       }
@@ -261,7 +268,7 @@
       text-decoration: underline;
       text-underline-offset: 0.18em;
     }
-    html:root .text-link:active:where(:not(:disabled, [aria-disabled="true"])) {
+    html:root .text-link:is(:active, .is-pressing):where(:not(:disabled, [aria-disabled="true"])) {
       color: var(--accent);
       opacity: 1;
       text-decoration: underline;
@@ -584,7 +591,8 @@
       color: var(--accent);
       background: color-mix(in srgb, var(--accent) 10%, transparent);
     }
-    :is(.toggle:not(.toggle--sort), .auth-mode-toggle, .live-mode-toggle, .site-search-filters):has(> .selection-highlight) {
+    :is(.toggle:not(.toggle--sort), .auth-mode-toggle, .live-mode-toggle, .site-search-filters,
+        .match-statistics-tabs, [data-statistics-graph-picker]):has(> .selection-highlight) {
       position: relative;
     }
     :is(.site-nav, .toggle, .auth-mode-toggle, .live-mode-toggle, .site-search-filters):has(> .selection-highlight) {
@@ -592,8 +600,21 @@
     }
     .selection-highlight {
       position: absolute;
+      inset: 0;
       z-index: 0;
       pointer-events: none;
+    }
+    .selection-highlight > span {
+      position: absolute;
+      background-color: var(--selection-highlight-color);
+    }
+    /* Apply the tint's transparency once to both shapes, including their overlap. */
+    .selection-highlight:has(> .selection-highlight-target) {
+      mask: linear-gradient(var(--selection-highlight-color), var(--selection-highlight-color))
+        center / 200% 200% no-repeat no-clip;
+    }
+    .selection-highlight:has(> .selection-highlight-target) > span {
+      background-color: color(from var(--selection-highlight-color) srgb r g b / 1);
     }
     .selection-highlight ~ :is(button, a[data-section]),
     .site-search-filters:has(> .selection-highlight) > button > span {
@@ -786,14 +807,15 @@
       text-align: inherit;
       text-decoration: none;
     }
-    .player-profile-link:is(:hover, :active:where(:not(:disabled, [aria-disabled="true"]))) { color: var(--accent) !important; }
+    .player-profile-link:is(:hover, :is(:active, .is-pressing):where(:not(:disabled, [aria-disabled="true"]))) { color: var(--accent) !important; }
     /* Nur direktes Hovern unterstreicht; Spielerkarten färben nur den Namen, auch den hervorgehobenen. */
-    .player-profile-link:is(:not(.match-detail-player):hover, :active:where(:not(:disabled, [aria-disabled="true"]))) {
+    .player-profile-link:not(.match-detail-player):is(:hover, :is(:active, .is-pressing):where(:not(:disabled, [aria-disabled="true"]))),
+    .match-detail-player.player-profile-link:is(:active, .is-pressing):where(:not(:disabled, [aria-disabled="true"])) .match-detail-player-name {
       text-decoration: underline;
       text-decoration-thickness: 1px;
       text-underline-offset: 3px;
     }
-    .match-detail-player.player-profile-link:is(:hover, :focus-visible, :active:where(:not(:disabled, [aria-disabled="true"]))) .match-detail-player-name { color: var(--accent) !important; }
+    .match-detail-player.player-profile-link:is(:hover, :focus-visible, :is(:active, .is-pressing):where(:not(:disabled, [aria-disabled="true"]))) .match-detail-player-name { color: var(--accent) !important; }
     .player-profile-link:focus-visible {
       border-radius: 3px;
       outline: 2px solid var(--accent);
@@ -1910,7 +1932,7 @@
       margin-top: 0;
       font-size: var(--text-xs);
     }
-    html:root .site-footer-links .text-link:where(:not(:active)) {
+    html:root .site-footer-links .text-link:where(:not(:active, .is-pressing)) {
       color: var(--dim);
     }
     .site-footer-links svg {
@@ -6032,8 +6054,12 @@
         opacity: 0;
         transform: translateY(10px) scale(0.96);
         transform-origin: right bottom;
-        transition: opacity 150ms ease, transform 180ms ease, visibility 180ms;
+        transition: opacity 150ms ease, transform 180ms ease, visibility 180ms,
+          scale var(--press-scale-duration, 160ms) ease-out;
         visibility: hidden;
+      }
+      .global-actions-list > .global-action {
+        --press-hit-area: calc(-3.1% - 1px) -1px -1px calc(-3.1% - 1px);
       }
       .global-actions.open .global-actions-list {
         pointer-events: auto;
@@ -6042,15 +6068,16 @@
         opacity: 1;
         transform: translateY(0) scale(1);
         visibility: visible;
+        transition-delay: var(--global-action-delay, 0ms), var(--global-action-delay, 0ms), var(--global-action-delay, 0ms), 0ms;
       }
-      .global-actions.open .global-actions-list > :nth-last-child(1) { transition-delay: 25ms; }
-      .global-actions.open .global-actions-list > :nth-last-child(2) { transition-delay: 50ms; }
-      .global-actions.open .global-actions-list > :nth-last-child(3) { transition-delay: 75ms; }
-      .global-actions.open .global-actions-list > :nth-last-child(4) { transition-delay: 100ms; }
-      .global-actions.open .global-actions-list > :nth-last-child(5) { transition-delay: 125ms; }
-      .global-actions.open .global-actions-list > :nth-last-child(6) { transition-delay: 150ms; }
-      .global-actions.open .global-actions-list > :nth-last-child(7) { transition-delay: 175ms; }
-      .global-actions.open .global-actions-list > :nth-last-child(8) { transition-delay: 200ms; }
+      .global-actions.open .global-actions-list > :nth-last-child(1) { --global-action-delay: 25ms; }
+      .global-actions.open .global-actions-list > :nth-last-child(2) { --global-action-delay: 50ms; }
+      .global-actions.open .global-actions-list > :nth-last-child(3) { --global-action-delay: 75ms; }
+      .global-actions.open .global-actions-list > :nth-last-child(4) { --global-action-delay: 100ms; }
+      .global-actions.open .global-actions-list > :nth-last-child(5) { --global-action-delay: 125ms; }
+      .global-actions.open .global-actions-list > :nth-last-child(6) { --global-action-delay: 150ms; }
+      .global-actions.open .global-actions-list > :nth-last-child(7) { --global-action-delay: 175ms; }
+      .global-actions.open .global-actions-list > :nth-last-child(8) { --global-action-delay: 200ms; }
 
       .global-actions .viewer-picker { max-width: calc(100vw - 32px); }
       .global-actions .viewer-split-button {
