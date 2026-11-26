@@ -87,7 +87,10 @@ test('own matches are scored with a winner-share tip per team', () => {
 
   const state = {
     profile: { player_id: 'c' },
-    matchFloorPredictions: new Map([['m1', new Map([[1, '2:1'], [2, '1:2']])]])
+    matchFloorPredictions: new Map([['m1', new Map([
+      [1, { prediction: '2:1' }],
+      [2, { prediction: '1:2' }]
+    ])]])
   };
   const context = vm.createContext({ state });
   vm.runInContext(fn('getOwnMatchAutoTip'), context);

@@ -15,9 +15,9 @@ function fn(name) {
   return match[0];
 }
 
-function createContext(databaseMatches = new Map()) {
+function createContext(databaseMatches = new Map(), matchFloorPredictions = new Map()) {
   const context = vm.createContext({
-    state: { databaseMatches },
+    state: { databaseMatches, matchFloorPredictions },
     Date,
     Number,
     escapeHtml: value => String(value ?? ''),
@@ -64,6 +64,19 @@ test('overview cells distinguish scored, hidden, passive, cancelled and missing 
   assert.match(context.renderPredictionTableMatchCell(null, ownMatch, false, 'p-9'), /is-empty/);
   assert.match(context.renderPredictionTableMatchCell(null, { ...ownMatch, notOpen: true }, true, 'p-1'), /is-empty/);
   assert.match(context.renderPredictionTableMatchCell({ is_passive: true, points: 2 }, ownMatch, true, 'p-1'), /is-passive/);
+});
+
+test('the racket tooltip shows the credited team tip and points on separate lines', () => {
+  const match = { id: 'm-1' };
+  const context = createContext(new Map(), new Map([[match.id, new Map([
+    [1, { prediction: '2:1', awarded_points: 4 }],
+    [2, { prediction: '1:2', awarded_points: 0 }]
+  ])]]));
+
+  const tooltip = points => context.renderPredictionTableMatchCell({ is_passive: true, points }, match)
+    .match(/class="prediction-table-racket"[^>]*title="([^"]+)"/)?.[1];
+  assert.equal(tooltip(4), 'Eigene Partie – Ø-Tipp: 2:1\nautomatisch 4 Punkte');
+  assert.equal(tooltip(0), 'Eigene Partie – Ø-Tipp: 1:2\nautomatisch 0 Punkte');
 });
 
 test('overview focus follows the latest played confirmed result, not the match number', () => {

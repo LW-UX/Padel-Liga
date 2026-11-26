@@ -431,7 +431,7 @@
       const [databaseSeason] = await Promise.all([
         loadDatabaseSeason(selected),
         selected.file ? loadScript(`../${selected.file}`) : Promise.resolve(),
-        loadScript('../js/tippspiel.js?v=2026-11-24-overview-separator')
+        loadScript('../js/tippspiel.js?v=2026-11-26-overview-passive-tip')
       ]);
       const season = hydrateSeason(mergeEditorialSeason(selected, databaseSeason, window.PADEL_SEASON || {}));
       selectedSeasonData = season;

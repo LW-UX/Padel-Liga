@@ -4603,6 +4603,9 @@
       font-size: var(--text-sm);
     }
     .live-ticker-history-section { margin-top: 2rem; }
+    .widget:has(> .live-ticker-history:last-child > .live-ticker-game) {
+      padding-block-end: 0;
+    }
     .live-ticker-history {
       display: grid;
       border-top: 1px solid var(--border);

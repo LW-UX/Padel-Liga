@@ -243,7 +243,7 @@
     const team = (match?.team1?.playerIds || []).includes(authenticatedPlayerId) ? 1
       : (match?.team2?.playerIds || []).includes(authenticatedPlayerId) ? 2
       : null;
-    return team ? state.matchFloorPredictions.get(match.id)?.get(team) || null : null;
+    return team ? state.matchFloorPredictions.get(match.id)?.get(team)?.prediction || null : null;
   }
 
   function getPredictionWinner(value, format) {
@@ -1396,8 +1396,9 @@
       : '<td class="prediction-table-cell is-hidden" title="Getippt – sichtbar ab Tippschluss" aria-label="Getippt">–</td>';
   }
 
-  function renderPredictionTableRacket() {
-    return `<span class="prediction-table-racket" role="img" aria-label="Eigene Partie"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${RACKET_ICON_SVG}</svg></span>`;
+  function renderPredictionTableRacket(title = '') {
+    const tooltip = title ? ` title="${escapeHtml(title)}"` : '';
+    return `<span class="prediction-table-racket" role="img" aria-label="Eigene Partie"${tooltip}><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${RACKET_ICON_SVG}</svg></span>`;
   }
 
   // Spieler des Kontos: beim eigenen Konto aus dem Profil, sonst über den Namen wie beim Kürzel.
@@ -1427,8 +1428,12 @@
     if (!entry) return '<td class="prediction-table-cell is-empty" aria-label="Kein Tipp"></td>';
     if (entry.is_passive) {
       const points = Number(entry.points) || 0;
-      const icon = renderPredictionTableRacket();
-      return `<td class="prediction-table-cell is-passive" title="Eigene Partie: automatisch ${points} Punkte">${renderPredictionTableCellContent('', points, icon, true)}</td>`;
+      const teamTips = state.matchFloorPredictions.get(match.id);
+      // Nur bei Gleichstand unterscheiden sich die Teamtipps. Dann erhält genau einer Punkte.
+      const tip = teamTips && [...teamTips.values()].find(row => Number(row.awarded_points) === points)?.prediction;
+      const label = tip ? `Eigene Partie – Ø-Tipp: ${tip}` : 'Eigene Partie';
+      const icon = renderPredictionTableRacket(`${label}\nautomatisch ${points} Punkte`);
+      return `<td class="prediction-table-cell is-passive">${renderPredictionTableCellContent('', points, icon, true)}</td>`;
     }
     if (entry.prediction === null || entry.prediction === undefined) return renderPredictionTableHiddenCell(isOwnRow);
     if (isCancelled) {
@@ -1842,7 +1847,7 @@
       }
       (data || []).forEach(row => {
         if (!floors.has(row.match_id)) floors.set(row.match_id, new Map());
-        floors.get(row.match_id).set(Number(row.team), row.prediction);
+        floors.get(row.match_id).set(Number(row.team), row);
       });
     }
     state.matchFloorPredictions = floors;
