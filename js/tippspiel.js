@@ -1129,7 +1129,8 @@
       const points = getPredictionPoints(selected, actualPredictionValue, matchFormat);
       const isCancelled = isCancelledMatch(match);
       const ownAutoTip = isOwn ? getOwnMatchAutoTip(match) : null;
-      const scheduledDateLabel = formatMatchDate(match);
+      const metadata = [getPredictionMatchLabel(match), formatMatchDate(match)]
+        .filter(Boolean).join(window.PadelMatchCourt.separator);
       const statusChip = getStatusChip({
         isCancelled,
         isOwn,
@@ -1143,7 +1144,7 @@
       return `
         <article class="prediction-match-card match-card ${actualPredictionValue || isCancelled ? 'is-played' : ''} ${matchFormat === 'single-set' ? 'is-single-set' : ''} ${selected ? 'has-prediction' : ''} ${isOpen ? '' : 'is-locked'} ${points !== null ? `points-${points}` : ''}">
           <div class="prediction-match-meta">
-            <span class="match-meta prediction-match-number">${escapeHtml(getPredictionMatchLabel(match))}${scheduledDateLabel ? ` – ${escapeHtml(scheduledDateLabel)}` : ''}</span>
+            <span class="match-meta prediction-match-number">${escapeHtml(metadata)}</span>
           </div>
           <div class="prediction-teams">
             <div class="prediction-team prediction-team-1 match-team${getTeamResultClass(match, 1)}">${renderTeam(match.team1)}</div>
@@ -1423,7 +1424,7 @@
     const isCancelled = isCancelledMatch(match);
     // Eigene, bereits geöffnete Partien des Kontos zeigen bis zur automatischen Gutschrift den Schläger ohne Punkte.
     if (!entry?.is_passive && isMatchOfPlayer(match, accountPlayerId) && isPredictionTableMatchActive(match)) {
-      return `<td class="prediction-table-cell is-own-match" title="Eigene Partie – kein Tipp möglich">${renderPredictionTableRacket()}</td>`;
+      return `<td class="prediction-table-cell is-own-match" title="Eigene Partie${window.PadelMatchCourt.separator}kein Tipp möglich">${renderPredictionTableRacket()}</td>`;
     }
     if (!entry) return '<td class="prediction-table-cell is-empty" aria-label="Kein Tipp"></td>';
     if (entry.is_passive) {
@@ -1431,7 +1432,7 @@
       const teamTips = state.matchFloorPredictions.get(match.id);
       // Nur bei Gleichstand unterscheiden sich die Teamtipps. Dann erhält genau einer Punkte.
       const tip = teamTips && [...teamTips.values()].find(row => Number(row.awarded_points) === points)?.prediction;
-      const label = tip ? `Eigene Partie – Ø-Tipp: ${tip}` : 'Eigene Partie';
+      const label = tip ? `Eigene Partie${window.PadelMatchCourt.separator}Ø-Tipp: ${tip}` : 'Eigene Partie';
       const icon = renderPredictionTableRacket(`${label}\nautomatisch ${points} Punkte`);
       return `<td class="prediction-table-cell is-passive">${renderPredictionTableCellContent('', points, icon, true)}</td>`;
     }

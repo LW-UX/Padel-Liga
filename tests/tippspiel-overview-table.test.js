@@ -18,6 +18,7 @@ function fn(name) {
 function createContext(databaseMatches = new Map(), matchFloorPredictions = new Map()) {
   const context = vm.createContext({
     state: { databaseMatches, matchFloorPredictions },
+    window: { PadelMatchCourt: require('../js/match-court.js') },
     Date,
     Number,
     escapeHtml: value => String(value ?? ''),
@@ -75,8 +76,8 @@ test('the racket tooltip shows the credited team tip and points on separate line
 
   const tooltip = points => context.renderPredictionTableMatchCell({ is_passive: true, points }, match)
     .match(/class="prediction-table-racket"[^>]*title="([^"]+)"/)?.[1];
-  assert.equal(tooltip(4), 'Eigene Partie – Ø-Tipp: 2:1\nautomatisch 4 Punkte');
-  assert.equal(tooltip(0), 'Eigene Partie – Ø-Tipp: 1:2\nautomatisch 0 Punkte');
+  assert.equal(tooltip(4), 'Eigene Partie\u00a0 · \u00a0Ø-Tipp: 2:1\nautomatisch 4 Punkte');
+  assert.equal(tooltip(0), 'Eigene Partie\u00a0 · \u00a0Ø-Tipp: 1:2\nautomatisch 0 Punkte');
 });
 
 test('overview focus follows the latest played confirmed result, not the match number', () => {
