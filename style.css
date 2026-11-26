@@ -152,7 +152,11 @@
     }
     /* Auswahlgruppen zeigen die Rückmeldung über ihre eigene Auswahlfläche. */
     @media (prefers-reduced-motion: no-preference) {
-      :is(button, a[href]):is(.primary-button, .secondary-button, .danger-button, .global-actions-toggle, .viewer-profile-button):where(:not(:disabled, [aria-disabled="true"], :is(.site-nav, .toggle, .auth-mode-toggle, .site-search-filters) *)) {
+      :is(
+        :is(button, a[href]):is(.primary-button, .secondary-button, .danger-button, .global-actions-toggle, .viewer-profile-button, .text-link:not(:where(.inline-link, .player-profile-link))),
+        .toggle--sort > button,
+        button.ranking-sort-header
+      ):where(:not(:disabled, [aria-disabled="true"], :is(.site-nav, .toggle:not(.toggle--sort), .toggle.disabled, .auth-mode-toggle, .site-search-filters) *)) {
         /* Die transparente Fläche hält Randklicks bis zum Ende der Skalierung im Button. */
         &::before {
           content: '';
@@ -273,6 +277,26 @@
       opacity: 1;
       text-decoration: underline;
       text-underline-offset: 0.18em;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      html:root .text-link:where(:not(.inline-link, .player-profile-link)) {
+        transition: opacity 160ms ease, background-size 300ms ease, color 150ms ease,
+          scale var(--press-scale-duration, 160ms) ease-out;
+      }
+      @media (max-width: 768px) {
+        html:root .global-actions-list > .text-link.global-action {
+          transition-property: opacity, transform, visibility, scale;
+          transition-duration: 150ms, 180ms, 180ms, var(--press-scale-duration, 160ms);
+        }
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      :is(.toggle--sort:not(.disabled) > button, button.ranking-sort-header):is(:active, .is-pressing):where(:not(:disabled, [aria-disabled="true"])) {
+        color: var(--accent);
+        text-decoration: underline;
+        text-underline-offset: 0.18em;
+        transition: none;
+      }
     }
     /* Inhaltsbereich; das Aussehen setzt das Branding. Steht vorn, damit Bereichsregeln es überschreiben. */
     .widget {
@@ -2146,6 +2170,7 @@
       text-transform: uppercase;
       background: transparent;
       color: var(--dim);
+      transition: color 150ms ease, scale var(--press-scale-duration, 160ms) ease-out;
     }
     .ranking-controls {
       display: flex;
@@ -3161,6 +3186,7 @@
       letter-spacing: inherit;
       line-height: inherit;
       text-transform: inherit;
+      transition: scale var(--press-scale-duration, 160ms) ease-out;
     }
     .ranking-sort-header:hover,
     .ranking-sort-header:focus-visible,
