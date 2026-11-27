@@ -618,8 +618,10 @@
     .result-entry-timing { display: grid; grid-template-columns: minmax(150px, 200px) minmax(120px, 160px); gap: 8px; }
     :where(.match-schedule-form, .result-entry-form) .result-entry-timing { grid-template-columns: minmax(150px, 200px) minmax(200px, 220px); }
     .match-schedule-form { display: grid; gap: 8px; }
+    .training-form-actions,
     .match-schedule-actions,
     .scheduled-result-actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .training-form-actions,
     .match-schedule-actions { flex-wrap: wrap; }
     .result-entry-form label,
     .match-schedule-form label,
@@ -886,11 +888,12 @@
     }
     .training-form > .secondary-button,
     .training-result-fields > .secondary-button { width: max-content; }
-    .training-form .primary-button { width: max-content; margin-left: auto; }
+    .training-form > .primary-button { width: max-content; margin-left: auto; }
     .training-form[hidden] { display: none; }
     .training-result-fields { display: grid; gap: 10px; }
     .training-result-fields[hidden] { display: none; }
-    .training-form-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .training-form-actions { align-items: center; }
+    .training-form-actions > [data-training-delete] { margin-right: auto; }
     .training-alternative-form {
       border: 0;
       border-top: 1px solid var(--border);
@@ -1178,7 +1181,12 @@
       .training-round-head .training-picker { width: 80%; }
       .training-form-meta :is(label, .schedule-time-label) { display: grid; gap: 4px; }
       .training-picker-toggle { min-width: 0; }
-      .training-form-actions { align-items: stretch; flex-direction: column-reverse; }
-      .training-form-actions .primary-button,
-      .training-form-actions .secondary-button { width: 100%; margin: 0; }
+      .training-form-actions:not(:has(> [data-court-training-open]:not([hidden]))) {
+        align-items: stretch;
+        flex-flow: column-reverse nowrap;
+      }
+      .training-form-actions:not(:has(> [data-court-training-open]:not([hidden]))) > button {
+        width: 100%;
+        margin: 0;
+      }
     }
