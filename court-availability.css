@@ -107,3 +107,27 @@ body:has(#court-availability-dialog[open]) { overflow: hidden; }
 .court-outage-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; }
 .court-outage:not([hidden]) + [data-court-status]:not(:empty) { margin-top: 8px; }
 .court-legend-item[hidden] { display: none; }
+
+.court-outlook-health { margin: 0; }
+.court-plan-proposal { display: flex; min-width: 0; }
+.court-plan-proposal > button { white-space: normal; }
+.court-plan-proposal:has(> :first-child[hidden] + [hidden]) { display: none; }
+.court-grid td.court-game-block, .court-legend-swatch.court-game-block { background: var(--surface2); color: var(--dim); box-shadow: none; }
+.court-legend-swatch.court-game-block { text-align: center; }
+.court-game-mark { color: var(--dim); }
+.court-outlook-swatch { border-color: var(--negativ); background: color-mix(in srgb, var(--negativ) 5%, transparent); }
+.court-grid td.court-outlook::after {
+  content: '';
+  position: absolute;
+  inset: 0 -1px -1px 0;
+  z-index: 1;
+  pointer-events: none;
+  border: 0 solid var(--negativ);
+  background: color-mix(in srgb, var(--negativ) 5%, transparent);
+}
+.court-grid td.court-outlook-start::after { border-left-width: 2px; }
+.court-grid td.court-outlook-end::after { border-right-width: 2px; }
+.court-grid td.court-outlook-top::after { border-top-width: 2px; }
+.court-grid td.court-outlook-bottom::after { border-bottom-width: 2px; }
+.court-grid td:has(.court-slot:focus-visible)::after { z-index: 0; }
+.court-grid td.court-outlook { isolation: isolate; }

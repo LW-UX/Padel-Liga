@@ -20,16 +20,39 @@ export function renderCourtAccessAlert(reason: string, siteUrl: string) {
   const subject = reason === "login_required" || reason === "configuration"
     ? "PadelLiga: Playtomic-Lesezugang erneuern" : "PadelLiga: Hallencode-Abruf prüfen";
   const footer = "Diese Betriebswarnung wird je Störung einmal an bestätigte Admin-Konten gesendet. Ein erfolgreicher neuer Codeabruf hebt die Warnung automatisch auf.";
+  return renderOperationalAlert({ subject, headline: "Der Hallencode-Abruf funktioniert gerade nicht.", body, footer,
+    destination, action: "Admin-Konto öffnen" });
+}
+
+export function renderCourtOutlookAlert(reason: string, siteUrl: string) {
+  const base = new URL(siteUrl);
+  if (!base.pathname.endsWith("/")) base.pathname += "/";
+  const destination = new URL("infos/#platzbuchung", base);
+  const body = reason === "reconnect"
+    ? "Die Outlook-Verbindung wurde von Microsoft abgewiesen. Bitte verbinde das Firmenkonto erneut."
+    : reason === "calendar_unavailable"
+    ? "Mindestens ein Outlook-Kalender konnte für die Platzplanung nicht abgerufen werden. Bitte prüfe den Kalenderabruf."
+    : "Die Outlook-Verbindung konnte gerade nicht geprüft werden. Bitte prüfe die Verbindung mit Microsoft.";
+  return renderOperationalAlert({
+    subject: "PadelLiga: Outlook-Kalenderabruf prüfen", headline: "Outlook-Belegung gerade nicht verfügbar.",
+    body, destination, action: "Platzbuchung öffnen",
+    footer: "Diese Betriebswarnung wird je Störung einmal an bestätigte Admin-Konten gesendet.",
+  });
+}
+
+function renderOperationalAlert({ subject, headline, body, footer, destination, action }: {
+  subject: string; headline: string; body: string; footer: string; destination: URL; action: string;
+}) {
   const html = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#07080C;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;">
   <tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#0E1017;border:1px solid #29303F;border-radius:12px;">
     <tr><td style="padding:28px 28px 8px;font-size:28px;font-weight:bold;letter-spacing:1px;color:#FFFFFF;">PADEL<span style="color:#D4F53A;">LIGA</span></td></tr>
     <tr><td style="padding:8px 28px 24px;color:#F3F4F1;font-size:16px;line-height:1.5;">
-      <p style="margin:0 0 16px;">Hallo,</p><p style="margin:0 0 8px;font-weight:bold;">Der Hallencode-Abruf funktioniert gerade nicht.</p>
+      <p style="margin:0 0 16px;">Hallo,</p><p style="margin:0 0 8px;font-weight:bold;">${escapeHtml(headline)}</p>
       <p style="margin:0;">${escapeHtml(body)}</p></td></tr>
-    <tr><td align="center" style="padding:0 28px 24px;"><a href="${escapeHtml(destination.href)}" style="display:inline-block;background:#D4F53A;color:#07080C;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 28px;border-radius:8px;">Admin-Konto öffnen</a></td></tr>
-    <tr><td style="padding:0 28px 28px;color:#7E828B;font-size:13px;line-height:1.5;">${footer}</td></tr>
+    <tr><td align="center" style="padding:0 28px 24px;"><a href="${escapeHtml(destination.href)}" style="display:inline-block;background:#D4F53A;color:#07080C;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 28px;border-radius:8px;">${escapeHtml(action)}</a></td></tr>
+    <tr><td style="padding:0 28px 28px;color:#7E828B;font-size:13px;line-height:1.5;">${escapeHtml(footer)}</td></tr>
   </table></td></tr></table>`;
-  return { subject, html, text: `Hallo,\n\nDer Hallencode-Abruf funktioniert gerade nicht.\n${body}\n\nAdmin-Konto öffnen: ${destination.href}\n\n${footer}` };
+  return { subject, html, text: `Hallo,\n\n${headline}\n${body}\n\n${action}: ${destination.href}\n\n${footer}` };
 }
 
 export async function dispatchCourtAccessAlerts(deps: {
@@ -38,6 +61,7 @@ export async function dispatchCourtAccessAlerts(deps: {
   complete: (job: CourtAccessAlert, token: string, success: boolean) => Promise<void>;
   send: (job: CourtAccessAlert, mail: ReturnType<typeof renderCourtAccessAlert>) => Promise<boolean>;
   siteUrl: string;
+  render?: typeof renderCourtAccessAlert;
 }) {
   const token = crypto.randomUUID();
   const jobs = await deps.claim(token);
@@ -46,7 +70,7 @@ export async function dispatchCourtAccessAlerts(deps: {
     // Recovery or a role change after claiming must suppress obsolete mail.
     if (!await deps.current(job, token)) continue;
     let success = false;
-    try { success = await deps.send(job, renderCourtAccessAlert(job.reason, deps.siteUrl)); }
+    try { success = await deps.send(job, (deps.render ?? renderCourtAccessAlert)(job.reason, deps.siteUrl)); }
     catch { /* Provider errors may contain private data. Store only success. */ }
     if (success) sent++; else failed++;
     await deps.complete(job, token, success);

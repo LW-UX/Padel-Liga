@@ -85,6 +85,8 @@ Diese Datei enthält nur betriebsrelevanten Gegenwartsstand. Dauerhafte Regeln s
 
 ## Noch ausstehend
 
+- Die Outlook-Planung für die Platzsuche einschließlich Betriebswarnung im Admin-Modal und Admin-Mail ist lokal vorbereitet. Für die Aktivierung stehen die Microsoft-Entra-Freigabe und der Live-Test des Firmenkontos, die freigegebene Bereitstellung der Supabase-Migrationen und der Edge Functions `court-planning` und `send-match-notifications` sowie der Website-Push aus.
+
 
 - Hallencode-Anzeige und gemeinsamer Cache sind auf das bestätigte Konzept umgestellt: erster Abruf bei Bedarf, einmalige Erneuerung ab acht Minuten vor Beginn, ausschließlich H1–H4 und Ausgabe bis Buchungsende beziehungsweise früherer Ergebniseintragung. Die lokale Oberfläche zeigt den Code in der Partiecard und am Spieltag im persönlichen Startseitencontainer sowie den Betriebswarnhinweis oben im Admin-Konto. Die Serverfunktionen einschließlich einmaliger Warnmail und automatischer Entwarnung sind produktiv aktiviert. 67 passende Tests einschließlich PostgreSQL-Rechte-, Cache-, Parallelabruf-, Cookie-Format-, Störungs-, Versand- und Erneuerungsprüfungen bestehen. Partie- und Trainingskarte im Konto sind veröffentlicht. Der persönliche Spieltagscontainer der Startseite hat den Code bisher nie angefragt, weil die Sichtbarkeitsprüfung das anfangs verborgene Codefeld selbst statt der zugehörigen Karte prüfte; die lokal korrigierte Prüfung benötigt noch den GitHub-Push des Nutzers. Der abschließende Anzeigetest mit echter Liga-Anmeldung folgt nach der Veröffentlichung.
 

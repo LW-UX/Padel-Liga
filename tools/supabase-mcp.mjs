@@ -195,6 +195,14 @@ if (command === 'list-tools') {
       content: await readFile(resolve(functionsDirectory, '_shared/playtomic-booking-mail.ts'), 'utf8') });
     entrypointPath = `${argument}/index.ts`;
   }
+  if (argument === 'court-planning') {
+    files = files.map(file => ({ ...file, name: `${argument}/${file.name}` }));
+    for (const name of ['reader.ts', 'data.ts', 'errors.ts', 'request-headers.ts', 'club-metadata.ts']) {
+      const source = `court-availability/${name}`;
+      files.push({ name: source, content: await readFile(resolve(functionsDirectory, source), 'utf8') });
+    }
+    entrypointPath = `${argument}/index.ts`;
+  }
   if (argument === 'racket-availability') {
     files = files.map(file => ({ ...file, name: `${argument}/${file.name}` }));
     files.push({ name: 'racket-booking/slot.ts',
@@ -208,7 +216,7 @@ if (command === 'list-tools') {
       entrypoint_path: entrypointPath,
       // Verfügbarkeit ist öffentlich; der Empfangs-Webhook prüft stattdessen
       // zwingend seine Resend-/Svix-Signatur vor jedem Zugriff.
-      verify_jwt: !['court-availability', 'racket-availability', 'receive-court-booking', 'send-invite-reminders'].includes(argument),
+      verify_jwt: !['court-availability', 'court-planning', 'racket-availability', 'receive-court-booking', 'send-invite-reminders'].includes(argument),
       files
     }
   }));

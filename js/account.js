@@ -1029,6 +1029,7 @@
       });
       renderBrandingPreview();
       renderProfileImageSettings();
+      renderPlayTimeSetting();
       const settingsMessage = document.querySelector('[data-account-settings-message]');
       if (settingsMessage && !state.notificationPreferencesAvailable) {
         settingsMessage.textContent = 'Die E-Mail-Einstellungen sind gerade nicht verfügbar.';
@@ -2681,6 +2682,7 @@
       if (state.session?.user?.id !== userId) return;
       publishAuthState();
       void loadCourtAccessHealth();
+      void loadPlayTimePreference();
       if (includeTasks) {
         await Promise.all([loadNotificationPreferences(), refreshPlayerTools({ force: true })]);
       } else {
@@ -3102,6 +3104,49 @@
       state.profileImageBusy = false;
       renderProfileImageSettings();
     }
+  }
+
+  let playTimeSetting = null;
+
+  function renderPlayTimeSetting() {
+    const row = document.querySelector('[data-account-play-time-row]');
+    if (!row) return;
+    const setting = playTimeSetting;
+    row.hidden = !isPlayerAccount() || !state.profile?.player_id || !setting
+      || setting.userId !== state.session?.user?.id || setting.value === undefined;
+    if (row.hidden) return;
+    const input = row.querySelector('[data-account-play-time]');
+    input.value = setting.value || '';
+    input.disabled = setting.saving;
+  }
+
+  async function loadPlayTimePreference() {
+    const userId = state.session?.user?.id;
+    if (!userId || !isPlayerAccount() || !state.profile?.player_id || playTimeSetting?.userId === userId) return;
+    const setting = { userId, saving: false, value: undefined };
+    playTimeSetting = setting;
+    const { data, error } = await Promise.resolve(state.client.rpc('get_my_preferred_play_time')).catch(() => ({ error: true }));
+    if (playTimeSetting !== setting || state.session?.user?.id !== userId) return;
+    if (error) playTimeSetting = null;
+    else setting.value = data ?? null;
+    renderPlayTimeSetting();
+  }
+
+  async function savePlayTimePreference(input) {
+    const setting = playTimeSetting;
+    const userId = state.session?.user?.id;
+    if (!setting || setting.userId !== userId || setting.saving) return;
+    const preference = input.value || null;
+    setting.saving = true;
+    input.disabled = true;
+    const { data, error } = await Promise.resolve(state.client.rpc('set_my_preferred_play_time', { p_preference: preference }))
+      .catch(() => ({ error: true }));
+    if (state.session?.user?.id !== userId || playTimeSetting !== setting) return;
+    setting.saving = false;
+    if (!error) setting.value = data ?? null;
+    renderPlayTimeSetting();
+    setAccountSettingsMessage(error ? 'Die Spielzeit konnte nicht gespeichert werden.' : 'Bevorzugte Spielzeit gespeichert.',
+      error ? 'error' : 'success');
   }
 
   async function saveNotificationPreferences(changedInput) {
@@ -4517,6 +4562,10 @@ Dein Hanako-Leben-Squad`;
         const file = event.target.files?.[0];
         event.target.value = '';
         void uploadProfileImage(file);
+        return;
+      }
+      if (event.target.matches('[data-account-play-time]')) {
+        void savePlayTimePreference(event.target);
         return;
       }
       if (event.target.matches('[data-email-notification]')) {

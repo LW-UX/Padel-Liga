@@ -162,10 +162,15 @@
         <label><span data-court-weekday aria-hidden="true">Wochentag</span><input type="date" data-court-date aria-label="Datum" required></label>
         <button class="secondary-button detail-view-step" type="button" data-court-day="1" aria-label="Nächster Tag"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 18 6-6-6-6"></path></svg></button>
         <button class="secondary-button" type="button" data-court-booking-show hidden>Gebuchten Platz anzeigen</button></div>
+      <div class="court-plan-proposal" aria-live="polite">
+        <button type="button" class="secondary-button" data-court-proposal hidden></button>
+        <span class="hint" data-court-no-proposal hidden>Kein passender Vorschlag vorhanden</span>
+      </div>
       <div class="toggle" role="group" aria-label="Plätze filtern">
         <button type="button" data-court-filter="indoor">Indoor</button><button type="button" data-court-filter="outdoor">Outdoor</button>
       </div>
     </div>
+    <div class="court-access-health court-outlook-health" data-court-outlook-health role="status" aria-live="polite" hidden></div>
     <div class="court-grid-stage">
       <div class="court-load-state hint" role="status" aria-live="polite">
         <div class="court-outage" data-court-outage hidden>
@@ -189,6 +194,8 @@
         <span class="court-legend-item" data-court-free-legend><span class="court-legend-swatch is-free" aria-hidden="true"></span>Frei</span>
         <span class="court-legend-item"><span class="court-legend-swatch is-booked" aria-hidden="true"></span>Gebucht</span>
         <span class="court-legend-item"><span class="court-legend-swatch is-booked is-assigned" aria-hidden="true"></span>Gebucht + andere Partie</span>
+        <span class="court-legend-item" data-court-game-legend hidden><span class="court-legend-swatch court-game-block" aria-hidden="true">×</span>Anderes Padelspiel · Gesperrt</span>
+        <span class="court-legend-item" data-court-outlook-legend hidden><span class="court-legend-swatch court-outlook-swatch" aria-hidden="true"></span>Outlook-Belegung · Freie Plätze bleiben auswählbar.</span>
       </div>
       <p class="hint">Einen gebuchten Platz kannst du hier auswählen und einer Partie zuordnen. Neue Platzbuchungen sind in dieser Ansicht nicht möglich; sie erfolgen weiterhin über das Hanako Leben Squad oder Ludwig. Partien kannst du hier dennoch terminieren, ohne dadurch einen Platz zu buchen.</p>
     </footer>
@@ -204,6 +211,7 @@
   let options = {}, data = null, selected = null, filter = 'outdoor', ownBookings = [];
   let availableBookings = [], hoursFilter = 'office', preview = null;
   let calendarUserId = null;
+  let planning = null, planningController = null;
   let generation = 0, bookingShortcutVersion = 0, controller = null, interval = null, historyId = null, afterClose = null, trigger = null, revealBookingId = null;
 
   function updateDateControls() {
@@ -283,9 +291,18 @@
     });
   }
 
+  function conflictsWithGame(slot) {
+    return planning?.date === data?.date && planning?.games.some(game =>
+      Date.parse(slot.start) < game.end && Date.parse(slot.end) > game.start);
+  }
+
+  function manuallySelectable(slot) {
+    return currentSlot(slot) && !conflictsWithGame(slot);
+  }
+
   function isSelectableBooking(slot) {
     const bounds = hourBounds(data, hoursFilter);
-    return currentSlot(slot) && minute(slot.time) >= bounds.from
+    return manuallySelectable(slot) && minute(slot.time) >= bounds.from
       && minute(slot.time) + slot.duration <= bounds.until
       && !slot.trainingId && (!slot.matchId || slot.matchId === options.matchId);
   }
@@ -341,7 +358,7 @@
     return [
       ...visibleSlots(data, hoursFilter, booked),
       ...booked.filter(isSelectableBooking)
-    ].find(slot => slot.id === slotId && currentSlot(slot));
+    ].find(slot => slot.id === slotId && manuallySelectable(slot));
   }
 
   function renderGridSkeleton(source = data) {
@@ -359,6 +376,87 @@
     grid.scrollLeft = scroll.left;
   }
 
+  function renderPlanningControls() {
+    const isCurrent = planning?.date === dateInput.value && planning?.filter === filter;
+    const proposal = isCurrent ? planning.suggestion : null;
+    const button = dialog.querySelector('[data-court-proposal]');
+    button.hidden = proposal?.state !== 'suggested';
+    button.textContent = '';
+    if (!button.hidden) {
+      const { date, time, courtName } = proposal.slot;
+      const label = new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', timeZone: 'Europe/Berlin' })
+        .format(new Date(`${date}T12:00:00Z`));
+      button.textContent = `Vorschlag · ${label} · ${time} · ${courtLabel({ name: courtName, location: filter })}`;
+    }
+    dialog.querySelector('[data-court-no-proposal]').hidden = proposal?.state !== 'no_match';
+  }
+
+  async function loadPlanning(date, proposedStart) {
+    planningController?.abort();
+    const matchId = options.matchId;
+    const location = filter;
+    const token = window.PadelKonto?.getSession?.()?.access_token;
+    const config = window.PADEL_SUPABASE_CONFIG;
+    if (!matchId || !token || !config) return null;
+    const requestController = new AbortController();
+    planningController = requestController;
+    const timeout = setTimeout(() => requestController.abort(), 55_000);
+    try {
+      const response = await fetch(`${config.url}/functions/v1/court-planning`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', apikey: config.publishableKey, Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ matchId, date, location, includeSuggestion: !proposedStart, proposedStart }), signal: requestController.signal, cache: 'no-store',
+      });
+      if (!response.ok) return null;
+      const result = await response.json();
+      if (!Array.isArray(result?.games)) return null;
+      return { date, filter: location, ...result };
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  function renderOutlookHealth(reason) {
+    const warning = dialog.querySelector('[data-court-outlook-health]');
+    const messages = {
+      reconnect: 'Outlook muss neu verbunden werden.',
+      unavailable: 'Die Outlook-Verbindung konnte gerade nicht geprüft werden.',
+      calendar_unavailable: 'Mindestens ein Outlook-Kalender konnte nicht abgerufen werden.',
+    };
+    warning.textContent = window.PadelKonto?.getProfile?.()?.app_role === 'admin' && Object.hasOwn(messages, reason)
+      ? `Admin-Hinweis · ${messages[reason]}` : '';
+    warning.hidden = !warning.textContent;
+  }
+
+  async function loadOutlookHealth(version, active) {
+    const account = window.PadelKonto;
+    const userId = account?.getSession?.()?.user?.id;
+    if (!userId || account.getProfile?.()?.app_role !== 'admin') {
+      renderOutlookHealth(null);
+      return;
+    }
+    try {
+      const { data, error } = await account.getClient().rpc('get_my_court_outlook_health');
+      if (version !== generation || active !== planningController || !dialog.open
+        || account.getSession?.()?.user?.id !== userId) return;
+      renderOutlookHealth(error ? null : data);
+    } catch { /* Outlook diagnostics must not affect the place search. */ }
+  }
+
+  function refreshPlanning(date, version, proposedStart) {
+    const request = loadPlanning(date, proposedStart);
+    const active = planningController;
+    return request.then(result => {
+      if (version !== generation || !dialog.open || active !== planningController) return null;
+      planning = result;
+      renderPlanningControls();
+      void loadOutlookHealth(version, active);
+      if (data?.date === date) renderGrid();
+      return result;
+    });
+  }
+
   function renderGrid() {
     const unavailable = Boolean(data?.availabilityUnavailable);
     dialog.querySelector('[data-court-outage]').hidden = !unavailable;
@@ -366,6 +464,10 @@
     dialog.querySelector('[data-court-free-legend]').hidden = unavailable;
     dialog.querySelector('[data-court-unavailable-label]').textContent = unavailable ? 'Nicht prüfbar' : 'Belegt';
     dialog.querySelector('.court-legend-swatch.is-unavailable').classList.toggle('is-unknown', unavailable);
+    const currentPlanning = data && planning?.date === data.date ? planning : null;
+    const outlookTimes = new Set(currentPlanning?.outlook ?? []);
+    dialog.querySelector('[data-court-outlook-legend]').hidden = !outlookTimes.size;
+    dialog.querySelector('[data-court-game-legend]').hidden = !currentPlanning?.games.length;
     if (!data) { grid.replaceChildren(); grid.style.minHeight = ''; return; }
     const scroll = { top: grid.scrollTop, left: grid.scrollLeft };
     const focusId = grid.contains(document.activeElement) ? document.activeElement.dataset.courtSlot : null;
@@ -373,16 +475,32 @@
     const booked = visibleBookedSlots(data, hoursFilter);
     const times = buildTimes(data, hoursFilter, booked);
     const visible = visibleSlots(data, hoursFilter, booked);
+    const gameStarts = new Set(currentPlanning ? times.filter(time => {
+      const baseline = new Date(`${data.date}T12:00:00Z`);
+      const localMinute = minute(clock(baseline));
+      const start = baseline.getTime() + (minute(time) - localMinute) * 60_000;
+      return currentPlanning.games.some(game => start < game.end && start + 60 * 60_000 > game.start);
+    }) : []);
     const slots = new Map(visible.map(slot => [`${slot.courtId}:${slot.time}`, slot]));
     preview = null;
     grid.innerHTML = courts.length && times.length ? `<table class="court-grid"><caption class="sr-only">${escape(dateLabel(data.date))}, ${unavailable ? 'Buchungen und Termine; freie Plätze nicht prüfbar' : 'freie Startzeiten für 60 Minuten'}</caption>
       <thead><tr><th scope="col">Platz</th>${times.map(time => `<th scope="col">${time}</th>`).join('')}</tr></thead>
-      <tbody>${courts.map(court => {
-        return `<tr><th scope="row">${renderCourtLabel(court)}</th>${times.map(time => {
+      <tbody>${courts.map((court, row) => {
+        return `<tr><th scope="row">${renderCourtLabel(court)}</th>${times.map((time, column) => {
         const slot = slots.get(`${court.id}:${time}`);
         const bookedCover = booked.find(item => item.courtId === court.id && minute(time) >= minute(item.time) && minute(time) < minute(item.time) + item.duration);
         const freeCovered = visible.some(item => item.courtId === court.id && minute(time) >= minute(item.time) && minute(time) < minute(item.time) + 60);
-        const choice = bookedCover && isSelectableBooking(bookedCover) ? bookedCover : bookedCover ? null : slot;
+        const bookingStart = !bookedCover || time === bookedCover.time;
+        const gameBlocked = gameStarts.has(time) || (bookingStart && bookedCover && conflictsWithGame(bookedCover));
+        const choice = gameBlocked ? null : bookedCover
+          ? isSelectableBooking(bookedCover) ? bookedCover : null
+          : slot;
+        const outlook = outlookTimes.has(time);
+        const adjacent = index => outlookTimes.has(times[index]) && Math.abs(minute(times[index]) - minute(time)) === 30;
+        const outlookEdges = outlook ? [
+          ' court-outlook', !adjacent(column - 1) ? ' court-outlook-start' : '', !adjacent(column + 1) ? ' court-outlook-end' : '',
+          row === 0 ? ' court-outlook-top' : '', row === courts.length - 1 ? ' court-outlook-bottom' : '',
+        ].join('') : '';
         const bookingLabel = bookedCover
           ? `Platz bereits gebucht, ${court.name}, ${bookedCover.time} bis ${clock(bookedCover.end)}${bookedCover.matchLabel ? `, ${bookedCover.matchLabel}` : ''}` : '';
         const bookingNumber = bookingMatchNumber(bookedCover);
@@ -395,9 +513,10 @@
         const label = choice?.reserved ? bookingLabel : choice ? `${court.name}, ${time} bis ${clock(choice.end)}, frei` : '';
         const racketBusy = !(bookedCover?.matchId || bookedCover?.trainingId) && isRacketBusy(time, data.racketBusyStarts);
         const racketText = (bookedCover?.matchId || bookedCover?.trainingId) ? '' : racketHourHint(time, data.racketBusyStarts);
-        return `<td data-court-cell="${escape(court.id)}" data-court-time="${time}" class="${className}">${choice
+        return `<td data-court-cell="${escape(court.id)}" data-court-time="${time}" class="${className}${outlookEdges}${gameBlocked ? ' court-game-block' : ''}">${choice
           ? `<button type="button" class="court-slot" data-court-slot="${escape(choice.id)}" data-court-label="${escape(label)}" aria-pressed="false" aria-label="${escape(label + (racketText ? `. ${racketText}` : ''))}"></button>`
-          : `<span class="sr-only">${escape(bookingLabel || (unavailable ? 'Platzverfügbarkeit nicht prüfbar' : 'Nicht als Stundenbeginn verfügbar'))}</span>`}${racketBusy ? renderRacketMarker(Boolean(choice), racketText) : ''}${bookingMarker}</td>`;
+          : `<span class="sr-only">${escape(gameBlocked ? 'Anderes Padelspiel · Gesperrt' : bookingLabel || (unavailable ? 'Platzverfügbarkeit nicht prüfbar' : 'Nicht als Stundenbeginn verfügbar'))}</span>`}${gameBlocked ? '<span class="court-game-mark" aria-hidden="true">×</span>'
+          : (racketBusy ? renderRacketMarker(Boolean(choice), racketText) : '') + bookingMarker}</td>`;
       }).join('')}</tr>`;
       }).join('')}${renderAppointmentRow(times, data.appointments || [])}</tbody></table>` : '<p class="hint">Für diese Auswahl sind keine Plätze verfügbar.</p>';
     grid.style.minHeight = '';
@@ -405,7 +524,7 @@
     grid.scrollLeft = scroll.left;
     if (focusId) [...grid.querySelectorAll('[data-court-slot]')].find(button => button.dataset.courtSlot === focusId)?.focus({ preventScroll: true });
     if (selected) {
-      const updated = [...visible, ...booked.filter(isSelectableBooking)].find(slot => slot.id === selected.id && courts.some(court => court.id === slot.courtId));
+      const updated = [...visible, ...booked.filter(isSelectableBooking)].find(slot => slot.id === selected.id && manuallySelectable(slot) && courts.some(court => court.id === slot.courtId));
       setSelection(updated || null);
       if (!updated) status.textContent = 'Die ausgewählte Zeit ist nicht mehr verfügbar. Bitte wähle eine andere Zeit.';
     }
@@ -497,7 +616,7 @@
     }
   }
 
-  async function load(background = false) {
+  async function load(background = false, proposedSlot = null) {
     if (!dialog.open || document.hidden) return;
     const version = ++generation;
     controller?.abort();
@@ -506,6 +625,10 @@
     const timeout = setTimeout(() => requestController.abort(), 15000);
     const date = dateInput.value;
     hideRacketTooltip();
+    if (!background) {
+      planning = null;
+      renderPlanningControls();
+    }
     updateDateControls();
     if (!date || !dateInput.validity.valid) {
       racketController?.abort(); racketAvailability = null;
@@ -518,6 +641,7 @@
       racketAvailability = null;
       racketStatus.textContent = ''; racketStatus.hidden = true;
     }
+    const planningRequest = refreshPlanning(date, version, proposedSlot?.start);
     void loadRacketAvailability(date, version);
     grid.setAttribute('aria-busy', 'true');
     if (!background) {
@@ -575,6 +699,18 @@
         && !visibleBookedSlots(result, hoursFilter).some(slot => result.courts.some(court => court.id === slot.courtId && court.location === filter))) {
         status.textContent = 'Für diese Auswahl sind keine freien Stunden verfügbar.';
       }
+      if (proposedSlot) {
+        const fresh = await planningRequest;
+        if (version !== generation || !dialog.open) return;
+        const slot = fresh?.fitsOutlook && findSelectableSlot(proposedSlot.id);
+        if (slot) {
+          setSelection(slot);
+          const button = [...grid.querySelectorAll('[data-court-slot]')].find(item => item.dataset.courtSlot === proposedSlot.id);
+          button?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+          button?.focus({ preventScroll: true });
+        }
+        void refreshPlanning(date, version);
+      }
     } catch (_error) {
       if (version !== generation || !dialog.open) return;
       data = null; ownBookings = []; setSelection(null); renderGrid();
@@ -586,7 +722,7 @@
   }
 
   function finishClose() {
-    generation++; controller?.abort(); clearInterval(interval); interval = null;
+    generation++; controller?.abort(); planningController?.abort(); planning = null; clearInterval(interval); interval = null;
     racketController?.abort(); racketAvailability = null; hideRacketTooltip();
     if (dialog.open) dialog.close();
     historyId = null;
@@ -611,7 +747,9 @@
     calendarUserId = window.PadelKonto?.getSession?.()?.user?.id || null;
     trigger = next.trigger || document.activeElement;
     filter = defaultFilter(next.seasonId);
-    hoursFilter = 'office'; preview = null; revealBookingId = null; availableBookings = [];
+    hoursFilter = 'office'; preview = null; revealBookingId = null; availableBookings = []; planning = null;
+    renderPlanningControls();
+    renderOutlookHealth(null);
     updateViewControls();
     dateInput.min = today();
     dateInput.value = next.date && next.date >= today() ? next.date : today();
@@ -641,6 +779,14 @@
       dateInput.value = format.format(new Date(booking.starts_at));
       void load(); return;
     }
+    if (event.target.closest('[data-court-proposal]')) {
+      const suggestion = planning?.suggestion;
+      if (suggestion?.state === 'suggested') {
+        dateInput.value = suggestion.slot.date;
+        void load(false, suggestion.slot);
+      }
+      return;
+    }
     const day = event.target.closest('[data-court-day]');
     if (day) {
       const date = new Date(`${dateInput.value}T12:00:00Z`);
@@ -657,7 +803,9 @@
         button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active));
       });
       if (selected && !data?.courts.some(court => court.id === selected.courtId && court.location === filter)) setSelection(null);
-      status.textContent = ''; renderGrid(); return;
+      status.textContent = ''; renderGrid(); renderPlanningControls();
+      if (options.matchId) void refreshPlanning(dateInput.value, generation);
+      return;
     }
     if (event.target.closest('[data-court-retry]')) { void load(); return; }
     if (event.target.closest('[data-court-account]')) { close(() => window.PadelKonto?.chooseCourtMatch(null)); return; }
@@ -671,7 +819,7 @@
       return;
     }
     if (event.target.closest('[data-court-apply]')) {
-      if (!selected || !currentSlot(selected)) {
+      if (!selected || !manuallySelectable(selected)) {
         setSelection(null);
         const selection = dialog.querySelector('[data-court-selection]');
         selection.textContent = 'Bitte wähle zuerst eine freie Zeit aus.';
@@ -706,8 +854,11 @@
   document.addEventListener('visibilitychange', () => { if (dialog.open && !document.hidden) void load(true); });
   window.addEventListener('padel:auth-state-changed', event => {
     const userId = event.detail?.session?.user?.id || null;
-    if (!dialog.open || userId === calendarUserId) return;
+    if (!dialog.open) return;
+    if (event.detail?.profile?.app_role !== 'admin') renderOutlookHealth(null);
+    if (userId === calendarUserId) return;
     calendarUserId = userId;
+    planningController?.abort(); planning = null; renderPlanningControls(); renderOutlookHealth(null);
     ownBookings = [];
     if (data) { data.appointments = []; renderGrid(); }
     void load();

@@ -6,7 +6,8 @@ const vm = require('node:vm');
 const { stripTypeScriptTypes } = require('node:module');
 const dataPromise = import('../supabase/functions/court-availability/data.ts');
 const errorsPromise = import('../supabase/functions/court-availability/errors.ts');
-const source = fs.readFileSync(path.join(__dirname, '../supabase/functions/court-availability/index.ts'), 'utf8');
+const source = ['reader.ts', 'index.ts'].map(file =>
+  fs.readFileSync(path.join(__dirname, '../supabase/functions/court-availability', file), 'utf8')).join('\n');
 const date = '2099-11-18';
 const request = () => new Request('https://example.invalid', { method: 'POST', body: JSON.stringify({ date }) });
 async function endpoint(upstream, clubOverride) {

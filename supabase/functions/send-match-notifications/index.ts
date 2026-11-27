@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { dispatchCourtAccessAlerts } from "./court-access-alerts.ts";
+import { dispatchCourtAccessAlerts, renderCourtOutlookAlert } from "./court-access-alerts.ts";
 
 type NotificationType =
   | "result_entry"
@@ -499,44 +499,49 @@ Deno.serve(async (request) => {
     }
   }
 
-  // Use the existing dispatcher after match mail. This only delivers queued
-  // incidents; it never polls Playtomic or tests/renews a Playtomic session.
-  let courtAccessAlerts;
-  try {
-    courtAccessAlerts = await dispatchCourtAccessAlerts({
-      siteUrl: publicSiteUrl,
-      async claim(token) {
-        const { data, error } = await serviceClient.rpc("claim_court_access_alerts", { p_claim_token: token, p_limit: 5 });
-        if (error) throw new Error("alert_queue_unavailable");
-        return data || [];
-      },
-      async current(job, token) {
-        const { data, error } = await serviceClient.rpc("court_access_alert_is_current", {
-          p_incident_id: job.incident_id, p_user_id: job.user_id, p_claim_token: token,
-        });
-        if (error) throw new Error("alert_status_unavailable");
-        return data === true;
-      },
-      async complete(job, token, success) {
-        const { error } = await serviceClient.rpc("complete_court_access_alert", {
-          p_incident_id: job.incident_id, p_user_id: job.user_id, p_claim_token: token, p_success: success,
-        });
-        if (error) throw new Error("alert_completion_unavailable");
-      },
-      async send(job, mail) {
-        const response = await fetch("https://api.resend.com/emails", {
-          method: "POST", headers: { "Content-Type": "application/json",
-            Authorization: `Bearer ${resendApiKey}`, "Idempotency-Key": job.idempotency_key },
-          body: JSON.stringify({ from: sender, to: [job.recipient_email], ...mail }),
-          signal: AbortSignal.timeout(15000),
-        });
-        await response.body?.cancel();
-        return response.ok;
-      },
-    });
-  } catch {
-    console.error("Hallencode-Betriebswarnungen konnten nicht vollständig verarbeitet werden.");
-    courtAccessAlerts = { unavailable: true };
+  // This dispatcher only delivers queued incidents. It does not poll either provider.
+  async function dispatchCourtAlerts(source: "court_access" | "court_outlook") {
+    try {
+      return await dispatchCourtAccessAlerts({
+        siteUrl: publicSiteUrl,
+        render: source === "court_outlook" ? renderCourtOutlookAlert : undefined,
+        async claim(token) {
+          const { data, error } = await serviceClient.rpc(`claim_${source}_alerts`, { p_claim_token: token, p_limit: 5 });
+          if (error) throw new Error("alert_queue_unavailable");
+          return data || [];
+        },
+        async current(job, token) {
+          const { data, error } = await serviceClient.rpc(`${source}_alert_is_current`, {
+            p_incident_id: job.incident_id, p_user_id: job.user_id, p_claim_token: token,
+          });
+          if (error) throw new Error("alert_status_unavailable");
+          return data === true;
+        },
+        async complete(job, token, success) {
+          const { error } = await serviceClient.rpc(`complete_${source}_alert`, {
+            p_incident_id: job.incident_id, p_user_id: job.user_id, p_claim_token: token, p_success: success,
+          });
+          if (error) throw new Error("alert_completion_unavailable");
+        },
+        async send(job, mail) {
+          const response = await fetch("https://api.resend.com/emails", {
+            method: "POST", headers: { "Content-Type": "application/json",
+              Authorization: `Bearer ${resendApiKey}`, "Idempotency-Key": job.idempotency_key },
+            body: JSON.stringify({ from: sender, to: [job.recipient_email], ...mail }),
+            signal: AbortSignal.timeout(15000),
+          });
+          await response.body?.cancel();
+          return response.ok;
+        },
+      });
+    } catch {
+      const provider = source === "court_outlook" ? "Outlook" : "Hallencode";
+      console.error(`${provider}-Betriebswarnungen konnten nicht vollständig verarbeitet werden.`);
+      return { unavailable: true };
+    }
   }
-  return jsonResponse({ claimed: jobs.length, sent, failed, courtAccessAlerts });
+  const [courtAccessAlerts, courtOutlookAlerts] = await Promise.all([
+    dispatchCourtAlerts("court_access"), dispatchCourtAlerts("court_outlook"),
+  ]);
+  return jsonResponse({ claimed: jobs.length, sent, failed, courtAccessAlerts, courtOutlookAlerts });
 });

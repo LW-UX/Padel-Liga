@@ -157,3 +157,23 @@ test('Ein verspäteter Statusabruf kann eine neue Kontositzung nicht überschrei
   await old;
   assert.equal(target.hidden, true);
 });
+
+test('Outlook uses the shared operational mail layout with a separate reason and destination', async () => {
+  const { dispatchCourtAccessAlerts, renderCourtOutlookAlert } = await import('../supabase/functions/send-match-notifications/court-access-alerts.ts');
+  const mail = renderCourtOutlookAlert('calendar_unavailable', 'https://example.invalid/liga/');
+  assert.match(mail.subject, /Outlook/);
+  assert.match(mail.text, /Mindestens ein Outlook-Kalender/);
+  assert.match(mail.html, /https:\/\/example\.invalid\/liga\/infos\/#platzbuchung/);
+  assert.doesNotMatch(mail.text, /Playtomic|Hallencode/);
+  const job = { user_id: 'admin', recipient_email: 'admin@example.invalid', idempotency_key: 'court-outlook-1-admin', reason: 'reconnect' };
+  const result = await dispatchCourtAccessAlerts({
+    siteUrl: 'https://example.invalid/', render: renderCourtOutlookAlert,
+    claim: async () => [job], current: async () => true, complete: async () => {},
+    send: async (pending, message) => {
+      assert.equal(pending.idempotency_key, job.idempotency_key);
+      assert.match(message.text, /Firmenkonto erneut/);
+      return true;
+    },
+  });
+  assert.equal(result.sent, 1);
+});

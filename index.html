@@ -45,8 +45,8 @@
   <link rel="stylesheet" href="achievements.css?v=2026-10-31">
   <link rel="stylesheet" href="style.css?v=2026-11-27-menu-outline-merge">
   <link rel="stylesheet" href="site-search.css?v=2026-11-27-filter-buttons">
-  <link rel="stylesheet" href="account.css?v=2026-11-19-muted-inputs">
-  <link rel="stylesheet" href="court-availability.css?v=2026-11-17-compact-calendar-error">
+  <link rel="stylesheet" href="account.css?v=2026-11-27-play-time">
+  <link rel="stylesheet" href="court-availability.css?v=2026-11-27-outlook-alerts">
   <link rel="stylesheet" href="whats-new.css?v=2026-11-05-cursors-11">
   <script>
     (function () {
@@ -81,9 +81,9 @@
   <script defer src="js/live-ticker.js?v=2026-11-11-match-parts-3b"></script>
   <script defer src="js/mobile-dialog-pages.js?v=2026-11-17-account-path"></script>
   <script defer src="js/branding-preview.js?v=2026-11-06-og-outer-border"></script>
-  <script defer src="js/court-availability.js?v=2026-11-17-compact-calendar-error"></script>
+  <script defer src="js/court-availability.js?v=2026-11-27-outlook-alerts"></script>
   <script defer src="js/home-matchday.js?v=2026-11-12-two-line-court"></script>
-  <script defer src="js/account.js?v=2026-11-20-clock-format"></script>
+  <script defer src="js/account.js?v=2026-11-27-play-time"></script>
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/name-nowrap.js?v=2026-11-12-name-nowrap"></script>
@@ -1032,6 +1032,15 @@
             </div>
           </div>
         </div>
+        <label class="account-setting-row account-play-time" data-account-play-time-row hidden>
+          <strong>Bevorzugte Spielzeit</strong>
+          <select data-account-play-time>
+            <option value="">Keine Präferenz</option>
+            <option value="morning">Morgens</option>
+            <option value="midday">Mittags</option>
+            <option value="evening">Abends</option>
+          </select>
+        </label>
         <div class="account-settings-mail">
           <h3>E-Mail-Benachrichtigungen</h3>
           <label class="account-setting-row">

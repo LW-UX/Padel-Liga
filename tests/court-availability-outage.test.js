@@ -21,7 +21,7 @@ function setup() {
     PadelKonto: { getCourtBookings: async () => [booking], getCourtAppointments: async () => [appointment] } },
     dialog: { open: true, querySelector: element }, grid, document: { hidden: false, activeElement: null },
     dateInput: { value: date, validity: { valid: true } }, status: {}, racketStatus: {},
-    generation: 0, controller: null, racketController: null, racketAvailability: null,
+    generation: 0, controller: null, planningController: null, planning: null, racketController: null, racketAvailability: null,
     data: null, selected: null, preview: null, ownBookings: [], availableBookings: [], revealBookingId: null,
     filter: 'indoor', hoursFilter: 'office', options: {},
     AbortController, setTimeout, clearTimeout,
@@ -31,7 +31,7 @@ function setup() {
   const helpers = source.slice(0, source.indexOf('  const dialog ='));
   const rendering = source.slice(source.indexOf('  function paintRange()'), source.indexOf('  function hideRacketTooltip()'));
   const loading = source.slice(source.indexOf('  async function load('), source.indexOf('  function finishClose()'));
-  vm.runInContext(helpers + rendering + loading + 'window.test = { load, renderGrid, findSelectableSlot }; })();', context);
+  vm.runInContext(helpers + rendering + loading + 'window.test = { load, renderGrid, findSelectableSlot, loadOutlookHealth }; })();', context);
   return { context, api: context.window.test, grid, element };
 }
 
@@ -143,4 +143,61 @@ test('the calendar explains provider failures while preserving bookings and disc
   await api.load();
   assert.equal(element('[data-court-outage-reason]').textContent, '');
   assert.equal(element('[data-court-outage]').hidden, true);
+});
+
+test('Outlook overlays span adjacent columns without blocking choices and vanish as a group', async () => {
+  const { context, api, grid, element } = setup();
+  const start = time => Date.parse(`${date}T${time}:00Z`);
+  const slots = ['13:00', '13:30', '14:00', '14:30', '16:00'].map(time => ({
+    id: time, courtId: booking.court_resource_id,
+    start: new Date(start(time)).toISOString(), end: new Date(start(time) + 3600000).toISOString(),
+    time: `${Number(time.slice(0, 2)) + 1}:${time.slice(3)}`,
+  }));
+  const court = { id: booking.court_resource_id, name: booking.court_name, location: 'indoor' };
+  context.data = { date, opening: { from: '07:00', until: '20:00' }, courts: [court, { ...court, id: 'other' }], slots };
+  context.planning = { date, filter: 'indoor', outlook: ['14:00', '14:30', '15:00'],
+    games: [{ start: start('15:00'), end: start('16:00') }], suggestion: { state: 'no_match' } };
+  api.renderGrid();
+  assert.match(grid.innerHTML, /<th scope="col">14:00<\/th>/);
+  assert.equal((grid.innerHTML.match(/court-outlook-start/g) || []).length, 2);
+  assert.equal((grid.innerHTML.match(/court-outlook-end/g) || []).length, 2);
+  assert.match(grid.innerHTML, /data-court-slot="13:30"/);
+  assert.match(grid.innerHTML, /court-game-mark/);
+  assert.equal(api.findSelectableSlot('14:30'), undefined);
+  assert.equal(api.findSelectableSlot('16:00')?.id, '16:00');
+  assert.equal(element('[data-court-outlook-legend]').hidden, false);
+
+  context.planning = { ...context.planning, outlook: null, suggestion: { state: 'hidden' } };
+  api.renderGrid();
+  assert.doesNotMatch(grid.innerHTML, /court-outlook/);
+  assert.match(grid.innerHTML, /court-game-mark/);
+  assert.equal(element('[data-court-outlook-legend]').hidden, true);
+});
+
+test('Outlook failures appear only to admins and clear after recovery', async () => {
+  const { context, api, element } = setup();
+  const banner = element('[data-court-outlook-health]');
+  banner.hidden = true;
+  let role = 'player';
+  let reason = 'calendar_unavailable';
+  let calls = 0;
+  Object.assign(context.window.PadelKonto, {
+    getSession: () => ({ user: { id: 'user' } }),
+    getProfile: () => ({ app_role: role }),
+    getClient: () => ({ rpc: async function (rpc) {
+      assert.equal(rpc, 'get_my_court_outlook_health');
+      calls++;
+      return { data: reason };
+    } }),
+  });
+  await api.loadOutlookHealth(0, null);
+  assert.equal(calls, 0);
+  assert.equal(banner.hidden, true);
+  role = 'admin';
+  await api.loadOutlookHealth(0, null);
+  assert.equal(banner.hidden, false);
+  assert.equal(banner.textContent, 'Admin-Hinweis · Mindestens ein Outlook-Kalender konnte nicht abgerufen werden.');
+  reason = null;
+  await api.loadOutlookHealth(0, null);
+  assert.equal(banner.hidden, true);
 });

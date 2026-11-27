@@ -62,7 +62,7 @@ test('a confirmed booking is atomically matched to the same official start time'
 test('90-minute reservations cover their full visible window, including a partially visible reservation', () => {
   const booking = { booking_id: 1, court_name: 'Halle', starts_at: '2099-11-04T17:00:00Z', ends_at: '2099-11-04T18:30:00Z' };
   const grid = { innerHTML: '', style: {}, scrollTop: 0, scrollLeft: 0, contains: () => false };
-  const context = { window: {}, grid, dialog: { querySelector: () => ({ classList: { toggle() {} } }) }, document: { activeElement: null }, ownBookings: [booking],
+  const context = { window: {}, grid, planning: null, dialog: { querySelector: () => ({ classList: { toggle() {} } }) }, document: { activeElement: null }, ownBookings: [booking],
     options: {},
     data: { date: '2099-11-04', opening: { from: '07:00', until: '24:00' }, slots: [],
       courts: [{ id: 'hall', name: 'Halle', location: 'indoor' }] },
@@ -110,7 +110,7 @@ test('our bookings block every overlapping free start and cannot be assigned to 
     starts_at: '2099-11-04T17:00:00Z', ends_at: '2099-11-04T18:30:00Z',
     match_id: 'match-one', match_label: 'Partie 1' };
   const grid = { innerHTML: '', style: {}, scrollTop: 0, scrollLeft: 0, contains: () => false };
-  const context = { window: {}, grid, dialog: { querySelector: () => ({ classList: { toggle() {} } }) }, document: { activeElement: null },
+  const context = { window: {}, grid, planning: null, dialog: { querySelector: () => ({ classList: { toggle() {} } }) }, document: { activeElement: null },
     ownBookings: [booking], options: { matchId: 'match-two' },
     data: { date: '2099-11-04', opening: { from: '07:00', until: '24:00' },
       courts: [{ id: 'hall', name: 'Halle', location: 'indoor' }, { id: 'other', name: 'Nebenplatz', location: 'indoor' }],
