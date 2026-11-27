@@ -1653,7 +1653,7 @@
       : document.querySelector(`[data-training-scheduled="${CSS.escape(sessionId)}"]`);
     if (!form) return;
     if (sessionId === 'new') {
-      renderTrainingForm();
+      if (form.hidden) renderTrainingForm();
       setTrainingToggleState(true);
       const group = form.closest('[data-training-form-group]');
       if (group) group.hidden = false;
@@ -2132,6 +2132,30 @@
     return getMatchAtTimestamp(`${dateValue}T${timeValue}:00`, NaN);
   }
 
+  function getFutureTrainingCourtDate(form, timestamp = getTrainingFormTimestamp(form)) {
+    const date = form.querySelector('[name="playedOn"]')?.value;
+    const now = Date.now();
+    const future = Number.isFinite(timestamp) ? timestamp > now
+      : date > getBerlinMatchAtParts(new Date(now).toISOString()).date;
+    return future ? date : null;
+  }
+
+  function openTrainingCourtAvailability(trigger) {
+    const form = trigger.closest('.training-form');
+    if (!form || form.hidden || !isPlayerAccount()) return;
+    const date = getFutureTrainingCourtDate(form);
+    if (!date) return;
+    const trainingId = form.dataset.trainingScheduled;
+    if (trainingId && !courtSelectableTrainings().some(task => String(task.session_id) === trainingId)) return;
+    window.PadelCourtAvailability?.open({
+      trigger, date, trainingId,
+      seasonId: window.PadelSeasonRouting?.getRequestedSeasonId()
+        || window.PADEL_SEASONS?.find(season => season.default)?.id,
+      label: 'Training',
+      onSelect: slot => applyTrainingCourtSlot(trainingId || 'new', slot),
+    });
+  }
+
   function syncTrainingFormMode(form) {
     if (!form || form.dataset.trainingAlternative) return;
     const timestamp = getTrainingFormTimestamp(form);
@@ -2143,6 +2167,8 @@
       renderTrainingRounds([], form, 1);
     }
     form.dataset.trainingMode = schedulesFuture ? 'scheduled' : 'result';
+    const courtButton = form.querySelector('[data-court-training-open]');
+    if (courtButton) courtButton.hidden = !getFutureTrainingCourtDate(form, timestamp);
     scheduleRacketCheck(form);
     const submit = form.querySelector('[type="submit"]');
     if (!submit) return;
@@ -2372,6 +2398,7 @@
       <div class="auth-message training-message" data-training-message role="status" aria-live="polite"></div>
       <div class="training-form-actions">
         ${due && canManage ? `<button class="secondary-button" type="button" data-training-delete="${escapeHtml(task.session_id)}">Training löschen</button>` : ''}
+        ${!due && canManage ? '<button class="secondary-button" type="button" data-court-training-open hidden>Freie Plätze prüfen</button>' : ''}
         <button class="primary-button" type="submit">${due
           ? state.profile?.app_role === 'admin' ? 'Ergebnis eintragen' : 'Zur Bestätigung senden'
           : 'Termin speichern'}</button>
@@ -2539,7 +2566,7 @@
     state.resultTasks = completeResultTasks;
     state.trainingTasks = trainingTaskResponse.data || [];
     state.courtBookings = courtBookingsResponse.error ? [] : courtBookingsResponse.data || [];
-    renderTrainingForm();
+    if (document.getElementById('training-form')?.hidden) renderTrainingForm();
   }
 
   function refreshPlayerMatchData({ force = false } = {}) {
@@ -4115,6 +4142,8 @@ Dein Hanako-Leben-Squad`;
         });
         return;
       }
+      const trainingCourtOpen = event.target.closest('[data-court-training-open]');
+      if (trainingCourtOpen) { openTrainingCourtAvailability(trainingCourtOpen); return; }
       const trainingCourtSelect = event.target.closest('[data-court-training-select]');
       if (trainingCourtSelect && pendingCourtSlot) { applyTrainingCourtSlot(trainingCourtSelect.dataset.courtTrainingSelect, pendingCourtSlot); return; }
       const courtSelect = event.target.closest('[data-court-match-select]');

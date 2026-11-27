@@ -283,11 +283,16 @@
     });
   }
 
+  function bookingAvailableForContext(matchId, trainingId) {
+    return (!matchId || matchId === options.matchId)
+      && (!trainingId || String(trainingId) === String(options.trainingId));
+  }
+
   function isSelectableBooking(slot) {
     const bounds = hourBounds(data, hoursFilter);
     return currentSlot(slot) && minute(slot.time) >= bounds.from
       && minute(slot.time) + slot.duration <= bounds.until
-      && !slot.trainingId && (!slot.matchId || slot.matchId === options.matchId);
+      && bookingAvailableForContext(slot.matchId, slot.trainingId);
   }
 
   function requestedBooking() {
@@ -303,8 +308,8 @@
     if (version !== bookingShortcutVersion || !dialog.open) return;
     availableBookings = (Array.isArray(bookings) ? bookings : [])
       .filter(booking => Date.parse(booking.starts_at) > Date.now()
-        && !booking.training_session_id && (!booking.match_id || booking.match_id === options.matchId))
-      .sort((left, right) => Number(right.match_id === options.matchId) - Number(left.match_id === options.matchId)
+        && bookingAvailableForContext(booking.match_id, booking.training_session_id))
+      .sort((left, right) => Number(Boolean(right.match_id || right.training_session_id)) - Number(Boolean(left.match_id || left.training_session_id))
         || Date.parse(left.starts_at) - Date.parse(right.starts_at)
         || Number(left.booking_id) - Number(right.booking_id));
     dialog.querySelector('[data-court-booking-show]').hidden = !availableBookings.length;

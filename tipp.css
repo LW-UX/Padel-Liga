@@ -223,7 +223,7 @@
     .prediction-team-2 { justify-content: flex-end; text-align: right; }
     .prediction-player.is-authenticated-player { color: var(--accent2); }
     table.prediction-ranking-table tbody tr.authenticated-player-highlight td {
-      background: color-mix(in srgb, var(--accent2) 20%, transparent);
+      background: color-mix(in srgb, var(--accent2) 20%, var(--ranking-highlight-bg, transparent));
     }
     table.prediction-ranking-table tbody tr.authenticated-player-highlight td:first-child {
       box-shadow: inset 3px 0 0 var(--accent2);
@@ -776,9 +776,6 @@
       .prediction-ranking-table.expanded .pname-short { display: inline; }
       /* Platz für das Sortier-Chevron, das links neben dem Spaltentitel steht. */
       table.prediction-ranking-table :is(th, td):is(.col-games, .col-wins, .col-passive, .col-bonus, .col-points) { padding-left: 18px; }
-      table.prediction-ranking-table.expanded tbody tr.authenticated-player-highlight :is(.col-rank, .col-name) {
-        background: color-mix(in srgb, var(--accent2) 20%, var(--bg));
-      }
       .prediction-overview-grid {
         grid-template-columns: minmax(0, 1fr);
         gap: var(--section-gap);

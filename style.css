@@ -3168,6 +3168,13 @@
     table.rt { width: 100%; border-collapse: collapse; margin-bottom: 1rem;}
     .ranking-wrap > table.rt { margin-bottom: 0; }
     .ranking-table { --rank-col-left: 0px; --name-col-left: 74px; }
+    table.ranking-table.expanded {
+      --ranking-table-bg: var(--surface);
+      /* Zellrahmen bleiben beim horizontalen Scrollen an den fixierten Zellen. */
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    table.ranking-table.expanded tbody tr { --ranking-highlight-bg: var(--ranking-row-bg); }
     .ranking-table.compact .col-gv,
     .ranking-table.compact .col-form,
     .ranking-table.compact .col-winrate,
@@ -3265,23 +3272,26 @@
     }
     table.rt th.col-rank {padding-left: 20px;}
     table.rt tr:last-child td { border-bottom: none; }
-    table.rt tbody tr { transition: background 0.1s; }
+    table.rt tbody tr {
+      --ranking-row-bg: var(--ranking-table-bg, transparent);
+      background-color: var(--ranking-row-bg);
+      transition: background-color 0.1s;
+    }
     table.rt tbody tr[data-player-profile-id] { cursor: var(--cursor-pointer); }
-    table.rt tbody tr:nth-child(odd) { background: var(--bg); }
-    table.rt tbody tr:hover { background: color-mix(in srgb, var(--dim) 10%, transparent); }
+    table.rt tbody tr:nth-child(odd) { --ranking-row-bg: var(--bg); }
+    table.rt tbody tr:hover {
+      --ranking-row-bg: color-mix(in srgb, var(--dim) 10%, var(--ranking-table-bg, transparent));
+    }
     /* Gelber Hover kündigt Zeilen an, die das Profil öffnen; nicht klickbare Zeilen behalten den grauen Hover. */
     table.rt tbody tr[data-player-profile-id]:hover td .player-profile-link { color: var(--accent); }
     table.rt tbody tr[data-player-profile-id]:not(.viewer-highlight, .profile-open-highlight):hover {
-      background: color-mix(in srgb, var(--accent) 12%, transparent);
-    }
-    table.ranking-table.expanded tbody tr[data-player-profile-id]:not(.viewer-highlight, .profile-open-highlight):hover :is(.col-rank, .col-name) {
-      background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+      --ranking-row-bg: color-mix(in srgb, var(--accent) 12%, var(--ranking-table-bg, transparent));
     }
     table.rt tbody tr.top-four-highlight td:first-child {
       box-shadow: inset 3px 0 0 var(--dim);
     }
     table.rt tbody tr.viewer-highlight td {
-      background: color-mix(in srgb, var(--accent2) 20%, transparent);
+      background: color-mix(in srgb, var(--accent2) 20%, var(--ranking-highlight-bg, transparent));
     }
     table.rt tbody tr.viewer-highlight td:first-child {
       box-shadow: inset 3px 0 0 var(--accent2);
@@ -3291,7 +3301,7 @@
       font-weight: 700;
     }
     table.rt tbody tr.profile-open-highlight td {
-      background: color-mix(in srgb, var(--accent) 16%, transparent);
+      background: color-mix(in srgb, var(--accent) 16%, var(--ranking-highlight-bg, transparent));
     }
     table.rt tbody tr.profile-open-highlight td:first-child {
       box-shadow: inset 3px 0 0 var(--accent);
@@ -3335,8 +3345,8 @@
     .ranking-table.expanded .col-name {
       position: sticky;
       z-index: 4;
-      background: var(--bg);
     }
+    table.ranking-table.expanded tbody :where(.col-rank, .col-name) { background-color: inherit; }
     .ranking-table.expanded .col-rank { left: var(--rank-col-left); z-index: 5;}
     .ranking-table.expanded .col-name {
       left: var(--name-col-left);
@@ -3382,19 +3392,7 @@
     .ranking-table.expanded thead .col-rank,
     .ranking-table.expanded thead .col-name {
       z-index: 6;
-      background: var(--bg);
-    }
-    .ranking-table.expanded tbody tr:nth-child(even) .col-rank,
-    .ranking-table.expanded tbody tr:nth-child(even) .col-name {
-      background: var(--surface);
-    }
-    .ranking-table.expanded tbody tr:hover .col-rank,
-    .ranking-table.expanded tbody tr:hover .col-name {
-      background: var(--surface);
-    }
-    .ranking-table.expanded tbody tr.viewer-highlight .col-rank,
-    .ranking-table.expanded tbody tr.viewer-highlight .col-name {
-      background: color-mix(in srgb, var(--accent2) 20%, var(--bg));
+      background-color: var(--ranking-table-bg);
     }
     .ranking-table .col-name .pname {
       white-space: nowrap;
@@ -3795,10 +3793,10 @@
       align-items: baseline;
       gap: 18px;
     }
-    .match-group > h3 span:first-child {
+    .match-group > h3 > span:first-child {
       white-space: nowrap;
     }
-    .match-group > h3 span + span {
+    .match-group > h3 > span + span {
       margin-left: auto;
       text-align: right;
     }
@@ -5634,15 +5632,15 @@
         width: max-content;
         min-width: max-content;
       }
-      .ranking-table.expanded tbody tr.profile-open-highlight .col-rank,
-      .ranking-table.expanded tbody tr.profile-open-highlight .col-name {
-        background: color-mix(in srgb, var(--accent) 16%, var(--bg));
-      }
       .help-tooltip {
         right: 0;
         left: auto;
         width: min(190px, calc(100vw - 32px));
         white-space: normal;
+      }
+      [data-training-form-group] .help-tooltip {
+        right: auto;
+        left: 0;
       }
       .ranking-table th.col-winrate .help-tooltip,
       .ranking-table th.col-draw-factor .help-tooltip {

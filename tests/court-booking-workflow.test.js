@@ -140,6 +140,14 @@ test('our bookings block every overlapping free start and cannot be assigned to 
   }
   context.options.matchId = 'match-one';
   assert.equal(api.findSelectableSlot('booking-12')?.bookingId, 12, 'the linked match can select its own reservation');
+  context.ownBookings = [{ ...booking, match_id: null, training_session_id: 42 }];
+  assert.equal(api.findSelectableSlot('booking-12'), undefined, 'a match cannot select a training reservation');
+  context.options = { trainingId: '42' };
+  assert.equal(api.findSelectableSlot('booking-12')?.bookingId, 12, 'the linked training can select its own reservation');
+  context.options = { trainingId: '43' };
+  assert.equal(api.findSelectableSlot('booking-12'), undefined, 'another training cannot select this reservation');
+  context.options = { matchId: 'match-one' };
+  context.ownBookings = [booking];
   vm.runInContext('Date.now = () => Date.parse("2099-11-04T17:15:00Z");', context);
   assert.equal(api.visibleBookedSlots(context.data, 'all').length, 1, 'an ongoing reservation remains occupied');
   assert.equal(api.findSelectableSlot('booking-12'), undefined, 'an ongoing reservation cannot be selected as a new start');

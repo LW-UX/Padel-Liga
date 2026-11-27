@@ -116,9 +116,10 @@
   --player-18: #F76E6E;
 }
 
-/* Die Inhaltsbereiche stehen frei auf --bg; damit die Zeilen weiter abwechseln, bekommen die geraden Zeilen --surface (wie die festen Spalten der erweiterten Tabelle). */
+/* Die Inhaltsbereiche stehen frei auf --bg; die geraden Zeilen heben sich davon ab. */
+:root table.ranking-table.expanded { --ranking-table-bg: var(--bg); }
 table.rt tbody tr:nth-child(even):not(:hover) {
-  background: var(--surface);
+  --ranking-row-bg: var(--surface);
 }
 
 /* Ligaartikel und Einordnung der Partie behalten ihre eigene Fläche, obwohl die Inhaltsbereiche frei stehen. */

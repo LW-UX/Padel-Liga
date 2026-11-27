@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="mask-icon" href="data/safari-pinned-tab.svg" color="#d4f53a">
   <link rel="manifest" href="manifest.webmanifest?v=2026-11-03-timeless">
-  <link rel="stylesheet" href="branding/og-design.css?v=6370197ff1">
+  <link rel="stylesheet" href="branding/og-design.css?v=aa66e7b04e">
   <script>
     // Browser laden CSS-Masken von file:// nicht; lokal geöffnet werden die Firmenlogos daher ohne Maske gezeigt.
     if (location.protocol === 'file:') document.documentElement.classList.add('is-file-protocol');
@@ -43,7 +43,7 @@
     })();
   </script>
   <link rel="stylesheet" href="achievements.css?v=2026-10-31">
-  <link rel="stylesheet" href="style.css?v=2026-11-27-menu-outline-merge">
+  <link rel="stylesheet" href="style.css?v=2026-11-27-ranking-columns">
   <link rel="stylesheet" href="site-search.css?v=2026-11-27-filter-buttons">
   <link rel="stylesheet" href="account.css?v=2026-11-19-muted-inputs">
   <link rel="stylesheet" href="court-availability.css?v=2026-11-17-compact-calendar-error">
@@ -81,9 +81,9 @@
   <script defer src="js/live-ticker.js?v=2026-11-11-match-parts-3b"></script>
   <script defer src="js/mobile-dialog-pages.js?v=2026-11-17-account-path"></script>
   <script defer src="js/branding-preview.js?v=2026-11-06-og-outer-border"></script>
-  <script defer src="js/court-availability.js?v=2026-11-17-compact-calendar-error"></script>
+  <script defer src="js/court-availability.js?v=2026-11-27-training-courts"></script>
   <script defer src="js/home-matchday.js?v=2026-11-12-two-line-court"></script>
-  <script defer src="js/account.js?v=2026-11-20-clock-format"></script>
+  <script defer src="js/account.js?v=2026-11-27-training-courts"></script>
   <script defer src="js/preview-window.js?v=2026-10-21-tip-window"></script>
   <script defer src="js/swipe-gesture.js?v=2026-10-22-swipe-thresholds"></script>
   <script defer src="js/name-nowrap.js?v=2026-11-12-name-nowrap"></script>
@@ -1117,7 +1117,10 @@
                   <button class="secondary-button" type="button" data-training-round-add>Weitere Paarung</button>
                 </div>
                 <div class="auth-message training-message" data-training-message role="status" aria-live="polite"></div>
-                <button class="primary-button" type="submit">Training speichern</button>
+                <div class="training-form-actions">
+                  <button class="secondary-button" type="button" data-court-training-open hidden>Freie Plätze prüfen</button>
+                  <button class="primary-button" type="submit">Training speichern</button>
+                </div>
               </form>
             </div>
             <div class="account-task-list prediction-match-list" id="result-task-list"></div>

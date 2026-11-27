@@ -49,6 +49,66 @@ test('account workflow switches between scheduling and result entry by time', ()
   assert.match(taskRenderer, /scheduled-result-actions[\s\S]*data-training-delete="\$\{escapeHtml\(task\.session_id\)\}">Termin löschen<\/button>[\s\S]*data-training-schedule-toggle="\$\{escapeHtml\(task\.session_id\)\}">Termin ändern<\/button>/);
 });
 
+test('the training form opens the court calendar only for future times and applies it to the same training', () => {
+  const helpers = account.slice(account.indexOf('  function getTrainingFormTimestamp('),
+    account.indexOf('  function closeTrainingPickerMenus('));
+  const today = '2026-11-27';
+  let availableTraining = '42';
+  let calendar;
+  let applied;
+  const window = { PadelCourtAvailability: { open: options => { calendar = options; } } };
+  const { syncTrainingFormMode, openTrainingCourtAvailability } = Function('window', 'deps', `
+    const { getMatchAtTimestamp, getBerlinMatchAtParts, courtSelectableTrainings, applyTrainingCourtSlot } = deps;
+    class Date extends globalThis.Date { static now() { return 0; } }
+    const state = { profile: { app_role: 'player' } };
+    const isPlayerAccount = () => true;
+    const scheduleRacketCheck = () => {};
+    const renderTrainingRounds = () => {};
+    ${helpers}
+    return { syncTrainingFormMode, openTrainingCourtAvailability };
+  `)(window, {
+    getMatchAtTimestamp: value => value >= `${today}T12:00` ? 1 : -1,
+    getBerlinMatchAtParts: () => ({ date: today }),
+    courtSelectableTrainings: () => [{ session_id: availableTraining }],
+    applyTrainingCourtSlot: (id, slot) => { applied = [id, slot]; }
+  });
+  const date = { value: today };
+  const time = { value: '' };
+  const button = {};
+  const form = { dataset: {}, hidden: false, querySelector: selector => ({
+    '[name="playedOn"]': date, '[name="displayTime"]': time, '[data-court-training-open]': button
+  }[selector]) };
+  button.closest = () => form;
+  syncTrainingFormMode(form);
+  assert.equal(button.hidden, true, 'today requires a future time');
+  time.value = '10:00';
+  syncTrainingFormMode(form);
+  openTrainingCourtAvailability(button);
+  assert.equal(button.hidden, true);
+  assert.equal(calendar, undefined);
+  time.value = '14:00';
+  syncTrainingFormMode(form);
+  assert.equal(button.hidden, false);
+  date.value = '2026-11-28';
+  time.value = '';
+  syncTrainingFormMode(form);
+  assert.equal(button.hidden, false, 'a future date is sufficient to look up a free time');
+  openTrainingCourtAvailability(button);
+  assert.equal(calendar.date, date.value);
+  const slot = { date: '2026-11-28', time: '17:00' };
+  calendar.onSelect(slot);
+  assert.deepEqual(applied, ['new', slot]);
+  form.dataset.trainingScheduled = '42';
+  openTrainingCourtAvailability(button);
+  assert.equal(calendar.trainingId, '42');
+  calendar.onSelect(slot);
+  assert.deepEqual(applied, ['42', slot]);
+  availableTraining = '43';
+  calendar = undefined;
+  openTrainingCourtAvailability(button);
+  assert.equal(calendar, undefined, 'only a manageable training opens the calendar');
+});
+
 test('training player pickers disable players already selected in another slot', () => {
   assert.match(account, /function syncTrainingPlayerPickerOptions\(form = document\)/);
   assert.match(account, /value !== currentValue[\s\S]*selectedPlayerIds\.includes\(value\)/);

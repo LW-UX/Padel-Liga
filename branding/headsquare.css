@@ -181,6 +181,7 @@ html:root .article-card h2::after {
 }
 
 /* Container mit Rangliste ohne Rahmen und Innenabstand; Startseite und Statistik behalten ihre Karten. */
+:root table.ranking-table.expanded { --ranking-table-bg: var(--bg); }
 html:root .widget:has(.ranking-wrap):not(#start *, #verlauf *) {
   border: 0;
   padding: 0;
