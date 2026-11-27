@@ -175,6 +175,7 @@
     .prediction-login-hint span,
     .prediction-session-note { color: var(--dim); font-size: 0.86rem; }
     .prediction-session-note strong { color: var(--text); }
+    .prediction-session-note > .text-link { margin-top: 0; }
     .prediction-match-card {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;

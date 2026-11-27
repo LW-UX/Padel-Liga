@@ -43,8 +43,8 @@
     })();
   </script>
   <link rel="stylesheet" href="achievements.css?v=2026-10-31">
-  <link rel="stylesheet" href="style.css?v=2026-11-26-text-press-feedback">
-  <link rel="stylesheet" href="site-search.css?v=2026-11-20-search-help-examples">
+  <link rel="stylesheet" href="style.css?v=2026-11-27-menu-outline">
+  <link rel="stylesheet" href="site-search.css?v=2026-11-27-filter-buttons">
   <link rel="stylesheet" href="account.css?v=2026-11-19-muted-inputs">
   <link rel="stylesheet" href="court-availability.css?v=2026-11-17-compact-calendar-error">
   <link rel="stylesheet" href="whats-new.css?v=2026-11-05-cursors-11">
@@ -96,10 +96,10 @@
   <script defer src="js/profile-comparison.js?v=2026-11-19-search-comparison"></script>
   <script defer src="js/prediction-badge.js?v=2026-11-19-open-tips"></script>
   <script defer src="js/site-search-core.js?v=2026-11-19-inline-modus-search"></script>
-  <script defer src="js/selection-motion.js?v=2026-11-26-selection-hover"></script>
+  <script defer src="js/selection-motion.js?v=2026-11-27-menu-outline"></script>
   <script defer src="js/site-search.js?v=2026-11-26-selection-motion"></script>
-  <script defer src="js/app.js?v=2026-11-20-clock-format"></script>
-  <script defer src="js/press-feedback.js?v=2026-11-26-text"></script>
+  <script defer src="js/app.js?v=2026-11-27-standalone-text-links"></script>
+  <script defer src="js/press-feedback.js?v=2026-11-27-filter-buttons"></script>
 </head>
 <body>
 
@@ -237,10 +237,10 @@
             <div class="skeleton-ranking-row"><span></span><span></span><span></span></div>
           </div>
           <div class="home-widget-links">
-            <button class="text-link inline-link" data-nav-target="rangliste">Zur Rangliste</button>
+            <button class="text-link" data-nav-target="rangliste">Zur Rangliste</button>
             <div class="hint home-widget-note" id="home-calculator-link">
               <span>Prognose wagen?</span>
-              <button class="text-link inline-link" data-nav-target="rechner">Zum Rechner</button>
+              <button class="text-link" data-nav-target="rechner">Zum Rechner</button>
             </div>
           </div>
         </article>
@@ -376,7 +376,7 @@
           <h2>Final Four</h2>
           <div class="sh-meta" id="ff-meta"></div>
         </div>
-        <button type="button" class="text-link inline-link final-four-detail-link" id="final-four-ranking-detail-link" data-live-view="overview" hidden>Zur Übersicht</button>
+        <button type="button" class="text-link" id="final-four-ranking-detail-link" data-live-view="overview" hidden>Zur Übersicht</button>
       </div>
       <article class="widget">
         <div class="ranking-wrap ranking-wrap--fit">

@@ -1,5 +1,6 @@
 (() => {
-  const groups = '.site-nav, .toggle:not(.toggle--sort), .auth-mode-toggle, .live-mode-toggle, .site-search-filters';
+  const menus = '.site-nav, .auth-mode-toggle';
+  const groups = `${menus}, .toggle:not(.toggle--sort), .live-mode-toggle`;
   const options = 'button, a[data-section]';
   const hover = matchMedia('(hover: hover)');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -82,9 +83,8 @@
     const layer = document.createElement('span');
     layer.className = 'selection-highlight';
     layer.setAttribute('aria-hidden', 'true');
-    layer.style.setProperty('--selection-highlight-color', backgroundColor);
-    if (group.matches('.site-search-filters')) group.append(layer);
-    else group.prepend(layer);
+    Object.assign(layer.style, { backgroundColor, borderRadius, boxShadow });
+    group.prepend(layer);
 
     const from = current || optionBox(fromOption).map(value => ({ value, velocity: 0 }));
     const to = optionBox(option);
@@ -93,23 +93,10 @@
       return;
     }
 
-    const moving = document.createElement('span');
-    layer.append(moving);
-    Object.assign(moving.style, { borderRadius, boxShadow });
-    if (hover.matches && group.matches('.site-nav, .auth-mode-toggle') && option.matches(':hover')) {
-      const destination = document.createElement('span');
-      destination.className = 'selection-highlight-target';
-      const [x, y, width, height] = to;
-      Object.assign(destination.style, {
-        left: `${x - width / 2}px`, top: `${y - height / 2}px`,
-        width: `${width}px`, height: `${height}px`, borderRadius
-      });
-      layer.append(destination);
-    }
-
+    const keepOutline = hover.matches && group.matches(menus) && option.matches(':hover');
     selection.layer = layer;
-    option.setAttribute('data-moving-selection', '');
-    selection.motion = moveHighlight(moving, from, to);
+    option.setAttribute('data-moving-selection', keepOutline ? 'hover' : '');
+    selection.motion = moveHighlight(layer, from, to);
     selection.motion.animation.onfinish = () => finish(selection);
   }
 

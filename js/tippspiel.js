@@ -638,7 +638,7 @@
     const target = document.getElementById('prediction-auth-hint');
     if (!target) return;
     target.innerHTML = state.session
-      ? `<div class="prediction-session-note"><span>Du tippst als <strong>${escapeHtml(window.PadelKonto?.getDisplayName?.() || state.session.user.email)}</strong>.</span><button class="text-link inline-link" type="button" data-auth-open>Konto öffnen</button></div>`
+      ? `<div class="prediction-session-note"><span>Du tippst als <strong>${escapeHtml(window.PadelKonto?.getDisplayName?.() || state.session.user.email)}</strong>.</span><button class="text-link" type="button" data-auth-open>Konto öffnen</button></div>`
       : '<div class="prediction-login-hint"><div><strong>Einloggen und mittippen</strong><span>Deine Tipps werden in deinem Konto gespeichert.</span></div><button class="primary-button" type="button" data-auth-open>Login / Konto erstellen</button></div>';
   }
 
@@ -1058,7 +1058,7 @@
         <h3>Spitzenfeld</h3>
         <div class="prediction-overview-ranks">${renderOverviewRankRows()}</div>
         <div class="home-widget-links">
-          <button class="text-link inline-link" type="button" data-tip-nav="tippuebersicht">Zur Tipprangliste</button>
+          <button class="text-link" type="button" data-tip-nav="tippuebersicht">Zur Tipprangliste</button>
         </div>
       </article>
     `;

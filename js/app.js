@@ -6731,7 +6731,7 @@ function sectionId(title) {
 function renderInfoSection(section, id) {
   const accountUrl = window.PadelSeasonRouting.getAccountUrl();
   const renderParagraphs = paragraphs => (paragraphs || []).map(p => `<p>${p.replaceAll('{{accountUrl}}', escapeHtml(accountUrl.href))}</p>`).join('');
-  const courtLink = `<p><a class="text-link inline-link" href="#platzbuchung" data-court-info-open data-court-season="${escapeHtml(selectedSeason?.id || '')}">Freie Plätze bei Lucky Star ansehen</a></p>`;
+  const courtLink = `<p><a class="text-link" href="#platzbuchung" data-court-info-open data-court-season="${escapeHtml(selectedSeason?.id || '')}">Freie Plätze bei Lucky Star ansehen</a></p>`;
   const link = section.link
     ? `<a href="${section.link.href}" target="_blank" rel="noopener" class="text-link inline-link">${section.link.label}</a>`
     : '';
@@ -7032,7 +7032,7 @@ function renderTournamentGroup(matches, fallbackTitle, className) {
     ? getFinalFourDetailEntryMatchId()
     : null;
   const detailLink = detailEntryMatchId
-    ? `<button type="button" class="text-link inline-link final-four-detail-link" data-live-open-match="${escapeHtml(detailEntryMatchId)}" data-live-view="overview">Zur Übersicht</button>`
+    ? `<button type="button" class="text-link" data-live-open-match="${escapeHtml(detailEntryMatchId)}" data-live-view="overview">Zur Übersicht</button>`
     : '';
   return `<div class="match-group ${className}">
     <div class="sh final-four-heading">

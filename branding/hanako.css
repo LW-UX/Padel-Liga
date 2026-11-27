@@ -220,11 +220,13 @@ html:root .danger-button:hover {
   border: 1px solid var(--accent2);
   opacity: 1;
 }
-/* Menüpunkte bleiben schwarz; Hover und aktiver Punkt nur mit grauem Hintergrund */
+/* Navigation mit grauer Hover-Kontur und grauer Auswahlfläche. */
+html:root .site-nav {
+  --menu-outline-color: var(--text);
+}
 html:root .site-nav :is(button, a[data-section]) {
   color: var(--text);
 }
-html:root .site-nav :is(button, a[data-section]):hover,
 html:root .site-nav :is(button, a[data-section]).active {
   color: var(--text);
   background: color-mix(in srgb, var(--text) 6%, transparent);

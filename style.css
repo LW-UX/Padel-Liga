@@ -156,7 +156,7 @@
         :is(button, a[href]):is(.primary-button, .secondary-button, .danger-button, .global-actions-toggle, .viewer-profile-button, .text-link:not(:where(.inline-link, .player-profile-link))),
         .toggle--sort > button,
         button.ranking-sort-header
-      ):where(:not(:disabled, [aria-disabled="true"], :is(.site-nav, .toggle:not(.toggle--sort), .toggle.disabled, .auth-mode-toggle, .site-search-filters) *)) {
+      ):where(:not(:disabled, [aria-disabled="true"], :is(.site-nav, .toggle:not(.toggle--sort), .toggle.disabled, .auth-mode-toggle) *)) {
         /* Die transparente Fläche hält Randklicks bis zum Ende der Skalierung im Button. */
         &::before {
           content: '';
@@ -176,7 +176,7 @@
       }
     }
     @media (prefers-reduced-motion: reduce) {
-      :is(button, a[href]):is(.primary-button, .secondary-button, .danger-button, .global-actions-toggle, .viewer-profile-button):where(:not(:disabled, [aria-disabled="true"], :is(.site-nav, .toggle, .auth-mode-toggle, .site-search-filters) *)):is(:active, .is-pressing) {
+      :is(button, a[href]):is(.primary-button, .secondary-button, .danger-button, .global-actions-toggle, .viewer-profile-button):where(:not(:disabled, [aria-disabled="true"], :is(.site-nav, .toggle, .auth-mode-toggle) *)):is(:active, .is-pressing) {
         box-shadow: inset 0 0 0 2px currentColor;
         transition: none;
       }
@@ -608,49 +608,37 @@
       transition: color 0.15s;
       white-space: nowrap;
     }
-    .site-nav :is(button, a[data-section]):hover,
     .site-nav :is(button, a[data-section]).active,
-    .auth-mode-toggle button:hover,
     .auth-mode-toggle button.active {
       color: var(--accent);
       background: color-mix(in srgb, var(--accent) 10%, transparent);
     }
-    :is(.toggle:not(.toggle--sort), .auth-mode-toggle, .live-mode-toggle, .site-search-filters,
+    @media (hover: hover) {
+      :is(.site-nav, .auth-mode-toggle) > :is(button, a[data-section]):hover:where(:not(.active, [aria-pressed="true"], :disabled, [aria-disabled="true"])),
+      [data-moving-selection="hover"] {
+        --selection-outline: inset 0 0 0 1px color-mix(in srgb, var(--menu-outline-color, var(--accent)) 35%, transparent);
+        box-shadow: var(--selection-outline);
+      }
+    }
+    :is(.toggle:not(.toggle--sort), .auth-mode-toggle, .live-mode-toggle,
         .match-statistics-tabs, [data-statistics-graph-picker]):has(> .selection-highlight) {
       position: relative;
     }
-    :is(.site-nav, .toggle, .auth-mode-toggle, .live-mode-toggle, .site-search-filters):has(> .selection-highlight) {
+    :is(.site-nav, .toggle, .auth-mode-toggle, .live-mode-toggle):has(> .selection-highlight) {
       isolation: isolate;
     }
     .selection-highlight {
       position: absolute;
-      inset: 0;
       z-index: 0;
       pointer-events: none;
     }
-    .selection-highlight > span {
-      position: absolute;
-      background-color: var(--selection-highlight-color);
-    }
-    /* Apply the tint's transparency once to both shapes, including their overlap. */
-    .selection-highlight:has(> .selection-highlight-target) {
-      mask: linear-gradient(var(--selection-highlight-color), var(--selection-highlight-color))
-        center / 200% 200% no-repeat no-clip;
-    }
-    .selection-highlight:has(> .selection-highlight-target) > span {
-      background-color: color(from var(--selection-highlight-color) srgb r g b / 1);
-    }
-    .selection-highlight ~ :is(button, a[data-section]),
-    .site-search-filters:has(> .selection-highlight) > button > span {
+    .selection-highlight ~ :is(button, a[data-section]) {
       position: relative;
       z-index: 1;
     }
     [data-moving-selection] {
       background: transparent !important;
-      box-shadow: none !important;
-    }
-    :is(.site-nav, .auth-mode-toggle):has(> .selection-highlight) > :is(button, a[data-section]):hover {
-      background: transparent !important;
+      box-shadow: var(--selection-outline, none) !important;
     }
     .viewer-picker {
       position: relative;
@@ -2691,7 +2679,7 @@
       gap: 0.75rem;
       margin-top: 1rem;
     }
-    .home-widget-links .text-link { font-size: var(--text-sm); }
+    .home-widget-links .text-link { margin-top: 0; }
     .home-widget-note {
       display: flex;
       align-items: baseline;
@@ -2702,7 +2690,7 @@
       line-height: 1.35;
       white-space: nowrap;
     }
-    .home-widget-note .inline-link {
+    .home-widget-note .text-link {
       flex: 0 0 auto;
       white-space: nowrap;
     }
@@ -2861,10 +2849,11 @@
       max-width: 100%;
       min-width: 0;
       align-items: center;
-      gap: 6px;
       vertical-align: top;
       width: 100%;
     }
+    .prediction-rank-account,
+    .mini-rank-name .ranking-player-name { gap: 6px; }
     .prediction-rank-account-name {
       min-width: 0;
       overflow: hidden;
@@ -3119,6 +3108,7 @@
     }
     .info-group { margin-top: 1rem; }
     .info-group h4 { font-size: var(--text-base); margin-bottom: 0.65rem; }
+    .info-group p > .text-link { margin-top: 0; }
     .info-note {
       font-size: var(--text-sm);
       color: var(--muted) !important;
@@ -3792,9 +3782,10 @@
     }
     .matchday-break > h3 { margin-bottom: 0; }
     .match-list { display: flex; flex-direction: column; gap: 12px; }
-    .final-four-detail-link {
+    .final-four-heading > .text-link {
       align-items: center;
       gap: 0.35rem;
+      margin-top: 0;
       margin-left: auto;
       white-space: nowrap;
     }
