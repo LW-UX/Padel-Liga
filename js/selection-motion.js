@@ -35,7 +35,7 @@
     return { value: target + decay * wave, velocity: decay * (slope - decayRate * wave) };
   }
 
-  function moveHighlight(layer, start, target) {
+  function moveHighlight(layer, moving, start, target) {
     const [x, y, width, height] = target;
     Object.assign(layer.style, {
       left: `${x - width / 2}px`, top: `${y - height / 2}px`,
@@ -56,7 +56,7 @@
       return { transform: `translate(${centerX.value - x}px, ${centerY.value - y}px) scale(${scaleX}, ${scaleY})` };
     });
     frames.push({ transform: 'translate(0px, 0px) scale(1, 1)' });
-    const animation = layer.animate(frames, { duration });
+    const animation = moving.animate(frames, { duration });
     return { animation, current: () => sample(Number(animation.currentTime) || 0) };
   }
 
@@ -80,10 +80,12 @@
     if (!current && (!fromOption || fromOption === option || !fromOption.getClientRects().length)) return;
 
     const { backgroundColor, borderRadius, boxShadow } = getComputedStyle(option);
+    const keepOutline = hover.matches && group.matches(menus) && option.matches(':hover');
     const layer = document.createElement('span');
     layer.className = 'selection-highlight';
+    layer.classList.toggle('selection-highlight--outlined', keepOutline);
     layer.setAttribute('aria-hidden', 'true');
-    Object.assign(layer.style, { backgroundColor, borderRadius, boxShadow });
+    layer.style.borderRadius = borderRadius;
     group.prepend(layer);
 
     const from = current || optionBox(fromOption).map(value => ({ value, velocity: 0 }));
@@ -93,10 +95,15 @@
       return;
     }
 
-    const keepOutline = hover.matches && group.matches(menus) && option.matches(':hover');
+    const moving = document.createElement('span');
+    Object.assign(moving.style, {
+      backgroundColor: keepOutline ? 'var(--menu-selection-color)' : backgroundColor,
+      boxShadow
+    });
+    layer.append(moving);
     selection.layer = layer;
-    option.setAttribute('data-moving-selection', keepOutline ? 'hover' : '');
-    selection.motion = moveHighlight(layer, from, to);
+    option.setAttribute('data-moving-selection', '');
+    selection.motion = moveHighlight(layer, moving, from, to);
     selection.motion.animation.onfinish = () => finish(selection);
   }
 

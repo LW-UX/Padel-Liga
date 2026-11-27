@@ -224,7 +224,8 @@ html:root .danger-button:hover {
 html:root .site-nav {
   --menu-text: var(--text);
   --menu-active-text: var(--text);
-  --menu-selection-bg: color-mix(in srgb, var(--text) 6%, transparent);
+  --menu-selection-color: var(--text);
+  --menu-selection-opacity: 6%;
 }
 
 /* Secondary-Buttons, Dropdowns, Auswahlschalter, Zähler und der Split-Button der Spielerauswahl: kein Rahmen, Fläche --surface mit Schatten. Textlinks behalten ihren animierten Balken. */
