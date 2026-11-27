@@ -222,14 +222,9 @@ html:root .danger-button:hover {
 }
 /* Navigation mit grauer Hover-Kontur und grauer Auswahlfläche. */
 html:root .site-nav {
-  --menu-outline-color: var(--text);
-}
-html:root .site-nav :is(button, a[data-section]) {
-  color: var(--text);
-}
-html:root .site-nav :is(button, a[data-section]).active {
-  color: var(--text);
-  background: color-mix(in srgb, var(--text) 6%, transparent);
+  --menu-text: var(--text);
+  --menu-active-text: var(--text);
+  --menu-selection-bg: color-mix(in srgb, var(--text) 6%, transparent);
 }
 
 /* Secondary-Buttons, Dropdowns, Auswahlschalter, Zähler und der Split-Button der Spielerauswahl: kein Rahmen, Fläche --surface mit Schatten. Textlinks behalten ihren animierten Balken. */

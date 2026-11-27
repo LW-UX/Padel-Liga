@@ -578,6 +578,10 @@
     .secondary-button--icon svg,
     .global-actions .text-link svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
     .global-actions .text-link svg { display: none; }
+    .site-nav,
+    .auth-mode-toggle {
+      --menu-selection-bg: color-mix(in srgb, var(--accent) 10%, transparent);
+    }
     .site-nav {
       position: sticky;
       top: 0;
@@ -599,7 +603,7 @@
       border: 0;
       border-radius: var(--menu-radius);
       background: transparent;
-      color: var(--dim);
+      color: var(--menu-text, var(--dim));
       cursor: var(--cursor-pointer);
       font-family: var(--font-body);
       font-size: var(--text-sm);
@@ -610,13 +614,16 @@
     }
     .site-nav :is(button, a[data-section]).active,
     .auth-mode-toggle button.active {
-      color: var(--accent);
-      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      color: var(--menu-active-text, var(--accent));
+      background: var(--menu-selection-bg);
     }
     @media (hover: hover) {
+      :is(.site-nav, .auth-mode-toggle) > :is(button, a[data-section]):hover:where(:not(:disabled, [aria-disabled="true"])) {
+        color: var(--accent);
+      }
       :is(.site-nav, .auth-mode-toggle) > :is(button, a[data-section]):hover:where(:not(.active, [aria-pressed="true"], :disabled, [aria-disabled="true"])),
       [data-moving-selection="hover"] {
-        --selection-outline: inset 0 0 0 1px color-mix(in srgb, var(--menu-outline-color, var(--accent)) 35%, transparent);
+        --selection-outline: inset 0 0 0 2px var(--menu-selection-bg);
         box-shadow: var(--selection-outline);
       }
     }
